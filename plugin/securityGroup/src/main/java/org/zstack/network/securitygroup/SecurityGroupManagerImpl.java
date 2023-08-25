@@ -76,6 +76,7 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.i18n;
@@ -1253,21 +1254,37 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         bus.publish(evt);
     }
 
-    private void removeNicFromSecurityGroup(String sgUuid, List<String> vmNicUuids) {
-        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuids).list();
-        List<VmNicSecurityGroupRefVO> toRemove = refs.stream().filter(ref -> ref.getSecurityGroupUuid().equals(sgUuid)).collect(Collectors.toList());
-        dbf.removeCollection(toRemove, VmNicSecurityGroupRefVO.class);
-        refs.removeAll(toRemove);
-
-        for (String nicUuid : vmNicUuids) {
-            List<VmNicSecurityGroupRefVO> toUpdate = refs.stream().filter(ref -> ref.getVmNicUuid().equals(nicUuid)).sorted(Comparator.comparingInt(VmNicSecurityGroupRefVO::getPriority)).collect(Collectors.toList());
-            if (!toUpdate.isEmpty()) {
-                toUpdate.stream().forEach(ref ->{
-                    ref.setPriority(toUpdate.indexOf(ref) + 1);
-                });
-                dbf.updateCollection(toUpdate);  
-            }
+    private void doRemoveNicFromSecurityGroup(String sgUuid, List<String> vmNicUuids) {
+        if (vmNicUuids.isEmpty()) {
+            return;
         }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuids).list();
+                List<VmNicSecurityGroupRefVO> toRemove = refs.stream().filter(ref -> ref.getSecurityGroupUuid().equals(sgUuid)).collect(Collectors.toList());
+                dbf.removeCollection(toRemove, VmNicSecurityGroupRefVO.class);
+                refs.removeAll(toRemove);
+
+                for (String nicUuid : vmNicUuids) {
+                    List<VmNicSecurityGroupRefVO> toUpdate = refs.stream().filter(ref -> ref.getVmNicUuid().equals(nicUuid)).sorted(Comparator.comparingInt(VmNicSecurityGroupRefVO::getPriority)).collect(Collectors.toList());
+                    if (!toUpdate.isEmpty()) {
+                        toUpdate.stream().forEach(ref ->{
+                            ref.setPriority(toUpdate.indexOf(ref) + 1);
+                        });
+                        dbf.updateCollection(toUpdate);  
+                    }
+                }
+            }
+        }.execute();
+
+        return;
+    }
+
+    private void removeNicFromSecurityGroup(String sgUuid, List<String> vmNicUuids) {
+
+        doRemoveNicFromSecurityGroup(sgUuid, vmNicUuids);
 
         RuleCalculator cal = new RuleCalculator();
         cal.vmNicUuids = vmNicUuids;
@@ -1287,31 +1304,151 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         bus.publish(evt);
     }
 
+    private void deleteSecurityGroup(String sgUuid, Completion completion) {
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "dettach-nic-from-security-group-in-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(sgUuid);
+                        List<String> attachedNicUuids = Q.New(VmNicSecurityGroupRefVO.class).select(VmNicSecurityGroupRefVO_.vmNicUuid).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).listValues();
+
+                        doRemoveNicFromSecurityGroup(sgUuid, attachedNicUuids);
+                        data.put(SecurityGroupConstant.Param.VM_NIC_UUIDS, attachedNicUuids);
+                        data.put(SecurityGroupConstant.Param.HOST_SECURITY_GROUP_MEMBERS_TO, groupMemberTO);
+
+                        trigger.next();
+                    }
+                });
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-all-associated-security-group-rules-in-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, sgUuid).notEq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list();
+                        if (rules.isEmpty()) {
+                            dbf.removeByPrimaryKey(sgUuid, SecurityGroupVO.class);
+                            trigger.next();
+                            return;
+                        }
+
+                        Map<String, List<String>> toDelete = new HashMap<>();
+                        rules.stream().forEach(r -> {
+                            if (!toDelete.containsKey(r.getSecurityGroupUuid())) {
+                                toDelete.put(r.getSecurityGroupUuid(), new ArrayList<String>());
+                                toDelete.get(r.getSecurityGroupUuid()).add(r.getUuid());
+                            } else {
+                                toDelete.get(r.getSecurityGroupUuid()).add(r.getUuid());
+                            }
+                        });
+
+                        List<String> otherNicUuids = new ArrayList<>();
+                        for (Map.Entry<String, List<String>> entry : toDelete.entrySet()) {
+                            List<String> nicUuids = Q.New(VmNicSecurityGroupRefVO.class).select(VmNicSecurityGroupRefVO_.vmNicUuid).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, entry.getKey()).listValues();
+                            otherNicUuids.addAll(nicUuids);
+                            doDeleteSecurityGroupRule(entry.getKey(), entry.getValue());
+                        }
+
+                        dbf.removeByPrimaryKey(sgUuid, SecurityGroupVO.class);
+
+                        List<String> attachedNicUuids = (List<String>)data.get(SecurityGroupConstant.Param.VM_NIC_UUIDS);
+                        List<String> finalNicuuids = Stream.concat(attachedNicUuids.stream(), otherNicUuids.stream()).distinct().collect(Collectors.toList());
+                        data.put(SecurityGroupConstant.Param.VM_NIC_UUIDS, finalNicuuids);
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-rules-on-hosts";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> vmNicUuids = (List<String>)data.get(SecurityGroupConstant.Param.VM_NIC_UUIDS);
+                        //
+                        if (!vmNicUuids.isEmpty()) {
+                            RuleCalculator cal = new RuleCalculator();
+                            cal.vmNicUuids = vmNicUuids;
+                            cal.vmStates = asList(VmInstanceState.Running);
+                            List<HostRuleTO> htos = cal.calculate();
+                            applyRules(htos);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-group-numbers";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        HostSecurityGroupMembersTO groupMemberTO = (HostSecurityGroupMembersTO)data.get(SecurityGroupConstant.Param.HOST_SECURITY_GROUP_MEMBERS_TO);
+                        if(!groupMemberTO.getHostUuids().isEmpty()){
+                            groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
+                            updateGroupMembers(groupMemberTO);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+                
+            }
+        }).start();
+
+    }
+
     private void handle(APIDeleteSecurityGroupMsg msg) {
-        List<String> sgUuids = Q.New(SecurityGroupRuleVO.class).select(SecurityGroupRuleVO_.securityGroupUuid).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, msg.getUuid()).listValues();
-        sgUuids.add(msg.getUuid());
-        sgUuids = sgUuids.stream().distinct().collect(Collectors.toList());
-        List<String> vmNicUuids = Q.New(VmNicSecurityGroupRefVO.class).select(VmNicSecurityGroupRefVO_.vmNicUuid).in(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuids).listValues();
-        RuleCalculator cal = new RuleCalculator();
-        HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(msg.getUuid());
-
-        dbf.removeByPrimaryKey(msg.getUuid(), SecurityGroupVO.class);
-
-        if (!vmNicUuids.isEmpty()) {
-            cal.vmNicUuids = vmNicUuids;
-            cal.vmStates = asList(VmInstanceState.Running);
-            List<HostRuleTO> htos = cal.calculate();
-            applyRules(htos);
-        }
-
-        if(!groupMemberTO.getHostUuids().isEmpty()){
-            groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
-            updateGroupMembers(groupMemberTO);
-        }
-
         APIDeleteSecurityGroupEvent evt = new APIDeleteSecurityGroupEvent(msg.getId());
-        logger.debug(String.format("successfully deleted security group[uuid:%s]", msg.getUuid()));
-        bus.publish(evt);
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                deleteSecurityGroup(msg.getUuid(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        logger.debug(String.format("successfully deleted security group[uuid:%s]", msg.getUuid()));
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-security-group-%s", msg.getUuid());
+            }
+        });
     }
 
     private void handle(APIDeleteSecurityGroupRuleMsg msg) {
@@ -1325,7 +1462,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
             @Override
             public void run(SyncTaskChain chain) {
-                doDeleteSecurityGroupRule(msg, sgUuid, new Completion(msg, chain) {
+                deleteSecurityGroupRule(msg, sgUuid, new Completion(msg, chain) {
                     @Override
                     public void success() {
                         SecurityGroupVO sgvo = dbf.findByUuid(sgUuid, SecurityGroupVO.class);
@@ -1350,7 +1487,61 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         });
     }
 
-    private void doDeleteSecurityGroupRule(APIDeleteSecurityGroupRuleMsg msg, String sgUuid, Completion completion) {
+    private void doDeleteSecurityGroupRule(String sgUuid, List<String> ruleUuids) {
+        if (ruleUuids.isEmpty()) {
+            return;
+        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
+                        .eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
+                        .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                        .list();
+
+                boolean isUpdateIngress = false, isUpdateEgress = false;
+                List<SecurityGroupRuleVO> toUpdate = new ArrayList<>();
+                for (SecurityGroupRuleVO rvo : rvos) {
+                    if (ruleUuids.contains(rvo.getUuid())) {
+                        if (SecurityGroupRuleType.Ingress.equals(rvo.getType())) {
+                            isUpdateIngress = true;
+                        } else {
+                            isUpdateEgress = true;
+                        }
+                    } else {
+                        toUpdate.add(rvo);
+                    }
+                }
+
+                dbf.removeByPrimaryKeys(ruleUuids, SecurityGroupRuleVO.class);
+
+                if (isUpdateIngress) {
+                    List<SecurityGroupRuleVO> ingressToUpdate = toUpdate.stream()
+                        .filter(rvo -> SecurityGroupRuleType.Ingress.equals(rvo.getType()))
+                        .sorted(Comparator.comparingInt(SecurityGroupRuleVO::getPriority)).collect(Collectors.toList());
+                    ingressToUpdate.stream().forEach(r -> {
+                        r.setPriority(ingressToUpdate.indexOf(r) + 1);
+                    });
+                    dbf.updateCollection(ingressToUpdate);
+                }
+
+                if (isUpdateEgress) {
+                    List<SecurityGroupRuleVO> egressToUpdate = toUpdate.stream()
+                        .filter(rvo -> SecurityGroupRuleType.Egress.equals(rvo.getType()))
+                        .sorted(Comparator.comparingInt(SecurityGroupRuleVO::getPriority)).collect(Collectors.toList());
+                    egressToUpdate.stream().forEach(r -> {
+                        r.setPriority(egressToUpdate.indexOf(r) + 1);
+                    });
+                    dbf.updateCollection(egressToUpdate);
+                }
+            }
+        }.execute();
+    
+        return;
+    }
+
+    private void deleteSecurityGroupRule(APIDeleteSecurityGroupRuleMsg msg, String sgUuid, Completion completion) {
         Map data = new HashMap();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setData(data);
@@ -1362,52 +1553,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new SQLBatch() {
-                            @Override
-                            protected void scripts() {
-                                List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
-                                        .eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
-                                        .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
-                                        .list();
-
-                                boolean isUpdateIngress = false, isUpdateEgress = false;
-                                List<SecurityGroupRuleVO> toUpdate = new ArrayList<>();
-                                for (SecurityGroupRuleVO rvo : rvos) {
-                                    if (msg.getRuleUuids().contains(rvo.getUuid())) {
-                                        if (SecurityGroupRuleType.Ingress.equals(rvo.getType())) {
-                                            isUpdateIngress = true;
-                                        } else {
-                                            isUpdateEgress = true;
-                                        }
-                                    } else {
-                                        toUpdate.add(rvo);
-                                    }
-                                }
-
-                                dbf.removeByPrimaryKeys(msg.getRuleUuids(), SecurityGroupRuleVO.class);
-
-                                if (isUpdateIngress) {
-                                    List<SecurityGroupRuleVO> ingressToUpdate = toUpdate.stream()
-                                        .filter(rvo -> SecurityGroupRuleType.Ingress.equals(rvo.getType()))
-                                        .sorted(Comparator.comparingInt(SecurityGroupRuleVO::getPriority)).collect(Collectors.toList());
-                                    ingressToUpdate.stream().forEach(r -> {
-                                        r.setPriority(ingressToUpdate.indexOf(r) + 1);
-                                    });
-                                    dbf.updateCollection(ingressToUpdate);
-                                }
-
-                                if (isUpdateEgress) {
-                                    List<SecurityGroupRuleVO> egressToUpdate = toUpdate.stream()
-                                        .filter(rvo -> SecurityGroupRuleType.Egress.equals(rvo.getType()))
-                                        .sorted(Comparator.comparingInt(SecurityGroupRuleVO::getPriority)).collect(Collectors.toList());
-                                    egressToUpdate.stream().forEach(r -> {
-                                        r.setPriority(egressToUpdate.indexOf(r) + 1);
-                                    });
-                                    dbf.updateCollection(egressToUpdate);
-                                }
-                            }
-                        }.execute();
-
+                        doDeleteSecurityGroupRule(sgUuid, msg.getRuleUuids());
                         trigger.next();
                     }
                 });
