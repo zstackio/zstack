@@ -241,6 +241,10 @@ public class ResourceConfig {
     protected Map<String, String> getResourceConfigValues(List<String> resourceUuids) {
         Map<String, String> valuesByResourceUuids = new HashMap<>();
 
+        if (resourceUuids.isEmpty()) {
+            return valuesByResourceUuids;
+        }
+
         List<Tuple> resourceTypeUuidPairs = Q.New(ResourceVO.class).select(ResourceVO_.resourceType, ResourceVO_.uuid)
                 .in(ResourceVO_.uuid, resourceUuids).listTuple();
 
