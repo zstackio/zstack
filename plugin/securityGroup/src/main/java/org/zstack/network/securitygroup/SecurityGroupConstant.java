@@ -24,6 +24,8 @@ public interface SecurityGroupConstant {
 
     public static enum Param {
         SECURITY_GROUP_RULE_VO,
-        SECURITY_GROUP_VO
+        SECURITY_GROUP_VO,
+        VM_NIC_UUIDS,
+        HOST_SECURITY_GROUP_MEMBERS_TO
     }
 }
