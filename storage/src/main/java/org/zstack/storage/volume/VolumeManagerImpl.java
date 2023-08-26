@@ -1,6 +1,5 @@
 package org.zstack.storage.volume;
 
-import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -552,6 +551,21 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             vo.setDeviceId(0);
         }
         vo.setAccountUuid(msg.getAccountUuid());
+        if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
+            vo.setShareable(true);
+        }
+
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vo.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
 
         List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {
@@ -966,6 +980,18 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setType(VolumeType.Data);
         vo.setStatus(VolumeStatus.NotInstantiated);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
+
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vo.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
 
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);

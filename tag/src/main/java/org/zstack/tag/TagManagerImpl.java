@@ -356,6 +356,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     public void createNonInherentSystemTags(List<String> sysTags, String resourceUuid, String resourceType) {
         for (String tag : sysTags) {
+            if (TagConstant.isEphemeralTag(tag)) {
+                continue;
+            }
             createNonInherentSystemTag(resourceUuid, tag, resourceType);
         }
     }
