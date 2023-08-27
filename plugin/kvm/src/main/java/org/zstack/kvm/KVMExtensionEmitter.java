@@ -231,17 +231,17 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void doBeforeVolumeCommit(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, BlockCommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion) {
+    public void doBeforeCommitVolume(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
         }
 
         KVMBlockCommitExtensionPoint ext = it.next();
-        ext.beforeVolumeCommit(host, msg, cmd, new Completion(completion) {
+        ext.beforeCommitVolume(host, msg, cmd, new Completion(completion) {
             @Override
             public void success() {
-                doBeforeVolumeCommit(it, host, msg, cmd, completion);
+                doBeforeCommitVolume(it, host, msg, cmd, completion);
             }
 
             @Override
@@ -251,22 +251,22 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void beforeVolumeCommit(KVMHostInventory host, BlockCommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion) {
+    public void beforeCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion) {
         Iterator<KVMBlockCommitExtensionPoint> it = blockCommitExts.iterator();
-        doBeforeVolumeCommit(it, host, msg, cmd, completion);
+        doBeforeCommitVolume(it, host, msg, cmd, completion);
     }
 
-    public void doAfterVolumeCommit(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, BlockCommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, BlockCommitVolumeOnHypervisorReply reply, Completion completion) {
+    public void doAfterCommitVolume(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, CommitVolumeOnHypervisorReply reply, Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
         }
 
         KVMBlockCommitExtensionPoint ext = it.next();
-        ext.afterVolumeCommit(host, msg, cmd, reply, new Completion(completion) {
+        ext.afterCommitVolume(host, msg, cmd, reply, new Completion(completion) {
             @Override
             public void success() {
-                doAfterVolumeCommit(it, host, msg, cmd, reply, completion);
+                doAfterCommitVolume(it, host, msg, cmd, reply, completion);
             }
 
             @Override
@@ -276,14 +276,14 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void afterVolumeCommit(KVMHostInventory host, BlockCommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, BlockCommitVolumeOnHypervisorReply reply, Completion completion) {
+    public void afterCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, CommitVolumeOnHypervisorReply reply, Completion completion) {
         Iterator<KVMBlockCommitExtensionPoint> it = blockCommitExts.iterator();
-        doAfterVolumeCommit(it, host, msg, cmd, reply, completion);
+        doAfterCommitVolume(it, host, msg, cmd, reply, completion);
     }
 
-    public void afterVolumeCommitFailed(KVMHostInventory host, BlockCommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, KVMAgentCommands.BlockCommitVolumeResponse rsp, ErrorCode err) {
+    public void failedToCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, KVMAgentCommands.BlockCommitVolumeResponse rsp, ErrorCode err) {
         for (KVMBlockCommitExtensionPoint ext : blockCommitExts) {
-            ext.afterVolumeCommitFailed(host, msg, cmd, rsp, err);
+            ext.failedToCommitVolume(host, msg, cmd, rsp, err);
         }
     }
 

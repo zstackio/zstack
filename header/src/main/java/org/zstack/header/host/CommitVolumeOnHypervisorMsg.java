@@ -3,7 +3,7 @@ package org.zstack.header.host;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.volume.VolumeInventory;
 
-public class BlockCommitVolumeOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
+public class CommitVolumeOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
     private String vmUuid;
     private VolumeInventory volume;

@@ -14,10 +14,6 @@ import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
 import org.zstack.core.timeout.TimeHelper;
-import org.zstack.header.core.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.tag.TagType;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -35,7 +31,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
@@ -72,8 +67,6 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
-import org.zstack.header.vm.devices.VirtualDeviceInfo;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
@@ -649,23 +642,23 @@ public class KVMHost extends HostBase implements Host {
             handle((GetHostWebSshUrlMsg) msg);
         } else if (msg instanceof GetHostPowerStatusMsg) {
             handle((GetHostPowerStatusMsg) msg);
-        } else if (msg instanceof BlockCommitVolumeOnHypervisorMsg) {
-            handle((BlockCommitVolumeOnHypervisorMsg) msg);
+        } else if (msg instanceof CommitVolumeOnHypervisorMsg) {
+            handle((CommitVolumeOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
 
-    private void handle(BlockCommitVolumeOnHypervisorMsg msg) {
+    private void handle(CommitVolumeOnHypervisorMsg msg) {
         inQueue().name(String.format("block-commit-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> {
-                    blockCommitVolume(msg);
+                    commitVolume(msg);
                     chain.next();
                 });
     }
 
-    private void blockCommitVolume(final BlockCommitVolumeOnHypervisorMsg msg) {
+    private void commitVolume(final CommitVolumeOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -674,7 +667,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void run(SyncTaskChain chain) {
-                doBlockCommit(msg, new NoErrorCompletion() {
+                doCommitVolume(msg, new NoErrorCompletion() {
                     @Override
                     public void done() {
                         chain.next();
@@ -694,9 +687,9 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void doBlockCommit(final BlockCommitVolumeOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    private void doCommitVolume(final CommitVolumeOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
-        final BlockCommitVolumeOnHypervisorReply reply = new BlockCommitVolumeOnHypervisorReply();
+        final CommitVolumeOnHypervisorReply reply = new CommitVolumeOnHypervisorReply();
 
         BlockCommitVolumeCmd cmd = new BlockCommitVolumeCmd();
         if (msg.getVmUuid() != null) {
@@ -725,7 +718,7 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        extEmitter.beforeVolumeCommit((KVMHostInventory) getSelfInventory(), msg, cmd, new Completion(trigger) {
+                        extEmitter.beforeCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -753,7 +746,7 @@ public class KVMHost extends HostBase implements Host {
                                     }
                                 } else {
                                     ErrorCode err = operr("operation error, because:%s", ret.getError());
-                                    extEmitter.afterVolumeCommitFailed((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
+                                    extEmitter.failedToCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
                                     trigger.fail(err);
                                     return;
                                 }
@@ -765,7 +758,7 @@ public class KVMHost extends HostBase implements Host {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                extEmitter.afterVolumeCommitFailed((KVMHostInventory) getSelfInventory(), msg, cmd, null, errorCode);
+                                extEmitter.failedToCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, null, errorCode);
                                 reply.setError(errorCode);
                                 trigger.fail(errorCode);
                             }
@@ -778,7 +771,7 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        extEmitter.afterVolumeCommit((KVMHostInventory) getSelfInventory(), msg, cmd, reply, new Completion(trigger) {
+                        extEmitter.afterCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, reply, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();

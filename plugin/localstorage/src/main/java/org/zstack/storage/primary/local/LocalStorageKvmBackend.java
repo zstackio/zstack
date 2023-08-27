@@ -2001,7 +2001,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg, final String hostUuid, final ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply> completion) {
-        BlockCommitVolumeOnHypervisorMsg hmsg = new BlockCommitVolumeOnHypervisorMsg();
+        CommitVolumeOnHypervisorMsg hmsg = new CommitVolumeOnHypervisorMsg();
         hmsg.setHostUuid(hostUuid);
         hmsg.setVmUuid(msg.getVmUuid());
         hmsg.setVolume(msg.getVolume());
@@ -2017,7 +2017,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 }
 
                 UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
-                BlockCommitVolumeOnHypervisorReply treply = (BlockCommitVolumeOnHypervisorReply) reply;
+                CommitVolumeOnHypervisorReply treply = (CommitVolumeOnHypervisorReply) reply;
                 ret.setSize(treply.getSize());
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 completion.success(ret);

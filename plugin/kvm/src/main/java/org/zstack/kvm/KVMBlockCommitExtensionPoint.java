@@ -2,15 +2,14 @@ package org.zstack.kvm;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.BlockCommitVolumeOnHypervisorMsg;
-import org.zstack.header.host.BlockCommitVolumeOnHypervisorReply;
-import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
+import org.zstack.header.host.CommitVolumeOnHypervisorMsg;
+import org.zstack.header.host.CommitVolumeOnHypervisorReply;
 
 
 public interface KVMBlockCommitExtensionPoint {
-    void beforeVolumeCommit(KVMHostInventory host, BlockCommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion);
+    void beforeCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion);
 
-    void afterVolumeCommit(KVMHostInventory host, BlockCommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, BlockCommitVolumeOnHypervisorReply reply, Completion completion);
+    void afterCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, CommitVolumeOnHypervisorReply reply, Completion completion);
 
-    void afterVolumeCommitFailed(KVMHostInventory host, BlockCommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, KVMAgentCommands.BlockCommitVolumeResponse rsp, ErrorCode err);
+    void failedToCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, KVMAgentCommands.BlockCommitVolumeResponse rsp, ErrorCode err);
 }

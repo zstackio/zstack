@@ -2,7 +2,7 @@ package org.zstack.header.host;
 
 import org.zstack.header.message.MessageReply;
 
-public class BlockCommitVolumeOnHypervisorReply extends MessageReply {
+public class CommitVolumeOnHypervisorReply extends MessageReply {
     private String newVolumeInstallPath;
     private long size;
 
