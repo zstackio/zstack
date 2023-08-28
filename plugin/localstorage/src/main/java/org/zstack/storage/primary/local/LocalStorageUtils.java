@@ -243,6 +243,7 @@ public class LocalStorageUtils {
         public String makeFullPath() {
             DebugUtils.Assert(installPath != null, "installPath cannot be null");
             DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
+            DebugUtils.Assert(!installPath.startsWith("file://"), "installPath cannot start with file://");
             fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
             return fullPath;
         }
