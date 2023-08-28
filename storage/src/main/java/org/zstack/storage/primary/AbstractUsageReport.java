@@ -40,8 +40,8 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
     private static final long COLLECT_AND_FORECAST_INTERVAL = 1;
     private static final String HISTORICAL_USED_PHYSICAL_CAPACITIES_PATH = "/tmp/historicalUsedPhysicalCapacities";
     private static final String FORECAST_RESULTS_PATH = "/tmp/forecast";
-    private static final String CAPACITY_FORECAST_BIN_FILENAME = "forecast-capacity";
-    private static final String CAPACITY_FORECAST_BIN_PATH = "/usr/local/zstack/tools/forecast-capacity";
+    private static final String CAPACITY_FORECAST_BIN_FILENAME = "zs-forecast-capacity";
+    private static final String CAPACITY_FORECAST_BIN_PATH = "/usr/local/bin/zs-forecast-capacity";
 
     private static class HistoricalUsage {
         EvictingQueue<Long> historicalUsedPhysicalCapacities = EvictingQueue.create(MAX_CACHE_LENGTHS_BY_DAY);
