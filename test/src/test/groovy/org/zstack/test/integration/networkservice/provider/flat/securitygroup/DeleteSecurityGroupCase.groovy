@@ -196,6 +196,78 @@ class DeleteSecurityGroupCase extends SubCase {
         assert sg4.rules.find {it.type == 'Ingress' && it.description == 'sg4-ingress-rule-2' && it.priority == 1}
     }
 
+    void testApplyRulesWhenDeleteSecurityGroup() {
+        sg2 = createSecurityGroup {
+            name = "sg-2"
+            ipVersion = 4
+        } as SecurityGroupInventory
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg2.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+
+        setVmNicSecurityGroup {
+            vmNicUuid = vm3.vmNics[0].uuid
+            refs = []
+        }
+
+        setVmNicSecurityGroup {
+            vmNicUuid = vm4.vmNics[0].uuid
+            refs = []
+        }
+
+        VmNicSecurityGroupRefAO ref1 = new VmNicSecurityGroupRefAO()
+        ref1.securityGroupUuid = sg1.uuid
+        ref1.priority = 1
+
+        VmNicSecurityGroupRefAO ref2 = new VmNicSecurityGroupRefAO()
+        ref2.securityGroupUuid = sg2.uuid
+        ref2.priority = 2
+
+        VmNicSecurityGroupRefAO ref3 = new VmNicSecurityGroupRefAO()
+        ref3.securityGroupUuid = sg3.uuid
+        ref3.priority = 3
+
+        setVmNicSecurityGroup {
+            vmNicUuid = vm4.vmNics[0].uuid
+            refs = [ref1, ref2]
+        }
+
+        setVmNicSecurityGroup {
+            vmNicUuid = vm3.vmNics[0].uuid
+            refs = [ref1, ref2, ref3]
+        }
+
+        SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+        r.type = 'Ingress'
+        r.description = 'sg2-ingress-rule-1'
+        r.protocol = 'TCP'
+        r.dstPortRange = '40-400'
+        r.remoteSecurityGroupUuid = sg3.uuid
+        sg2 = addSecurityGroupRule {
+            securityGroupUuid = sg2.uuid
+            rules = [r]
+        }
+
+        KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
+        env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+
+            return rsp
+        }
+
+        deleteSecurityGroup {
+            uuid = sg2.uuid
+        }
+
+        retryInSecs {
+            assert cmd != null
+            assert cmd.vmNicTOs.size() == 2
+            assert cmd.vmNicTOs.find {it.vmNicUuid == vm3.vmNics[0].uuid}
+            assert cmd.vmNicTOs.find {it.vmNicUuid == vm4.vmNics[0].uuid}
+        }
+    }
+
     @Override
     void clean() {
         env.delete()
@@ -259,5 +331,6 @@ class DeleteSecurityGroupCase extends SubCase {
 
         testDeleteSecurityGroupCase1()
         testDeleteSecurityGroupCase2()
+        testApplyRulesWhenDeleteSecurityGroup()
     }
 }

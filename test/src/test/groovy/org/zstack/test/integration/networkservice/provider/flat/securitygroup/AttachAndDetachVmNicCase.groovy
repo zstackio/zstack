@@ -27,7 +27,7 @@ class AttachAndDetachVmNicCase extends SubCase {
 
     L3NetworkInventory l3Net
     VmInstanceInventory vm1, vm2, vm3, vm4
-    SecurityGroupInventory sg1, sg2, sg3
+    SecurityGroupInventory sg1, sg2, sg3, sg4
 
     void testAttachVmNicToSecurityGroup() {
         attachSecurityGroupToL3Network {
@@ -111,8 +111,91 @@ class AttachAndDetachVmNicCase extends SubCase {
                 assert it.priority == 3
             }
         })
+    }
 
+    void testDetachVmNicFromSecurityGroup() {
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg1.uuid
+            vmNicUuids = [vm2.vmNics[0].uuid]
+        }
 
+        VmNicSecurityPolicyVO policy = Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, vm2.vmNics[0].uuid).find()
+        assert policy != null
+        assert policy.ingressPolicy == "DENY"
+        assert policy.egressPolicy == "ALLOW"
+
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm2.vmNics[0].uuid).list()
+        assert refs.find {it.securityGroupUuid == sg1.uuid && it.priority == 1}
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg2.uuid
+            vmNicUuids = [vm2.vmNics[0].uuid]
+        }
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg3.uuid
+            vmNicUuids = [vm2.vmNics[0].uuid]
+        }
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm2.vmNics[0].uuid).list()
+        assert refs.find {it.securityGroupUuid == sg1.uuid && it.priority == 1}
+        assert refs.find {it.securityGroupUuid == sg2.uuid && it.priority == 2}
+        assert refs.find {it.securityGroupUuid == sg3.uuid && it.priority == 3}
+
+        deleteVmNicFromSecurityGroup {
+            securityGroupUuid = sg1.uuid
+            vmNicUuids = [vm2.vmNics[0].uuid]
+        }
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm2.vmNics[0].uuid).list()
+        assert refs.find {it.securityGroupUuid == sg2.uuid && it.priority == 1}
+        assert refs.find {it.securityGroupUuid == sg3.uuid && it.priority == 2}
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg1.uuid
+            vmNicUuids = [vm2.vmNics[0].uuid]
+        }
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm2.vmNics[0].uuid).list()
+        assert refs.find {it.securityGroupUuid == sg2.uuid && it.priority == 1}
+        assert refs.find {it.securityGroupUuid == sg3.uuid && it.priority == 2}
+        assert refs.find {it.securityGroupUuid == sg1.uuid && it.priority == 3}
+
+        deleteVmNicFromSecurityGroup {
+            securityGroupUuid = sg2.uuid
+            vmNicUuids = [vm2.vmNics[0].uuid]
+        }
+        deleteVmNicFromSecurityGroup {
+            securityGroupUuid = sg3.uuid
+            vmNicUuids = [vm2.vmNics[0].uuid]
+        }
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm2.vmNics[0].uuid).list()
+        assert refs.find {it.securityGroupUuid == sg1.uuid && it.priority == 1}
+    }
+
+    void testDeleteL3FromSecurityGroup() {
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg4.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg4.uuid
+            vmNicUuids = [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid, vm3.vmNics[0].uuid]
+        }
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid, vm3.vmNics[0].uuid]).list()
+        assert refs.find {it.securityGroupUuid == sg4.uuid && it.vmNicUuid == vm1.vmNics[0].uuid}
+        assert refs.find {it.securityGroupUuid == sg4.uuid && it.vmNicUuid == vm2.vmNics[0].uuid}
+        assert refs.find {it.securityGroupUuid == sg4.uuid && it.vmNicUuid == vm3.vmNics[0].uuid}
+
+        detachSecurityGroupFromL3Network {
+            securityGroupUuid = sg4.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid, vm3.vmNics[0].uuid]).list()
+        assert refs.find {it.securityGroupUuid == sg4.uuid && it.vmNicUuid == vm1.vmNics[0].uuid} == null
+        assert refs.find {it.securityGroupUuid == sg4.uuid && it.vmNicUuid == vm2.vmNics[0].uuid} == null
+        assert refs.find {it.securityGroupUuid == sg4.uuid && it.vmNicUuid == vm3.vmNics[0].uuid} == null
     }
 
     @Override
@@ -152,8 +235,14 @@ class AttachAndDetachVmNicCase extends SubCase {
                 name = "sg-3"
                 ipVersion = 4
             } as SecurityGroupInventory
+            sg4 = createSecurityGroup {
+                name = "sg-4"
+                ipVersion = 4
+            } as SecurityGroupInventory
         }
 
         testAttachVmNicToSecurityGroup()
+        testDetachVmNicFromSecurityGroup()
+        testDeleteL3FromSecurityGroup()
     }
 }
