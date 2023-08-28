@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QuerySNSSnmpEndpointAction extends QueryAction {
+public class QuerySNSSnmpPlatformAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QuerySNSSnmpEndpointAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpEndpointResult value;
+        public org.zstack.sdk.sns.platform.email.QuerySNSEmailPlatformResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QuerySNSSnmpEndpointAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpEndpointResult() : value; 
+        org.zstack.sdk.sns.platform.email.QuerySNSEmailPlatformResult value = res.getResult(org.zstack.sdk.sns.platform.email.QuerySNSEmailPlatformResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.email.QuerySNSEmailPlatformResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QuerySNSSnmpEndpointAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/sns/application-endpoints/snmp";
+        info.path = "/sns/application-platforms/snmp";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

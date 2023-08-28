@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSnmpTrapReceiverAction extends AbstractAction {
+public class UpdateSNSSnmpPlatformAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSnmpTrapReceiverAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.snmp.CreateSnmpTrapReceiverResult value;
+        public org.zstack.sdk.sns.UpdateSNSApplicationPlatformResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,20 @@ public class CreateSnmpTrapReceiverAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String ipAddress;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String snmpAddress;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public int port = 0;
+    public java.lang.Integer snmpPort;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +72,8 @@ public class CreateSnmpTrapReceiverAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.snmp.CreateSnmpTrapReceiverResult value = res.getResult(org.zstack.sdk.sns.platform.snmp.CreateSnmpTrapReceiverResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.snmp.CreateSnmpTrapReceiverResult() : value; 
+        org.zstack.sdk.sns.UpdateSNSApplicationPlatformResult value = res.getResult(org.zstack.sdk.sns.UpdateSNSApplicationPlatformResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.UpdateSNSApplicationPlatformResult() : value; 
 
         return ret;
     }
@@ -94,10 +103,10 @@ public class CreateSnmpTrapReceiverAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/sns/application-endpoints/snmp/trap-receiver";
+        info.path = "/sns/application-platforms/snmp/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "createSnmpTrapReceiver";
+        info.parameterName = "updateSNSSnmpPlatform";
         return info;
     }
 

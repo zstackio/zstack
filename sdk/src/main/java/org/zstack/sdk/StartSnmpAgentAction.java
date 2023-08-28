@@ -25,29 +25,8 @@ public class StartSnmpAgentAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"v2c","v3"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String version;
-
-    @Param(required = false, maxLength = 32, minLength = 1, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String readCommunity;
-
-    @Param(required = false, maxLength = 32, minLength = 8, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String userName;
-
-    @Param(required = false, validValues = {"MD5","SHA","SHA224","SHA256","SHA384","SHA512"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String authAlgorithm;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String authPassword;
-
-    @Param(required = false, validValues = {"DES","AES128","AES192","AES256","3DES"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String privacyAlgorithm;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String privacyPassword;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,65535L}, noTrim = false)
-    public int port = 0;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;

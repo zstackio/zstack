@@ -43,8 +43,7 @@ import org.zstack.sdk.sns.platform.email.CreateSNSEmailEndpointAction
 import org.zstack.sdk.sns.platform.email.CreateSNSEmailPlatformAction
 import org.zstack.sdk.sns.platform.http.CreateSNSHttpEndpointAction
 import org.zstack.sdk.sns.platform.snmp.CreateSNSSnmpEndpointAction
-import org.zstack.sdk.sns.platform.snmp.CreateSnmpTrapReceiverAction
-import org.zstack.sdk.sns.platform.snmp.DeleteSnmpTrapReceiverAction
+import org.zstack.sdk.sns.platform.snmp.CreateSNSSnmpPlatformAction
 import org.zstack.sdk.zwatch.alarm.CreateAlarmAction
 import org.zstack.sdk.zwatch.alarm.DeleteAlarmAction
 import org.zstack.sdk.zwatch.alarm.SubscribeEventAction
@@ -180,7 +179,7 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateMonitorGroupAction.metaClass, CreateMonitorGroupAction.Result.metaClass, DeleteMonitorGroupAction.class],
             [CreateMonitorTemplateAction.metaClass, CreateMonitorTemplateAction.Result.metaClass, DeleteMonitorTemplateAction.class],
             [CreateDirectoryAction.metaClass, CreateDirectoryAction.Result.metaClass, DeleteDirectoryAction.class],
-            [CreateSnmpTrapReceiverAction.metaClass, CreateSnmpTrapReceiverAction.Result.metaClass, DeleteSnmpTrapReceiverAction.class],
+            [CreateSNSSnmpPlatformAction.metaClass, CreateSNSSnmpPlatformAction.Result.metaClass, DeleteSNSApplicationPlatformAction.class],
             [CreateSNSSnmpEndpointAction.metaClass, CreateSNSSnmpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
     ]
 

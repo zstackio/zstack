@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class SnmpAgentConfigInventory  {
+public class SnmpAgentInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -68,12 +68,20 @@ public class SnmpAgentConfigInventory  {
         return this.privacyPassword;
     }
 
-    public int port;
-    public void setPort(int port) {
+    public java.lang.Integer port;
+    public void setPort(java.lang.Integer port) {
         this.port = port;
     }
-    public int getPort() {
+    public java.lang.Integer getPort() {
         return this.port;
+    }
+
+    public java.lang.String status;
+    public void setStatus(java.lang.String status) {
+        this.status = status;
+    }
+    public java.lang.String getStatus() {
+        return this.status;
     }
 
     public java.lang.String securityLevel;

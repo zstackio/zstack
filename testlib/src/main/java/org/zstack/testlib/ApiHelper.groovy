@@ -9494,6 +9494,33 @@ abstract class ApiHelper {
     }
 
 
+    def createSnmpAgent(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateSnmpAgentAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateSnmpAgentAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createSystemTag(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateSystemTagAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateSystemTagAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -29547,8 +29574,8 @@ abstract class ApiHelper {
     }
 
 
-    def querySnmpAgentConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QuerySnmpAgentConfigAction.class) Closure c) {
-        def a = new org.zstack.sdk.QuerySnmpAgentConfigAction()
+    def querySnmpAgent(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QuerySnmpAgentAction.class) Closure c) {
+        def a = new org.zstack.sdk.QuerySnmpAgentAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -44756,8 +44783,8 @@ abstract class ApiHelper {
     }
 
 
-    def createSnmpTrapReceiver(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.snmp.CreateSnmpTrapReceiverAction.class) Closure c) {
-        def a = new org.zstack.sdk.sns.platform.snmp.CreateSnmpTrapReceiverAction()
+    def createSNSSnmpPlatform(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.snmp.CreateSNSSnmpPlatformAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.snmp.CreateSNSSnmpPlatformAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -44783,35 +44810,8 @@ abstract class ApiHelper {
     }
 
 
-    def deleteSnmpTrapReceiver(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.snmp.DeleteSnmpTrapReceiverAction.class) Closure c) {
-        def a = new org.zstack.sdk.sns.platform.snmp.DeleteSnmpTrapReceiverAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def querySNSSnmpEndpoint(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpEndpointAction.class) Closure c) {
-        def a = new org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpEndpointAction()
+    def querySNSSnmpPlatform(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpPlatformAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpPlatformAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -44839,37 +44839,8 @@ abstract class ApiHelper {
     }
 
 
-    def querySNSSnmpTrapReceiver(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpTrapReceiverAction.class) Closure c) {
-        def a = new org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpTrapReceiverAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-        a.conditions = a.conditions.collect { it.toString() }
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def updateSnmpTrapReceiver(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.snmp.UpdateSnmpTrapReceiverAction.class) Closure c) {
-        def a = new org.zstack.sdk.sns.platform.snmp.UpdateSnmpTrapReceiverAction()
+    def updateSNSSnmpPlatform(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.snmp.UpdateSNSSnmpPlatformAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.snmp.UpdateSNSSnmpPlatformAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

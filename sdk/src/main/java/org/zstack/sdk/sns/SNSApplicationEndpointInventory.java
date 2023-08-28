@@ -1,6 +1,6 @@
 package org.zstack.sdk.sns;
 
-
+import org.zstack.sdk.sns.SNSApplicationPlatformInventory;
 
 public class SNSApplicationEndpointInventory  {
 
@@ -66,6 +66,14 @@ public class SNSApplicationEndpointInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public SNSApplicationPlatformInventory platform;
+    public void setPlatform(SNSApplicationPlatformInventory platform) {
+        this.platform = platform;
+    }
+    public SNSApplicationPlatformInventory getPlatform() {
+        return this.platform;
     }
 
 }
