@@ -16,7 +16,7 @@ public class VmAbnormalLifeCycleStruct {
                         || struct.getOriginalState() == VmInstanceState.Starting
                         || struct.getOriginalState() == VmInstanceState.Unknown)
                         && struct.getCurrentState() == VmInstanceState.Stopped
-                        && struct.getCurrentHostUuid().equals(struct.getOriginalHostUuid());
+                        && Objects.equals(struct.getCurrentHostUuid(), struct.getOriginalHostUuid());
             }
         },
         VmRunningFromIntermediateState {
