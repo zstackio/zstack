@@ -160,8 +160,8 @@
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
-        <version>NT</version>
-        <osRelease>WindowsServer NT</osRelease>
+        <version>4.0</version>
+        <osRelease>Windows NT 4.0</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
