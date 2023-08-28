@@ -195,12 +195,12 @@ public class ErrorCode implements Serializable, Cloneable {
     }
 
     public String getRootCauseDetails() {
-        ErrorCode root = getRootCause();
-        if (root.getDetails() == null) {
-            return root.getDescription();
-        } else {
-            return root.getDetails();
+        if (cause == null) {
+            return getDetails() != null ? getDetails() : getDescription();
         }
+
+        ErrorCode root = getRootCause();
+        return root.getReadableDetails();
     }
 
     public ErrorCodeElaboration getMessages() {
