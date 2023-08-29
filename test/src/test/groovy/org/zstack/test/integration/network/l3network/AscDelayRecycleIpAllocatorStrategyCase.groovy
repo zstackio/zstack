@@ -23,8 +23,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         env = env {
             instanceOffering {
                 name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(2)
-                cpu = 2
+                memory = SizeUnit.GIGABYTE.toByte(1)
+                cpu = 1
             }
 
             diskOffering {
@@ -226,9 +226,34 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         deleteVmInstance(vm_7)
         deleteVmInstance(vm_8)
         deleteVmInstance(vm_9)
+
+        List<Thread> threads = new ArrayList<>()
+        List<VmInstanceInventory> vms = []
+        for (int i = 3; i < 13; i++) {
+            threads.add(Thread.start {
+                try {
+                    def vm = createVmInstance {
+                        name = "vm_${i}"
+                        instanceOfferingUuid = instanceOffering.uuid
+                        imageUuid = image.uuid
+                        l3NetworkUuids = [l3.uuid]
+                    }
+                    assert vm.vmNics[0].usedIps[0].ip == "192.168.0.${i}"
+                    vms.add(vm)
+                } catch (AssertionError e) {
+                    // Rethrow the assertion error as a RuntimeException
+                    throw new RuntimeException("Assertion failed in thread ${Thread.currentThread().name}", e)
+                }
+            })
+        }
+        threads.forEach({it -> it.join()})
+
         deleteIpRange { uuid = range.uuid }
         deleteL3Network { uuid = l3.uuid }
 
+        vms.each {
+            deleteVmInstance(it)
+        }
     }
 
     void testAscDelayRecycleMultiIpRange() {
