@@ -209,6 +209,10 @@ public class ConsoleProxyBase implements ConsoleProxy {
 
     @Override
     public void deleteProxy(VmInstanceInventory vm, final Completion completion) {
+        deleteProxy(vm.getUuid(), completion);
+    }
+
+    private void deleteProxy(String vmInstanceUuid, Completion completion) {
         DeleteProxyCmd cmd = new DeleteProxyCmd();
         cmd.setProxyHostname(self.getProxyHostname());
         cmd.setProxyPort(self.getProxyPort());
@@ -216,7 +220,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setTargetHostname(self.getTargetHostname());
         cmd.setTargetPort(self.getTargetPort());
         cmd.setToken(self.getToken());
-        cmd.setVmUuid(vm.getUuid());
+        cmd.setVmUuid(vmInstanceUuid);
 
         restf.asyncJsonPost(URLBuilder.buildHttpUrl(self.getAgentIp(), agentPort, ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH), cmd,
                 new JsonAsyncRESTCallback<DeleteProxyRsp>(completion) {
@@ -239,5 +243,10 @@ public class ConsoleProxyBase implements ConsoleProxy {
                         return DeleteProxyRsp.class;
                     }
                 });
+    }
+
+    @Override
+    public void deleteProxy(ConsoleProxyInventory proxy, Completion completion) {
+        deleteProxy(proxy.getVmInstanceUuid(), completion);
     }
 }
