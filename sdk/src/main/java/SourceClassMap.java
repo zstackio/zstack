@@ -561,6 +561,8 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.SmartDataStruct", "org.zstack.sdk.SmartDataStruct");
 			put("org.zstack.storage.device.nvme.NvmeLunHostRefInventory", "org.zstack.sdk.NvmeLunHostRefInventory");
 			put("org.zstack.storage.device.nvme.NvmeLunInventory", "org.zstack.sdk.NvmeLunInventory");
+			put("org.zstack.storage.device.nvme.NvmeServerClusterRefInventory", "org.zstack.sdk.NvmeServerClusterRefInventory");
+			put("org.zstack.storage.device.nvme.NvmeServerInventory", "org.zstack.sdk.NvmeServerInventory");
 			put("org.zstack.storage.device.nvme.NvmeTargetInventory", "org.zstack.sdk.NvmeTargetInventory");
 			put("org.zstack.storage.primary.block.BlockPrimaryStorageInventory", "org.zstack.sdk.BlockPrimaryStorageInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
@@ -992,6 +994,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NormalIpRangeInventory", "org.zstack.header.network.l3.NormalIpRangeInventory");
 			put("org.zstack.sdk.NvmeLunHostRefInventory", "org.zstack.storage.device.nvme.NvmeLunHostRefInventory");
 			put("org.zstack.sdk.NvmeLunInventory", "org.zstack.storage.device.nvme.NvmeLunInventory");
+			put("org.zstack.sdk.NvmeServerClusterRefInventory", "org.zstack.storage.device.nvme.NvmeServerClusterRefInventory");
+			put("org.zstack.sdk.NvmeServerInventory", "org.zstack.storage.device.nvme.NvmeServerInventory");
 			put("org.zstack.sdk.NvmeTargetInventory", "org.zstack.storage.device.nvme.NvmeTargetInventory");
 			put("org.zstack.sdk.OAuth2ClientInventory", "org.zstack.sso.header.OAuth2ClientInventory");
 			put("org.zstack.sdk.OAuth2TokenInventory", "org.zstack.sso.header.OAuth2TokenInventory");

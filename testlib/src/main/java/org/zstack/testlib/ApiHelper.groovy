@@ -1880,6 +1880,33 @@ abstract class ApiHelper {
     }
 
 
+    def addNvmeServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddNvmeServerAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddNvmeServerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def addOssBucketFromRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddOssBucketFromRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.AddOssBucketFromRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -3574,6 +3601,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def attachNvmeServerToCluster(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachNvmeServerToClusterAction.class) Closure c) {
+        def a = new org.zstack.sdk.AttachNvmeServerToClusterAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
@@ -13355,6 +13409,33 @@ abstract class ApiHelper {
     }
 
 
+    def deleteNvmeServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteNvmeServerAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteNvmeServerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteOssBucketFileRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteOssBucketFileRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteOssBucketFileRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -16021,6 +16102,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def detachNvmeServerFromCluster(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachNvmeServerFromClusterAction.class) Closure c) {
+        def a = new org.zstack.sdk.DetachNvmeServerFromClusterAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
@@ -28372,6 +28480,35 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryNvmeServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryNvmeServerAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryNvmeServerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
