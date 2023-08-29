@@ -310,6 +310,34 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule uuid[%s] is not exist", msg.getUuid()));
         }
 
+        if (vo.getPriority() == 0) {
+            if (msg.getProtocol() != null || msg.getAction() != null || msg.getRemoteSecurityGroupUuid() != null || msg.getSrcIpRange() != null
+                || msg.getDstIpRange() != null || msg.getDstPortRange() != null || msg.getPriority() != null) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] is default rule, only the description and status can be set", msg.getUuid()));
+                }
+        }
+
+        if (msg.getPriority() != null) {
+            if (msg.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] priority cannot be set to default rule priority[%d]", msg.getUuid(), SecurityGroupConstant.DEFAULT_RULE_PRIORITY));
+            }
+
+            Long count = Q.New(SecurityGroupRuleVO.class)
+                    .eq(SecurityGroupRuleVO_.securityGroupUuid, vo.getSecurityGroupUuid())
+                    .eq(SecurityGroupRuleVO_.type, vo.getType())
+                    .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                    .count();
+            if (count.intValue() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group %s rules number[%d] is out of max limit[%d]", vo.getType(), count.intValue(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
+            }
+            if (msg.getPriority() > count.intValue()) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because the maximum priority of %s rule is [%d]", vo.getType().toString(), count.intValue()));
+            }
+            if (msg.getPriority() < 0) {
+                msg.setPriority(SecurityGroupConstant.LOWEST_RULE_PRIORITY);
+            }
+        }
+
         if (msg.getState() != null) {
             if (!SecurityGroupRuleState.isValid(msg.getState())) {
                 throw new ApiMessageInterceptionException(argerr("could not change security group rule, because invalid state[%s]", msg.getState()));
@@ -340,34 +368,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             }
         } else {
             msg.setDescription(vo.getDescription());
-        }
-
-        if (vo.getPriority() == 0) {
-            if (msg.getProtocol() != null || msg.getAction() != null || msg.getRemoteSecurityGroupUuid() != null || msg.getSrcIpRange() != null
-                || msg.getDstIpRange() != null || msg.getDstPortRange() != null || msg.getPriority() != null) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] is default rule, only the description and status can be set", msg.getUuid()));
-                }
-        }
-
-        if (msg.getPriority() != null) {
-            if (msg.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] priority cannot be set to default rule priority[%d]", msg.getUuid(), SecurityGroupConstant.DEFAULT_RULE_PRIORITY));
-            }
-
-            Long count = Q.New(SecurityGroupRuleVO.class)
-                    .eq(SecurityGroupRuleVO_.securityGroupUuid, vo.getSecurityGroupUuid())
-                    .eq(SecurityGroupRuleVO_.type, vo.getType())
-                    .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
-                    .count();
-            if (count.intValue() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group %s rules number[%d] is out of max limit[%d]", vo.getType(), count.intValue(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
-            }
-            if (msg.getPriority() > count.intValue()) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because the maximum priority of %s rule is [%d]", vo.getType().toString(), count.intValue()));
-            }
-            if (msg.getPriority() < 0) {
-                msg.setPriority(SecurityGroupConstant.LOWEST_RULE_PRIORITY);
-            }
         }
 
         if (msg.getRemoteSecurityGroupUuid() != null) {
@@ -488,6 +488,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validatePorts(String ports) {
+        if (ports.isEmpty() || ports.startsWith(SecurityGroupConstant.IP_SPLIT) || ports.endsWith(SecurityGroupConstant.IP_SPLIT)) {
+            throw new ApiMessageInterceptionException(argerr("invalid ips[%s]", ports));
+        }
         String portArray[];
         if (ports.contains(SecurityGroupConstant.IP_SPLIT)) {
             String[] tmpPorts = ports.split(String.format("%s|%s", SecurityGroupConstant.IP_SPLIT, SecurityGroupConstant.RANGE_SPLIT));
@@ -505,6 +508,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         }
 
         for (String port : portArray) {
+            if (port.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("invalid ips[%s]", ports));
+            }
             if (port.contains(SecurityGroupConstant.RANGE_SPLIT)) {
                 String portRange[] = port.split(SecurityGroupConstant.RANGE_SPLIT);
                 if (portRange.length != 2) {
@@ -536,6 +542,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validateIps(String ips, Integer ipVersion) {
+        if (ips.isEmpty() || ips.startsWith(SecurityGroupConstant.IP_SPLIT) || ips.endsWith(SecurityGroupConstant.IP_SPLIT)) {
+            throw new ApiMessageInterceptionException(argerr("invalid ips[%s]", ips));
+        }
         String ipArray[];
         if (ips.contains(SecurityGroupConstant.IP_SPLIT)) {
             ipArray = ips.split(SecurityGroupConstant.IP_SPLIT);
@@ -557,6 +566,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         }
 
         for (String ip : ipArray) {
+            if (ip.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("invalid ips[%s]", ips));
+            }
             if (ip.contains(SecurityGroupConstant.CIDR_SPLIT)) {
                 if (!NetworkUtils.isCidr(ip, ipVersion)) {
                     throw new ApiMessageInterceptionException(argerr("invalid cidr[%s], ipVersion[%d]", ip, ipVersion));

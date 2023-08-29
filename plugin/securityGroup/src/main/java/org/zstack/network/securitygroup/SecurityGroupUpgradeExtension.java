@@ -35,9 +35,6 @@ public class SecurityGroupUpgradeExtension implements Component {
 
         sgs.forEach(sg -> {
             List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sg.getUuid()).list();
-            if (rules.isEmpty()) {
-                return;
-            }
 
             List<SecurityGroupRuleVO> ingressRules = rules.stream().filter(r -> r.getType().equals(SecurityGroupRuleType.Ingress)).collect(Collectors.toList());
             List<SecurityGroupRuleVO> egressRules = rules.stream().filter(r -> r.getType().equals(SecurityGroupRuleType.Egress)).collect(Collectors.toList());
@@ -57,7 +54,6 @@ public class SecurityGroupUpgradeExtension implements Component {
                 .orElse(null);
     }
 
-    @Transactional
     private void upgradeSecurityGroupRules(String sgUuid, List<SecurityGroupRuleVO> rules, SecurityGroupRuleType type) {
         List<SecurityGroupRuleVO> defaultRules = new ArrayList<>();
         SecurityGroupRuleVO ip4DefaultRule = getDefaultSecurityGroupRule(rules, type, IPv6Constants.IPv4);

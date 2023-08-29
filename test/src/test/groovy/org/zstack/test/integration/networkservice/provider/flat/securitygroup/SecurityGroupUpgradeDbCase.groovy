@@ -19,6 +19,7 @@ import org.zstack.network.securitygroup.SecurityGroupRuleVO_
 import org.zstack.network.securitygroup.SecurityGroupVO
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.securitygroup.SecurityGroupRuleType
+import org.zstack.network.securitygroup.SecurityGroupRuleState
 import org.zstack.network.securitygroup.SecurityGroupUpgradeExtension
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SecurityGroupInventory
@@ -158,6 +159,211 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         }
     }
 
+    void testUpgradeSecurityGroupWithNoRules() {
+        SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = true
+        sg1 = createSecurityGroup {
+            name = "sg-1"
+            ipVersion = 4
+        } as SecurityGroupInventory
+
+        sg2 = createSecurityGroup {
+            name = "sg-2"
+            ipVersion = 6
+        } as SecurityGroupInventory
+
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg1.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg2.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+
+        for (int i = 1; i <= 5; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = "Ingress"
+            r.ipVersion = 4
+            r.protocol = "TCP"
+            r.startPort = i
+            r.endPort = i
+
+            addSecurityGroupRule {
+                securityGroupUuid = sg2.uuid
+                rules = [r]
+            }
+        }
+
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
+                .eq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                .delete()
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid)
+                .eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.Ingress)
+                .eq(SecurityGroupRuleVO_.ipVersion, 4)
+                .eq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                .delete()
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid)
+                .set(SecurityGroupRuleVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
+                .set(SecurityGroupRuleVO_.dstPortRange, null)
+                .set(SecurityGroupRuleVO_.description, null)
+                .update()
+
+        upgradeExt.start()
+
+        List<SecurityGroupRuleVO> sg1Rules = Q.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid).list()
+
+        assert sg1Rules.size() == 4
+        assert sg1Rules.find {it.priority == 0 && it.ipVersion == 4 && it.type == SecurityGroupRuleType.Ingress && it.state == SecurityGroupRuleState.Disabled}
+        assert sg1Rules.find {it.priority == 0 && it.ipVersion == 6 && it.type == SecurityGroupRuleType.Ingress && it.state == SecurityGroupRuleState.Disabled}
+        assert sg1Rules.find {it.priority == 0 && it.ipVersion == 4 && it.type == SecurityGroupRuleType.Egress && it.state == SecurityGroupRuleState.Disabled}
+        assert sg1Rules.find {it.priority == 0 && it.ipVersion == 6 && it.type == SecurityGroupRuleType.Egress && it.state == SecurityGroupRuleState.Disabled}
+
+        List<SecurityGroupRuleVO> sg2Rules = Q.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid).list()
+
+        assert sg2Rules.size() == 9
+        assert sg2Rules.find {it.priority == 0 && it.ipVersion == 4 && it.type == SecurityGroupRuleType.Ingress && it.state == SecurityGroupRuleState.Disabled}
+        assert sg2Rules.find {it.priority == 0 && it.ipVersion == 6 && it.type == SecurityGroupRuleType.Ingress && it.state == SecurityGroupRuleState.Enabled}
+        assert sg2Rules.find {it.priority == 0 && it.ipVersion == 4 && it.type == SecurityGroupRuleType.Egress && it.state == SecurityGroupRuleState.Enabled}
+        assert sg2Rules.find {it.priority == 0 && it.ipVersion == 6 && it.type == SecurityGroupRuleType.Egress && it.state == SecurityGroupRuleState.Enabled}
+
+        SecurityGroupRuleVO userRule = sg2Rules.find {it.priority == 3 && it.ipVersion == 4 && it.type == SecurityGroupRuleType.Ingress}
+        assert userRule != null
+        SecurityGroupRuleInventory ruleInv = changeSecurityGroupRule {
+            uuid = userRule.uuid
+            remoteSecurityGroupUuid = sg1.uuid
+            priority = 1
+        }
+
+        assert ruleInv.remoteSecurityGroupUuid == sg1.uuid
+        assert ruleInv.priority == 1
+
+        deleteSecurityGroup {
+            uuid = sg1.uuid
+        }
+        deleteSecurityGroup {
+            uuid = sg2.uuid
+        }
+    }
+
+    void testAddSecurityGroupRuleAfterUpGradeDB() {
+        SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = true
+        sg1 = createSecurityGroup {
+            name = "sg-1"
+            ipVersion = 4
+        } as SecurityGroupInventory
+
+        sg2 = createSecurityGroup {
+            name = "sg-2"
+            ipVersion = 6
+        } as SecurityGroupInventory
+
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg1.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg2.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+
+        for (int i = 1; i <= 5; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = "Ingress"
+            r.ipVersion = 4
+            r.protocol = "TCP"
+            r.startPort = i
+            r.endPort = i
+
+            addSecurityGroupRule {
+                securityGroupUuid = sg2.uuid
+                rules = [r]
+            }
+        }
+
+        for (int i = 1; i <= 5; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = 'Egress'
+            r.ipVersion = 4
+            r.protocol = 'ICMP'
+            r.dstIpRange = String.format('10.0.0.%s', i)
+
+            addSecurityGroupRule {
+                securityGroupUuid = sg2.uuid
+                rules = [r]
+            }
+        }
+
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
+                .set(SecurityGroupRuleVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
+                .set(SecurityGroupRuleVO_.dstPortRange, null)
+                .set(SecurityGroupRuleVO_.description, null)
+                .update()
+
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid)
+                .set(SecurityGroupRuleVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
+                .set(SecurityGroupRuleVO_.dstPortRange, null)
+                .set(SecurityGroupRuleVO_.description, null)
+                .update()
+
+        upgradeExt.start()
+
+        List<SecurityGroupRuleVO> sg1Rules = Q.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid).list()
+
+        assert sg1Rules.size() == 4
+        assert sg1Rules.every {it.priority == 0}
+
+        List<SecurityGroupRuleVO> sg2Rules = Q.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid).list()
+
+        assert sg2Rules.size() == 14
+
+        SecurityGroupRuleVO ingressRule_1 = sg2Rules.find {it.priority == 1 && it.ipVersion == 4 && it.type == SecurityGroupRuleType.Ingress}
+        SecurityGroupRuleVO egressRule_1 = sg2Rules.find {it.priority == 1 && it.ipVersion == 4 && it.type == SecurityGroupRuleType.Egress}
+
+        SecurityGroupRuleAO r1 = new SecurityGroupRuleAO()
+        r1.type = 'Ingress'
+        r1.ipVersion = 4
+        r1.protocol = 'UDP'
+        r1.dstPortRange = '10-20'
+
+        SecurityGroupRuleAO r2 = new SecurityGroupRuleAO()
+        r2.type = 'Egress'
+        r2.ipVersion = 4
+        r2.protocol = 'TCP'
+        r2.dstPortRange = '30-40'
+
+        sg2 = addSecurityGroupRule {
+            securityGroupUuid = sg2.uuid
+            rules = [r1, r2]
+            priority = 1
+        }
+
+        SecurityGroupRuleInventory rule_1 = sg2.rules.find {it.priority == 1 && it.ipVersion == 4 && it.type == 'Ingress' && it.protocol == 'UDP' && it.dstPortRange == '10-20'}
+        SecurityGroupRuleInventory rule_2 = sg2.rules.find {it.priority == 1 && it.ipVersion == 4 && it.type == 'Egress' && it.protocol == 'TCP' && it.dstPortRange == '30-40'}
+        assert rule_1 != null
+        assert rule_2 != null
+        assert sg2.rules.find {it.uuid == ingressRule_1.uuid && it.priority == 2}
+        assert sg2.rules.find {it.uuid == egressRule_1.uuid && it.priority == 2}
+
+        sg2 = deleteSecurityGroupRule {
+            ruleUuids = [rule_1.uuid, rule_2.uuid]
+        }
+
+        assert sg2.rules.find {it.uuid == ingressRule_1.uuid && it.priority == 1}
+        assert sg2.rules.find {it.uuid == egressRule_1.uuid && it.priority == 1}
+        assert sg2.rules.find {it.uuid == rule_1.uuid } == null
+        assert sg2.rules.find {it.uuid == rule_2.uuid } == null
+    }
 
     @Override
     void clean() {
@@ -193,6 +399,8 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         }
 
         testUpgradeSecurityGroupRules()
+        testUpgradeSecurityGroupWithNoRules()
+        testAddSecurityGroupRuleAfterUpGradeDB()
 
         SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = false
     }
