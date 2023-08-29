@@ -130,6 +130,8 @@ public interface KVMConstant {
 
     int IPMI_DEFAULT_PORT = 623;
 
+    public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
+
     enum KvmVmState {
         NoState,
         Running,

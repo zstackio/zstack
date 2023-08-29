@@ -1,6 +1,6 @@
 package org.zstack.header.network.l2;
 
-import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
@@ -10,36 +10,39 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Inventory(mappingVOClass = L2NetworkClusterRefVO.class)
+@Inventory(mappingVOClass = L2NetworkHostRefVO.class)
 @ExpandedQueries({
-        @ExpandedQuery(expandedField = "cluster", inventoryClass = ClusterInventory.class,
-                foreignKey = "clusterUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "host", inventoryClass = HostInventory.class,
+                foreignKey = "hostUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "l2Network", inventoryClass = L2NetworkInventory.class,
                 foreignKey = "l2NetworkUuid", expandedInventoryKey = "uuid"),
 })
-public class L2NetworkClusterRefInventory {
-    private String clusterUuid;
+public class L2NetworkHostRefInventory {
+    private String hostUuid;
     private String l2NetworkUuid;
 
     private String l2ProviderType;
+
+    private L2NetworkAttachStatus attachStatus;
 
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
 
-    public static L2NetworkClusterRefInventory valueOf(L2NetworkClusterRefVO vo) {
-        L2NetworkClusterRefInventory inv = new L2NetworkClusterRefInventory();
-        inv.setClusterUuid(vo.getClusterUuid());
+    public static L2NetworkHostRefInventory valueOf(L2NetworkHostRefVO vo) {
+        L2NetworkHostRefInventory inv = new L2NetworkHostRefInventory();
+        inv.setHostUuid(vo.getHostUuid());
         inv.setL2NetworkUuid(vo.getL2NetworkUuid());
         inv.setL2ProviderType(vo.getL2ProviderType());
+        inv.setAttachStatus(vo.getAttachStatus());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
 
-    public static List<L2NetworkClusterRefInventory> valueOf(Collection<L2NetworkClusterRefVO> vos) {
-        List<L2NetworkClusterRefInventory> invs = new ArrayList<L2NetworkClusterRefInventory>();
-        for (L2NetworkClusterRefVO vo : vos) {
+    public static List<L2NetworkHostRefInventory> valueOf(Collection<L2NetworkHostRefVO> vos) {
+        List<L2NetworkHostRefInventory> invs = new ArrayList<L2NetworkHostRefInventory>();
+        for (L2NetworkHostRefVO vo : vos) {
             invs.add(valueOf(vo));
         }
         return invs;
@@ -53,12 +56,12 @@ public class L2NetworkClusterRefInventory {
         this.l2ProviderType = l2ProviderType;
     }
 
-    public String getClusterUuid() {
-        return clusterUuid;
+    public String getHostUuid() {
+        return hostUuid;
     }
 
-    public void setClusterUuid(String clusterUuid) {
-        this.clusterUuid = clusterUuid;
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 
     public String getL2NetworkUuid() {
@@ -83,5 +86,13 @@ public class L2NetworkClusterRefInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public L2NetworkAttachStatus getAttachStatus() {
+        return attachStatus;
+    }
+
+    public void setAttachStatus(L2NetworkAttachStatus attachStatus) {
+        this.attachStatus = attachStatus;
     }
 }

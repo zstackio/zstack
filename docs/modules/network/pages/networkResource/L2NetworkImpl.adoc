@@ -251,10 +251,10 @@ private void deleteL2Bridge(List<String> clusterUuids, Completion completion) {
             .list();
     List<ErrorCode> errs = new ArrayList<>();
     new While<>(hosts).step((host,compl) -> {
-        HypervisorType hvType = HypervisorType.valueOf(host.getHypervisorType());
-        L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+        HostInventory hostInv = HostInventory.valueOf(host);
+            L2NetworkInventory l2Inv = getSelfInventory();
 
-        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+            L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Inv, hostInv);
         ext.delete(getSelfInventory(), host.getUuid(), new Completion(compl){
             @Override
             public void success() {
