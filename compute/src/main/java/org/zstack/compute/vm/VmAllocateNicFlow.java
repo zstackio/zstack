@@ -230,7 +230,7 @@ public class VmAllocateNicFlow implements Flow {
         //add vmnic multiqueue config
         if (vmNicParm.getMultiQueueNum() != null) {
             ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
-            Integer queues = vmSpec.getVmInventory().getCpuNum() > vmNicParm.getMultiQueueNum() ? vmNicParm.getMultiQueueNum() : vmSpec.getVmInventory().getCpuNum();
+            Integer queues = vmNicParm.getMultiQueueNum();
             multiQueues.updateValue(vmNicVO.getUuid(), queues.toString());
         }
     }
