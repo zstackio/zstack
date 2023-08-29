@@ -25,6 +25,8 @@ import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosOfferingSelector;
@@ -34,6 +36,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -53,6 +56,9 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private DatabaseFacade dbf;
+
+    @Autowired
+    private NetworkServiceManager nsMgr;
 
     public static final String SET_DNS_FORWARD_PATH = "/dns/forward/set";
     public static final String REMOVE_DNS_FORWARD_PATH = "/dns/forward/remove";
@@ -223,6 +229,17 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
         L3NetworkVO defaultL3 = dbf.findByUuid(inv.getDefaultL3NetworkUuid(), L3NetworkVO.class);
         if (!defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
                 .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS.toString())) {
+            return;
+        }
+
+        NetworkServiceProviderType providerType = null;
+        try {
+            providerType = nsMgr.getTypeOfNetworkServiceProviderForService(defaultL3.getUuid(), NetworkServiceType.DHCP);
+        } catch (Throwable e){
+            logger.warn(e.getMessage(), e);
+            return;
+        }
+        if (VyosConstants.PROVIDER_TYPE.equals(providerType)) {
             return;
         }
 
