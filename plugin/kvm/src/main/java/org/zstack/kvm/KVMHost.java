@@ -3530,9 +3530,11 @@ public class KVMHost extends HostBase implements Host {
             String cores = VmHardwareSystemTags.CPU_CORES.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_CORES_TOKEN);
             String threads = VmHardwareSystemTags.CPU_THREADS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_THREADS_TOKEN);
 
-            cmd.setSocketNum(Integer.parseInt(sockets));
-            cmd.setCpuOnSocket(Integer.parseInt(cores));
-            cmd.setThreadsPerCore(Integer.parseInt(threads));
+            CpuTopology cpuTopology = new CpuTopology(cmd.getMaxVcpuNum() == 0 ? cpuNum : cmd.getMaxVcpuNum(), sockets, cores, threads);
+            cpuTopology.calculateValidTopology(true);
+            cmd.setSocketNum(cpuTopology.getCpuSockets());
+            cmd.setCpuOnSocket(cpuTopology.getCpuCores());
+            cmd.setThreadsPerCore(cpuTopology.getCpuThreads());
             return;
         }
 
