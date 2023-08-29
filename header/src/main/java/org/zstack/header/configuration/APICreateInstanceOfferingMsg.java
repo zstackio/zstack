@@ -32,7 +32,7 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage implements AP
     private int cpuSpeed;
     @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"})
     private long memorySize;
-    @APIParam(numberRange = {0, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"})
+    @APIParam(numberRange = {0, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"}, required = false)
     private long reservedMemorySize;
     private String allocatorStrategy;
     private int sortKey;
