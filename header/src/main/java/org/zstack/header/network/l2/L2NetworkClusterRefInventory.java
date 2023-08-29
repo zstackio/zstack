@@ -20,6 +20,9 @@ import java.util.List;
 public class L2NetworkClusterRefInventory {
     private String clusterUuid;
     private String l2NetworkUuid;
+
+    private String l2ProviderType;
+
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -28,6 +31,7 @@ public class L2NetworkClusterRefInventory {
         L2NetworkClusterRefInventory inv = new L2NetworkClusterRefInventory();
         inv.setClusterUuid(vo.getClusterUuid());
         inv.setL2NetworkUuid(vo.getL2NetworkUuid());
+        inv.setL2ProviderType(vo.getL2ProviderType());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -39,6 +43,14 @@ public class L2NetworkClusterRefInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public String getL2ProviderType() {
+        return l2ProviderType;
+    }
+
+    public void setL2ProviderType(String l2ProviderType) {
+        this.l2ProviderType = l2ProviderType;
     }
 
     public String getClusterUuid() {

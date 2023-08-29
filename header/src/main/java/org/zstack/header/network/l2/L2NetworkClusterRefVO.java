@@ -42,10 +42,21 @@ public class L2NetworkClusterRefVO {
     private String l2NetworkUuid;
 
     @Column
+    private String l2ProviderType;
+
+    @Column
     private Timestamp createDate;
 
     @Column
     private Timestamp lastOpDate;
+
+    public String getL2ProviderType() {
+        return l2ProviderType;
+    }
+
+    public void setL2ProviderType(String l2ProviderType) {
+        this.l2ProviderType = l2ProviderType;
+    }
 
     @PreUpdate
     private void preUpdate() {
@@ -91,4 +102,5 @@ public class L2NetworkClusterRefVO {
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
     }
+
 }
