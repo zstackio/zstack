@@ -45,8 +45,8 @@ public class VmNicUtils {
             }
 
             if (nic.getMultiQueueNum() != null ) {
-                if (nic.getMultiQueueNum() < 0) {
-                    throw new ApiMessageInterceptionException(argerr("multi queue num[%d] of vm nic is less than 0", nic.getMultiQueueNum()));
+                if (nic.getMultiQueueNum() < 1 || nic.getMultiQueueNum() > 256) {
+                    throw new ApiMessageInterceptionException(argerr("multi queue num[%d] of vm nic is out of [1,256]", nic.getMultiQueueNum()));
                 }
             }
 
