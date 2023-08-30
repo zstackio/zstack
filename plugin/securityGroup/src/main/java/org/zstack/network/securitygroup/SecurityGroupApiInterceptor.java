@@ -489,7 +489,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
     private void validatePorts(String ports) {
         if (ports.isEmpty() || ports.startsWith(SecurityGroupConstant.IP_SPLIT) || ports.endsWith(SecurityGroupConstant.IP_SPLIT)) {
-            throw new ApiMessageInterceptionException(argerr("invalid ips[%s]", ports));
+            throw new ApiMessageInterceptionException(argerr("invalid ports[%s]", ports));
         }
         String portArray[];
         if (ports.contains(SecurityGroupConstant.IP_SPLIT)) {
@@ -509,7 +509,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
         for (String port : portArray) {
             if (port.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("invalid ips[%s]", ports));
+                throw new ApiMessageInterceptionException(argerr("invalid ports[%s]", ports));
             }
             if (port.contains(SecurityGroupConstant.RANGE_SPLIT)) {
                 String portRange[] = port.split(SecurityGroupConstant.RANGE_SPLIT);

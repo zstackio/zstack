@@ -8,6 +8,7 @@ import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroup
 import org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
 import org.zstack.network.securitygroup.VmNicSecurityPolicyVO
+import org.zstack.network.securitygroup.SecurityGroupMembersTO
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.SecurityGroupRuleInventory
@@ -104,9 +105,38 @@ class SetVmNicSecurityGroupCase extends SubCase {
         }
 
         assert refInvs.size() == 0
-
     }
 
+    void testUpdateGroupMembers() {
+        String vm1_nic_uuid = vm1.vmNics[0].uuid
+
+        VmNicSecurityGroupRefAO ref1 = new VmNicSecurityGroupRefAO()
+        ref1.securityGroupUuid = sg1.uuid
+        ref1.priority = 1
+
+        VmNicSecurityGroupRefAO ref2 = new VmNicSecurityGroupRefAO()
+        ref2.securityGroupUuid = sg2.uuid
+        ref2.priority = 2
+
+        VmNicSecurityGroupRefAO ref3 = new VmNicSecurityGroupRefAO()
+        ref3.securityGroupUuid = sg3.uuid
+        ref3.priority = 3
+
+        KVMAgentCommands.UpdateGroupMemberCmd ucmd = null
+        env.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_UPDATE_GROUP_MEMBER ){ HttpEntity<String> e ->
+            ucmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.UpdateGroupMemberCmd.class)
+            return new KVMAgentCommands.ApplySecurityGroupRuleResponse()
+        }
+
+        setVmNicSecurityGroup {
+            vmNicUuid = vm1_nic_uuid
+            refs = [ref3, ref2, ref1]
+        }
+
+        retryInSecs {
+            assert ucmd != null
+        }
+    }
 
     @Override
     void clean() {
@@ -148,5 +178,6 @@ class SetVmNicSecurityGroupCase extends SubCase {
         }
 
         testVmNicAttachSecurityGroup()
+        testUpdateGroupMembers()
     }
 }

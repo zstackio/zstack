@@ -117,6 +117,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         return String.format("SecurityGroup-%s", securityGroupUuid);
     }
 
+    private String getVmNicSecurityGroupSyncThreadName(String vmNicuuid) {
+        return String.format("SecurityGroup-VmNic-%s", vmNicuuid);
+    }
+
     @Override
     public List<Quota> reportQuota() {
         Quota quota = new Quota();
@@ -575,8 +579,34 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(RemoveVmNicFromSecurityGroupMsg msg) {
         RemoveVmNicFromSecurityGroupReply reply = new RemoveVmNicFromSecurityGroupReply();
-        removeNicFromSecurityGroup(msg.getSecurityGroupUuid(), msg.getVmNicUuids());
-        bus.reply(msg, reply);
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                removeNicFromSecurityGroup(msg.getSecurityGroupUuid(), msg.getVmNicUuids(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("remove-vm-nic-from-security-group-%s", msg.getSecurityGroupUuid());
+            }
+        });
     }
 
     private void handle(RefreshSecurityGroupRulesOnVmMsg msg) {
@@ -785,91 +815,173 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
     }
 
-    private void handle(APISetVmNicSecurityGroupMsg msg) {
-        List<VmNicSecurityGroupRefVO> refs = new ArrayList<>();
-        
-        List<String> sgUuids = doSetVmNicSecurityGroup(msg.getVmNicUuid(), msg.getRefs());
+    private void setVmNicSecurityGroup(APISetVmNicSecurityGroupMsg msg, Completion completion) {
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "set-vm-nic-security-group-in-db";
 
-        RuleCalculator cal = new RuleCalculator();
-        cal.vmNicUuids = asList(msg.getVmNicUuid());
-        List<HostRuleTO> rhtos = cal.calculate();
-        applyRules(rhtos);
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                List<VmNicSecurityGroupRefVO> toCreate = new ArrayList<>();
+                                List<VmNicSecurityGroupRefVO> toDelete = new ArrayList<>();
+                                List<VmNicSecurityGroupRefVO> toUpdate = new ArrayList<>();
+                                List<String> sgUuids = new ArrayList<>();
+                                Map<String, VmNicSecurityGroupRefVO> refMap = new HashMap<>();
 
-        for (String sgUuid : sgUuids) {
-            HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(sgUuid);
-            if(!groupMemberTO.getHostUuids().isEmpty()){
-                groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
-                updateGroupMembers(groupMemberTO);
+                                VmNicVO nic = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+                                List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, msg.getVmNicUuid()).list();
+
+                                refs.forEach(ref -> {
+                                    refMap.put(ref.getSecurityGroupUuid(), ref);
+                                });
+
+                                for (VmNicSecurityGroupRefAO ao : msg.getRefs()) {
+                                    if (!refMap.containsKey(ao.getSecurityGroupUuid())) {
+                                        // to create
+                                        VmNicSecurityGroupRefVO vo = new VmNicSecurityGroupRefVO();
+                                        vo.setUuid(Platform.getUuid());
+                                        vo.setVmNicUuid(nic.getUuid());
+                                        vo.setPriority(ao.getPriority());
+                                        vo.setVmInstanceUuid(nic.getVmInstanceUuid());
+                                        vo.setSecurityGroupUuid(ao.getSecurityGroupUuid());
+                                        toCreate.add(vo);
+                                        sgUuids.add(ao.getSecurityGroupUuid());
+                                    } else {
+                                        // to update
+                                        VmNicSecurityGroupRefVO vo = refMap.get(ao.getSecurityGroupUuid());
+                                        vo.setPriority(ao.getPriority());
+                                        toUpdate.add(vo);
+                                        refMap.remove(ao.getSecurityGroupUuid());
+                                    }
+                                }
+
+                                // to delete
+                                toDelete.addAll(refMap.values());
+                                refMap.values().forEach(ref -> sgUuids.add(ref.getSecurityGroupUuid()));
+
+                                if (!toCreate.isEmpty()) {
+                                    dbf.persistCollection(toCreate);
+                                }
+                                if (!toDelete.isEmpty()) {
+                                    dbf.removeCollection(toDelete, VmNicSecurityGroupRefVO.class);
+                                }
+                                if (!toUpdate.isEmpty()) {
+                                    dbf.updateCollection(toUpdate);
+                                }
+
+                                if (!toCreate.isEmpty() || !toUpdate.isEmpty()) {
+                                    if (!Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, msg.getVmNicUuid()).isExists()) {
+                                        VmNicSecurityPolicyVO vo = new VmNicSecurityPolicyVO();
+                                        vo.setUuid(Platform.getUuid());
+                                        vo.setVmNicUuid(msg.getVmNicUuid());
+                                        vo.setIngressPolicy(VmNicSecurityPolicy.DENY.toString());
+                                        vo.setEgressPolicy(VmNicSecurityPolicy.ALLOW.toString());
+                                        dbf.persist(vo);
+                                    }
+                                }
+                                
+                                data.put(SecurityGroupConstant.Param.SECURITY_GROUP_UUIDS, sgUuids);
+                            }
+                        }.execute();
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-rules-on-hosts";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        cal.vmNicUuids = asList(msg.getVmNicUuid());
+                        List<HostRuleTO> rhtos = cal.calculate();
+                        applyRules(rhtos);
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-group-members";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> sgUuids = (List<String>)data.get(SecurityGroupConstant.Param.SECURITY_GROUP_UUIDS);
+                        for (String sgUuid : sgUuids) {
+                            RuleCalculator cal = new RuleCalculator();
+                            HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(sgUuid);
+                            if(!groupMemberTO.getHostUuids().isEmpty()){
+                                if (Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, sgUuid).eq(SecurityGroupVO_.state, SecurityGroupState.Disabled).isExists()) {
+                                    groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
+                                }
+                                updateGroupMembers(groupMemberTO);
+                            }
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+
             }
-        }
-
-        APISetVmNicSecurityGroupEvent evt = new APISetVmNicSecurityGroupEvent(msg.getId());
-        refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, msg.getVmNicUuid()).list();
-        evt.setInventory(VmNicSecurityGroupRefInventory.valueOf(refs));
-        bus.publish(evt);
+        }).start();
     }
 
-    @Transactional
-    private List<String> doSetVmNicSecurityGroup(String vmNicUuid, List<VmNicSecurityGroupRefAO> aos) {
-        List<VmNicSecurityGroupRefVO> toCreate = new ArrayList<>();
-        List<VmNicSecurityGroupRefVO> toDelete = new ArrayList<>();
-        List<VmNicSecurityGroupRefVO> toUpdate = new ArrayList<>();
-        List<String> sgUuids = new ArrayList<>();
-        Map<String, VmNicSecurityGroupRefVO> refMap = new HashMap<>();
+    private void handle(APISetVmNicSecurityGroupMsg msg) {
+        APISetVmNicSecurityGroupEvent evt = new APISetVmNicSecurityGroupEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getVmNicSecurityGroupSyncThreadName(msg.getVmNicUuid());
+            }
 
-        VmNicVO nic = dbf.findByUuid(vmNicUuid, VmNicVO.class);
-        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuid).list();
+            @Override
+            public void run(SyncTaskChain chain) {
+                setVmNicSecurityGroup(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, msg.getVmNicUuid()).list();
+                        evt.setInventory(VmNicSecurityGroupRefInventory.valueOf(refs));
+                        bus.publish(evt);
+                        chain.next();
+                    }
 
-        refs.forEach(ref -> {
-            refMap.put(ref.getSecurityGroupUuid(), ref);
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("set-vm-nic-%s-security-group", msg.getVmNicUuid());
+            }
         });
-
-        for (VmNicSecurityGroupRefAO ao : aos) {
-            if (!refMap.containsKey(ao.getSecurityGroupUuid())) {
-                // to create
-                VmNicSecurityGroupRefVO vo = new VmNicSecurityGroupRefVO();
-                vo.setUuid(Platform.getUuid());
-                vo.setVmNicUuid(nic.getUuid());
-                vo.setPriority(ao.getPriority());
-                vo.setVmInstanceUuid(nic.getVmInstanceUuid());
-                vo.setSecurityGroupUuid(ao.getSecurityGroupUuid());
-                toCreate.add(vo);
-                sgUuids.add(ao.getSecurityGroupUuid());
-            } else {
-                // to update
-                VmNicSecurityGroupRefVO vo = refMap.get(ao.getSecurityGroupUuid());
-                vo.setPriority(ao.getPriority());
-                toUpdate.add(vo);
-                refMap.remove(ao.getSecurityGroupUuid());
-            }
-        }
-
-        // to delete
-        toDelete.addAll(refMap.values());
-        refMap.values().forEach(ref -> sgUuids.add(ref.getSecurityGroupUuid()));
-
-        if (!toCreate.isEmpty()) {
-            dbf.persistCollection(toCreate);
-        }
-        if (!toDelete.isEmpty()) {
-            dbf.removeCollection(toDelete, VmNicSecurityGroupRefVO.class);
-        }
-        if (!toUpdate.isEmpty()) {
-            dbf.updateCollection(toUpdate);
-        }
-
-        if (!toCreate.isEmpty() || !toUpdate.isEmpty()) {
-            if (!Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, vmNicUuid).isExists()) {
-                VmNicSecurityPolicyVO vo = new VmNicSecurityPolicyVO();
-                vo.setUuid(Platform.getUuid());
-                vo.setVmNicUuid(vmNicUuid);
-                vo.setIngressPolicy(VmNicSecurityPolicy.DENY.toString());
-                vo.setEgressPolicy(VmNicSecurityPolicy.ALLOW.toString());
-                dbf.persist(vo);
-            }
-        }
-
-        return sgUuids;
     }
 
     private void handle(APIChangeSecurityGroupRuleStateMsg msg) {
@@ -1187,9 +1299,18 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(APIDetachSecurityGroupFromL3NetworkMsg msg) {
         List<String> vmNicUuids = getVmNicUuidsToRemoveForDetachSecurityGroup(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
-
         if (!vmNicUuids.isEmpty()) {
-            removeNicFromSecurityGroup(msg.getSecurityGroupUuid(), vmNicUuids);
+            removeNicFromSecurityGroup(msg.getSecurityGroupUuid(), vmNicUuids, new Completion(null) {
+                    @Override
+                    public void success() {
+                        logger.debug(String.format("remove vm nic from security group[%s] successfully", msg.getSecurityGroupUuid()));
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.debug(String.format("failed to remove vm nic from security group[%s], beacuse %s", msg.getSecurityGroupUuid(), errorCode));
+                    }
+                });
         }
 
         detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
@@ -1277,26 +1398,104 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         return;
     }
 
-    private void removeNicFromSecurityGroup(String sgUuid, List<String> vmNicUuids) {
+    private void removeNicFromSecurityGroup(String sgUuid, List<String> vmNicUuids, Completion completion) {
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-nic-from-security-group-in-db";
 
-        doRemoveNicFromSecurityGroup(sgUuid, vmNicUuids);
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        doRemoveNicFromSecurityGroup(sgUuid, vmNicUuids);
 
-        RuleCalculator cal = new RuleCalculator();
-        cal.vmNicUuids = vmNicUuids;
-        List<HostRuleTO> htos = cal.calculate();
-        applyRules(htos);
+                        trigger.next();
+                    }
+                });
 
-        // update security group member
-        HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(sgUuid);
-        if(!groupMemberTO.getHostUuids().isEmpty()){
-            updateGroupMembers(groupMemberTO);
-        }
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-rules-on-hosts";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        cal.vmNicUuids = vmNicUuids;
+                        List<HostRuleTO> htos = cal.calculate();
+                        applyRules(htos);
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-group-numbers";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(sgUuid);
+                        if(!groupMemberTO.getHostUuids().isEmpty()){
+                            if (Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, sgUuid).eq(SecurityGroupVO_.state, SecurityGroupState.Disabled).isExists()) {
+                                groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
+                            }
+                            updateGroupMembers(groupMemberTO);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+                
+            }
+        }).start();
     }
 
     private void handle(APIDeleteVmNicFromSecurityGroupMsg msg) {
-        removeNicFromSecurityGroup(msg.getSecurityGroupUuid(), msg.getVmNicUuids());
         APIDeleteVmNicFromSecurityGroupEvent evt = new APIDeleteVmNicFromSecurityGroupEvent(msg.getId());
-        bus.publish(evt);
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                removeNicFromSecurityGroup(msg.getSecurityGroupUuid(), msg.getVmNicUuids(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("remove-vm-nic-from-security-group-%s", msg.getSecurityGroupUuid());
+            }
+        });
     }
 
     private void deleteSecurityGroup(String sgUuid, Completion completion) {
@@ -1338,10 +1537,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         rules.stream().forEach(r -> {
                             if (!toDelete.containsKey(r.getSecurityGroupUuid())) {
                                 toDelete.put(r.getSecurityGroupUuid(), new ArrayList<String>());
-                                toDelete.get(r.getSecurityGroupUuid()).add(r.getUuid());
-                            } else {
-                                toDelete.get(r.getSecurityGroupUuid()).add(r.getUuid());
                             }
+
+                            toDelete.get(r.getSecurityGroupUuid()).add(r.getUuid());
                         });
 
                         List<String> otherNicUuids = new ArrayList<>();
@@ -1366,7 +1564,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         List<String> vmNicUuids = (List<String>)data.get(SecurityGroupConstant.Param.VM_NIC_UUIDS);
-                        //
                         if (!vmNicUuids.isEmpty()) {
                             RuleCalculator cal = new RuleCalculator();
                             cal.vmNicUuids = vmNicUuids;
@@ -1409,7 +1606,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 
             }
         }).start();
-
     }
 
     private void handle(APIDeleteSecurityGroupMsg msg) {
@@ -1623,43 +1819,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         msg.setVmNicUuids(uuids);
     }
 
-    private void handle(AddVmNicToSecurityGroupMsg msg) {
-        AddVmNicToSecurityGroupReply reply = new AddVmNicToSecurityGroupReply();
-
-        validate(msg);
-
-        List<String> vmUuids = doAddVmNicToSecurityGroup(msg.getSecurityGroupUuid(), msg.getVmNicUuids());
-
-        boolean triggerApplyRules = Q.New(VmInstanceVO.class)
-                .in(VmInstanceVO_.uuid, vmUuids)
-                .eq(VmInstanceVO_.state, VmInstanceState.Running)
-                .isExists();
-
-        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-        if (SecurityGroupState.Enabled.equals(sgvo.getState())) {
-            RuleCalculator cal = new RuleCalculator();
-            if (triggerApplyRules) {
-                cal.vmNicUuids = msg.getVmNicUuids();
-                List<HostRuleTO> htos = cal.calculate();
-                applyRules(htos);
-            }
-
-            HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(msg.getSecurityGroupUuid());
-            if (!groupMemberTO.getHostUuids().isEmpty()) {
-                updateGroupMembers(groupMemberTO);
-            }
-        }
-
-        logger.debug(String.format("successfully added vm nics%s to security group[uuid:%s]", msg.getVmNicUuids(), msg.getSecurityGroupUuid()));
-        bus.reply(msg, reply);
-    }
-
-    @Transactional
-    private List<String> doAddVmNicToSecurityGroup(String sgUuid, List<String> vmNicUuids) {
+    private void doAddVmNicToSecurityGroup(String sgUuid, List<String> vmNicUuids) {
         List<VmNicVO> nicvos = Q.New(VmNicVO.class).in(VmNicVO_.uuid, vmNicUuids).list();
         List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuids).list();
 
-        List<String> vmUuids = new ArrayList<String>();
         List<VmNicSecurityGroupRefVO> toCreateRefs = new ArrayList<VmNicSecurityGroupRefVO>();
         List<VmNicSecurityPolicyVO> toCreatePolicies = new ArrayList<VmNicSecurityPolicyVO>();
 
@@ -1685,14 +1848,113 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 pvo.setEgressPolicy(VmNicSecurityPolicy.ALLOW.toString());
                 toCreatePolicies.add(pvo);
             }
-
-            vmUuids.add(nic.getVmInstanceUuid());
         }
 
         dbf.persistCollection(toCreateRefs);
         dbf.persistCollection(toCreatePolicies);
+    }
 
-        return vmUuids;
+    private void addVmNicToSecurityGroup(String sgUuid, List<String> vmNicUuids, Completion completion) {
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "add-vm-nic-to-security-group-in-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        doAddVmNicToSecurityGroup(sgUuid, vmNicUuids);
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-rules-on-hosts";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        cal.vmNicUuids = vmNicUuids;
+                        List<HostRuleTO> htos = cal.calculate();
+                        applyRules(htos);
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-group-numbers";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(sgUuid);
+                        if(!groupMemberTO.getHostUuids().isEmpty()){
+                            if (Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, sgUuid).eq(SecurityGroupVO_.state, SecurityGroupState.Disabled).isExists()) {
+                                groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
+                            }
+                            updateGroupMembers(groupMemberTO);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+                
+            }
+        }).start();
+    }
+
+    private void handle(AddVmNicToSecurityGroupMsg msg) {
+        AddVmNicToSecurityGroupReply reply = new AddVmNicToSecurityGroupReply();
+
+        validate(msg);
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                addVmNicToSecurityGroup(msg.getSecurityGroupUuid(), msg.getVmNicUuids(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        logger.debug(String.format("successfully added vm nics%s to security group[uuid:%s]", msg.getVmNicUuids(), msg.getSecurityGroupUuid()));
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("add-vm-nic-to-security-group-%s", msg.getSecurityGroupUuid());
+            }
+        });
     }
 
     private void handle(final APIAddVmNicToSecurityGroupMsg msg) {
