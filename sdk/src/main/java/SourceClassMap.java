@@ -107,7 +107,11 @@ public class SourceClassMap {
 			put("org.zstack.directory.DirectoryInventory", "org.zstack.sdk.DirectoryInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
+			put("org.zstack.drs.data.DpmOperation", "org.zstack.sdk.DpmOperation");
+			put("org.zstack.drs.data.DpmOperationStatus", "org.zstack.sdk.DpmOperationStatus");
 			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
+			put("org.zstack.drs.entity.ClusterDpmInventory", "org.zstack.sdk.ClusterDpmInventory");
+			put("org.zstack.drs.entity.ClusterDpmRecordsInventory", "org.zstack.sdk.ClusterDpmRecordsInventory");
 			put("org.zstack.drs.entity.DRSAdviceInventory", "org.zstack.sdk.DRSAdviceInventory");
 			put("org.zstack.drs.entity.DRSVmMigrationActivityInventory", "org.zstack.sdk.DRSVmMigrationActivityInventory");
 			put("org.zstack.externalbackup.BackupStorageExternalBackupInfo", "org.zstack.sdk.BackupStorageExternalBackupInfo");
@@ -804,6 +808,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CloneVmInstanceResults", "org.zstack.header.vm.CloneVmInstanceResults");
 			put("org.zstack.sdk.CloudFormationStackEventInventory", "org.zstack.header.cloudformation.CloudFormationStackEventInventory");
 			put("org.zstack.sdk.ClusterDRSInventory", "org.zstack.drs.entity.ClusterDRSInventory");
+			put("org.zstack.sdk.ClusterDpmInventory", "org.zstack.drs.entity.ClusterDpmInventory");
+			put("org.zstack.sdk.ClusterDpmRecordsInventory", "org.zstack.drs.entity.ClusterDpmRecordsInventory");
 			put("org.zstack.sdk.ClusterInventory", "org.zstack.header.cluster.ClusterInventory");
 			put("org.zstack.sdk.ConnectionAccessPointInventory", "org.zstack.header.aliyun.network.connection.ConnectionAccessPointInventory");
 			put("org.zstack.sdk.ConnectionRelationShipInventory", "org.zstack.header.aliyun.network.connection.ConnectionRelationShipInventory");
@@ -824,6 +830,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DeleteSnapshotGroupResult", "org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult");
 			put("org.zstack.sdk.DirectoryInventory", "org.zstack.directory.DirectoryInventory");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
+			put("org.zstack.sdk.DpmOperation", "org.zstack.drs.data.DpmOperation");
+			put("org.zstack.sdk.DpmOperationStatus", "org.zstack.drs.data.DpmOperationStatus");
 			put("org.zstack.sdk.ESXHostInventory", "org.zstack.vmware.ESXHostInventory");
 			put("org.zstack.sdk.EcsImageInventory", "org.zstack.header.aliyun.image.EcsImageInventory");
 			put("org.zstack.sdk.EcsInstanceInventory", "org.zstack.header.aliyun.ecs.EcsInstanceInventory");
