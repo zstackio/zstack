@@ -40,7 +40,7 @@ public class BackupStorageReservedCapacityAllocatorFlow extends NoRollbackFlow {
         DebugUtils.Assert(candidates != null && !candidates.isEmpty(), "BackupStorageReservedCapacityAllocatorFlow cannot be the first element in the allocator chain");
 
         List<String> backupStorageUuids = candidates.stream().map(ResourceVO::getUuid).collect(Collectors.toList());
-        Map<String, String> resourceConfigValueMap = rcf.getResourceConfigValueByResourceUuids(
+        Map<String, String> resourceConfigValueMap = rcf.getResourceConfigValues(
                 BackupStorageGlobalConfig.RESERVED_CAPACITY, backupStorageUuids, String.class);
 
         List<BackupStorageVO> ret = new ArrayList<>();

@@ -1,8 +1,6 @@
 package org.zstack.core.db;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.util.Strings;
-import org.springframework.security.access.method.P;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.EntityGraph;
@@ -43,6 +41,7 @@ public class DBGraph {
     }
 
     public static class EntityVertex {
+        public Class srcClass;
         public Class entityClass;
         public String srcKey;
         public String dstKey;
@@ -107,6 +106,39 @@ public class DBGraph {
             }
         }
 
+        public String toBidirectionalSQL(String field, SimpleQuery.Op op, String value) {
+            return makeBidirectionalSQL(this, field, op, value);
+        }
+
+        private static String makeBidirectionalSQL(EntityVertex vertex, String field, SimpleQuery.Op op, String val) {
+            List<String> from = new ArrayList<>();
+            List<String> conditions = new ArrayList<>();
+            String srcClassFiled = String.format("%s_.%s", vertex.srcClass.getSimpleName(), field);
+            while (true) {
+                String entity = String.format("%s_", vertex.entityClass.getSimpleName());
+                String vo = vertex.entityClass.getSimpleName();
+                from.add(vo + " " + entity);
+
+                if (vertex.previous == null) {
+                    conditions.add(String.format("%s.%s %s %s", entity, field, op.toString(), val));
+                } else {
+                    conditions.add(String.format("%s.%s = %s.%s",
+                            String.format("%s_", vertex.previous.entityClass.getSimpleName()), vertex.previous.srcKey,
+                            entity, vertex.previous.dstKey));
+                }
+
+                if (vertex.next != null) {
+                    vertex = vertex.next;
+                    continue;
+                }
+
+                String primaryKey = vertex.previous != null ? vertex.previous.dstKey : EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
+                return String.format("select %s.%s,%s from %s where %s", entity, primaryKey, srcClassFiled,
+                        StringUtils.join(from, ", "),
+                        StringUtils.join(conditions, " and "));
+            }
+        }
+
         @Override
         public String toString() {
             return "EntityVertex{" +
@@ -140,6 +172,7 @@ public class DBGraph {
     public static EntityVertex findVerticesWithSmallestWeight(Class src, Class dst) {
         if (src == dst) {
             EntityVertex vertex = new EntityVertex();
+            vertex.srcClass = src;
             vertex.entityClass = src;
             vertex.srcKey = vertex.dstKey = EntityMetadata.getPrimaryKeyField(src).getName();
             vertex.previous = vertex;
@@ -159,6 +192,7 @@ public class DBGraph {
         List<Judge> judges = new ArrayList<>();
         all.forEach(lst -> {
             EntityVertex vertex = new EntityVertex();
+            vertex.srcClass = src;
             Judge j = new Judge();
             j.vertex = vertex;
             judges.add(j);
@@ -177,6 +211,7 @@ public class DBGraph {
                 current.next = new EntityVertex();
                 current.next.entityClass = right.entityClass;
                 current.next.previous = current;
+                current.next.srcClass = src;
                 current = current.next;
                 left = right;
             }
