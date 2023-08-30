@@ -206,6 +206,21 @@ class ChangeSecurityGroupRuleCase extends SubCase {
                 action = "DROP"
             }
         }
+
+        assert default_rule.state == 'Enabled'
+        default_rule = changeSecurityGroupRule {
+            uuid = default_rule.uuid
+            state = 'Disabled'
+        }
+
+        assert default_rule.state == 'Disabled'
+
+        default_rule = changeSecurityGroupRule {
+            uuid = default_rule.uuid
+            description = ''
+        }
+
+        assert default_rule.description == null
     }
 
     void testChangeRulePriorityError() {

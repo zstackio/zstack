@@ -130,6 +130,56 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
                 rules = [errorRule]
             }
         }
+
+        errorRule.ipVersion = 4
+        errorRule.dstIpRange = '1.1.1.1-1.1.1.10,,2.2.2.2,3.3.3.0/24'
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
+
+        errorRule.ipVersion = 4
+        errorRule.dstIpRange = '1.1.1.1-1.1.1.10,2.2.2.2,3.3.3.0/24,'
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
+
+        errorRule.ipVersion = 4
+        errorRule.dstIpRange = '1.1.1.1-1.1.1.10,2.2.2.2,3.3.3.0/24,,'
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
+        
+        errorRule.ipVersion = 4
+        errorRule.dstIpRange = ',1.1.1.1-1.1.1.10,2.2.2.2,3.3.3.0/24'
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
+
+        errorRule.protocol = 'TCP'
+        errorRule.dstIpRange = '1.1.1.1'
+        errorRule.dstPortRange = '100-200,300,400-500,'
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
     }
 
     void testAddSecurityGroupRule() {

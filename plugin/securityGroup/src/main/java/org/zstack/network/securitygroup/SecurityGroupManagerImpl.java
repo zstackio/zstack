@@ -1004,46 +1004,41 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new SQLBatch() {
-                            @Override
-                            protected void scripts() {
-                                SecurityGroupRuleVO vo = findByUuid(msg.getUuid(), SecurityGroupRuleVO.class);
-                                vo.setDescription(msg.getDescription());
-                                vo.setState(SecurityGroupRuleState.valueOf(msg.getState()));
-                                vo.setAction(msg.getAction());
-                                vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(msg.getProtocol()));
-                                vo.setRemoteSecurityGroupUuid(msg.getRemoteSecurityGroupUuid());
-                                vo.setSrcIpRange(msg.getSrcIpRange());
-                                vo.setDstIpRange(msg.getDstIpRange());
-                                vo.setDstPortRange(msg.getDstPortRange());
+                        SecurityGroupRuleVO vo = dbf.findByUuid(msg.getUuid(), SecurityGroupRuleVO.class);
+                        vo.setDescription(msg.getDescription());
+                        vo.setState(SecurityGroupRuleState.valueOf(msg.getState()));
+                        vo.setAction(msg.getAction());
+                        vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(msg.getProtocol()));
+                        vo.setRemoteSecurityGroupUuid(msg.getRemoteSecurityGroupUuid());
+                        vo.setSrcIpRange(msg.getSrcIpRange());
+                        vo.setDstIpRange(msg.getDstIpRange());
+                        vo.setDstPortRange(msg.getDstPortRange());
 
-                                if (msg.getPriority() != null && msg.getPriority() != vo.getPriority()) {
-                                    List<SecurityGroupRuleVO> others = Q.New(SecurityGroupRuleVO.class)
-                                        .eq(SecurityGroupRuleVO_.securityGroupUuid, vo.getSecurityGroupUuid())
-                                        .eq(SecurityGroupRuleVO_.type, vo.getType())
-                                        .notEq(SecurityGroupRuleVO_.uuid, vo.getUuid())
-                                        .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
-                                        .list();
-                                    final int finalPriority = msg.getPriority() == -1 ? others.size() + 1 : msg.getPriority();
+                        if (msg.getPriority() != null && msg.getPriority() != vo.getPriority()) {
+                            List<SecurityGroupRuleVO> others = Q.New(SecurityGroupRuleVO.class)
+                                .eq(SecurityGroupRuleVO_.securityGroupUuid, vo.getSecurityGroupUuid())
+                                .eq(SecurityGroupRuleVO_.type, vo.getType())
+                                .notEq(SecurityGroupRuleVO_.uuid, vo.getUuid())
+                                .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                                .list();
+                            final int finalPriority = msg.getPriority() == -1 ? others.size() + 1 : msg.getPriority();
 
-                                    if (vo.getPriority() > finalPriority) {
-                                        List<SecurityGroupRuleVO> toUpdate = others.stream().filter(r -> r.getPriority() >= finalPriority && r.getPriority() < vo.getPriority()).collect(Collectors.toList());
+                            if (vo.getPriority() > finalPriority) {
+                                List<SecurityGroupRuleVO> toUpdate = others.stream().filter(r -> r.getPriority() >= finalPriority && r.getPriority() < vo.getPriority()).collect(Collectors.toList());
 
-                                        toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() + 1));
-                                        dbf.updateCollection(toUpdate);
-                                    } else {
-                                        List<SecurityGroupRuleVO> toUpdate = others.stream().filter(r -> r.getPriority() <= finalPriority && r.getPriority() > vo.getPriority()).collect(Collectors.toList());
+                                toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() + 1));
+                                dbf.updateCollection(toUpdate);
+                            } else {
+                                List<SecurityGroupRuleVO> toUpdate = others.stream().filter(r -> r.getPriority() <= finalPriority && r.getPriority() > vo.getPriority()).collect(Collectors.toList());
 
-                                        toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() - 1));
-                                        dbf.updateCollection(toUpdate);
-                                    }
-
-                                    vo.setPriority(finalPriority);
-                                }
-
-                                dbf.updateAndRefresh(vo);
+                                toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() - 1));
+                                dbf.updateCollection(toUpdate);
                             }
-                        }.execute();
+
+                            vo.setPriority(finalPriority);
+                        }
+
+                        dbf.update(vo);
 
                         trigger.next();
                     }
