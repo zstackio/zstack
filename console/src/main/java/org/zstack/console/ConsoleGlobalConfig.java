@@ -24,4 +24,7 @@ public class ConsoleGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig VNC_ALLOW_PORTS_LIST = new GlobalConfig(CATEGORY, "vnc.allow.ports");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig DELETE_CONSOLE_PROXY_RETRY_DELAY = new GlobalConfig(CATEGORY, "delete.consoleproxy.gc.delay");
 }
