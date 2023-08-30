@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.compute.vm.VmSchedHistoryRecorder;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.Platform;
-import org.zstack.authentication.checkfile.*;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;

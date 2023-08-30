@@ -111,6 +111,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "rootUuid"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 
