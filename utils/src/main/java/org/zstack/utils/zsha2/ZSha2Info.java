@@ -9,6 +9,8 @@ public class ZSha2Info {
     private String dbvip;
     private String nic;
     private boolean isMaster;
+    private boolean dbStatusError;
+    private String dbErrorDetail;
 
     public String getNodeip() {
         return nodeip;
@@ -48,5 +50,21 @@ public class ZSha2Info {
 
     public void setMaster(boolean master) {
         isMaster = master;
+    }
+
+    public boolean isDbStatusError() {
+        return dbStatusError;
+    }
+
+    public void setDbStatusError(boolean dbStatusError) {
+        this.dbStatusError = dbStatusError;
+    }
+
+    public String getDbErrorDetail() {
+        return dbErrorDetail;
+    }
+
+    public void setDbErrorDetail(String dbErrorDetail) {
+        this.dbErrorDetail = dbErrorDetail;
     }
 }
