@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.core.db.Q;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingVO_;
@@ -8,6 +9,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.ArrayList;
@@ -51,6 +53,14 @@ public class NewVmInstanceMsgBuilder {
         return nicSpecs;
     }
 
+    private static List<String> getDisableL3FromNewVmInstanceMsg(NewVmInstanceMessage msg) {
+        if (StringUtils.isEmpty(msg.getVmNicParams())) {
+            return Collections.EMPTY_LIST;
+        }
+        List<VmNicParm> vmNicParms = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
+        return vmNicParms.stream().filter(nic -> VmNicState.disable.toString().equals(nic.getState())).map(VmNicParm::getL3NetworkUuid).collect(Collectors.toList());
+    }
+
     public static CreateVmInstanceMsg fromAPINewVmInstanceMsg(NewVmInstanceMessage2 msg) {
         CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg();
         APICreateMessage api = (APICreateMessage) msg;
@@ -79,6 +89,7 @@ public class NewVmInstanceMsgBuilder {
         cmsg.setAccountUuid(api.getSession().getAccountUuid());
         cmsg.setName(msg.getName());
         cmsg.setL3NetworkSpecs(getVmNicSpecsFromNewVmInstanceMsg(msg));
+        cmsg.setDisableL3Networks(getDisableL3FromNewVmInstanceMsg(msg));
         cmsg.setType(msg.getType());
 
         cmsg.setClusterUuid(msg.getClusterUuid());
