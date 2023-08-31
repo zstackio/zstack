@@ -820,6 +820,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                                 public void success(VolumeInfo returnValue) {
                                     volumeInstallPath = returnValue.getInstallPath();
                                     actualSize = returnValue.getActualSize();
+                                    volume.setSize(returnValue.getSize());
+
                                     trigger.next();
                                 }
 

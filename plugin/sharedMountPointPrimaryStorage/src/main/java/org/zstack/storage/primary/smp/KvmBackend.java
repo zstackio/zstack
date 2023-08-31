@@ -171,6 +171,7 @@ public class KvmBackend extends HypervisorBackend {
 
     public static class CreateVolumeFromCacheRsp extends AgentRsp {
         public Long actualSize;
+        public Long size;
     }
 
     public static class CreateVolumeWithBackingCmd extends AgentCmd {
@@ -294,6 +295,7 @@ public class KvmBackend extends HypervisorBackend {
 
     public static class CreateEmptyVolumeRsp extends AgentRsp {
         public Long actualSize;
+        public Long size;
     }
 
     public static class CheckBitsCmd extends AgentCmd {
@@ -935,6 +937,7 @@ public class KvmBackend extends HypervisorBackend {
                 volume.setInstallPath(cmd.installPath);
                 volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                 volume.setActualSize(rsp.actualSize);
+                volume.setSize(rsp.size);
                 reply.setVolume(volume);
                 completion.success(reply);
             }
@@ -1017,6 +1020,7 @@ public class KvmBackend extends HypervisorBackend {
                             @Override
                             public void success(CreateVolumeFromCacheRsp rsp) {
                                 actualSize = rsp.actualSize;
+                                volume.setSize(rsp.size);
                                 trigger.next();
                             }
 
