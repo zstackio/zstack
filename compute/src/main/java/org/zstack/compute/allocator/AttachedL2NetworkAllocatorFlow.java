@@ -19,8 +19,18 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.zstack.utils.logging.CLogger;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.core.db.Q;
+import org.zstack.utils.Utils;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.host.*;
+
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
+    private static final CLogger logger = Utils.getLogger(AttachedL2NetworkAllocatorFlow.class);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -95,7 +105,41 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
                 skip();
                 return;
             } else {
-                throw new CloudRuntimeException("l3Network uuids can not be empty AttachedL2NetworkAllocatorFlow");
+                spec.setAllowNoL3Networks(true);
+
+                String sql;
+                Set<String> clusterUuids = new HashSet<>();
+                clusterUuids.add(spec.getVmInstance().getClusterUuid());
+                List<String> hostUuids = null;
+                if (!amITheFirstFlow()) {
+                    hostUuids = candidates.stream().map(HostVO::getUuid).collect(Collectors.toList());
+                }
+
+                if (hostUuids == null || hostUuids.isEmpty()) {
+                    sql = "select h from HostVO h where h.clusterUuid in (:cuuids)";
+                    TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+                    hq.setParameter("cuuids", clusterUuids);
+                    if (usePagination()) {
+                        hq.setFirstResult(paginationInfo.getOffset());
+                        hq.setMaxResults(paginationInfo.getLimit());
+                    }
+                    candidates = hq.getResultList();
+                } else {
+                    sql = "select h from HostVO h where h.clusterUuid in (:cuuids) and h.uuid in (:huuids)";
+                    TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+                    hq.setParameter("cuuids", clusterUuids);
+                    hq.setParameter("huuids", hostUuids);
+
+                    if (usePagination()) {
+                        hq.setFirstResult(paginationInfo.getOffset());
+                        hq.setMaxResults(paginationInfo.getLimit());
+                    }
+                    candidates = hq.getResultList();
+               }
+
+                next(candidates);
+                logger.debug(String.format("vm clusteruuid:%s, candidates size:%s", spec.getVmInstance().getClusterUuid(), candidates.size()));
+                return;
             }
         }
 
