@@ -458,6 +458,87 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         assert rule1.description == null
     }
 
+    void testChangeRuleWithOldRules() {
+        deleteSecurityGroup {
+            uuid = sg4.uuid
+        }
+
+        sg4 = createSecurityGroup {
+            name = "sg-4"
+            ipVersion = 4
+        } as SecurityGroupInventory
+
+        SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+        r.type = 'Ingress'
+        r.description = 'testChangeRuleWithOldRules'
+        r.ipVersion = 4
+        r.dstPortRange = '500-600'
+        r.srcIpRange = '5.5.5.5'
+        r.protocol = 'UDP'
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [r]
+        }
+
+        SecurityGroupRuleInventory rule1 = sg4.rules.find { it.description == 'testChangeRuleWithOldRules' }
+
+        SQL.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sg4.uuid)
+                .eq(SecurityGroupRuleVO_.uuid, rule1.uuid)
+                .set(SecurityGroupRuleVO_.remoteSecurityGroupUuid, sg3.uuid)
+                .update()
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            protocol = 'TCP'
+            dstPortRange = '700-800'
+            action = 'DROP'
+            state = 'Disabled'
+        }
+
+        assert rule1.protocol == 'TCP'
+        assert rule1.dstPortRange == '700-800'
+        assert rule1.action == 'DROP'
+        assert rule1.state == 'Disabled'
+        assert rule1.remoteSecurityGroupUuid == sg3.uuid
+        assert rule1.srcIpRange == '5.5.5.5'
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            remoteSecurityGroupUuid = sg2.uuid
+            protocol = 'ICMP'
+            action = 'ACCEPT'
+            state = 'Enabled'
+            description = ''
+        }
+
+        assert rule1.protocol == 'ICMP'
+        assert rule1.dstPortRange == null
+        assert rule1.action == 'ACCEPT'
+        assert rule1.state == 'Enabled'
+        assert rule1.description == null
+        assert rule1.remoteSecurityGroupUuid == sg2.uuid
+        assert rule1.srcIpRange == null
+
+        SQL.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sg4.uuid)
+                .eq(SecurityGroupRuleVO_.uuid, rule1.uuid)
+                .set(SecurityGroupRuleVO_.srcIpRange, '6.6.6.6')
+                .update()
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            remoteSecurityGroupUuid = ''
+        }
+
+        assert rule1.protocol == 'ICMP'
+        assert rule1.dstPortRange == null
+        assert rule1.action == 'ACCEPT'
+        assert rule1.state == 'Enabled'
+        assert rule1.description == null
+        assert rule1.remoteSecurityGroupUuid == null
+        assert rule1.srcIpRange == '6.6.6.6'
+    }
+
     @Override
     void clean() {
         env.delete()
@@ -504,5 +585,6 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         testChangeRulePriorityError()
         testChangeRuleDuplicate()
         testChangeRuleParamLimit()
+        testChangeRuleWithOldRules()
     }
 }

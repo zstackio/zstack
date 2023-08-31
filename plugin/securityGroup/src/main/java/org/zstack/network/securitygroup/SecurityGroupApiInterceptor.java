@@ -370,86 +370,116 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             msg.setDescription(vo.getDescription());
         }
 
-        if (msg.getRemoteSecurityGroupUuid() != null) {
-            if (!msg.getRemoteSecurityGroupUuid().isEmpty()) {
-                if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuid()).isExists()) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because remote security group[uuid:%s] not found", msg.getRemoteSecurityGroupUuid()));
-                }
-                if (!StringUtils.isEmpty(msg.getSrcIpRange()) || !StringUtils.isEmpty(msg.getDstIpRange())) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because remote security group[uuid:%s] is set, srcIpRange or dstIpRange must be empty", msg.getRemoteSecurityGroupUuid()));
-                }
-            } else {
-                msg.setRemoteSecurityGroupUuid(null);
+        if (StringUtils.isNotEmpty(msg.getSrcIpRange())) {
+            if (SecurityGroupRuleType.Egress.equals(vo.getType())) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Egress, srcIpRange[%s] cannot be set", msg.getUuid(),  msg.getSrcIpRange()));
             }
-        } else {
-            msg.setRemoteSecurityGroupUuid(vo.getRemoteSecurityGroupUuid());
+            if (StringUtils.isNotEmpty(msg.getDstIpRange())) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Ingress, dstIpRange[%s] cannot be set", msg.getUuid(), msg.getDstIpRange()));
+            }
+            if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because srcIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty", msg.getSrcIpRange(), msg.getRemoteSecurityGroupUuid()));
+            }
+            validateIps(msg.getSrcIpRange(), vo.getIpVersion());
         }
 
-        if (msg.getSrcIpRange() != null) {
-            if (!msg.getSrcIpRange().isEmpty()) {
-                if (SecurityGroupRuleType.Egress.equals(vo.getType())) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Egress, srcIpRange cannot be set", msg.getUuid()));
-                }
-                if (!StringUtils.isEmpty(msg.getDstIpRange())) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because srcIpRange[%s] and dstIpRange[%s] cannot be set at the same time", msg.getSrcIpRange(), msg.getDstIpRange()));
-                }
+        if (StringUtils.isNotEmpty(msg.getDstIpRange())) {
+            if (SecurityGroupRuleType.Ingress.equals(vo.getType())) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Ingress, dstIpRange[%s] cannot be set", msg.getUuid(), msg.getDstIpRange()));
+            }
+            if (StringUtils.isNotEmpty(msg.getSrcIpRange())) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Egress, srcIpRange[%s] cannot be set", msg.getUuid(), msg.getSrcIpRange()));
+            }
+            if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because dstIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty", msg.getDstIpRange(), msg.getRemoteSecurityGroupUuid()));
+            }
+            validateIps(msg.getDstIpRange(), vo.getIpVersion());
+        }
+
+        if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
+            if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuid()).isExists()) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because remote security group[uuid:%s] not found", msg.getRemoteSecurityGroupUuid()));
+            }
+            if (StringUtils.isNotEmpty(msg.getSrcIpRange()) || StringUtils.isNotEmpty(msg.getDstIpRange())) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because remote security group[uuid:%s] is set, srcIpRange and dstIpRange must be empty", msg.getRemoteSecurityGroupUuid()));
+            }
+        }
+
+        if (StringUtils.isNotEmpty(msg.getSrcIpRange()) || StringUtils.isNotEmpty(msg.getDstIpRange()) || StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
+            if (StringUtils.isNotEmpty(msg.getSrcIpRange())) {
                 msg.setRemoteSecurityGroupUuid(null);
-                validateIps(msg.getSrcIpRange(), vo.getIpVersion());
-            } else {
+                msg.setDstIpRange(null);
+            }
+            if (StringUtils.isNotEmpty(msg.getDstIpRange())) {
+                msg.setRemoteSecurityGroupUuid(null);
                 msg.setSrcIpRange(null);
             }
+            if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
+                msg.setSrcIpRange(null);
+                msg.setDstIpRange(null);
+            }
         } else {
-            if (msg.getRemoteSecurityGroupUuid() != null) {
+            if (msg.getSrcIpRange() != null && msg.getSrcIpRange().isEmpty()) {
                 msg.setSrcIpRange(null);
             } else {
                 msg.setSrcIpRange(vo.getSrcIpRange());
             }
-        }
 
-        if (msg.getDstIpRange() != null) {
-            if (!msg.getDstIpRange().isEmpty()) {
-                if (SecurityGroupRuleType.Ingress.equals(vo.getType())) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Ingress, dstIpRange cannot be set", msg.getUuid()));
-                }
-                if (!StringUtils.isEmpty(msg.getSrcIpRange())) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because srcIpRange[%s] and dstIpRange[%s] cannot be set at the same time", msg.getSrcIpRange(), msg.getDstIpRange()));
-                }
-                msg.setRemoteSecurityGroupUuid(null);
-                validateIps(msg.getDstIpRange(), vo.getIpVersion());
-            } else {
-                msg.setDstIpRange(null);
-            }
-        } else {
-            if (msg.getRemoteSecurityGroupUuid() != null) {
+            if (msg.getDstIpRange() != null && msg.getDstIpRange().isEmpty()) {
                 msg.setDstIpRange(null);
             } else {
                 msg.setDstIpRange(vo.getDstIpRange());
             }
-        }
 
-        if (msg.getDstPortRange() != null) {
-            if (!msg.getDstPortRange().isEmpty()) {
-                if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be set", msg.getProtocol()));
-                }
-                validatePorts(msg.getDstPortRange());
+            if (msg.getRemoteSecurityGroupUuid() != null && msg.getRemoteSecurityGroupUuid().isEmpty()) {
+                msg.setRemoteSecurityGroupUuid(null);
             } else {
-                if (SecurityGroupRuleProtocolType.TCP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.UDP.toString().equals(msg.getProtocol())) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty", msg.getProtocol()));
-                }
-                msg.setDstPortRange(null);
+                msg.setRemoteSecurityGroupUuid(vo.getRemoteSecurityGroupUuid());
             }
-        } else {
-            msg.setDstPortRange(vo.getDstPortRange());
+
         }
 
-        if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
-            msg.setDstPortRange(null);
-        } else {
-            if (msg.getDstPortRange() == null) {
+        if (StringUtils.isNotEmpty(msg.getDstPortRange())) {
+            if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be set", msg.getProtocol()));
+            }
+            validatePorts(msg.getDstPortRange());
+        } else if (msg.getDstPortRange() != null) {
+            if (SecurityGroupRuleProtocolType.TCP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.UDP.toString().equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty", msg.getProtocol()));
             }
+            msg.setDstPortRange(null);
+        } else {
+            if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
+                msg.setDstPortRange(null);
+            } else {
+                msg.setDstPortRange(vo.getDstPortRange());
+            }
         }
+
+        // if (msg.getDstPortRange() != null) {
+        //     if (!msg.getDstPortRange().isEmpty()) {
+        //         if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
+        //             throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be set", msg.getProtocol()));
+        //         }
+        //         validatePorts(msg.getDstPortRange());
+        //     } else {
+        //         if (SecurityGroupRuleProtocolType.TCP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.UDP.toString().equals(msg.getProtocol())) {
+        //             throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty", msg.getProtocol()));
+        //         }
+        //         msg.setDstPortRange(null);
+        //     }
+        // } else {
+        //     msg.setDstPortRange(vo.getDstPortRange());
+        // }
+
+        // if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
+        //     msg.setDstPortRange(null);
+        // } else {
+        //     if (msg.getDstPortRange() == null) {
+        //         throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty", msg.getProtocol()));
+        //     }
+        // }
 
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO sao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
         sao.setType(vo.getType().toString());
