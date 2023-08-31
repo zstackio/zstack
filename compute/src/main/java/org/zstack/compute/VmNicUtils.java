@@ -2,14 +2,17 @@ package org.zstack.compute;
 
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang.StringUtils;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.vm.VmNicParm;
+import org.zstack.header.vm.VmNicState;
 import org.zstack.utils.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 
 public class VmNicUtils {
@@ -47,6 +50,12 @@ public class VmNicUtils {
             if (nic.getMultiQueueNum() != null ) {
                 if (nic.getMultiQueueNum() < 1 || nic.getMultiQueueNum() > 256) {
                     throw new ApiMessageInterceptionException(argerr("multi queue num[%d] of vm nic is out of [1,256]", nic.getMultiQueueNum()));
+                }
+            }
+
+            if (nic.getState() != null) {
+                if (!asList(VmNicState.enable.toString(), VmNicState.disable.toString()).contains(nic.getState())) {
+                    throw new ApiMessageInterceptionException(argerr("vm nic of l3[uuid:%s] state[%s] is not %s or %s ", nic.getL3NetworkUuid(), nic.getState(), VmNicState.enable.toString(), VmNicState.disable.toString()));
                 }
             }
 
