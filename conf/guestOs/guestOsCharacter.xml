@@ -155,7 +155,7 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <osRelease>Windows NT</osRelease>
+        <osRelease>Windows NT 4.0</osRelease>
         <cpuModel>pentium</cpuModel>
         <nicDriver>pcnet</nicDriver>
     </osInfo>

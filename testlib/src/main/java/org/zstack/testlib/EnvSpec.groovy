@@ -688,6 +688,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
                               "BaremetalInstanceSequenceNumberVO", "BaremetalImageCacheVO",
                               "GarbageCollectorVO",
+                              "GuestOsCategoryVO",
                               "TaskProgressVO", "TaskStepVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
@@ -844,7 +845,6 @@ class EnvSpec extends ApiHelper implements Node  {
             SQL.New(VmSchedHistoryVO).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
-            SQL.New(GuestOsCategoryVO.class).hardDelete()
 
             if (GLOBAL_DELETE_HOOK != null) {
                 GLOBAL_DELETE_HOOK()
