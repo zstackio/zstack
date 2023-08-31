@@ -121,4 +121,9 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig UNIQUE_VM_NAME = new GlobalConfig(CATEGORY, "uniqueVmName");
+
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "vm.ha.across.clusters")
+    public static GlobalConfig VM_HA_ACROSS_CLUSTERS = new GlobalConfig(CATEGORY, "vm.ha.across.clusters");
 }
