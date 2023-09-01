@@ -5,6 +5,7 @@ import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.Message;
@@ -12,6 +13,7 @@ import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.JsonWrapper;
@@ -148,7 +150,15 @@ public class VmInstanceSpec implements Serializable {
         }
 
         public boolean relyOnImageCache() {
-            return !needDownload && CollectionUtils.isEmpty(inventory.getBackupStorageRefs());
+            return !needDownload && inventory != null &&  CollectionUtils.isEmpty(inventory.getBackupStorageRefs());
+        }
+
+        public boolean isIso() {
+            return inventory != null && ImageConstant.ImageMediaType.ISO.toString().equals(inventory.getMediaType());
+        }
+
+        public boolean relayOnImage() {
+            return inventory != null;
         }
     }
 
@@ -759,5 +769,22 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDisableL3Networks(List<String> disableL3Networks) {
         this.disableL3Networks = disableL3Networks;
+    }
+
+    public String getVolumeFormatFromImage() {
+        ImageSpec image = getImageSpec();
+        // if no image is specified, use default format
+        if (!image.relayOnImage()) {
+            return ImageConstant.QCOW2_FORMAT_STRING;
+        }
+
+        if (image.isIso()) {
+            return VolumeFormat.getVolumeFormatByMasterHypervisorType(getDestHost().getHypervisorType()).toString();
+        } else if (image.getInventory().getFormat() != null) {
+            VolumeFormat imageFormat = VolumeFormat.valueOf(getImageSpec().getInventory().getFormat());
+            return imageFormat.getOutputFormat(getDestHost().getHypervisorType());
+        } else {
+            return ImageConstant.QCOW2_FORMAT_STRING;
+        }
     }
 }
