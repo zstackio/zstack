@@ -45,7 +45,7 @@ doc {
 					desc "镜像UUID。云主机的根云盘会从该字段指定的镜像创建。"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 				}
 				column {

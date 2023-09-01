@@ -6,6 +6,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.VmNicUtils;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
@@ -1145,39 +1146,59 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         validate((NewVmInstanceMessage2) msg);
 
         ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
-        ImageState imgState = image.getState();
-        if (imgState == ImageState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid()));
+        if (image == null) {
+            String err = "";
+            if (msg.getPlatform() == null) {
+                err = Platform.missingVariables("platform");
+            }
+
+            if (msg.getGuestOsType() == null) {
+                err += Platform.missingVariables("guestOsType");
+            }
+
+            if (msg.getArchitecture() == null) {
+                err += Platform.missingVariables("architecture");
+            }
+
+            if (!err.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr(String.format("when imageUuid is null, %s", err)));
+            }
+        } else {
+            ImageState imgState = image.getState();
+            if (imgState == ImageState.Disabled) {
+                throw new ApiMessageInterceptionException(operr("image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid()));
+            }
+
+            ImageStatus imgStatus = image.getStatus();
+            if (imgStatus != ImageStatus.Ready) {
+                throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not ready yet, can't create vm from it", msg.getImageUuid()));
+            }
+
+            ImageMediaType imgFormat = image.getMediaType();
+            if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO) {
+                throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
+            }
+
+            boolean isSystemImage = image.isSystem();
+            if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
+                throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
+            }
+
+            if (msg.getPlatform() == null && image.getPlatform() == null) {
+                throw new ApiMessageInterceptionException(operr("at least one of field platform in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            }
+
+            if (msg.getGuestOsType() == null && image.getGuestOsType() == null) {
+                throw new ApiMessageInterceptionException(operr("at least one of field guestOsType in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            }
+
+            if (msg.getArchitecture() == null && image.getArchitecture() == null) {
+                throw new ApiMessageInterceptionException(operr("at least one of field architecture in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            }
+
+            validateRootDiskOffering(imgFormat, msg);
         }
 
-        ImageStatus imgStatus = image.getStatus();
-        if (imgStatus != ImageStatus.Ready) {
-            throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not ready yet, can't create vm from it", msg.getImageUuid()));
-        }
-
-        ImageMediaType imgFormat = image.getMediaType();
-        if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO) {
-            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
-        }
-
-        boolean isSystemImage = image.isSystem();
-        if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
-        }
-
-        if (msg.getPlatform() == null && image.getPlatform() == null) {
-            throw new ApiMessageInterceptionException(operr("at least one of field platform in msg or image[uuid:%s] should be set", msg.getImageUuid()));
-        }
-
-        if (msg.getGuestOsType() == null && image.getGuestOsType() == null) {
-            throw new ApiMessageInterceptionException(operr("at least one of field guestOsType in msg or image[uuid:%s] should be set", msg.getImageUuid()));
-        }
-
-        if (msg.getArchitecture() == null && image.getArchitecture() == null) {
-            throw new ApiMessageInterceptionException(operr("at least one of field architecture in msg or image[uuid:%s] should be set", msg.getImageUuid()));
-        }
-
-        validateRootDiskOffering(imgFormat, msg);
         validateDataDiskSizes(msg);
 
         List<String> allDiskOfferingUuids = new ArrayList<String>();
