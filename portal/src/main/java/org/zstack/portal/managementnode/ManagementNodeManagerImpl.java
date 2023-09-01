@@ -877,8 +877,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         }
 
                         updateHeartbeat();
-                        checkAllNodesHealth();
                         fenceSuspects();
+                        checkAllNodesHealth();
                     } catch (Throwable t) {
                         if (handleHeartbeatFailure(t)) {
                             // this stops the management node
