@@ -887,6 +887,7 @@ public class KVMAgentCommands {
         private String vlanId;
         private String pciDeviceAddress;
         // only for tf nic
+        private String ipForTf;
         private String l2NetworkUuid;
 
         public List<String> getIps() {
@@ -1023,6 +1024,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public String getIpForTf() {
+            return ipForTf;
+        }
+
+        public void setIpForTf(String ipForTf) {
+            this.ipForTf = ipForTf;
         }
 
         public String getL2NetworkUuid() {
