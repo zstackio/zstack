@@ -21,8 +21,7 @@ public class TfCompleteNicInformationExtensionPointImpl implements KVMCompleteNi
     @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
-        to.setIps(new ArrayList<String>(Arrays.asList(nic.getIp())));
-        VmGlobalConfig.VM_CLEAN_TRAFFIC.updateValue(true);
+        to.setIpForTf(nic.getIp());
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         to.setL2NetworkUuid(l2Network.getUuid());
         logger.debug("Complete nic information for TfL2Network");

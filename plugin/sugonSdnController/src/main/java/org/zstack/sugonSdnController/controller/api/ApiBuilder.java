@@ -93,7 +93,7 @@ class ApiBuilder {
         return element.getAsString();
     }
 
-    public List<? extends ApiObjectBase> jsonToApiObjects(String data, Class<? extends ApiObjectBase> cls, List<String> parent) throws IOException {
+    public List<? extends ApiObjectBase> jsonToApiObjects(String data, Class<? extends ApiObjectBase> cls, boolean withDetail) throws IOException {
         if (data == null) {
             return null;
         }
@@ -112,7 +112,13 @@ class ApiBuilder {
         }
         Gson json = ApiSerializer.getDeserializer();
         for (JsonElement element : array) {
-            ApiObjectBase obj = json.fromJson(element.toString(), cls);
+            ApiObjectBase obj;
+            if (withDetail) {
+                obj = jsonToApiObject(element.toString(), cls);
+            } else {
+                obj = json.fromJson(element.toString(), cls);
+            }
+
             if (obj == null) {
                 s_logger.warn("Unable to decode list element");
                 continue;

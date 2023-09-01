@@ -505,6 +505,11 @@ public class ApiConnectorMock implements ApiConnector {
         return list;
     }
 
+    @Override
+    public List<? extends ApiObjectBase> listWithDetail(Class<? extends ApiObjectBase> cls, String fields, String filters) throws IOException {
+        return null;
+    }
+
     private boolean isChildrenExists(ApiObjectBase parent) {
         String fqnParent = getFqnString(parent.getQualifiedName());
         ArrayList<List<HashMap<String, ApiObjectBase>>> clsDataList = new ArrayList<List<HashMap<String, ApiObjectBase>>>(_map.values());

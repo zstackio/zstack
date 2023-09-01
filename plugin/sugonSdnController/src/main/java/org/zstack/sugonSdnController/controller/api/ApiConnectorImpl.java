@@ -45,11 +45,6 @@ import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
 import org.apache.http.util.EntityUtils;
-/*
-import org.openstack4j.api.OSClient;
-import org.openstack4j.openstack.OSFactory;
-import org.openstack4j.api.exceptions.AuthenticationException;
- */
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import org.zstack.utils.Utils;
@@ -608,11 +603,7 @@ class ApiConnectorImpl implements ApiConnector {
         return uuid;
     }
 
-    @Override
-    public synchronized List<? extends ApiObjectBase> list(Class<? extends ApiObjectBase> cls, List<String> parent) throws IOException {
-        final String typename = _apiBuilder.getTypename(cls);
-        final HttpResponse response = execute(HttpGet.METHOD_NAME, '/' + typename + "s?detail=true", null);
-
+    private synchronized List<? extends ApiObjectBase> listResult(Class<? extends ApiObjectBase> cls, HttpResponse response, boolean withDetail) throws IOException {
         if (response == null ||  response.getStatusLine() == null) {
             return null;
         }
@@ -629,12 +620,36 @@ class ApiConnectorImpl implements ApiConnector {
             checkResponseKeepAliveStatus(response);
             return null;
         }
-        List<? extends ApiObjectBase> list = _apiBuilder.jsonToApiObjects(data, cls, parent);
+        List<? extends ApiObjectBase> list = _apiBuilder.jsonToApiObjects(data, cls, withDetail);
         if (list == null) {
             s_logger.warn("Unable to parse/deserialize response: " + data);
         }
         checkResponseKeepAliveStatus(response);
         return list;
+    }
+
+    @Override
+    public synchronized List<? extends ApiObjectBase> list(Class<? extends ApiObjectBase> cls, List<String> parent) throws IOException {
+        final String typename = _apiBuilder.getTypename(cls);
+        final HttpResponse response = execute(HttpGet.METHOD_NAME, '/' + typename + 's', null);
+        return listResult(cls, response, false);
+    }
+
+    @Override
+    public synchronized List<? extends ApiObjectBase> listWithDetail(Class<? extends ApiObjectBase> cls,
+                                                                     String fields,
+                                                                     String filters) throws IOException {
+        final String typename = _apiBuilder.getTypename(cls);
+        String uri = '/' + typename + "s?detail=true";
+        if (fields != null) {
+            uri = uri + "&fields=" + fields;
+        }
+        if (filters != null) {
+            uri = uri + "&filters=" + filters;
+        }
+        final HttpResponse response = execute(HttpGet.METHOD_NAME, uri, null);
+
+        return listResult(cls, response, true);
     }
 
 

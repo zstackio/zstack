@@ -998,6 +998,7 @@ public class KVMAgentCommands {
         private String vlanId;
         private String pciDeviceAddress;
         // only for tf nic
+        private String ipForTf;
         private String l2NetworkUuid;
 
         // for vDPA & dpdkvhostuserclient nic
@@ -1163,6 +1164,14 @@ public class KVMAgentCommands {
 
         public void setCleanTraffic(Boolean cleanTraffic) {
             this.cleanTraffic = cleanTraffic;
+        }
+
+        public String getIpForTf() {
+            return ipForTf;
+        }
+
+        public void setIpForTf(String ipForTf) {
+            this.ipForTf = ipForTf;
         }
 
         public String getL2NetworkUuid() {
