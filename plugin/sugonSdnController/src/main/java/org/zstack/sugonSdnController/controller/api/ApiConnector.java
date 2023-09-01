@@ -42,6 +42,7 @@ public interface ApiConnector {
     ApiObjectBase find(Class<? extends ApiObjectBase> cls, ApiObjectBase parent, String name) throws IOException;
     ApiObjectBase findByFQN(Class<? extends ApiObjectBase> cls, String fullName) throws IOException;
     List<? extends ApiObjectBase> list(Class <? extends ApiObjectBase> cls, List<String> parent) throws IOException;
+    List<? extends ApiObjectBase> listWithDetail(Class <? extends ApiObjectBase> cls, String fields, String filters) throws IOException;
     <T extends ApiPropertyBase> List<? extends ApiObjectBase> getObjects(Class<? extends ApiObjectBase> cls,
             List<ObjectReference<T>> refList) throws IOException;
 

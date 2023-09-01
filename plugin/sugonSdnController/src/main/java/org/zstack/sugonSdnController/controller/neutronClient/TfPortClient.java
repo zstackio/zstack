@@ -63,8 +63,8 @@ public class TfPortClient {
             //if mac-address is specified, check against the exisitng ports
             //to see if there exists a port with the same mac-address
             if (!Objects.isNull(mac)) {
-                List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) apiConnector.list(
-                        VirtualMachineInterface.class, Arrays.asList("default-domain", tenantId));
+                List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) apiConnector.listWithDetail(
+                        VirtualMachineInterface.class, null, null);
 
                 for (VirtualMachineInterface port : ports) {
                     MacAddressesType macAddressesType = null;
@@ -303,19 +303,9 @@ public class TfPortClient {
 
     public List<VirtualMachineInterface> getVirtualMachineInterfaceDetail() {
         try {
-            List<VirtualMachineInterface> result = new ArrayList<>();
-            List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) apiConnector.list(
-                    VirtualMachineInterface.class, Arrays.asList("default-domain", tenantId));
-
-            for (VirtualMachineInterface port : ports) {
-                VirtualMachineInterface detail = (VirtualMachineInterface) apiConnector.findById(
-                        VirtualMachineInterface.class, port.getUuid());
-                if (detail == null) {
-                    continue;
-                }
-                result.add(detail);
-            }
-            return result;
+            List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) apiConnector.listWithDetail(
+                    VirtualMachineInterface.class, null, null);
+            return ports;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
