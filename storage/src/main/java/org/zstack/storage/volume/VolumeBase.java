@@ -441,6 +441,7 @@ public class VolumeBase implements Volume {
             String installPath;
             String format;
             Long actualSize;
+            Long virtualSize;
 
             @Override
             public void setup() {
@@ -521,6 +522,7 @@ public class VolumeBase implements Volume {
                                     installPath = ret.getInstallPath();
                                     format = ret.getFormat();
                                     actualSize = ret.getActualSize();
+                                    virtualSize = ret.getSize();
 
                                     buildSnapshotRefFromTemplateIfNeed(ret);
 
@@ -615,6 +617,7 @@ public class VolumeBase implements Volume {
                                 installPath = ir.getVolume().getInstallPath();
                                 format = ir.getVolume().getFormat();
                                 actualSize = ir.getVolume().getActualSize();
+                                virtualSize = ir.getVolume().getSize();
 
                                 List<AfterInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(AfterInstantiateVolumeExtensionPoint.class);
                                 for (AfterInstantiateVolumeExtensionPoint ext : exts) {
@@ -657,6 +660,9 @@ public class VolumeBase implements Volume {
                         self.setStatus(VolumeStatus.Ready);
                         if (actualSize != null) {
                             self.setActualSize(actualSize);
+                        }
+                        if (virtualSize != 0 && virtualSize != self.getSize()) {
+                            self.setSize(virtualSize);
                         }
                         self = dbf.updateAndRefresh(self);
 

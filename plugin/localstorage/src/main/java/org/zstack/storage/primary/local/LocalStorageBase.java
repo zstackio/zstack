@@ -2040,6 +2040,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         String hostUuid = msg.getDestHost().getUuid();
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        final long size = msg.getVolume().getSize();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("instantiate-volume-%s-local-primary-storage-%s", msg.getVolume().getUuid(), self.getUuid()));
@@ -2073,7 +2074,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void handle(Map data) {
                         createResourceRefVO(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName(),
-                                msg.getVolume().getSize(), finalHostUuid);
+                                msg.getVolume().getSize() == 0 ? size : msg.getVolume().getSize(), finalHostUuid);
                         bus.reply(msg, reply);
                     }
                 });

@@ -388,6 +388,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     
     public static class CreateRootVolumeFromTemplateResponse extends NfsPrimaryStorageAgentResponse {
         public Long actualSize;
+        public Long size;
     }
 
     public static class CreateVolumeWithBackingCmd extends CreateVolumeCmd {
@@ -440,6 +441,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {
         public Long actualSize;
+        public Long size;
     }
 
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {

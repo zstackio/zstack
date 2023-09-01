@@ -300,10 +300,18 @@ public class VolumeInventory implements Serializable {
     }
 
     public long getSize() {
-        return size;
+        if (size != null) {
+            return size;
+        }
+
+        return 0L;
     }
 
     public void setSize(long size) {
+        this.size = size;
+    }
+
+    public void setSize(Long size) {
         this.size = size;
     }
 

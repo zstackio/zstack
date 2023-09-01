@@ -256,6 +256,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     public static class CreateEmptyVolumeRsp extends AgentResponse {
         public Long actualSize;
+        public Long size;
     }
 
     public static class GetPhysicalCapacityCmd extends AgentCommand {
@@ -311,6 +312,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     public static class CreateVolumeFromCacheRsp extends AgentResponse {
         public Long actualSize;
+        public Long size;
     }
 
     public static class CreateVolumeWithBackingCmd extends AgentCommand {
@@ -1226,6 +1228,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 VolumeInventory vol = msg.getVolume();
                 vol.setInstallPath(returnValue.getInstallPath());
                 vol.setActualSize(returnValue.getActualSize());
+                vol.setSize(returnValue.getSize());
                 vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                 r.setVolume(vol);
                 completion.success(r);
@@ -1266,7 +1269,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
             @Override
             public void success(CreateEmptyVolumeRsp returnValue) {
-                completion.success(new VolumeInfo(cmd.getInstallUrl(), returnValue.actualSize));
+                completion.success(new VolumeInfo(cmd.getInstallUrl(), returnValue.actualSize, returnValue.size));
             }
 
             @Override
@@ -1670,6 +1673,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public void success(CreateVolumeFromCacheRsp returnValue) {
                                 actualSize = returnValue.actualSize;
+                                volume.setSize(returnValue.size);
                                 trigger.next();
                             }
 

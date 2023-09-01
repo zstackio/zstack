@@ -1137,6 +1137,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 volume.setInstallPath(cmd.getInstallUrl());
                 volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                 volume.setActualSize(rsp.actualSize);
+                volume.setSize(rsp.size);
 
                 nfsMgr.reportCapacityIfNeeded(pinv.getUuid(), rsp);
                 complete.success(volume);
@@ -1388,7 +1389,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
 
                 nfsMgr.reportCapacityIfNeeded(primaryStorage.getUuid(), rsp);
-                completion.success(new VolumeInfo(installPath, rsp.actualSize));
+                completion.success(new VolumeInfo(installPath, rsp.actualSize, rsp.size));
             }
         });
     }
