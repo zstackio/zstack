@@ -101,6 +101,11 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                             String querySql = getQuerySql(covertSubClasses, className, field.getName(), uuid);
                             String value = sql(querySql).find();
 
+                            if (StringUtils.isEmpty(value)) {
+                                logger.debug(String.format("encryption[className: %s, uuid: %s] value is null, skip encryption", className, uuid));
+                                continue;
+                            }
+
                             try {
                                 String encryptedString = encrypt(value);
 
@@ -111,7 +116,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                 query.setParameter("uuid", uuid);
                                 query.executeUpdate();
                             } catch (Exception e) {
-                                logger.debug(String.format("encrypt error because : %s",e.getMessage()));
+                                logger.debug(String.format("encrypt[className: %s, uuid: %s] error because : %s", className, uuid, e.getMessage()));
                             }
                         }
                         updateEncryptDataStateIfExists(className, field.getName(), EncryptEntityState.Encrypted);
@@ -162,6 +167,11 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                             String querySql = getQuerySql(covertSubClasses, className, field.getName(), uuid);
                             String encryptedString = sql(querySql).find();
 
+                            if (StringUtils.isEmpty(encryptedString)) {
+                                logger.debug(String.format("decryption[className: %s, uuid: %s] value is null, skip decryption", className, uuid));
+                                continue;
+                            }
+
                             try {
                                 String decryptString = decrypt(encryptedString);
 
@@ -172,7 +182,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                 query.setParameter("uuid", uuid);
                                 query.executeUpdate();
                             } catch (Exception e) {
-                                logger.debug(String.format("decrypt password error because : %s",e.getMessage()));
+                                logger.debug(String.format("decrypt[className: %s, uuid: %s] password error because : %s", className, uuid, e.getMessage()));
                             }
                         }
                         updateEncryptDataStateIfExists(className, field.getName(), EncryptEntityState.NewAdded);
@@ -196,6 +206,11 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                             String querySql = getQuerySql(covertSubClasses, className, field.getName(), uuid);
                             String encryptedString = sql(querySql).find();
 
+                            if (StringUtils.isEmpty(encryptedString)) {
+                                logger.debug(String.format("encryptAllPasswordWithNewKey[className: %s, uuid: %s] value is null, skip encrypt", className, uuid));
+                                continue;
+                            }
+
                             try {
                                 String decryptedString = decrypt(encryptedString);
                                 ErrorableValue<String> encrypt = encrypt(decryptedString, key);
@@ -211,7 +226,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                 query.setParameter("uuid", uuid);
                                 query.executeUpdate();
                             } catch (Exception e) {
-                                logger.debug(String.format("decrypt origin password error because : %s",e.getMessage()));
+                                logger.debug(String.format("decrypt[className: %s, uuid: %s] origin password error because : %s", className, uuid, e.getMessage()));
                             }
                         }
                     }
@@ -328,6 +343,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                     String value = sql(querySql).find();
 
                                     if (StringUtils.isEmpty(value)){
+                                        logger.debug(String.format("EncryptEntityMetadata[className: %s, uuid: %s] value is null, skip encrypt", className, uuid));
                                         continue;
                                     }
 
@@ -344,7 +360,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                         query.setParameter("uuid", uuid);
                                         query.executeUpdate();
                                     } catch (Exception e) {
-                                        logger.debug(String.format("encrypt error because : %s", e.getMessage()));
+                                        logger.debug(String.format("EncryptEntityMetadata[className: %s, uuid: %s] error because : %s", className, uuid, e.getMessage()));
                                     }
                                 }
 
@@ -515,6 +531,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                     String value = sql(querySql).find();
 
                                     if (StringUtils.isEmpty(value)) {
+                                        logger.debug(String.format("DecryptEntity[className: %s, uuid: %s] value is null, skip decrypt", className, uuid));
                                         continue;
                                     }
 
@@ -526,7 +543,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                         query.setParameter("uuid", uuid);
                                         query.executeUpdate();
                                     } catch (Exception e) {
-                                        logger.debug(String.format("handleNeedDecryptEntity error because : %s", e.getMessage()));
+                                        logger.debug(String.format("handleNeedDecryptEntity[className: %s, uuid: %s] error because : %s", className, uuid, e.getMessage()));
 
                                     }
                                 }
