@@ -3537,6 +3537,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         dmsg.setBitsUuid(self.getUuid());
                         dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(getSelfInventory().getFormat()).toString());
                         dmsg.setFolder(false);
+                        dmsg.setFromRecycle(true);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -3566,23 +3567,25 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new SQLBatch() {
+                        MarkSnapshotAsVolumeMsg mmsg = new MarkSnapshotAsVolumeMsg();
+                        mmsg.setVolumeUuid(self.getUuid());
+                        mmsg.setSnapshotUuid(snapShot.getUuid());
+                        mmsg.setSize(size);
+                        mmsg.setVolumePath(newVolumeInstallPath);
+                        mmsg.setTreeUuid(snapShot.getTreeUuid());
+                        bus.makeTargetServiceIdByResourceUuid(mmsg, VolumeSnapshotConstant.SERVICE_ID, snapShot.getUuid());
+                        bus.send(mmsg, new CloudBusCallBack(trigger) {
                             @Override
-                            protected void scripts() {
-                                sql(VolumeVO.class).eq(VolumeVO_.uuid, self.getUuid())
-                                        .set(VolumeVO_.installPath, newVolumeInstallPath)
-                                        .set(VolumeVO_.actualSize, size)
-                                        .update();
-                                sql(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snapShot.getUuid()).hardDelete();
-
-                                if (!q(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.treeUuid, snapShot.getTreeUuid()).isExists()) {
-                                    logger.debug(String.format("volume snapshot tree[uuid:%s] has no leaf, delete it", snapShot.getTreeUuid()));
-                                    sql(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.uuid, snapShot.getTreeUuid()).hardDelete();
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("mark snapshot:%s as volume failed", snapShot.getUuid()));
+                                    trigger.fail(reply.getError());
+                                    return;
                                 }
-                            }
 
-                        }.execute();
-                        trigger.next();
+                                trigger.next();
+                            }
+                        });
                     }
                 });
 

@@ -3533,21 +3533,12 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class BlockCommitVolumeCmd extends AgentCommand {
+    public static class BlockCommitVolumeCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private String volumeUuid;
         private VolumeTO volume;
         private String top;
         private String base;
-        private long timeout;
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
-        }
 
         public String getVmUuid() {
             return vmUuid;

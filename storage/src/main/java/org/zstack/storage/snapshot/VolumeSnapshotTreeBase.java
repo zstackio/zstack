@@ -211,6 +211,8 @@ public class VolumeSnapshotTreeBase {
             handle((RevertVolumeFromSnapshotGroupMsg) msg);
         } else if (msg instanceof CancelDeleteVolumeSnapshotMsg) {
             handle((CancelDeleteVolumeSnapshotMsg) msg);
+        } else if (msg instanceof MarkSnapshotAsVolumeMsg) {
+            handle((MarkSnapshotAsVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -2272,6 +2274,59 @@ public class VolumeSnapshotTreeBase {
             public void fail(ErrorCode errorCode) {
                 evt.setError(errorCode);
                 bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final MarkSnapshotAsVolumeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncSignature;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                refreshVO();
+                MarkSnapshotAsVolumeReply reply = new MarkSnapshotAsVolumeReply();
+                if (!currentRoot.isLatest()) {
+                    reply.setError(operr("current snapshot:%s is not latest snapshot, cannot mark as volume", currentRoot.getUuid()));
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        sql(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                                .set(VolumeVO_.installPath, msg.getVolumePath())
+                                .set(VolumeVO_.actualSize, msg.getSize())
+                                .update();
+
+                        sql(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, msg.getSnapshotUuid())
+                                .set(VolumeSnapshotVO_.primaryStorageInstallPath, null)
+                                .set(VolumeSnapshotVO_.primaryStorageUuid, null)
+                                .update();
+
+                        if (currentRoot.getParentUuid() != null) {
+                            // reset latest
+                            sql(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, currentRoot.getParentUuid())
+                                    .set(VolumeSnapshotVO_.latest, true).update();
+                            logger.debug(String.format("reset latest snapshot of tree[uuid:%s] to snapshot[uuid:%s]",
+                                    currentRoot.getTreeUuid(), currentRoot.getParentUuid()));
+                        }
+                    }
+                }.execute();
+                cleanup();
+
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("mark-snapshot-%s-as-volume", currentRoot.getUuid());
             }
         });
     }
