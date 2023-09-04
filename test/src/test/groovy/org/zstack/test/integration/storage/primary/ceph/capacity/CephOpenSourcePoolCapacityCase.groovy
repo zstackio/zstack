@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.CephBackupStorageInventory
+import org.zstack.sdk.CephPrimaryStoragePoolInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.CephConstants
@@ -16,6 +17,9 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+
+import java.util.stream.Collector
+import java.util.stream.Collectors
 
 class CephOpenSourcePoolCapacityCase extends SubCase {
     EnvSpec env
@@ -45,6 +49,14 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
     void testReconnectPrimaryStorage() {
         PrimaryStorageInventory ps = env.inventoryByName("ceph-pri")
         CephBackupStorageInventory bs = env.inventoryByName("ceph-bk")
+        def existingPools = queryCephPrimaryStoragePool {
+            conditions=["primaryStorageUuid=${ps.uuid}".toString()]
+        } as List<CephPrimaryStoragePoolInventory>
+        existingPools = existingPools.stream().map {t -> t.getPoolName()}.collect(Collectors.toList())
+        assert existingPools.size() == 3
+
+        def otherPools = ["pool-1", "pool-2", "pool-3"]
+        def returnPools = otherPools
 
         env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)
@@ -61,7 +73,7 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
             rsp.availableCapacity = 999
             rsp.poolCapacities = [
                     new CephPoolCapacity(
-                            name : "test-pool1",
+                            name : returnPools.get(0),
                             usedCapacity: SizeUnit.GIGABYTE.toByte(10),
                             availableCapacity : SizeUnit.GIGABYTE.toByte(90),
                             totalCapacity: SizeUnit.GIGABYTE.toByte(100),
@@ -70,7 +82,7 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
                             diskUtilization: 0.33
                     ),
                     new CephPoolCapacity(
-                            name : "test-pool2",
+                            name : returnPools.get(1),
                             usedCapacity: SizeUnit.GIGABYTE.toByte(10),
                             availableCapacity : SizeUnit.GIGABYTE.toByte(90),
                             totalCapacity: SizeUnit.GIGABYTE.toByte(100),
@@ -79,7 +91,7 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
                             diskUtilization: 0.33
                     ),
                     new CephPoolCapacity(
-                            name : "test-pool3",
+                            name : returnPools.get(2),
                             usedCapacity: SizeUnit.GIGABYTE.toByte(10),
                             availableCapacity : SizeUnit.GIGABYTE.toByte(90),
                             totalCapacity: SizeUnit.GIGABYTE.toByte(100),
@@ -99,10 +111,22 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
             return rsp
         }
 
+        returnPools = otherPools
         reconnectPrimaryStorage {
             uuid = ps.uuid
         }
 
+        GetPrimaryStorageCapacityResult afterPsCapacity = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+        assert 999L == afterPsCapacity.availablePhysicalCapacity
+        assert 1000L == afterPsCapacity.totalCapacity
+        assert 1000L == afterPsCapacity.totalPhysicalCapacity
+
+        returnPools = existingPools
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
         GetPrimaryStorageCapacityResult psCapacity = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }

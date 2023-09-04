@@ -67,10 +67,15 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
             }
 
             Map<String, CephPoolCapacity> osdPoolCapacity = new HashMap<>();
+            List<String> poolsName = Q.New(CephPrimaryStoragePoolVO.class)
+                    .select(CephPrimaryStoragePoolVO_.poolName)
+                    .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, cephPs.getUuid())
+                    .listValues();
             for (CephPoolCapacity poolCapacitiy : poolCapacities) {
-                if (poolCapacitiy.getRelatedOsdCapacity() == null) {
+                if (poolCapacitiy.getRelatedOsdCapacity() == null || !poolsName.contains(poolCapacitiy.getName())) {
                     continue;
                 }
+
                 Map<String, CephPoolCapacity> osdPoolCap = poolCapacitiy.getRelatedOsdCapacity().keySet().stream()
                         .collect(Collectors.toMap(osdName -> osdName, osdName -> {
                             if (!osdPoolCapacity.containsKey(osdName)) {
