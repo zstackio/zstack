@@ -1293,7 +1293,16 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {}
 
     @Override
+    public void afterInstantiateVolumeForNewCreatedVm(VmInstanceInventory vm, VolumeInventory volume) {
+        updateVolumeInfo(vm, volume);
+    }
+
+    @Override
     public void afterAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        updateVolumeInfo(vm, volume);
+    }
+
+    private void updateVolumeInfo(VmInstanceInventory vm, VolumeInventory volume) {
         String format = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid()).select(VolumeVO_.format).findValue();
         SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
                 .set(VolumeVO_.vmInstanceUuid, volume.isShareable() ? null : vm.getUuid())
