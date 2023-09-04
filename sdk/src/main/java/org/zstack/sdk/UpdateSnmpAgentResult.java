@@ -1,13 +1,13 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.SnmpAgentConfigInventory;
+import org.zstack.sdk.SnmpAgentInventory;
 
 public class UpdateSnmpAgentResult {
-    public SnmpAgentConfigInventory inventory;
-    public void setInventory(SnmpAgentConfigInventory inventory) {
+    public SnmpAgentInventory inventory;
+    public void setInventory(SnmpAgentInventory inventory) {
         this.inventory = inventory;
     }
-    public SnmpAgentConfigInventory getInventory() {
+    public SnmpAgentInventory getInventory() {
         return this.inventory;
     }
 

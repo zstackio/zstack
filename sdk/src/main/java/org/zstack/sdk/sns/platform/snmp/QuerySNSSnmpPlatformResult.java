@@ -2,7 +2,7 @@ package org.zstack.sdk.sns.platform.snmp;
 
 
 
-public class QuerySNSSnmpTrapReceiverResult {
+public class QuerySNSSnmpPlatformResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
         this.inventories = inventories;

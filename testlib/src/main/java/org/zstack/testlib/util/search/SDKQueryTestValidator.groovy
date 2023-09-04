@@ -4,6 +4,7 @@ import junit.framework.Assert
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.query.QueryOp
 import org.zstack.header.query.Unqueryable
+import org.zstack.header.rest.APINoSee
 import org.zstack.sdk.QueryAction
 import org.zstack.testlib.Test
 import org.zstack.utils.FieldUtils
@@ -32,7 +33,11 @@ class SDKQueryTestValidator {
                 continue
             }
 
-            ret.add(f) 
+            if (f.isAnnotationPresent(APINoSee.class)) {
+                continue
+            }
+
+            ret.add(f)
         }
 
         return ret 

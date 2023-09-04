@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.snmp;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QuerySNSSnmpTrapReceiverAction extends QueryAction {
+public class QuerySnmpAgentAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QuerySNSSnmpTrapReceiverAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpTrapReceiverResult value;
+        public org.zstack.sdk.QuerySnmpAgentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QuerySNSSnmpTrapReceiverAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpTrapReceiverResult value = res.getResult(org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpTrapReceiverResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpTrapReceiverResult() : value; 
+        org.zstack.sdk.QuerySnmpAgentResult value = res.getResult(org.zstack.sdk.QuerySnmpAgentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySnmpAgentResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QuerySNSSnmpTrapReceiverAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/sns/application-endpoints/snmp/trap-receiver";
+        info.path = "/snmp/agent";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

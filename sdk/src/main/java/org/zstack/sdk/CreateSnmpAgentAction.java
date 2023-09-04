@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.snmp;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteSnmpTrapReceiverAction extends AbstractAction {
+public class CreateSnmpAgentAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteSnmpTrapReceiverAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.snmp.DeleteSnmpTrapReceiverResult value;
+        public org.zstack.sdk.CreateSnmpAgentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,35 @@ public class DeleteSnmpTrapReceiverAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, validValues = {"v2c","v3"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String version;
+
+    @Param(required = false, maxLength = 32, minLength = 1, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String readCommunity;
+
+    @Param(required = false, maxLength = 32, minLength = 1, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String userName;
+
+    @Param(required = false, validValues = {"MD5","SHA","SHA224","SHA256","SHA384","SHA512"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String authAlgorithm;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String authPassword;
+
+    @Param(required = false, validValues = {"DES","AES128","AES192","AES256","3DES"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String privacyAlgorithm;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String privacyPassword;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,65535L}, noTrim = false)
+    public int port = 0;
+
     @Param(required = false)
-    public java.lang.String uuid;
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +87,8 @@ public class DeleteSnmpTrapReceiverAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.snmp.DeleteSnmpTrapReceiverResult value = res.getResult(org.zstack.sdk.sns.platform.snmp.DeleteSnmpTrapReceiverResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.snmp.DeleteSnmpTrapReceiverResult() : value; 
+        org.zstack.sdk.CreateSnmpAgentResult value = res.getResult(org.zstack.sdk.CreateSnmpAgentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateSnmpAgentResult() : value; 
 
         return ret;
     }
@@ -90,11 +117,11 @@ public class DeleteSnmpTrapReceiverAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sns/application-endpoints/snmp/trap-receiver";
+        info.httpMethod = "POST";
+        info.path = "/snmp/agent";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "deleteSnmpTrapReceiver";
+        info.parameterName = "params";
         return info;
     }
 
