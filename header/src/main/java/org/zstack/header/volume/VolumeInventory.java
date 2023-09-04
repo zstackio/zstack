@@ -311,10 +311,6 @@ public class VolumeInventory implements Serializable {
         this.size = size;
     }
 
-    public void setSize(Long size) {
-        this.size = size;
-    }
-
     public boolean isAttached() {
         if (attachedJudgers.isEmpty()) {
             return vmInstanceUuid != null;
