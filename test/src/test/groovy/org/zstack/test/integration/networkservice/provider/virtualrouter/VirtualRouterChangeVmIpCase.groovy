@@ -477,7 +477,7 @@ class VirtualRouterChangeVmIpCase extends SubCase {
             assert addDhcpEntryCmd.dhcpEntries.get(0).ip == ip2
 
             assert cmd != null
-            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
+            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_DELETE_CHAIN
         }
     }
 }

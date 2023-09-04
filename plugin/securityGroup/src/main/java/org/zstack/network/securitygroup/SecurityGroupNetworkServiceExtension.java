@@ -45,7 +45,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
     private List<String> syncSystemTagToVmNicSecurityGroup(String vmUuid) {
         final List<String> sgUuids = new ArrayList<>();
         List<String> tags = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vmUuid);
-        List<VmNicSecurityGroupRefVO> refVOS = new ArrayList<>();
+
         for (String tag : tags) {
             Map<String, String> tokens = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTokensByTag(tag);
             String l3Uuid = tokens.get(VmSystemTags.L3_UUID_TOKEN);
@@ -57,23 +57,37 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                     .eq(VmNicVO_.vmInstanceUuid, vmUuid)
                     .select(VmNicVO_.uuid)
                     .findValue();
-            for (String securityGroupUuid : securityGroupUuids) {
-                if (!Q.New(VmNicSecurityGroupRefVO.class)
-                        .eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuid)
-                        .eq(VmNicSecurityGroupRefVO_.securityGroupUuid, securityGroupUuid)
-                        .eq(VmNicSecurityGroupRefVO_.vmInstanceUuid, vmUuid)
-                        .isExists()) {
+            List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuid).eq(VmNicSecurityGroupRefVO_.vmInstanceUuid, vmUuid).list();
+            List<VmNicSecurityGroupRefVO> toCreate = new ArrayList<>();
+            for (String sgUuid : securityGroupUuids) {
+                refs.stream().filter(ref -> ref.getSecurityGroupUuid().equals(sgUuid)).findAny().orElseGet(() -> {
                     VmNicSecurityGroupRefVO refVO = new VmNicSecurityGroupRefVO();
                     refVO.setUuid(Platform.getUuid());
-                    refVO.setSecurityGroupUuid(securityGroupUuid);
+                    refVO.setSecurityGroupUuid(sgUuid);
                     refVO.setVmInstanceUuid(vmUuid);
                     refVO.setVmNicUuid(vmNicUuid);
-                    refVOS.add(refVO);
+                    toCreate.add(refVO);
+                    return refVO;
+                });
+            }
+            if (!toCreate.isEmpty()) {
+                toCreate.stream().forEach(ref -> {
+                    ref.setPriority(refs.size() + toCreate.indexOf(ref) + 1);
+                });
+
+                dbf.persistCollection(toCreate);
+
+                if (!Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, vmNicUuid).isExists()) {
+                    VmNicSecurityPolicyVO policyVO = new VmNicSecurityPolicyVO();
+                    policyVO.setUuid(Platform.getUuid());
+                    policyVO.setVmNicUuid(vmNicUuid);
+                    policyVO.setIngressPolicy(VmNicSecurityPolicy.DENY.toString());
+                    policyVO.setEgressPolicy(VmNicSecurityPolicy.ALLOW.toString());
+                    dbf.persist(policyVO);
                 }
             }
         }
 
-        dbf.persistCollection(refVOS);
         VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(vmUuid);
         return sgUuids.stream().distinct().collect(Collectors.toList());
     }
@@ -133,6 +147,11 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 if (servedVm.getCurrentVmOperation() == VmInstanceConstant.VmOperation.DetachNic) {
                     for (VmNicInventory nic: servedVm.getDestNics()) {
                         deleteVmNicSecurityGroupRef(nic.getUuid());
+                    }
+                }
+                if (servedVm.getCurrentVmOperation() == VmInstanceConstant.VmOperation.ChangeNicNetwork) {
+                    for (String nicUuid : uuids) {
+                        deleteVmNicSecurityGroupRef(nicUuid);
                     }
                 }
 

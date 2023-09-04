@@ -1316,15 +1316,21 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
                         evt.setError(reply.getError());
+                    } else {
+                        detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
+                        SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+                        evt.setInventory(SecurityGroupInventory.valueOf(vo));
                     }
+
+                    bus.publish(evt);
                 }
             });
+        } else {
+            detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
+            SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+            evt.setInventory(SecurityGroupInventory.valueOf(vo));
+            bus.publish(evt);
         }
-
-        detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
-        SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-        evt.setInventory(SecurityGroupInventory.valueOf(vo));
-        bus.publish(evt);
     }
 
     private void handle(APIChangeSecurityGroupStateMsg msg) {

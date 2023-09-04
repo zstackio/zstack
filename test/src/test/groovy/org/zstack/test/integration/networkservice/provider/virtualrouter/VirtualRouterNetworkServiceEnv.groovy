@@ -657,6 +657,32 @@ class VirtualRouterNetworkServiceEnv {
                     }
 
                     l3Network {
+                        name = "l3-2"
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        service {
+                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
+                            types = [NetworkServiceType.DHCP.toString(),
+                                     NetworkServiceType.DNS.toString(),
+                                     NetworkServiceType.SNAT.toString(),
+                                     PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE,
+                                     LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING,
+                                     EipConstant.EIP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            startIp = "192.168.200.10"
+                            endIp = "192.168.200.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.200.1"
+                        }
+                    }
+
+                    l3Network {
                         name = "pubL3"
 
                         ip {

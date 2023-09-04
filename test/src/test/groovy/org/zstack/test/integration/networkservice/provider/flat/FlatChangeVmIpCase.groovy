@@ -3,7 +3,8 @@ package org.zstack.test.integration.networkservice.provider.flat
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.SimpleQuery
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.network.service.flat.BridgeNameFinder
@@ -18,6 +19,8 @@ import org.zstack.header.network.service.NetworkServiceProviderVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType
 import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
+import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
 import org.zstack.network.securitygroup.VmNicSecurityTO
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
@@ -209,6 +212,68 @@ class FlatChangeVmIpCase extends SubCase{
             testEipWhenChangeIp()
             testUpdateNicWhenChangeL3()
             testUserdataWhenChangeIp()
+            testChangeL3NetworkWithSecurityGroup()
+        }
+    }
+
+    void testChangeL3NetworkWithSecurityGroup() {
+        L3NetworkInventory flat_l3 = env.inventoryByName("flatL3")
+        L3NetworkInventory pub_l3 = env.inventoryByName("pubL3")
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-flat-change-l3"
+            imageUuid = env.inventoryByName("image1").uuid
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            l3NetworkUuids = [flat_l3.uuid]
+        }
+
+        def sg = createSecurityGroup {
+            name = "vm-test-security-group"
+            ipVersion = 4
+        } as SecurityGroupInventory
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg.uuid
+            l3NetworkUuid = flat_l3.uuid
+        }
+        KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
+        env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+
+            return rsp
+        }
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg.uuid
+            vmNicUuids = [vm.vmNics[0].uuid]
+        }
+
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm.vmNics[0].uuid).list()
+        assert refs.size() == 1
+        assert refs.find {it.securityGroupUuid == sg.uuid}.priority == 1
+
+        retryInSecs {
+            assert cmd != null
+            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
+        }
+
+        cmd = null
+        List<FreeIpInventory> freeIp4s = getFreeIp {
+            l3NetworkUuid = pub_l3.uuid
+            ipVersion = IPv6Constants.IPv4
+        }
+        String ip2 = freeIp4s.get(0).getIp()
+        changeVmNicNetwork {
+            vmNicUuid = vm.vmNics[0].uuid
+            destL3NetworkUuid = pub_l3.uuid
+            systemTags = [String.format("staticIp::%s::%s", pub_l3.uuid, ip2)]
+        }
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm.vmNics[0].uuid).list()
+        assert refs.size() == 0
+
+        retryInSecs {
+            assert cmd != null
+            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_DELETE_CHAIN
         }
     }
 
@@ -219,7 +284,6 @@ class FlatChangeVmIpCase extends SubCase{
             imageUuid = env.inventoryByName("image1").uuid
             instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
             l3NetworkUuids = [flat_l3.uuid]
-            systemTags = [VmSystemTags.USERDATA.instantiateTag([(VmSystemTags.USERDATA_TOKEN): new String(Base64.getEncoder().encode(userdata.getBytes()))])]
         }
         VmNicInventory vmNic = vm.getVmNics().get(0)
         VmNicVO vmNicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
@@ -384,7 +448,7 @@ class FlatChangeVmIpCase extends SubCase{
             assert applyUserdataCmd.userdata.bridgeName == new BridgeNameFinder().findByL3Uuid(pub_l3.uuid)
 
             assert cmd != null
-            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
+            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_DELETE_CHAIN
         }
     }
 
