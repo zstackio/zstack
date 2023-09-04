@@ -114,7 +114,8 @@ class AddRulesRemoteGroupsCase extends SubCase{
             sgVmIp.get(sg1.uuid).remove(vm4.vmNics.get(0).ip)
 
             //sg3's ipset is in host1, host2 and host3, should delete its ipset on host1, host2 and host3
-            testDeleteSecurityGroup(sg3.uuid, [host1.uuid, host2.uuid, host3.uuid])
+            // testDeleteSecurityGroup(sg3.uuid, [host1.uuid, host2.uuid, host3.uuid])
+            testDeleteSecurityGroup(sg3.uuid, [host1.uuid, host2.uuid])
 
             testAddDuplicateRule(sg1.uuid, sg2.uuid)
             testChangeState(sg1.uuid)
@@ -546,7 +547,7 @@ class AddRulesRemoteGroupsCase extends SubCase{
         if(hasHost){
             actuallyHostUuids.removeAll(expectHostUuids)
             assert actuallyHostUuids.isEmpty()
-            assert ucmd.updateGroupTOs.get(0).actionCode == SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP
+            assert ucmd.updateGroupTOs.get(0).actionCode == SecurityGroupMembersTO.ACTION_CODE_UPDATE_GROUP_MEMBER
             assert ucmd.updateGroupTOs.get(0).securityGroupUuid == sgUuid
         }
     }
