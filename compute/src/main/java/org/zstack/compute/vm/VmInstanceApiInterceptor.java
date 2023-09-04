@@ -1160,6 +1160,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 err += Platform.missingVariables("architecture");
             }
 
+            if (msg.getRootDiskOfferingUuid() == null && msg.getRootDiskSize() == null) {
+                err += "rootDiskOfferingUuid or rootDiskSize cannot be all null";
+            }
+
             if (!err.isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr(String.format("when imageUuid is null, %s", err)));
             }
