@@ -106,6 +106,8 @@
 
         <Logger name="org.zstack.query" level="TRACE" />
 
+        <Logger name="org.zstack.compute.vm" level="TRACE" />
+
         <Logger name="org.zstack.compute.allocator" level="TRACE" />
 
         <Logger name="org.zstack.storage.primary" level="TRACE" />
