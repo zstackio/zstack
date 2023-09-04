@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -57,7 +58,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory destHost = spec.getDestHost();
-        final ImageInventory iminv = spec.getImageSpec().getInventory();
 
         // allocate ps for root volume
         AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
@@ -119,7 +119,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                         volumeSpec.setAllocatedInstallUrl(ar.getAllocatedInstallUrl());
                         volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
                         volumeSpec.setSize(ar.getSize());
-                        volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
+                        volumeSpec.setType(PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(msg.getPurpose()) ?
+                                VolumeType.Root.toString() : VolumeType.Data.toString());
                         volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
                         if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
                             volumeSpec.setTags(spec.getRootVolumeSystemTags());
