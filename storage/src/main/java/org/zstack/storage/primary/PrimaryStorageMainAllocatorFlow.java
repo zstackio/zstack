@@ -180,6 +180,10 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
 
     @Transactional(readOnly = true)
     private Collection<? extends PrimaryStorageVO> considerImageCache(PrimaryStorageAllocationSpec spec, List<PrimaryStorageVO> vos) {
+        if (spec.getImageUuid() == null) {
+            return vos;
+        }
+
         List<PrimaryStorageVO> res = new ArrayList<>();
         if (vos.isEmpty()) {
             return res;
