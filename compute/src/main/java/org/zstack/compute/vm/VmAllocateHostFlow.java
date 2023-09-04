@@ -62,7 +62,7 @@ public class VmAllocateHostFlow implements Flow {
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
         ImageInventory image = spec.getImageSpec().getInventory();
         long diskSize;
-        if (image.getMediaType() != null && image.getMediaType().equals(ImageMediaType.ISO.toString())) {
+        if (image == null || (image.getMediaType() != null && image.getMediaType().equals(ImageMediaType.ISO.toString()))) {
             DiskOfferingVO dvo = dbf.findByUuid(spec.getRootDiskOffering().getUuid(), DiskOfferingVO.class);
             diskSize = dvo.getDiskSize();
             diskOfferings.add(DiskOfferingInventory.valueOf(dvo));
