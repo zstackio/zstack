@@ -25,4 +25,9 @@
         <id>1004</id>
         <description>Request refused</description>
     </code>
+
+    <code>
+        <id>1005</id>
+        <description>State is disabled</description>
+    </code>
 </error>

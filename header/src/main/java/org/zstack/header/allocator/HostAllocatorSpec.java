@@ -34,6 +34,15 @@ public class HostAllocatorSpec {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+    private String allowMinSecurityLevel;
+
+    public String getAllowMinSecurityLevel() {
+        return allowMinSecurityLevel;
+    }
+
+    public void setAllowMinSecurityLevel(String allowMinSecurityLevel) {
+        this.allowMinSecurityLevel = allowMinSecurityLevel;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -236,6 +245,7 @@ public class HostAllocatorSpec {
         spec.setRequiredPrimaryStorageUuids(msg.getRequiredPrimaryStorageUuids());
         spec.setAllocationScene(msg.getAllocationScene());
         spec.setArchitecture(msg.getArchitecture());
+        spec.setAllowMinSecurityLevel("3");
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
         }

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.compute.vm.VmSchedHistoryRecorder;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -20,6 +21,10 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
+import org.zstack.core.singleflight.TaskSingleFlight;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.agent.versioncontrol.AgentVersionVO;
@@ -94,6 +99,9 @@ public abstract class HostBase extends AbstractHost {
     protected EventFacade evtf;
     @Autowired
     protected HostMaintenancePolicyManager hostMaintenancePolicyMgr;
+    @Autowired
+    @Qualifier("HostSingleFlight")
+    protected TaskSingleFlight<String, ConnectHostReply> singleFlight;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;

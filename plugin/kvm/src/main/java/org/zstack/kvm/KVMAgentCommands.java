@@ -394,6 +394,7 @@ public class KVMAgentCommands {
         private String ipmiAddress;
         private String powerSupplyMaxPowerCapacity;
         private String hostCpuModelName;
+        private String hostname;
         private String systemProductName;
         private String systemSerialNumber;
         private String cpuCache;
@@ -534,6 +535,14 @@ public class KVMAgentCommands {
 
         public void setHostCpuModelName (String hostCpuModelName) {
             this.hostCpuModelName = hostCpuModelName;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
         }
 
         public String getSystemProductName() {
@@ -2871,10 +2880,12 @@ public class KVMAgentCommands {
         private String storageMigrationPolicy;
         private String srcHostIp;
         private boolean useNuma;
+        private boolean useTls;
         private boolean migrateFromDestination;
         private boolean autoConverge;
         private boolean xbzrle;
         private List<String> vdpaPaths;
+        private Long timeout; // in seconds
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
 
         public boolean isUseNuma() {
@@ -2955,6 +2966,22 @@ public class KVMAgentCommands {
 
         public void setDisks(Map<String, VolumeTO> disks) {
             this.disks = disks;
+        }
+
+        public boolean isUseTls() {
+            return useTls;
+        }
+
+        public void setUseTls(boolean useTls) {
+            this.useTls = useTls;
+        }
+
+        public Long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(Long timeout) {
+            this.timeout = timeout;
         }
 
         public String getDestHostManagementIp() {
@@ -3546,4 +3573,13 @@ public class KVMAgentCommands {
             this.status = status;
         }
     }
+
+    public static class ConfirmVerificationFilesCommand extends AgentCommand {
+        public List<String> patterns;
+    }
+
+    public static class ConfirmVerificationFilesResponse extends AgentResponse {
+        public List<String> paths;
+    }
+
 }

@@ -370,6 +370,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>block-primary-storage</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>sdk</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -426,6 +431,16 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>iam2-ldap-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>iam2-rms-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>soc-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -526,6 +541,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>authentication</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>slb</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -549,6 +569,89 @@
                     <artifactId>ovf</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>security-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>storage-encrypt-gateway</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>sugon</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-war-plugin</artifactId>
+                        <version>2.3</version>
+                        <configuration>
+                            <packagingExcludes>
+                                WEB-INF/lib/maven*.jar,
+                                WEB-INF/lib/plexus*.jar,
+                                WEB-INF/lib/cvsclient*.jar,
+                                WEB-INF/lib/classworlds*.jar,
+                                WEB-INF/lib/junit*.jar,
+                                WEB-INF/lib/regexp*.jar,
+                                WEB-INF/lib/jtidy*.jar,
+                                WEB-INF/lib/servlet-api*.jar,
+                                WEB-INF/lib/c3p0-0.9.1.1.jar,
+                                WEB-INF/lib/reflections-0.9.8.jar,
+                                WEB-INF/lib/groovy-2.4.7.jar,
+                                WEB-INF/lib/okhttp-2.7.5.jar,
+                                WEB-INF/lib/sisu-guava-0.9.9.jar,
+                            </packagingExcludes>
+                            <webResources>
+                                <resource>
+                                    <directory>../conf</directory>
+                                    <targetPath>WEB-INF/classes</targetPath>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>zstack.xml</exclude>
+                                        <exclude>persistence.xml</exclude>
+                                        <exclude>springConfigXml/localStorage.xml</exclude>
+                                        <exclude>springConfigXml/HostAllocatorManager.xml</exclude>
+                                        <exclude>springConfigXml/NfsPrimaryStorage.xml</exclude>
+                                        <exclude>springConfigXml/sharedMountPointPrimaryStorage.xml</exclude>
+                                        <exclude>springConfigXml/ceph.xml</exclude>
+                                        <exclude>springConfigXml/AccountManager.xml</exclude>
+                                        <exclude>serviceConfig/metadata.xml</exclude>
+                                        <exclude>searchConfig/indexConfig.xml</exclude>
+                                        <exclude>springConfigXml/resourceConfig.xml</exclude>
+                                    </excludes>
+                                </resource>
+                                <resource>
+                                    <directory>../conf</directory>
+                                    <targetPath>WEB-INF/</targetPath>
+                                    <includes>
+                                        <include>urlrewrite.xml</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>../sugon/conf</directory>
+                                    <targetPath>WEB-INF/classes</targetPath>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>.</directory>
+                                    <targetPath>META-INF/</targetPath>
+                                    <includes>
+                                        <include>context.xml</include>
+                                    </includes>
+                                </resource>
+                            </webResources>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
             </dependencies>
         </profile>
     </profiles>
@@ -762,6 +865,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>longjob</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>authentication</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

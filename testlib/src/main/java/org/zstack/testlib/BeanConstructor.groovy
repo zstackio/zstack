@@ -35,6 +35,7 @@ class BeanConstructor {
             "rest.xml",
             "eventlog.xml",
             "Progress.xml",
+            "FileVerificationFacade.xml",
             "externalService.xml"
     ]
 

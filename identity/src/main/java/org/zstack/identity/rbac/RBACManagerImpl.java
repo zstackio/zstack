@@ -149,6 +149,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 vo.setDescription(msg.getDescription());
                 vo.setType(RoleType.Customized);
                 vo.setIdentity(msg.getIdentity());
+                vo.setRootUuid(msg.getRootUuid());
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
 
                 if (msg.getIdentity() == null) {

@@ -152,6 +152,7 @@
         <class>org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO</class>
         <class>org.zstack.header.core.progress.TaskProgressVO</class>
         <class>org.zstack.header.vo.ResourceVO</class>
+        <class>org.zstack.header.vo.SecurityLevelResourceRefVO</class>
         <class>org.zstack.header.core.webhooks.WebhookVO</class>
         <class>org.zstack.header.longjob.LongJobVO</class>
         <class>org.zstack.header.identity.role.RoleAccountRefVO</class>
@@ -177,5 +178,6 @@
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
         <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
+        <class>org.zstack.authentication.checkfile.FileVerificationVO</class>
     </persistence-unit>
 </persistence>

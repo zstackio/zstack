@@ -18,6 +18,7 @@ public class SourceClassMap {
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVSwitchInventory", "org.zstack.sdk.AliyunProxyVSwitchInventory");
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVpcInventory", "org.zstack.sdk.AliyunProxyVpcInventory");
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
+			put("org.zstack.authentication.checkfile.FileVerificationInventory", "org.zstack.sdk.FileVerificationInventory");
 			put("org.zstack.autoscaling.group.AutoScalingGroupInventory", "org.zstack.sdk.AutoScalingGroupInventory");
 			put("org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory", "org.zstack.sdk.AutoScalingGroupActivityInventory");
 			put("org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory", "org.zstack.sdk.AutoScalingGroupInstanceInventory");
@@ -117,6 +118,8 @@ public class SourceClassMap {
 			put("org.zstack.externalbackup.zbox.ZBoxVmBackupInfo", "org.zstack.sdk.ZBoxVmBackupInfo");
 			put("org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo", "org.zstack.sdk.ZBoxVolumeBackupInfo");
 			put("org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory", "org.zstack.sdk.FaultToleranceVmGroupInventory");
+			put("org.zstack.gateway.encrypt.storage.entity.StorageEncryptGatewayInventory", "org.zstack.sdk.StorageEncryptGatewayInventory");
+			put("org.zstack.gateway.encrypt.storage.entity.StorageEncryptGatewayPrimaryStorageRefInventory", "org.zstack.sdk.StorageEncryptGatewayPrimaryStorageRefInventory");
 			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.GuestToolsInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
@@ -324,6 +327,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory", "org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory");
 			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory", "org.zstack.sdk.VmInstanceDeviceAddressGroupInventory");
 			put("org.zstack.header.vo.ResourceInventory", "org.zstack.sdk.ResourceInventory");
+			put("org.zstack.header.vo.SecurityLevelResourceRefInventory", "org.zstack.sdk.SecurityLevelResourceRefInventory");
 			put("org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct", "org.zstack.sdk.VolumeFormatReplyStruct");
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
 			put("org.zstack.header.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
@@ -341,6 +345,7 @@ public class SourceClassMap {
 			put("org.zstack.iam2.api.Attribute", "org.zstack.sdk.iam2.api.Attribute");
 			put("org.zstack.iam2.api.ErrorResult", "org.zstack.sdk.iam2.api.ErrorResult");
 			put("org.zstack.iam2.entity.AttributeType", "org.zstack.sdk.iam2.entity.AttributeType");
+			put("org.zstack.iam2.entity.ClusterIAM2ProjectRefInventory", "org.zstack.sdk.iam2.entity.ClusterIAM2ProjectRefInventory");
 			put("org.zstack.iam2.entity.IAM2AttributeInventory", "org.zstack.sdk.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.iam2.entity.IAM2OrganizationAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2OrganizationInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationInventory");
@@ -354,6 +359,7 @@ public class SourceClassMap {
 			put("org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2VirtualIDGroupInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupInventory");
 			put("org.zstack.iam2.entity.IAM2VirtualIDInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDInventory");
+			put("org.zstack.iam2.entity.IAM2VirtualIDResourceRefInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDResourceRefInventory");
 			put("org.zstack.iam2.entity.OrganizationType", "org.zstack.sdk.iam2.entity.OrganizationType");
 			put("org.zstack.iam2.entity.ProjectState", "org.zstack.sdk.iam2.entity.ProjectState");
 			put("org.zstack.iam2.entity.State", "org.zstack.sdk.iam2.entity.State");
@@ -515,6 +521,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
 			put("org.zstack.storage.device.localRaid.RunningState", "org.zstack.sdk.RunningState");
 			put("org.zstack.storage.device.localRaid.SmartDataStruct", "org.zstack.sdk.SmartDataStruct");
+			put("org.zstack.storage.primary.block.BlockPrimaryStorageInventory", "org.zstack.sdk.BlockPrimaryStorageInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
 			put("org.zstack.storage.primary.local.LocalStorageResourceRefInventory", "org.zstack.sdk.LocalStorageResourceRefInventory");
 			put("org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory", "org.zstack.sdk.MiniStorageHostRefInventory");
@@ -728,6 +735,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BaremetalVlanNicInventory", "org.zstack.header.baremetal.network.BaremetalVlanNicInventory");
 			put("org.zstack.sdk.BatchDeleteVolumeSnapshotStruct", "org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
+			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BuildAppExportHistoryInventory", "org.zstack.header.buildapp.BuildAppExportHistoryInventory");
 			put("org.zstack.sdk.BuildApplicationInventory", "org.zstack.header.buildapp.BuildApplicationInventory");
 			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");
@@ -797,6 +805,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
+			put("org.zstack.sdk.FileVerificationInventory", "org.zstack.authentication.checkfile.FileVerificationInventory");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
 			put("org.zstack.sdk.FlowCollectorInventory", "org.zstack.header.flowMeter.FlowCollectorInventory");
 			put("org.zstack.sdk.FlowCounter", "org.zstack.header.flowMeter.FlowCounter");
@@ -1027,6 +1036,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
+			put("org.zstack.sdk.SecurityLevelResourceRefInventory", "org.zstack.header.vo.SecurityLevelResourceRefInventory");
 			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.header.securitymachine.SecurityMachineInventory");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SessionStatus", "org.zstack.header.portMirror.SessionStatus");
@@ -1059,6 +1069,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SpendingDetails", "org.zstack.billing.SpendingDetails");
 			put("org.zstack.sdk.StackParameters", "org.zstack.header.cloudformation.StackParameters");
 			put("org.zstack.sdk.StackTemplateInventory", "org.zstack.header.cloudformation.StackTemplateInventory");
+			put("org.zstack.sdk.StorageEncryptGatewayInventory", "org.zstack.gateway.encrypt.storage.entity.StorageEncryptGatewayInventory");
+			put("org.zstack.sdk.StorageEncryptGatewayPrimaryStorageRefInventory", "org.zstack.gateway.encrypt.storage.entity.StorageEncryptGatewayPrimaryStorageRefInventory");
 			put("org.zstack.sdk.SupportedResourceStruct", "org.zstack.header.cloudformation.SupportedResourceStruct");
 			put("org.zstack.sdk.SyncBackupResult", "org.zstack.header.storage.backup.SyncBackupResult");
 			put("org.zstack.sdk.SystemTagInventory", "org.zstack.header.tag.SystemTagInventory");
@@ -1180,6 +1192,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.api.ErrorResult", "org.zstack.iam2.api.ErrorResult");
 			put("org.zstack.sdk.iam2.api.Permission", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionReply$Permission");
 			put("org.zstack.sdk.iam2.entity.AttributeType", "org.zstack.iam2.entity.AttributeType");
+			put("org.zstack.sdk.iam2.entity.ClusterIAM2ProjectRefInventory", "org.zstack.iam2.entity.ClusterIAM2ProjectRefInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2AttributeInventory", "org.zstack.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2OrganizationAttributeInventory", "org.zstack.iam2.entity.IAM2OrganizationAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2OrganizationInventory", "org.zstack.iam2.entity.IAM2OrganizationInventory");
@@ -1193,6 +1206,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupAttributeInventory", "org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupInventory", "org.zstack.iam2.entity.IAM2VirtualIDGroupInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDInventory", "org.zstack.iam2.entity.IAM2VirtualIDInventory");
+			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDResourceRefInventory", "org.zstack.iam2.entity.IAM2VirtualIDResourceRefInventory");
 			put("org.zstack.sdk.iam2.entity.OrganizationType", "org.zstack.iam2.entity.OrganizationType");
 			put("org.zstack.sdk.iam2.entity.ProjectState", "org.zstack.iam2.entity.ProjectState");
 			put("org.zstack.sdk.iam2.entity.State", "org.zstack.iam2.entity.State");
