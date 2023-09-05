@@ -851,7 +851,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
-        List<String> validPersistenceValues = Arrays.asList("disable", "enable");
+        List<String> validPersistenceValues = Arrays.asList("disable", "iphash", "insert", "rewrite");
         if (seessionPersistence != null && !validPersistenceValues.contains(seessionPersistence)) {
             throw new ApiMessageInterceptionException(argerr("invalid session persistence status [%s], it only support %s", seessionPersistence, validPersistenceValues));
         }
