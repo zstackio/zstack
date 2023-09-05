@@ -93,6 +93,8 @@ public interface VmInstanceDeviceManager {
      */
     List<VmInstanceDeviceAddressVO> revertDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid);
 
+    List<VmInstanceDeviceAddressVO> revertExistingDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid);
+
 
     List<VmInstanceDeviceAddressVO> revertRequestedDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid, List<String> needRevertResourceUuidList);
     /**
