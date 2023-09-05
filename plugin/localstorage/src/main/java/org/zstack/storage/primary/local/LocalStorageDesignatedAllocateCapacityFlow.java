@@ -150,7 +150,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
 
         AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        if (spec.getImageSpec() != null) {
+        if (spec.getImageSpec() != null && spec.getImageSpec().getInventory() != null) {
             rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
         }
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
