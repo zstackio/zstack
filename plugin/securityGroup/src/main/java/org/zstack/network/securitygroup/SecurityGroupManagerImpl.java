@@ -990,27 +990,99 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         });
     }
 
+    private void doChangeSecurityGroupRuleState(APIChangeSecurityGroupRuleStateMsg msg, Completion completion) {
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.setName(String.format("change-security-group-%s-rule-state", msg.getSecurityGroupUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "change-security-group-rule-state-in-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+
+                        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
+                                .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
+                                .in(SecurityGroupRuleVO_.uuid, msg.getRuleUuids())
+                                .list();
+
+                        rvos.forEach(rvo -> {
+                            rvo.setState(SecurityGroupRuleState.valueOf(msg.getState()));
+                        });
+                        dbf.updateCollection(rvos);
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-rules-on-hosts";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        cal.securityGroupUuids = asList(msg.getSecurityGroupUuid());
+                        List<HostRuleTO> htos = cal.calculate();
+                        applyRules(htos);
+
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+
+            }
+        }).start();
+    }
+
     private void handle(APIChangeSecurityGroupRuleStateMsg msg) {
-        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
-                .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
-                .in(SecurityGroupRuleVO_.uuid, msg.getRuleUuids())
-                .list();
-
-        rvos.forEach(rvo -> {
-            rvo.setState(SecurityGroupRuleState.valueOf(msg.getState()));
-        });
-        dbf.updateCollection(rvos);
-        sgvo = dbf.reload(sgvo);
-
-        RuleCalculator cal = new RuleCalculator();
-        cal.securityGroupUuids = asList(msg.getSecurityGroupUuid());
-        List<HostRuleTO> htos = cal.calculate();
-        applyRules(htos);
-        
         APIChangeSecurityGroupRuleStateEvent evt = new APIChangeSecurityGroupRuleStateEvent(msg.getId());
-        evt.setInventory(SecurityGroupInventory.valueOf(sgvo));
-        bus.publish(evt);
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doChangeSecurityGroupRuleState(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+                        evt.setInventory(SecurityGroupInventory.valueOf(vo));
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-security-group-%s-rule-state", msg.getSecurityGroupUuid());
+            }
+        });
     }
 
     private void handle(APIChangeVmNicSecurityPolicyMsg msg) {
@@ -1035,42 +1107,111 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         bus.publish(evt);
     }
 
-    private void handle(APIUpdateSecurityGroupRulePriorityMsg msg) {
+    private void doUpdateSecurityGroupRulePriority(APIUpdateSecurityGroupRulePriorityMsg msg, Completion completion) {
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.setName(String.format("update-security-group-%s-rule-priority", msg.getSecurityGroupUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-security-group-rule-in-db";
 
-        SecurityGroupVO sgvo = doUpdateSecurityGroupRulePriority(msg.getSecurityGroupUuid(), msg.getType(), msg.getRules());
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
 
-        RuleCalculator cal = new RuleCalculator();
-        cal.securityGroupUuids = asList(msg.getSecurityGroupUuid());
-        cal.vmStates = asList(VmInstanceState.Running);
-        List<HostRuleTO> rhtos = cal.calculate();
-        applyRules(rhtos);
+                        List<SecurityGroupRuleVO> toUpdate = new ArrayList<SecurityGroupRuleVO>();
 
-        APIUpdateSecurityGroupRulePriorityEvent evt = new APIUpdateSecurityGroupRulePriorityEvent(msg.getId());
-        evt.setInventory(SecurityGroupInventory.valueOf(sgvo));
-        bus.publish(evt);
+                        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
+                                .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
+                                .eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.valueOf(msg.getType()))
+                                .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                                .list();
+                        for (SecurityGroupRulePriorityAO ao : msg.getRules()) {
+                            SecurityGroupRuleVO vo = rvos.stream().filter(r -> r.getUuid().equals(ao.getRuleUuid())).findFirst().orElse(null);
+                            if (vo == null) {
+                                throw new OperationFailureException(operr("failed to chenge rule[uuid:%s] priority, beacuse it's not found", ao.getRuleUuid()));
+                            }
+                            if (ao.getPriority() != vo.getPriority()) {
+                                vo.setPriority(ao.getPriority());
+                                toUpdate.add(vo);
+                            }
+                        }
+
+                        dbf.updateCollection(toUpdate);
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-rules-on-hosts";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        cal.securityGroupUuids = asList(msg.getSecurityGroupUuid());
+                        cal.vmStates = asList(VmInstanceState.Running);
+                        List<HostRuleTO> rhtos = cal.calculate();
+                        applyRules(rhtos);
+
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+
+            }
+        }).start();
     }
 
-    @Transactional
-    private SecurityGroupVO doUpdateSecurityGroupRulePriority(String sgUuid, String ruleType, List<SecurityGroupRulePriorityAO> aos) {
-        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
-                .eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
-                .eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.valueOf(ruleType))
-                .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
-                .list();
-        for (SecurityGroupRulePriorityAO ao : aos) {
-            List<SecurityGroupRuleVO> toUpdate = new ArrayList<SecurityGroupRuleVO>();
-            SecurityGroupRuleVO vo = rvos.stream().filter(r -> r.getUuid().equals(ao.getRuleUuid())).findFirst().orElse(null);
-            if (vo == null) {
-                throw new OperationFailureException(operr("failed to chenge rule[uuid:%s] priority, beacuse it's not found", ao.getRuleUuid()));
+    private void handle(APIUpdateSecurityGroupRulePriorityMsg msg) {
+        APIUpdateSecurityGroupRulePriorityEvent evt = new APIUpdateSecurityGroupRulePriorityEvent(msg.getId());
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
             }
-            
-            vo.setPriority(ao.getPriority());
-            toUpdate.add(vo);
-        }
 
-        dbf.updateCollection(rvos);
+            @Override
+            public void run(SyncTaskChain chain) {
+                doUpdateSecurityGroupRulePriority(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+                        evt.setInventory(SecurityGroupInventory.valueOf(vo));
+                        bus.publish(evt);
+                        chain.next();
+                    }
 
-        return dbf.findByUuid(sgUuid, SecurityGroupVO.class);
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-security-group-%s-%s-rule-priority", msg.getSecurityGroupUuid(), msg.getType());
+            }
+        });
     }
 
     private void handle(APIChangeSecurityGroupRuleMsg msg) {

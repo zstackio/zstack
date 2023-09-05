@@ -33,6 +33,7 @@ import org.zstack.test.integration.networkservice.provider.virtualrouter.Virtual
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
+import java.util.concurrent.TimeUnit
 
 class SecurityGroupUpgradeDbCase extends SubCase {
     EnvSpec env
@@ -552,6 +553,152 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         assert refvos.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.securityGroupUuid == sg2.uuid && it.priority == 2}
         assert policies.size() == 1
         assert policies.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.ingressPolicy == 'DENY' && it.egressPolicy == 'ALLOW'}
+
+        deleteSecurityGroup {
+            uuid = sg1.uuid
+        }
+        deleteSecurityGroup {
+            uuid = sg2.uuid
+        }
+    }
+
+    void testUpdateDBMutiple() {
+        SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = true
+        sg1 = createSecurityGroup {
+            name = "sg-1"
+            ipVersion = 4
+        } as SecurityGroupInventory
+
+        sg2 = createSecurityGroup {
+            name = "sg-2"
+            ipVersion = 6
+        } as SecurityGroupInventory
+
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg1.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg2.uuid
+            l3NetworkUuid = l3Net.uuid
+        }
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg1.uuid
+            vmNicUuids = [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid]
+        }
+
+        TimeUnit.SECONDS.sleep(2)
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg2.uuid
+            vmNicUuids = [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid]
+        }
+
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
+                .set(SecurityGroupRuleVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
+                .set(SecurityGroupRuleVO_.dstPortRange, null)
+                .set(SecurityGroupRuleVO_.description, null)
+                .update()
+
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid)
+                .set(SecurityGroupRuleVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
+                .set(SecurityGroupRuleVO_.dstPortRange, null)
+                .set(SecurityGroupRuleVO_.description, null)
+                .update()
+        SQL.New(VmNicSecurityPolicyVO.class)
+                .in(VmNicSecurityPolicyVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid])
+                .delete()
+        SQL.New(VmNicSecurityGroupRefVO.class)
+                .in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid])
+                .set(VmNicSecurityGroupRefVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
+                .update()
+
+        upgradeExt.start()
+
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid]).list()
+        List<VmNicSecurityPolicyVO> policies = Q.New(VmNicSecurityPolicyVO.class).in(VmNicSecurityPolicyVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid]).list()
+        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class).in(SecurityGroupRuleVO_.securityGroupUuid, [sg1.uuid, sg2.uuid]).list()
+
+        assert refs.size() == 4
+        assert refs.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.securityGroupUuid == sg1.uuid && it.priority == 1}
+        assert refs.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.securityGroupUuid == sg2.uuid && it.priority == 2}
+        assert refs.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.securityGroupUuid == sg1.uuid && it.priority == 1}
+        assert refs.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.securityGroupUuid == sg2.uuid && it.priority == 2}
+
+        assert policies.size() == 2
+        assert policies.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.ingressPolicy == 'DENY' && it.egressPolicy == 'ALLOW'}
+        assert policies.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.ingressPolicy == 'DENY' && it.egressPolicy == 'ALLOW'}
+
+        assert rvos.size() == 8
+        assert rvos.every {it.priority == 0}
+
+        upgradeExt.start()
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid]).list()
+        policies = Q.New(VmNicSecurityPolicyVO.class).in(VmNicSecurityPolicyVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid]).list()
+        rvos = Q.New(SecurityGroupRuleVO.class).in(SecurityGroupRuleVO_.securityGroupUuid, [sg1.uuid, sg2.uuid]).list()
+
+        assert refs.size() == 4
+        assert refs.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.securityGroupUuid == sg1.uuid && it.priority == 1}
+        assert refs.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.securityGroupUuid == sg2.uuid && it.priority == 2}
+        assert refs.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.securityGroupUuid == sg1.uuid && it.priority == 1}
+        assert refs.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.securityGroupUuid == sg2.uuid && it.priority == 2}
+
+        assert policies.size() == 2
+        assert policies.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.ingressPolicy == 'DENY' && it.egressPolicy == 'ALLOW'}
+        assert policies.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.ingressPolicy == 'DENY' && it.egressPolicy == 'ALLOW'}
+
+        assert rvos.size() == 8
+        assert rvos.every {it.priority == 0}
+
+        for (int i = 1; i <= 5; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = 'Egress'
+            r.ipVersion = 4
+            r.protocol = 'ICMP'
+            r.dstIpRange = String.format('10.0.0.%s', i)
+
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [r]
+            }
+
+            addSecurityGroupRule {
+                securityGroupUuid = sg2.uuid
+                rules = [r]
+            }
+        }
+
+        upgradeExt.start()
+        upgradeExt.start()
+        upgradeExt.start()
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid]).list()
+        policies = Q.New(VmNicSecurityPolicyVO.class).in(VmNicSecurityPolicyVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid]).list()
+        rvos = Q.New(SecurityGroupRuleVO.class).in(SecurityGroupRuleVO_.securityGroupUuid, [sg1.uuid, sg2.uuid]).list()
+
+        assert refs.size() == 4
+        assert refs.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.securityGroupUuid == sg1.uuid && it.priority == 1}
+        assert refs.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.securityGroupUuid == sg2.uuid && it.priority == 2}
+        assert refs.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.securityGroupUuid == sg1.uuid && it.priority == 1}
+        assert refs.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.securityGroupUuid == sg2.uuid && it.priority == 2}
+
+        assert policies.size() == 2
+        assert policies.find {it.vmNicUuid == vm1.vmNics[0].uuid && it.ingressPolicy == 'DENY' && it.egressPolicy == 'ALLOW'}
+        assert policies.find {it.vmNicUuid == vm2.vmNics[0].uuid && it.ingressPolicy == 'DENY' && it.egressPolicy == 'ALLOW'}
+
+        assert rvos.size() == 18
+        def priorities = [1, 2, 3, 4, 5]
+        for(int priority : priorities){
+            assert rvos.find {it.securityGroupUuid == sg1.uuid && it.priority == priority}
+        }
+        for(int priority : priorities){
+            assert rvos.find {it.securityGroupUuid == sg2.uuid && it.priority == priority}
+        }
     }
 
     @Override
@@ -592,6 +739,7 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         testAddSecurityGroupRuleAfterUpgradeDB()
         testAttachNicToSecurityGroupAfterUpgradeDB()
         testSetVmNicSecurityGroupAfterUpgradeDB()
+        testUpdateDBMutiple()
 
         SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = false
     }
