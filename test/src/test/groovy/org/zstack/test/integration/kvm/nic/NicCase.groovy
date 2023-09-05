@@ -179,6 +179,14 @@ class NicCase extends SubCase {
             }[0]
             assert vm.getVmNics().size() == 0
 
+            startVmInstance {
+                uuid = vm.uuid
+            }
+
+            stopVmInstance {
+                uuid = vm.uuid
+            }
+
             destroyVmInstance {
                 uuid = vm.uuid
             }
