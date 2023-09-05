@@ -237,6 +237,29 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     }
 
     @Override
+    public List<VmInstanceDeviceAddressVO> revertExistingDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid) {
+        VmInstanceDeviceAddressGroupVO group = Q.New(VmInstanceDeviceAddressGroupVO.class)
+                .eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, archiveForResourceUuid)
+                .find();
+
+        List<VmInstanceDeviceAddressVO> createdAddressList = new ArrayList<>();
+        if (group == null) {
+            return createdAddressList;
+        }
+
+        for (VmInstanceDeviceAddressArchiveVO archive : group.getAddressList()) {
+            if (!vmDeviceExists(archive.getResourceUuid())) {
+                continue;
+            }
+
+            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), DeviceAddress.fromString(archive.getDeviceAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
+            createdAddressList.add(vo);
+        }
+
+        return createdAddressList;
+    }
+
+    @Override
     public List<VmInstanceDeviceAddressVO> revertRequestedDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid, List<String> needRevertResourceUuidList) {
         VmInstanceDeviceAddressGroupVO group = Q.New(VmInstanceDeviceAddressGroupVO.class)
                 .eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, archiveForResourceUuid)
