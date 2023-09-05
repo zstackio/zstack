@@ -1228,8 +1228,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 VolumeInventory vol = msg.getVolume();
                 vol.setInstallPath(returnValue.getInstallPath());
                 vol.setActualSize(returnValue.getActualSize());
-                vol.setSize(returnValue.getSize());
                 vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                if (returnValue.getSize() != null) {
+                    vol.setSize(returnValue.getSize());
+                }
+
                 r.setVolume(vol);
                 completion.success(r);
             }
@@ -1673,7 +1676,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public void success(CreateVolumeFromCacheRsp returnValue) {
                                 actualSize = returnValue.actualSize;
-                                volume.setSize(returnValue.size);
+                                if (returnValue.size != null) {
+                                    volume.setSize(returnValue.size);
+                                }
+
                                 trigger.next();
                             }
 
