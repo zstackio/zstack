@@ -7442,6 +7442,33 @@ abstract class ApiHelper {
     }
 
 
+    def createClusterDpm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateClusterDpmAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateClusterDpmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createConnectionBetweenL3NetworkAndAliyunVSwitch(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateConnectionBetweenL3NetworkAndAliyunVSwitchAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateConnectionBetweenL3NetworkAndAliyunVSwitchAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -11656,6 +11683,33 @@ abstract class ApiHelper {
 
     def deleteClusterDRS(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteClusterDRSAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteClusterDRSAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteClusterDpm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteClusterDpmAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteClusterDpmAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -25748,6 +25802,64 @@ abstract class ApiHelper {
     }
 
 
+    def queryClusterDpm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryClusterDpmAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryClusterDpmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryClusterDpmRecords(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryClusterDpmRecordsAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryClusterDpmRecordsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryConnectionAccessPointFromLocal(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryConnectionAccessPointFromLocalAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryConnectionAccessPointFromLocalAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -35443,6 +35555,33 @@ abstract class ApiHelper {
     }
 
 
+    def syncImage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncImageAction.class) Closure c) {
+        def a = new org.zstack.sdk.SyncImageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def syncImageFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncImageFromImageStoreBackupStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.SyncImageFromImageStoreBackupStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -37173,6 +37312,33 @@ abstract class ApiHelper {
 
     def updateClusterDRS(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateClusterDRSAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateClusterDRSAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateClusterDpm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateClusterDpmAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateClusterDpmAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -40413,6 +40579,33 @@ abstract class ApiHelper {
 
     def validateClusterSupportDRS(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidateClusterSupportDRSAction.class) Closure c) {
         def a = new org.zstack.sdk.ValidateClusterSupportDRSAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def validateClusterSupportDpm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidateClusterSupportDpmAction.class) Closure c) {
+        def a = new org.zstack.sdk.ValidateClusterSupportDpmAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -47621,31 +47814,5 @@ abstract class ApiHelper {
         }
     }
 
-
-    def syncImage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncImageAction.class) Closure c) {
-        def a = new org.zstack.sdk.SyncImageAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
 
 }
