@@ -1,6 +1,8 @@
 package org.zstack.network.securitygroup;
 
 import com.google.common.base.Joiner;
+
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -1129,6 +1131,14 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         vo.setSrcIpRange(msg.getSrcIpRange());
                         vo.setDstIpRange(msg.getDstIpRange());
                         vo.setDstPortRange(msg.getDstPortRange());
+
+                        if (StringUtils.isNotEmpty(msg.getSrcIpRange()) || StringUtils.isNotEmpty(msg.getDstIpRange()) || StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
+                            vo.setAllowedCidr(vo.getIpVersion() == IPv6Constants.IPv4 ? SecurityGroupConstant.WORLD_OPEN_CIDR : SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
+                        }
+                        if (StringUtils.isNotEmpty(msg.getDstPortRange())) {
+                            vo.setStartPort(-1);
+                            vo.setEndPort(-1);
+                        }
 
                         if (msg.getPriority() != null && msg.getPriority() != vo.getPriority()) {
                             List<SecurityGroupRuleVO> others = Q.New(SecurityGroupRuleVO.class)

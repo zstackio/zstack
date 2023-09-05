@@ -586,8 +586,8 @@ class IPv6SecurityGroupCase extends SubCase {
         rule4.allowedCidr = "192.168.0.1/24"
         rule4.type = SecurityGroupRuleType.Ingress.toString()
         rule4.protocol = SecurityGroupRuleProtocolType.ICMP.toString()
-        rule4.startPort = 1
-        rule4.endPort = 3
+        rule4.startPort = -1
+        rule4.endPort = -1
 
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule41 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
         rule41.allowedCidr = "192.168.1.1/24"
@@ -616,8 +616,8 @@ class IPv6SecurityGroupCase extends SubCase {
         rule6.type = SecurityGroupRuleType.Egress.toString()
         rule6.protocol = SecurityGroupRuleProtocolType.ICMP.toString()
         rule6.ipVersion = 6
-        rule6.startPort = 1
-        rule6.endPort = 3
+        rule6.startPort = -1
+        rule6.endPort = -1
 
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule61 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
         rule61.allowedCidr = "2003::/64"

@@ -328,6 +328,44 @@ class ChangeSecurityGroupRuleCase extends SubCase {
                 remoteSecurityGroupUuid = sg4.uuid
             }
         }
+
+        SecurityGroupRuleAO r3 = new SecurityGroupRuleAO()
+        r3.type = "Ingress"
+        r3.description = "ingress-rule-1"
+        r3.ipVersion = 4
+        r3.protocol = "TCP"
+        r3.startPort = 20
+        r3.endPort = 20
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [r3]
+        }
+
+        SecurityGroupRuleAO r4 = new SecurityGroupRuleAO()
+        r4.type = "Ingress"
+        r4.description = "ingress-rule-2"
+        r4.ipVersion = 4
+        r4.protocol = "TCP"
+        r4.dstPortRange = "20-21"
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [r4]
+        }
+
+        SecurityGroupRuleInventory rule3 = sg4.rules.find { it.description == "ingress-rule-1" }
+        SecurityGroupRuleInventory rule4 = sg4.rules.find { it.description == "ingress-rule-2" }
+
+        assert rule3 != null
+        assert rule4 != null
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule3.uuid
+                dstPortRange = '20-21'
+            }
+        }
     }
 
     void testChangeRuleParamLimit() {
@@ -456,6 +494,13 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         assert rule1.action == 'ACCEPT'
         assert rule1.state == 'Enabled'
         assert rule1.description == null
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule1.uuid
+                protocol = 'UDP'
+            }
+        }
     }
 
     void testChangeRuleWithOldRules() {
@@ -537,6 +582,51 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         assert rule1.description == null
         assert rule1.remoteSecurityGroupUuid == null
         assert rule1.srcIpRange == '6.6.6.6'
+
+
+        SecurityGroupRuleAO r2 = new SecurityGroupRuleAO()
+        r2.type = 'Ingress'
+        r2.description = 'testChangeRuleWithAutoModify'
+        r2.ipVersion = 4
+        r2.allowedCidr = '8.8.8.8'
+        r2.protocol = 'UDP'
+        r2.startPort = 200
+        r2.endPort = 300
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [r2]
+        }
+
+        SecurityGroupRuleInventory rule2 = sg4.rules.find { it.description == 'testChangeRuleWithAutoModify' }
+
+        assert rule2.srcIpRange == '8.8.8.8'
+        assert rule2.allowedCidr == '8.8.8.8'
+        assert rule2.startPort == 200
+        assert rule2.endPort == 300
+        assert rule2.dstPortRange == '200-300'
+
+        rule2 = changeSecurityGroupRule {
+            uuid = rule2.uuid
+            srcIpRange = '9.9.9.9'
+        }
+
+        assert rule2.srcIpRange == '9.9.9.9'
+        assert rule2.allowedCidr == '0.0.0.0/0'
+        assert rule2.startPort == -1
+        assert rule2.endPort == -1
+        assert rule2.dstPortRange == '200-300'
+
+        rule2 = changeSecurityGroupRule {
+            uuid = rule2.uuid
+            dstPortRange = '400-500'
+        }
+
+        assert rule2.srcIpRange == '9.9.9.9'
+        assert rule2.allowedCidr == '0.0.0.0/0'
+        assert rule2.startPort == -1
+        assert rule2.endPort == -1
+        assert rule2.dstPortRange == '400-500'
     }
 
     @Override
