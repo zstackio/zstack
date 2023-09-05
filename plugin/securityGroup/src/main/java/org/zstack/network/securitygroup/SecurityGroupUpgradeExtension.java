@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -107,6 +106,11 @@ public class SecurityGroupUpgradeExtension implements Component {
             dbf.updateCollection(defaultRules);
         }
 
+        boolean isUpdate = rules.stream().anyMatch(r -> r.getPriority() == SecurityGroupConstant.LOWEST_RULE_PRIORITY);
+        if (!isUpdate) {
+            return;
+        }
+
         List<SecurityGroupRuleVO> userRules = rules.stream().filter(r -> r.getPriority() != SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
                 .sorted(Comparator.comparing(SecurityGroupRuleVO::getCreateDate)).collect(Collectors.toList());
         if (userRules.isEmpty()) {
@@ -154,9 +158,11 @@ public class SecurityGroupUpgradeExtension implements Component {
         if (refs.isEmpty()) {
             return;
         }
+
+        List<VmNicSecurityPolicyVO> pvos = Q.New(VmNicSecurityPolicyVO.class).list();
         
         Map<String, List<VmNicSecurityGroupRefVO>> nicMap = new HashMap<>();
-        List<VmNicSecurityPolicyVO> pvos = new ArrayList<>();
+        List<VmNicSecurityPolicyVO> toCreate = new ArrayList<>();
         
         for (VmNicSecurityGroupRefVO ref : refs) {
             if (!nicMap.containsKey(ref.getVmNicUuid())) {
@@ -166,19 +172,32 @@ public class SecurityGroupUpgradeExtension implements Component {
         }
 
         nicMap.keySet().stream().forEach(nicUuid -> {
+            if (pvos.stream().anyMatch(pvo -> pvo.getVmNicUuid().equals(nicUuid))) {
+                return;
+            }
             VmNicSecurityPolicyVO vo = new VmNicSecurityPolicyVO();
             vo.setUuid(Platform.getUuid());
             vo.setVmNicUuid(nicUuid);
             vo.setIngressPolicy(VmNicSecurityPolicy.DENY.toString());
             vo.setEgressPolicy(VmNicSecurityPolicy.ALLOW.toString());
-            pvos.add(vo);
+            toCreate.add(vo);
         });
-        dbf.persistCollection(pvos);
+
+        if (!toCreate.isEmpty()) {
+            dbf.persistCollection(toCreate);
+        }
 
         nicMap.values().forEach(refsOfNic -> {
+            boolean isUpdate = refsOfNic.stream().anyMatch(r -> r.getPriority() == -1);
+            if (!isUpdate) {
+                return;
+            }
+
             List<VmNicSecurityGroupRefVO> toUpdate = refsOfNic.stream().sorted(Comparator.comparing(VmNicSecurityGroupRefVO::getCreateDate)).collect(Collectors.toList());
-            toUpdate.forEach(r -> {r.setPriority(toUpdate.indexOf(r)+1);});
-            dbf.updateCollection(toUpdate);
+            if (!toUpdate.isEmpty()) {
+                toUpdate.forEach(v -> {v.setPriority(toUpdate.indexOf(v) + 1);});
+                dbf.updateCollection(toUpdate);
+            }
         });
     }
 
