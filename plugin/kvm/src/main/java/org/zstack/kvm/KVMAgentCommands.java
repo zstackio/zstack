@@ -969,6 +969,8 @@ public class KVMAgentCommands {
 
         // for vDPA & dpdkvhostuserclient nic
         private String srcPath;
+        
+        private Boolean cleanTraffic;
 
         public List<String> getIps() {
             return ips;
@@ -1120,6 +1122,14 @@ public class KVMAgentCommands {
 
         public void setSrcPath(String srcPath) {
             this.srcPath = srcPath;
+        }
+
+        public Boolean getCleanTraffic() {
+            return cleanTraffic;
+        }
+
+        public void setCleanTraffic(Boolean cleanTraffic) {
+            this.cleanTraffic = cleanTraffic;
         }
     }
 
