@@ -37,7 +37,7 @@ public class CreateInstanceOfferingAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
     public long memorySize = 0L;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
     public long reservedMemorySize = 0L;
 
     @Param(required = false)

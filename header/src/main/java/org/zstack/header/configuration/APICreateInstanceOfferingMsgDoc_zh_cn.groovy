@@ -126,7 +126,7 @@ doc {
 					desc ""
 					location "body"
 					type "long"
-					optional false
+					optional true
 					since "4.7.21"
 				}
 			}
