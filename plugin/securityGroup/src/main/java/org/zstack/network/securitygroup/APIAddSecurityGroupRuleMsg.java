@@ -333,9 +333,7 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
             return Objects.equals(type, other.type) && Objects.equals(remoteSecurityGroupUuid, other.remoteSecurityGroupUuid)
                     && Objects.equals(ipVersion, other.ipVersion) && Objects.equals(protocol, other.protocol)
                     && Objects.equals(srcIpRange, other.srcIpRange) && Objects.equals(dstIpRange, other.dstIpRange)
-                    && Objects.equals(dstPortRange, other.dstPortRange) && Objects.equals(action, other.action)
-                    && Objects.equals(startPort, other.startPort) && Objects.equals(endPort, other.endPort)
-                    && Objects.equals(allowedCidr, other.allowedCidr);
+                    && Objects.equals(dstPortRange, other.dstPortRange) && Objects.equals(action, other.action);
         }
     }
 

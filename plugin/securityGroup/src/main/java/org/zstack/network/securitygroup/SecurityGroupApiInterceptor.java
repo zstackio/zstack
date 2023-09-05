@@ -453,39 +453,15 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
                 msg.setDstPortRange(null);
             } else {
+                if (vo.getDstPortRange() == null) {
+                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange must be set", msg.getProtocol()));
+                }
                 msg.setDstPortRange(vo.getDstPortRange());
             }
         }
 
-        // if (msg.getDstPortRange() != null) {
-        //     if (!msg.getDstPortRange().isEmpty()) {
-        //         if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
-        //             throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be set", msg.getProtocol()));
-        //         }
-        //         validatePorts(msg.getDstPortRange());
-        //     } else {
-        //         if (SecurityGroupRuleProtocolType.TCP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.UDP.toString().equals(msg.getProtocol())) {
-        //             throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty", msg.getProtocol()));
-        //         }
-        //         msg.setDstPortRange(null);
-        //     }
-        // } else {
-        //     msg.setDstPortRange(vo.getDstPortRange());
-        // }
-
-        // if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
-        //     msg.setDstPortRange(null);
-        // } else {
-        //     if (msg.getDstPortRange() == null) {
-        //         throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty", msg.getProtocol()));
-        //     }
-        // }
-
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO sao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
         sao.setType(vo.getType().toString());
-        sao.setAllowedCidr(vo.getAllowedCidr());
-        sao.setStartPort(vo.getStartPort());
-        sao.setEndPort(vo.getEndPort());
         sao.setIpVersion(vo.getIpVersion());
         sao.setAction(msg.getAction());
         sao.setProtocol(msg.getProtocol());
@@ -501,9 +477,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         for (SecurityGroupRuleVO o : others) {
             APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
             ao.setType(o.getType().toString());
-            ao.setAllowedCidr(o.getAllowedCidr());
-            ao.setStartPort(o.getStartPort());
-            ao.setEndPort(o.getEndPort());
             ao.setIpVersion(o.getIpVersion());
             ao.setProtocol(o.getProtocol().toString());
             ao.setRemoteSecurityGroupUuid(o.getRemoteSecurityGroupUuid());
@@ -912,6 +885,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             if (SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
                 if (ao.getDstPortRange() != null) {
                     throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the protocol type ALL or ICMP cant not set dstPortRange[%s]", ao.getDstPortRange()));
+                }
+                if (ao.getStartPort() != -1 || ao.getEndPort() != -1) {
+                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the protocol type ALL or ICMP cant not set startPort or endPort"));
                 }
             } else {
                 if (ao.getStartPort() >= SecurityGroupConstant.PORT_NUMBER_MIN && ao.getEndPort() < SecurityGroupConstant.PORT_NUMBER_MAX) {

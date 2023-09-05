@@ -27,7 +27,94 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
 
     L3NetworkInventory l3Net
     VmInstanceInventory vm1, vm2, vm3, vm4
-    SecurityGroupInventory sg1, sg2, sg3
+    SecurityGroupInventory sg1, sg2, sg3, sg4
+
+    void testAddSecurityGroupDuplicate() {
+        SecurityGroupRuleAO rule1 = new SecurityGroupRuleAO()
+        rule1.allowedCidr = "192.167.1.0/24"
+        rule1.type = "Ingress"
+        rule1.protocol = "UDP"
+        rule1.startPort = 200
+        rule1.endPort = 300
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [rule1]
+        }
+
+        SecurityGroupRuleAO ruleDup_1 = new SecurityGroupRuleAO()
+        ruleDup_1.allowedCidr = "192.167.1.0/24"
+        ruleDup_1.type = "Ingress"
+        ruleDup_1.protocol = "UDP"
+        ruleDup_1.startPort = 200
+        ruleDup_1.endPort = 300
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg4.uuid
+                rules = [ruleDup_1]
+            }
+        }
+
+        SecurityGroupRuleAO ruleDup_2 = new SecurityGroupRuleAO()
+        ruleDup_2.allowedCidr = '192.167.1.0/24'
+        ruleDup_2.type = 'Ingress'
+        ruleDup_2.protocol = 'UDP'
+        ruleDup_2.dstPortRange = '200-300'
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg4.uuid
+                rules = [ruleDup_2]
+            }
+        }
+
+        SecurityGroupRuleAO rule2 = new SecurityGroupRuleAO()
+        rule2.allowedCidr = "192.169.1.0/24"
+        rule2.type = "Ingress"
+        rule2.protocol = "ICMP"
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [rule2]
+        }
+
+        SecurityGroupRuleAO ruleDup_3 = new SecurityGroupRuleAO()
+        ruleDup_3.allowedCidr = "192.169.1.0/24"
+        ruleDup_3.type = "Ingress"
+        ruleDup_3.protocol = "ICMP"
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg4.uuid
+                rules = [ruleDup_3]
+            }
+        }
+
+        SecurityGroupRuleAO ruleDup_4 = new SecurityGroupRuleAO()
+        ruleDup_4.srcIpRange = '192.169.1.0/24'
+        ruleDup_4.type = 'Ingress'
+        ruleDup_4.protocol = 'ICMP'
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg4.uuid
+                rules = [ruleDup_4]
+            }
+        }
+
+        SecurityGroupRuleAO rule3 = new SecurityGroupRuleAO()
+        rule3.allowedCidr = "192.170.1.0/24"
+        rule3.type = "Ingress"
+        rule3.protocol = "ICMP"
+        rule3.startPort = 20
+        rule3.startPort = 30
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg4.uuid
+                rules = [rule3]
+            }
+        }
+    }
 
     void testAddSecurityGroupRuleError() {
         SecurityGroupRuleAO errorRule = new SecurityGroupRuleAO()
@@ -568,6 +655,11 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
                 name = "sg-3"
                 ipVersion = 4
             } as SecurityGroupInventory
+
+            sg4 = createSecurityGroup {
+                name = "sg-4"
+                ipVersion = 4
+            } as SecurityGroupInventory
         }
 
         testAddSecurityGroupRule()
@@ -575,5 +667,6 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         testAddRuleExceedLimit()
         testAddRuleDiscontinuously()
         testAddSecurityGroupRuleError()
+        testAddSecurityGroupDuplicate()
     }
 }
