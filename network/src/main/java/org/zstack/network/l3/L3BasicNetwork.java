@@ -492,38 +492,6 @@ public class L3BasicNetwork implements L3Network {
         bus.publish(evt);
     }
 
-    private List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit, String start) {
-        SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
-        q.select(UsedIpVO_.ip);
-        q.add(UsedIpVO_.ipRangeUuid, Op.EQ, ipr.getUuid());
-
-        List<String> used = q.listValue();
-        used = used.stream().distinct().collect(Collectors.toList());
-
-        List<String> spareIps = new ArrayList<>();
-        if (ipr.getIpVersion() == IPv6Constants.IPv6) {
-            spareIps.addAll(NetworkUtils.getFreeIpv6InRange(ipr.getStartIp(), ipr.getEndIp(), used, limit, start));
-        } else {
-            IpRangeVO cloneIpr = new IpRangeVO();
-            cloneIpr.setStartIp(ipr.getStartIp());
-            cloneIpr.setEndIp(ipr.getEndIp());
-            cloneIpr.setNetmask(ipr.getNetmask());
-            IpRangeHelper.stripNetworkAndBroadcastAddress(cloneIpr);
-            spareIps.addAll(NetworkUtils.getFreeIpInRange(cloneIpr.getStartIp(), cloneIpr.getEndIp(), used, limit, start));
-        }
-        return CollectionUtils.transformToList(spareIps, new Function<FreeIpInventory, String>() {
-            @Override
-            public FreeIpInventory call(String arg) {
-                FreeIpInventory f = new FreeIpInventory();
-                f.setGateway(ipr.getGateway());
-                f.setIp(arg);
-                f.setNetmask(ipr.getNetmask());
-                f.setIpRangeUuid(ipr.getUuid());
-                return f;
-            }
-        });
-    }
-
     private void handle(APIGetFreeIpMsg msg) {
         APIGetFreeIpReply reply = new APIGetFreeIpReply();
 
@@ -575,7 +543,7 @@ public class L3BasicNetwork implements L3Network {
                     start = "0.0.0.0";
                 }
             }
-            List<FreeIpInventory> tempFreeIpInventorys = getFreeIp(ipRangeVO, limit,start);
+            List<FreeIpInventory> tempFreeIpInventorys = IpRangeHelper.getFreeIp(ipRangeVO, limit,start);
             freeIpInventorys.addAll(tempFreeIpInventorys);
             if (freeIpInventorys.size() >= msg.getLimit()) {
                 break;
