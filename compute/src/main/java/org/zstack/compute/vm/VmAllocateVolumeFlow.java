@@ -97,17 +97,15 @@ public class VmAllocateVolumeFlow implements Flow {
                 msg.setResourceUuid((String) ctx.get("uuid"));
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
-                msg.setRootImageUuid(spec.getImageSpec().getInventory().getUuid());
+
+                if (spec.getImageSpec().relayOnImage()) {
+                    msg.setRootImageUuid(spec.getImageSpec().getInventory().getUuid());
+                }
+
+                msg.setFormat(spec.getVolumeFormatFromImage());
+
                 if (spec.getRootVolumeSystemTags() != null) {
                     tags.addAll(spec.getRootVolumeSystemTags());
-                }
-                if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
-                    msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
-                } else if (spec.getImageSpec().getInventory().getFormat() != null) {
-                    VolumeFormat imageFormat = VolumeFormat.valueOf(spec.getImageSpec().getInventory().getFormat());
-                    msg.setFormat(imageFormat.getOutputFormat(spec.getDestHost().getHypervisorType()));
-                } else {
-                    msg.setFormat(ImageConstant.QCOW2_FORMAT_STRING);
                 }
             } else if (VolumeType.Data.toString().equals(vspec.getType())) {
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
