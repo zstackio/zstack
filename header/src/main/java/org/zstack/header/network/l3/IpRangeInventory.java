@@ -270,42 +270,67 @@ public class IpRangeInventory implements Serializable {
         return ipr;
     }
 
-    public static IpRangeInventory fromMessage(APIAddIpRangeByNetworkCidrMsg msg) {
-        SubnetUtils utils = new SubnetUtils(msg.getNetworkCidr());
-        SubnetInfo subnet = utils.getInfo();
-        utils = new SubnetUtils(subnet.getNetworkAddress(), subnet.getNetmask());
-        subnet = utils.getInfo();
-
+    private static IpRangeInventory createAndSetIpv4RangeAttribute(APIAddIpRangeByNetworkCidrMsg msg, SubnetInfo subnet,
+                                                                   String startIp, String endIp, String gateway) {
         IpRangeInventory ipr = new IpRangeInventory();
         ipr.setNetworkCidr(subnet.getCidrSignature());
         ipr.setName(msg.getName());
         ipr.setDescription(msg.getDescription());
-
         ipr.setIpRangeType(IpRangeType.valueOf(msg.getIpRangeType()));
 
-        String lowAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()));
-        String highAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()));
-        if (ipr.getIpRangeType() == IpRangeType.Normal) {
-            if (msg.getGateway() == null || msg.getGateway().equals(lowAddress)) {
-                ipr.setGateway(lowAddress);
-                ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) + 1));
-                ipr.setEndIp(subnet.getHighAddress());
-            } else if (msg.getGateway().equals(highAddress)) {
-                ipr.setGateway(highAddress);
-                ipr.setStartIp(lowAddress);
-                ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) - 1));
-            }
-        } else {
-            ipr.setGateway(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(lowAddress)));
-            ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(lowAddress)));
-            ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(highAddress)));
-        }
+        ipr.setGateway(gateway);
+        ipr.setStartIp(startIp);
+        ipr.setEndIp(endIp);
+
         ipr.setNetmask(subnet.getNetmask());
         ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(subnet.getNetmask()));
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
         ipr.setUuid(msg.getResourceUuid());
         ipr.setIpVersion(IPv6Constants.IPv4);
+
         return ipr;
+    }
+
+    public static List<IpRangeInventory> fromMessage(APIAddIpRangeByNetworkCidrMsg msg) {
+        List<IpRangeInventory> iprs = new ArrayList<>();
+        SubnetUtils utils = new SubnetUtils(msg.getNetworkCidr());
+        SubnetInfo subnet = utils.getInfo();
+        utils = new SubnetUtils(subnet.getNetworkAddress(), subnet.getNetmask());
+        subnet = utils.getInfo();
+
+        String lowAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()));
+        String highAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()));
+
+        if (IpRangeType.valueOf(msg.getIpRangeType()) == IpRangeType.Normal) {
+            if (msg.getGateway() == null || msg.getGateway().equals(lowAddress)) {
+                String gateway = lowAddress;
+                String startIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(lowAddress) + 1);
+                String endIp = highAddress;
+                IpRangeInventory ipr = createAndSetIpv4RangeAttribute(msg, subnet, startIp, endIp, gateway);
+                iprs.add(ipr);
+            } else if (msg.getGateway().equals(highAddress)) {
+                String gateway = highAddress;
+                String startIp = lowAddress;
+                String endIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(highAddress) - 1);
+                IpRangeInventory ipr = createAndSetIpv4RangeAttribute(msg, subnet, startIp, endIp, gateway);
+                iprs.add(ipr);
+            } else {
+                String gateway = msg.getGateway();
+                String startIp = lowAddress;
+                String endIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(gateway) - 1);
+                iprs.add(createAndSetIpv4RangeAttribute(msg, subnet, startIp, endIp, gateway));
+
+                startIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(gateway) + 1);
+                endIp = highAddress;
+                iprs.add(createAndSetIpv4RangeAttribute(msg, subnet, startIp, endIp, gateway));
+            }
+        } else {
+            String gateway = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(lowAddress));
+            String startIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(lowAddress));
+            String endIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(highAddress));
+            iprs.add(createAndSetIpv4RangeAttribute(msg, subnet, startIp, endIp, gateway));
+        }
+        return iprs;
     }
 
     public static IpRangeInventory fromMessage(APIAddIpv6RangeByNetworkCidrMsg msg) {

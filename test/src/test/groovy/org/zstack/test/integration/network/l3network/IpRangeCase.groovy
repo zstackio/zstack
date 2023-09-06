@@ -170,6 +170,58 @@ class IpRangeCase extends SubCase {
             networkCidr = "192.168.211.0/24"
             gateway = "192.168.211.254"
         }
-    }
+
+        L3NetworkInventory l3_5 = createL3Network {
+            name = "l3-5"
+            l2NetworkUuid = l3_1.l2NetworkUuid
+            category = L3NetworkCategory.Private
+        }
+
+        addIpRangeByNetworkCidr {
+            name = "cidr-5"
+            l3NetworkUuid = l3_5.getUuid()
+            networkCidr = "192.168.212.0/24"
+            gateway = "192.168.212.1"
+        }
+
+        L3NetworkInventory l3_6 = createL3Network {
+            name = "l3-6"
+            l2NetworkUuid = l3_1.l2NetworkUuid
+            category = L3NetworkCategory.Private
+        }
+
+        addIpRangeByNetworkCidr {
+            name = "cidr-6"
+            l3NetworkUuid = l3_6.getUuid()
+            networkCidr = "192.168.213.0/24"
+        }
+
+        L3NetworkInventory l3_7 = createL3Network {
+            name = "l3-7"
+            l2NetworkUuid = l3_1.l2NetworkUuid
+            category = L3NetworkCategory.Private
+        }
+
+        AddIpRangeByNetworkCidrAction addIpRangeByNetworkCidrActionAction = new AddIpRangeByNetworkCidrAction()
+        addIpRangeByNetworkCidrActionAction.name = "cidr-7"
+        addIpRangeByNetworkCidrActionAction.l3NetworkUuid = l3_7.getUuid()
+        addIpRangeByNetworkCidrActionAction.networkCidr = "192.168.214.0/24"
+        addIpRangeByNetworkCidrActionAction.gateway = "192.168.214.100"
+        addIpRangeByNetworkCidrActionAction.sessionId = adminSession()
+        AddIpRangeByNetworkCidrAction.Result ret = addIpRangeByNetworkCidrActionAction.call()
+
+        assert ret.error == null
+        assert ret.value.inventory.startIp == "192.168.214.1"
+        assert ret.value.inventory.endIp == "192.168.214.99"
+        assert ret.value.inventory.gateway == "192.168.214.100"
+
+        assert ret.value.inventories.get(0).startIp == "192.168.214.1"
+        assert ret.value.inventories.get(0).endIp == "192.168.214.99"
+        assert ret.value.inventories.get(0).gateway == "192.168.214.100"
+
+        assert ret.value.inventories.get(1).startIp == "192.168.214.101"
+        assert ret.value.inventories.get(1).endIp == "192.168.214.254"
+        assert ret.value.inventories.get(1).gateway == "192.168.214.100"
+   }
 }
 

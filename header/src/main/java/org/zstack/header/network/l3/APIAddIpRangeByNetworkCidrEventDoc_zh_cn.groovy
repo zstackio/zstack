@@ -22,6 +22,14 @@ doc {
 		clz ErrorCode.class
 	}
 	ref {
+		name "inventories"
+		path "org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrEvent.inventory"
+		desc "null"
+		type "IpRangeInventory"
+		since "0.6"
+		clz IpRangeInventory.class
+	}
+	ref {
 		name "inventory"
 		path "org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrEvent.inventory"
 		desc "null"
@@ -29,4 +37,5 @@ doc {
 		since "0.6"
 		clz IpRangeInventory.class
 	}
+
 }
