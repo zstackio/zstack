@@ -6902,11 +6902,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setMemorySnapshotUuid(((RestoreVmInstanceMsg) msg).getMemorySnapshotUuid());
         }
 
-        if (spec.getDestNics().isEmpty()) {
-            throw new OperationFailureException(operr("unable to start the vm[uuid:%s]." +
-                    " It doesn't have any nic, please attach a nic and try again", self.getUuid()));
-        }
-
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.starting);
 
@@ -7078,7 +7073,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setCdRomSpecs(cdRomSpecs);
         buildImageSpec(spec);
         spec.setCurrentVmOperation(VmOperation.NewCreate);
-        if (struct.getRequiredHostUuid() != null) {
+        if (struct.getRequiredHostUuid() != null || CollectionUtils.isEmpty(struct.getL3NetworkUuids())) {
             spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
         }
         buildHostname(spec);
