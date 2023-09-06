@@ -52,6 +52,19 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private ErrorFacade errf;
 
+    private void setServiceId(APIMessage msg) {
+        if (msg instanceof AddSecurityGroupRuleMessage) {
+            AddSecurityGroupRuleMessage amsg = (AddSecurityGroupRuleMessage)msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, amsg.getSecurityGroupUuid());
+        } else if (msg instanceof SecurityGroupMessage) {
+            SecurityGroupMessage smsg = (SecurityGroupMessage)msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, smsg.getSecurityGroupUuid());
+        } else if (msg instanceof VmNicSecurityGroupMessage) {
+            VmNicSecurityGroupMessage vmsg = (VmNicSecurityGroupMessage)msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, vmsg.getVmNicUuid());
+        }
+    }
+
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddSecurityGroupRuleMsg) {
@@ -83,6 +96,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         } else if (msg instanceof APIValidateSecurityGroupRuleMsg) {
             validate((APIValidateSecurityGroupRuleMsg) msg);
         }
+
+        setServiceId(msg);
 
         return msg;
     }

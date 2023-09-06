@@ -14,7 +14,7 @@ import org.zstack.header.vm.VmNicVO;
         responseClass = APIChangeVmNicSecurityPolicyEvent.class,
         isAction = true
 )
-public class APIChangeVmNicSecurityPolicyMsg extends APIMessage {
+public class APIChangeVmNicSecurityPolicyMsg extends APIMessage implements VmNicSecurityGroupMessage {
     @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
     private String vmNicUuid;
 
@@ -24,6 +24,7 @@ public class APIChangeVmNicSecurityPolicyMsg extends APIMessage {
     @APIParam(required = false, validValues = {"DENY", "ALLOW"})
     private String egressPolicy;
 
+    @Override
     public String getVmNicUuid() {
         return vmNicUuid;
     }

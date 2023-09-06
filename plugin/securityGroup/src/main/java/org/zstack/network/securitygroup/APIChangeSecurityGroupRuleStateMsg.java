@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
         responseClass = APIChangeSecurityGroupRuleStateEvent.class,
         isAction = true
 )
-public class APIChangeSecurityGroupRuleStateMsg extends APIMessage {
+public class APIChangeSecurityGroupRuleStateMsg extends APIMessage implements SecurityGroupMessage {
     @APIParam(required = true, nonempty = true, checkAccount = true, operationTarget = true)
     private String securityGroupUuid;
 
@@ -27,6 +27,7 @@ public class APIChangeSecurityGroupRuleStateMsg extends APIMessage {
 	@APIParam(required = true, validValues = {"Enabled", "Disabled"})
 	private String state;
 
+	@Override
     public String getSecurityGroupUuid() {
         return securityGroupUuid;
     }

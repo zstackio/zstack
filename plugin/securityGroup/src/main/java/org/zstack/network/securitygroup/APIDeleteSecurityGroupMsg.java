@@ -52,7 +52,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteSecurityGroupEvent.class
 )
-public class APIDeleteSecurityGroupMsg extends APIDeleteMessage {
+public class APIDeleteSecurityGroupMsg extends APIDeleteMessage implements SecurityGroupMessage {
     /**
      * @desc security group uuid
      */
@@ -65,6 +65,11 @@ public class APIDeleteSecurityGroupMsg extends APIDeleteMessage {
 
     public void setUuid(String securityGroupUuid) {
         this.uuid = securityGroupUuid;
+    }
+
+    @Override
+    public String getSecurityGroupUuid() {
+        return uuid;
     }
  
     public static APIDeleteSecurityGroupMsg __example__() {
