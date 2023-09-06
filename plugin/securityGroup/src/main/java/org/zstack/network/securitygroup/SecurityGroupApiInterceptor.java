@@ -243,10 +243,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         if (policy == null) {
             throw new ApiMessageInterceptionException(argerr("could no change vm nic security policy, because vm nic[uuid:%s] has no security policy", msg.getVmNicUuid()));
         }
-
-        if (policy.getIngressPolicy().equals(msg.getIngressPolicy()) && policy.getEgressPolicy().equals(msg.getEgressPolicy())) {
-            throw new ApiMessageInterceptionException(argerr("could no change vm nic security policy, because the security policy of vm nic[uuid:%s] has not changed, ingressPolicy[%s], egressPolicy[%s]", msg.getVmNicUuid(), msg.getIngressPolicy(), msg.getEgressPolicy()));
-        }
         
         if (policy.getIngressPolicy().equals(msg.getIngressPolicy())) {
             msg.setIngressPolicy(null);
