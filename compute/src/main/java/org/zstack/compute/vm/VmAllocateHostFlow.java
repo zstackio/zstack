@@ -117,6 +117,7 @@ public class VmAllocateHostFlow implements Flow {
         if (spec.getImageSpec() != null && spec.getImageSpec().getSelectedBackupStorage() != null) {
             msg.setRequiredBackupStorageUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
         }
+        msg.setAllowNoL3Networks(true);
         return msg;
     }
 

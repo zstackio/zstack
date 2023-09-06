@@ -54,7 +54,7 @@ doc {
 					desc "三层网络UUID列表。可以指定一个或多个三层网络，云主机会在每个网络上创建一个网卡。"
 					location "body"
 					type "List"
-					optional false
+					optional true
 					since "0.6"
 				}
 				column {

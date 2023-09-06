@@ -13,7 +13,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceHostRouteBackend;
 
 import javax.persistence.TypedQuery;
 import java.util.*;

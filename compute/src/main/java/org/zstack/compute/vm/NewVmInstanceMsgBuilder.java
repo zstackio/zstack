@@ -22,6 +22,9 @@ import java.util.stream.Collectors;
  */
 public class NewVmInstanceMsgBuilder {
     private static List<VmNicSpec> getVmNicSpecsFromNewVmInstanceMsg(NewVmInstanceMessage msg) {
+        if (CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
+            return Collections.EMPTY_LIST;
+        }
         List<VmNicParm> vmNicParms = Collections.emptyList();
         if (msg.getVmNicParams() != null && !msg.getVmNicParams().isEmpty()) {
             vmNicParms = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
@@ -68,11 +71,13 @@ public class NewVmInstanceMsgBuilder {
         if(msg.getZoneUuid() != null){
             cmsg.setZoneUuid(msg.getZoneUuid());
         }else{
-            String zoneUuid = Q.New(L3NetworkVO.class)
-                    .select(L3NetworkVO_.zoneUuid)
-                    .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuids().get(0))
-                    .findValue();
-            cmsg.setZoneUuid(zoneUuid);
+            if (!CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
+                String zoneUuid = Q.New(L3NetworkVO.class)
+                        .select(L3NetworkVO_.zoneUuid)
+                        .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuids().get(0))
+                        .findValue();
+                cmsg.setZoneUuid(zoneUuid);
+            }
         }
 
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();

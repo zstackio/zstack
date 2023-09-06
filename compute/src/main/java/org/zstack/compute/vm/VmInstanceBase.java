@@ -6987,7 +6987,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setCdRomSpecs(cdRomSpecs);
         buildImageSpec(spec);
         spec.setCurrentVmOperation(VmOperation.NewCreate);
-        if (struct.getRequiredHostUuid() != null) {
+        if (struct.getRequiredHostUuid() != null || CollectionUtils.isEmpty(struct.getL3NetworkUuids())) {
             spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
         }
         buildHostname(spec);
