@@ -631,8 +631,6 @@ public class SourceClassMap {
 			put("org.zstack.zbox.ZBoxLocationRefInventory", "org.zstack.sdk.ZBoxLocationRefInventory");
 			put("org.zstack.zbox.ZBoxState", "org.zstack.sdk.ZBoxState");
 			put("org.zstack.zbox.ZBoxStatus", "org.zstack.sdk.ZBoxStatus");
-			put("org.zstack.zops.CephHealthInfo", "org.zstack.sdk.CephHealthInfo");
-			put("org.zstack.zops.CephHealthStatus", "org.zstack.sdk.CephHealthStatus");
 			put("org.zstack.zops.ChronyServerInfo", "org.zstack.sdk.ChronyServerInfo");
 			put("org.zstack.zops.ChronyServerInfoPair", "org.zstack.sdk.ChronyServerInfoPair");
 			put("org.zstack.zops.HostConnectedStatus", "org.zstack.sdk.HostConnectedStatus");
@@ -799,8 +797,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CdpTaskType", "org.zstack.header.storage.cdp.CdpTaskType");
 			put("org.zstack.sdk.CephBackupStorageInventory", "org.zstack.storage.ceph.backup.CephBackupStorageInventory");
 			put("org.zstack.sdk.CephBackupStorageMonInventory", "org.zstack.storage.ceph.backup.CephBackupStorageMonInventory");
-			put("org.zstack.sdk.CephHealthInfo", "org.zstack.zops.CephHealthInfo");
-			put("org.zstack.sdk.CephHealthStatus", "org.zstack.zops.CephHealthStatus");
 			put("org.zstack.sdk.CephOsdGroupInventory", "org.zstack.storage.ceph.primary.CephOsdGroupInventory");
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
 			put("org.zstack.sdk.CephPrimaryStorageMonInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory");
