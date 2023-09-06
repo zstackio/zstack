@@ -6,6 +6,7 @@ import com.unboundid.ldap.sdk.SearchScope
 import org.junit.ClassRule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
+import org.zstack.ldap.LdapErrors
 import org.zstack.sdk.AddLdapServerAction
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.ZSClient
@@ -107,7 +108,7 @@ class LdapExceptionCase extends SubCase {
         )
         res = ZSClient.call(addLdapServerAction)
         assert res.error != null
-        assert res.error.details.contains("communication false, please checkout IP, port and Base DN")
+        assert res.error.code == LdapErrors.TEST_LDAP_CONNECTION_FAILED.toString()
 
         addLdapServerAction = new AddLdapServerAction(
                 name : "ldap0",
@@ -122,6 +123,6 @@ class LdapExceptionCase extends SubCase {
         )
         res = ZSClient.call(addLdapServerAction)
         assert res.error != null
-        assert res.error.details.contains("Invalid Credentials, please checkout User DN and password")
+        assert res.error.code == LdapErrors.TEST_LDAP_CONNECTION_FAILED.toString()
     }
 }
