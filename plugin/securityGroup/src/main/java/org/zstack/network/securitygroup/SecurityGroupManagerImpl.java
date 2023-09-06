@@ -723,103 +723,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(APIValidateSecurityGroupRuleMsg msg) {
         APIValidateSecurityGroupRuleReply reply = new APIValidateSecurityGroupRuleReply();
-        checkRuleAvailability(msg, reply);
+        reply.setAvailable(true);
         bus.reply(msg, reply);
     }
 
-    private void checkRuleAvailability(APIValidateSecurityGroupRuleMsg msg, APIValidateSecurityGroupRuleReply reply) {
-        reply.setAvailable(true);
-
-        if (msg.getRemoteSecurityGroupUuid() != null) {
-            if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
-                reply.setReason(i18n("remoteSecurityGroupUuid[%s] and srcIpRange/dstIpRange cannot be set at the same time", msg.getRemoteSecurityGroupUuid()));
-            }
-            if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(msg.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(msg.getAllowedCidr())) {
-                reply.setReason(i18n("remoteSecurityGroupUuid[%s] and allowedCidr[%s] cannot be set at the same time", msg.getRemoteSecurityGroupUuid(), msg.getAllowedCidr()));
-            }
-        }
-
-        if (msg.getSrcIpRange() != null) {
-            if (msg.getDstIpRange() != null) {
-                reply.setReason(i18n("srcIpRange[%s] and dstIpRange[%s] cannot be set at the same time", msg.getSrcIpRange(), msg.getDstIpRange()));
-            }
-            if (SecurityGroupRuleType.Egress.toString().equals(msg.getType())) {
-                reply.setReason(i18n("srcIpRange cannot be set in Egress rule"));
-            }
-        }
-
-        if (msg.getDstIpRange() != null) {
-            if (SecurityGroupRuleType.Ingress.toString().equals(msg.getType())) {
-                reply.setReason(i18n("dstIpRange cannot be set in Ingress rule"));
-            }
-        }
-
-        if (msg.getDstPortRange() != null) {
-            if (SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol())) {
-                reply.setReason(i18n("dstPortRange cannot be set when rule protocol is ALL or ICMP"));
-            }
-
-            if (msg.getStartPort() != -1 || msg.getEndPort() != -1) {
-                reply.setReason(i18n("dstPortRange and startPort/endPort cannot be set at the same time"));
-            }
-        } else if (msg.getStartPort() >= 0) {
-            if (msg.getStartPort().equals(msg.getEndPort())) {
-                msg.setDstPortRange(String.valueOf(msg.getStartPort()));
-            } else {
-                msg.setDstPortRange(String.format("%s-%s", msg.getStartPort(), msg.getEndPort()));
-            }
-        }
-
-        if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(msg.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(msg.getAllowedCidr())) {
-            if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
-                reply.setReason(i18n("allowCidr and srcIpRange/dstIpRange cannot be set at the same time"));
-            }
-
-            if (SecurityGroupRuleType.Ingress.toString().equals(msg.getType())) {
-                msg.setSrcIpRange(msg.getAllowedCidr());
-            } else {
-                msg.setDstIpRange(msg.getAllowedCidr());
-            }
-        }
-
-        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO targetRule = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
-        targetRule.setType(msg.getType());
-        targetRule.setRemoteSecurityGroupUuid(msg.getRemoteSecurityGroupUuid());
-        targetRule.setAction(msg.getAction());
-        targetRule.setProtocol(msg.getProtocol());
-        targetRule.setIpVersion(msg.getIpVersion());
-        targetRule.setDstIpRange(msg.getDstIpRange());
-        targetRule.setSrcIpRange(msg.getSrcIpRange());
-        targetRule.setDstPortRange(msg.getDstPortRange());
-        targetRule.setAllowedCidr(msg.getAllowedCidr());
-        targetRule.setStartPort(msg.getStartPort());
-        targetRule.setEndPort(msg.getEndPort());
-
-        // Deduplicate in DB
-        List<SecurityGroupRuleVO> vos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid()).eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.valueOf(msg.getType())).list();
-
-        for (SecurityGroupRuleVO vo : vos) {
-            APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
-            ao.setType(vo.getType().toString());
-            ao.setAllowedCidr(vo.getAllowedCidr());
-            ao.setProtocol(vo.getProtocol().toString());
-            ao.setStartPort(vo.getStartPort());
-            ao.setEndPort(vo.getEndPort());
-            ao.setIpVersion(vo.getIpVersion());
-            ao.setRemoteSecurityGroupUuid(vo.getRemoteSecurityGroupUuid());
-            ao.setAction(vo.getAction());
-            ao.setSrcIpRange(vo.getSrcIpRange());
-            ao.setDstIpRange(vo.getDstIpRange());
-            ao.setDstPortRange(vo.getDstPortRange());
-            if (ao.equals(targetRule)) {
-                reply.setReason(i18n("duplicated to rule[uuid:%s] in datebase", vo.getUuid()));
-            }
-        }
-
-        if (reply.getReason() != null) {
-            reply.setAvailable(false);
-        }
-    }
 
     private void setVmNicSecurityGroup(APISetVmNicSecurityGroupMsg msg, Completion completion) {
         Map data = new HashMap();
