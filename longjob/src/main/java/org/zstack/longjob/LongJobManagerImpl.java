@@ -26,6 +26,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
 import org.zstack.header.core.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.APIDeleteAccountEvent;
 import org.zstack.header.longjob.*;
@@ -620,7 +621,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
                 if (evt != null) {
                     exts.forEach(ext -> ext.afterJobFinished(job, vo, evt));
-                    Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.safeAccept(evt));
+                    runLongJobCallBack(vo, evt);
                 } else {
                     exts.forEach(ext -> ext.afterJobFinished(job, vo));
                 }
@@ -645,11 +646,27 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 evt.setError(errorCode);
 
                 exts.forEach(ext -> ext.afterJobFailed(job, vo, evt));
-                Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.safeAccept(evt));
+                runLongJobCallBack(vo, evt);
 
                 logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             }
         };
+    }
+
+    private void runLongJobCallBack(LongJobVO vo, APIEvent evt) {
+        Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> {
+            logger.debug(String.format("run callback for longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+            it.safeAccept(evt);
+        });
+    }
+
+    private void runLongJobCallBack(LongJobVO vo, ErrorCode err) {
+        Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> {
+            APIEvent evt = new APIEvent(vo.getApiId());
+            evt.setError(err);
+            logger.debug(String.format("run callback for longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+            it.safeAccept(evt);
+        });
     }
 
     @Override
@@ -828,21 +845,34 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
         if (operation == LongJobOperation.Start) {
             doStartJob(vo.getUuid(), new NopeCompletion());
-        } else if (operation == LongJobOperation.Resume) {
-            if (longJobFactory.supportResume(vo.getJobName())) {
-                doResumeJob(vo.getUuid(), new NopeCompletion());
-            } else if (longJobFactory.supportClean(vo.getJobName())) {
-                doCleanJob(vo, new NopeCompletion());
-            } else {
-                changeState(vo.getUuid(), LongJobStateEvent.fail);
-            }
-        } else if (operation == LongJobOperation.Cancel) {
-            if (longJobFactory.supportClean(vo.getJobName())) {
-                doCleanJob(vo, new NopeCompletion());
-            } else {
-                changeState(vo.getUuid(), LongJobStateEvent.canceled);
-            }
+            return;
         }
+
+        if (operation == LongJobOperation.Resume && longJobFactory.supportResume(vo.getJobName())) {
+            doResumeJob(vo.getUuid(), new NopeCompletion());
+            return;
+        }
+
+        if (!longJobFactory.supportClean(vo.getJobName())) {
+            changeState(vo.getUuid(), LongJobStateEvent.fail);
+            runLongJobCallBack(vo, err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                    "management node is unavailable"));
+            return;
+        }
+
+        doCleanJob(vo, new Completion(null) {
+            @Override
+            public void success() {
+                runLongJobCallBack(vo, err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                        "management node is unavailable"));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                runLongJobCallBack(vo, err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                        "management node is unavailable"));
+            }
+        });
     }
 
     private LongJobOperation getLoadOperation(LongJobVO vo) {

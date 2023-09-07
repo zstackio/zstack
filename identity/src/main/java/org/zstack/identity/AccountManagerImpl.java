@@ -473,6 +473,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             session = svo == null ? null : SessionInventory.valueOf(svo);
         }
         msg.setSession(session);
+
+        for (LogoutExtensionPoint ext : pluginRgty.getExtensionList(LogoutExtensionPoint.class)) {
+            ext.beforeLogout(session);
+        }
+
         logOutSession(msg.getSessionUuid());
         bus.reply(msg, reply);
     }
