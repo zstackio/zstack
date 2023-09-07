@@ -137,6 +137,11 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
 
         if (VmOperation.NewCreate == spec.getCurrentVmOperation()
                 || VmOperation.ChangeImage == spec.getCurrentVmOperation()) {
+            if (spec.getImageSpec().getInventory() == null) {
+                trigger.next();
+                return;
+            }
+
             final String bsUuid = findBackupStorage(spec, spec.getImageSpec().getInventory().getUuid());
             spec.getImageSpec().setSelectedBackupStorage(CollectionUtils.find(
                     spec.getImageSpec().getInventory().getBackupStorageRefs(),

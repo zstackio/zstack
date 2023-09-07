@@ -1024,9 +1024,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), finalVo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
 
-        boolean isVirtio = msg.getVirtio() != null ? msg.getVirtio() : Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue();
-
-        if (isVirtio) {
+        if ((msg.getVirtio() != null && msg.getVirtio())
+                || Q.New(ImageVO.class)
+                .eq(ImageVO_.uuid, msg.getImageUuid())
+                .eq(ImageVO_.virtio, true)
+                .isExists()) {
             SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
             creator.recreate = true;
             creator.inherent = false;
