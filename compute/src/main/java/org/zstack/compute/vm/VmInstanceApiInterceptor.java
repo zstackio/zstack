@@ -4,6 +4,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
@@ -1010,6 +1011,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     @Transactional(readOnly = true)
     private void validate(APIChangeVmNicStateMsg msg) {
         VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        if (msg.getState().equals(VmNicState.enable.toString())) {
+            MacOperator mo = new MacOperator();
+            if (mo.checkDuplicateMac(nicVO.getHypervisorType(), nicVO.getMac())) {
+                throw new ApiMessageInterceptionException(Platform.argerr("Duplicate mac address [%s]", nicVO.getMac()));
+            }
+        }
+
         if (!nicVO.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)) {
             throw new ApiMessageInterceptionException(operr("could not update nic[uuid: %s] state, due to nic type[%s] not support",
                     msg.getVmNicUuid(), nicVO.getType()));
