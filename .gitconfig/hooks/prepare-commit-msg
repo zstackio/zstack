@@ -286,7 +286,7 @@ def get_tags(changed_folders, changed_paths):
 def get_jiras():
     jiras = []
     jira_patterns = [r"\bZSTAC-\d+\b", r"\bZSTACK-\d+\b", r"\bMINI-\d+\b", 
-                     r"\bZOPS-\d+\b", r"\bZHCI-\d+\b"]
+                     r"\bZOPS-\d+\b", r"\bZHCI-\d+\b", r"\bZSV-\d+\b"]
 
     bashCommand = "git rev-parse --abbrev-ref HEAD"
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
