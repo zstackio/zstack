@@ -8,12 +8,13 @@ import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroup
 import org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
 import org.zstack.network.securitygroup.VmNicSecurityPolicyVO
+import org.zstack.network.securitygroup.SecurityGroupErrors
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.SecurityGroupRuleInventory
 import org.zstack.sdk.VmNicSecurityGroupRefInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.ValidateSecurityGroupRuleResult
+import org.zstack.sdk.ValidateSecurityGroupRuleAction
 import org.zstack.sdk.VmNicSecurityPolicyInventory
 import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -29,70 +30,106 @@ class ValidateSecurityGroupRuleCase extends SubCase {
     VmInstanceInventory vm1, vm2, vm3, vm4
     SecurityGroupInventory sg1, sg2, sg3
 
-    void testRuleAvailability() {
-        ValidateSecurityGroupRuleResult reply = validateSecurityGroupRule {
-            securityGroupUuid = sg1.uuid
-            type = "Ingress"
-            protocol = "TCP"
-            srcIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
-            dstPortRange = "1-100"
-            allowedCidr = "1.1.1.0/24"
+    void testValidateErrorRuleCode() {
+        try {
+            ValidateSecurityGroupRuleAction action = new ValidateSecurityGroupRuleAction()
+            action.securityGroupUuid = sg1.uuid
+            action.type = "Ingress"
+            action.protocol = "TCP"
+            action.srcIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
+            action.dstPortRange = "1-100"
+            action.allowedCidr = "1.1.1.0/24"
+            action.sessionId = adminSession()
+        } catch (ApiMessageInterceptionException e) {
+            assert e.code == SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR.toString()
         }
 
-        assert reply.available == false
-
-        reply = validateSecurityGroupRule {
-            securityGroupUuid = sg1.uuid
-            type = "Ingress"
-            protocol = "TCP"
-            srcIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
-            dstIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
-            dstPortRange = "1-100"
+        try {
+            ValidateSecurityGroupRuleAction action = new ValidateSecurityGroupRuleAction()
+            action.securityGroupUuid = sg1.uuid
+            action.type = "Ingress"
+            action.protocol = "TCP"
+            action.srcIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
+            action.dstIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
+            action.dstPortRange = "1-100"
+            action.sessionId = adminSession()
+        } catch (ApiMessageInterceptionException e) {
+            assert e.code == SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR.toString()
         }
 
-        assert reply.available == false
-
-        reply = validateSecurityGroupRule {
-            securityGroupUuid = sg1.uuid
-            type = "Egress"
-            protocol = "TCP"
-            srcIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
-            dstPortRange = "1-100"
+        try {
+            ValidateSecurityGroupRuleAction action = new ValidateSecurityGroupRuleAction()
+            action.securityGroupUuid = sg1.uuid
+            action.type = "Egress"
+            action.protocol = "TCP"
+            action.srcIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
+            action.dstPortRange = "1-100"
+            action.sessionId = adminSession()
+        } catch (ApiMessageInterceptionException e) {
+            assert e.code == SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR.toString()
         }
 
-        assert reply.available == false
-
-        reply = validateSecurityGroupRule {
-            securityGroupUuid = sg1.uuid
-            type = "Ingress"
-            protocol = "ALL"
-            srcIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
-            remoteSecurityGroupUuid = sg2.uuid
+        try {
+            ValidateSecurityGroupRuleAction action = new ValidateSecurityGroupRuleAction()
+            action.securityGroupUuid = sg1.uuid
+            action.type = "Ingress"
+            action.protocol = "ALL"
+            action.srcIpRange = "1.1.1.1-1.1.1.10,2.2.2.0/24"
+            action.remoteSecurityGroupUuid = sg2.uuid
+            action.sessionId = adminSession()
+        } catch (ApiMessageInterceptionException e) {
+            assert e.code == SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR.toString()
         }
 
-        assert reply.available == false
+        try {
+            ValidateSecurityGroupRuleAction action = new ValidateSecurityGroupRuleAction()
+            action.securityGroupUuid = sg1.uuid
+            action.type = "Ingress"
+            action.protocol = "TCP"
+            action.allowedCidr = "192.168.1.0/24"
+            action.startPort = 400
+            action.endPort = 300
+            action.sessionId = adminSession()
+        } catch (ApiMessageInterceptionException e) {
+            assert e.code == SecurityGroupErrors.RULE_PORT_FIELD_ERROR.toString()
+        }
 
-        SecurityGroupRuleAO rule1 = new SecurityGroupRuleAO()
-        rule1.allowedCidr = "192.168.1.0/24"
-        rule1.type = "Ingress"
-        rule1.protocol = "TCP"
-        rule1.startPort = 200
-        rule1.endPort = 300
+        try {
+            ValidateSecurityGroupRuleAction action = new ValidateSecurityGroupRuleAction()
+            action.securityGroupUuid = sg1.uuid
+            action.type = "Ingress"
+            action.protocol = "TCP"
+            action.allowedCidr = "333.168.1.0/24"
+            action.startPort = 500
+            action.endPort = 600
+            action.sessionId = adminSession()
+        } catch (ApiMessageInterceptionException e) {
+            assert e.code == SecurityGroupErrors.RULE_IP_FIELD_ERROR.toString()
+        }
+
+        SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+        r.type = "Ingress"
+        r.ipVersion = 4
+        r.startPort = 1000
+        r.endPort = 2000
+        r.srcIpRange = "172.16.90.157"
+        r.protocol = "TCP"
         sg1 = addSecurityGroupRule {
             securityGroupUuid = sg1.uuid
-            rules = [rule1]
+            rules = [r]
         }
 
-        reply = validateSecurityGroupRule {
-            securityGroupUuid = sg1.uuid
-            allowedCidr = "192.168.1.0/24"
-            type = "Ingress"
-            protocol = "TCP"
-            startPort = 200
-            endPort = 300
+        try {
+            ValidateSecurityGroupRuleAction action = new ValidateSecurityGroupRuleAction()
+            action.securityGroupUuid = sg1.uuid
+            action.type = "Ingress"
+            action.protocol = "TCP"
+            action.srcIpRange = "172.16.90.157"
+            action.dstPortRange = "1000-2000"
+            action.sessionId = adminSession()
+        } catch (ApiMessageInterceptionException e) {
+            assert e.code == SecurityGroupErrors.RULE_DUPLICATE_ERROR.toString()
         }
-
-        assert reply.available == false
     }
 
 
@@ -134,6 +171,6 @@ class ValidateSecurityGroupRuleCase extends SubCase {
             } as SecurityGroupInventory
         }
 
-        testRuleAvailability()
+        testValidateErrorRuleCode()
     }
 }

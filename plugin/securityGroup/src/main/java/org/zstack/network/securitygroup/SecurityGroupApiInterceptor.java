@@ -89,12 +89,12 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIValidateSecurityGroupRuleMsg msg) {
         if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getSecurityGroupUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("invalid security group rule, because security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
+            throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RESOURCE_NOT_EXIST_ERROR, "invalid security group rule, because security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
         }
 
         if (msg.getRemoteSecurityGroupUuid() != null) {
             if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("invalid security group rule, because remote security group[uuid:%s] not found", msg.getRemoteSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RESOURCE_NOT_EXIST_ERROR, "invalid security group rule, because remote security group[uuid:%s] not found", msg.getRemoteSecurityGroupUuid()));
             }
         }
 
@@ -133,14 +133,94 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
         if (SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol())) {
             if (msg.getStartPort() != -1 || msg.getEndPort() != -1) {
-                throw new ApiMessageInterceptionException(argerr("invalid security group rule, because startPort and endPort must be -1 when protocol is ALL or ICMP"));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because startPort and endPort must be -1 when protocol is ALL or ICMP"));
             }
         } else {
             if (msg.getStartPort() > msg.getEndPort()) {
-                throw new ApiMessageInterceptionException(argerr("invalid security group rule, because invalid endPort[%d], endPort must be greater than or equal to startPort[%d]", msg.getEndPort(), msg.getStartPort()));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because invalid endPort[%d], endPort must be greater than or equal to startPort[%d]", msg.getEndPort(), msg.getStartPort()));
             }
             if (msg.getStartPort() > 65535) {
-                throw new ApiMessageInterceptionException(argerr("invalid security group rule, because startPort[%d] must less than 65535 when protocol is[%s]", msg.getStartPort(), msg.getProtocol()));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because startPort[%d] must less than 65535 when protocol is[%s]", msg.getStartPort(), msg.getProtocol()));
+            }
+        }
+
+        if (msg.getRemoteSecurityGroupUuid() != null) {
+            if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "remoteSecurityGroupUuid[%s] and srcIpRange/dstIpRange cannot be set at the same time", msg.getRemoteSecurityGroupUuid()));
+            }
+            if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(msg.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(msg.getAllowedCidr())) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "remoteSecurityGroupUuid[%s] and allowedCidr[%s] cannot be set at the same time", msg.getRemoteSecurityGroupUuid(), msg.getAllowedCidr()));
+            }
+        }
+
+        if (msg.getSrcIpRange() != null) {
+            if (msg.getDstIpRange() != null) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "srcIpRange[%s] and dstIpRange[%s] cannot be set at the same time", msg.getSrcIpRange(), msg.getDstIpRange()));
+            }
+            if (SecurityGroupRuleType.Egress.toString().equals(msg.getType())) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "srcIpRange cannot be set in Egress rule"));
+            }
+        }
+
+        if (msg.getDstIpRange() != null) {
+            if (SecurityGroupRuleType.Ingress.toString().equals(msg.getType())) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "dstIpRange cannot be set in Ingress rule"));
+            }
+        }
+
+        if (msg.getDstPortRange() != null) {
+            if (SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "dstPortRange cannot be set when rule protocol is ALL or ICMP"));
+            }
+
+            if (msg.getStartPort() != -1 || msg.getEndPort() != -1) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "dstPortRange and startPort/endPort cannot be set at the same time"));
+            }
+        } else if (msg.getStartPort() >= 0) {
+            if (msg.getStartPort().equals(msg.getEndPort())) {
+                msg.setDstPortRange(String.valueOf(msg.getStartPort()));
+            } else {
+                msg.setDstPortRange(String.format("%s-%s", msg.getStartPort(), msg.getEndPort()));
+            }
+        }
+
+        if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(msg.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(msg.getAllowedCidr())) {
+            if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "allowCidr and srcIpRange/dstIpRange cannot be set at the same time"));
+            }
+
+            if (SecurityGroupRuleType.Ingress.toString().equals(msg.getType())) {
+                msg.setSrcIpRange(msg.getAllowedCidr());
+            } else {
+                msg.setDstIpRange(msg.getAllowedCidr());
+            }
+        }
+
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO targetRule = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
+        targetRule.setType(msg.getType());
+        targetRule.setRemoteSecurityGroupUuid(msg.getRemoteSecurityGroupUuid());
+        targetRule.setAction(msg.getAction());
+        targetRule.setProtocol(msg.getProtocol());
+        targetRule.setIpVersion(msg.getIpVersion());
+        targetRule.setDstIpRange(msg.getDstIpRange());
+        targetRule.setSrcIpRange(msg.getSrcIpRange());
+        targetRule.setDstPortRange(msg.getDstPortRange());
+
+        // Deduplicate in DB
+        List<SecurityGroupRuleVO> vos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid()).eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.valueOf(msg.getType())).list();
+
+        for (SecurityGroupRuleVO vo : vos) {
+            APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
+            ao.setType(vo.getType().toString());
+            ao.setProtocol(vo.getProtocol().toString());
+            ao.setIpVersion(vo.getIpVersion());
+            ao.setRemoteSecurityGroupUuid(vo.getRemoteSecurityGroupUuid());
+            ao.setAction(vo.getAction());
+            ao.setSrcIpRange(vo.getSrcIpRange());
+            ao.setDstIpRange(vo.getDstIpRange());
+            ao.setDstPortRange(vo.getDstPortRange());
+            if (ao.equals(targetRule)) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_DUPLICATE_ERROR, "duplicated to rule[uuid:%s] in datebase", vo.getUuid()));
             }
         }
     }
@@ -492,19 +572,19 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
     private void validatePorts(String ports) {
         if (ports.isEmpty() || ports.startsWith(SecurityGroupConstant.IP_SPLIT) || ports.endsWith(SecurityGroupConstant.IP_SPLIT)) {
-            throw new ApiMessageInterceptionException(argerr("invalid ports[%s]", ports));
+            throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s]", ports));
         }
         String portArray[];
         if (ports.contains(SecurityGroupConstant.IP_SPLIT)) {
             String[] tmpPorts = ports.split(String.format("%s|%s", SecurityGroupConstant.IP_SPLIT, SecurityGroupConstant.RANGE_SPLIT));
             if (tmpPorts.length > SecurityGroupConstant.PORT_GROUP_NUMBER_LIMIT) {
-                throw new ApiMessageInterceptionException(argerr("invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]", ports, Arrays.toString(tmpPorts), tmpPorts.length, SecurityGroupConstant.PORT_GROUP_NUMBER_LIMIT));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]", ports, Arrays.toString(tmpPorts), tmpPorts.length, SecurityGroupConstant.PORT_GROUP_NUMBER_LIMIT));
             }
 
             portArray = ports.split(SecurityGroupConstant.IP_SPLIT);
             Stream<String> stream = Stream.of(portArray).distinct();
             if (portArray.length != stream.count()) {
-                throw new ApiMessageInterceptionException(argerr("invalid ports[%s], port duplicate", ports));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port duplicate", ports));
             }
         } else {
             portArray = new String[]{ports};
@@ -512,12 +592,12 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
         for (String port : portArray) {
             if (port.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("invalid ports[%s]", ports));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s]", ports));
             }
             if (port.contains(SecurityGroupConstant.RANGE_SPLIT)) {
                 String portRange[] = port.split(SecurityGroupConstant.RANGE_SPLIT);
                 if (portRange.length != 2) {
-                    throw new ApiMessageInterceptionException(argerr("invalid port range[%s]", port));
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
                 }
 
                 try {
@@ -525,20 +605,20 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                     Integer endPort = Integer.valueOf(portRange[1]);
                     if (startPort >= endPort || startPort < SecurityGroupConstant.PORT_NUMBER_MIN
                         || endPort > SecurityGroupConstant.PORT_NUMBER_MAX) {
-                        throw new ApiMessageInterceptionException(argerr("invalid port range[%s]", port));
+                        throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
                     }
                 } catch (NumberFormatException e) {
-                    throw new ApiMessageInterceptionException(argerr("invalid port range[%s]", port));
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
                 }
             } else {
                 try {
                     Integer.valueOf(port);
                     if (Integer.valueOf(port) < SecurityGroupConstant.PORT_NUMBER_MIN
                         || Integer.valueOf(port) > SecurityGroupConstant.PORT_NUMBER_MAX) {
-                        throw new ApiMessageInterceptionException(argerr("invalid port[%s]", port));
+                        throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port[%s]", port));
                     }
                 } catch (NumberFormatException e) {
-                    throw new ApiMessageInterceptionException(argerr("invalid port[%s]", port));
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port[%s]", port));
                 }
             }
         }
@@ -546,22 +626,22 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
     private void validateIps(String ips, Integer ipVersion) {
         if (ips.isEmpty() || ips.startsWith(SecurityGroupConstant.IP_SPLIT) || ips.endsWith(SecurityGroupConstant.IP_SPLIT)) {
-            throw new ApiMessageInterceptionException(argerr("invalid ips[%s]", ips));
+            throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s]", ips));
         }
         String ipArray[];
         if (ips.contains(SecurityGroupConstant.IP_SPLIT)) {
             ipArray = ips.split(SecurityGroupConstant.IP_SPLIT);
             if (ipArray.length > SecurityGroupConstant.IP_GROUP_NUMBER_LIMIT) {
-                throw new ApiMessageInterceptionException(argerr("invalid ips[%s], ip number[%d] is out of max limit[%d]", ips, ipArray.length, SecurityGroupConstant.IP_GROUP_NUMBER_LIMIT));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip number[%d] is out of max limit[%d]", ips, ipArray.length, SecurityGroupConstant.IP_GROUP_NUMBER_LIMIT));
             }
             Stream<String> stream = Stream.of(ipArray).distinct();
             if (ipArray.length != stream.count()) {
-                throw new ApiMessageInterceptionException(argerr("invalid ips[%s], ip duplicate", ips));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip duplicate", ips));
             }
             if (ipVersion == IPv6Constants.IPv6) {
                 List<String> ipv6List = Stream.of(ipArray).filter(ip -> ip.contains(SecurityGroupConstant.RANGE_SPLIT)).collect(Collectors.toList());
                 if (ipv6List.size() > 0) {
-                    throw new ApiMessageInterceptionException(argerr("invalid ips[%s], ip range cannot be used when specifying multiple ipv6 addresses", ips));
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip range cannot be used when specifying multiple ipv6 addresses", ips));
                 }
             }
         } else {
@@ -570,18 +650,18 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
         for (String ip : ipArray) {
             if (ip.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("invalid ips[%s]", ips));
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s]", ips));
             }
             if (ip.contains(SecurityGroupConstant.CIDR_SPLIT)) {
                 if (!NetworkUtils.isCidr(ip, ipVersion)) {
-                    throw new ApiMessageInterceptionException(argerr("invalid cidr[%s], ipVersion[%d]", ip, ipVersion));
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid cidr[%s], ipVersion[%d]", ip, ipVersion));
                 }
                 continue;
             }
             if (ip.contains(SecurityGroupConstant.RANGE_SPLIT)) {
                 String[] ipRangeArray = ip.split(SecurityGroupConstant.RANGE_SPLIT);
                 if (ipRangeArray.length != 2) {
-                    throw new ApiMessageInterceptionException(argerr("invalid ip range[%s]", ip));
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip range[%s]", ip));
                 }
                 String startIp = ipRangeArray[0];
                 String endIp = ipRangeArray[1];
@@ -589,18 +669,18 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                     NetworkUtils.validateIpRange(startIp, endIp);
                 } else {
                     if (!IPv6NetworkUtils.isIpv6Address(startIp) || !IPv6NetworkUtils.isIpv6Address(endIp) || startIp.compareTo(endIp) > 0) {
-                        throw new ApiMessageInterceptionException(argerr("invalid ip range[%s]", ip));
+                        throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip range[%s]", ip));
                     }
                 }
                 continue;
             }
             if (ipVersion == IPv6Constants.IPv4) {
                 if (!NetworkUtils.isIpv4Address(ip)) {
-                    throw new ApiMessageInterceptionException(argerr("invalid ip[%s], ipVersion[%d]", ip, ipVersion));
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip[%s], ipVersion[%d]", ip, ipVersion));
                 }
             } else {
                 if (!IPv6NetworkUtils.isValidIpv6(ip)) {
-                    throw new ApiMessageInterceptionException(argerr("invalid ip[%s], ipVersion[%d]", ip, ipVersion));
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip[%s], ipVersion[%d]", ip, ipVersion));
                 }
             }
         }
