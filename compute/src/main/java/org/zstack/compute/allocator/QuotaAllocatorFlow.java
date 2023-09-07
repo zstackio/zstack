@@ -8,10 +8,48 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.identity.Account;
 import org.zstack.identity.QuotaUtil;
 
+import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.db.DatabaseFacade;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.core.db.Q;
+import org.zstack.utils.Utils;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.host.*;
+import javax.persistence.TypedQuery;
+import java.util.*;
+
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class QuotaAllocatorFlow extends AbstractHostAllocatorFlow {
+    private static final CLogger logger = Utils.getLogger(QuotaAllocatorFlow.class);
+
+    @Autowired
+    private DatabaseFacade dbf;
+
     @Override
     public void allocate() {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            if (candidates == null || candidates.isEmpty()) {
+                String sql = "select h from HostVO h where h.clusterUuid in (:cuuids)";
+                Set<String> clusterUuids = new HashSet<>();
+                clusterUuids.add(spec.getVmInstance().getClusterUuid());
+
+                TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+                hq.setParameter("cuuids", clusterUuids);
+                if (usePagination()) {
+                    hq.setFirstResult(paginationInfo.getOffset());
+                    hq.setMaxResults(paginationInfo.getLimit());
+                }
+                candidates = hq.getResultList();
+                logger.debug(String.format("vm clusteruuid:%s, candidates size:%s", spec.getVmInstance().getClusterUuid(), candidates.size()));
+                next(candidates);
+            }
+        }
+
         throwExceptionIfIAmTheFirstFlow();
 
         final String vmInstanceUuid = spec.getVmInstance().getUuid();
