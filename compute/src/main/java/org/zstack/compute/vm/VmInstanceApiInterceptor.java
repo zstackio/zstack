@@ -177,6 +177,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIChangeVmNicNetworkMsg msg) {
         List<Map<String, String>> networkServices = new ArrayList<>();
         VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+
+        //l2 must use same vswitch
+        long count  = SQL.New("select count(distinct l2.vSwitchType) from L2NetworkVO l2, L3NetworkVO l3 where l2.uuid = l3.l2NetworkUuid" +
+                " and l3.uuid in :l3Uuids")
+                .param("l3Uuids", Arrays.asList(nicVO.getL3NetworkUuid(), msg.getDestL3NetworkUuid()))
+                .find();
+        if (count > 1) {
+            throw new ApiMessageInterceptionException(operr("could not change to L3 network, the l2 of l3[uuid:%s, %s] use different vswitch",
+                    nicVO.getL3NetworkUuid(), msg.getDestL3NetworkUuid()));
+        }
         for (VmNicChangeNetworkExtensionPoint extension : pluginRgty.getExtensionList(VmNicChangeNetworkExtensionPoint.class)) {
             Map<String, String> ret = extension.getVmNicAttachedNetworkService(VmNicInventory.valueOf(nicVO));
             if (ret == null) {

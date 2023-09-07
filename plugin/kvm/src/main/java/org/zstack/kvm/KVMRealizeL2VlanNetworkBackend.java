@@ -176,12 +176,17 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
     }
 
-	@Override
+    @Override
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    }
+
+    @Override
 	public L2NetworkType getL2NetworkTypeVmNicOn() {
 		return getSupportedL2NetworkType();
 	}
 
-	@Override
+    @Override
 	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         final Integer vlanId = getVlanId(l2Network.getUuid());
 		NicTO to = new NicTO();

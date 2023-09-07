@@ -46,7 +46,7 @@ public class CreateL2HardwareVxlanNetworkAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String type;
 
-    @Param(required = false, validValues = {"LinuxBridge","OvsDpdk"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"LinuxBridge","OvsDpdk","MacVlan"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vSwitchType = "LinuxBridge";
 
     @Param(required = false)

@@ -1,5 +1,6 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.vm.VmMacVlanNicConstant;
 import org.zstack.header.vm.VmNicType;
 import org.zstack.header.vm.VmOvsNicConstant;
 
@@ -60,6 +61,10 @@ public class VSwitchType {
                 if (type.isUseSRIOV() == enableSRIOV) {
                     return type;
                 }
+            }
+        } else if (typeName.equals(L2NetworkConstant.VSWITCH_TYPE_MACVLAN)) {
+            if (types.contains(VmNicType.valueOf(VmMacVlanNicConstant.MACVLAN_NIC_TYPE))) {
+                return VmNicType.valueOf(VmMacVlanNicConstant.MACVLAN_NIC_TYPE);
             }
         }
 
