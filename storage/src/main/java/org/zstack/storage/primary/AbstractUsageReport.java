@@ -185,7 +185,26 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
         if (!usedPhysicalCapacityForecastsMap.containsKey(resourceUuid)) {
             return new ArrayList<>();
         }
-        return usedPhysicalCapacityForecastsMap.get(resourceUuid).getFutureForecastsInPercent();
+        List<Double> percents = usedPhysicalCapacityForecastsMap.get(resourceUuid).getFutureForecastsInPercent();
+
+        long now = Timestamp.valueOf(LocalDate.now().atStartOfDay()).getTime();
+        Long lastRecordDate = getLastHistoricalUsageRecordDateForResource(resourceUuid);
+        if (lastRecordDate == null) {
+            return new ArrayList<>();
+        }
+        if (lastRecordDate < now) {
+            percents.remove(0);
+        }
+
+        return percents;
+    }
+
+    private Long getLastHistoricalUsageRecordDateForResource(String resourceUuid) {
+        if (!historicalUsageMap.containsKey(resourceUuid)) {
+            return null;
+        }
+        List<Long> recordDates = new ArrayList<>(historicalUsageMap.get(resourceUuid).getRecordDates());
+        return recordDates.get(recordDates.size() - 1);
     }
 
     private List<ResourceUsage> getResourceUsages() {
@@ -226,7 +245,8 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
                 return;
             }
 
-            usageReport.setUsedPhysicalCapacitiesForecast(usedPhysicalCapacityForecastsMap.get(resourceUuid).getAllForecasts());
+            usageReport.setUsedPhysicalCapacitiesForecast(usedPhysicalCapacityForecastsMap.containsKey(resourceUuid) ?
+                    usedPhysicalCapacityForecastsMap.get(resourceUuid).getAllForecasts() : new ArrayList<>());
             usageReport.setUsedPhysicalCapacitiesHistory(new ArrayList<>(historicalUsageMap.get(resourceUuid).getHistoricalUsedPhysicalCapacities()));
             usageReport.setTotalPhysicalCapacitiesHistory(new ArrayList<>(historicalUsageMap.get(resourceUuid).getTotalPhysicalCapacities()));
             usageReport.setStartTime(new ArrayList<>(historicalUsageMap.get(resourceUuid).getRecordDates()).get(0));
