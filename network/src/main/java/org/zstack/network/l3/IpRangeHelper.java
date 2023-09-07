@@ -8,6 +8,8 @@ import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.network.l3.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -134,6 +136,32 @@ public class IpRangeHelper {
             List<String> used = q.listValues();
             return used.stream().distinct().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
         }
+    }
+
+    public static List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit, String start) {
+        List<String> usedIps = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, ipr.getUuid()).listValues();
+        usedIps = usedIps.stream().distinct().collect(Collectors.toList());
+
+        List<String> spareIps = new ArrayList<>();
+        if (ipr.getIpVersion() == IPv6Constants.IPv6) {
+            spareIps.addAll(NetworkUtils.getFreeIpv6InRange(ipr.getStartIp(), ipr.getEndIp(), usedIps, limit, start));
+        } else {
+            IpRangeVO cloneIpr = new IpRangeVO();
+            cloneIpr.setStartIp(ipr.getStartIp());
+            cloneIpr.setEndIp(ipr.getEndIp());
+            cloneIpr.setNetmask(ipr.getNetmask());
+            IpRangeHelper.stripNetworkAndBroadcastAddress(cloneIpr);
+            spareIps.addAll(NetworkUtils.getFreeIpInRange(cloneIpr.getStartIp(), cloneIpr.getEndIp(), usedIps, limit, start));
+        }
+
+        return CollectionUtils.transformToList(spareIps, (Function<FreeIpInventory, String>) arg -> {
+            FreeIpInventory f = new FreeIpInventory();
+            f.setGateway(ipr.getGateway());
+            f.setIp(arg);
+            f.setNetmask(ipr.getNetmask());
+            f.setIpRangeUuid(ipr.getUuid());
+            return f;
+        });
     }
 
     public static boolean stripNetworkAndBroadcastAddress(IpRangeVO ipr) {
