@@ -82,6 +82,15 @@ class ChangeVmNicSecurityPolicyCase extends SubCase {
 
         assert policy.ingressPolicy == "DENY"
         assert policy.egressPolicy == "ALLOW"
+
+        changeVmNicSecurityPolicy {
+            vmNicUuid = vm1_nic_uuid
+            ingressPolicy == "DENY"
+            egressPolicy = "ALLOW"
+        }
+
+        assert policy.ingressPolicy == "DENY"
+        assert policy.egressPolicy == "ALLOW"
     }
 
     @Override

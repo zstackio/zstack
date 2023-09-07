@@ -993,7 +993,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     private void handle(APIChangeVmNicSecurityPolicyMsg msg) {
+        APIChangeVmNicSecurityPolicyEvent evt = new APIChangeVmNicSecurityPolicyEvent(msg.getId());
         VmNicSecurityPolicyVO pvo = Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, msg.getVmNicUuid()).find();
+
+        if (msg.getIngressPolicy() == null && msg.getEgressPolicy() == null) {
+            logger.debug(String.format("vm nic[uuid:%s] security policy not change", msg.getVmNicUuid()));
+            evt.setInventory(VmNicSecurityPolicyInventory.valueOf(pvo));
+            bus.publish(evt);
+
+            return;
+        }
+
 
         if (msg.getIngressPolicy() != null) {
             pvo.setIngressPolicy(msg.getIngressPolicy());
@@ -1009,7 +1019,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         List<HostRuleTO> htos = cal.calculate();
         applyRules(htos);
 
-        APIChangeVmNicSecurityPolicyEvent evt = new APIChangeVmNicSecurityPolicyEvent(msg.getId());
         evt.setInventory(VmNicSecurityPolicyInventory.valueOf(pvo));
         bus.publish(evt);
     }
