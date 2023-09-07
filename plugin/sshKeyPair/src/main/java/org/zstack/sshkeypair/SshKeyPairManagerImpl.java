@@ -255,4 +255,21 @@ public class SshKeyPairManagerImpl extends AbstractService implements
         }
         return sshKeyPairs;
     }
+
+    @Override
+    public void cloneSshKeyPairsToVm(String originVmUuid, String destVmUuid) {
+        List<String> sshKeyPairUuids = Q.New(SshKeyPairRefVO.class)
+                .select(SshKeyPairRefVO_.sshKeyPairUuid)
+                .eq(SshKeyPairRefVO_.resourceUuid, originVmUuid)
+                .eq(SshKeyPairRefVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                .listValues();
+        for (String sshKeyPairUuid: sshKeyPairUuids) {
+            SshKeyPairRefVO refVo = new SshKeyPairRefVO();
+            refVo.setSshKeyPairUuid(sshKeyPairUuid);
+            refVo.setResourceUuid(destVmUuid);
+            refVo.setResourceType(VmInstanceVO.class.getSimpleName());
+            refVo.setCreateDate(new Timestamp(new Date().getTime()));
+            dbf.persist(refVo);
+        }
+    }
 }
