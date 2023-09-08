@@ -1285,49 +1285,52 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             return new ArrayList<VmNicVO>();
         }
 
-        String sql = "select ref.vmNicUuid from VmNicSecurityGroupRefVO ref where ref.securityGroupUuid = :sgUuid";
-        TypedQuery<String> nq = dbf.getEntityManager().createQuery(sql, String.class);
-        nq.setParameter("sgUuid", sgId);
-        List<String> nicUuidsToExclued = nq.getResultList();
+        List<String> nicUuidsToExclued = Q.New(VmNicSecurityGroupRefVO.class).select(VmNicSecurityGroupRefVO_.vmNicUuid).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgId).listValues();
 
-        TypedQuery<VmNicVO> q;
-        if (nicUuidsToInclude == null) {
-            // accessed by an admin
-            if (nicUuidsToExclued.isEmpty()) {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
-                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) group by nic.uuid";
-                q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+        List<VmNicVO> candidateNics = new ArrayList<>();
+        List<VmNicVO> allNics = SQL.New("select nic from VmNicVO nic, VmInstanceVO vm" +
+                " where nic.vmInstanceUuid = vm.uuid" +
+                " and vm.type = :vmType" +
+                " and vm.state in (:vmStates)", VmNicVO.class)
+                .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                .param("vmStates", list(VmInstanceState.Running, VmInstanceState.Stopped))
+                .list();
+        
+        if (allNics.isEmpty()) {
+            return allNics;
+        }
+
+        if (!nicUuidsToExclued.isEmpty()) {
+            if (nicUuidsToInclude != null && !nicUuidsToInclude.isEmpty()) {
+                // accessed by a normal account
+                allNics.stream().forEach(nic -> {
+                    if (!nicUuidsToExclued.contains(nic.getUuid()) && nicUuidsToInclude.contains(nic.getUuid())) {
+                        candidateNics.add(nic);
+                    }
+                });
             } else {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref" +
-                        " where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) group by nic.uuid";
-                q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-                q.setParameter("nicUuids", nicUuidsToExclued);
+                // accessed by an admin
+                allNics.stream().forEach(nic -> {
+                    if (!nicUuidsToExclued.contains(nic.getUuid())) {
+                        candidateNics.add(nic);
+                    }
+                });
             }
         } else {
-            // accessed by a normal account
-            if (nicUuidsToExclued.isEmpty()) {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref" +
-                        " where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid in (:iuuids) group by nic.uuid";
-                q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-                q.setParameter("iuuids", nicUuidsToInclude);
+            if (nicUuidsToInclude != null && !nicUuidsToInclude.isEmpty()) {
+                // accessed by a normal account
+                allNics.stream().forEach(nic -> {
+                    if (nicUuidsToInclude.contains(nic.getUuid())) {
+                        candidateNics.add(nic);
+                    }
+                });
             } else {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref" +
-                        " where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) and nic.uuid in (:iuuids) group by nic.uuid";
-                q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-                q.setParameter("nicUuids", nicUuidsToExclued);
-                q.setParameter("iuuids", nicUuidsToInclude);
+                // accessed by an admin
+                return allNics;
             }
         }
 
-
-        q.setParameter("sgUuid", sgId);
-        q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-        q.setParameter("vmStates", list(VmInstanceState.Running, VmInstanceState.Stopped));
-        return q.getResultList();
+        return candidateNics;
     }
 
     private void handle(APIGetCandidateVmNicForSecurityGroupMsg msg) {
