@@ -42,7 +42,6 @@ import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -1102,6 +1101,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validateZoneOrClusterOrHostOrL3Exist(APICreateVmInstanceMsg msg) {
+        if (CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && StringUtils.isEmpty(msg.getZoneUuid())
+                && StringUtils.isEmpty(msg.getClusterUuid()) && StringUtils.isEmpty(msg.getHostUuid())) {
+            throw new ApiMessageInterceptionException(operr("could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set", msg.getImageUuid()));
+        }
+    }
+
     private void validateInstanceSettings(NewVmInstanceMessage2 msg) {
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
 
@@ -1225,6 +1231,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validatePsWhetherSameCluster(msg);
+
+        validateZoneOrClusterOrHostOrL3Exist(msg);
     }
 
     private void validate(APICreateVmInstanceFromVolumeMsg msg) {
@@ -1289,25 +1297,27 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             VmNicUtils.validateVmParms(vmNicInventories, msg.getL3NetworkUuids(), supportNicDriverTypes);
         }
 
-        SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
-        l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state);
-        List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
-        List<String> duplicateElements = getDuplicateElementsOfList(uuids);
-        if (duplicateElements.size() > 0) {
-            throw new ApiMessageInterceptionException(operr("Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
-        }
-
-        l3q.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
-        List<Tuple> l3ts = l3q.listTuple();
-        for (Tuple t : l3ts) {
-            String l3Uuid = t.get(0, String.class);
-            Boolean system = t.get(1, Boolean.class);
-            L3NetworkState state = t.get(2, L3NetworkState.class);
-            if (state != L3NetworkState.Enabled) {
-                throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
+        if (!CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
+            SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
+            l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state);
+            List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
+            List<String> duplicateElements = getDuplicateElementsOfList(uuids);
+            if (duplicateElements.size() > 0) {
+                throw new ApiMessageInterceptionException(operr("Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
             }
-            if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-                throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
+
+            l3q.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
+            List<Tuple> l3ts = l3q.listTuple();
+            for (Tuple t : l3ts) {
+                String l3Uuid = t.get(0, String.class);
+                Boolean system = t.get(1, Boolean.class);
+                L3NetworkState state = t.get(2, L3NetworkState.class);
+                if (state != L3NetworkState.Enabled) {
+                    throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
+                }
+                if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
+                    throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
+                }
             }
         }
 
@@ -1360,9 +1370,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (VmInstanceConstant.USER_VM_TYPE.equals(msg.getType())) {
-            if (msg.getDefaultL3NetworkUuid() == null && msg.getL3NetworkUuids().size() != 1) {
+            if (msg.getDefaultL3NetworkUuid() == null && (msg.getL3NetworkUuids()!= null && msg.getL3NetworkUuids().size() != 1)) {
                 throw new ApiMessageInterceptionException(argerr("there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null"));
-            } else if (msg.getDefaultL3NetworkUuid() == null && msg.getL3NetworkUuids().size() == 1) {
+            } else if (msg.getDefaultL3NetworkUuid() == null && (msg.getL3NetworkUuids()!= null &&msg.getL3NetworkUuids().size() == 1)) {
                 msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
             } else if (msg.getDefaultL3NetworkUuid() != null && !msg.getL3NetworkUuids().contains(msg.getDefaultL3NetworkUuid())) {
                 throw new ApiMessageInterceptionException(argerr("defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", msg.getDefaultL3NetworkUuid(), msg.getL3NetworkUuids()));

@@ -54,7 +54,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         }
         if ((spec.getRequiredClusterUuid() != null &&
                 !spec.getRequiredClusterUuid().equals(msg.getVmInstance().getClusterUuid()))
-                || spec.getRequiredHostUuid() != null) {
+                || spec.getRequiredHostUuid() != null || CollectionUtils.isEmpty(spec.getVmInventory().getVmNics())) {
             msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
             msg.setHostUuid(spec.getRequiredHostUuid());
         } else {
@@ -65,6 +65,10 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
                 msg.setAllocatorStrategy(HostAllocatorConstant.LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE);
             }
         }
+        if (CollectionUtils.isEmpty(spec.getVmInventory().getVmNics())) {
+            msg.setAllowNoL3Networks(true);
+        }
+
         msg.setL3NetworkUuids(CollectionUtils.transformToList(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()),
                 new Function<String, L3NetworkInventory>() {
             @Override
@@ -72,7 +76,13 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
                 return arg.getUuid();
             }
         }));
-        msg.setClusterUuid(spec.getRequiredClusterUuid());
+        if (spec.getRequiredClusterUuid() == null) {
+            if (CollectionUtils.isEmpty(spec.getVmInventory().getVmNics())) {
+                msg.setClusterUuid(spec.getVmInventory().getClusterUuid());
+            }
+        } else {
+            msg.setClusterUuid(spec.getRequiredClusterUuid());
+        }
         msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
                 .map(VolumeInventory::getPrimaryStorageUuid)
                 .collect(Collectors.toSet()));

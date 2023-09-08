@@ -1306,7 +1306,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void handle(final CreateVmInstanceMsg msg) {
-        if(msg.getZoneUuid() == null){
+        if(msg.getZoneUuid() == null && !CollectionUtils.isEmpty(msg.getL3NetworkSpecs())){
             String l3Uuid = VmNicSpec.getL3UuidsOfSpec(msg.getL3NetworkSpecs()).get(0);
             String zoneUuid = Q.New(L3NetworkVO.class)
                     .select(L3NetworkVO_.zoneUuid)
