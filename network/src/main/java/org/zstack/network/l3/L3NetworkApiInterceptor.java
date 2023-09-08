@@ -400,9 +400,8 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             if (subnet.getAddressCount() == 0) {
                 throw new ApiMessageInterceptionException(argerr("%s is not an allowed network cidr, because it doesn't have usable ip range", msg.getNetworkCidr()));
             }
-
-            if (msg.getGateway() != null && !(msg.getGateway().equals(subnet.getLowAddress()) || msg.getGateway().equals(subnet.getHighAddress()))) {
-                throw new ApiMessageInterceptionException(argerr("%s is not the first or last address of the cidr %s", msg.getGateway(), msg.getNetworkCidr()));
+            if (msg.getGateway() != null && !subnet.isInRange(msg.getGateway())) {
+                throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s", msg.getGateway(), subnet.getCidrSignature()));
             }
         } catch (IllegalArgumentException e) {
             throw new ApiMessageInterceptionException(argerr("%s is not a valid network cidr", msg.getNetworkCidr()));
@@ -412,8 +411,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             msg.setIpRangeType(IpRangeType.Normal.toString());
         }
 
-        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-        validate(ipr);
+        List<IpRangeInventory> iprs = IpRangeInventory.fromMessage(msg);
+        for (IpRangeInventory ipr : iprs) {
+            validate(ipr);
+        }
     }
 
     private void validate(APIGetIpAddressCapacityMsg msg) {

@@ -585,16 +585,18 @@ public class L3BasicNetwork implements L3Network {
 
 
     private void handle(APIAddIpRangeByNetworkCidrMsg msg) {
-        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-        IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
-        IpRangeInventory inv = factory.createIpRange(ipr, msg);
-
-        tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
-
-        setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
-
+        List<IpRangeInventory> iprs = IpRangeInventory.fromMessage(msg);
+        List<IpRangeInventory> ret = new ArrayList<>();
+        for (IpRangeInventory ipr : iprs) {
+            IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
+            IpRangeInventory inv = factory.createIpRange(ipr, msg);
+            setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
+            ret.add(inv);
+        }
+        tagMgr.createTagsFromAPICreateMessage(msg, iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
-        evt.setInventory(inv);
+        evt.setInventory(ret.get(0));
+        evt.setInventories(ret);
         bus.publish(evt);
     }
 
@@ -609,6 +611,7 @@ public class L3BasicNetwork implements L3Network {
 
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
         evt.setInventory(inv);
+        evt.setInventories(Collections.singletonList(inv));
         bus.publish(evt);
     }
 

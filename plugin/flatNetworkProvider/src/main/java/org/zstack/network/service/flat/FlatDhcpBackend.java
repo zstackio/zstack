@@ -1866,8 +1866,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpRangeMsg)msg);
             validateDhcpServerIp(inv, msg.getSystemTags());
         } else if (msg instanceof APIAddIpRangeByNetworkCidrMsg) {
-            IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpRangeByNetworkCidrMsg)msg);
-            validateDhcpServerIp(inv, msg.getSystemTags());
+            List<IpRangeInventory> invs = IpRangeInventory.fromMessage((APIAddIpRangeByNetworkCidrMsg)msg);
+            validateDhcpServerIp(invs.get(0), msg.getSystemTags());
         } else if (msg instanceof APIAddIpv6RangeMsg) {
             IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpv6RangeMsg)msg);
             validateDhcpServerIp(inv, msg.getSystemTags());
