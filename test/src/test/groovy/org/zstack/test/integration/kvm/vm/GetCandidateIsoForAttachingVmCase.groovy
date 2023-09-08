@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.image.ImageBackupStorageRefVO
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImageStatus
@@ -137,7 +138,7 @@ class GetCandidateIsoForAttachingVmCase extends SubCase {
         testvalidate.vmInstanceUuid = vm.uuid
         testvalidate.sessionId = adminSession()
         AttachIsoToVmInstanceAction.Result validateRes = testvalidate.call()
-        assert validateRes.error.details.contains("Unsupported Image Media Type")
+        assert validateRes.error.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()
 
         List<ImageInventory> isoList = getCandidateIsoForAttachingVm {
             vmInstanceUuid = vm.uuid
