@@ -981,7 +981,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the protocol type ALL or ICMP cant not set startPort or endPort"));
                 }
             } else {
-                if (ao.getStartPort() >= SecurityGroupConstant.PORT_NUMBER_MIN && ao.getEndPort() < SecurityGroupConstant.PORT_NUMBER_MAX) {
+                if (ao.getStartPort() >= SecurityGroupConstant.PORT_NUMBER_MIN && ao.getEndPort() <= SecurityGroupConstant.PORT_NUMBER_MAX) {
                     if (ao.getStartPort() > ao.getEndPort()) {
                         throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule endPort[%d], endPort must be greater than or equal to startPort[%d]", ao.getEndPort(), ao.getStartPort()));
                     }
