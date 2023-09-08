@@ -124,7 +124,7 @@ public class KVMGlobalConfig {
     public static GlobalConfig MEMORY_AUTO_BALLOON = new GlobalConfig(CATEGORY, "memory.auto.balloon");
 
     @GlobalConfigValidation(validValues = {"true", "false", "none"})
-    @GlobalConfigDef(defaultValue = "true", description = "enable host ksm")
+    @GlobalConfigDef(defaultValue = "none", description = "enable host ksm")
     @BindResourceConfig({HostVO.class})
     public static GlobalConfig HOST_KSM = new GlobalConfig(CATEGORY, "host.ksm");
 }
