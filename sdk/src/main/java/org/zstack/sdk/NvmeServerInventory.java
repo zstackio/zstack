@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class NvmeTargetInventory  {
+public class NvmeServerInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -20,20 +20,20 @@ public class NvmeTargetInventory  {
         return this.name;
     }
 
-    public java.lang.String nqn;
-    public void setNqn(java.lang.String nqn) {
-        this.nqn = nqn;
+    public java.lang.String ip;
+    public void setIp(java.lang.String ip) {
+        this.ip = ip;
     }
-    public java.lang.String getNqn() {
-        return this.nqn;
+    public java.lang.String getIp() {
+        return this.ip;
     }
 
-    public java.lang.String nvmeServerUuid;
-    public void setNvmeServerUuid(java.lang.String nvmeServerUuid) {
-        this.nvmeServerUuid = nvmeServerUuid;
+    public java.lang.Integer port;
+    public void setPort(java.lang.Integer port) {
+        this.port = port;
     }
-    public java.lang.String getNvmeServerUuid() {
-        return this.nvmeServerUuid;
+    public java.lang.Integer getPort() {
+        return this.port;
     }
 
     public java.lang.String state;
@@ -44,12 +44,28 @@ public class NvmeTargetInventory  {
         return this.state;
     }
 
-    public java.util.List nvmeLuns;
-    public void setNvmeLuns(java.util.List nvmeLuns) {
-        this.nvmeLuns = nvmeLuns;
+    public java.lang.String transport;
+    public void setTransport(java.lang.String transport) {
+        this.transport = transport;
     }
-    public java.util.List getNvmeLuns() {
-        return this.nvmeLuns;
+    public java.lang.String getTransport() {
+        return this.transport;
+    }
+
+    public java.util.List nvmeTargets;
+    public void setNvmeTargets(java.util.List nvmeTargets) {
+        this.nvmeTargets = nvmeTargets;
+    }
+    public java.util.List getNvmeTargets() {
+        return this.nvmeTargets;
+    }
+
+    public java.util.List nvmeClusterRefs;
+    public void setNvmeClusterRefs(java.util.List nvmeClusterRefs) {
+        this.nvmeClusterRefs = nvmeClusterRefs;
+    }
+    public java.util.List getNvmeClusterRefs() {
+        return this.nvmeClusterRefs;
     }
 
     public java.sql.Timestamp createDate;
