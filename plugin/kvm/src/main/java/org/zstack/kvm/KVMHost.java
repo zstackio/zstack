@@ -1270,6 +1270,8 @@ public class KVMHost extends HostBase implements Host {
         List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
         cmd.setVolumes(VolumeTO.valueOf(volumes, KVMHostInventory.valueOf(getSelf())));
 
+        checkCleanTraffic(msg.getVmInstanceUuid());
+
         List<NicTO> nics = new ArrayList<>();
         for (VmNicInventory nic : msg.getNics()) {
             NicTO to = completeNicInfo(nic);
@@ -1924,6 +1926,8 @@ public class KVMHost extends HostBase implements Host {
     }
     protected void changeVmNicState(final ChangeVmNicStateOnHypervisorMsg msg, final NoErrorCompletion completion) {
         final ChangeVmNicStateOnHypervisorReply reply = new ChangeVmNicStateOnHypervisorReply();
+        checkCleanTraffic(msg.getVmInstanceUuid());
+
         NicTO to = completeNicInfo(msg.getNic());
         ChangeVmNicStateCommand cmd = new ChangeVmNicStateCommand();
         cmd.setVmUuid(msg.getVmInstanceUuid());
@@ -1961,6 +1965,9 @@ public class KVMHost extends HostBase implements Host {
 
     protected void detachNic(final DetachNicFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         final DetachNicFromVmOnHypervisorReply reply = new DetachNicFromVmOnHypervisorReply();
+
+        checkCleanTraffic(msg.getVmInstanceUuid());
+
         NicTO to = completeNicInfo(msg.getNic());
 
         DetachNicCommand cmd = new DetachNicCommand();
@@ -2764,6 +2771,9 @@ public class KVMHost extends HostBase implements Host {
             }
         }
 
+
+        checkCleanTraffic(msg.getVmInstanceUuid());
+
         UpdateNicCmd cmd = new UpdateNicCmd();
         cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmd.setNics(VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList()));
@@ -2807,6 +2817,8 @@ public class KVMHost extends HostBase implements Host {
 
     protected void attachNic(final VmAttachNicOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
+
+        checkCleanTraffic(msg.getNicInventory().getVmInstanceUuid());
 
         NicTO to = completeNicInfo(msg.getNicInventory());
 
@@ -3566,6 +3578,7 @@ public class KVMHost extends HostBase implements Host {
 
         cmd.setVmInternalId(spec.getVmInventory().getInternalId());
 
+        checkCleanTraffic(spec.getVmInventory().getUuid());
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
             NicTO to = completeNicInfo(nic);
@@ -5700,5 +5713,23 @@ public class KVMHost extends HostBase implements Host {
                 completion.done();
             }
         });
+    }
+
+    private void checkCleanTraffic(String vmUuid) {
+        // if cleanTraffic tag is null, check global config value and create tag if it`s true
+        if (!VmSystemTags.CLEAN_TRAFFIC.hasTag(vmUuid) &&
+                VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
+            if(!Q.New(VmInstanceVO.class)
+                    .eq(VmInstanceVO_.uuid, vmUuid).select(VmInstanceVO_.type)
+                    .findValue().equals(VmInstanceConstant.USER_VM_TYPE)) {
+                return;
+            }
+            SystemTagCreator creator = VmSystemTags.CLEAN_TRAFFIC.newSystemTagCreator(vmUuid);
+            creator.setTagByTokens(map(e(VmSystemTags.CLEAN_TRAFFIC_TOKEN,
+                    String.valueOf(VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))
+            )));
+            creator.recreate = true;
+            creator.create();
+        }
     }
 }
