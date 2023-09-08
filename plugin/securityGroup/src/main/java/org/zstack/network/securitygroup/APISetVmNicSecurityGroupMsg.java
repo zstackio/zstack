@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
         responseClass = APISetVmNicSecurityGroupEvent.class,
         isAction = true
 )
-public class APISetVmNicSecurityGroupMsg extends APIMessage {
+public class APISetVmNicSecurityGroupMsg extends APIMessage implements VmNicSecurityGroupMessage {
     @APIParam(resourceType = VmNicVO.class, nonempty = true, checkAccount = true, operationTarget = true, required = true)
     private String vmNicUuid;
 
@@ -48,6 +48,7 @@ public class APISetVmNicSecurityGroupMsg extends APIMessage {
         }
     }
 
+    @Override
     public String getVmNicUuid() {
         return vmNicUuid;
     }

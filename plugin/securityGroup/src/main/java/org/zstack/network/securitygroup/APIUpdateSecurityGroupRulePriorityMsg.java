@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
         isAction = true
 )
  
-public class APIUpdateSecurityGroupRulePriorityMsg extends APIMessage {
+public class APIUpdateSecurityGroupRulePriorityMsg extends APIMessage implements SecurityGroupMessage {
     public static class SecurityGroupRulePriorityAO {
         @APIParam(resourceType = SecurityGroupRuleVO.class, checkAccount = true, operationTarget = true, nonempty = true, required = true)
         private String ruleUuid;
@@ -66,6 +66,7 @@ public class APIUpdateSecurityGroupRulePriorityMsg extends APIMessage {
         this.rules = rules;
     }
 
+    @Override
     public String getSecurityGroupUuid() {
         return securityGroupUuid;
     }
