@@ -410,30 +410,38 @@ public class L2NoVlanNetwork implements L2Network {
                 });
             }
         }).then(new NoRollbackFlow() {
-            private void realize(final Iterator<HostInventory> it, final FlowTrigger trigger) {
-                if (!it.hasNext()) {
-                    trigger.next();
-                    return;
-                }
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                List<String> hss = new ArrayList<>();
 
-                HostInventory host = it.next();
-                realizeNetwork(host.getUuid(), host.getHypervisorType(), new Completion(trigger) {
+                new While<>(hosts).step((host, whileCompletion) -> {
+                    realizeNetwork(host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            hss.add(host.getUuid());
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.error(String.format("attach l2 network to host:[%s] failed", host.getUuid()));
+                            whileCompletion.allDone();
+                        }
+                    });
+
+                },10).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void success() {
-                        realize(it, trigger);
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (hss.size() != hosts.size()) {
+                            trigger.fail(errorCodeList);  
+                        } else {
+                            trigger.next();
+                        }
                     }
 
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
                 });
             }
 
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                realize(hosts.iterator(), trigger);
-            }
         }).then(new NoRollbackFlow() {
             String __name__ = "after-l2-network-attached";
 
