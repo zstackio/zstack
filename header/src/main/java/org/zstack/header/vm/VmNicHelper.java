@@ -1,7 +1,9 @@
 package org.zstack.header.vm;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.zstack.header.network.l3.UsedIpInventory;
@@ -51,6 +53,15 @@ public class VmNicHelper {
         return ret;
     }
 
+    public static Map<String, String> getIpAddressesAndNetmask(VmNicInventory nic) {
+        Map<String, String> ret = new HashMap<>();
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            ret.put(ip.getIp(), ip.getNetmask());
+        }
+
+        return ret;
+    }
+
     public static List<String> getIpAddresses(VmNicVO nic) {
         List<String> ret = new ArrayList<>();
         for (UsedIpVO ip : nic.getUsedIps()) {
@@ -59,7 +70,16 @@ public class VmNicHelper {
 
         return ret;
     }
-    
+
+    public static Map<String, String> getIpAddressesAndNetmask(VmNicVO nic) {
+        Map<String, String> ret = new HashMap<>();
+        for (UsedIpVO ip : nic.getUsedIps()) {
+            ret.put(ip.getIp(), ip.getNetmask());
+        }
+
+        return ret;
+    }
+
     public static boolean isL3AttachedToVmNic(VmNicInventory nic, String l3Uuid) {
         for (UsedIpInventory ip : nic.getUsedIps()) {
             if (ip.getL3NetworkUuid().equals(l3Uuid)) {
