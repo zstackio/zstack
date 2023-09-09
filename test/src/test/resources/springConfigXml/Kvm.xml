@@ -64,6 +64,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KVMRealizedLinuxBridgeBackend" class="org.zstack.kvm.KVMRealizedLinuxBridgeBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KVMExtensionEmitter" class="org.zstack.kvm.KVMExtensionEmitter">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
