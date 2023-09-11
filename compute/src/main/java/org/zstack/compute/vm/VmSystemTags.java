@@ -210,6 +210,11 @@ public class VmSystemTags {
     public static String DIRECTORY_UUID_TOKEN = "directoryUuid";
     public static PatternedSystemTag DIRECTORY_UUID = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
 
+    public static String USBDEVICE_UUID_TOKEN = "usbDeviceUuid";
+    public static String usbDevice_attach_type_token = "attachType";
+    public static PatternedSystemTag VM_ATTACH_USB = new PatternedSystemTag(String.format("usbDeviceUuid::{%s}::attachType::{%s}",
+            USBDEVICE_UUID_TOKEN, usbDevice_attach_type_token), VmInstanceVO.class);
+
     public static String GUEST_OS_TYPE_TOKEN = "guestOsType";
     public static PatternedSystemTag GUEST_OS_TYPE = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
     public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
