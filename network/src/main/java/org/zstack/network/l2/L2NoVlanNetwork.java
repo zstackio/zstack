@@ -744,15 +744,38 @@ public class L2NoVlanNetwork implements L2Network {
             }
         }
 
-        List<HostVO> hosts = Q.New(HostVO.class)
-                .in(HostVO_.clusterUuid, clusterUuids)
-                .list();
+        Map<String, List<String>> providerClusterMap = new HashMap<>();
+        for (L2NetworkClusterRefVO ref : self.getAttachedClusterRefs()) {
+            if (!clusterUuids.contains(ref.getClusterUuid())) {
+                continue;
+            }
+
+            providerClusterMap.computeIfAbsent(ref.getL2ProviderType(), k -> new ArrayList<>()).add(ref.getClusterUuid());
+        }
+
+        List<HostVO> hostss = new ArrayList<>();
+        Map<String, String> hostL2ProviderMap = new HashMap<>();
+        for (Map.Entry<String, List<String>> e : providerClusterMap.entrySet()) {
+            List<HostVO> hosts = Q.New(HostVO.class)
+                    .in(HostVO_.clusterUuid, e.getValue()).list();
+            for (HostVO h: hosts) {
+                hostL2ProviderMap.put(h.getUuid(), e.getKey());
+            }
+            hostss.addAll(hosts);
+        }
+
         List<ErrorCode> errs = new ArrayList<>();
-        new While<>(hosts).step((host,compl) -> {
+        new While<>(hostss).step((host,compl) -> {
             HypervisorType hvType = HypervisorType.valueOf(host.getHypervisorType());
             L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
 
-            L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+            L2NetworkRealizationExtensionPoint ext;
+            if (hostL2ProviderMap.get(host.getUuid()) != null) {
+                ext = l2Mgr.getRealizationExtension(L2ProviderType.valueOf(hostL2ProviderMap.get(host.getUuid())));
+            } else {
+                ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+            }
+
             ext.delete(getSelfInventory(), host.getUuid(), new Completion(compl){
                 @Override
                 public void success() {

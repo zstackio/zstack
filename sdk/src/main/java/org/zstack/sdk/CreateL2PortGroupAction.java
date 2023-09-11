@@ -28,7 +28,7 @@ public class CreateL2PortGroupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vSwitchUuid;
 
-    @Param(required = false, validValues = {"VLAN","TRUNK","PVLAN"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"ACCESS","TRUNK","PVLAN"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vlanMode;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,4094L}, noTrim = false)
