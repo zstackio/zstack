@@ -9,8 +9,6 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
