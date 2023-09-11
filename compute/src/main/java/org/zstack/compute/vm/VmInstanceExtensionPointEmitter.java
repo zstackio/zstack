@@ -489,6 +489,12 @@ public class VmInstanceExtensionPointEmitter implements Component {
         return sshKeyPairs;
     }
 
+    public void cloneSshKeyPairsToVm(String originVmUuid, String destVmUuid) {
+        CollectionUtils.safeForEach(sshKeyPairAssociateExtensionPoints, extension -> {
+            extension.cloneSshKeyPairsToVm(originVmUuid, destVmUuid);
+        });
+    }
+
     private void populateExtensions() {
         VmInstanceBeforeStartExtensions = pluginRgty.getExtensionList(VmInstanceBeforeStartExtensionPoint.class);
         VmInstanceResumeExtensionPoints = pluginRgty.getExtensionList(VmInstanceResumeExtensionPoint.class);
