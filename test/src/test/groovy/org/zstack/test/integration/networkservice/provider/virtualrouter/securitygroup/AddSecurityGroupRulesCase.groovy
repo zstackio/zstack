@@ -52,11 +52,6 @@ class AddSecurityGroupRulesCase extends SubCase{
             systemTags = [String.format("l3::%s::SecurityGroupUuids::%s", l3Net.uuid, sg.uuid)]
         } as VmInstanceInventory
 
-        addVmNicToSecurityGroup {
-            securityGroupUuid = sg.uuid
-            vmNicUuids = [vm1.vmNics[0].uuid]
-        }
-
         def tags = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vm1.uuid) as List<String>
 
         assert tags.isEmpty()

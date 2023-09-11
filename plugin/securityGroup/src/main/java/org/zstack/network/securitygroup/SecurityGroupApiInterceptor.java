@@ -272,7 +272,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             aoMap.put(priority, ao.getSecurityGroupUuid());
 
             if (!refs.stream().anyMatch(r -> r.getSecurityGroupUuid().equals(ao.getSecurityGroupUuid()))) {
-                checkIfVmNicFromAttachedL3Networks(ao.getSecurityGroupUuid(), asList(msg.getVmNicUuid()));
+                checkIfL3NetworkSupportSecurityGroup(asList(msg.getVmNicUuid()));
             }
         }
         if (!aoMap.isEmpty()) {
@@ -785,9 +785,33 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        checkIfVmNicFromAttachedL3Networks(msg.getSecurityGroupUuid(), uuids);
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, msg.getSecurityGroupUuid()).list();
+        if (!refs.isEmpty()) {
+            refs.stream().forEach(ref -> {
+                if (uuids.contains(ref.getVmNicUuid())) {
+                    throw new ApiMessageInterceptionException(argerr("vm nic[uuid:%s] has been attach to security group[uuid:%s]", ref.getVmNicUuid(), msg.getSecurityGroupUuid()));
+                }
+            });
+        }
+
+        checkIfL3NetworkSupportSecurityGroup(uuids);
 
         msg.setVmNicUuids(uuids);
+    }
+
+    private void checkIfL3NetworkSupportSecurityGroup(List<String> vmNicUuids) {
+        if (vmNicUuids.isEmpty()) {
+            return;
+        }
+
+        List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, vmNicUuids).list();
+
+        for(VmNicVO nic : nics) {
+            if (!Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, nic.getL3NetworkUuid())
+                    .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE).isExists()) {
+                throw new ApiMessageInterceptionException(argerr("the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, nic.getL3NetworkUuid(), nic.getUuid()));
+            }
+        }
     }
 
     @Transactional(readOnly = true)
