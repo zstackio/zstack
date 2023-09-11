@@ -2,8 +2,10 @@ package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.StorageCapacityAO;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.Index;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -19,7 +21,12 @@ import java.util.Set;
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = PrimaryStorageVO.class, joinColumn = "primaryStorageUuid")
 })
-public class CephOsdGroupVO extends ResourceVO {
+public class CephOsdGroupVO extends StorageCapacityAO {
+    @Id
+    @Column
+    @Index
+    private String uuid;
+
     @Column
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String primaryStorageUuid;
@@ -31,13 +38,8 @@ public class CephOsdGroupVO extends ResourceVO {
     private long availableCapacity;
 
     @Column
-    private long availablePhysicalCapacity;
-
-    @Column
-    private long totalPhysicalCapacity;
-
-    @Column
     private Timestamp createDate;
+
     @Column
     private Timestamp lastOpDate;
 
@@ -73,22 +75,6 @@ public class CephOsdGroupVO extends ResourceVO {
         this.availableCapacity = availableCapacity;
     }
 
-    public long getAvailablePhysicalCapacity() {
-        return availablePhysicalCapacity;
-    }
-
-    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
-        this.availablePhysicalCapacity = availablePhysicalCapacity;
-    }
-
-    public long getTotalPhysicalCapacity() {
-        return totalPhysicalCapacity;
-    }
-
-    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
-        this.totalPhysicalCapacity = totalPhysicalCapacity;
-    }
-
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -103,5 +89,18 @@ public class CephOsdGroupVO extends ResourceVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return uuid;
     }
 }

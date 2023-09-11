@@ -200,6 +200,7 @@ public class KVMHost extends HostBase implements Host {
     private String syncVmDeviceInfo;
     private String attachVolumePath;
     private String detachVolumePath;
+    private String vmFstrimPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
@@ -417,6 +418,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_DETACH_VOLUME_PATH);
         detachVolumePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.FSTRIM_VM_PATH);
+        vmFstrimPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -637,6 +642,8 @@ public class KVMHost extends HostBase implements Host {
             handle((GetHostWebSshUrlMsg) msg);
         } else if (msg instanceof GetHostPowerStatusMsg) {
             handle((GetHostPowerStatusMsg) msg);
+        } else if (msg instanceof FstrimVmMsg) {
+            handle((FstrimVmMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -5688,6 +5695,41 @@ public class KVMHost extends HostBase implements Host {
                             p -> p.afterDetachVolume(self.getUuid()));
                 }
 
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(FstrimVmMsg msg) {
+        inQueue().name(String.format("fstrim-vm-%s", self.getUuid())).asyncBackup(msg)
+                .run(chain -> doFstrimVm(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void doFstrimVm(FstrimVmMsg msg, NoErrorCompletion completion) {
+        FstrimVmReply reply = new FstrimVmReply();
+
+        VmFstrimCmd cmd = new VmFstrimCmd();
+        cmd.vmUuid = msg.getVmUuid();
+
+        new Http<>(vmFstrimPath, cmd, VmFstrimRsp.class).call(new ReturnValueCompletion<VmFstrimRsp>(msg) {
+            @Override
+            public void success(VmFstrimRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("vm[%s] failed to fstrim, because:%s", msg.getVmUuid(), rsp.getError()));
+                }
                 bus.reply(msg, reply);
                 completion.done();
             }

@@ -190,5 +190,8 @@
         <class>org.zstack.directory.ResourceDirectoryRefVO</class>
         <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
         <class>org.zstack.header.host.HostIpmiVO</class>
+        <class>org.zstack.header.storage.primary.PrimaryStorageHistoricalUsageVO</class>
+        <class>org.zstack.storage.ceph.primary.CephOsdGroupHistoricalUsageVO</class>
+        <class>org.zstack.storage.primary.local.LocalStorageHostHistoricalUsageVO</class>
     </persistence-unit>
 </persistence>
