@@ -9,6 +9,6 @@ CREATE TABLE `zstack`.`RemoteVtepVO` (
         `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY  (`uuid`),
         CONSTRAINT fkRemoteVtepVOClusterEO FOREIGN KEY (clusterUuid) REFERENCES ClusterEO (uuid) ON DELETE CASCADE,
-        UNIQUE KEY `ukRemoteVtepIpPoolUuid` (`vtepIp`,`poolUuid`) USING BTREE
+        UNIQUE KEY `ukRemoteVtepIpPoolUuidClusterUuid` (`vtepIp`,`poolUuid`,`clusterUuid`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
