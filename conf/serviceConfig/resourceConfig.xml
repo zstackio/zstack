@@ -8,6 +8,10 @@
     </message>
 
     <message>
+        <name>org.zstack.resourceconfig.APIUpdateResourceConfigsMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.resourceconfig.APIDeleteResourceConfigMsg</name>
     </message>
 
