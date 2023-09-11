@@ -36,9 +36,32 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
             validate((APIAbstractCreateTagMsg) msg);
         } else if (msg instanceof APIUpdateSystemTagMsg) {
             validate((APIUpdateSystemTagMsg) msg);
+        } else if (msg instanceof APICreateSystemTagsMsg) {
+            validate((APICreateSystemTagsMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APICreateSystemTagsMsg msg) {
+        if (!tagMgr.getManagedEntityNames().contains(msg.getResourceType())) {
+            throw new ApiMessageInterceptionException(argerr("no resource type[%s] found in tag system", msg.getResourceType()));
+        }
+
+        for (String tag : msg.getTags()) {
+            // early return if new system tag match resource config
+            if (tagMgr.isResourceConfigSystemTag(tag)) {
+                return;
+            }
+
+            try {
+                tagMgr.validateSystemTag(msg.getResourceUuid(), msg.getResourceType(), tag);
+            } catch (OperationFailureException oe) {
+                throw new ApiMessageInterceptionException(oe.getErrorCode());
+            }
+            checkIfResourceHasThisTagType(msg.getResourceUuid(), msg.getResourceType());
+        }
+
     }
 
     private void validate(APIUpdateSystemTagMsg msg) {

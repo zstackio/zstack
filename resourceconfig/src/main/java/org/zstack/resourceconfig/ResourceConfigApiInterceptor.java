@@ -9,8 +9,11 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.tag.APIUpdateSystemTagEvent;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,8 +41,29 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetResourceConfigMsg) msg);
         } else if (msg instanceof APIGetResourceConfigsMsg) {
             validate((APIGetResourceConfigsMsg) msg);
+        } else if (msg instanceof APIUpdateResourceConfigsMsg) {
+            validate((APIUpdateResourceConfigsMsg)msg);
         }
         return msg;
+    }
+
+    private void validate(APIUpdateResourceConfigsMsg msg) {
+        for (APIUpdateResourceConfigsMsg.ResourceConfigAO resourceConfigAO: msg.getResourceConfigs()) {
+            String identity = GlobalConfig.produceIdentity(resourceConfigAO.getCategory(), resourceConfigAO.getName());
+
+            GlobalConfig gc = gcf.getAllConfig().get(identity);
+            if (gc == null) {
+                throw new ApiMessageInterceptionException(argerr("no global config[category:%s, name:%s] found",
+                        resourceConfigAO.getCategory(), identity));
+            }
+
+            ResourceConfig rc = rcf.getResourceConfig(gc.getIdentity());
+            if (rc == null) {
+                throw new ApiMessageInterceptionException(argerr("global config[category:%s, name:%s] cannot bind resource",
+                        resourceConfigAO.getCategory(), identity));
+            }
+            rc.validateNewValue(msg.getResourceUuid(), resourceConfigAO.getValue());
+        }
     }
 
     private void validate(ResourceConfigMessage msg) {
