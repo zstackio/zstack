@@ -3178,7 +3178,7 @@ public class VolumeBase implements Volume {
             estimateTemplateSize(new ReturnValueCompletion<EstimateVolumeTemplateSizeReply>(msg) {
                 @Override
                 public void success(EstimateVolumeTemplateSizeReply er) {
-                    long templateSize = er.getSize();
+                    long templateSize = er.getActualSize();
                     if (!er.isWithInternalSnapshot()) {
                         templateSize += calculateSnapshotSize();
                     }
