@@ -75,11 +75,8 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.tag.PatternedSystemTag;
-import org.zstack.tag.SystemTagCreator;
-import org.zstack.tag.SystemTagUtils;
-import org.zstack.tag.TagManager;
+import org.zstack.resourceconfig.*;
+import org.zstack.tag.*;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -1560,6 +1557,27 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         throw new ApiMessageInterceptionException(operr("unable to enable this function. There are multi nics of L3 network[uuid:%s] in the vm[uuid: %s]",
                                     tuple.get(0, String.class), tuple.get(1, String.class)));
                     }
+                }
+            }
+        });
+
+        ResourceConfig resourceConfig = rcf.getResourceConfig(VmGlobalConfig.VM_HA_ACROSS_CLUSTERS.getIdentity());
+        resourceConfig.installUpdateExtension(new ResourceConfigUpdateExtensionPoint() {
+            @Override
+            public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue) {
+                if (!VmInstanceVO.class.getSimpleName().equals(resourceType))
+                    return;
+                // keep back-compatibility create or delete resource binding tag if needed
+                if (newValue.equals("false")) {
+                    String clusterUuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.clusterUuid)
+                            .eq(VmInstanceVO_.uuid, resourceUuid).findValue();
+                    String token = String.format("Cluster:%s", clusterUuid);
+                    SystemTagCreator creator = VmSystemTags.VM_RESOURCE_BINGDING.newSystemTagCreator(resourceUuid);
+                    creator.recreate = true;
+                    creator.setTagByTokens(map(e(VmSystemTags.VM_RESOURCE_BINGDING_TOKEN, token)));
+                    creator.create();
+                } else {
+                    VmSystemTags.VM_RESOURCE_BINGDING.delete(resourceUuid);
                 }
             }
         });
