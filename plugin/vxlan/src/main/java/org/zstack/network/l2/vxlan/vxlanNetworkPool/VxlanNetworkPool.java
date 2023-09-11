@@ -465,6 +465,13 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         query.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
         final List<HostVO> hosts = query.list();
         List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
+        // cluster no hosts, only remove db
+        if (hvinvs == null || hvinvs.isEmpty()) {
+            dbf.remove(vo);
+            bus.publish(evt);
+            logger.debug(String.format("clusterUuid:[%s] no host", msg.getClusterUuid()));
+            return;
+        }
 
         ErrorCodeList errList = new ErrorCodeList();
         new While<>(hvinvs).step((host, completion1) -> {
@@ -554,6 +561,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             bus.publish(evt);
             return;
         }
+
         List<VxlanNetworkVO> vxlanNetworkVOS;
         vxlanNetworkVOS = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).list();
         // no br based vxlan, add db only
@@ -569,6 +577,12 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         query.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
         final List<HostVO> hosts = query.list();
         List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
+        // cluster no hosts, only add db
+        if (hvinvs == null || hvinvs.isEmpty()) {
+            logger.debug(String.format("clusterUuid:[%s] no host", msg.getClusterUuid()));
+            syncVxlanPoolRemoteVtepDataBase(msg, evt);
+            return;
+        }
 
         prepareL2NetworkVxlanRemoteVtepOnHosts(msg, hvinvs, new Completion(msg) {
             @Override
