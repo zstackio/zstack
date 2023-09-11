@@ -145,7 +145,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
 
                 VolumeVO vo = dbf.findByUuid(volumeUuid, VolumeVO.class);
                 if (vo.getType() == VolumeType.Data) {
-                    vo.setVmInstanceUuid(spec.getVmInventory().getUuid());
+                    vo.setVmInstanceUuid(vo.isShareable() ? null : spec.getVmInventory().getUuid());
                     vo.setDeviceId(getNextDeviceId(volumeUuid, imageUuid));
                     vo.setActualSize(vo.getActualSize() == null ? 0L : vo.getActualSize());
                 } else if (spec.getImageSpec().getInventory() != null) {
@@ -154,6 +154,12 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 }
 
                 vo = dbf.updateAndRefresh(vo);
+                List<VmAttachVolumeExtensionPoint> exts = pluginRgty.getExtensionList(VmAttachVolumeExtensionPoint.class);
+                for (VmAttachVolumeExtensionPoint ext : exts) {
+                    ext.afterInstantiateVolumeForNewCreatedVm(spec.getVmInventory(), VolumeInventory.valueOf(vo));
+                }
+
+                vo = dbf.reload(vo);
                 VolumeInventory vinv = VolumeInventory.valueOf(vo);
                 if (spec.getDestRootVolume().getUuid().equals(vinv.getUuid())) {
                     spec.setDestRootVolume(vinv);
