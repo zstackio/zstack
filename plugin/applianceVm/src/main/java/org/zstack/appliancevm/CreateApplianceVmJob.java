@@ -29,8 +29,8 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
-import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMGlobalConfig;
+import org.zstack.header.vo.SecurityLevelResourceRefVO;
+import org.zstack.header.vo.SecurityLevelResourceRefVO_;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
@@ -232,7 +232,7 @@ public class CreateApplianceVmJob implements Job {
                 L3NetworkConstant.VRouterData data = new L3NetworkConstant.VRouterData();
                 data.vrouterUuid = avo.getUuid();
                 evtf.fire(L3NetworkConstant.VROUTER_CREATE_EVENT_PATH, data);
-
+                copyImageSecurityLevelIfNeeded(avo.getImageUuid(), avo.getUuid());
                 logger.debug(String.format("successfully created appliance vm[uuid:%s, name: %s, appliance vm type: %s]", avo.getUuid(), avo.getName(), avo.getApplianceVmType()));
                 ApplianceVmVO apvo = dbf.findByUuid(avo.getUuid(), ApplianceVmVO.class);
                 ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(apvo);
@@ -245,6 +245,21 @@ public class CreateApplianceVmJob implements Job {
                 complete.fail(errCode);
             }
         }).start();
+    }
+
+    private void copyImageSecurityLevelIfNeeded(String imageUuid, String vmUuid) {
+        if (Q.New(SecurityLevelResourceRefVO.class).eq(SecurityLevelResourceRefVO_.resourceUuid, imageUuid).isExists()) {
+            String currentImageSecurityLevel = Q.New(SecurityLevelResourceRefVO.class)
+                    .select(SecurityLevelResourceRefVO_.securityLevel)
+                    .eq(SecurityLevelResourceRefVO_.resourceUuid, imageUuid).findValue();
+            logger.debug(String.format("current image[uuid:%s] security level[%s]", imageUuid, currentImageSecurityLevel));
+
+            SecurityLevelResourceRefVO refVO = new SecurityLevelResourceRefVO();
+            refVO.setResourceUuid(vmUuid);
+            refVO.setSecurityLevel(currentImageSecurityLevel);
+            dbf.persist(refVO);
+            logger.debug(String.format("successfully sync image[uuid:%s] security level[%s] to appliance vm[uuid:%s]", imageUuid, currentImageSecurityLevel, vmUuid));
+        }
     }
 
     public ApplianceVmSpec getSpec() {
