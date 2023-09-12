@@ -5,6 +5,8 @@ import org.zstack.header.image.ImagePlatform
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.core.db.UpdateQuery
 import org.zstack.header.volume.VolumeStatus
 import org.zstack.header.volume.VolumeVO
 import org.zstack.kvm.KVMAgentCommands
@@ -221,6 +223,11 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
             diskOfferingUuid = offering.uuid
         } as VolumeInventory
 
+        UpdateQuery.New(VmInstanceVO.class)
+                .set(VmInstanceVO_.platform, "Other").
+                eq(VmInstanceVO_.uuid, vm.uuid)
+                .update()
+
         //vm is running and attach volume
         expect(AssertionError.class){
             attachDataVolumeToVm {
@@ -229,6 +236,25 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
             }
         }
         assert dbFindByUuid(volume.uuid,VolumeVO.class).status == VolumeStatus.NotInstantiated
+
+        UpdateQuery.New(VmInstanceVO.class)
+                .set(VmInstanceVO_.platform, "Linux").
+                eq(VmInstanceVO_.uuid, vm.uuid)
+                .update()
+
+        attachDataVolumeToVm {
+            volumeUuid = volume.uuid
+            vmInstanceUuid = vm.uuid
+        }
+
+        detachDataVolumeFromVm {
+            uuid = volume.uuid
+        }
+
+        UpdateQuery.New(VmInstanceVO.class)
+                .set(VmInstanceVO_.platform, "Other").
+                eq(VmInstanceVO_.uuid, vm.uuid)
+                .update()
 
         //stop vm and retry
         //vm is stop and AttachDataVolumeCmd is not called

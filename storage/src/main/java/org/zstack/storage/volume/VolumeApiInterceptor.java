@@ -288,14 +288,13 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                 }
 
                 long count = sql("select count(vm.uuid)" +
-                        " from VmInstanceVO vm, ImageVO image" +
+                        " from VmInstanceVO vm" +
                         " where vm.uuid = :vmUuid" +
-                        " and vm.imageUuid = image.uuid" +
-                        " and image.platform = :platformType" +
+                        " and vm.platform = :platformType" +
                         " and vm.state != :vmState")
                         .param("vmUuid", msg.getVmInstanceUuid())
                         .param("vmState", VmInstanceState.Stopped)
-                        .param("platformType", ImagePlatform.Other).find();
+                        .param("platformType", ImagePlatform.Other.toString()).find();
                 if (count > 0) {
                     throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't support to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
                 }
