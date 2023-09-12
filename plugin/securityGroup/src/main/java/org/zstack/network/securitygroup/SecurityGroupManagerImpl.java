@@ -52,6 +52,8 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -119,10 +121,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         return String.format("SecurityGroup-%s", securityGroupUuid);
     }
 
-    // private String getVmNicSecurityGroupSyncThreadName(String vmNicuuid) {
-    //     return String.format("SecurityGroup-VmNic-%s", vmNicuuid);
-    // }
-
     private String getVmNicSecurityGroupRefSyncThreadName() {
         return String.format("SecurityGroup-VmNicSecurityGroupRef");
     }
@@ -150,14 +148,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Override
     public void validateSystemtagL3SecurityGroup(String l3Uuid, List<String> securityGroupUuids) {
-        for(String uuid : securityGroupUuids) {
-            if (!Q.New(SecurityGroupL3NetworkRefVO.class)
-                    .eq(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, l3Uuid)
-                    .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, uuid)
-                    .isExists()) {
-                throw new ApiMessageInterceptionException(argerr(
-                        "l3NetWorkVO[uuid:%s] is not attach SecurityGroupVO[uuid:%s]", l3Uuid, uuid));
-            }
+        if (!Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3Uuid)
+                .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("the netwotk service[type:%s] not enabled on the l3Network[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, l3Uuid));
         }
     }
 
@@ -266,26 +259,21 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         private List<HostRuleTO> calculateByL3NetworkAndSecurityGroup() {
-            String sql = "select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupL3NetworkRefVO l3ref, VmNicVO nic, SecurityGroupVO sg" +
-                    " where l3ref.securityGroupUuid = ref.securityGroupUuid and nic.l3NetworkUuid = l3ref.l3NetworkUuid" +
-                    " and ref.securityGroupUuid in (:sgUuids) and l3ref.l3NetworkUuid in (:l3Uuids)" +
-                    " and ref.securityGroupUuid = sg.uuid and sg.state in (:sgStates)";
-            TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-            q.setParameter("sgUuids", securityGroupUuids);
-            q.setParameter("l3Uuids", l3NetworkUuids);
-            q.setParameter("sgStates", sgStates);
-            vmNicUuids = q.getResultList().stream().distinct().collect(Collectors.toList());
+            List<String> targetNicUuids = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, VmNicVO nic, SecurityGroupVO sg" +
+                    " where nic.l3NetworkUuid in (:l3Uuids)" +
+                    " and ref.vmNicUuid = nic.uuid" +
+                    " and ref.securityGroupUuid in (:sgUuids)" +
+                    " and sg.state in (:sgStates)", String.class)
+                    .param("l3Uuids", l3NetworkUuids)
+                    .param("sgUuids", securityGroupUuids)
+                    .param("sgStates", sgStates)
+                    .list();
+            vmNicUuids = targetNicUuids.stream().distinct().collect(Collectors.toList());
 
             return calculateByVmNic();
         }
 
         private List<RuleTO> calculateRuleTOBySecurityGroup(String sgUuid, String l3Uuid, int ipVersion) {
-            boolean isAttached = Q.New(SecurityGroupL3NetworkRefVO.class).eq(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, l3Uuid)
-                    .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, sgUuid).isExists();
-            if (!isAttached) {
-                return new ArrayList<>();
-            }
-
             List<RuleTO> ret = new ArrayList<>();
             List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
                     .eq(SecurityGroupRuleVO_.ipVersion, ipVersion)
@@ -347,9 +335,19 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
 
             /* add gateway address to group list */
-            List<String> l3Uuids = Q.New(SecurityGroupL3NetworkRefVO.class).select(SecurityGroupL3NetworkRefVO_.l3NetworkUuid)
+            List<String> attachedL3Uuids = Q.New(SecurityGroupL3NetworkRefVO.class).select(SecurityGroupL3NetworkRefVO_.l3NetworkUuid)
                     .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, sgUuid).listValues();
-            for (String uuid: l3Uuids) {
+
+            List<String> nicL3Uuids = SQL.New("select distinct l3.uuid from VmNicVO nic, VmNicSecurityGroupRefVO ref, L3NetworkVO l3" +
+                    " where ref.securityGroupUuid = :sgUuid" +
+                    " and ref.vmNicUuid = nic.uuid" +
+                    " and l3.uuid = nic.l3NetworkUuid", String.class)
+                    .param("sgUuid", sgUuid)
+                    .list();
+
+            List<String> resultL3Uuids = Stream.concat(attachedL3Uuids.stream(), nicL3Uuids.stream()).distinct().collect(Collectors.toList());
+
+            for (String uuid: resultL3Uuids) {
                 L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(uuid, L3NetworkVO.class));
                 List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(inv, ipVersion);
                 if (!iprs.isEmpty()) {
@@ -384,7 +382,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 return htoMap.values().stream().collect(Collectors.toList());
             }
 
-            List<SecurityGroupL3NetworkRefVO> l3Refs = Q.New(SecurityGroupL3NetworkRefVO.class).list();
             List<UsedIpVO> usedIps = Q.New(UsedIpVO.class).in(UsedIpVO_.vmNicUuid, vmNicUuids).list();
             List<VmNicSecurityPolicyVO> policies = Q.New(VmNicSecurityPolicyVO.class).in(VmNicSecurityPolicyVO_.vmNicUuid, vmNicUuids).list();
 
@@ -434,7 +431,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                 List<UsedIpVO> ips = usedIps.stream().filter(i -> i.getVmNicUuid().equals(nicUuid)).collect(Collectors.toList());
                 List<Tuple> sgRefs = refs.stream().filter(r -> r.get(0, String.class).equals(nicUuid)).collect(Collectors.toList());
-                if (ips.isEmpty() || sgRefs.isEmpty() || l3Refs.isEmpty()) {
+                if (ips.isEmpty() || sgRefs.isEmpty()) {
                     continue;
                 }
 
@@ -449,10 +446,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     for (Tuple sgRef : sgRefs) {
                         int priority = sgRef.get(1, Integer.class);
                         String sgUuid = sgRef.get(2, String.class);
-
-                        if (!l3Refs.stream().anyMatch(ref -> ref.getL3NetworkUuid().equals(l3Uuid) && ref.getSecurityGroupUuid().equals(sgUuid))) {
-                            continue;
-                        }
 
                         nicTo.getSecurityGroupRefs().put(sgUuid, priority);
 
@@ -527,6 +520,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(AddSecurityGroupRuleMsg msg) {
         for (APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao : msg.getRules()) {
+            if (ao.getAllowedCidr() == null) {
+                ao.setAllowedCidr(ao.getIpVersion() == IPv6Constants.IPv4 ? SecurityGroupConstant.WORLD_OPEN_CIDR : SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
+            }
+            if (ao.getStartPort() == null || ao.getEndPort() == null) {
+                ao.setStartPort(-1);
+                ao.setEndPort(-1);
+            }
             if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(ao.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(ao.getAllowedCidr())) {
                 if (ao.getType().equals(SecurityGroupRuleType.Egress.toString())) {
                     ao.setDstIpRange(ao.getAllowedCidr());
@@ -534,7 +534,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     ao.setSrcIpRange(ao.getAllowedCidr());
                 }
             }
-            if (ao.getStartPort() != null && ao.getStartPort() != -1) {
+            if (ao.getStartPort() != -1) {
                 if (ao.getStartPort().equals(ao.getEndPort())) {
                     ao.setDstPortRange(String.valueOf(ao.getStartPort()));
                 } else {
@@ -1375,33 +1375,49 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private void handle(APIDetachSecurityGroupFromL3NetworkMsg msg) {
         APIDetachSecurityGroupFromL3NetworkEvent evt = new APIDetachSecurityGroupFromL3NetworkEvent(msg.getId());
 
-        List<String> vmNicUuids = getVmNicUuidsToRemoveForDetachSecurityGroup(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
-        if (!vmNicUuids.isEmpty()) {
-            RemoveVmNicFromSecurityGroupMsg rmsg = new RemoveVmNicFromSecurityGroupMsg();
-            rmsg.setSecurityGroupUuid(msg.getSecurityGroupUuid());
-            rmsg.setVmNicUuids(vmNicUuids);
-            bus.makeTargetServiceIdByResourceUuid(rmsg, SecurityGroupConstant.SERVICE_ID, msg.getSecurityGroupUuid());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
 
-            bus.send(rmsg, new CloudBusCallBack(msg) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        evt.setError(reply.getError());
-                    } else {
-                        detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
-                        SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-                        evt.setInventory(SecurityGroupInventory.valueOf(vo));
-                    }
+            @Override
+            public void run(SyncTaskChain chain) {
+                List<String> vmNicUuids = getVmNicUuidsToRemoveForDetachSecurityGroup(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
+                if (!vmNicUuids.isEmpty()) {
+                    RemoveVmNicFromSecurityGroupMsg rmsg = new RemoveVmNicFromSecurityGroupMsg();
+                    rmsg.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+                    rmsg.setVmNicUuids(vmNicUuids);
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, SecurityGroupConstant.SERVICE_ID, msg.getSecurityGroupUuid());
 
+                    bus.send(rmsg, new CloudBusCallBack(msg) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                evt.setError(reply.getError());
+                            }
+
+                            detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
+                            SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+                            evt.setInventory(SecurityGroupInventory.valueOf(vo));
+                            bus.publish(evt);
+                            chain.next();
+                        }
+                    });
+                } else {
+                    detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
+                    SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+                    evt.setInventory(SecurityGroupInventory.valueOf(vo));
                     bus.publish(evt);
+                    chain.next();
                 }
-            });
-        } else {
-            detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
-            SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-            evt.setInventory(SecurityGroupInventory.valueOf(vo));
-            bus.publish(evt);
-        }
+            }
+
+            @Override
+            public String getName() {
+                return String.format("detach-security-group-%s-from-l3Network-%s", msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
+            }
+        });
     }
 
     private void handle(APIChangeSecurityGroupStateMsg msg) {
@@ -1436,21 +1452,38 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(APIAttachSecurityGroupToL3NetworkMsg msg) {
         APIAttachSecurityGroupToL3NetworkEvent evt = new APIAttachSecurityGroupToL3NetworkEvent(msg.getId());
-        SimpleQuery<SecurityGroupL3NetworkRefVO> q = dbf.createQuery(SecurityGroupL3NetworkRefVO.class);
-        q.add(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-        q.add(SecurityGroupL3NetworkRefVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
-        SecurityGroupL3NetworkRefVO ref = q.find();
-        if (ref == null) {
-            ref = new SecurityGroupL3NetworkRefVO();
-            ref.setUuid(Platform.getUuid());
-            ref.setL3NetworkUuid(msg.getL3NetworkUuid());
-            ref.setSecurityGroupUuid(msg.getSecurityGroupUuid());
-            dbf.persist(ref);
-        }
-        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-        SecurityGroupInventory sginv = SecurityGroupInventory.valueOf(sgvo);
-        evt.setInventory(sginv);
-        bus.publish(evt);
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                SimpleQuery<SecurityGroupL3NetworkRefVO> q = dbf.createQuery(SecurityGroupL3NetworkRefVO.class);
+                q.add(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                q.add(SecurityGroupL3NetworkRefVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
+                SecurityGroupL3NetworkRefVO ref = q.find();
+                if (ref == null) {
+                    ref = new SecurityGroupL3NetworkRefVO();
+                    ref.setUuid(Platform.getUuid());
+                    ref.setL3NetworkUuid(msg.getL3NetworkUuid());
+                    ref.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+                    dbf.persist(ref);
+                }
+                SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+                SecurityGroupInventory sginv = SecurityGroupInventory.valueOf(sgvo);
+                evt.setInventory(sginv);
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("attach-security-group-%s-to-l3Network-%s", msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
+            }
+        });
     }
 
     private void removeNicFromSecurityGroup(String sgUuid, List<String> vmNicUuids, Completion completion) {
@@ -1857,7 +1890,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     private void validate(AddVmNicToSecurityGroupMsg msg) {
-        String securityGroupUuid = msg.getSecurityGroupUuid();
         List<String> uuids = Q.New(VmNicVO.class)
                 .select(VmNicVO_.uuid)
                 .in(VmNicVO_.uuid, msg.getVmNicUuids())
@@ -1869,29 +1901,30 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             ));
         }
 
-        List<String> nicUuids = SQL.New("select nic.uuid from SecurityGroupL3NetworkRefVO ref, VmNicVO nic, UsedIpVO ip" +
-                " where ref.l3NetworkUuid = ip.l3NetworkUuid and ip.vmNicUuid = nic.uuid" +
-                " and ref.securityGroupUuid = :sgUuid and nic.uuid in (:nicUuids)")
-                .param("nicUuids", uuids)
-                .param("sgUuid", securityGroupUuid)
-                .list();
-
-        List<String> wrongUuids = new ArrayList<>();
-        for (String uuid : uuids) {
-            if (!nicUuids.contains(uuid)) {
-                wrongUuids.add(uuid);
-            }
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, msg.getSecurityGroupUuid()).list();
+        if (!refs.isEmpty()) {
+            refs.stream().forEach(ref -> {
+                if (uuids.contains(ref.getVmNicUuid())) {
+                    throw new OperationFailureException(argerr("vm nic[uuid:%s] has been attach to security group[uuid:%s]", ref.getVmNicUuid(), msg.getSecurityGroupUuid()));
+                }
+            });
         }
 
-        if (!wrongUuids.isEmpty()) {
-            throw new OperationFailureException(argerr("VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
-                    wrongUuids, securityGroupUuid));
+        List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, uuids).list();
+        for(VmNicVO nic : nics) {
+            if (!Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, nic.getL3NetworkUuid())
+                    .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE).isExists()) {
+                throw new OperationFailureException(argerr("the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, nic.getL3NetworkUuid(), nic.getUuid()));
+            }
         }
 
         msg.setVmNicUuids(uuids);
     }
 
     private void doAddVmNicToSecurityGroup(String sgUuid, List<String> vmNicUuids) {
+        if (vmNicUuids.isEmpty()) {
+            return;
+        }
         List<VmNicVO> nicvos = Q.New(VmNicVO.class).in(VmNicVO_.uuid, vmNicUuids).list();
         List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuids).list();
 
