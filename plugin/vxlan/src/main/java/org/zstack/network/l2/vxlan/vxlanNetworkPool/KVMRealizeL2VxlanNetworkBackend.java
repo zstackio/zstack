@@ -96,7 +96,9 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         peers.addAll(p);
 
         //add remote vtep ip
-        List<String> gwpeers = Q.New(RemoteVtepVO.class).select(RemoteVtepVO_.vtepIp).eq(RemoteVtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
+        String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
+
+        List<String> gwpeers = Q.New(RemoteVtepVO.class).select(RemoteVtepVO_.vtepIp).eq(RemoteVtepVO_.poolUuid, l2vxlan.getPoolUuid()).eq(RemoteVtepVO_.clusterUuid, clusterUuid).listValues();
         if (gwpeers.size() > 0) {
             Set<String> gwp = new HashSet<String>(gwpeers);
             peers.addAll(gwp);
