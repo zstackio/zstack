@@ -298,6 +298,21 @@ class VirtualrouterMultiNicCase extends SubCase {
             protocolType = PortForwardingProtocolType.TCP.toString()
         }
 
+        GetVipFreePortInventory VipFreePort = getVipFreePort {
+            vipUuid = vip.uuid
+            start = 20
+            limit = 5
+            protocolType = "TCP"
+        }
+        assert !VipFreePort.freeList.contains(22)         
+
+        boolean avail = checkVipFreePortAvailability {
+            vipUuid = vip.uuid
+            port = 23
+            protocolType = "UDP"
+        } 
+        assert avail
+  
         List<VmNicInventory> vmNics = getPortForwardingAttachableVmNics {
             ruleUuid = portForwarding.uuid
         }
