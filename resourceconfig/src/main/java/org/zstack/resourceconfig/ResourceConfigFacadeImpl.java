@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.*;
 import org.zstack.header.AbstractService;
@@ -17,6 +18,8 @@ import org.zstack.utils.logging.CLogger;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 public class ResourceConfigFacadeImpl extends AbstractService implements ResourceConfigFacade {
     private static final CLogger logger = Utils.getLogger(ResourceConfigFacadeImpl.class);
@@ -68,10 +71,15 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
 
     private void handle(APIUpdateResourceConfigMsg msg) {
         ResourceConfig rc = getResourceConfig(msg.getIdentity());
-        rc.updateValue(msg.getResourceUuid(), msg.getValue());
-
         APIUpdateResourceConfigEvent evt = new APIUpdateResourceConfigEvent(msg.getId());
-        evt.setInventory(ResourceConfigInventory.valueOf(rc.loadConfig(msg.getResourceUuid())));
+
+        try {
+            rc.updateValue(msg.getResourceUuid(), msg.getValue());
+            evt.setInventory(ResourceConfigInventory.valueOf(rc.loadConfig(msg.getResourceUuid())));
+        } catch (GlobalConfigException e) {
+            evt.setError(operr(e.getMessage()));
+        }
+
         bus.publish(evt);
     }
 
