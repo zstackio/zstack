@@ -34,6 +34,9 @@ public class RemoveRolesFromIAM2VirtualIDAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String organizationUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
