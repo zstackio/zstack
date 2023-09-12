@@ -724,6 +724,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private void handle(APIValidateSecurityGroupRuleMsg msg) {
         APIValidateSecurityGroupRuleReply reply = new APIValidateSecurityGroupRuleReply();
         reply.setAvailable(true);
+        reply.setCode(SecurityGroupErrors.RULE_CHECK_OK.toString());
         bus.reply(msg, reply);
     }
 

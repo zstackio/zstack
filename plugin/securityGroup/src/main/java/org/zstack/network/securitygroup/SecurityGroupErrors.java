@@ -9,7 +9,9 @@ public enum SecurityGroupErrors {
     RULE_FILED_CONFLICT_ERROR(1003),
     RULE_FILED_NOT_SUPPORT_ERROR(1004),
     RULE_PORT_FIELD_ERROR(1005),
-    RULE_IP_FIELD_ERROR(1006);
+    RULE_IP_FIELD_ERROR(1006),
+    
+    RULE_CHECK_OK(2000);
 
     private String code;
 
