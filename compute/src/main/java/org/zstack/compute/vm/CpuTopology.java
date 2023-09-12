@@ -60,7 +60,7 @@ public class CpuTopology {
         }
 
         // check the topology is valid
-        if (cpuNum == socketNum * coreNum * threadNum) {
+        if (cpuNum >= socketNum * coreNum * threadNum) {
             cpuSockets = socketNum;
             cpuCores = coreNum;
             cpuThreads = threadNum;

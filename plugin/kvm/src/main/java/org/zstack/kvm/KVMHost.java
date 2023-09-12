@@ -3535,6 +3535,9 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSocketNum(cpuTopology.getCpuSockets());
             cmd.setCpuOnSocket(cpuTopology.getCpuCores());
             cmd.setThreadsPerCore(cpuTopology.getCpuThreads());
+
+            if(cmd.getMaxVcpuNum() != 0 && cpuTopology.getCpuSockets() != null)
+                cmd.setMaxVcpuNum(cpuTopology.getCpuSockets() * cpuTopology.getCpuCores() * cpuTopology.getCpuThreads());
             return;
         }
 
