@@ -130,6 +130,18 @@ class ValidateSecurityGroupRuleCase extends SubCase {
         } catch (ApiMessageInterceptionException e) {
             assert e.code == SecurityGroupErrors.RULE_DUPLICATE_ERROR.toString()
         }
+
+        ValidateSecurityGroupRuleAction action = new ValidateSecurityGroupRuleAction()
+        action.securityGroupUuid = sg1.uuid
+        action.type = "Ingress"
+        action.protocol = "TCP"
+        action.srcIpRange = "172.16.90.157"
+        action.dstPortRange = "1000-2000,3000-4000"
+        action.sessionId = adminSession()
+
+        ValidateSecurityGroupRuleAction.Result result = action.call()
+        assert result.value.available == true
+        assert result.value.code == 'SG.2000'
     }
 
 
