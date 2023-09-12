@@ -436,6 +436,7 @@ public class SourceClassMap {
 			put("org.zstack.network.securitygroup.SecurityGroupInventory", "org.zstack.sdk.SecurityGroupInventory");
 			put("org.zstack.network.securitygroup.SecurityGroupRuleInventory", "org.zstack.sdk.SecurityGroupRuleInventory");
 			put("org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory", "org.zstack.sdk.VmNicSecurityGroupRefInventory");
+			put("org.zstack.network.securitygroup.VmNicSecurityPolicyInventory", "org.zstack.sdk.VmNicSecurityPolicyInventory");
 			put("org.zstack.network.service.eip.EipInventory", "org.zstack.sdk.EipInventory");
 			put("org.zstack.network.service.flat.IpStatisticData", "org.zstack.sdk.IpStatisticData");
 			put("org.zstack.network.service.lb.APIChangeAccessControlListServerGroupEvent$LoadBalancerListerAcl", "org.zstack.sdk.LoadBalancerListerAcl");
@@ -1213,6 +1214,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.spendingcalculator.vmnic.VmNicBandwidthSpendingDetails");
 			put("org.zstack.sdk.VmNicInventory", "org.zstack.header.vm.VmNicInventory");
 			put("org.zstack.sdk.VmNicSecurityGroupRefInventory", "org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory");
+			put("org.zstack.sdk.VmNicSecurityPolicyInventory", "org.zstack.network.securitygroup.VmNicSecurityPolicyInventory");
 			put("org.zstack.sdk.VmPriorityConfigInventory", "org.zstack.header.vm.VmPriorityConfigInventory");
 			put("org.zstack.sdk.VmPriorityLevel", "org.zstack.header.vm.VmPriorityLevel");
 			put("org.zstack.sdk.VmSchedHistoryInventory", "org.zstack.header.vm.VmSchedHistoryInventory");

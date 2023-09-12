@@ -5471,6 +5471,60 @@ abstract class ApiHelper {
     }
 
 
+    def changeSecurityGroupRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeSecurityGroupRuleAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeSecurityGroupRuleAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def changeSecurityGroupRuleState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeSecurityGroupRuleStateAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeSecurityGroupRuleStateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def changeSecurityGroupState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeSecurityGroupStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeSecurityGroupStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -5608,6 +5662,33 @@ abstract class ApiHelper {
 
     def changeVmNicNetwork(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeVmNicNetworkAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeVmNicNetworkAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def changeVmNicSecurityPolicy(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeVmNicSecurityPolicyAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeVmNicSecurityPolicyAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -30807,6 +30888,35 @@ abstract class ApiHelper {
     }
 
 
+    def queryVmNicSecurityPolicy(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryVmNicSecurityPolicyAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryVmNicSecurityPolicyAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryVmPriorityConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryVmPriorityConfigAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryVmPriorityConfigAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -34506,6 +34616,33 @@ abstract class ApiHelper {
 
     def setVmMonitorNumber(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmMonitorNumberAction.class) Closure c) {
         def a = new org.zstack.sdk.SetVmMonitorNumberAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def setVmNicSecurityGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmNicSecurityGroupAction.class) Closure c) {
+        def a = new org.zstack.sdk.SetVmNicSecurityGroupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -39714,6 +39851,33 @@ abstract class ApiHelper {
     }
 
 
+    def updateSecurityGroupRulePriority(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateSecurityGroupRulePriorityAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateSecurityGroupRulePriorityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateSecurityMachine(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateSecurityMachineAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateSecurityMachineAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -40904,6 +41068,33 @@ abstract class ApiHelper {
 
     def validatePriceUserConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidatePriceUserConfigAction.class) Closure c) {
         def a = new org.zstack.sdk.ValidatePriceUserConfigAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def validateSecurityGroupRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidateSecurityGroupRuleAction.class) Closure c) {
+        def a = new org.zstack.sdk.ValidateSecurityGroupRuleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

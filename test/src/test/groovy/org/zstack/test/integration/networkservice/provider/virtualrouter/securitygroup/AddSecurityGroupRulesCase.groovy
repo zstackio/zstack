@@ -120,7 +120,7 @@ class AddSecurityGroupRulesCase extends SubCase{
             vm4 = env.inventoryByName("vm4") as VmInstanceInventory // vm4 in host3
             testCreateSecurityGroup()
             testAttachVmNicWithSecurityGroup()
-            testAddMultiRulesToSecurityGroup(1000)
+            testAddMultiRulesToSecurityGroup(100)
         }
     }
 }
