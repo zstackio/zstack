@@ -39714,6 +39714,33 @@ abstract class ApiHelper {
     }
 
 
+    def updateSSORedirectTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateSSORedirectTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateSSORedirectTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateSchedulerJob(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateSchedulerJobAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateSchedulerJobAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
