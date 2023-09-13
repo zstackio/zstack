@@ -21,7 +21,6 @@ import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.core.trash.*;
 import org.zstack.header.Constants;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
@@ -30,6 +29,8 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
+import org.zstack.header.core.trash.TrashCleanupResult;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -38,8 +39,11 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.*;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -65,7 +69,6 @@ import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
-import org.zstack.storage.ceph.primary.capacity.XSKYCephPrimaryCapacityBaseUpdater;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
@@ -4903,44 +4906,31 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         ImageSpec imageSpec = new ImageSpec();
         imageSpec.setInventory(ImageInventory.valueOf(image));
-        Map<String, ImageStatus> fsidImageStatusMap = new HashMap<>();
 
-        ImageBackupStorageRefInventory ref = CollectionUtils.find(image.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefVO>() {
-            @Override
-            public ImageBackupStorageRefInventory call(ImageBackupStorageRefVO arg) {
-                String fsid = Q.New(CephBackupStorageVO.class).eq(CephBackupStorageVO_.uuid, arg.getBackupStorageUuid()).select(CephBackupStorageVO_.fsid).findValue();
-                // mismatch fsid means the image is not available for this primary storage.
-                // normally this happens due to primary storage migration which do
-                // not migrate images stored in ceph backup storage.
-                if (fsid == null || !fsid.equals(getSelf().getFsid())) {
-                    return null;
-                }
+        // mismatch fsid means the image is not available for this primary storage.
+        // normally this happens due to primary storage migration which do
+        // not migrate images stored in ceph backup storage.
+        List<String> sameCephBsUuids = Q.New(CephBackupStorageVO.class).select(CephBackupStorageVO_.uuid)
+                .eq(CephBackupStorageVO_.fsid, getSelf().getFsid())
+                .listValues();
+        List<String> supportBsUuids = Q.New(BackupStorageVO.class).select(BackupStorageVO_.uuid)
+                .in(BackupStorageVO_.type, backupStorageMediators.keySet())
+                .listValues();
 
-                fsidImageStatusMap.put(fsid, arg.getStatus());
+        ImageBackupStorageRefInventory ref = imageSpec.getInventory().getBackupStorageRefs().stream()
+                .filter(it -> ImageStatus.Ready.toString().equals(it.getStatus()))
+                .filter(it -> supportBsUuids.contains(it.getBackupStorageUuid()))
+                .filter(it -> !it.getInstallPath().startsWith("ceph://") || sameCephBsUuids.contains(it.getBackupStorageUuid()))
+                .min(Comparator.comparing(it -> {
+                    if (it.getInstallPath().startsWith("ceph://")) {
+                        return -1;
+                    } else {
+                        return 1;
+                    }
+                })).orElseThrow(() -> new OperationFailureException(operr("cannot find backupstorage to download image [%s] " +
+                        "to primarystorage [%s] due to lack of Ready and accessible image", volume.getRootImageUuid(), getSelf().getUuid())));
 
-                if (ImageStatus.Ready == arg.getStatus()) {
-                    return ImageBackupStorageRefInventory.valueOf(arg);
-                }
-                return null;
-            }
-        });
-
-        if (ref == null) {
-            String cause;
-
-            if (fsidImageStatusMap.isEmpty()) {
-                cause = i18n("Because the image is currently inaccessible, " +
-                        "possibly due to a previous volume storage migration");
-            } else {
-                cause = i18n("Because image status is not %s", ImageStatus.Ready.toString());
-            }
-
-            throw new OperationFailureException(operr("cannot find backupstorage to download image [%s] " +
-                    "to primarystorage [%s]. %s", volume.getRootImageUuid(), getSelf().getUuid(), cause));
-        }
-
-        imageSpec.setSelectedBackupStorage(ImageBackupStorageRefInventory.valueOf(image.getBackupStorageRefs().iterator().next()));
-
+        imageSpec.setSelectedBackupStorage(ref);
         return imageSpec;
     }
 
