@@ -247,6 +247,14 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     host.getManagementIp(), msg.getPoolUuid(), vxlanNetworkUuids, host.getUuid()));
 
             VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
+            // if remote vtep ip exist ,add it
+            String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, host.getUuid()).findValue();
+            List<String> gwpeers = Q.New(RemoteVtepVO.class).select(RemoteVtepVO_.vtepIp).eq(RemoteVtepVO_.poolUuid, msg.getPoolUuid()).eq(RemoteVtepVO_.clusterUuid, clusterUuid).listValues();
+            if (gwpeers.size() > 0) {
+                Set<String> gwp = new HashSet<String>(gwpeers);
+                peers.addAll(gwp);
+            }
+
             cmd.setPeers(new ArrayList<>(peers));
             cmd.setNetworkUuids(vxlanNetworkUuids);
 
