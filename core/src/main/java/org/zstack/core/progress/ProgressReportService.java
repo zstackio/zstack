@@ -69,7 +69,7 @@ public class ProgressReportService extends AbstractService implements Management
 
     private static Map<String, ParallelTaskStage> parallelTaskStage = new ConcurrentHashMap<>();
 
-    private void startCleanupThread() {
+    private synchronized void startCleanupThread() {
         if (cleanupThread != null) {
             cleanupThread.cancel(true);
         }

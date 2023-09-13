@@ -277,7 +277,7 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         return basePkgNames;
     }
 
-    public void refreshIntervalClean() {
+    public synchronized void refreshIntervalClean() {
         if (restAPIVOCleanTask != null){
             restAPIVOCleanTask.cancel(true);
         }

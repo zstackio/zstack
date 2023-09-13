@@ -60,7 +60,7 @@ public class GarbageCollectorManagerImpl extends AbstractService
 
     private ConcurrentHashMap<String, GarbageCollector> managedGarbageCollectors = new ConcurrentHashMap<>();
 
-    private void startScanOrphanJobs() {
+    private synchronized void startScanOrphanJobs() {
         if (scanOrphanJobsTask != null) {
             scanOrphanJobsTask.cancel(true);
         }
@@ -94,7 +94,7 @@ public class GarbageCollectorManagerImpl extends AbstractService
         logger.debug(String.format("[GC] starts scanning orphan job thread with the interval[%ss]", GCGlobalConfig.SCAN_ORPHAN_JOB_INTERVAL.value(Integer.class)));
     }
 
-    private void startCleanUpCompletedJobs() {
+    private synchronized void startCleanUpCompletedJobs() {
         if (cleanUpCompletedJobsTask != null) {
             cleanUpCompletedJobsTask.cancel(true);
         }

@@ -597,7 +597,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         startRefreshHostPowerStatusTask();
     }
 
-    private void startRefreshHostPowerStatusTask() {
+    private synchronized void startRefreshHostPowerStatusTask() {
         if (refreshHostPowerStatusTask != null) {
             refreshHostPowerStatusTask.cancel(true);
         }
@@ -651,7 +651,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         });
     }
 
-    private void startReportHostCapacityTask() {
+    private synchronized void startReportHostCapacityTask() {
         if (reportHostCapacityTask != null) {
             reportHostCapacityTask.cancel(true);
         }
