@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`L2PortGroupNetworkVO` (
     CONSTRAINT `fkL2PortGroupNetworkVOL2VirtualSwitchNetworkVO` FOREIGN KEY (`vSwitchUuid`) REFERENCES L2VirtualSwitchNetworkVO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `zstack`.`L2NetworkHostRefVO` (
+CREATE TABLE  IF NOT EXISTS `zstack`.`L2NetworkHostRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `l2NetworkUuid` varchar(32) NOT NULL,
     `hostUuid` varchar(32) NOT NULL,
