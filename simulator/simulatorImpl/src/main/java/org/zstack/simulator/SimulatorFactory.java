@@ -56,6 +56,11 @@ public class SimulatorFactory implements HypervisorFactory, HostBaseExtensionFac
     }
 
     @Override
+    public boolean supportGetHostOs() {
+        return true;
+    }
+
+    @Override
     public HostOperationSystem getHostOS(String uuid) {
         return DEFAULT_OS;
     }

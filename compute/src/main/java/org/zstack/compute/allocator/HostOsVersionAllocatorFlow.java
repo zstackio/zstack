@@ -37,14 +37,17 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
                 .eq(HostVO_.uuid, currentHostUuid)
                 .find();
         allHostList.add(currentHost);
-        Map<String, HostOperationSystem> hostOsMap = generateHostUuidOsMap(allHostList);
+        final Map<String, HostOperationSystem> hostOsMap = generateHostUuidOsMap(allHostList);
 
         final HostOperationSystem currentHostOs = hostOsMap.get(currentHostUuid);
-        hostOsMap.remove(currentHostUuid);
+        allHostList.remove(currentHost);
 
-        List<HostVO> matchedHosts = hostOsMap.entrySet().stream()
-                .filter(entry -> currentHostOs.equals(entry.getValue()))
-                .map(Entry::getKey)
+        List<HostVO> matchedHosts = allHostList.stream()
+                .map(HostVO::getUuid)
+                .filter(hostUuid -> {
+                    final HostOperationSystem hostOs = hostOsMap.get(hostUuid);
+                    return hostOs == null ? true : hostOs.equals(currentHostOs);
+                })
                 .map(hostMap::get)
                 .collect(Collectors.toList());
 
@@ -68,7 +71,10 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
                     .filter(entry -> hypervisorTypeString.equals(entry.getValue()))
                     .map(Entry::getKey)
                     .collect(Collectors.toList());
-            results.putAll(factory.getHostOsMap(hostsWithThisHypervisorType));
+
+            if (factory.supportGetHostOs()) {
+                results.putAll(factory.getHostOsMap(hostsWithThisHypervisorType));
+            }
         }
 
         return results;
