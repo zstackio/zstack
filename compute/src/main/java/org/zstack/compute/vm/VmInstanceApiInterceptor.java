@@ -1370,7 +1370,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (VmInstanceConstant.USER_VM_TYPE.equals(msg.getType())) {
-            if (msg.getDefaultL3NetworkUuid() == null && (msg.getL3NetworkUuids()!= null && msg.getL3NetworkUuids().size() != 1)) {
+            if (msg.getDefaultL3NetworkUuid() == null && (!CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && msg.getL3NetworkUuids().size() != 1)) {
                 throw new ApiMessageInterceptionException(argerr("there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null"));
             } else if (msg.getDefaultL3NetworkUuid() == null && (msg.getL3NetworkUuids()!= null &&msg.getL3NetworkUuids().size() == 1)) {
                 msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
