@@ -45,6 +45,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<CleanUpAfterVmFailedToStartExtensionPoint> cleanUpAfterVmFailedToStartExtensionPoints;
     private List<CleanUpAfterVmChangeImageExtensionPoint> cleanUpAfterVmChangeImageExtensionPoints;
     private List<VmNicChangeStateExtensionPoint> vmNicChangeStateExtensionPoints;
+    private List<SshKeyPairAssociateExtensionPoint> sshKeyPairAssociateExtensionPoints;
 
     public List<ErrorCode> handleSystemTag(String vmUuid, List<String> tags){
         List<ErrorCode> errorCodes = new ArrayList<>();
@@ -466,6 +467,34 @@ public class VmInstanceExtensionPointEmitter implements Component {
         CollectionUtils.safeForEach(vmNicChangeStateExtensionPoints, arg -> arg.afterChangeVmNicState(vmNic, state));
     }
 
+    public List<ErrorCode> associateSshKeyPair(String vmUuid, List<String> sshKeyUuids) {
+        List<ErrorCode> errorCodes = new ArrayList<>();
+        CollectionUtils.safeForEach(sshKeyPairAssociateExtensionPoints, extension -> {
+            ErrorCode errorCode = extension.associateSshKeyPair(vmUuid, sshKeyUuids);
+            if (errorCode != null) {
+                errorCodes.add(errorCode);
+            }
+        });
+        return errorCodes;
+    }
+
+    public List<String> fetchAssociatedSshKeyPairs(String vmUuid) {
+        List<String> sshKeyPairs = new ArrayList<>();
+        CollectionUtils.safeForEach(sshKeyPairAssociateExtensionPoints, extension -> {
+            List<String> keyPairs = extension.fetchAssociatedSshKeyPairs(vmUuid);
+            if (!keyPairs.isEmpty()) {
+                sshKeyPairs.addAll(keyPairs);
+            }
+        });
+        return sshKeyPairs;
+    }
+
+    public void cloneSshKeyPairsToVm(String originVmUuid, String destVmUuid) {
+        CollectionUtils.safeForEach(sshKeyPairAssociateExtensionPoints, extension -> {
+            extension.cloneSshKeyPairsToVm(originVmUuid, destVmUuid);
+        });
+    }
+
     private void populateExtensions() {
         VmInstanceBeforeStartExtensions = pluginRgty.getExtensionList(VmInstanceBeforeStartExtensionPoint.class);
         VmInstanceResumeExtensionPoints = pluginRgty.getExtensionList(VmInstanceResumeExtensionPoint.class);
@@ -482,6 +511,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         cleanUpAfterVmFailedToStartExtensionPoints = pluginRgty.getExtensionList(CleanUpAfterVmFailedToStartExtensionPoint.class);
         cleanUpAfterVmChangeImageExtensionPoints = pluginRgty.getExtensionList(CleanUpAfterVmChangeImageExtensionPoint.class);
         vmNicChangeStateExtensionPoints = pluginRgty.getExtensionList(VmNicChangeStateExtensionPoint.class);
+        sshKeyPairAssociateExtensionPoints = pluginRgty.getExtensionList(SshKeyPairAssociateExtensionPoint.class);
     }
 
     @Override

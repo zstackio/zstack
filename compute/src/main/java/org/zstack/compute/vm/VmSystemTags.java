@@ -56,7 +56,9 @@ public class VmSystemTags {
     @SensitiveTag(tokens = {"userdata"}, customizeOutput = UserdataTagOutputHandler.class)
     public static PatternedSystemTag USERDATA = new PatternedSystemTag(String.format("userdata::{%s}", USERDATA_TOKEN), VmInstanceVO.class);
 
+    @Deprecated
     public static String SSHKEY_TOKEN = "sshkey";
+    @Deprecated
     public static PatternedSystemTag SSHKEY = new PatternedSystemTag(String.format("sshkey::{%s}", SSHKEY_TOKEN), VmInstanceVO.class);
 
     public static String ROOT_PASSWORD_TOKEN = "rootPassword";
