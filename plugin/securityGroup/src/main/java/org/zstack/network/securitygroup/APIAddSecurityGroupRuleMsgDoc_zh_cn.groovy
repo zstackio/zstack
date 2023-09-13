@@ -49,6 +49,15 @@ doc {
 					since "2.1"
 				}
 				column {
+					name "priority"
+					enclosedIn "params"
+					desc "规则优先级"
+					location "body"
+					type "Integer"
+					optional true
+					since "4.7.21"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

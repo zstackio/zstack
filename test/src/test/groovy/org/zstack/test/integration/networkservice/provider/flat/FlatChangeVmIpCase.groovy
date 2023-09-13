@@ -3,7 +3,8 @@ package org.zstack.test.integration.networkservice.provider.flat
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.SimpleQuery
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.network.service.flat.BridgeNameFinder
@@ -18,6 +19,9 @@ import org.zstack.header.network.service.NetworkServiceProviderVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType
 import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
+import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
+import org.zstack.network.securitygroup.VmNicSecurityTO
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.userdata.UserdataConstant
@@ -208,6 +212,68 @@ class FlatChangeVmIpCase extends SubCase{
             testEipWhenChangeIp()
             testUpdateNicWhenChangeL3()
             testUserdataWhenChangeIp()
+            testChangeL3NetworkWithSecurityGroup()
+        }
+    }
+
+    void testChangeL3NetworkWithSecurityGroup() {
+        L3NetworkInventory flat_l3 = env.inventoryByName("flatL3")
+        L3NetworkInventory pub_l3 = env.inventoryByName("pubL3")
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-flat-change-l3"
+            imageUuid = env.inventoryByName("image1").uuid
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            l3NetworkUuids = [flat_l3.uuid]
+        }
+
+        def sg = createSecurityGroup {
+            name = "vm-test-security-group"
+            ipVersion = 4
+        } as SecurityGroupInventory
+        attachSecurityGroupToL3Network {
+            securityGroupUuid = sg.uuid
+            l3NetworkUuid = flat_l3.uuid
+        }
+        KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
+        env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+
+            return rsp
+        }
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg.uuid
+            vmNicUuids = [vm.vmNics[0].uuid]
+        }
+
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm.vmNics[0].uuid).list()
+        assert refs.size() == 1
+        assert refs.find {it.securityGroupUuid == sg.uuid}.priority == 1
+
+        retryInSecs {
+            assert cmd != null
+            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
+        }
+
+        cmd = null
+        List<FreeIpInventory> freeIp4s = getFreeIp {
+            l3NetworkUuid = pub_l3.uuid
+            ipVersion = IPv6Constants.IPv4
+        }
+        String ip2 = freeIp4s.get(0).getIp()
+        changeVmNicNetwork {
+            vmNicUuid = vm.vmNics[0].uuid
+            destL3NetworkUuid = pub_l3.uuid
+            systemTags = [String.format("staticIp::%s::%s", pub_l3.uuid, ip2)]
+        }
+
+        refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vm.vmNics[0].uuid).list()
+        assert refs.size() == 0
+
+        retryInSecs {
+            assert cmd != null
+            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_DELETE_CHAIN
         }
     }
 
@@ -218,7 +284,6 @@ class FlatChangeVmIpCase extends SubCase{
             imageUuid = env.inventoryByName("image1").uuid
             instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
             l3NetworkUuids = [flat_l3.uuid]
-            systemTags = [VmSystemTags.USERDATA.instantiateTag([(VmSystemTags.USERDATA_TOKEN): new String(Base64.getEncoder().encode(userdata.getBytes()))])]
         }
         VmNicInventory vmNic = vm.getVmNics().get(0)
         VmNicVO vmNicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
@@ -258,17 +323,11 @@ class FlatChangeVmIpCase extends SubCase{
             applyUserdataCmd = json(e.body, FlatUserdataBackend.ApplyUserdataCmd.class)
             return rsp
         }
-        KVMAgentCommands.ApplySecurityGroupRuleCmd releaseSGCmd = null
-        KVMAgentCommands.ApplySecurityGroupRuleCmd applySGCmd = null
+
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
-            if (cmd.ruleTOs.get(0).actionCode == "applyRule") {
-                applySGCmd = cmd
-            }
-            if (cmd.ruleTOs.get(0).actionCode == "deleteChain") {
-                releaseSGCmd = cmd
-            }
+
             return rsp
         }
 
@@ -284,26 +343,26 @@ class FlatChangeVmIpCase extends SubCase{
         }
 
         assert ip1 != ip2
-        assert releaseDhcpCmd != null
-        assert releaseDhcpCmd.dhcp.size() == 1
-        assert releaseDhcpCmd.dhcp.get(0).ip == ip1
-        assert batchApplyDhcpCmd != null
-        assert batchApplyDhcpCmd.dhcpInfos.size() == 1
-        assert batchApplyDhcpCmd.dhcpInfos.get(0).dhcp.size() == 1
-        assert batchApplyDhcpCmd.dhcpInfos.get(0).dhcp.get(0).ip == ip2
+        retryInSecs {
+            assert releaseDhcpCmd != null
+            assert releaseDhcpCmd.dhcp.size() == 1
+            assert releaseDhcpCmd.dhcp.get(0).ip == ip1
+            assert batchApplyDhcpCmd != null
+            assert batchApplyDhcpCmd.dhcpInfos.size() == 1
+            assert batchApplyDhcpCmd.dhcpInfos.get(0).dhcp.size() == 1
+            assert batchApplyDhcpCmd.dhcpInfos.get(0).dhcp.get(0).ip == ip2
 
-        assert releaseUserdataCmd != null
-        assert releaseUserdataCmd.namespaceName != null
-        assert releaseUserdataCmd.vmIp == ip1
-        assert releaseUserdataCmd.bridgeName == new BridgeNameFinder().findByL3Uuid(flat_l3.uuid)
-        assert applyUserdataCmd != null
-        assert applyUserdataCmd.userdata.vmIp == ip2
-        assert applyUserdataCmd.userdata.bridgeName == new BridgeNameFinder().findByL3Uuid(flat_l3.uuid)
+            assert releaseUserdataCmd != null
+            assert releaseUserdataCmd.namespaceName != null
+            assert releaseUserdataCmd.vmIp == ip1
+            assert releaseUserdataCmd.bridgeName == new BridgeNameFinder().findByL3Uuid(flat_l3.uuid)
+            assert applyUserdataCmd != null
+            assert applyUserdataCmd.userdata.vmIp == ip2
+            assert applyUserdataCmd.userdata.bridgeName == new BridgeNameFinder().findByL3Uuid(flat_l3.uuid)
 
-        assert releaseSGCmd != null
-        assert releaseSGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip1
-        assert applySGCmd != null
-        assert applySGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip2
+            assert cmd != null
+            assert cmd.ruleTOs.get(sg.uuid) != null
+        }
     }
 
     void testFlatBaseServiceWhenChangeL3() {
@@ -353,17 +412,10 @@ class FlatChangeVmIpCase extends SubCase{
             applyUserdataCmd = json(e.body, FlatUserdataBackend.ApplyUserdataCmd.class)
             return rsp
         }
-        KVMAgentCommands.ApplySecurityGroupRuleCmd releaseSGCmd = null
-        KVMAgentCommands.ApplySecurityGroupRuleCmd applySGCmd = null
+
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
-            if (cmd.ruleTOs.get(0).actionCode == "applyRule") {
-                applySGCmd = cmd
-            }
-            if (cmd.ruleTOs.get(0).actionCode == "deleteChain") {
-                releaseSGCmd = cmd
-            }
             return rsp
         }
 
@@ -378,26 +430,26 @@ class FlatChangeVmIpCase extends SubCase{
             systemTags = [String.format("staticIp::%s::%s", pub_l3.uuid, ip2)]
         }
 
-        assert releaseDhcpCmd != null
-        assert releaseDhcpCmd.dhcp.size() == 1
-        assert releaseDhcpCmd.dhcp.get(0).ip == ip1
-        assert batchApplyDhcpCmd != null
-        assert batchApplyDhcpCmd.dhcpInfos.size() == 1
-        assert batchApplyDhcpCmd.dhcpInfos.get(0).dhcp.size() == 1
-        assert batchApplyDhcpCmd.dhcpInfos.get(0).dhcp.get(0).ip == ip2
+        retryInSecs {
+            assert releaseDhcpCmd != null
+            assert releaseDhcpCmd.dhcp.size() == 1
+            assert releaseDhcpCmd.dhcp.get(0).ip == ip1
+            assert batchApplyDhcpCmd != null
+            assert batchApplyDhcpCmd.dhcpInfos.size() == 1
+            assert batchApplyDhcpCmd.dhcpInfos.get(0).dhcp.size() == 1
+            assert batchApplyDhcpCmd.dhcpInfos.get(0).dhcp.get(0).ip == ip2
 
-        assert releaseUserdataCmd != null
-        assert releaseUserdataCmd.namespaceName != null
-        assert releaseUserdataCmd.vmIp == ip1
-        assert releaseUserdataCmd.bridgeName == new BridgeNameFinder().findByL3Uuid(flat_l3.uuid)
-        assert applyUserdataCmd != null
-        assert applyUserdataCmd.userdata.vmIp == ip2
-        assert applyUserdataCmd.userdata.bridgeName == new BridgeNameFinder().findByL3Uuid(pub_l3.uuid)
+            assert releaseUserdataCmd != null
+            assert releaseUserdataCmd.namespaceName != null
+            assert releaseUserdataCmd.vmIp == ip1
+            assert releaseUserdataCmd.bridgeName == new BridgeNameFinder().findByL3Uuid(flat_l3.uuid)
+            assert applyUserdataCmd != null
+            assert applyUserdataCmd.userdata.vmIp == ip2
+            assert applyUserdataCmd.userdata.bridgeName == new BridgeNameFinder().findByL3Uuid(pub_l3.uuid)
 
-        assert releaseSGCmd != null
-        assert releaseSGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip1
-        assert applySGCmd != null
-        assert applySGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip2
+            assert cmd != null
+            assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_DELETE_CHAIN
+        }
     }
 
     void testEipWhenChangeIp() {
@@ -448,12 +500,15 @@ class FlatChangeVmIpCase extends SubCase{
         }
 
         assert ip1 != ip2
-        assert releaseEipCmd != null
-        assert releaseEipCmd.eip.nicIp == ip1
 
-        assert applyEipCmd != null
-        assert applyEipCmd.eip.nicIp == ip2
-        assert applyEipCmd.eip.vip == releaseEipCmd.eip.vip
+        retryInSecs {
+            assert releaseEipCmd != null
+            assert releaseEipCmd.eip.nicIp == ip1
+
+            assert applyEipCmd != null
+            assert applyEipCmd.eip.nicIp == ip2
+            assert applyEipCmd.eip.vip == releaseEipCmd.eip.vip
+        }
     }
 
     void testUpdateNicWhenChangeL3() {
@@ -489,9 +544,11 @@ class FlatChangeVmIpCase extends SubCase{
         }
 
         assert ip1 != ip2
-        assert updateNicCmd != null
-        assert updateNicCmd.nics.size() == 1
-        assert updateNicCmd.nics.get(0).mac == vmNicVO.getMac()
+        retryInSecs {
+            assert updateNicCmd != null
+            assert updateNicCmd.nics.size() == 1
+            assert updateNicCmd.nics.get(0).mac == vmNicVO.getMac()
+        }
     }
 
     void testUserdataWhenChangeIp() {
@@ -538,7 +595,9 @@ class FlatChangeVmIpCase extends SubCase{
         }
 
         assert ip1 != ip2
-        assert releaseUserdataCmd == null
-        assert applyUserdataCmd == null
+        retryInSecs {
+            assert releaseUserdataCmd == null
+            assert applyUserdataCmd == null
+        }
     }
 }
