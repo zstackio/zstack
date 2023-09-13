@@ -135,7 +135,7 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
                         freeIpInventories.addAll(tempFreeIpInventories);
                     }
 
-                    if ((isUseForUserVm && freeIpInventories.isEmpty()) || (!isUseForUserVm && freeIpInventories.size() == 1)) {
+                    if ((isUseForUserVm && freeIpInventories.isEmpty())) {
                         throw new ApiMessageInterceptionException(operr("there are not enough IPs for allocation when attaching the DHCP service to L3 network[uuid:%s].", msg.getL3NetworkUuid()));
                     }
                 }
