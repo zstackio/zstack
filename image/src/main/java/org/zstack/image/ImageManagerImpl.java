@@ -852,12 +852,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 startExpungeTask();
             }
         });
-        ImageGlobalConfig.EXPUNGE_PERIOD.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
-            @Override
-            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                startExpungeTask();
-            }
-        });
     }
 
     private void installGlobalConfigValidator() {
@@ -895,7 +889,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         };
     }
 
-    private void startExpungeTask() {
+    private synchronized void startExpungeTask() {
         if (expungeTask != null) {
             expungeTask.cancel(true);
         }

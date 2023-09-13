@@ -61,10 +61,6 @@ public abstract class ImageCacheCleaner {
         cleanupIntervalConfig().installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                if (gcThread != null) {
-                    gcThread.cancel(true);
-                }
-
                 startGCThread();
             }
         });
@@ -214,7 +210,11 @@ public abstract class ImageCacheCleaner {
         }).start();
     }
 
-    private void startGCThread() {
+    private synchronized void startGCThread() {
+        if (gcThread != null) {
+            gcThread.cancel(true);
+        }
+
         logger.debug(String.format("%s starts with the interval %s secs", this.getClass().getSimpleName(), PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.value(Long.class)));
 
         gcThread = thdf.submitPeriodicTask(new PeriodicTask() {

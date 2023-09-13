@@ -1448,7 +1448,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         logger.debug(String.format("security group failureHostCopingThread starts[failureHostEachTimeTake: %s, failureHostWorkerInterval: %ss]", failureHostEachTimeTake, failureHostWorkerInterval));
     }
 
-    private void restartFailureHostCopingThread() {
+    private synchronized void restartFailureHostCopingThread() {
         if (failureHostCopingThread != null) {
             failureHostCopingThread.cancel(true);
         }

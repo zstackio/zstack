@@ -273,7 +273,7 @@ public class Session implements Component {
         IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startCleanUpStaleSessionTask());
     }
 
-    private void startCleanUpStaleSessionTask() {
+    private synchronized void startCleanUpStaleSessionTask() {
         if (expiredSessionCollector != null) {
             expiredSessionCollector.cancel(true);
         }

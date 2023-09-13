@@ -660,7 +660,7 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
         }
     }
 
-    private void startTcpChannelTimeoutChecker() {
+    private synchronized void startTcpChannelTimeoutChecker() {
         if (checkSocketChannelTimeoutThread != null) {
             checkSocketChannelTimeoutThread.cancel(true);
         }

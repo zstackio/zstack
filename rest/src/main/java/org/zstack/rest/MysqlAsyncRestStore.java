@@ -133,7 +133,7 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
         return true;
     }
 
-    private void startExpiredApiCleanupThread() {
+    private synchronized void startExpiredApiCleanupThread() {
         if (cleanupThread != null) {
             cleanupThread.cancel(true);
         }
