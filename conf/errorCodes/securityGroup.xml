@@ -36,5 +36,10 @@
         <description>Rule's port field is invalid</description>
     </code>
 
+    <code>
+        <id>2000</id>
+        <description>Rule check ok</description>
+    </code>
+
 </error>
 

@@ -10,7 +10,13 @@ doc {
 		name "available"
 		desc "规则是否可用"
 		type "boolean"
-		since "4.7.11"
+		since "4.7.21"
+	}
+	field {
+		name "code"
+		desc "规则检验错误码"
+		type "String"
+		since "4.7.21"
 	}
 	field {
 		name "reason"
