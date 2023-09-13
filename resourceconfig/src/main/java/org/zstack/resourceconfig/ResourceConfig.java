@@ -84,6 +84,15 @@ public class ResourceConfig {
                 it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
     }
 
+    public void validateNewValue(String resourceUuid, String newValue) {
+        String originValue = loadConfigValue(resourceUuid);
+        String oldValue = originValue == null ? globalConfig.value() : originValue;
+
+        globalConfig.getValidators().forEach(it ->
+                it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
+        validatorExtensions.forEach(it -> it.validateResourceConfig(resourceUuid, oldValue, newValue));
+    }
+
     public void updateValue(String resourceUuid, String newValue) {
         String resourceType = getResourceType(resourceUuid);
         updateValue(resourceUuid, resourceType, newValue, true);
