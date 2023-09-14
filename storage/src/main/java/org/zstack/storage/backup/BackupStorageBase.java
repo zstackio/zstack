@@ -45,6 +45,7 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.CollectionDSL;
+import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -162,14 +163,16 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }
 
         long size = getContentLength(url);
+        long reservedCapacity = SizeUtils.sizeStringToBytes(BackupStorageGlobalConfig.RESERVED_CAPACITY.value());
+        long available = self.getAvailableCapacity() - reservedCapacity;
         if (size == -1) {
             logger.error(String.format("failed to get image size from url %s, but ignore this error and proceed", url));
         } else if (size < ImageConstant.MINI_IMAGE_SIZE_IN_BYTE) {
             throw new OperationFailureException(operr("the image size get from url %s is %d bytes, " +
                     "it's too small for an image, please check the url again.", url, size));
-        } else if (size > self.getAvailableCapacity()) {
+        } else if (size > available) {
             throw new OperationFailureException(operr("the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]." +
-                            "Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, self.getAvailableCapacity()));
+                            "Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, available));
         }
     }
 

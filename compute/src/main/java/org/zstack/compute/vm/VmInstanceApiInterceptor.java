@@ -814,7 +814,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         ImageMediaType imgFormat = imgt.get(2, ImageMediaType.class);
-        if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO) {
+        if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO && imgFormat != ImageMediaType.Kernel) {
             throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
         }
 

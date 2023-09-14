@@ -122,7 +122,7 @@
 	<config>
 		<name>pciePortNums</name>
 		<description>PCIe-root-port numbers of VM. On x86-64/q35, it determine the hot-pluggable pci device numbers.</description>
-		<defaultValue>28</defaultValue>
+		<defaultValue>20</defaultValue>
 		<category>vm</category>
 		<type>java.lang.Integer</type>
 	</config>

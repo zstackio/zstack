@@ -11,6 +11,8 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.primary.DownloadVolumeTemplateToPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
@@ -144,11 +146,28 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
         bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeConstant.SERVICE_ID, spec.getDestRootVolume().getUuid());
         msgs.add(rmsg);
 
+        if (ImageMediaType.Kernel.toString().equals(image.getInventory().getMediaType())) {
+            DownloadVolumeTemplateToPrimaryStorageMsg dmsg = new DownloadVolumeTemplateToPrimaryStorageMsg();
+            dmsg.setTemplateSpec(image);
+            dmsg.setHostUuid(spec.getDestHost().getUuid());
+            dmsg.setPrimaryStorageUuid(spec.getDestRootVolume().getPrimaryStorageUuid());
+            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
+            bus.send(dmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        completion.fail(reply.getError());
+                        return;
+                    }
+
+                }
+            });
+        }
+
         if (msgs.isEmpty()) {
             completion.success();
             return;
         }
-
         doInstantiate(msgs.iterator(), spec, completion);
     }
 

@@ -42,6 +42,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
+import org.zstack.header.image.Image;
 import org.zstack.header.image.ImageArchitecture;
 import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.image.ImagePlatform;
@@ -1576,10 +1577,13 @@ public class KVMHost extends HostBase implements Host {
 
             if (!HostSystemTags.LIVE_SNAPSHOT.hasTag(self.getUuid())) {
                 if (vmState != VmInstanceState.Stopped) {
-                    throw new OperationFailureException(err(SysErrors.NO_CAPABILITY_ERROR,
+                    reply.setError(err(SysErrors.NO_CAPABILITY_ERROR,
                             "kvm host[uuid:%s, name:%s, ip:%s] doesn't not support live snapshot. please stop vm[uuid:%s] and try again",
                                     self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid()
                     ));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
                 }
             }
 
@@ -2545,6 +2549,9 @@ public class KVMHost extends HostBase implements Host {
 
         int cpuNum = spec.getVmInventory().getCpuNum();
         cmd.setCpuNum(cpuNum);
+        String imageUuid = spec.getImageSpec().getInventory().getUuid();
+        cmd.setImageUuid(imageUuid);
+        cmd.setPsUrl(dbf.findByUuid(spec.getDestRootVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class).getUrl());
 
         int socket;
         int cpuOnSocket;
@@ -2616,7 +2623,7 @@ public class KVMHost extends HostBase implements Host {
                 cmd.setPredefinedPciBridgeNum(1);
             }
         }
-
+        cmd.setGuestOsType(spec.getImageSpec().getInventory().getGuestOsType());
         VmPriorityLevel level = new VmPriorityOperator().getVmPriority(spec.getVmInventory().getUuid());
         VmPriorityConfigVO priorityVO = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, level).find();
         cmd.setPriorityConfigStruct(new PriorityConfigStruct(priorityVO, spec.getVmInventory().getUuid()));
@@ -2681,7 +2688,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
-        cmd.setUsbRedirect(spec.getUsbRedirect());
+        cmd.setUsbRedirect(spec.isUsbRedirect());
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
@@ -3776,7 +3783,9 @@ public class KVMHost extends HostBase implements Host {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
                                     }
 
-
+                                    if (ret.isKvmPtp()){
+                                        createTagWithoutNonValue(KVMSystemTags.KVM_PTP, KVMSystemTags.KVM_PTP_TOKEN, HostKvmPTPStatusType.Active.toString(), true);
+                                    }
 
                                     List<String> ips = ret.getIpAddresses();
                                     if (ips != null) {

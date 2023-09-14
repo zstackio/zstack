@@ -408,6 +408,7 @@ public class KVMAgentCommands {
         private String systemProductName;
         private String systemSerialNumber;
         private List<String> ipAddresses;
+        private boolean kvmPtp;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -503,6 +504,14 @@ public class KVMAgentCommands {
 
         public void setSystemSerialNumber(String systemSerialNumber) {
             this.systemSerialNumber = systemSerialNumber;
+        }
+
+        public boolean isKvmPtp() {
+            return kvmPtp;
+        }
+
+        public void setKvmPtp(boolean kvmPtp) {
+            this.kvmPtp = kvmPtp;
         }
     }
 
@@ -1475,7 +1484,7 @@ public class KVMAgentCommands {
         private String clock;
         private String clockTrack;
         private boolean useNuma;
-        private String usbRedirect;
+        private boolean usbRedirect;
         private boolean useBootMenu;
         private boolean createPaused;
         private boolean kvmHiddenState;
@@ -1496,6 +1505,9 @@ public class KVMAgentCommands {
         private String memorySnapshotPath;
         private boolean coloPrimary;
         private boolean coloSecondary;
+        private String imageUuid;
+        private String psUrl;
+        private String guestOsType;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -1580,6 +1592,14 @@ public class KVMAgentCommands {
             isApplianceVm = applianceVm;
         }
 
+        public String getGuestOsType() {
+            return guestOsType;
+        }
+
+        public void setGuestOsType(String guestOsType) {
+            this.guestOsType = guestOsType;
+        }
+
         public String getSystemSerialNumber() {
             return systemSerialNumber;
         }
@@ -1628,11 +1648,11 @@ public class KVMAgentCommands {
             return createPaused;
         }
 
-        public String getUsbRedirect() {
+        public boolean isUsbRedirect() {
             return usbRedirect;
         }
 
-        public void setUsbRedirect(String usbRedirect) {
+        public void setUsbRedirect(boolean usbRedirect) {
             this.usbRedirect = usbRedirect;
         }
 
@@ -1788,6 +1808,22 @@ public class KVMAgentCommands {
 
         public void setRootVolume(VolumeTO rootVolume) {
             this.rootVolume = rootVolume;
+        }
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+
+        public String getPsUrl() {
+            return psUrl;
+        }
+
+        public void setPsUrl(String psUrl) {
+            this.psUrl = psUrl;
         }
 
         public List<VolumeTO> getDataVolumes() {

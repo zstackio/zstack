@@ -161,4 +161,8 @@ public class VmSystemTags {
     public static String VM_IP_CHANGED_TOKEN = "ipChanged";
     public static PatternedSystemTag VM_IP_CHANGED =
             new PatternedSystemTag(String.format("ipChanged::{%s}", VM_IP_CHANGED_TOKEN), VmInstanceVO.class);
+
+    public static final String TIME_PROTOCOL_TOKEN = "timeProtocol";
+    public static PatternedSystemTag TIME_PROTOCOL = new PatternedSystemTag(String.format("timeProtocol::{%s}", TIME_PROTOCOL_TOKEN), VmInstanceVO.class
+    );
 }
