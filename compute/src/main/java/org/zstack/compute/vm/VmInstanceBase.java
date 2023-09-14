@@ -61,6 +61,8 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
@@ -95,6 +97,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected DatabaseFacade dbf;
     @Autowired
     protected ThreadFacade thdf;
+    @Autowired
+    protected ResourceConfigFacade rcf;
     @Autowired
     protected VmInstanceManager vmMgr;
     @Autowired
@@ -2883,6 +2887,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APISetVmBootVolumeMsg) {
             handle((APISetVmBootVolumeMsg) msg);
+        } else if (msg instanceof APISetVmClockTrackMsg) {
+            handle((APISetVmClockTrackMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
             handle((APISetVmConsolePasswordMsg) msg);
         } else if (msg instanceof APISetVmSoundTypeMsg) {
@@ -3298,6 +3304,103 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(APISetVmClockTrackMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("set-vm-clock-track-%s", msg.getUuid());
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                APISetVmClockTrackEvent event = new APISetVmClockTrackEvent(msg.getId());
+                setVmClockTrack(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        refreshVO();
+                        event.setInventory(getSelfInventory());
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void setVmClockTrack(APISetVmClockTrackMsg msg, Completion completion) {
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("set-vm-clock-track-for-%s", msg.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "set-QGA-sync-clock-task";
+
+            @Override
+            public boolean skip(Map data) {
+                return msg.isSyncAfterVMResume() == null && msg.getIntervalInSeconds() == null;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                // sync clock by QGA
+                SetVmQgaSyncClockTaskMsg syncMsg = new SetVmQgaSyncClockTaskMsg();
+                syncMsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+                if (msg.isSyncAfterVMResume() != null) {
+                    syncMsg.setSyncAfterVMResume(msg.isSyncAfterVMResume());
+                }
+                if (msg.getIntervalInSeconds() != null) {
+                    syncMsg.setIntervalInSeconds(msg.getIntervalInSeconds());
+                }
+
+                bus.makeTargetServiceIdByResourceUuid(syncMsg, VmInstanceConstant.SERVICE_ID, syncMsg.getVmInstanceUuid());
+                bus.send(syncMsg, new CloudBusCallBack(trigger, msg) {
+                    @Override
+                    public void run(MessageReply r) {
+                        if (r.isSuccess()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        trigger.fail(r.getError());
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "set-vm-clock-track";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                // sync clock (Real-time Clock)
+                ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.VM_CLOCK_TRACK.getIdentity());
+                rc.updateValue(msg.getVmInstanceUuid(), msg.getTrack());
+                trigger.next();
+            }
+        });
+
+        chain.error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).start();
     }
 
     private void handle(APISetVmBootOrderMsg msg) {
@@ -6583,6 +6686,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 evt.setInventory(inv);
                 bus.publish(evt);
+                extEmitter.afterResumeVm(inv);
                 taskChain.next();
             }
 

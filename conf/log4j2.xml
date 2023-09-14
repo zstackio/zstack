@@ -4,7 +4,7 @@
         <RollingFile name="RollingFile" fileName="${sys:catalina.home}/logs/management-server.log"
                      filePattern="${sys:catalina.home}/logs/management-server-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,} (%t) %m%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,task} (%t) %m%n</pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="450 MB"/>

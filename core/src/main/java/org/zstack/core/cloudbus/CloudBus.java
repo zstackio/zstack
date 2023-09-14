@@ -34,6 +34,8 @@ public interface CloudBus extends Component {
     void route(Message msg);
     
     void reply(Message request, MessageReply reply);
+
+    void cancel(String correlationId, String error);
     
     void publish(List<Event> events);
     

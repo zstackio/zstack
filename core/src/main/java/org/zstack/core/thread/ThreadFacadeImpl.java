@@ -3,6 +3,7 @@ package org.zstack.core.thread;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.jmx.JmxFacade;
 import org.zstack.header.core.progress.ChainInfo;
+import org.zstack.header.core.progress.SingleFlightChainInfo;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
@@ -223,6 +224,11 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     }
 
     @Override
+    public <T> Future<T> singleFlightSubmit(SingleFlightTask task) {
+        return dpq.singleFlightSubmit(task);
+    }
+
+    @Override
     public boolean isChainTaskRunning(String signature) {
         return dpq.isChainTaskRunning(signature);
     }
@@ -230,6 +236,16 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     @Override
     public ChainInfo getChainTaskInfo(String signature) {
         return dpq.getChainTaskInfo(signature);
+    }
+
+    @Override
+    public ChainInfo cleanChainTaskInfo(String signature, Integer index, Boolean cleanUp, Boolean isRunningTask) {
+        return dpq.cleanChainTaskInfo(signature, index, cleanUp, isRunningTask);
+    }
+
+    @Override
+    public SingleFlightChainInfo getSingleFlightChainTaskInfo(String signature) {
+        return dpq.getSingleFlightChainTaskInfo(signature);
     }
 
     @Override

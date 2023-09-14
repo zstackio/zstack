@@ -19,23 +19,22 @@ import java.util.concurrent.TimeUnit;
  * Created by MaJin on 2019/7/4.
  */
 public class TaskInfoBuilder {
-    static RunningTaskInfo buildRunningTaskInfo(DispatchQueueImpl.ChainFuture cf, long now, int index) {
+    static RunningTaskInfo buildRunningTaskInfo(AbstractTimeStatisticFuture abstractTimeStatisticFuture, long now, int index) {
         RunningTaskInfo info = new RunningTaskInfo();
-        loadTaskInfo(info, cf, index);
-        info.setExecutionTime(TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartExecutionTimeInMills()));
-        info.setPendingTime(TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()) - info.getExecutionTime());
+        loadTaskInfo(info, abstractTimeStatisticFuture, index);
+        info.setExecutionTime(TimeUnit.MILLISECONDS.toSeconds(now - abstractTimeStatisticFuture.getStartExecutionTimeInMills()));
+        info.setPendingTime(TimeUnit.MILLISECONDS.toSeconds(now - abstractTimeStatisticFuture.getStartPendingTimeInMills()) - info.getExecutionTime());
         return info;
-
     }
 
-    static PendingTaskInfo buildPendingTaskInfo(DispatchQueueImpl.ChainFuture cf, long now, int index) {
+    static PendingTaskInfo buildPendingTaskInfo(AbstractTimeStatisticFuture abstractTimeStatisticFuture, long now, int index) {
         PendingTaskInfo info = new PendingTaskInfo();
-        loadTaskInfo(info, cf, index);
-        info.setPendingTime(TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()));
+        loadTaskInfo(info, abstractTimeStatisticFuture, index);
+        info.setPendingTime(TimeUnit.MILLISECONDS.toSeconds(now - abstractTimeStatisticFuture.getStartPendingTimeInMills()));
         return info;
     }
 
-    static private void loadTaskInfo(TaskInfo info, DispatchQueueImpl.ChainFuture cf, int index) {
+    static private void loadTaskInfo(TaskInfo info, AbstractTimeStatisticFuture cf, int index) {
         info.setName(cf.getTask().getName());
         info.setClassName(cf.getTask().getClass().getSimpleName());
         info.setIndex(index);

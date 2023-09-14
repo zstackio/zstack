@@ -31,13 +31,13 @@ public class AddXDragonHostAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String password;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {64L,256L}, noTrim = false)
     public java.lang.Integer cpuNum;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,32L}, noTrim = false)
     public java.lang.Integer cpuSockets;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {137438953472L,9223372036854775807L}, noTrim = false)
     public java.lang.Long totalPhysicalMemory;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)

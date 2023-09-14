@@ -8,7 +8,7 @@
         <RollingFile name="RollingFile" fileName="management-server.log"
             filePattern="./management-server-%i.log" >
             <PatternLayout>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,} (%t) %m%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,task} (%t) %m%n</pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="200 MB" />

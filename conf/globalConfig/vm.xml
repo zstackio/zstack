@@ -229,4 +229,13 @@
 		<category>vm</category>
 		<type>java.lang.Long</type>
 	</config>
+
+	<config>
+		<name>vm.clock.track</name>
+		<description>set vm clock track guest or host</description>
+		<defaultValue>host</defaultValue>
+		<category>vm</category>
+		<type>java.lang.String</type>
+	</config>
+
 </globalConfig>

@@ -10,7 +10,6 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.*;
 import org.zstack.core.db.*;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
 import org.zstack.utils.TypeUtils;

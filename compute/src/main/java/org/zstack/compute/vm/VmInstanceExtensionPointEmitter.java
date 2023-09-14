@@ -31,6 +31,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private ErrorFacade errf;
 
     private List<VmInstanceBeforeStartExtensionPoint> VmInstanceBeforeStartExtensions;
+    private List<VmInstanceResumeExtensionPoint> VmInstanceResumeExtensionPoints;
     private List<VmInstanceStartNewCreatedVmExtensionPoint> startNewCreatedVmExtensions;
     private List<BeforeVmInstanceStopExtensionPoint> beforeVmStopExtensions;
     private List<VmInstanceStopExtensionPoint> stopVmExtensions;
@@ -263,6 +264,15 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
+    public void afterResumeVm(VmInstanceInventory inv) {
+        CollectionUtils.safeForEach(VmInstanceResumeExtensionPoints, new ForEachFunction<VmInstanceResumeExtensionPoint>() {
+            @Override
+            public void run(VmInstanceResumeExtensionPoint arg) {
+                arg.afterResumeVm(inv);
+            }
+        });
+    }
+
     public ErrorCode preStartVm(VmInstanceInventory inv) {
         for (VmInstanceStartExtensionPoint ext : startVmExtensions) {
             try {
@@ -449,6 +459,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
 
     private void populateExtensions() {
         VmInstanceBeforeStartExtensions = pluginRgty.getExtensionList(VmInstanceBeforeStartExtensionPoint.class);
+        VmInstanceResumeExtensionPoints = pluginRgty.getExtensionList(VmInstanceResumeExtensionPoint.class);
         startNewCreatedVmExtensions = pluginRgty.getExtensionList(VmInstanceStartNewCreatedVmExtensionPoint.class);
         beforeVmStopExtensions = pluginRgty.getExtensionList(BeforeVmInstanceStopExtensionPoint.class);
         stopVmExtensions = pluginRgty.getExtensionList(VmInstanceStopExtensionPoint.class);

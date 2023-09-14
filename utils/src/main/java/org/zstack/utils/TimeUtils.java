@@ -5,6 +5,9 @@ import org.zstack.utils.logging.CLogger;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -126,7 +129,8 @@ public class TimeUtils {
         return TimeUnit.valueOf(time).toMillis(1);
     }
 
-    private static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final String DEFAULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    private static final DateFormat df = new SimpleDateFormat(DEFAULT_TIME_FORMAT);
     public static boolean isValidTimestampFormat(String timestamp) {
         try {
             df.parse(timestamp);
@@ -220,5 +224,13 @@ public class TimeUtils {
         }
 
         return null;
+    }
+
+    public static String instantToString(Instant instant) {
+        return instantToString(instant, DEFAULT_TIME_FORMAT);
+    }
+
+    public static String instantToString(Instant instant, String format) {
+        return DateTimeFormatter.ofPattern(format).withZone(ZoneId.systemDefault()).format(instant);
     }
 }
