@@ -67,11 +67,11 @@ public class VmNicHelper {
             }
         }
 
-        if (nic.getL3NetworkUuid().equals(l3Uuid)) {
-            return true;
+        if (nic.getL3NetworkUuid() == null) {
+            return false;
         }
 
-        return false;
+        return nic.getL3NetworkUuid().equals(l3Uuid);
     }
 
     public static List<String> getUsedIpUuids(VmNicInventory nic) {

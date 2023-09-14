@@ -156,7 +156,9 @@
 
         <Logger name="org.springframework.data.cassandra.core" level="TRACE" />
 
-        <Logger name="oorg.zstack.zwatch.namespace" level="TRACE"/>
+        <Logger name="org.zstack.zwatch.namespace" level="TRACE"/>
+
+        <Logger name="org.zstack.vmware" level="TRACE"/>
 
         <Logger name="org.hibernate" level="WARN">
             <AppenderRef ref="RollingFile" />
