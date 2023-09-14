@@ -779,7 +779,7 @@ public class KVMHost extends HostBase implements Host {
 
             private void submitTaskWaitHostPowerOnByIpmi() {
                 HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
-                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long timeoutInSec = KVMConstant.KVM_HOST_POWER_OPERATION_TIMEOUT_SECONDS;
                 long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
                 Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
                 thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
@@ -861,7 +861,7 @@ public class KVMHost extends HostBase implements Host {
             }
 
             private void submitTaskWaitHostShutdownByIpmi() {
-                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long timeoutInSec = KVMConstant.KVM_HOST_POWER_OPERATION_TIMEOUT_SECONDS;
                 long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
                 Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
                 thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
@@ -5181,7 +5181,7 @@ public class KVMHost extends HostBase implements Host {
             }
 
             private void waitForHostShutdown(ShutdownHostReply reply, NoErrorCompletion noErrorCompletion) {
-                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long timeoutInSec = KVMConstant.KVM_HOST_POWER_OPERATION_TIMEOUT_SECONDS;
                 long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
                 Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
                 thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(msg, completion) {
