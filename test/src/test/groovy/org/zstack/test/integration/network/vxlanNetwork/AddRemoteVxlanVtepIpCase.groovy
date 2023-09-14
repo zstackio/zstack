@@ -84,9 +84,42 @@ class AddRemoteVxlanVtepIpCase extends SubCase {
 
                 }
 
+                cluster {
+                    name = "cluster2"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm3"
+                        managementIp = "127.0.0.2"
+                        username = "root"
+                        password = "password"
+
+                        totalCpu = 8
+                        totalMem = SizeUnit.GIGABYTE.toByte(20)
+                    }
+
+                    kvm {
+                        name = "kvm4"
+                        managementIp = "127.0.0.3"
+                        username = "root"
+                        password = "password"
+
+                        totalCpu = 8
+                        totalMem = SizeUnit.GIGABYTE.toByte(20)
+                    }
+
+                    attachPrimaryStorage("nfs-ps")
+
+                }
+
                 localPrimaryStorage {
                     name = "local"
                     url = "/local_ps"
+                }
+
+                nfsPrimaryStorage {
+                    name = "nfs-ps"
+                    url = "localhost:/nfs"
                 }
 
                 attachBackupStorage("sftp")
@@ -109,8 +142,11 @@ class AddRemoteVxlanVtepIpCase extends SubCase {
     void testRemoteVxlanVtepIp() {
         def zone = env.inventoryByName("zone") as ZoneInventory
         def cluster = env.inventoryByName("cluster1") as ClusterInventory
+        def cluster2 = env.inventoryByName("cluster2") as ClusterInventory
         def host1 = env.inventoryByName("kvm1") as KVMHostInventory
         def host2 = env.inventoryByName("kvm2") as KVMHostInventory
+        def host3 = env.inventoryByName("kvm3") as KVMHostInventory
+        def host4 = env.inventoryByName("kvm4") as KVMHostInventory
 
         def pool = createL2VxlanNetworkPool {
             name = "TestVxlanPool1"
@@ -137,18 +173,53 @@ class AddRemoteVxlanVtepIpCase extends SubCase {
             systemTags = ["l2NetworkUuid::${pool.getUuid()}::clusterUuid::${cluster.uuid}::cidr::{192.168.0.0/16}".toString()]
         }
 
+        attachL2NetworkToCluster {
+            l2NetworkUuid = pool.uuid
+            clusterUuid = cluster2.uuid
+            systemTags = ["l2NetworkUuid::${pool.getUuid()}::clusterUuid::${cluster2.uuid}::cidr::{192.127.0.0/16}".toString()]
+        }
+
         createVxlanPoolRemoteVtep {
             l2NetworkUuid = pool.uuid
             clusterUuid = cluster.uuid
             remoteVtepIp = "1.1.1.1"
         }
         assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).isExists()
+        assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).eq(RemoteVtepVO_.clusterUuid,cluster.uuid).isExists()
+        assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).count() == 1
+        assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).eq(RemoteVtepVO_.clusterUuid,cluster.uuid).count() == 1 
+
+        createVxlanPoolRemoteVtep {
+            l2NetworkUuid = pool.uuid
+            clusterUuid = cluster2.uuid
+            remoteVtepIp = "1.1.1.1"
+        }
+        assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).isExists()
+        assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).eq(RemoteVtepVO_.clusterUuid,cluster2.uuid).isExists()
+        assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).count() == 2
+        assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).eq(RemoteVtepVO_.clusterUuid,cluster2.uuid).count() == 1 
+        expect(AssertionError.class) {
+            createVxlanPoolRemoteVtep {
+                l2NetworkUuid = pool.uuid
+                clusterUuid = cluster2.uuid
+                remoteVtepIp = "1.1.1.1"
+            }        
+        }
 
         deleteVxlanPoolRemoteVtep {
             l2NetworkUuid = pool.uuid
             clusterUuid = cluster.uuid 
             remoteVtepIp = "1.1.1.1"
         }
+        assert !Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).eq(RemoteVtepVO_.clusterUuid,cluster.uuid).isExists()
+        assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).count() == 1
+
+        deleteVxlanPoolRemoteVtep {
+            l2NetworkUuid = pool.uuid
+            clusterUuid = cluster2.uuid 
+            remoteVtepIp = "1.1.1.1"
+        }
         assert !Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).isExists()
+
     }
 }
