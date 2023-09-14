@@ -1,4 +1,4 @@
-package org.zstack.network.l2.vxlan.vtep;
+package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.NeedReplyMessage;
