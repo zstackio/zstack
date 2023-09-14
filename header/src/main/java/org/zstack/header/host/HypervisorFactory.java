@@ -48,4 +48,8 @@ public interface HypervisorFactory {
     default Map<String, HostOperationSystem> getHostOsMap(Collection<String> hostUuidList) {
         return hostUuidList.stream().collect(Collectors.toMap(Function.identity(), this::getHostOS));
     }
+
+    default boolean supportGetHostOs() {
+        return false;
+    }
 }

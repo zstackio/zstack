@@ -266,6 +266,11 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
     }
 
     @Override
+    public boolean supportGetHostOs() {
+        return true;
+    }
+
+    @Override
     public HostOperationSystem getHostOS(String uuid) {
         Tuple tuple = Q.New(KVMHostVO.class)
                 .select(KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion)
