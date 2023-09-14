@@ -179,6 +179,8 @@
           "org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg",
           "org.zstack.network.l2.vxlan.vxlanNetworkPool.APIUpdateVniRangeMsg",
           "org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVniRangeMsg",
+          "org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVxlanPoolRemoteVtepMsg",
+          "org.zstack.network.l2.vxlan.vxlanNetworkPool.APIDeleteVxlanPoolRemoteVtepMsg",
           "org.zstack.header.network.l2.APIDeleteL2NetworkMsg",
           "org.zstack.ipsec.**",
           "org.zstack.core.errorcode.**",

@@ -1,5 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory;
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO;
 import org.zstack.core.db.Q;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.message.NoJsonSchema;
@@ -29,6 +31,8 @@ import java.util.regex.Pattern;
                 foreignKey = "uuid", expandedInventoryKey = "l2NetworkUuid"),
         @ExpandedQuery(expandedField = "l2VxlanNetwork", inventoryClass = L2VxlanNetworkInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "poolUuid"),
+        @ExpandedQuery(expandedField = "remotevtep", inventoryClass = RemoteVtepInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "poolUuid"),
         @ExpandedQuery(expandedField = "vtep", inventoryClass = VtepInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "poolUuid")
 })
@@ -36,6 +40,10 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
     @Queryable(mappingClass = VtepInventory.class,
             joinColumn = @JoinColumn(name = "poolUuid"))
     private List<VtepInventory> attachedVtepRefs;
+
+    @Queryable(mappingClass = RemoteVtepInventory.class,
+            joinColumn = @JoinColumn(name = "poolUuid"))
+    private List<RemoteVtepInventory> remoteVteps;
 
     @Queryable(mappingClass = L2VxlanNetworkInventory.class,
             joinColumn = @JoinColumn(name = "poolUuid"))
@@ -64,6 +72,7 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
         }
         setAttachedCidrs(attachedCidrs);
         setAttachedVniRanges(VniRangeInventory.valueOf(vo.getAttachedVniRanges()));
+        setRemoteVteps(RemoteVtepInventory.valueOf(vo.getRemoteVteps()));
         setAttachedVtepRefs(VtepInventory.valueOf(vo.getAttachedVtepRefs()));
         List<VxlanNetworkVO> networkVOS = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.poolUuid, vo.getUuid()).list();
         setAttachedVxlanNetworkRefs(L2VxlanNetworkInventory.valueOf1(networkVOS));
@@ -79,6 +88,14 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
             invs.add(new L2VxlanNetworkPoolInventory(vo));
         }
         return invs;
+    }
+
+    public List<RemoteVtepInventory> getRemoteVteps() {
+        return remoteVteps;
+    }
+
+    public void setRemoteVteps(List<RemoteVtepInventory> remoteVteps) {
+        this.remoteVteps = remoteVteps;
     }
 
     public List<VtepInventory> getAttachedVtepRefs() {

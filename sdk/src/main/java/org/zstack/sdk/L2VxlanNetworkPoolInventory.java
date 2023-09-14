@@ -12,6 +12,14 @@ public class L2VxlanNetworkPoolInventory extends org.zstack.sdk.L2NetworkInvento
         return this.attachedVtepRefs;
     }
 
+    public java.util.List remoteVteps;
+    public void setRemoteVteps(java.util.List remoteVteps) {
+        this.remoteVteps = remoteVteps;
+    }
+    public java.util.List getRemoteVteps() {
+        return this.remoteVteps;
+    }
+
     public java.util.List attachedVxlanNetworkRefs;
     public void setAttachedVxlanNetworkRefs(java.util.List attachedVxlanNetworkRefs) {
         this.attachedVxlanNetworkRefs = attachedVxlanNetworkRefs;
