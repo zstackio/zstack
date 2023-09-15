@@ -20,7 +20,7 @@ public interface SecurityGroupConstant {
     public static int PORT_GROUP_NUMBER_LIMIT = 10;
     public static int PORT_NUMBER_MAX = 65535;
     public static int PORT_NUMBER_MIN = 0;
-    int ONE_API_RULES_MAX_NUM = 100;
+    int ONE_API_RULES_MAX_NUM = 2000;
 
     public static enum Param {
         SECURITY_GROUP_RULE_VO,
