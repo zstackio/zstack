@@ -128,6 +128,8 @@ public interface KVMConstant {
     String VIRTUALIZER_QEMU = "qemu";
 
     int IPMI_DEFAULT_PORT = 623;
+    int KVM_HOST_POWER_OPERATION_TIMEOUT_SECONDS = 300;
+
 
     enum KvmVmState {
         NoState,
