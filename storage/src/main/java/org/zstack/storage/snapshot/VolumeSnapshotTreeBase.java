@@ -686,11 +686,11 @@ public class VolumeSnapshotTreeBase {
                     @Override
                     protected void scripts() {
                         if (msg.isVolumeDeletion()) {
-                            sql("update VolumeSnapshotTreeVO tree set tree.volumeUuid = NULL where tree.volumeUuid = :volUuid")
-                                    .param("volUuid", currentRoot.getVolumeUuid()).execute();
+                            sql("update VolumeSnapshotTreeVO tree set tree.volumeUuid = NULL where tree.uuid = :treeUuid")
+                                    .param("treeUuid", currentRoot.getTreeUuid()).execute();
 
-                            sql("update VolumeSnapshotVO s set s.volumeUuid = NULL where s.volumeUuid = :volUuid")
-                                    .param("volUuid", currentRoot.getVolumeUuid()).execute();
+                            sql("update VolumeSnapshotVO s set s.volumeUuid = NULL where s.treeUuid = :treeUuid")
+                                    .param("treeUuid", currentRoot.getTreeUuid()).execute();
                         }
 
 
@@ -1405,23 +1405,18 @@ public class VolumeSnapshotTreeBase {
     }
 
     private boolean cleanup() {
-        class Ret {
-            boolean value;
-        }
 
-        Ret ret = new Ret();
         List<VolumeSnapshotInventory> snapshots = currentLeaf.getDescendants();
-        new SQLBatch() {
+        boolean cleanup = new SQLBatchWithReturn<Boolean>() {
             @Override
-            protected void scripts() {
+            protected Boolean scripts() {
                 String psUuid = q(VolumeSnapshotVO.class)
                         .select(VolumeSnapshotVO_.primaryStorageUuid)
                         .eq(VolumeSnapshotVO_.uuid, currentRoot.getUuid())
                         .findValue();
 
                 if (psUuid != null) {
-                    ret.value = false;
-                    return;
+                    return false;
                 }
 
                 // the snapshot is on neither primary storage, delete it and descendants
@@ -1438,17 +1433,15 @@ public class VolumeSnapshotTreeBase {
 
                 VolumeSnapshotReferenceUtils.handleSnapshotDeletion(currentRoot);
 
-                ret.value = true;
+                return true;
             }
-
-
         }.execute();
 
-        if (ret.value) {
+        if (cleanup) {
             ungroupAfterDeleted(snapshots);
         }
 
-        return ret.value;
+        return cleanup;
     }
 
     private void ungroupAfterDeleted(List<VolumeSnapshotInventory> snapshots) {
