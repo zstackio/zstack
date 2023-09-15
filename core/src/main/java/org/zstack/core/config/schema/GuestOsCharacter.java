@@ -25,6 +25,7 @@ public class GuestOsCharacter {
             "platform",
             "osRelease",
             "acpi",
+            "hygonTag",
             "x2apic"
     })
     public static class Config {
@@ -39,6 +40,9 @@ public class GuestOsCharacter {
 
         @XmlElement(required = false)
         protected Boolean acpi;
+
+        @XmlElement(required = false)
+        protected Boolean hygonTag;
 
         @XmlElement(required = false)
         protected Boolean x2apic;
@@ -73,6 +77,14 @@ public class GuestOsCharacter {
 
         public void setX2apic(Boolean x2apic) {
             this.x2apic = x2apic;
+        }
+
+        public Boolean getHygonTag() {
+            return hygonTag;
+        }
+
+        public void setHygonTag(Boolean hygonTag) {
+            this.hygonTag = hygonTag;
         }
 
         public String getArchitecture() {

@@ -25,6 +25,12 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
+        <osRelease>Other Kernel ≥ 4.2.0 or Hygon Linux</osRelease>
+        <hygonTag>false</hygonTag>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
         <osRelease>CentOS 5</osRelease>
     </osInfo>
     <osInfo>
@@ -161,6 +167,13 @@
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <osRelease>WindowsServer 2019</osRelease>
+        <hygonTag>false</hygonTag>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <osRelease>WindowsServer 2022</osRelease>
+        <hygonTag>false</hygonTag>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
@@ -176,6 +189,7 @@
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <osRelease>Windows 10</osRelease>
+        <hygonTag>false</hygonTag>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
