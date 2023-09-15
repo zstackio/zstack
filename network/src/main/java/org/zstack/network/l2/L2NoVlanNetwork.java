@@ -374,13 +374,7 @@ public class L2NoVlanNetwork implements L2Network {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
 
-        L2NetworkRealizationExtensionPoint ext;
-        if (providerType != null) {
-            ext = l2Mgr.getRealizationExtension(L2ProviderType.valueOf(providerType));
-        } else {
-            ext = l2Mgr.getRealizationExtension(l2Type, hvType);
-        }
-
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType, providerType);
         ext.realize(getSelfInventory(), hostUuid, completion);
     }
 
@@ -769,12 +763,7 @@ public class L2NoVlanNetwork implements L2Network {
             HypervisorType hvType = HypervisorType.valueOf(host.getHypervisorType());
             L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
 
-            L2NetworkRealizationExtensionPoint ext;
-            if (hostL2ProviderMap.get(host.getUuid()) != null) {
-                ext = l2Mgr.getRealizationExtension(L2ProviderType.valueOf(hostL2ProviderMap.get(host.getUuid())));
-            } else {
-                ext = l2Mgr.getRealizationExtension(l2Type, hvType);
-            }
+            L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType, hostL2ProviderMap.get(host.getUuid()));
 
             ext.delete(getSelfInventory(), host.getUuid(), new Completion(compl){
                 @Override

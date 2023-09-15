@@ -524,6 +524,15 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     }
 
     @Override
+    public L2NetworkRealizationExtensionPoint getRealizationExtension(L2NetworkType l2Type, HypervisorType hvType, String providerType) {
+        if (providerType == null) {
+            return getRealizationExtension(l2Type, hvType);
+        }
+
+        return getRealizationExtension(L2ProviderType.valueOf(providerType));
+    }
+
+    @Override
     public L2NetworkAttachClusterExtensionPoint getAttachClusterExtension(L2NetworkType l2Type, HypervisorType hvType) {
         Map<HypervisorType, L2NetworkAttachClusterExtensionPoint> map = attachClusterExts.get(l2Type);
         if (map == null) {
