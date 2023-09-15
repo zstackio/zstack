@@ -99,6 +99,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`RemoteVtepVO` (
         UNIQUE KEY `ukRemoteVtepIpPoolUuidClusterUuid` (`vtepIp`,`poolUuid`,`clusterUuid`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT IGNORE INTO `zstack`.`EncryptEntityMetadataVO` (`entityName`, `columnName`, `state`, `lastOpDate`, `createDate`)
+                VALUES ('IAM2ProjectAttributeVO', 'value', 'NeedDecrypt', NOW(), NOW());
+
 CREATE TABLE IF NOT EXISTS `zstack`.`PrimaryStorageHistoricalUsageVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `primaryStorageUuid` varchar(32) NOT NULL,
