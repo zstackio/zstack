@@ -512,7 +512,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             float v = Integer.parseInt(newValue);
 
             if (v > Integer.parseInt(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value())) {
-                throw new OperationFailureException(argerr("the mtu[%s] of the vlan network is greater than no vlan network mtu", newValue ));
+                throw new OperationFailureException(argerr("invalid value[%s], the mtu of the vlan network should be less than novlan network mtu", v ));
             }
         });
 
@@ -520,7 +520,15 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             float v = Integer.parseInt(newValue);
 
             if (v > Integer.parseInt(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value())) {
-                throw new OperationFailureException(argerr("the mtu[%s] of the vxlan network is greater than no vlan network mtu[%s]", newValue));
+                throw new OperationFailureException(argerr("invalid value[%s], the mtu of the vxlan network should be less than novlan network mtu", v));
+            }
+        });
+
+        NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.installValidateExtension((category, name, oldValue, newValue) -> {
+            float v = Integer.parseInt(newValue);
+
+            if (v < Integer.parseInt(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.value()) || v < Integer.parseInt(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value())) {
+                throw new OperationFailureException(argerr("invalid value[%s], the mtu of the novlan network should be greater than vlan network mtu and vxlan network mtu", v));
             }
         });
     }
