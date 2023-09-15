@@ -448,28 +448,25 @@ public class L2NoVlanNetwork implements L2Network {
         }).then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                List<String> hss = new ArrayList<>();
-
                 new While<>(hosts).step((host, whileCompletion) -> {
                     realizeNetwork(host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
                         @Override
                         public void success() {
-                            hss.add(host.getUuid());
                             whileCompletion.done();
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
                             logger.error(String.format("attach l2 network to host:[%s] failed", host.getUuid()));
+                            whileCompletion.addError(errorCode);
                             whileCompletion.allDone();
                         }
                     });
-
                 },10).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
-                        if (hss.size() != hosts.size()) {
-                            trigger.fail(errorCodeList);  
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            trigger.fail(errorCodeList.getCauses().get(0));
                         } else {
                             trigger.next();
                         }
