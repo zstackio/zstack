@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SNSSnmpPlatformVO`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8;
 
+DELETE FROM `CpuFeaturesHistoryVO`;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`RemoteVtepVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
   `vtepIp` varchar(32) NOT NULL,
