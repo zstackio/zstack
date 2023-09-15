@@ -9,5 +9,8 @@ public interface L2NetworkManager {
     L2NetworkRealizationExtensionPoint getRealizationExtension(L2ProviderType providerType);
 
     L2NetworkRealizationExtensionPoint getRealizationExtension(L2NetworkType l2Type, HypervisorType hvType);
+
+    L2NetworkRealizationExtensionPoint getRealizationExtension(L2NetworkType l2Type, HypervisorType hvType, String providerType);
+
     L2NetworkAttachClusterExtensionPoint getAttachClusterExtension(L2NetworkType l2Type, HypervisorType hvType);
 }
