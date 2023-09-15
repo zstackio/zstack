@@ -12,6 +12,9 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
@@ -284,6 +287,19 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             for (int i = 0; i < priorities.length - 1; i++) {
                 if (priorities[i] + 1 != priorities[i + 1]) {
                     throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because invalid priority, priority[%d] and priority[%d] expected to be consecutive", priorities[i], priorities[i + 1]));
+                }
+            }
+        }
+
+        if (!msg.getSession().isAccountSession() && !AccountConstant.isAdminPermission(msg.getSession())) {
+            final String currentAccountUuid = msg.getSession().getAccountUuid();
+            for (VmNicSecurityGroupRefVO ref : refs) {
+                String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(ref.getSecurityGroupUuid());
+
+                if (!sgOwnerAccountUuid.equals(currentAccountUuid)) {
+                    if (!aoMap.values().stream().anyMatch(value -> value.equals(ref.getSecurityGroupUuid()))) {
+                        throw new ApiMessageInterceptionException(argerr("could no set vm nic security Group, because securityGroup[uuid:%s] is already attached on this nic by account[uuid:%s], current user does not have permission to delete", ref.getSecurityGroupUuid(), sgOwnerAccountUuid));
+                    }
                 }
             }
         }
