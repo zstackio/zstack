@@ -18,7 +18,7 @@ import java.sql.Timestamp;
                 @EntityGraph.Neighbour(type = PrimaryStorageVO.class, myField = "uuid", targetField = "uuid")
         }
 )
-public class PrimaryStorageCapacityVO implements ShadowEntity {
+public class PrimaryStorageCapacityVO extends StorageCapacityAO implements ShadowEntity {
     @Column
     @Id
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
@@ -31,14 +31,6 @@ public class PrimaryStorageCapacityVO implements ShadowEntity {
     @Column
     @Index
     private long availableCapacity;
-
-    @Column
-    @Index
-    private long totalPhysicalCapacity;
-
-    @Column
-    @Index
-    private long availablePhysicalCapacity;
 
     @Column
     private Long systemUsedCapacity;
@@ -67,22 +59,6 @@ public class PrimaryStorageCapacityVO implements ShadowEntity {
 
     public void setSystemUsedCapacity(Long systemUsedCapacity) {
         this.systemUsedCapacity = systemUsedCapacity;
-    }
-
-    public long getTotalPhysicalCapacity() {
-        return totalPhysicalCapacity;
-    }
-
-    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
-        this.totalPhysicalCapacity = totalPhysicalCapacity;
-    }
-
-    public long getAvailablePhysicalCapacity() {
-        return availablePhysicalCapacity;
-    }
-
-    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
-        this.availablePhysicalCapacity = availablePhysicalCapacity;
     }
 
     public String getUuid() {
@@ -128,5 +104,10 @@ public class PrimaryStorageCapacityVO implements ShadowEntity {
     @Override
     public void setShadow(Object o) {
         shadow = (PrimaryStorageCapacityVO) o;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return uuid;
     }
 }

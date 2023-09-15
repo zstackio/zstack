@@ -7,7 +7,7 @@ import java.sql.Timestamp;
 /**
  */
 @StaticMetamodel(PrimaryStorageCapacityVO.class)
-public class PrimaryStorageCapacityVO_ {
+public class PrimaryStorageCapacityVO_ extends StorageCapacityAO_ {
     public static volatile SingularAttribute<PrimaryStorageCapacityVO, String> uuid;
     public static volatile SingularAttribute<PrimaryStorageCapacityVO, Long> totalCapacity;
     public static volatile SingularAttribute<PrimaryStorageCapacityVO, Long> availableCapacity;

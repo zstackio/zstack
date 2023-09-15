@@ -80,6 +80,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private LocalStorageImageCleaner imageCacheCleaner;
     @Autowired
     private EventFacade eventf;
+    @Autowired
+    private LocalStorageHostUsageReport localForecaster;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -838,6 +840,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((LocalStorageRecalculateCapacityMsg) msg);
         } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof GetPrimaryStorageUsageReportMsg) {
+            handle((GetPrimaryStorageUsageReportMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -955,6 +959,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(GetPrimaryStorageUsageReportMsg msg) {
+        GetPrimaryStorageUsedPhysicalCapacityForecastReply reply = new GetPrimaryStorageUsedPhysicalCapacityForecastReply();
+        reply.setUsageReportMap(localForecaster.getUsageReportByResourceUuids(getHostUuidsFromPoolUris(msg.getUris())));
+        bus.reply(msg, reply);
+    }
+
+    private List<String> getHostUuidsFromPoolUris(List<String> uris) {
+        return uris.stream().map(uri -> uri.replace("hostUuid://", "")).collect(Collectors.toList());
     }
 
     private void handle(final UploadBitsFromLocalStorageToBackupStorageMsg msg) {

@@ -194,5 +194,8 @@
         <class>org.zstack.header.host.HostIpmiVO</class>
         <class>org.zstack.header.sshkeypair.SshKeyPairVO</class>
         <class>org.zstack.header.sshkeypair.SshKeyPairRefVO</class>
+        <class>org.zstack.header.storage.primary.PrimaryStorageHistoricalUsageVO</class>
+        <class>org.zstack.storage.ceph.primary.CephOsdGroupHistoricalUsageVO</class>
+        <class>org.zstack.storage.primary.local.LocalStorageHostHistoricalUsageVO</class>
     </persistence-unit>
 </persistence>

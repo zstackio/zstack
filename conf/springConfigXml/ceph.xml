@@ -127,4 +127,10 @@
             <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="PoolUsageCollector" class="org.zstack.storage.ceph.primary.PoolUsageReport">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" order="-2"/>
+        </zstack:plugin>
+    </bean>
 </beans>

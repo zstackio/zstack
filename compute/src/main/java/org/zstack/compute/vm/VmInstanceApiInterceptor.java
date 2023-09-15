@@ -57,9 +57,7 @@ import java.util.stream.Collectors;
 import static java.lang.Integer.parseInt;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.CollectionUtils.getDuplicateElementsOfList;
 
 /**
@@ -158,6 +156,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVmNicDriverMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
             validate((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
+        } else if (msg instanceof APIFstrimVmMsg) {
+            validate((APIFstrimVmMsg) msg);
         }
 
         setServiceId(msg);
@@ -1456,4 +1456,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validate(APIFstrimVmMsg msg) {
+        Tuple t = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getUuid())
+                .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                .findTuple();
+        VmInstanceState state = t.get(0, VmInstanceState.class);
+
+        if (state != VmInstanceState.Running) {
+            throw new ApiMessageInterceptionException(operr(
+                    "vm[uuid:%s] can only fstrim when state is Running, current state is %s", msg.getUuid(), state));
+        }
+        msg.setHostUuid(t.get(1, String.class));
+    }
 }

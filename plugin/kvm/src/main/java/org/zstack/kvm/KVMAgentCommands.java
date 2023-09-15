@@ -3914,4 +3914,11 @@ public class KVMAgentCommands {
 
     public static class DetachVolumeRsp extends AgentResponse {
     }
+
+    public static class VmFstrimCmd extends AgentCommand {
+        public String vmUuid;
+    }
+
+    public static class VmFstrimRsp extends AgentResponse {
+    }
 }
