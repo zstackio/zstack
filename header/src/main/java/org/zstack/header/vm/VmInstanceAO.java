@@ -75,6 +75,9 @@ public class VmInstanceAO extends ResourceVO {
     private long memorySize;
 
     @Column
+    private long reservedMemorySize;
+
+    @Column
     private String platform;
 
     @Column
@@ -117,6 +120,7 @@ public class VmInstanceAO extends ResourceVO {
         this.cpuNum = other.cpuNum;
         this.cpuSpeed = other.cpuSpeed;
         this.memorySize = other.memorySize;
+        this.reservedMemorySize = other.getReservedMemorySize();
         this.allocatorStrategy = other.allocatorStrategy;
         this.createDate = other.createDate;
         this.lastOpDate = other.lastOpDate;
@@ -169,6 +173,14 @@ public class VmInstanceAO extends ResourceVO {
 
     public void setMemorySize(long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    public long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 
     public String getDefaultL3NetworkUuid() {

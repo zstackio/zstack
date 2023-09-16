@@ -5510,6 +5510,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     update = true;
                 }
 
+                if (msg.getReservedMemorySize() != null) {
+                    self.setReservedMemorySize(msg.getReservedMemorySize());
+                    update = true;
+                }
+
                 if (update) {
                     dbf.update(self);
                 }
@@ -5562,6 +5567,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         umsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
         umsg.setCpuNum(msg.getCpuNum());
         umsg.setMemorySize(msg.getMemorySize());
+        umsg.setReservedMemorySize(msg.getReservedMemorySize());
         umsg.setPlatform(msg.getPlatform());
         umsg.setState(msg.getState());
         umsg.setGuestOsType(msg.getGuestOsType());

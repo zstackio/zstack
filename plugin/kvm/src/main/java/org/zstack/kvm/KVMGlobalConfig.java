@@ -117,4 +117,14 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable install host shutdown hook")
     public static GlobalConfig INSTALL_HOST_SHUTDOWN_HOOK = new GlobalConfig(CATEGORY, "install.host.shutdown.hook");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable memory auto balloon")
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig MEMORY_AUTO_BALLOON = new GlobalConfig(CATEGORY, "memory.auto.balloon");
+
+    @GlobalConfigValidation(validValues = {"true", "false", "none"})
+    @GlobalConfigDef(defaultValue = "none", description = "enable host ksm")
+    @BindResourceConfig({HostVO.class})
+    public static GlobalConfig HOST_KSM = new GlobalConfig(CATEGORY, "host.ksm");
 }

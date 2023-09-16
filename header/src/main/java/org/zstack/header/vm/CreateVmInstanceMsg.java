@@ -16,6 +16,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private int cpuNum;
     private long cpuSpeed;
     private long memorySize;
+    private long reservedMemorySize;
     private List<VmNicSpec> l3NetworkSpecs;
     private String type;
     private String rootDiskOfferingUuid;
@@ -204,6 +205,15 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setMemorySize(long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    @Override
+    public long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 
     @Override

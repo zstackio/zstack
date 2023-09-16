@@ -195,6 +195,15 @@ doc {
 					optional true
 					since "3.10.0"
 				}
+				column {
+					name "reservedMemorySize"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Long"
+					optional true
+					since "4.7.21"
+				}
 			}
         }
 

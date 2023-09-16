@@ -35,6 +35,8 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     private Integer cpuNum;
     @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
     private Long memorySize;
+    @APIParam(required = false, numberRange = {0, Long.MAX_VALUE})
+    private Long reservedMemorySize;
     @APIParam(required = false, maxLength = 255)
     private String guestOsType;
 
@@ -114,7 +116,15 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
     }
- 
+
+    public Long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
+    }
+
     public static APIUpdateVmInstanceMsg __example__() {
         APIUpdateVmInstanceMsg msg = new APIUpdateVmInstanceMsg();
         msg.uuid = uuid();

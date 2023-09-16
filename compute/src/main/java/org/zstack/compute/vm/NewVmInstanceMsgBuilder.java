@@ -57,6 +57,7 @@ public class NewVmInstanceMsgBuilder {
 
         cmsg.setCpuNum(msg.getCpuNum());
         cmsg.setMemorySize(msg.getMemorySize());
+        cmsg.setReservedMemorySize(msg.getReservedMemorySize() == null ? 0 : msg.getReservedMemorySize());
 
         cmsg.setAccountUuid(api.getSession().getAccountUuid());
         cmsg.setName(msg.getName());
