@@ -231,7 +231,6 @@ public class KVMAgentCommands {
         private boolean pageTableExtensionDisabled;
         private int tcpServerPort;
         private String version;
-        private long reservedMemory;
 
         public boolean isIgnoreMsrs() {
             return ignoreMsrs;
@@ -287,14 +286,6 @@ public class KVMAgentCommands {
 
         public void setVersion(String version) {
             this.version = version;
-        }
-
-        public long getReservedMemory() {
-            return reservedMemory;
-        }
-
-        public void setReservedMemory(long reservedMemory) {
-            this.reservedMemory = reservedMemory;
         }
     }
 
