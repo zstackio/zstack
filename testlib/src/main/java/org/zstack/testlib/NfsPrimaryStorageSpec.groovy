@@ -14,6 +14,7 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.storage.primary.nfs.NfsPrimaryToSftpBackupKVMBackend
@@ -441,7 +442,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
             VFS.vfsHook(NfsPrimaryStorageKVMBackend.NFS_TO_NFS_MIGRATE_BITS_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.NfsToNfsMigrateBitsCmd.class)
-                VFS srcVfs = vfs(cmd, spec)
+                VFS srcVfs = vfs(cmd.srcPrimaryStorageUuid, spec)
 
                 PrimaryStorageVO dstNFS = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.url, cmd.url).find()
                 assert dstNFS : "cannot find NFS primary storage[url: ${cmd.url}]"

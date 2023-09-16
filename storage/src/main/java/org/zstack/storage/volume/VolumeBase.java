@@ -62,7 +62,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.storage.volume.VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY;
+import static org.zstack.storage.volume.VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY_TOKEN;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -1370,6 +1372,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             "with origin volume[uuid:%s].",transientVolume.getUuid(), volume.getUuid()));
         }
 
+        String newVolumeProvisioning = VOLUME_PROVISIONING_STRATEGY.getTokenByResourceUuid(transientVolume.getUuid(),
+                VolumeVO.class, VOLUME_PROVISIONING_STRATEGY_TOKEN);
         FlowChain chain = new SimpleFlowChain();
         chain.setName("cover-volume-from-transient-volume");
         chain.then(new NoRollbackFlow() {
@@ -1479,6 +1483,16 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 creator.setTagByTokens(Collections.singletonMap(VolumeSystemTags.OVERWRITED_VOLUME_TOKEN, transientVolume.getUuid()));
                 creator.inherent = false;
                 creator.create();
+
+                if (newVolumeProvisioning != null) {
+                    SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volume.getUuid());
+                    tagCreator.setTagByTokens(
+                            map(e(VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY_TOKEN, newVolumeProvisioning))
+                    );
+                    tagCreator.inherent = false;
+                    tagCreator.recreate = true;
+                    tagCreator.create();
+                }
             }
 
         }).error(new FlowErrorHandler(msg) {
