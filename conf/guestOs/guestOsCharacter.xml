@@ -20,7 +20,7 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
-        <osRelease>Other Kernel ≥ 4.2.0 or Hygon Linux</osRelease>
+        <osRelease>Other Kernel ≥ 4.20 or Hygon Linux</osRelease>
         <hygonTag>false</hygonTag>
     </osInfo>
     <osInfo>

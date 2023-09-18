@@ -156,6 +156,12 @@
         <version>7</version>
         <osRelease>Oracle Linux 7</osRelease>
     </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Linux</name>
+        <version></version>
+        <osRelease>Other Kernel ≥ 4.20 or Hygon Linux</osRelease>
+    </osInfo>
 
     <osInfo>
         <platform>Windows</platform>
