@@ -588,7 +588,7 @@
     "code": "1000",
     "method": "regex",
     "regex": ".*cannot allocate vni\\[.*] in l2Network\\[uuid:.*], out of vni range",
-    "message_cn": "不能在二层网络 [uuid：%2$s] 中创建 vni [%1$s]，vni 超出范围。",
+    "message_cn": "不能在分布式交换机 [uuid：%2$s] 中创建 vni [%1$s]，vni 超出范围。",
     "message_en": "Could not create VNI range [%1$s] in L2 network [uuid: %2$s]. The VNI is out of range."
   },
   {
@@ -612,7 +612,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "There has been a l2Network\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*]. Failed to attach l2Network\\[uuid:.*]",
-    "message_cn": "二层网络挂载失败，物理网络接口设备 [%4$s] 已经被二层网络 [%2$s] 使用并挂载到集群上。",
+    "message_cn": "分布式交换机挂载失败，物理网络接口设备 [%4$s] 已经被分布式交换机 [%2$s] 使用并挂载到集群上。",
     "message_en": "Failed to attach L2 network, because the physical interface [%4$s] is already attached to the cluster by L2 network [%2$s]."
   },
   {
@@ -620,7 +620,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "failed to check physical network interfaces\\[names.*] on kvm host\\[uuid:.*, ip:.*]",
-    "message_cn": "二层网络挂载失败，未能在 KVM 主机上找到 [%1$s] 这个物理网络接口。",
+    "message_cn": "分布式交换机挂载失败，未能在 KVM 主机上找到 [%1$s] 这个物理网络接口。",
     "message_en": "Failed to attach L2 network, because the physical network interfaces [%1$s] not found on KVM host."
   },
   {
@@ -644,7 +644,7 @@
     "code": "1001",
     "method": "regex",
     "regex": "there is already a vip\\[.*] on l3Network\\[uuid:.*]",
-    "message_cn": "在三层网络 [uuid：%2$s] 中，已经存在一个地址为 [%1$s] 的虚拟 IP。",
+    "message_cn": "在分布式端口组 [uuid：%2$s] 中，已经存在一个地址为 [%1$s] 的虚拟 IP。",
     "message_en": "A VIP [%1$s] already exists in L3 network [uuid: %2$s]."
   },
   {
@@ -660,7 +660,7 @@
     "code": "1003",
     "method": "regex",
     "regex": ".*unable to attach a L3 network to the vm\\[uuid:.*], Unable to create tap device vnic.*: Device or resource busy.*",
-    "message_cn": "无法将三层网络连接到虚拟机，因为无法创建 tap 设备：设备或资源忙。请重试或者手动删除网络接口 [%6$s]。",
+    "message_cn": "无法将分布式端口组连接到虚拟机，因为无法创建 tap 设备：设备或资源忙。请重试或者手动删除网络接口 [%6$s]。",
     "message_en": "Could not attach L3 network to VM or create tap device: Device or resource busy. Please try again or delete device [%6$s] manually."
   },
   {
@@ -668,7 +668,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "multiple CIDR on the same L3 network is not allowed. There has been a IP range.* is not in the CIDR with the existing one",
-    "message_cn": "同一三层网络上不能加载多个 CIDR。",
+    "message_cn": "同一分布式端口组上不能加载多个 CIDR。",
     "message_en": "Multiple CIDRs on the same L3 network is not allowed."
   },
   {
@@ -692,7 +692,7 @@
     "code": "1007",
     "method": "regex",
     "regex": ".*IP allocator strategy\\[RandomIpAllocatorStrategy] failed, because no ip is available in this l3Network.*",
-    "message_cn": "分配 IP 失败，三层网络 [name：%1$s，uuid：%2$s] 中已经没有可用的 IP 地址。",
+    "message_cn": "分配 IP 失败，分布式端口组 [name：%1$s，uuid：%2$s] 中已经没有可用的 IP 地址。",
     "message_en": "Failed to allocate IP. No available IPs in L3 network [name: %1$s, uuid: %2$s]."
   },
   {
@@ -1237,7 +1237,7 @@
     "code": "1012",
     "method": "regex",
     "regex": "no host found in clusters that has attached to L2Networks which have L3Networks.*",
-    "message_cn": "这个三层网络所在的二层网络加载到的所有集群中，都没有找到主机。",
+    "message_cn": "这个分布式端口组所在的分布式交换机加载到的所有集群中，都没有找到主机。",
     "message_en": "No host found in cluster to which the L2 networks of the L3 networks are attached."
   },
   {
@@ -1477,7 +1477,7 @@
     "code": "1042",
     "method": "regex",
     "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is gateway.*",
-    "message_cn": "在三层网络 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 是网关地址。",
+    "message_cn": "在分布式端口组 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 是网关地址。",
     "message_en": "IP [%1$s] is not available on L3 network [uuid: %2$s], because the IP is a gateway."
   },
   {
@@ -1485,7 +1485,7 @@
     "code": "1043",
     "method": "regex",
     "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is not in this range.*",
-    "message_cn": "在三层网络 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 不在网络段范围内。",
+    "message_cn": "在分布式端口组 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 不在网络段范围内。",
     "message_en": "IP[%1$s] is not available on L3 network[uuid: %2$s], because the IP is not in the network range."
   },
   {
@@ -1493,7 +1493,7 @@
     "code": "1044",
     "method": "regex",
     "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is used.*",
-    "message_cn": "在三层网络 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 已被占用。",
+    "message_cn": "在分布式端口组 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 已被占用。",
     "message_en": "IP [%1$s] is not available on L3 network [uuid: %2$s], because the IP is occupied."
   },
   {
@@ -1613,7 +1613,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "the L3 network[uuid: .*] is same network address with [uuid: .*], it cannot be used for virtual router",
-    "message_cn": "三层网络地址与另一个三层网络重复，无法被用于 VPC 路由器。",
+    "message_cn": "三层网络地址与另一个分布式端口组重复，无法被用于 VPC 路由器。",
     "message_en": "The L3 network address is duplicated with another one, and therefore cannot be used for VPC vRouters."
   },
   {
