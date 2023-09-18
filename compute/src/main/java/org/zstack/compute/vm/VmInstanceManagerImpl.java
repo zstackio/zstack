@@ -2173,14 +2173,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     return (long) (msg.getDataDiskOfferingUuids().size());
                 }).addMessageRequiredQuotaHandler(VmQuotaConstant.VOLUME_SIZE, (msg) ->  {
                     long allVolumeSizeAsked = 0;
-                    String sql = "select img.size, img.mediaType" +
-                            " from ImageVO img" +
-                            " where img.uuid = :iuuid";
-                    TypedQuery<Tuple> iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
-                    iq.setParameter("iuuid", msg.getImageUuid());
-                    Tuple it = iq.getSingleResult();
-                    Long imgSize = it.get(0, Long.class);
-                    ImageConstant.ImageMediaType imgType = it.get(1, ImageConstant.ImageMediaType.class);
+
+                    String sql;
+                    Long imgSize;
+                    ImageConstant.ImageMediaType imgType = null;
+                    if (msg.getImageUuid() != null) {
+                        sql = "select img.size, img.mediaType" +
+                                " from ImageVO img" +
+                                " where img.uuid = :iuuid";
+                        TypedQuery<Tuple> iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                        iq.setParameter("iuuid", msg.getImageUuid());
+                        Tuple it = iq.getSingleResult();
+                        imgSize = it.get(0, Long.class);
+                        imgType = it.get(1, ImageConstant.ImageMediaType.class);
+                    } else {
+                        imgSize = 0L;
+                    }
 
                     List<String> diskOfferingUuids = new ArrayList<>();
                     if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
@@ -2195,6 +2203,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             allVolumeSizeAsked += msg.getRootDiskSize();
                         } else {
                             throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
+                        }
+                    } else {
+                        if (msg.getRootDiskOfferingUuid() != null) {
+                            diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+                        } else if (msg.getRootDiskSize() != null) {
+                            allVolumeSizeAsked += msg.getRootDiskSize();
+                        } else {
+                            throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when create vm without image"));
                         }
                     }
 
