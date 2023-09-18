@@ -1305,7 +1305,7 @@
   {
     "raw": "No Such Cidr found for l3network: %s",
     "en_US": "No Such Cidr found for l3network: {0}",
-    "zh_CN": "未找到三层网络{0}对应的CIDR",
+    "zh_CN": "未找到分布式端口组{0}对应的CIDR",
     "arguments": [
       "msg.getL3networkUuid()"
     ],
@@ -1315,7 +1315,7 @@
   {
     "raw": "No Such VRouter nic found for l3network: %s",
     "en_US": "No Such VRouter nic found for l3network: {0}",
-    "zh_CN": "未找到三层网络{0}对应的虚拟路由器网卡",
+    "zh_CN": "未找到分布式端口组{0}对应的虚拟路由器网卡",
     "arguments": [
       "msg.getL3networkUuid()"
     ],
@@ -1355,7 +1355,7 @@
   {
     "raw": "no such l3network found for: %s",
     "en_US": "no such l3network found for: {0}",
-    "zh_CN": "没有找到该三层网络: {0}",
+    "zh_CN": "没有找到该分布式端口组: {0}",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -1959,7 +1959,7 @@
   {
     "raw": "there is no available nicType on L2 network [%s]",
     "en_US": "there is no available nicType on L2 network [{0}]",
-    "zh_CN": "L2网络[{0}]上没有可用的nicType",
+    "zh_CN": "分布式交换机[{0}]上没有可用的nicType",
     "arguments": [
       "l2NetworkVO.getUuid()"
     ],
@@ -2074,7 +2074,7 @@
   {
     "raw": "invalid l3 network uuids[%s] for listener that belongs lb[%s], all the networks must be attached the LB service and be attached with the same vRouter with LB",
     "en_US": "invalid l3 network uuids[{0}] for listener that belongs lb[{1}], all the networks must be attached the LB service and be attached with the same vRouter with LB",
-    "zh_CN": "属于LB[{1}]的侦听器的L3网络UUID[{0}]无效，所有网络都必须附加到LB服务，并且必须附加到与LB相同的VRouter",
+    "zh_CN": "属于LB[{1}]的侦听器的分布式端口组UUID[{0}]无效，所有网络都必须附加到LB服务，并且必须附加到与LB相同的VRouter",
     "arguments": [
       "l3Uuids",
       "uuid"
@@ -2534,7 +2534,7 @@
   {
     "raw": "duplicated l3 network uuid detacted",
     "en_US": "duplicated l3 network uuid detacted",
-    "zh_CN": "已分离重复的L3网络UUID",
+    "zh_CN": "已分离重复的分布式端口组UUID",
     "arguments": [],
     "line": 148,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
@@ -2542,7 +2542,7 @@
   {
     "raw": "the selected l3 network doesn\u0027t exist",
     "en_US": "the selected l3 network doesn\u0027t exist",
-    "zh_CN": "选定的L3网络不存在",
+    "zh_CN": "选定的分布式端口组不存在",
     "arguments": [],
     "line": 152,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
@@ -2550,7 +2550,7 @@
   {
     "raw": "the selected l3 network cannot be assigned to chassis[uuid:%s]",
     "en_US": "the selected l3 network cannot be assigned to chassis[uuid:{0}]",
-    "zh_CN": "无法将选定的L3网络分配给机箱[UUID：{0}]",
+    "zh_CN": "无法将选定的分布式端口组分配给机箱[UUID：{0}]",
     "arguments": [
       "chassis.getUuid()"
     ],
@@ -3395,7 +3395,7 @@
   {
     "raw": "l2 network should not have the same interface name with provision network that\u0027s already attached to the cluster",
     "en_US": "l2 network should not have the same interface name with provision network that\u0027s already attached to the cluster",
-    "zh_CN": "L2网络不应与已连接到群集的Provision网络具有相同的接口名称",
+    "zh_CN": "分布式交换机不应与已连接到群集的Provision网络具有相同的接口名称",
     "arguments": [],
     "line": 123,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/BareMetal2ClusterFactory.java"
@@ -4213,7 +4213,7 @@
   {
     "raw": "only l3 network with ip version %d is supported by baremetal2 instance",
     "en_US": "only l3 network with ip version {0} is supported by baremetal2 instance",
-    "zh_CN": "Baremetal2实例仅支持IP版本为{0}的L3网络",
+    "zh_CN": "Baremetal2实例仅支持IP版本为{0}的分布式端口组",
     "arguments": [
       "ipVersion"
     ],
@@ -4223,7 +4223,7 @@
   {
     "raw": "l2 network type %s not supported by baremetal2 instance",
     "en_US": "l2 network type {0} not supported by baremetal2 instance",
-    "zh_CN": "L2网络类型{0}不受Baremetal2实例支持",
+    "zh_CN": "分布式交换机类型{0}不受Baremetal2实例支持",
     "arguments": [
       "l2Type"
     ],
@@ -4233,7 +4233,7 @@
   {
     "raw": "customMac is mandatory when attaching l3 network to baremetal2 instance",
     "en_US": "customMac is mandatory when attaching l3 network to baremetal2 instance",
-    "zh_CN": "将L3网络连接到Baremetal2实例时，CustomMAC是必需的",
+    "zh_CN": "将分布式端口组连接到Baremetal2实例时，CustomMAC是必需的",
     "arguments": [],
     "line": 355,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
@@ -4773,7 +4773,7 @@
   {
     "raw": "provision network should not have the same interface name with l2 networks that are already attached to the cluster",
     "en_US": "provision network should not have the same interface name with l2 networks that are already attached to the cluster",
-    "zh_CN": "设置网络不应与已连接到群集的L2网络具有相同的接口名称",
+    "zh_CN": "设置网络不应与已连接到群集的分布式交换机具有相同的接口名称",
     "arguments": [],
     "line": 241,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
@@ -6831,7 +6831,7 @@
   {
     "raw": "L3 Network [uuid:%s] doesn\u0027t exist",
     "en_US": "L3 Network [uuid:{0}] doesn\u0027t exist",
-    "zh_CN": "L3网络[UUID：{0}]不存在",
+    "zh_CN": "分布式端口组[UUID：{0}]不存在",
     "arguments": [
       "l3Uuid"
     ],
@@ -6841,7 +6841,7 @@
   {
     "raw": "related l2 network[uuid:%s] of l3 network[uuid:%s] is not sriov enabled",
     "en_US": "related l2 network[uuid:{0}] of l3 network[uuid:{1}] is not sriov enabled",
-    "zh_CN": "L3网络[UUID：{1}]的相关L2网络[UUID：{0}]未启用SRIOV",
+    "zh_CN": "分布式端口组[UUID：{1}]的相关分布式交换机[UUID：{0}]未启用SRIOV",
     "arguments": [
       "l2Uuid",
       "l3Uuid"
@@ -7409,7 +7409,7 @@
   {
     "raw": "there is no available ipRange on L3 network [%s]",
     "en_US": "there is no available ipRange on L3 network [{0}]",
-    "zh_CN": "L3网络[{0}]中没有可用的网络段",
+    "zh_CN": "分布式端口组[{0}]中没有可用的网络段",
     "arguments": [
       "v.getL3Invs().get(0).getUuid()"
     ],
@@ -7471,7 +7471,7 @@
   {
     "raw": "unable to change to L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
     "en_US": "unable to change to L3 network. The vm[uuid: {0}] is not Running or Stopped; the current state is {1}",
-    "zh_CN": "无法更改为L3网络。VM[UUID：{0}]未运行或已停止。当前状态为{1}",
+    "zh_CN": "无法更改为分布式端口组。VM[UUID：{0}]未运行或已停止。当前状态为{1}",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "state"
@@ -7482,7 +7482,7 @@
   {
     "raw": "unable to change to L3 network. The L3 network[uuid:%s] doesn\u0027t has have ip range",
     "en_US": "unable to change to L3 network. The L3 network[uuid:{0}] doesn\u0027t has have ip range",
-    "zh_CN": "无法更改为L3网络。L3网络[UUID：{0}]没有IP范围",
+    "zh_CN": "无法更改为分布式端口组。分布式端口组[UUID：{0}]没有IP范围",
     "arguments": [
       "msg.getDestL3NetworkUuid()"
     ],
@@ -7492,7 +7492,7 @@
   {
     "raw": "unable to change to L3 network. The L3 network[uuid:%s] are belonged to different l2 networks [uuids:%s]",
     "en_US": "unable to change to L3 network. The L3 network[uuid:{0}] are belonged to different l2 networks [uuids:{1}]",
-    "zh_CN": "无法更改为L3网络。L3网络[UUID：{0}]属于不同的L2网络[UUID：{1}]",
+    "zh_CN": "无法更改为分布式端口组。分布式端口组[UUID：{0}]属于不同的分布式交换机[UUID：{1}]",
     "arguments": [
       "newAddedL3Uuids",
       "l2Uuids"
@@ -7503,7 +7503,7 @@
   {
     "raw": "unable to change to L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
     "en_US": "unable to change to L3 network. The L3 network[uuid:{0}] are belonged to l2 networks [uuids:{1}] that have not been attached to any cluster",
-    "zh_CN": "无法更改为L3网络。L3网络[UUID：{0}]属于尚未连接到任何群集的L2网络[UUID：{1}]",
+    "zh_CN": "无法更改为分布式端口组。分布式端口组[UUID：{0}]属于尚未连接到任何群集的分布式交换机[UUID：{1}]",
     "arguments": [
       "newAddedL3Uuids",
       "l2Uuids"
@@ -7514,7 +7514,7 @@
   {
     "raw": "unable to change to L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
     "en_US": "unable to change to L3 network. The L3 network[uuid:{0}] is already attached to the vm[uuid: {1}]",
-    "zh_CN": "无法更改为L3网络。L3网络[UUID：{0}]已连接到虚拟机[UUID：{1}]",
+    "zh_CN": "无法更改为分布式端口组。分布式端口组[UUID：{0}]已连接到虚拟机[UUID：{1}]",
     "arguments": [
       "attachedL3Uuids",
       "msg.getVmInstanceUuid()"
@@ -7525,7 +7525,7 @@
   {
     "raw": "unable to change to a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
     "en_US": "unable to change to a non-guest L3 network. The L3 network[uuid:{0}] is already attached to the vm[uuid: {1}]",
-    "zh_CN": "无法更改为非来宾L3网络。L3网络[UUID：{0}]已连接到虚拟机[UUID：{1}]",
+    "zh_CN": "无法更改为非来宾分布式端口组。分布式端口组[UUID：{0}]已连接到虚拟机[UUID：{1}]",
     "arguments": [
       "attachedL3Uuids",
       "msg.getVmInstanceUuid()"
@@ -7536,7 +7536,7 @@
   {
     "raw": "unable to change to L3 network. The L3 network[uuid:%s] is disabled",
     "en_US": "unable to change to L3 network. The L3 network[uuid:{0}] is disabled",
-    "zh_CN": "无法更改为L3网络。L3网络[UUID：{0}]已禁用",
+    "zh_CN": "无法更改为分布式端口组。分布式端口组[UUID：{0}]已禁用",
     "arguments": [
       "l3Uuid"
     ],
@@ -7546,7 +7546,7 @@
   {
     "raw": "unable to change to L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
     "en_US": "unable to change to L3 network. The L3 network[uuid:{0}] is a system network and vm is a user vm",
-    "zh_CN": "无法更改为L3网络。L3网络[UUID：{0}]是系统网络，VM是用户VM",
+    "zh_CN": "无法更改为分布式端口组。分布式端口组[UUID：{0}]是系统网络，VM是用户VM",
     "arguments": [
       "l3Uuid"
     ],
@@ -7556,7 +7556,7 @@
   {
     "raw": "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]",
     "en_US": "the static IP[{0}] is not in any IP range of the L3 network[uuid:{1}]",
-    "zh_CN": "该静态IP[{0}]不在L3网络[uuid:{1}]的任何IP段",
+    "zh_CN": "该静态IP[{0}]不在分布式端口组[uuid:{1}]的任何IP段",
     "arguments": [
       "staticIp",
       "l3Uuid"
@@ -7567,7 +7567,7 @@
   {
     "raw": "the static IP[%s] has been occupied on the L3 network[uuid:%s]",
     "en_US": "the static IP[{0}] has been occupied on the L3 network[uuid:{1}]",
-    "zh_CN": "该静态IP[{0}]已经存在在L3网络[uuid:{1}]中",
+    "zh_CN": "该静态IP[{0}]已经存在在分布式端口组[uuid:{1}]中",
     "arguments": [
       "staticIp",
       "l3Uuid"
@@ -7578,7 +7578,7 @@
   {
     "raw": "static ip l3 uuid[%s] is not included in nic l3 [%s]",
     "en_US": "static ip l3 uuid[{0}] is not included in nic l3 [{1}]",
-    "zh_CN": "静态IP的L3网络[uuid:{0}]不在网卡的L3列表[uuid:{1}]中",
+    "zh_CN": "静态IP的分布式端口组[uuid:{0}]不在网卡的L3列表[uuid:{1}]中",
     "arguments": [
       "e.getKey()",
       "newAddedL3Uuids"
@@ -7690,7 +7690,7 @@
   {
     "raw": "either l3NetworkUuids or imageUuid must be set",
     "en_US": "either l3NetworkUuids or imageUuid must be set",
-    "zh_CN": "L3网络的uuid们或者镜像的uuid必须被设置",
+    "zh_CN": "分布式端口组的uuid们或者镜像的uuid必须被设置",
     "arguments": [],
     "line": 515,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
@@ -7796,7 +7796,7 @@
   {
     "raw": "the VM[uuid:%s] has no nic on the L3 network[uuid:%s]",
     "en_US": "the VM[uuid:{0}] has no nic on the L3 network[uuid:{1}]",
-    "zh_CN": "虚拟机[uuid:{0}]在L3网络[uuid:{1}]上没有任何网卡",
+    "zh_CN": "虚拟机[uuid:{0}]在分布式端口组[uuid:{1}]上没有任何网卡",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "msg.getL3NetworkUuid()"
@@ -7899,7 +7899,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] is disabled",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] is disabled",
-    "zh_CN": "不能挂载L3网络，因为该L3网络[uuid:{0}]处于未启动状态",
+    "zh_CN": "不能挂载分布式端口组，因为该分布式端口组[uuid:{0}]处于未启动状态",
     "arguments": [
       "l3Uuid"
     ],
@@ -7909,7 +7909,7 @@
   {
     "raw": "unable to attach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
     "en_US": "unable to attach a L3 network. The vm[uuid: {0}] is not Running or Stopped; the current state is {1}",
-    "zh_CN": "无法挂载L3网络。虚拟机[uuid: {0}]既不处于Running也不处于Stopped状态中，当前状态为{1}",
+    "zh_CN": "无法挂载分布式端口组。虚拟机[uuid: {0}]既不处于Running也不处于Stopped状态中，当前状态为{1}",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "state"
@@ -7920,7 +7920,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] doesn\u0027t has have ip range",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] doesn\u0027t has have ip range",
-    "zh_CN": "无法连接L3网络。L3网络[UUID：{0}]没有IP范围",
+    "zh_CN": "无法连接分布式端口组。分布式端口组[UUID：{0}]没有IP范围",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -7930,7 +7930,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] are belonged to different l2 networks [uuids:%s]",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] are belonged to different l2 networks [uuids:{1}]",
-    "zh_CN": "不能挂载L3网络，L3网络[uuid:{0}]属于不同的L2网络",
+    "zh_CN": "不能挂载分布式端口组，分布式端口组[uuid:{0}]属于不同的分布式交换机",
     "arguments": [
       "newAddedL3Uuids",
       "l2Uuids"
@@ -7941,7 +7941,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] are belonged to l2 networks [uuids:{1}] that have not been attached to any cluster",
-    "zh_CN": "无法连接L3网络。L3网络[UUID：{0}]属于尚未连接到任何群集的L2网络[UUID：{1}]",
+    "zh_CN": "无法连接分布式端口组。分布式端口组[UUID：{0}]属于尚未连接到任何群集的分布式交换机[UUID：{1}]",
     "arguments": [
       "newAddedL3Uuids",
       "l2Uuids"
@@ -7952,7 +7952,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] is already attached to the vm[uuid: {1}]",
-    "zh_CN": "不能挂载L3网络，l3网络[uuid:{0}]已经挂载到虚拟机[uuid: {1}]上了",
+    "zh_CN": "不能挂载分布式端口组，分布式端口组[uuid:{0}]已经挂载到虚拟机[uuid: {1}]上了",
     "arguments": [
       "attachedL3Uuids",
       "msg.getVmInstanceUuid()"
@@ -7963,7 +7963,7 @@
   {
     "raw": "unable to attach a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
     "en_US": "unable to attach a non-guest L3 network. The L3 network[uuid:{0}] is already attached to the vm[uuid: {1}]",
-    "zh_CN": "无法连接非来宾L3网络。L3网络[UUID：{0}]已连接到虚拟机[UUID：{1}]",
+    "zh_CN": "无法连接非来宾分布式端口组。分布式端口组[UUID：{0}]已连接到虚拟机[UUID：{1}]",
     "arguments": [
       "attachedL3Uuids",
       "msg.getVmInstanceUuid()"
@@ -7974,7 +7974,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] is a system network and vm is a user vm",
-    "zh_CN": "不能连接三层网络。这个三层网络[uuid:{0}]是系统网络，但虚拟机是一个用户虚拟机",
+    "zh_CN": "不能连接分布式端口组。这个分布式端口组[uuid:{0}]是系统网络，但虚拟机是一个用户虚拟机",
     "arguments": [
       "l3Uuid"
     ],
@@ -8015,7 +8015,7 @@
   {
     "raw": "unable to attach the nic. Its L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
     "en_US": "unable to attach the nic. Its L3 network[uuid:{0}] is already attached to the vm[uuid: {1}]",
-    "zh_CN": "无法连接NIC。其L3网络[UUID：{0}]已连接到虚拟机[UUID：{1}]",
+    "zh_CN": "无法连接NIC。其分布式端口组[UUID：{0}]已连接到虚拟机[UUID：{1}]",
     "arguments": [
       "vmNicVO.getL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
@@ -8026,7 +8026,7 @@
   {
     "raw": "unable to attach the nic with a non-guest L3 network. Its L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
     "en_US": "unable to attach the nic with a non-guest L3 network. Its L3 network[uuid:{0}] is already attached to the vm[uuid: {1}]",
-    "zh_CN": "无法将NIC连接到非来宾L3网络。其L3网络[UUID：{0}]已连接到虚拟机[UUID：{1}]",
+    "zh_CN": "无法将NIC连接到非来宾分布式端口组。其分布式端口组[UUID：{0}]已连接到虚拟机[UUID：{1}]",
     "arguments": [
       "vmNicVO.getL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
@@ -8037,7 +8037,7 @@
   {
     "raw": "unable to attach the nic. Its L3 network[uuid:%s] is disabled",
     "en_US": "unable to attach the nic. Its L3 network[uuid:{0}] is disabled",
-    "zh_CN": "无法连接NIC。其L3网络[UUID：{0}]已禁用",
+    "zh_CN": "无法连接NIC。其分布式端口组[UUID：{0}]已禁用",
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
@@ -8047,7 +8047,7 @@
   {
     "raw": "unable to attach the nic. Its L3 network[uuid:%s] is a system network and vm is a user vm",
     "en_US": "unable to attach the nic. Its L3 network[uuid:{0}] is a system network and vm is a user vm",
-    "zh_CN": "无法连接NIC。其L3网络[UUID：{0}]是系统网络，VM是用户VM",
+    "zh_CN": "无法连接NIC。其分布式端口组[UUID：{0}]是系统网络，VM是用户VM",
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
@@ -8057,7 +8057,7 @@
   {
     "raw": "unable to attach the nic. Its l2 network [uuid:%s] that have not been attached to any cluster",
     "en_US": "unable to attach the nic. Its l2 network [uuid:{0}] that have not been attached to any cluster",
-    "zh_CN": "无法连接NIC。其L2网络[UUID：{0}]尚未连接到任何群集",
+    "zh_CN": "无法连接NIC。其分布式交换机[UUID：{0}]尚未连接到任何群集",
     "arguments": [
       "l3NetworkVO.getL2NetworkUuid()"
     ],
@@ -8088,7 +8088,7 @@
   {
     "raw": "unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
     "en_US": "unable to detach a L3 network. The vm[uuid: {0}] is not Running or Stopped; the current state is {1}",
-    "zh_CN": "不能卸载L3网络，虚拟机[uuid: {0}]不是运行状态或者暂停状态，状态为{1}",
+    "zh_CN": "不能卸载分布式端口组，虚拟机[uuid: {0}]不是运行状态或者暂停状态，状态为{1}",
     "arguments": [
       "vmUuid",
       "state"
@@ -8276,7 +8276,7 @@
   {
     "raw": "the vm[uuid:%s] has no nic on the L3 network[uuid:%s]",
     "en_US": "the vm[uuid:{0}] has no nic on the L3 network[uuid:{1}]",
-    "zh_CN": "虚拟机[uuid:{0}] 没有网卡在L3网络[uuid:{1}]上",
+    "zh_CN": "虚拟机[uuid:{0}] 没有网卡在分布式端口组[uuid:{1}]上",
     "arguments": [
       "self.getUuid()",
       "l3Uuid"
@@ -8464,7 +8464,7 @@
   {
     "raw": "no l2Networks found in clusters that have attached to primary storages[uuids:%s]",
     "en_US": "no l2Networks found in clusters that have attached to primary storages[uuids:{0}]",
-    "zh_CN": "在已加载到数据存储[uuids:{0}]的集群中未找到二层网络",
+    "zh_CN": "在已加载到数据存储[uuids:{0}]的集群中未找到分布式交换机",
     "arguments": [
       "psUuids"
     ],
@@ -8503,7 +8503,7 @@
   {
     "raw": "unable to enable this function. There are multi nics of L3 network[uuid:%s] in the vm[uuid: %s]",
     "en_US": "unable to enable this function. There are multi nics of L3 network[uuid:{0}] in the vm[uuid: {1}]",
-    "zh_CN": "无法启用此功能。虚拟机[UUID：{1}]中存在多个L3网络[UUID：{0}]的NIC",
+    "zh_CN": "无法启用此功能。虚拟机[UUID：{1}]中存在多个分布式端口组[UUID：{0}]的NIC",
     "arguments": [
       "tuple.get(0, String.class)",
       "tuple.get(1, String.class)"
@@ -8546,7 +8546,7 @@
   {
     "raw": "IP[%s] is already used on the L3 network[uuid:%s]. Please correct your system tag[%s] of static IP",
     "en_US": "IP[{0}] is already used on the L3 network[uuid:{1}]. Please correct your system tag[{2}] of static IP",
-    "zh_CN": "IP[{0}]已在L3网络[UUID：{1}]上使用。请更正静态IP的系统标记[{2}]",
+    "zh_CN": "IP[{0}]已在分布式端口组[UUID：{1}]上使用。请更正静态IP的系统标记[{2}]",
     "arguments": [
       "ip",
       "l3Uuid",
@@ -8558,7 +8558,7 @@
   {
     "raw": "IP[%s] is not available on the L3 network[uuid:%s] because: %s",
     "en_US": "IP[{0}] is not available on the L3 network[uuid:{1}] because: {2}",
-    "zh_CN": "在L3网络[uuid:{1}]中，IP[{0}]不可用, 因为{2}",
+    "zh_CN": "在分布式端口组[uuid:{1}]中，IP[{0}]不可用, 因为{2}",
     "arguments": [
       "ip",
       "l3Uuid",
@@ -8570,7 +8570,7 @@
   {
     "raw": "conflict hostname in system tag[%s]; there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
     "en_US": "conflict hostname in system tag[{0}]; there has been a VM[uuid:{1}] having hostname[{2}] on L3 network[uuid:{3}]",
-    "zh_CN": "系统标签的主机名存在冲突[{0}]；已经存在以一个主机名为[{2}]的VM[uuid:{1}]出现在L3网络[uuid:{3}]中",
+    "zh_CN": "系统标签的主机名存在冲突[{0}]；已经存在以一个主机名为[{2}]的VM[uuid:{1}]出现在分布式端口组[uuid:{3}]中",
     "arguments": [
       "tag",
       "sameTag.getResourceUuid()",
@@ -11079,7 +11079,7 @@
   {
     "raw": "could not delete l3 network[uuid:%s]. Fault tolerance vm[%s] in states[%s, %s] still using it. Stop related fault tolerance vms before delete l3 network",
     "en_US": "could not delete l3 network[uuid:{0}]. Fault tolerance vm[{1}] in states[{2}, {3}] still using it. Stop related fault tolerance vms before delete l3 network",
-    "zh_CN": "无法删除L3网络[UUID：{0}]。状态为[{2}，{3}]的容错VM[{1}]仍在使用。在删除L3网络之前停止相关的容错虚拟机",
+    "zh_CN": "无法删除分布式端口组[UUID：{0}]。状态为[{2}，{3}]的容错VM[{1}]仍在使用。在删除分布式端口组之前停止相关的容错虚拟机",
     "arguments": [
       "msg.getL3NetworkUuid()",
       "String.join(\",\", vmInstanceUuids)",
@@ -11608,7 +11608,7 @@
   {
     "raw": "unable to set vm hostname. the vm[uuid:%s] do not have default L3 network",
     "en_US": "unable to set vm hostname. the vm[uuid:{0}] do not have default L3 network",
-    "zh_CN": "无法设置虚拟机主机名。VM[UUID：{0}]没有默认的L3网络",
+    "zh_CN": "无法设置虚拟机主机名。VM[UUID：{0}]没有默认的分布式端口组",
     "arguments": [
       "vmUuid"
     ],
@@ -11618,7 +11618,7 @@
   {
     "raw": "conflict hostname, there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
     "en_US": "conflict hostname, there has been a VM[uuid:{0}] having hostname[{1}] on L3 network[uuid:{2}]",
-    "zh_CN": "主机名冲突，在L3网络[UUID：{2}]上存在主机名为[{1}]的虚拟机[UUID：{0}]",
+    "zh_CN": "主机名冲突，在分布式端口组[UUID：{2}]上存在主机名为[{1}]的虚拟机[UUID：{0}]",
     "arguments": [
       "sameTag.getResourceUuid()",
       "hostname",
@@ -13427,7 +13427,7 @@
   {
     "raw": "nics on the l3Network[uuid:%s] are attached to the securityGroup. before you can detach the l3Network from the securityGroup, you need to detach the nics from the securityGroup.",
     "en_US": "nics on the l3Network[uuid:{0}] are attached to the securityGroup. before you can detach the l3Network from the securityGroup, you need to detach the nics from the securityGroup.",
-    "zh_CN": "L3网络[UUID：{0}]上的NIC已连接到SecurityGroup。在将L3Network与SecurityGroup分离之前，需要将NIC与SecurityGroup分离。",
+    "zh_CN": "分布式端口组[UUID：{0}]上的NIC已连接到SecurityGroup。在将L3Network与SecurityGroup分离之前，需要将NIC与SecurityGroup分离。",
     "arguments": [
       "msg.getL3NetworkUuid()",
       "msg.getSecurityGroupUuid()"
@@ -14564,7 +14564,7 @@
   {
     "raw": "must include l3 networks in APIAttachL3NetworksToIPsecConnectionMsg",
     "en_US": "must include l3 networks in APIAttachL3NetworksToIPsecConnectionMsg",
-    "zh_CN": "参数中缺少三层网络的uuid",
+    "zh_CN": "参数中缺少分布式端口组的uuid",
     "arguments": [],
     "line": 281,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
@@ -15477,7 +15477,7 @@
   {
     "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}] on kvm host[uuid:{3}], because {4}",
-    "zh_CN": "在主机[uuid:{3}]上为L2网络[uuid:{1}, type:{2}]创建网桥[{0}]失败，原因: {4}",
+    "zh_CN": "在主机[uuid:{3}]上为分布式交换机[uuid:{1}, type:{2}]创建网桥[{0}]失败，原因: {4}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -15491,7 +15491,7 @@
   {
     "raw": "failed to check bridge[%s] for l2NoVlanNetwork[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
     "en_US": "failed to check bridge[{0}] for l2NoVlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid: {3}], {4}",
-    "zh_CN": "在L2网络[uuid:{1}中检查网桥[{0}]失败，名字为[{2}]在主机t[uuid: {3}]上, {4}",
+    "zh_CN": "在分布式交换机[uuid:{1}中检查网桥[{0}]失败，名字为[{2}]在主机t[uuid: {3}]上, {4}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -15505,7 +15505,7 @@
   {
     "raw": "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to delete bridge[{0}] for l2Network[uuid:{1}, type:{2}] on kvm host[uuid:{3}], because {4}",
-    "zh_CN": "无法在KVM主机[UUID：{3}]上删除L2网络[UUID：{1}，类型：{2}]的网桥[{0}]，因为{4}",
+    "zh_CN": "无法在KVM主机[UUID：{3}]上删除分布式交换机[UUID：{1}，类型：{2}]的网桥[{0}]，因为{4}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -15519,7 +15519,7 @@
   {
     "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}, vlan:{3}] on kvm host[uuid:{4}], because {5}",
-    "zh_CN": "创建L2网络[uuid:{1}中的网桥[{0}]失败 , 类型为: {2}, vlan:{3}] 在主机[uuid:{4}]上, 原因:  {5}",
+    "zh_CN": "创建分布式交换机[uuid:{1}中的网桥[{0}]失败 , 类型为: {2}, vlan:{3}] 在主机[uuid:{4}]上, 原因:  {5}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -15534,7 +15534,7 @@
   {
     "raw": "failed to check bridge[%s] for l2VlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
     "en_US": "failed to check bridge[{0}] for l2VlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid:{3}], {4}",
-    "zh_CN": "检查在主机[uuid:{3}]上L2网络[uuid:{1}, name:{2}]中的网桥[{0}]失败, {4}",
+    "zh_CN": "检查在主机[uuid:{3}]上分布式交换机[uuid:{1}, name:{2}]中的网桥[{0}]失败, {4}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2vlan.getUuid()",
@@ -15548,7 +15548,7 @@
   {
     "raw": "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to delete bridge[{0}] for l2Network[uuid:{1}, type:{2}, vlan:{3}] on kvm host[uuid:{4}], because {5}",
-    "zh_CN": "无法在KVM主机[UUID：{4}]上删除L2网络[UUID：{1}，类型：{2}，VLAN：{3}]的网桥[{0}]，因为{5}",
+    "zh_CN": "无法在KVM主机[UUID：{4}]上删除分布式交换机[UUID：{1}，类型：{2}，VLAN：{3}]的网桥[{0}]，因为{5}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -16291,7 +16291,7 @@
   {
     "raw": "unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm",
     "en_US": "unable to attach a L3 network. The cidr of l3[{0}] to attach overlapped with l3[{1}] already attached to vm",
-    "zh_CN": "不能绑定这个三层网络。这个虚拟机上已经绑定的三层网络[{1}]和这个三层网络[{0}]的CIDR存在重叠",
+    "zh_CN": "不能绑定这个分布式端口组。这个虚拟机上已经绑定的分布式端口组[{1}]和这个分布式端口组[{0}]的CIDR存在重叠",
     "arguments": [
       "l3NetworkUuid",
       "vmNicVO.getL3NetworkUuid()"
@@ -16367,7 +16367,7 @@
   {
     "raw": "L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
     "en_US": "L3 network[uuid:{0}] not found. Please correct your system tag[{1}] of static IP",
-    "zh_CN": "找不到L3网络[uuid:0]。请确认静态IP的系统标签",
+    "zh_CN": "找不到分布式端口组[uuid:0]。请确认静态IP的系统标签",
     "arguments": [
       "l3Uuid",
       "systemTag"
@@ -17731,7 +17731,7 @@
   {
     "raw": "l2Network[uuid:%s] has attached to cluster[uuid:%s], can\u0027t attach again",
     "en_US": "l2Network[uuid:{0}] has attached to cluster[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "不能再次挂载l2网络[uuid:{0}]，因为已经挂载到集群[uuid:{1}]上了",
+    "zh_CN": "不能再次挂载分布式交换机[uuid:{0}]，因为已经挂载到集群[uuid:{1}]上了",
     "arguments": [
       "msg.getL2NetworkUuid()",
       "msg.getClusterUuid()"
@@ -17742,7 +17742,7 @@
   {
     "raw": "could not attach l2 network, because there is another network [uuid:%] on physical interface [%s] with different vswitch type",
     "en_US": "could not attach l2 network, because there is another network [uuid:%] on physical interface [{0}] with different vswitch type",
-    "zh_CN": "无法连接L2网络，因为物理接口[{0}]上存在另一个具有不同vSwitch类型的网络[UUID：%]",
+    "zh_CN": "无法连接分布式交换机，因为物理接口[{0}]上存在另一个具有不同vSwitch类型的网络[UUID：%]",
     "arguments": [
       "otherL2s.get(0)",
       "l2.getPhysicalInterface()"
@@ -17753,7 +17753,7 @@
   {
     "raw": "l2Network[uuid:%s] has not attached to cluster[uuid:%s]",
     "en_US": "l2Network[uuid:{0}] has not attached to cluster[uuid:{1}]",
-    "zh_CN": "L2网络[uuid:{0}]没有挂载到集群上[uuid:{1}]",
+    "zh_CN": "分布式交换机[uuid:{0}]没有挂载到集群上[uuid:{1}]",
     "arguments": [
       "msg.getL2NetworkUuid()",
       "msg.getClusterUuid()"
@@ -17784,7 +17784,7 @@
   {
     "raw": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
     "en_US": "There has been a L2VlanNetwork[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}], vlan[{4}]. Failed to attach L2VlanNetwork[uuid:{5}]",
-    "zh_CN": "L2网络挂载失败[uuid:{5}]: L2网络[uuid:{0}, name:{1}]的物理接口[{3}], vlan[{4}]已经挂载到集群[uuid:{2}]上",
+    "zh_CN": "分布式交换机挂载失败[uuid:{5}]: 分布式交换机[uuid:{0}, name:{1}]的物理接口[{3}], vlan[{4}]已经挂载到集群[uuid:{2}]上",
     "arguments": [
       "vl2.getUuid()",
       "vl2.getName()",
@@ -17799,7 +17799,7 @@
   {
     "raw": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
     "en_US": "There has been a l2Network[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}]. Failed to attach l2Network[uuid:{4}]",
-    "zh_CN": "L2网络挂载失败[uuid:{4}]: L2网络[uuid:{0}, name:{1}]的物理接口[{3}]]已经挂载到集群[uuid:{2}]上",
+    "zh_CN": "分布式交换机挂载失败[uuid:{4}]: 分布式交换机[uuid:{0}, name:{1}]的物理接口[{3}]]已经挂载到集群[uuid:{2}]上",
     "arguments": [
       "l2.getUuid()",
       "l2.getName()",
@@ -17846,7 +17846,7 @@
   {
     "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}, vni:{3}] on kvm host[uuid:{4}], because {5}",
-    "zh_CN": "为L2网络[uuid:{1}, type:{2}, vni:{3}]在KVM主机[uuid:{4}]上创建网桥[{0}]失败，错误细节: {5}",
+    "zh_CN": "为分布式交换机[uuid:{1}, type:{2}, vni:{3}]在KVM主机[uuid:{4}]上创建网桥[{0}]失败，错误细节: {5}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -17875,7 +17875,7 @@
   {
     "raw": "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to delete bridge[{0}] for l2Network[uuid:{1}, type:{2}, vni:{3}] on kvm host[uuid:{4}], because {5}",
-    "zh_CN": "无法删除KVM主机[UUID：{4}]上的L2网络[UUID：{1}，类型：{2}，VNI：{3}]的网桥[{0}]，因为{5}",
+    "zh_CN": "无法删除KVM主机[UUID：{4}]上的分布式交换机[UUID：{1}，类型：{2}，VNI：{3}]的网桥[{0}]，因为{5}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -17959,7 +17959,7 @@
   {
     "raw": "vxlan network pool doesn\u0027t support create l3 network",
     "en_US": "vxlan network pool doesn\u0027t support create l3 network",
-    "zh_CN": "vxlan network pool不支持创建L3网络",
+    "zh_CN": "vxlan network pool不支持创建分布式端口组",
     "arguments": [],
     "line": 99,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
@@ -18002,7 +18002,7 @@
   {
     "raw": "could not set mtu because l2 network[uuid:%s] of l3 network [uuid:%s] mtu can not be bigger than the novlan network",
     "en_US": "could not set mtu because l2 network[uuid:{0}] of l3 network [uuid:{1}] mtu can not be bigger than the novlan network",
-    "zh_CN": "无法设置MTU，因为L3网络[UUID：{1}]MTU的L2网络[UUID：{0}]不能大于NoVLAN网络",
+    "zh_CN": "无法设置MTU，因为分布式端口组[UUID：{1}]MTU的分布式交换机[UUID：{0}]不能大于NoVLAN网络",
     "arguments": [
       "l2VO.getUuid()",
       "msg.getL3NetworkUuid()"
@@ -18049,7 +18049,7 @@
   {
     "raw": "no ip range in l3[%s]",
     "en_US": "no ip range in l3[{0}]",
-    "zh_CN": "没有IP在三层网络范围中",
+    "zh_CN": "没有IP在分布式端口组范围中",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -18059,7 +18059,7 @@
   {
     "raw": "ip[%s] is not in the cidr of ip range[uuid:%s, cidr:%s] which l3 network[%s] attached",
     "en_US": "ip[{0}] is not in the cidr of ip range[uuid:{1}, cidr:{2}] which l3 network[{3}] attached",
-    "zh_CN": "IP[{0}]没有在三层网络[{3}]的CIDR的IP范围内[uuid:{1}, cidr:{2}]",
+    "zh_CN": "IP[{0}]没有在分布式端口组[{3}]的CIDR的IP范围内[uuid:{1}, cidr:{2}]",
     "arguments": [
       "msg.getRouterInterfaceIp()",
       "ipr.getUuid()",
@@ -18072,7 +18072,7 @@
   {
     "raw": "ip[%s] in ip range[uuid:%s, startIp:%s, endIp:%s] which l3 network[%s] attached, this is not allowed",
     "en_US": "ip[{0}] in ip range[uuid:{1}, startIp:{2}, endIp:{3}] which l3 network[{4}] attached, this is not allowed",
-    "zh_CN": "IP[{0}]在三层网络[{4}]绑定的IP范围内[uuid:{1}, startIp:{2}, endIp:{3}]，这是不被允许的",
+    "zh_CN": "IP[{0}]在分布式端口组[{4}]绑定的IP范围内[uuid:{1}, startIp:{2}, endIp:{3}]，这是不被允许的",
     "arguments": [
       "msg.getRouterInterfaceIp()",
       "ipr.getUuid()",
@@ -18195,7 +18195,7 @@
   {
     "raw": "addressMode[%s] is different from L3Netowork address mode[%s]",
     "en_US": "addressMode[{0}] is different from L3Netowork address mode[{1}]",
-    "zh_CN": "地址模式[{0}]和三层网络的地址模式[{1}]不同",
+    "zh_CN": "地址模式[{0}]和分布式端口组的地址模式[{1}]不同",
     "arguments": [
       "ipr.getAddressMode()",
       "rangeVOS.get(0).getAddressMode()"
@@ -18229,7 +18229,7 @@
   {
     "raw": "new network CIDR [%s] is different from old network cidr [%s]",
     "en_US": "new network CIDR [{0}] is different from old network cidr [{1}]",
-    "zh_CN": "同一L3网络上不能加载多个CIDR。",
+    "zh_CN": "同一分布式端口组上不能加载多个CIDR。",
     "arguments": [
       "r.getNetworkCidr()",
       "ipr.getNetworkCidr()"
@@ -18292,7 +18292,7 @@
   {
     "raw": "unsupported l3network type[%s]",
     "en_US": "unsupported l3network type[{0}]",
-    "zh_CN": "不支持的L3网络类型[{0}]",
+    "zh_CN": "不支持的分布式端口组类型[{0}]",
     "arguments": [
       "msg.getType()"
     ],
@@ -18324,7 +18324,7 @@
   {
     "raw": "l3 network [uuid %s: name %s] is not a public network, address pool range can not be added",
     "en_US": "l3 network [uuid {0}: name {1}] is not a public network, address pool range can not be added",
-    "zh_CN": "L3网络[UUID{0}：名称{1}]不是公用网络，无法添加地址池范围",
+    "zh_CN": "分布式端口组[UUID{0}：名称{1}]不是公用网络，无法添加地址池范围",
     "arguments": [
       "l3Vo.getUuid()",
       "l3Vo.getName()"
@@ -18439,7 +18439,7 @@
   {
     "raw": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
     "en_US": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:{0}, CIDR:{1}], the new IP range[CIDR:{2}] is not in the CIDR with the existing one",
-    "zh_CN": "在相同的三层网络上多个CIDR是不允许的，已有的IP范围 [uuid: {0}，CIDR: {1}]。新的IP范围 [CIDR: {2}] 不在现有的一个CIDR",
+    "zh_CN": "在相同的分布式端口组上多个CIDR是不允许的，已有的IP范围 [uuid: {0}，CIDR: {1}]。新的IP范围 [CIDR: {2}] 不在现有的一个CIDR",
     "arguments": [
       "r.getUuid()",
       "rcidr",
@@ -18463,7 +18463,7 @@
   {
     "raw": "there has been a DNS[%s] on L3 network[uuid:%s]",
     "en_US": "there has been a DNS[{0}] on L3 network[uuid:{1}]",
-    "zh_CN": "在L3网络[uuid:{1}]上已经存在一个DNS[{0}]",
+    "zh_CN": "在分布式端口组[uuid:{1}]上已经存在一个DNS[{0}]",
     "arguments": [
       "msg.getDns()",
       "msg.getL3NetworkUuid()"
@@ -18494,7 +18494,7 @@
   {
     "raw": "there has been a hostroute for prefix[%s] on L3 network[uuid:%s]",
     "en_US": "there has been a hostroute for prefix[{0}] on L3 network[uuid:{1}]",
-    "zh_CN": "三层网络{1}已配置主机路由{0}",
+    "zh_CN": "分布式端口组{1}已配置主机路由{0}",
     "arguments": [
       "msg.getPrefix()",
       "msg.getL3NetworkUuid()"
@@ -18505,7 +18505,7 @@
   {
     "raw": "there is no hostroute for prefix[%s] on L3 network[uuid:%s]",
     "en_US": "there is no hostroute for prefix[{0}] on L3 network[uuid:{1}]",
-    "zh_CN": "三层网络{1}没有主机路由{0}",
+    "zh_CN": "分布式端口组{1}没有主机路由{0}",
     "arguments": [
       "msg.getPrefix()",
       "msg.getL3NetworkUuid()"
@@ -18558,7 +18558,7 @@
   {
     "raw": "the L3 network[uuid:%s] doesn\u0027t have the network service type[%s] enabled",
     "en_US": "the L3 network[uuid:{0}] doesn\u0027t have the network service type[{1}] enabled",
-    "zh_CN": "L3网络[uuid:{0}]没有开启[{1}]类型的网络服务",
+    "zh_CN": "分布式端口组[uuid:{0}]没有开启[{1}]类型的网络服务",
     "arguments": [
       "msg.getL3NetworkUuid()",
       "SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE"
@@ -18717,7 +18717,7 @@
   {
     "raw": "VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
     "en_US": "VM nics[uuids:{0}] are not on L3 networks that have been attached to the security group[uuid:{1}]",
-    "zh_CN": "虚拟机网卡[uuids:{0}]不在安全组[uuid:{1}]挂载的L3网络上",
+    "zh_CN": "虚拟机网卡[uuids:{0}]不在安全组[uuid:{1}]挂载的分布式端口组上",
     "arguments": [
       "wrongUuids",
       "securityGroupUuid"
@@ -18739,7 +18739,7 @@
   {
     "raw": "L3Network [uuid: %s] provide type null",
     "en_US": "L3Network [uuid: {0}] provide type null",
-    "zh_CN": "三层网络{0}后端为空",
+    "zh_CN": "分布式端口组{0}后端为空",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -18749,7 +18749,7 @@
   {
     "raw": "L3Network [uuid: %s] does not have host route service",
     "en_US": "L3Network [uuid: {0}] does not have host route service",
-    "zh_CN": "三层网络{0}没有主机路由功能",
+    "zh_CN": "分布式端口组{0}没有主机路由功能",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -18798,7 +18798,7 @@
   {
     "raw": "there has been a network service[%s] attached to L3 network[uuid:%s]",
     "en_US": "there has been a network service[{0}] attached to L3 network[uuid:{1}]",
-    "zh_CN": "已经有一个网络服务[{0}]被挂载到L3网络[uuid:{1}]",
+    "zh_CN": "已经有一个网络服务[{0}]被挂载到分布式端口组[uuid:{1}]",
     "arguments": [
       "type",
       "msg.getL3NetworkUuid()"
@@ -18809,7 +18809,7 @@
   {
     "raw": "L3Network[uuid:%s] doesn\u0027t have network service[type:%s] enabled or no provider provides this network service",
     "en_US": "L3Network[uuid:{0}] doesn\u0027t have network service[type:{1}] enabled or no provider provides this network service",
-    "zh_CN": "L3网络[uuid:{0}]上没有网络服务[type:{1}]被启用或没有服务提供器提供该网络服务",
+    "zh_CN": "分布式端口组[uuid:{0}]上没有网络服务[type:{1}]被启用或没有服务提供器提供该网络服务",
     "arguments": [
       "l3NetworkUuid",
       "serviceType"
@@ -18882,7 +18882,7 @@
   {
     "raw": "guest l3Network of vm nic[uuid:%s] and vip l3Network of EIP[uuid:%s] are the same network",
     "en_US": "guest l3Network of vm nic[uuid:{0}] and vip l3Network of EIP[uuid:{1}] are the same network",
-    "zh_CN": "虚拟机网卡[uuid:{0}]的客户L3网络，和EIP[uuid:{1}]的虚拟ip L3网络是同一个网络",
+    "zh_CN": "虚拟机网卡[uuid:{0}]的客户分布式端口组，和EIP[uuid:{1}]的虚拟ip 分布式端口组是同一个网络",
     "arguments": [
       "msg.getVmNicUuid()",
       "msg.getEipUuid()"
@@ -19023,7 +19023,7 @@
   {
     "raw": "unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s], because the L3 network is providing EIP to one of the vm\u0027s nic",
     "en_US": "unable to attach the L3 network[uuid:{0}, name:{1}] to the vm[uuid:{2}, name:{3}], because the L3 network is providing EIP to one of the vm\u0027s nic",
-    "zh_CN": "无法将L3网络[uuid:{0}, name:{1}]挂载到虚拟机[uuid:{2}, name:{3}]，因为L3网络正在为虚拟机上的一块网卡提供EIP",
+    "zh_CN": "无法将分布式端口组[uuid:{0}, name:{1}]挂载到虚拟机[uuid:{2}, name:{3}]，因为分布式端口组正在为虚拟机上的一块网卡提供EIP",
     "arguments": [
       "l3.getUuid()",
       "l3.getName()",
@@ -19036,7 +19036,7 @@
   {
     "raw": "could not get dhcp4 server ip for l3 network [uuid:%s]",
     "en_US": "could not get dhcp4 server ip for l3 network [uuid:{0}]",
-    "zh_CN": "无法获取L3网络[UUID：{0}]的DHCP4服务器IP",
+    "zh_CN": "无法获取分布式端口组[UUID：{0}]的DHCP4服务器IP",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -19046,7 +19046,7 @@
   {
     "raw": "could not get dhcp6 server ip for l3 network [uuid:%s]",
     "en_US": "could not get dhcp6 server ip for l3 network [uuid:{0}]",
-    "zh_CN": "无法获取L3网络[UUID：{0}]的DHCP6服务器IP",
+    "zh_CN": "无法获取分布式端口组[UUID：{0}]的DHCP6服务器IP",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -19075,7 +19075,7 @@
   {
     "raw": "l3 network uuid cannot be null",
     "en_US": "l3 network uuid cannot be null",
-    "zh_CN": "L3网络的uuid不能为空",
+    "zh_CN": "分布式端口组的uuid不能为空",
     "arguments": [],
     "line": 647,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
@@ -19083,7 +19083,7 @@
   {
     "raw": "Cannot find DhcpIp for l3 network[uuid:%s]",
     "en_US": "Cannot find DhcpIp for l3 network[uuid:{0}]",
-    "zh_CN": "无法为L3网络[uuid:{0}]找到DHCP IP",
+    "zh_CN": "无法为分布式端口组[uuid:{0}]找到DHCP IP",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -19104,7 +19104,7 @@
   {
     "raw": "minimum ip range prefix length of flat network is %d",
     "en_US": "minimum ip range prefix length of flat network is {0}",
-    "zh_CN": "平面网络的最小IP范围前缀长度为{0}",
+    "zh_CN": "分布式端口组的最小IP范围前缀长度为{0}",
     "arguments": [
       "IPv6Constants.IPV6_PREFIX_LEN_MIN_DNSMASQ"
     ],
@@ -19145,7 +19145,7 @@
   {
     "raw": "DHCP server ip [%s] is already existed in l3 network [%s]",
     "en_US": "DHCP server ip [{0}] is already existed in l3 network [{1}]",
-    "zh_CN": "三层网络[{1}]已经配置了DHCP服务器地址[{0}]",
+    "zh_CN": "分布式端口组[{1}]已经配置了DHCP服务器地址[{0}]",
     "arguments": [
       "entry.getKey()",
       "inv.getL3NetworkUuid()"
@@ -19176,7 +19176,7 @@
   {
     "raw": "could not attach eip because ipv6 eip can ONLY be attached to flat network",
     "en_US": "could not attach eip because ipv6 eip can ONLY be attached to flat network",
-    "zh_CN": "无法附加EIP，因为IPv6 EIP只能附加到平面网络",
+    "zh_CN": "无法附加EIP，因为IPv6 EIP只能附加到分布式端口组",
     "arguments": [],
     "line": 80,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatEipApiInterceptor.java"
@@ -19184,7 +19184,7 @@
   {
     "raw": "L2Network where vip\u0027s L3Network based hasn\u0027t attached the cluster where vmNic[uuid:%s] located",
     "en_US": "L2Network where vip\u0027s L3Network based hasn\u0027t attached the cluster where vmNic[uuid:{0}] located",
-    "zh_CN": "基于虚拟IP三层网络的二层网络没有绑定到虚拟机网卡所在的集群",
+    "zh_CN": "基于虚拟IP分布式端口组的分布式交换机没有绑定到虚拟机网卡所在的集群",
     "arguments": [
       "vmNicUuid"
     ],
@@ -19244,7 +19244,7 @@
   {
     "raw": "could not get candidate l3 network, because both load balancer uuid and server group uuid are not specified",
     "en_US": "could not get candidate l3 network, because both load balancer uuid and server group uuid are not specified",
-    "zh_CN": "无法获取候选L3网络，因为未指定负载平衡器UUID和服务器组UUID",
+    "zh_CN": "无法获取候选分布式端口组，因为未指定负载平衡器UUID和服务器组UUID",
     "arguments": [],
     "line": 198,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
@@ -19480,7 +19480,7 @@
   {
     "raw": "L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
     "en_US": "L3 networks[uuids:{0}] of the vm nics has no network service[{1}] enabled",
-    "zh_CN": "虚拟机网卡的三层网络没有可用的网络服务",
+    "zh_CN": "虚拟机网卡的分布式端口组没有可用的网络服务",
     "arguments": [
       "l3Uuids",
       "LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING"
@@ -20500,7 +20500,7 @@
   {
     "raw": "guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network",
     "en_US": "guest l3Network of vm nic[uuid:{0}] and vip l3Network of vip[uuid: {1}] are the same network",
-    "zh_CN": "虚拟机网卡[uuid:{0}]的客户L3网络和虚拟IP[uuid:{1}]的虚拟IP L3网络是同一个网络",
+    "zh_CN": "虚拟机网卡[uuid:{0}]的客户分布式端口组和虚拟IP[uuid:{1}]的虚拟IP 分布式端口组是同一个网络",
     "arguments": [
       "msg.getVmNicUuid()",
       "msg.getVipUuid()"
@@ -20565,7 +20565,7 @@
   {
     "raw": "guest l3Network of vm nic[uuid:%s] and vip l3Network of port forwarding rule[uuid:%s] are the same network",
     "en_US": "guest l3Network of vm nic[uuid:{0}] and vip l3Network of port forwarding rule[uuid:{1}] are the same network",
-    "zh_CN": "虚拟机网卡[uuid:{0}]的客户L3网络和端口转发规则[uuid:{1}]的VIP L3网络是同一个网络",
+    "zh_CN": "虚拟机网卡[uuid:{0}]的客户分布式端口组和端口转发规则[uuid:{1}]的VIP 分布式端口组是同一个网络",
     "arguments": [
       "msg.getVmNicUuid()",
       "msg.getRuleUuid()"
@@ -20744,7 +20744,7 @@
   {
     "raw": "could not create slb group because invalid front l3 network type %s",
     "en_US": "could not create slb group because invalid front l3 network type {0}",
-    "zh_CN": "无法创建SLB组，因为前端L3网络类型{0}无效",
+    "zh_CN": "无法创建SLB组，因为前端分布式端口组类型{0}无效",
     "arguments": [
       "frontL3.getCategory()"
     ],
@@ -20770,7 +20770,7 @@
   {
     "raw": "could not execute the api operation. backend network [uuid:%s] cidr [%s] is overlapped with frond l3 network[uuid:%s] cidr [%s]",
     "en_US": "could not execute the api operation. backend network [uuid:{0}] cidr [{1}] is overlapped with frond l3 network[uuid:{2}] cidr [{3}]",
-    "zh_CN": "无法执行API操作。后端网络[UUID：{0}]CIDR[{1}]与前端L3网络[UUID：{2}]CIDR[{3}]重叠",
+    "zh_CN": "无法执行API操作。后端网络[UUID：{0}]CIDR[{1}]与前端分布式端口组[UUID：{2}]CIDR[{3}]重叠",
     "arguments": [
       "uuid",
       "backendL3Cidr",
@@ -20837,7 +20837,7 @@
   {
     "raw": "could not execute the api operation. backend network [uuid:%s] must be private flat network because frond l3 network is private flat network",
     "en_US": "could not execute the api operation. backend network [uuid:{0}] must be private flat network because frond l3 network is private flat network",
-    "zh_CN": "无法执行API操作。后端网络[UUID：{0}]必须是专用平面网络，因为前端L3网络是专用平面网络",
+    "zh_CN": "无法执行API操作。后端网络[UUID：{0}]必须是专用分布式端口组，因为前端分布式端口组是专用分布式端口组",
     "arguments": [
       "uuid"
     ],
@@ -20857,7 +20857,7 @@
   {
     "raw": "could not execute the api operation. backend network [uuid:%s] must be vpc network because frond l3 network is vpc network",
     "en_US": "could not execute the api operation. backend network [uuid:{0}] must be vpc network because frond l3 network is vpc network",
-    "zh_CN": "无法执行API操作。后端网络[UUID：{0}]必须是VPC网络，因为前端L3网络是VPC网络",
+    "zh_CN": "无法执行API操作。后端网络[UUID：{0}]必须是VPC网络，因为前端分布式端口组是VPC网络",
     "arguments": [
       "uuid"
     ],
@@ -20899,7 +20899,7 @@
   {
     "raw": "can not detach front end l3 network [uuid:%s] from SLB instance",
     "en_US": "can not detach front end l3 network [uuid:{0}] from SLB instance",
-    "zh_CN": "无法从SLB实例分离前端L3网络[UUID：{0}]",
+    "zh_CN": "无法从SLB实例分离前端分布式端口组[UUID：{0}]",
     "arguments": [
       "frontL3Uuid",
       "slbVO.getUuid()"
@@ -20910,7 +20910,7 @@
   {
     "raw": "can not detach management l3 network [uuid:%s] from SLB instance",
     "en_US": "can not detach management l3 network [uuid:{0}] from SLB instance",
-    "zh_CN": "无法从SLB实例分离管理L3网络[UUID：{0}]",
+    "zh_CN": "无法从SLB实例分离管理分布式端口组[UUID：{0}]",
     "arguments": [
       "slbVO.getManagementNetworkUuid()",
       "slbVO.getUuid()"
@@ -20921,7 +20921,7 @@
   {
     "raw": "can not detach nic [uuid:%s] from SLB instance, because it is the last backend l3 network nic",
     "en_US": "can not detach nic [uuid:{0}] from SLB instance, because it is the last backend l3 network nic",
-    "zh_CN": "无法从SLB实例分离NIC[UUID：{0}]，因为它是最后一个后端L3网络NIC",
+    "zh_CN": "无法从SLB实例分离NIC[UUID：{0}]，因为它是最后一个后端分布式端口组NIC",
     "arguments": [
       "msg.getVmNicUuid()"
     ],
@@ -20963,7 +20963,7 @@
   {
     "raw": "could not add vmnic to load balancer server  group because l3 network is not connected slb instance",
     "en_US": "could not add vmnic to load balancer server  group because l3 network is not connected slb instance",
-    "zh_CN": "无法将vmnic添加到负载平衡器服务器组，因为L3网络未连接到SLB实例",
+    "zh_CN": "无法将vmnic添加到负载平衡器服务器组，因为分布式端口组未连接到SLB实例",
     "arguments": [],
     "line": 407,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
@@ -20971,7 +20971,7 @@
   {
     "raw": "could not add vmnic to load balancer server  group because l3 network [uuid:%s] is connected any vpc router",
     "en_US": "could not add vmnic to load balancer server  group because l3 network [uuid:{0}] is connected any vpc router",
-    "zh_CN": "无法将vmnic添加到负载平衡器服务器组，因为L3网络[UUID：{0}]已连接到任何VPC路由器",
+    "zh_CN": "无法将vmnic添加到负载平衡器服务器组，因为分布式端口组[UUID：{0}]已连接到任何VPC路由器",
     "arguments": [
       "uuid"
     ],
@@ -20981,7 +20981,7 @@
   {
     "raw": "could not add vmnic to load balancer server  group because l3 network[uuid:%s] is connected to different vpc router",
     "en_US": "could not add vmnic to load balancer server  group because l3 network[uuid:{0}] is connected to different vpc router",
-    "zh_CN": "无法将vmnic添加到负载平衡器服务器组，因为L3网络[UUID：{0}]已连接到不同的VPC路由器",
+    "zh_CN": "无法将vmnic添加到负载平衡器服务器组，因为分布式端口组[UUID：{0}]已连接到不同的VPC路由器",
     "arguments": [
       "uuid"
     ],
@@ -20991,7 +20991,7 @@
   {
     "raw": "can not find nic of slb instance [uuid:%s] which is attached to slb group front l3 network [uuid:%s]",
     "en_US": "can not find nic of slb instance [uuid:{0}] which is attached to slb group front l3 network [uuid:{1}]",
-    "zh_CN": "找不到SLB实例[UUID：{0}]的网卡，该网卡挂接在SLB组前三层网络[UUID：{1}]上",
+    "zh_CN": "找不到SLB实例[UUID：{0}]的网卡，该网卡挂接在SLB组前分布式端口组[UUID：{1}]上",
     "arguments": [
       "slbInstance.getUuid()",
       "frontL3Uuid"
@@ -21038,7 +21038,7 @@
   {
     "raw": "there is already a vip[%s] on l3Network[uuid:%s]",
     "en_US": "there is already a vip[{0}] on l3Network[uuid:{1}]",
-    "zh_CN": "已有一个vip[{0}]在L3网络[uuid:{1}]上",
+    "zh_CN": "已有一个vip[{0}]在分布式端口组[uuid:{1}]上",
     "arguments": [
       "msg.getRequiredIp()",
       "msg.getL3NetworkUuid()"
@@ -21117,7 +21117,7 @@
   {
     "raw": "Cannot set Qos for this Vip. Not all peer l3networks provide VipQos service.",
     "en_US": "Cannot set Qos for this Vip. Not all peer l3networks provide VipQos service.",
-    "zh_CN": "无法设置此VIP的QoS。并非所有对等L3网络都提供VIPQoS服务。",
+    "zh_CN": "无法设置此VIP的QoS。并非所有对等分布式端口组都提供VIPQoS服务。",
     "arguments": [],
     "line": 67,
     "fileName": "src/main/java/org/zstack/network/service/vipQos/VipQosApiInterceptor.java"
@@ -21310,7 +21310,7 @@
   {
     "raw": "the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a public network",
     "en_US": "the L3 network[uuid: {0}] has the SNAT service enabled, it cannot be used as a public network",
-    "zh_CN": "L3网络[uuid: {0}]启用了SNAT服务，无法被用作公共网络",
+    "zh_CN": "分布式端口组[uuid: {0}]启用了SNAT服务，无法被用作公共网络",
     "arguments": [
       "msg.getPublicNetworkUuid()"
     ],
@@ -21320,7 +21320,7 @@
   {
     "raw": "the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a management network",
     "en_US": "the L3 network[uuid: {0}] has the SNAT service enabled, it cannot be used as a management network",
-    "zh_CN": "L3网络[uuid: {0}]启用了SNAT服务，无法被用作管理网络",
+    "zh_CN": "分布式端口组[uuid: {0}]启用了SNAT服务，无法被用作管理网络",
     "arguments": [
       "msg.getManagementNetworkUuid()"
     ],
@@ -21330,7 +21330,7 @@
   {
     "raw": "the L3 network[uuid: %s] is same network address with [uuid: %s], it cannot be used for virtual router",
     "en_US": "the L3 network[uuid: {0}] is same network address with [uuid: {1}], it cannot be used for virtual router",
-    "zh_CN": "L3网络[uuid: {0}] 和 网络 [uuid: {1}] 具有相同的网络地址，无法被用于云路由",
+    "zh_CN": "分布式端口组[uuid: {0}] 和 网络 [uuid: {1}] 具有相同的网络地址，无法被用于云路由",
     "arguments": [
       "msg.getManagementNetworkUuid()",
       "msg.getPublicNetworkUuid()"
@@ -21407,7 +21407,7 @@
   {
     "raw": "the network of virtual router instance offering with uuid:%s can\u0027t be same with private l3 network uuid:%s",
     "en_US": "the network of virtual router instance offering with uuid:{0} can\u0027t be same with private l3 network uuid:{1}",
-    "zh_CN": "UUID为{0}的虚拟路由器实例提供的网络不能与UUID为{1}的专用L3网络相同",
+    "zh_CN": "UUID为{0}的虚拟路由器实例提供的网络不能与UUID为{1}的专用分布式端口组相同",
     "arguments": [
       "offeringUuid",
       "resourceUuid"
@@ -21418,7 +21418,7 @@
   {
     "raw": "cannot add ip range, because l3 network[uuid:%s] is management network of virtual router offering",
     "en_US": "cannot add ip range, because l3 network[uuid:{0}] is management network of virtual router offering",
-    "zh_CN": "无法添加IP范围，因为L3网络[UUID：{0}]是虚拟路由器产品的管理网络",
+    "zh_CN": "无法添加IP范围，因为分布式端口组[UUID：{0}]是虚拟路由器产品的管理网络",
     "arguments": [
       "l3NetworkUuid"
     ],
@@ -21428,7 +21428,7 @@
   {
     "raw": "cannot add ip range, because l3 network[uuid:%s] is management network of virtual router",
     "en_US": "cannot add ip range, because l3 network[uuid:{0}] is management network of virtual router",
-    "zh_CN": "无法添加IP范围，因为L3网络[UUID：{0}]是虚拟路由器的管理网络",
+    "zh_CN": "无法添加IP范围，因为分布式端口组[UUID：{0}]是虚拟路由器的管理网络",
     "arguments": [
       "l3NetworkUuid"
     ],
@@ -21449,7 +21449,7 @@
   {
     "raw": "failed tot attach virtual router network services to l3Network[uuid:%s]. When eip is selected, snat must be selected too",
     "en_US": "failed tot attach virtual router network services to l3Network[uuid:{0}]. When eip is selected, snat must be selected too",
-    "zh_CN": "挂载虚拟路由网络服务到L3网络[uuid:{0}]失败。选中EIP服务时，SNAT服务也必须被选中",
+    "zh_CN": "挂载虚拟路由网络服务到分布式端口组[uuid:{0}]失败。选中EIP服务时，SNAT服务也必须被选中",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -21459,7 +21459,7 @@
   {
     "raw": "failed tot attach virtual router network services to l3Network[uuid:%s]. When port forwarding is selected, snat must be selected too",
     "en_US": "failed tot attach virtual router network services to l3Network[uuid:{0}]. When port forwarding is selected, snat must be selected too",
-    "zh_CN": "挂载虚拟路由网络服务到L3网络[uuid:{0}]失败。选中端口转发服务时，SNAT服务也必须被选中",
+    "zh_CN": "挂载虚拟路由网络服务到分布式端口组[uuid:{0}]失败。选中端口转发服务时，SNAT服务也必须被选中",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -21523,7 +21523,7 @@
   {
     "raw": "virtual router[uuid:%s, ip:%s] failed to configure dns%s for L3Network[uuid:%s, name:%s], %s",
     "en_US": "virtual router[uuid:{0}, ip:{1}] failed to configure dns{2} for L3Network[uuid:{3}, name:{4}], {5}",
-    "zh_CN": "云路由[uuid:{0}, ip:{1}]未能为L3网络[uuid:{3}, name:{4}]配置DNS{2}，错误细节: {5}",
+    "zh_CN": "云路由[uuid:{0}, ip:{1}]未能为分布式端口组[uuid:{3}, name:{4}]配置DNS{2}，错误细节: {5}",
     "arguments": [
       "vr.getUuid()",
       "vr.getManagementNic().getIp()",
@@ -21577,7 +21577,7 @@
   {
     "raw": "found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network\u0027s public network[uuid:%s] is not the same to EIP[uuid:%s]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
     "en_US": "found a virtual router offering[uuid:{0}] for L3Network[uuid:{1}] in zone[uuid:{2}]; however, the network\u0027s public network[uuid:{3}] is not the same to EIP[uuid:{4}]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
-    "zh_CN": "在数据中心（zone）[uuid:{2}]上为L3网络[uuid:{1}]找到了云路由规格[uuid:{0}]；但是，其公共网络[uuid:{3}]和EIP[uuid:{4}]的公共网络不是同一个L3网络。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该L3网络指定一个特定的云路有规格",
+    "zh_CN": "在数据中心（zone）[uuid:{2}]上为分布式端口组[uuid:{1}]找到了云路由规格[uuid:{0}]；但是，其公共网络[uuid:{3}]和EIP[uuid:{4}]的公共网络不是同一个分布式端口组。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该分布式端口组指定一个特定的云路有规格",
     "arguments": [
       "offering.getUuid()",
       "l3inv.getUuid()",
@@ -21625,7 +21625,7 @@
   {
     "raw": "new add vm nics[uuids:%s] and peer l3s[uuids:%s] of loadbalancer[uuid: %s]\u0027s vip are not on the same vrouter, they are on vrouters[uuids:%s]",
     "en_US": "new add vm nics[uuids:{0}] and peer l3s[uuids:{1}] of loadbalancer[uuid: {2}]\u0027s vip are not on the same vrouter, they are on vrouters[uuids:{3}]",
-    "zh_CN": "新添加的虚拟机网卡[uuids:{0}]和负载均衡器[uuid: {2}]的弹性IP的三层网络[uuids:{1}]没有在相同的云路由上，它们分别在云路由[uuids:{3}]上",
+    "zh_CN": "新添加的虚拟机网卡[uuids:{0}]和负载均衡器[uuid: {2}]的弹性IP的分布式端口组[uuids:{1}]没有在相同的云路由上，它们分别在云路由[uuids:{3}]上",
     "arguments": [
       "msg.getVmNicUuids()",
       "peerL3NetworkUuids",
@@ -21656,7 +21656,7 @@
   {
     "raw": "guest l3Network[uuid:%s, name:%s] needs SNAT service provided by virtual router, but public l3Network[uuid:%s] of virtual router offering[uuid: %s, name:%s] is the same to this guest l3Network",
     "en_US": "guest l3Network[uuid:{0}, name:{1}] needs SNAT service provided by virtual router, but public l3Network[uuid:{2}] of virtual router offering[uuid: {3}, name:{4}] is the same to this guest l3Network",
-    "zh_CN": "用户L3网络[uuid:{0}, name:{1}]需要云路由提供的SNAT服务，但是云路由规格[uuid: {3}, name:{4}]的公共L3网络[uuid:{2}]与该客户L3网络相同",
+    "zh_CN": "用户分布式端口组[uuid:{0}, name:{1}]需要云路由提供的SNAT服务，但是云路由规格[uuid: {3}, name:{4}]的公共分布式端口组[uuid:{2}]与该客户分布式端口组相同",
     "arguments": [
       "guestL3.getUuid()",
       "guestL3.getName()",
@@ -21710,7 +21710,7 @@
   {
     "raw": "found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network\u0027s public network[uuid:%s] is not the same to PortForwarding rule[uuid:%s]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
     "en_US": "found a virtual router offering[uuid:{0}] for L3Network[uuid:{1}] in zone[uuid:{2}]; however, the network\u0027s public network[uuid:{3}] is not the same to PortForwarding rule[uuid:{4}]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
-    "zh_CN": "在数据中心（zone）[uuid:{2}]内为L3网络[uuid:{1}]找到了一个云路由规格[uuid:{0}]；然而，其网络的公共网络[uuid:{3}]和端口转发规则[uuid:{4}]的公共网络不一致。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该L3网络指定一个特定的云路有规格",
+    "zh_CN": "在数据中心（zone）[uuid:{2}]内为分布式端口组[uuid:{1}]找到了一个云路由规格[uuid:{0}]；然而，其网络的公共网络[uuid:{3}]和端口转发规则[uuid:{4}]的公共网络不一致。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该分布式端口组指定一个特定的云路有规格",
     "arguments": [
       "offering.getUuid()",
       "struct.getGuestL3Network().getUuid()",
@@ -21819,7 +21819,7 @@
   {
     "raw": "found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network\u0027s public network[uuid:%s] is not the same to VIP[uuid:%s]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
     "en_US": "found a virtual router offering[uuid:{0}] for L3Network[uuid:{1}] in zone[uuid:{2}]; however, the network\u0027s public network[uuid:{3}] is not the same to VIP[uuid:{4}]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
-    "zh_CN": "在数据中心（zone）[uuid:{2}]内为L3网络[uuid:{1}]找到了一个云路由规格[uuid:{0}]；然而，其网络的公共网络[uuid:{3}]和VIP[uuid:{4}]的公共网络不一致。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该L3网络指定一个特定的云路有规格",
+    "zh_CN": "在数据中心（zone）[uuid:{2}]内为分布式端口组[uuid:{1}]找到了一个云路由规格[uuid:{0}]；然而，其网络的公共网络[uuid:{3}]和VIP[uuid:{4}]的公共网络不一致。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该分布式端口组指定一个特定的云路有规格",
     "arguments": [
       "offering.getUuid()",
       "s.getL3Network().getUuid()",
@@ -24272,7 +24272,7 @@
   {
     "raw": "hardware vxlan network pool doesn\u0027t support create l3 network",
     "en_US": "hardware vxlan network pool doesn\u0027t support create l3 network",
-    "zh_CN": "硬件VXLAN网络池不支持创建L3网络",
+    "zh_CN": "硬件VXLAN网络池不支持创建分布式端口组",
     "arguments": [],
     "line": 112,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
@@ -27511,7 +27511,7 @@
   {
     "raw": "nic with l3 network[uuid: %s] is referenced by VolumeSnapshotGroup[uuid: %s], delete this VolumeSnapshotGroup before deleting this l3 network.",
     "en_US": "nic with l3 network[uuid: {0}] is referenced by VolumeSnapshotGroup[uuid: {1}], delete this VolumeSnapshotGroup before deleting this l3 network.",
-    "zh_CN": "具有L3网络[UUID：{0}]的NIC由卷SnapshotGroup[UUID：{1}]引用，请在删除此L3网络之前删除此卷SnapshotGroup。",
+    "zh_CN": "具有分布式端口组[UUID：{0}]的NIC由卷SnapshotGroup[UUID：{1}]引用，请在删除此分布式端口组之前删除此卷SnapshotGroup。",
     "arguments": [
       "l3Uuid",
       "String.join(\"\u0027,\u0027\", memorySnapshotGroupUuidList)"
@@ -27746,7 +27746,7 @@
   {
     "raw": "The destination primary storage is not attached to any cluster that has the same L2 networks as source cluster.",
     "en_US": "The destination primary storage is not attached to any cluster that has the same L2 networks as source cluster.",
-    "zh_CN": "目标数据存储不能连接任何和源集群一样的二层网络的集群",
+    "zh_CN": "目标数据存储不能连接任何和源集群一样的分布式交换机的集群",
     "arguments": [],
     "line": 320,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
@@ -29100,7 +29100,7 @@
   {
     "raw": "The two clusters[uuid:%s,uuid:%s] cannot access each other in l2 network  when migrate the vm[uuid:%s] to another cluster",
     "en_US": "The two clusters[uuid:{0},uuid:{1}] cannot access each other in l2 network  when migrate the vm[uuid:{2}] to another cluster",
-    "zh_CN": "两个集群[uuid:{0},uuid:{1}]无法在L2网络中互相访问对方，当迁移虚拟机[uuid:{2}]从其中一个集群到另一个集群时",
+    "zh_CN": "两个集群[uuid:{0},uuid:{1}]无法在分布式交换机中互相访问对方，当迁移虚拟机[uuid:{2}]从其中一个集群到另一个集群时",
     "arguments": [
       "originClusterUuid",
       "clusterUuid",
@@ -32840,7 +32840,7 @@
   {
     "raw": "Can\u0027t add same uuid in the l3Network,uuid: %s",
     "en_US": "Can\u0027t add same uuid in the l3Network,uuid: {0}",
-    "zh_CN": "不能添加相同的uuid{0}在L3网络中",
+    "zh_CN": "不能添加相同的uuid{0}在分布式端口组中",
     "arguments": [
       "duplicateElements.get(0)"
     ],
@@ -32850,7 +32850,7 @@
   {
     "raw": "l3Network[uuid:%s] is Disabled, can not create vm on it",
     "en_US": "l3Network[uuid:{0}] is Disabled, can not create vm on it",
-    "zh_CN": "L3网络[uuid:{0}]没有被启用，不能从这个L3网络创建虚拟机",
+    "zh_CN": "分布式端口组[uuid:{0}]没有被启用，不能从这个分布式端口组创建虚拟机",
     "arguments": [
       "l3Uuid"
     ],
@@ -32860,7 +32860,7 @@
   {
     "raw": "l3Network[uuid:%s] is system network, can not create user vm on it",
     "en_US": "l3Network[uuid:{0}] is system network, can not create user vm on it",
-    "zh_CN": "L3网络[uuid:{0}]是系统网络，不能在这上面创建虚拟机",
+    "zh_CN": "分布式端口组[uuid:{0}]是系统网络，不能在这上面创建虚拟机",
     "arguments": [
       "l3Uuid"
     ],
@@ -32911,7 +32911,7 @@
   {
     "raw": "defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s",
     "en_US": "defaultL3NetworkUuid[uuid:{0}] is not in l3NetworkUuids{1}",
-    "zh_CN": "默认L3网络的uuid是[uuid:{0}]，不在L3网络uuid们中{1}",
+    "zh_CN": "默认分布式端口组的uuid是[uuid:{0}]，不在分布式端口组uuid们中{1}",
     "arguments": [
       "msg.getDefaultL3NetworkUuid()",
       "msg.getL3NetworkUuids()"
@@ -32922,7 +32922,7 @@
   {
     "raw": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
     "en_US": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
-    "zh_CN": "在L3网络uuid们中有很多L3网络被指定了，但是默认L3网络的uuid是空的",
+    "zh_CN": "在分布式端口组uuid们中有很多分布式端口组被指定了，但是默认分布式端口组的uuid是空的",
     "arguments": [],
     "line": 230,
     "fileName": "src/main/java/org/zstack/v2v/V2VApiInterceptor.java"
@@ -33406,7 +33406,7 @@
   {
     "raw": "Cluster[uuid:%s] and L2[uuid:%s] belongs to different DCs",
     "en_US": "Cluster[uuid:{0}] and L2[uuid:{1}] belongs to different DCs",
-    "zh_CN": "集群[uuid:{0}]和二层网络[uuid:{1}]属于不同的DC",
+    "zh_CN": "集群[uuid:{0}]和分布式交换机[uuid:{1}]属于不同的DC",
     "arguments": [
       "clusterUuid",
       "l2uuid"
@@ -33438,7 +33438,7 @@
   {
     "raw": "L2[uuid:%s] doesn\u0027t belong to vCenter[uuid:%s] cluster[uuid:%s]",
     "en_US": "L2[uuid:{0}] doesn\u0027t belong to vCenter[uuid:{1}] cluster[uuid:{2}]",
-    "zh_CN": "二层网络[uuid:{0}]不属于vCenter[uuid:{1}]集群[uuid:{2}]",
+    "zh_CN": "分布式交换机[uuid:{0}]不属于vCenter[uuid:{1}]集群[uuid:{2}]",
     "arguments": [
       "l2uuid",
       "vcvo.getUuid()",
@@ -34057,7 +34057,7 @@
   {
     "raw": "no ip ranges attached with l3 network[uuid:%s]",
     "en_US": "no ip ranges attached with l3 network[uuid:{0}]",
-    "zh_CN": "在三层网络[uuid:{0}]上没有IP范围被绑定",
+    "zh_CN": "在分布式端口组[uuid:{0}]上没有IP范围被绑定",
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
@@ -34091,7 +34091,7 @@
   {
     "raw": "could not detach l3 network to vpc router[uuid:%s] because its state is not running or stopped",
     "en_US": "could not detach l3 network to vpc router[uuid:{0}] because its state is not running or stopped",
-    "zh_CN": "无法将L3网络与VPC路由器[UUID：{0}]分离，因为其状态未运行或已停止",
+    "zh_CN": "无法将分布式端口组与VPC路由器[UUID：{0}]分离，因为其状态未运行或已停止",
     "arguments": [
       "vpc.getUuid()"
     ],
@@ -34101,7 +34101,7 @@
   {
     "raw": "could not detach l3 network to vpc router[uuid:%s] becaus the states of the master and slave are inconsistent",
     "en_US": "could not detach l3 network to vpc router[uuid:{0}] becaus the states of the master and slave are inconsistent",
-    "zh_CN": "无法将L3网络与VPC路由器[UUID：{0}]分离，因为主设备和从设备的状态不一致",
+    "zh_CN": "无法将分布式端口组与VPC路由器[UUID：{0}]分离，因为主设备和从设备的状态不一致",
     "arguments": [
       "vpc.getUuid()"
     ],
@@ -34111,7 +34111,7 @@
   {
     "raw": "l3 network[uuid:%s] can not detach from vpc vrouter[uuid:%s] since network services attached vips[%s] still used in l3",
     "en_US": "l3 network[uuid:{0}] can not detach from vpc vrouter[uuid:{1}] since network services attached vips[{2}] still used in l3",
-    "zh_CN": "L3网络[UUID：{0}]无法与VPC虚拟路由器[UUID：{1}]分离，因为网络服务附加的VIP[{2}]仍在L3中使用",
+    "zh_CN": "分布式端口组[UUID：{0}]无法与VPC虚拟路由器[UUID：{1}]分离，因为网络服务附加的VIP[{2}]仍在L3中使用",
     "arguments": [
       "l3NetworkVO.getUuid()",
       "vmInstanceVO.getUuid()",
@@ -34123,7 +34123,7 @@
   {
     "raw": "vpc l3 network[uuid:%s] can not detach from vpc vrouter[uuid:%s] since vm nics[%s] still used in l3",
     "en_US": "vpc l3 network[uuid:{0}] can not detach from vpc vrouter[uuid:{1}] since vm nics[{2}] still used in l3",
-    "zh_CN": "vpc三层网络[uuid:{0}]无法从vpc路由器[uuid:{1}]卸载, l3网络还在使用以下虚拟机网卡[{2}]",
+    "zh_CN": "vpc三层网络[uuid:{0}]无法从vpc路由器[uuid:{1}]卸载, 分布式端口组还在使用以下虚拟机网卡[{2}]",
     "arguments": [
       "l3NetworkVO.getUuid()",
       "vmInstanceVO.getUuid()",
@@ -34164,7 +34164,7 @@
   {
     "raw": "could not attached l3 network to vpc router[uuid:%s] because both its state and it peer state is not running or stopped",
     "en_US": "could not attached l3 network to vpc router[uuid:{0}] because both its state and it peer state is not running or stopped",
-    "zh_CN": "无法将L3网络连接到VPC路由器[UUID：{0}]，因为其状态和对等状态均未运行或已停止",
+    "zh_CN": "无法将分布式端口组连接到VPC路由器[UUID：{0}]，因为其状态和对等状态均未运行或已停止",
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
@@ -34174,7 +34174,7 @@
   {
     "raw": "could not attached l3 network to vpc router[uuid:%s] because its state is not running or stopped",
     "en_US": "could not attached l3 network to vpc router[uuid:{0}] because its state is not running or stopped",
-    "zh_CN": "无法将L3网络连接到VPC路由器[UUID：{0}]，因为其状态未运行或已停止",
+    "zh_CN": "无法将分布式端口组连接到VPC路由器[UUID：{0}]，因为其状态未运行或已停止",
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
@@ -34198,7 +34198,7 @@
   {
     "raw": "the gateway[ip:%s] of l3[uuid:%s] has been occupied",
     "en_US": "the gateway[ip:{0}] of l3[uuid:{1}] has been occupied",
-    "zh_CN": "三层网络[uuid:{1}]的网关[uuid:{0}]已经被占用",
+    "zh_CN": "分布式端口组[uuid:{1}]的网关[uuid:{0}]已经被占用",
     "arguments": [
       "gateways",
       "msg.getL3NetworkUuid()"
@@ -34209,7 +34209,7 @@
   {
     "raw": "the static ip[%s] specified in message not equals to gateway ips[%s] of l3 network[uuid:%s]",
     "en_US": "the static ip[{0}] specified in message not equals to gateway ips[{1}] of l3 network[uuid:{2}]",
-    "zh_CN": "消息中指定的静态IP[{0}]不等于L3网络[UUID：{2}]的网关IP[{1}]",
+    "zh_CN": "消息中指定的静态IP[{0}]不等于分布式端口组[UUID：{2}]的网关IP[{1}]",
     "arguments": [
       "msg.getStaticIp()",
       "gateways",
@@ -34221,7 +34221,7 @@
   {
     "raw": "l3 network [uuid:%s] must be attached first, because there is vip on that l3 network",
     "en_US": "l3 network [uuid:{0}] must be attached first, because there is vip on that l3 network",
-    "zh_CN": "必须首先连接L3网络[UUID：{0}]，因为该L3网络上存在VIP",
+    "zh_CN": "必须首先连接分布式端口组[UUID：{0}]，因为该分布式端口组上存在VIP",
     "arguments": [
       "vipL3Uuid"
     ],
@@ -34242,7 +34242,7 @@
   {
     "raw": "could not add ipv6 range to l3 network[uuid:%s], because it\u0027s overlap with cidr [%s] of vRouter [uuid:%s]",
     "en_US": "could not add ipv6 range to l3 network[uuid:{0}], because it\u0027s overlap with cidr [{1}] of vRouter [uuid:{2}]",
-    "zh_CN": "无法将IPv6范围添加到L3网络[UUID：{0}]，因为它与VRouter[UUID：{2}]的CIDR[{1}]重叠",
+    "zh_CN": "无法将IPv6范围添加到分布式端口组[UUID：{0}]，因为它与VRouter[UUID：{2}]的CIDR[{1}]重叠",
     "arguments": [
       "ipr.getL3NetworkUuid()",
       "ipRangeVO.getNetworkCidr()",
@@ -34254,7 +34254,7 @@
   {
     "raw": "could not add ip range to l3 network[uuid:%s], because it\u0027s overlap with cidr [%s] of vRouter [uuid:%s]",
     "en_US": "could not add ip range to l3 network[uuid:{0}], because it\u0027s overlap with cidr [{1}] of vRouter [uuid:{2}]",
-    "zh_CN": "无法将IP范围添加到L3网络[UUID：{0}]，因为它与VRouter[UUID：{2}]的CIDR[{1}]重叠",
+    "zh_CN": "无法将IP范围添加到分布式端口组[UUID：{0}]，因为它与VRouter[UUID：{2}]的CIDR[{1}]重叠",
     "arguments": [
       "ipr.getL3NetworkUuid()",
       "ipRangeVO.getNetworkCidr()",
@@ -34357,7 +34357,7 @@
   {
     "raw": "there is no ip range for l3 network[uuid:%s]",
     "en_US": "there is no ip range for l3 network[uuid:{0}]",
-    "zh_CN": "L3网络[UUID：{0}]没有IP范围",
+    "zh_CN": "分布式端口组[UUID：{0}]没有IP范围",
     "arguments": [
       "l3.getUuid()"
     ],
@@ -34428,7 +34428,7 @@
   {
     "raw": "Could not apply snat with this L3Network, due to l3 network [uuid:%s] is not public network",
     "en_US": "Could not apply snat with this L3Network, due to l3 network [uuid:{0}] is not public network",
-    "zh_CN": "无法对此L3网络应用SNAT，因为L3网络[UUID：{0}]不是公共网络",
+    "zh_CN": "无法对此分布式端口组应用SNAT，因为分布式端口组[UUID：{0}]不是公共网络",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -34438,7 +34438,7 @@
   {
     "raw": "Could not apply snat with this L3Network, due to l3 network [uuid:%s] is not attached to vpc router",
     "en_US": "Could not apply snat with this L3Network, due to l3 network [uuid:{0}] is not attached to vpc router",
-    "zh_CN": "无法对此L3网络应用SNAT，因为L3网络[UUID：{0}]未连接到VPC路由器",
+    "zh_CN": "无法对此分布式端口组应用SNAT，因为分布式端口组[UUID：{0}]未连接到VPC路由器",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
