@@ -116,7 +116,7 @@
     "code": "1008",
     "method": "regex",
     "regex": ".*, because:cannot find pool\\[.*] in the ceph cluster, you must create it manually",
-    "message_cn": "未能在 Ceph 集群中找到存储池 [%1$s]，您需要先手动创建。",
+    "message_cn": "未能在 分布式存储 集群中找到存储池 [%1$s]，您需要先手动创建。",
     "message_en": "Could not find pool [%1$s] in Ceph cluster. You need to create one manually."
   },
   {
@@ -132,7 +132,7 @@
     "code": "1000",
     "method": "regex",
     "regex": ".*cannot add ceph primary storage, there has been some ceph primary storage using mon\\[hostnames:.*].*",
-    "message_cn": "无法添加 Ceph 数据存储，监控节点 [%1$s] 已被占用。",
+    "message_cn": "无法添加 分布式存储，监控节点 [%1$s] 已被占用。",
     "message_en": "Could not add Ceph primary storage. The mon [%1$s] is occupied."
   },
   {
@@ -140,7 +140,7 @@
     "code": "1001",
     "method": "regex",
     "regex": "cannot find any Connected ceph mon for the primary storage.*",
-    "message_cn": "无法为 Ceph 数据存储找到一个已连接的监控节点。",
+    "message_cn": "无法为 分布式存储找到一个已连接的监控节点。",
     "message_en": "Could not find any connected Ceph mon for the Ceph primary storage."
   },
   {
@@ -148,7 +148,7 @@
     "code": "1002",
     "method": "regex",
     "regex": "operation error, because:The ceph storage type to be added does not support auto initialize pool, please create it manually",
-    "message_cn": "要添加的 Ceph 存储类型不支持自动创建存储池，请手动创建。",
+    "message_cn": "要添加的 分布式存储类型不支持自动创建存储池，请手动创建。",
     "message_en": "The Ceph storage type to be added does not support auto creation of storage pools. Please create one manually."
   },
   {
@@ -156,7 +156,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "there is another CEPH primary storage.* with the same FSID.*, you cannot add the same CEPH setup as two different primary storage",
-    "message_cn": "已经存在一个 FSID 为 [%3$s] 的 Ceph 数据存储，您不能将同一个 Ceph 集群设置为两个不同的数据存储。",
+    "message_cn": "已经存在一个 FSID 为 [%3$s] 的 分布式存储，您不能将同一个 分布式存储 集群设置为两个不同的数据存储。",
     "message_en": "A Ceph primary storage with the FSID [%3$s] already exists. You could not add a Ceph cluster as two different primary storages."
   },
   {
@@ -1461,7 +1461,7 @@
     "code": "1040",
     "method": "regex",
     "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.* error reading header from .*: Operation not permitted.*",
-    "message_cn": "无法启动虚拟机，因为硬盘对应的 Ceph 文件读取失败。",
+    "message_cn": "无法启动虚拟机，因为硬盘对应的 分布式存储 文件读取失败。",
     "message_en": "Failed to start VM, because failed to read the Ceph file of the volume."
   },
   {

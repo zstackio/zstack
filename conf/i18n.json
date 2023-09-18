@@ -3403,7 +3403,7 @@
   {
     "raw": "Can not attach third-party ceph with token into aarch64 cluster.",
     "en_US": "Can not attach third-party ceph with token into aarch64 cluster.",
-    "zh_CN": "无法使用令牌将第三方Ceph附加到Aarch64集群。",
+    "zh_CN": "无法使用令牌将第三方 分布式存储 附加到Aarch64集群。",
     "arguments": [],
     "line": 29,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/CephStorageAttachBm2ClusterMetric.java"
@@ -3575,7 +3575,7 @@
   {
     "raw": "third party ceph with token not support local disk yet",
     "en_US": "third party ceph with token not support local disk yet",
-    "zh_CN": "带有令牌的第三方Ceph尚不支持本地磁盘",
+    "zh_CN": "带有令牌的第三方 分布式存储 尚不支持本地磁盘",
     "arguments": [],
     "line": 1677,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
@@ -4293,7 +4293,7 @@
   {
     "raw": "third party ceph cannot mixed with other primary storage",
     "en_US": "third party ceph cannot mixed with other primary storage",
-    "zh_CN": "第三方Ceph不能与其他数据存储混合",
+    "zh_CN": "第三方 分布式存储 不能与其他数据存储混合",
     "arguments": [],
     "line": 448,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
@@ -5840,7 +5840,7 @@
   {
     "raw": "the backup storage[uuid:%s, type:%s] requires bound primary storage, however, the primary storage has not been added",
     "en_US": "the backup storage[uuid:{0}, type:{1}] requires bound primary storage, however, the primary storage has not been added",
-    "zh_CN": "无法找到跟镜像存储[uuid:{0}, type:{1}]配对的数据存储。一些镜像存储必须跟配对的数据存储共同使用，例如Ceph镜像存储只能搭配Ceph数据存储使用。请检查你数据存储的设置",
+    "zh_CN": "无法找到跟镜像存储[uuid:{0}, type:{1}]配对的数据存储。一些镜像存储必须跟配对的数据存储共同使用，例如分布式镜像仓库只能搭配分布式存储使用。请检查你数据存储的设置",
     "arguments": [
       "spec.getRequiredBackupStorageUuid()",
       "bsType"
@@ -27539,7 +27539,7 @@
   {
     "raw": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]",
     "en_US": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:{0}]",
-    "zh_CN": "无法添加ceph数据存储，一定有某些ceph数据存储使用了mon[主机名: {0}]",
+    "zh_CN": "无法添加分布式存储，一定有某些分布式存储使用了mon[主机名: {0}]",
     "arguments": [
       "existing"
     ],
@@ -27602,7 +27602,7 @@
   {
     "raw": "cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:%s]",
     "en_US": "cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:{0}]",
-    "zh_CN": "无法添加ceph镜像存储，已经有某个ceph镜像存储使用mon[主机名: {0}]",
+    "zh_CN": "无法添加分布式镜像仓库，已经有某个分布式镜像仓库使用mon[主机名: {0}]",
     "arguments": [
       "existing"
     ],
@@ -27665,7 +27665,7 @@
   {
     "raw": "there is another CEPH backup storage[name:%s, uuid:%s] with the same FSID[%s], you cannot add the same CEPH setup as two different backup storage",
     "en_US": "there is another CEPH backup storage[name:{0}, uuid:{1}] with the same FSID[{2}], you cannot add the same CEPH setup as two different backup storage",
-    "zh_CN": "有另外一个CEPH镜像存储[name:{0}, uuid:{1}]有相同的FSID[{2}]，你不能添加同样的CEPH为两个不同的镜像存储",
+    "zh_CN": "有另外一个分布式镜像仓库[name:{0}, uuid:{1}]有相同的FSID[{2}]，你不能添加同样的CEPH为两个不同的镜像存储",
     "arguments": [
       "otherCeph.getName()",
       "otherCeph.getUuid()",
@@ -27689,7 +27689,7 @@
   {
     "raw": "cannot update status of the ceph backup storage mon[uuid:%s], it has been deleted.This error can be ignored",
     "en_US": "cannot update status of the ceph backup storage mon[uuid:{0}], it has been deleted.This error can be ignored",
-    "zh_CN": "无法更新ceph镜像存储监控节点[uuid:{0}]，他已经被删除。这个错误可以被忽略",
+    "zh_CN": "无法更新分布式镜像仓库监控节点[uuid:{0}]，他已经被删除。这个错误可以被忽略",
     "arguments": [
       "uuid"
     ],
@@ -27747,7 +27747,7 @@
   {
     "raw": "ceph primary storage[uuid:%s] may have been deleted.",
     "en_US": "ceph primary storage[uuid:{0}] may have been deleted.",
-    "zh_CN": "Ceph数据存储[uuid:{0}]可能已经被删除",
+    "zh_CN": "分布式存储[uuid:{0}]可能已经被删除",
     "arguments": [
       "self.getUuid()"
     ],
@@ -27757,7 +27757,7 @@
   {
     "raw": "unable to connect to the ceph primary storage[uuid:%s], failed to connect all ceph monitors.",
     "en_US": "unable to connect to the ceph primary storage[uuid:{0}], failed to connect all ceph monitors.",
-    "zh_CN": "无法连接到ceph数据存储[uuid:{0}]，所有监控节点均连接失败",
+    "zh_CN": "无法连接到分布式存储[uuid:{0}]，所有监控节点均连接失败",
     "arguments": [
       "self.getUuid()"
     ],
@@ -27775,7 +27775,7 @@
   {
     "raw": "there is another CEPH primary storage[name:%s, uuid:%s] with the same FSID[%s], you cannot add the same CEPH setup as two different primary storage",
     "en_US": "there is another CEPH primary storage[name:{0}, uuid:{1}] with the same FSID[{2}], you cannot add the same CEPH setup as two different primary storage",
-    "zh_CN": "有另外一个CEPH数据存储[name:{0}, uuid:{1}] 有相同的 FSID[{2}]，你不能添加相同的CEPH设置到两个不同的数据存储",
+    "zh_CN": "有另外一个分布式存储[name:{0}, uuid:{1}] 有相同的 FSID[{2}]，你不能添加相同的CEPH设置到两个不同的数据存储",
     "arguments": [
       "otherCeph.getName()",
       "otherCeph.getUuid()",
@@ -27787,7 +27787,7 @@
   {
     "raw": "the ceph primary storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports an operation failure[%s]",
     "en_US": "the ceph primary storage[uuid:{0}, name:{1}] is down, as one mon[uuid:{2}] reports an operation failure[{3}]",
-    "zh_CN": "ceph数据存储[uuid:{0}, name:{1}]关闭，因为一个mon[uuid:{2}]报告了一个操作失败[{3}]",
+    "zh_CN": "分布式存储[uuid:{0}, name:{1}]关闭，因为一个mon[uuid:{2}]报告了一个操作失败[{3}]",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
@@ -27875,7 +27875,7 @@
   {
     "raw": "cannot find any Connected ceph mon for the primary storage[uuid:%s]",
     "en_US": "cannot find any Connected ceph mon for the primary storage[uuid:{0}]",
-    "zh_CN": "无法为Ceph数据存储[uuid:{0}]找到一台处于Connected状态的的监控节点",
+    "zh_CN": "无法为分布式存储[uuid:{0}]找到一台处于Connected状态的的监控节点",
     "arguments": [
       "vol.getPrimaryStorageUuid()"
     ],
@@ -27961,7 +27961,7 @@
   {
     "raw": "cannot update status of the ceph primary storage mon[uuid:%s], it has been deleted.This error can be ignored",
     "en_US": "cannot update status of the ceph primary storage mon[uuid:{0}], it has been deleted.This error can be ignored",
-    "zh_CN": "不能更新一台已经被删除的Ceph数据存储监控节点[uuid:{0}]，这个错误可被忽略",
+    "zh_CN": "不能更新一台已经被删除的分布式存储监控节点[uuid:{0}]，这个错误可被忽略",
     "arguments": [
       "uuid"
     ],
@@ -28622,7 +28622,7 @@
   {
     "raw": "all ceph mons are Disconnected in ceph backup storage[uuid:%s]",
     "en_US": "all ceph mons are Disconnected in ceph backup storage[uuid:{0}]",
-    "zh_CN": "所有在ceph镜像存储[uuid:{0}]的监控节点都处于失联状态",
+    "zh_CN": "所有在分布式镜像仓库[uuid:{0}]的监控节点都处于失联状态",
     "arguments": [
       "dstBsVO.getUuid()"
     ],
@@ -28669,7 +28669,7 @@
   {
     "raw": "all ceph mons are Disconnected in ceph primary storage[uuid:%s]",
     "en_US": "all ceph mons are Disconnected in ceph primary storage[uuid:{0}]",
-    "zh_CN": "所有Ceph MON都在Ceph数据存储[UUID：{0}]中断开连接",
+    "zh_CN": "所有Ceph MON都在分布式存储[UUID：{0}]中断开连接",
     "arguments": [
       "dstPsVO.getUuid()"
     ],
@@ -29574,7 +29574,7 @@
   {
     "raw": "all ceph mons of primary storage[uuid:%s] are not in Connected state",
     "en_US": "all ceph mons of primary storage[uuid:{0}] are not in Connected state",
-    "zh_CN": "Ceph数据存储[uuid:{0}]所有的监控节点都不是已连接状态",
+    "zh_CN": "分布式存储[uuid:{0}]所有的监控节点都不是已连接状态",
     "arguments": [
       "vo.getUuid()"
     ],
@@ -29584,7 +29584,7 @@
   {
     "raw": "CephPrimaryStorage[%s] not existed!",
     "en_US": "CephPrimaryStorage[{0}] not existed!",
-    "zh_CN": "Ceph镜像存储[{0}]不存在",
+    "zh_CN": "分布式镜像仓库[{0}]不存在",
     "arguments": [
       "param.getPrimaryStorageUuid()"
     ],
