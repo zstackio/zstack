@@ -1,0 +1,1 @@
+ALTER TABLE `zstack`.`GuestOsCategoryVO` MODIFY COLUMN osRelease varchar(64) NOT NULL;
