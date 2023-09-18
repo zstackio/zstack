@@ -74,6 +74,9 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
     private Timestamp lastDetachDate;
 
     @Column
+    private long lastAttachDate;
+
+    @Column
     private boolean isShareable;
 
     @Column
@@ -270,5 +273,13 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
 
     public void setVolumeQos(String volumeQos) {
         this.volumeQos = volumeQos;
+    }
+
+    public long getLastAttachDate() {
+        return lastAttachDate;
+    }
+
+    public void setLastAttachDate(long lastAttachDate) {
+        this.lastAttachDate = lastAttachDate;
     }
 }

@@ -26,8 +26,6 @@ public class VmInstanceUtils {
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-        cmsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
-        cmsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         cmsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         cmsg.setPlatform(msg.getPlatform());
@@ -37,6 +35,7 @@ public class VmInstanceUtils {
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
+        cmsg.setDiskAOs(msg.getDiskAOs());
         return cmsg;
     }
 

@@ -258,20 +258,11 @@ doc {
 					since "4.4.24"
 				}
 				column {
-					name "dataVolumeTemplateUuids"
+					name "diskAOs"
 					enclosedIn "params"
 					desc ""
 					location "body"
 					type "List"
-					optional true
-					since "4.7.0"
-				}
-				column {
-					name "dataVolumeFromTemplateSystemTags"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "Map"
 					optional true
 					since "4.7.0"
 				}
