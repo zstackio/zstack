@@ -4,15 +4,18 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.other.APIAuditor;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneVO;
 
 import java.util.Collections;
@@ -180,12 +183,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
     @APIParam(required = false)
-    private List<String> dataVolumeTemplateUuids;
-
-    @APIParam(required = false)
-    private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
-
-    @APIParam(required = false)
     private List<String> rootVolumeSystemTags;
 
     @APIParam(required = false)
@@ -205,6 +202,104 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     @APIParam(required = false)
     private Boolean virtio;
+
+    @PythonClassInventory
+    public static class DiskAO {
+        private String primaryStorageUuid;
+        private long size;
+        private String templateUuid;
+        private String diskOfferingUuid;
+        private String sourceType;
+        private String sourceUuid;
+        private List<String> systemTags;
+        @APINoSee
+        private DiskOfferingVO diskOffering;
+        @APINoSee
+        private VolumeInventory volumeInventory;
+
+        public String getPrimaryStorageUuid() {
+            return primaryStorageUuid;
+        }
+
+        public void setPrimaryStorageUuid(String primaryStorageUuid) {
+            this.primaryStorageUuid = primaryStorageUuid;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public String getTemplateUuid() {
+            return templateUuid;
+        }
+
+        public void setTemplateUuid(String templateUuid) {
+            this.templateUuid = templateUuid;
+        }
+
+        public String getDiskOfferingUuid() {
+            return diskOfferingUuid;
+        }
+
+        public void setDiskOfferingUuid(String diskOfferingUuid) {
+            this.diskOfferingUuid = diskOfferingUuid;
+        }
+
+        public String getSourceType() {
+            return sourceType;
+        }
+
+        public void setSourceType(String sourceType) {
+            this.sourceType = sourceType;
+        }
+
+        public String getSourceUuid() {
+            return sourceUuid;
+        }
+
+        public void setSourceUuid(String sourceUuid) {
+            this.sourceUuid = sourceUuid;
+        }
+
+        public List<String> getSystemTags() {
+            return systemTags;
+        }
+
+        public void setSystemTags(List<String> systemTags) {
+            this.systemTags = systemTags;
+        }
+
+        public DiskOfferingVO getDiskOffering() {
+            return diskOffering;
+        }
+
+        public void setDiskOffering(DiskOfferingVO diskOffering) {
+            this.diskOffering = diskOffering;
+        }
+
+        public VolumeInventory getVolumeInventory() {
+            return volumeInventory;
+        }
+
+        public void setVolumeInventory(VolumeInventory volumeInventory) {
+            this.volumeInventory = volumeInventory;
+        }
+    }
+
+    @APIParam(required = false)
+    private List<DiskAO> diskAOs;
+
+    public List<DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
 
     public String getStrategy() {
         return strategy;
@@ -381,24 +476,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
         this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
-    }
-
-
-
-    public List<String> getDataVolumeTemplateUuids() {
-        return dataVolumeTemplateUuids;
-    }
-
-    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
-        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
-    }
-
-    public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {
-        return dataVolumeFromTemplateSystemTags;
-    }
-
-    public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
-        this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
     }
 
     public String getPlatform() {

@@ -57,6 +57,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -233,6 +234,19 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vol.setAccountUuid(msg.getAccountUuid());
         vol.setShareable(getShareableCapabilityFromMsg(msg));
+
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vol.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
+
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
@@ -1308,6 +1322,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 .set(VolumeVO_.vmInstanceUuid, volume.isShareable() ? null : vm.getUuid())
                 .set(VolumeVO_.format, format != null ? format :
                         VolumeFormat.getVolumeFormatByMasterHypervisorType(vm.getHypervisorType()))
+                .set(VolumeVO_.lastAttachDate, Timestamp.valueOf(LocalDateTime.now()).getTime())
                 .update();
     }
 
