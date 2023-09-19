@@ -13977,6 +13977,17 @@
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vyos/VyosVersionVersionManagerImpl.java"
   },
   {
+    "raw": "could not create L2PortGroupNetwork, because L2VirtualSwitchNetwork[uuid:%s] already has L2PortGroupNetworks with the same vlanId[%s]",
+    "en_US": "could not create L2PortGroupNetwork, because L2VirtualSwitchNetwork[uuid:{0}] already has L2PortGroupNetworks with the same vlanId[{1}]",
+    "zh_CN": "创建端口组失败，因为虚拟交换机[uuid:{0}]已经存在vlanId[{1}]的端口组",
+    "arguments": [
+      "msg.getvSwitchUuid()",
+      "msg.getVlan()"
+    ],
+    "line": 83,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
     "raw": "could not attach L2VirtualSwitchNetwork, because interface[%s] in cluster[uuid:%s] is already used for another L2VirtualSwitchNetwork",
     "en_US": "could not attach L2VirtualSwitchNetwork, because interface[{0}] in cluster[uuid:{1}] is already used for another L2VirtualSwitchNetwork",
     "zh_CN": "挂载虚拟交换机失败，因为集群[uuid:{1}]中的网卡[{0}]已被其他虚拟交换机使用",

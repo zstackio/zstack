@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`L2VirtualSwitchNetworkVO` (
 CREATE TABLE IF NOT EXISTS `zstack`.`L2PortGroupNetworkVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `vSwitchUuid` varchar(32) NOT NULL,
-    `vlanMode` varchar(32) NOT NULL default 'VLAN',
+    `vlanMode` varchar(32) NOT NULL default 'ACCESS',
     `vlanId` int unsigned NOT NULL,
     `vlanRanges` varchar(256) default NULL,
     PRIMARY KEY (`uuid`),
