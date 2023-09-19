@@ -15,7 +15,8 @@ import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostVO;
-import org.zstack.utils.Linux;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -160,22 +161,30 @@ public class FileVerification {
         return vo;
     }
 
-    public KVMHostVO getHostByUuid(){
+    private String getSshPassCommand() {
         KVMHostVO vo = dbf.findByUuid(node, KVMHostVO.class);
-        return vo == null ? null : vo;
+        if (vo == null) {
+            throw new CloudRuntimeException(String.format("failed to find target host[uuid:%s].", node));
+        }
+
+        return String.format(
+                "timeout 10 sshpass -p '%s' ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p %d %s@%s PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
+                vo.getPassword(),
+                vo.getPort(),
+                vo.getUsername(),
+                vo.getManagementIp()
+        );
     }
-
-
 
     public boolean isFileExists(){
         if (NODE_MANAGEMENT_NODE.equals(node)) {
             File file = new File(path);
             return file.getAbsoluteFile().exists();
-        }else {
-            KVMHostVO host = getHostByUuid();
-            String cmd = String.format("sshpass -p %s ssh -p %s -o StrictHostKeyChecking=no %s@%s [ -f %s ]", host.getPassword(), host.getPort(), host.getUsername(), host.getManagementIp(), path);
-            Linux.ShellResult ret = Linux.shell(cmd);
-            return ret.getExitCode() == 0;
+        } else {
+            ShellResult rst = ShellUtils.runAndReturn(String.format(
+                    "%s ls %s 2>/dev/null", getSshPassCommand(), path
+            ));
+            return rst.getRetCode() == 0;
         }
     }
 
