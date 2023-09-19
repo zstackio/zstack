@@ -37,7 +37,7 @@ public class CreateVmFromVmBackupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String instanceOfferingUuid;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List l3NetworkUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
