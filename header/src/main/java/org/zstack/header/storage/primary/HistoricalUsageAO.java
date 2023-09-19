@@ -1,14 +1,20 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.vo.Index;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @MappedSuperclass
 public abstract class HistoricalUsageAO {
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    @Id
     private long id;
+
+    @Column
+    @Index
+    protected String resourceType;
 
     @Column
     private long totalPhysicalCapacity;
@@ -39,6 +45,14 @@ public abstract class HistoricalUsageAO {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 
     public long getTotalPhysicalCapacity() {
@@ -82,5 +96,6 @@ public abstract class HistoricalUsageAO {
     }
 
     public abstract String getResourceUuid();
+
     public abstract void setResourceUuid(String resourceUuid);
 }

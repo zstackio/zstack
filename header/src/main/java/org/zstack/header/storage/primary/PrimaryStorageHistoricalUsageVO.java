@@ -1,40 +1,18 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vo.BaseResource;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @Entity
 @Table
-@EntityGraph(
-        parents = {
-                @EntityGraph.Neighbour(type = PrimaryStorageCapacityVO.class, myField = "primaryStorageUuid", targetField = "uuid")
-        }
-)
-public class PrimaryStorageHistoricalUsageVO extends HistoricalUsageAO {
-    @Column
-    @ForeignKey(parentEntityClass = PrimaryStorageCapacityVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
-    private String primaryStorageUuid;
+@BaseResource
+@AutoDeleteTag
+public class PrimaryStorageHistoricalUsageVO extends PrimaryStorageHistoricalUsageBaseVO {
 
     public PrimaryStorageHistoricalUsageVO() {
-    }
-
-    public String getPrimaryStorageUuid() {
-        return primaryStorageUuid;
-    }
-
-    public void setPrimaryStorageUuid(String primaryStorageUuid) {
-        this.primaryStorageUuid = primaryStorageUuid;
-    }
-
-    @Override
-    public String getResourceUuid() {
-        return primaryStorageUuid;
-    }
-
-    @Override
-    public void setResourceUuid(String resourceUuid) {
-        this.primaryStorageUuid = resourceUuid;
+        resourceType = PrimaryStorageVO.class.getSimpleName();
     }
 }

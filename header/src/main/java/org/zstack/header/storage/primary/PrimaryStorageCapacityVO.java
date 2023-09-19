@@ -110,4 +110,9 @@ public class PrimaryStorageCapacityVO extends StorageCapacityAO implements Shado
     public String getResourceUuid() {
         return uuid;
     }
+
+    @Override
+    public String getPrimaryStorageUuid() {
+        return uuid;
+    }
 }

@@ -20,13 +20,14 @@ import org.zstack.utils.logging.CLogger;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.time.*;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends StorageCapacityAO> {
+public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsageBaseVO, K extends StorageCapacityAO> {
     private static final CLogger logger = Utils.getLogger(AbstractUsageReport.class);
     @Autowired
     protected DatabaseFacade dbf;
@@ -121,14 +122,24 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
     }
 
     private static class ResourceUsage {
+        String primaryStorageUuid;
         String resourceUuid;
         Long totalPhysicalCapacity;
         Long usedPhysicalCapacity;
 
-        public ResourceUsage(String resourceUuid, Long totalPhysicalCapacity, Long usedPhysicalCapacity) {
+        public ResourceUsage(String primaryStorageUuid, String resourceUuid, Long totalPhysicalCapacity, Long usedPhysicalCapacity) {
+            this.primaryStorageUuid = primaryStorageUuid;
             this.resourceUuid = resourceUuid;
             this.totalPhysicalCapacity = totalPhysicalCapacity;
             this.usedPhysicalCapacity = usedPhysicalCapacity;
+        }
+
+        public String getPrimaryStorageUuid() {
+            return primaryStorageUuid;
+        }
+
+        public void setPrimaryStorageUuid(String primaryStorageUuid) {
+            this.primaryStorageUuid = primaryStorageUuid;
         }
 
         public String getResourceUuid() {
@@ -212,6 +223,7 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
 
         List<K> capacityVOs = Q.New(capacityClass).list();
         capacityVOs.forEach(capacityVO -> {
+            String primaryStorageUuid = capacityVO.getPrimaryStorageUuid();
             String resourceUuid = capacityVO.getResourceUuid();
             long totalPhysicalCapacity = capacityVO.getTotalPhysicalCapacity() / SizeUnit.GIGABYTE.toByte(1);
             long usedPhysicalCapacity = (capacityVO.getTotalPhysicalCapacity() - capacityVO.getAvailablePhysicalCapacity()) / SizeUnit.GIGABYTE.toByte(1);
@@ -222,7 +234,7 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
                 usedPhysicalCapacity = new ArrayList<>(historicalUsageMap.get(resourceUuid).getHistoricalUsedPhysicalCapacities()).get(usageLength);
             }
 
-            ResourceUsage resourceUsage = new ResourceUsage(resourceUuid, totalPhysicalCapacity, usedPhysicalCapacity);
+            ResourceUsage resourceUsage = new ResourceUsage(primaryStorageUuid, resourceUuid, totalPhysicalCapacity, usedPhysicalCapacity);
             resourceUsages.add(resourceUsage);
         });
         return resourceUsages;
@@ -260,7 +272,7 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
 
     private void deleteExpiredHistoricalUsageFromDatabase() {
         SQL.New(usageClass).lt(HistoricalUsageAO_.recordDate,
-                Timestamp.valueOf(LocalDate.now().minusDays(366).atStartOfDay())).delete();
+                Timestamp.valueOf(LocalDate.now().minusDays(366).atStartOfDay())).hardDelete();
     }
 
     private void deleteExpiredHistoricalUsageFromMap(List<String> resourceUuids) {
@@ -340,6 +352,7 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
                 throw new RuntimeException(e);
             }
 
+            vo.setPrimaryStorageUuid(usage.getPrimaryStorageUuid());
             vo.setResourceUuid(usage.getResourceUuid());
             vo.setTotalPhysicalCapacity(usage.getTotalPhysicalCapacity());
             vo.setUsedPhysicalCapacity(usage.getUsedPhysicalCapacity());
@@ -424,6 +437,7 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
+            vo.setPrimaryStorageUuid(usage.getPrimaryStorageUuid());
             vo.setResourceUuid(usage.getResourceUuid());
             vo.setTotalPhysicalCapacity(usage.getTotalPhysicalCapacity());
             vo.setUsedPhysicalCapacity(usage.getUsedPhysicalCapacity());

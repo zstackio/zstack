@@ -55,6 +55,7 @@ public class LocalStorageHostRefVO extends StorageCapacityAO {
         this.systemUsedCapacity = systemUsedCapacity;
     }
 
+    @Override
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
     }

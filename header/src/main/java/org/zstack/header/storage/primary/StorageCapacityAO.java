@@ -31,4 +31,5 @@ public abstract class StorageCapacityAO {
     }
 
     public abstract String getResourceUuid();
+    public abstract String getPrimaryStorageUuid();
 }

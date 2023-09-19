@@ -1,27 +1,25 @@
 package org.zstack.storage.ceph.primary;
 
-import org.zstack.header.storage.primary.HistoricalUsageAO;
-import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.vo.ForeignKey;
-import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.storage.primary.PrimaryStorageHistoricalUsageBaseVO;
+import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vo.BaseResource;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @Entity
 @Table
-@EntityGraph(
-        parents = {
-                @EntityGraph.Neighbour(type = CephOsdGroupVO.class, myField = "osdGroupUuid", targetField = "uuid"),
-        }
-)
-public class CephOsdGroupHistoricalUsageVO extends HistoricalUsageAO {
-    @Column
-    @ForeignKey(parentEntityClass = CephOsdGroupVO.class, onDeleteAction = ReferenceOption.CASCADE)
-    private String osdGroupUuid;
+@BaseResource
+@AutoDeleteTag
+public class CephOsdGroupHistoricalUsageVO extends PrimaryStorageHistoricalUsageBaseVO {
 
     public CephOsdGroupHistoricalUsageVO() {
-
+        resourceType = CephOsdGroupVO.class.getSimpleName();
     }
+
+    @Column
+    private String osdGroupUuid;
 
     public String getOsdGroupUuid() {
         return osdGroupUuid;

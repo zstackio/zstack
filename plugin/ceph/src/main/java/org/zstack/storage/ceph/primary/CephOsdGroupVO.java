@@ -51,6 +51,7 @@ public class CephOsdGroupVO extends StorageCapacityAO {
         lastOpDate = null;
     }
 
+    @Override
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
     }

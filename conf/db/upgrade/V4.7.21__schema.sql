@@ -102,41 +102,37 @@ CREATE TABLE IF NOT EXISTS `zstack`.`RemoteVtepVO` (
 INSERT IGNORE INTO `zstack`.`EncryptEntityMetadataVO` (`entityName`, `columnName`, `state`, `lastOpDate`, `createDate`)
                 VALUES ('IAM2ProjectAttributeVO', 'value', 'NeedDecrypt', NOW(), NOW());
 
-CREATE TABLE IF NOT EXISTS `zstack`.`PrimaryStorageHistoricalUsageVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`PrimaryStorageHistoricalUsageBaseVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `primaryStorageUuid` varchar(32) NOT NULL,
+    `resourceUuid` varchar(32),
+    `resourceType` varchar(32) NOT NULL,
     `totalPhysicalCapacity` bigint unsigned DEFAULT 0,
     `usedPhysicalCapacity` bigint unsigned DEFAULT 0,
-    `recordDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    CONSTRAINT `fkUsageVOPrimaryStorageCapacityVO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES PrimaryStorageCapacityVO (`uuid`) ON DELETE CASCADE,
+    `recordDate` timestamp DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp DEFAULT '0000-00-00 00:00:00',
+    CONSTRAINT `fkUsageVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES PrimaryStorageEO (`uuid`) ON DELETE CASCADE,
+    INDEX (primaryStorageUuid),
+    INDEX (resourceUuid),
+    INDEX (resourceType),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`CephOsdGroupHistoricalUsageVO` (
-    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `osdGroupUuid` varchar(32) NOT NULL,
-    `totalPhysicalCapacity` bigint unsigned DEFAULT 0,
-    `usedPhysicalCapacity` bigint unsigned DEFAULT 0,
-    `recordDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    CONSTRAINT `fkUsageVOCephOsdGroupVO` FOREIGN KEY (`osdGroupUuid`) REFERENCES CephOsdGroupVO (`uuid`) ON DELETE CASCADE,
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+DROP VIEW IF EXISTS `zstack`.PrimaryStorageHistoricalUsageVO;
+CREATE VIEW `zstack`.`PrimaryStorageHistoricalUsageVO` AS SELECT
+id, primaryStorageUuid, resourceType, totalPhysicalCapacity, usedPhysicalCapacity, recordDate, createDate, lastOpDate
+FROM `zstack`.`PrimaryStorageHistoricalUsageBaseVO` WHERE resourceType = 'PrimaryStorageVO';
 
-CREATE TABLE IF NOT EXISTS `zstack`.`LocalStorageHostHistoricalUsageVO` (
-    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `hostUuid` varchar(32) NOT NULL,
-    `totalPhysicalCapacity` bigint unsigned DEFAULT 0,
-    `usedPhysicalCapacity` bigint unsigned DEFAULT 0,
-    `recordDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    CONSTRAINT `fkUsageVOLocalStorageHostRefVO` FOREIGN KEY (`hostUuid`) REFERENCES LocalStorageHostRefVO (`hostUuid`) ON DELETE CASCADE,
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+DROP VIEW IF EXISTS `zstack`.CephOsdGroupHistoricalUsageVO;
+CREATE VIEW `zstack`.`CephOsdGroupHistoricalUsageVO` AS SELECT
+id, primaryStorageUuid, resourceUuid as osdGroupUuid, resourceType, totalPhysicalCapacity, usedPhysicalCapacity, recordDate, createDate, lastOpDate
+FROM `zstack`.`PrimaryStorageHistoricalUsageBaseVO` WHERE resourceType = 'CephOsdGroupVO';
+
+DROP VIEW IF EXISTS `zstack`.LocalStorageHostHistoricalUsageVO;
+CREATE VIEW `zstack`.`LocalStorageHostHistoricalUsageVO` AS SELECT
+id, primaryStorageUuid, resourceUuid as hostUuid, resourceType, totalPhysicalCapacity, usedPhysicalCapacity, recordDate, createDate, lastOpDate
+FROM `zstack`.`PrimaryStorageHistoricalUsageBaseVO` WHERE resourceType = 'LocalStorageHostRefVO';
 
 ALTER TABLE `zstack`.`InstanceOfferingEO` ADD COLUMN `reservedMemorySize` bigint unsigned DEFAULT 0;
 ALTER TABLE `zstack`.`VmInstanceEO` ADD COLUMN `reservedMemorySize` bigint unsigned DEFAULT 0;
