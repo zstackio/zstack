@@ -70,7 +70,6 @@ public abstract class AbstractVolume {
         );
 
         forbiddenOperations.addState(VolumeStatus.Migrating,
-                VolumeDeletionMsg.class.getName(),
                 VolumeTemplateOverlayMsg.class.getName(),
                 VolumeBackupOverlayMsg.class.getName(),
                 CreateVolumeSnapshotGroupMsg.class.getName(),
