@@ -44,10 +44,10 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APICreateVipMsg) {
             validate((APICreateVipMsg) msg);
-        } else if (msg instanceof APIGetVipFreePortMsg) {
-            validate((APIGetVipFreePortMsg) msg);
-        } else if (msg instanceof APICheckVipFreePortAvailabilityMsg) {
-            validate((APICheckVipFreePortAvailabilityMsg) msg);
+        } else if (msg instanceof APIGetVipAvailablePortMsg) {
+            validate((APIGetVipAvailablePortMsg) msg);
+        } else if (msg instanceof APICheckVipPortAvailabilityMsg) {
+            validate((APICheckVipPortAvailabilityMsg) msg);
         } else if (msg instanceof APIDeleteVipMsg) {
             validate((APIDeleteVipMsg) msg);
         }
@@ -68,12 +68,12 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
         }
     }
    
-    private void validate(APICheckVipFreePortAvailabilityMsg msg) {
+    private void validate(APICheckVipPortAvailabilityMsg msg) {
         String accountUuid = msg.getSession().getAccountUuid();
         checkVipBelongToAccount(msg.getVipUuid(), accountUuid);
     }
 
-    private void validate(APIGetVipFreePortMsg msg) {
+    private void validate(APIGetVipAvailablePortMsg msg) {
         String accountUuid = msg.getSession().getAccountUuid();
         checkVipBelongToAccount(msg.getVipUuid(), accountUuid);
     }

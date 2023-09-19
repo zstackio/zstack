@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CheckVipFreePortAvailabilityAction extends AbstractAction {
+public class GetVipAvailablePortAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CheckVipFreePortAvailabilityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CheckVipFreePortAvailabilityResult value;
+        public org.zstack.sdk.GetVipAvailablePortResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,9 +27,6 @@ public class CheckVipFreePortAvailabilityAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vipUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public int port = 0;
 
     @Param(required = true, validValues = {"TCP","UDP"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String protocolType;
@@ -66,8 +63,8 @@ public class CheckVipFreePortAvailabilityAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CheckVipFreePortAvailabilityResult value = res.getResult(org.zstack.sdk.CheckVipFreePortAvailabilityResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CheckVipFreePortAvailabilityResult() : value; 
+        org.zstack.sdk.GetVipAvailablePortResult value = res.getResult(org.zstack.sdk.GetVipAvailablePortResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVipAvailablePortResult() : value; 
 
         return ret;
     }
@@ -97,7 +94,7 @@ public class CheckVipFreePortAvailabilityAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vips/{vipUuid}/check-vip-free-port";
+        info.path = "/vips/{vipUuid}/get-port-availability";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

@@ -298,21 +298,37 @@ class VirtualrouterMultiNicCase extends SubCase {
             protocolType = PortForwardingProtocolType.TCP.toString()
         }
 
-        GetVipFreePortInventory VipFreePort = getVipFreePort {
-            vipUuid = vip.uuid
-            start = 20
-            limit = 5
-            protocolType = "TCP"
-        }
-        assert !VipFreePort.freeList.contains(22)         
+        GetVipAvailablePortAction getVipAvailablePortAction = new GetVipAvailablePortAction()
+        getVipAvailablePortAction.vipUuid = vip.uuid
+        getVipAvailablePortAction.protocolType = "TCP"
+        getVipAvailablePortAction.start = 20
+        getVipAvailablePortAction.limit = 5
+        getVipAvailablePortAction.sessionId = adminSession()
+        GetVipAvailablePortAction.Result getRes = getVipAvailablePortAction.call()
+        assert getRes.error == null
+        List<Integer> availablePort = getRes.value.availablePort
+        assert !availablePort.contains(22.0)         
 
-        boolean avail = checkVipFreePortAvailability {
-            vipUuid = vip.uuid
-            port = 23
-            protocolType = "UDP"
-        } 
+        CheckVipPortAvailabilityAction checkVipPortAvailabilityAction = new CheckVipPortAvailabilityAction()
+        checkVipPortAvailabilityAction.vipUuid = vip.uuid
+        checkVipPortAvailabilityAction.port = 22
+        checkVipPortAvailabilityAction.protocolType = "UDP"
+        checkVipPortAvailabilityAction.sessionId = adminSession()
+        CheckVipPortAvailabilityAction.Result chkRes = checkVipPortAvailabilityAction.call()
+        assert chkRes.error == null
+        boolean avail = chkRes.value.available
         assert avail
-  
+
+        CheckVipPortAvailabilityAction checkVipPortAvailabilityAction1 = new CheckVipPortAvailabilityAction()
+        checkVipPortAvailabilityAction1.vipUuid = vip.uuid
+        checkVipPortAvailabilityAction1.port = 22
+        checkVipPortAvailabilityAction1.protocolType = "TCP"
+        checkVipPortAvailabilityAction1.sessionId = adminSession()
+        CheckVipPortAvailabilityAction.Result chkRes1 = checkVipPortAvailabilityAction1.call()
+        assert chkRes1.error == null
+        boolean avail1 = chkRes1.value.available
+        assert !avail1
+
         List<VmNicInventory> vmNics = getPortForwardingAttachableVmNics {
             ruleUuid = portForwarding.uuid
         }

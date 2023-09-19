@@ -9,11 +9,11 @@ import org.zstack.header.message.APIGetMessage;
 import org.zstack.network.service.vip.*;
 
 @RestRequest(
-        path = "/vips/{vipUuid}/get-vip-free-port",
+        path = "/vips/{vipUuid}/get-port-availability",
         method = HttpMethod.GET,
-        responseClass = APIGetVipFreePortReply.class
+        responseClass = APIGetVipAvailablePortReply.class
 )
-public class APIGetVipFreePortMsg extends APIGetMessage {
+public class APIGetVipAvailablePortMsg extends APIGetMessage {
 
     @APIParam(resourceType = VipVO.class)
     private String vipUuid;    
@@ -37,8 +37,8 @@ public class APIGetVipFreePortMsg extends APIGetMessage {
         this.protocolType = protocolType;
     }
  
-    public static APIGetVipFreePortMsg __example__() {
-        APIGetVipFreePortMsg msg = new APIGetVipFreePortMsg();
+    public static APIGetVipAvailablePortMsg __example__() {
+        APIGetVipAvailablePortMsg msg = new APIGetVipAvailablePortMsg();
         msg.setVipUuid(uuid());
         msg.setProtocolType("UDP");
         msg.setStart(1);
