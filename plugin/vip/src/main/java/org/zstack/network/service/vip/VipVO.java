@@ -158,7 +158,7 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
     public Set<String> getServicesTypes() {
         if (getServicesRefs() != null && !getServicesRefs().isEmpty()) {
             return getServicesRefs().stream()
-                                         .map(ref -> ref.getServiceType())
+                                         .map(VipNetworkServicesRefVO::getServiceType)
                                          .collect(Collectors.toSet());
         }
 

@@ -9,11 +9,11 @@ import org.zstack.header.message.APIGetMessage;
 import org.zstack.network.service.vip.*;
 
 @RestRequest(
-        path = "/vips/{vipUuid}/check-vip-free-port",
+        path = "/vips/{vipUuid}/check-port-availability",
         method = HttpMethod.GET,
-        responseClass = APICheckVipFreePortAvailabilityReply.class
+        responseClass = APICheckVipPortAvailabilityReply.class
 )
-public class APICheckVipFreePortAvailabilityMsg extends APIGetMessage {
+public class APICheckVipPortAvailabilityMsg extends APIGetMessage {
 
     @APIParam(resourceType = VipVO.class)
     private String vipUuid;    
@@ -49,8 +49,8 @@ public class APICheckVipFreePortAvailabilityMsg extends APIGetMessage {
     }
 
 
-    public static APICheckVipFreePortAvailabilityMsg __example__() {
-        APICheckVipFreePortAvailabilityMsg msg = new APICheckVipFreePortAvailabilityMsg();
+    public static APICheckVipPortAvailabilityMsg __example__() {
+        APICheckVipPortAvailabilityMsg msg = new APICheckVipPortAvailabilityMsg();
         msg.setVipUuid(uuid());
         msg.setPort(5);
         msg.setProtocolType("TCP");

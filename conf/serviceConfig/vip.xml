@@ -8,11 +8,11 @@
     </message>
 
     <message>
-        <name>org.zstack.network.service.vip.APIGetVipFreePortMsg</name>
+        <name>org.zstack.network.service.vip.APIGetVipAvailablePortMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.network.service.vip.APICheckVipFreePortAvailabilityMsg</name>
+        <name>org.zstack.network.service.vip.APICheckVipPortAvailabilityMsg</name>
     </message>
 
     <message>

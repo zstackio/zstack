@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVipFreePortAction extends AbstractAction {
+public class CheckVipPortAvailabilityAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVipFreePortAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVipFreePortResult value;
+        public org.zstack.sdk.CheckVipPortAvailabilityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,6 +27,9 @@ public class GetVipFreePortAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vipUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public int port = 0;
 
     @Param(required = true, validValues = {"TCP","UDP"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String protocolType;
@@ -63,8 +66,8 @@ public class GetVipFreePortAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVipFreePortResult value = res.getResult(org.zstack.sdk.GetVipFreePortResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVipFreePortResult() : value; 
+        org.zstack.sdk.CheckVipPortAvailabilityResult value = res.getResult(org.zstack.sdk.CheckVipPortAvailabilityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CheckVipPortAvailabilityResult() : value; 
 
         return ret;
     }
@@ -94,7 +97,7 @@ public class GetVipFreePortAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vips/{vipUuid}/get-vip-free-port";
+        info.path = "/vips/{vipUuid}/check-port-availability";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

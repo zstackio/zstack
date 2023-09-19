@@ -7,7 +7,7 @@ import org.zstack.header.message.APIReply;
 import java.util.List;
 
 @RestResponse(fieldsTo = {"all"})
-public class APICheckVipFreePortAvailabilityReply extends APIReply {
+public class APICheckVipPortAvailabilityReply extends APIReply {
 
     private boolean available;
 
@@ -19,8 +19,8 @@ public class APICheckVipFreePortAvailabilityReply extends APIReply {
         this.available = available;
     }
 
-    public static APICheckVipFreePortAvailabilityReply __example__() {
-        APICheckVipFreePortAvailabilityReply reply = new APICheckVipFreePortAvailabilityReply();
+    public static APICheckVipPortAvailabilityReply __example__() {
+        APICheckVipPortAvailabilityReply reply = new APICheckVipPortAvailabilityReply();
         reply.setAvailable(true);
         return reply;
     }

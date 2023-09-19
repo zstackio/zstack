@@ -460,7 +460,6 @@ public class SourceClassMap {
 			put("org.zstack.network.service.slb.SlbLoadBalancerInventory", "org.zstack.sdk.SlbLoadBalancerInventory");
 			put("org.zstack.network.service.slb.SlbOfferingInventory", "org.zstack.sdk.SlbOfferingInventory");
 			put("org.zstack.network.service.slb.SlbVmInstanceInventory", "org.zstack.sdk.SlbVmInstanceInventory");
-			put("org.zstack.network.service.vip.GetVipFreePortInventory", "org.zstack.sdk.GetVipFreePortInventory");
 			put("org.zstack.network.service.vip.VipInventory", "org.zstack.sdk.VipInventory");
 			put("org.zstack.network.service.vip.VipNetworkServicesRefInventory", "org.zstack.sdk.VipNetworkServicesRefInventory");
 			put("org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory", "org.zstack.sdk.VipPortRangeInventory");
@@ -878,7 +877,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FlowMeterInventory", "org.zstack.header.flowMeter.FlowMeterInventory");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
 			put("org.zstack.sdk.GarbageCollectorInventory", "org.zstack.core.gc.GarbageCollectorInventory");
-			put("org.zstack.sdk.GetVipFreePortInventory", "org.zstack.network.service.vip.GetVipFreePortInventory");
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
 			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
