@@ -24,7 +24,9 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.Task;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
@@ -39,9 +41,20 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.managementnode.*;
+import org.zstack.header.managementnode.IsManagementNodeReadyMsg;
+import org.zstack.header.managementnode.IsManagementNodeReadyReply;
+import org.zstack.header.managementnode.ManagementNodeCanonicalEvent;
 import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.LifeCycle;
 import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.ManagementNodeLifeCycleData;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeConstant;
+import org.zstack.header.managementnode.ManagementNodeExitMsg;
+import org.zstack.header.managementnode.ManagementNodeInventory;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.managementnode.ManagementNodeState;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
+import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
@@ -55,8 +68,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.zsha2.ZSha2Helper;
-import org.zstack.utils.zsha2.ZSha2Info;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -141,8 +152,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private ResourceDestinationMaker destinationMaker;
     @Autowired
     private EventFacade evtf;
-
-    private Future monitorMNDBStatusTask;
 
     private boolean sigUsr2 = false;
 
@@ -571,13 +580,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     evtf.fire(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, d);
                     trigger.next();
                 }
-            }).then(new NoRollbackFlow() {
-                String __name__ = "start-check-mn-db-status-task";
-                @Override
-                public void run(FlowTrigger trigger, Map data) {
-                    startCheckMNDbStatusTask();
-                    trigger.next();
-                }
             }).done(new FlowDoneHandler(null) {
                 @Override
                 public void handle(Map data) {
@@ -632,46 +634,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         logger.debug("quited main-loop, start stopping management node");
         stop();
         return true;
-    }
-
-    private void startCheckMNDbStatusTask() {
-        if (!ZSha2Helper.isMNHaEnvironment()) {
-            logger.debug("current environment is not Ha, skip the database status check");
-            return;
-        }
-
-        if (monitorMNDBStatusTask != null) monitorMNDBStatusTask.cancel(true);
-        monitorMNDBStatusTask = thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
-            @Override
-            public TimeUnit getTimeUnit() {
-                return TimeUnit.SECONDS;
-            }
-
-            @Override
-            public long getInterval() {
-                return ManagementNodeGlobalConfig.MONITOR_MN_DB_STATUS_INTERVAL.value(Long.class);
-            }
-
-            @Override
-            public String getName() {
-                return "zwatch-monitor-mn-db-status-task";
-            }
-
-            @Override
-            public boolean run() {
-                if (!Platform.isVIPNode()) return true;
-
-                ZSha2Info lastHaInfo = ZSha2Helper.getInfo();
-                if (lastHaInfo.isDbStatusError()) {
-                    MNCanonicalEvents.MNDbStatusData data = new MNCanonicalEvents.MNDbStatusData();
-                    data.setManagementNodeIP(Platform.getManagementServerIp());
-                    data.setDbErrorDetail(lastHaInfo.getDbErrorDetail());
-                    evtf.fire(MNCanonicalEvents.MN_DB_STATUS_PATH, data);
-                }
-                return false;
-            }
-        });
-
     }
 
     private void setupHeartbeat() {
