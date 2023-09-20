@@ -478,9 +478,17 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getUuid(), Boolean.class);
                 if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
-                    throw new ApiMessageInterceptionException(argerr(
-                            "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
-                    ));
+                    if (cpuSum != null && cpuSum != vo.getCpuNum()) {
+                        throw new ApiMessageInterceptionException(argerr(
+                                "the VM cannot do cpu hot plug because of disabling cpu hot plug. Please stop the VM then do the cpu hot plug again"
+                        ));
+                    }
+
+                    if (memorySize != null && memorySize != vo.getMemorySize()) {
+                        throw new ApiMessageInterceptionException(argerr(
+                                "the VM cannot do memory hot plug because of disabling memory hot plug. Please stop the VM then do the memory hot plug again"
+                        ));
+                    }
                 }
 
                 if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
