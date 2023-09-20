@@ -32,12 +32,4 @@
         <description>Maximum number of days to keep logs</description>
     </config>
 
-    <config>
-        <category>managementServer</category>
-        <name>monitor.mn.dbStatus.interval</name>
-        <description>monitor mn db status, in seconds</description>
-        <type>java.lang.Integer</type>
-        <defaultValue>600</defaultValue>
-    </config>
-
 </globalConfig>
