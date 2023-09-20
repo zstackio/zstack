@@ -57,7 +57,7 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
                 msg.getAvoidHostUuids().addAll(migrateVmMsg.getAvoidHostUuids());
             }
         }
-        if (spec.getImageSpec() != null) {
+        if (spec.getImageSpec() != null && spec.getImageSpec().getInventory() != null) {
             msg.setImage(spec.getImageSpec().getInventory());
         }
         msg.setZoneUuid(spec.getVmInventory().getZoneUuid());
