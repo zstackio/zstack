@@ -92,4 +92,12 @@ public class VolumeSnapshotGroupRefInventory  {
         return this.lastOpDate;
     }
 
+    public java.sql.Timestamp volumeLastAttachDate;
+    public void setVolumeLastAttachDate(java.sql.Timestamp volumeLastAttachDate) {
+        this.volumeLastAttachDate = volumeLastAttachDate;
+    }
+    public java.sql.Timestamp getVolumeLastAttachDate() {
+        return this.volumeLastAttachDate;
+    }
+
 }
