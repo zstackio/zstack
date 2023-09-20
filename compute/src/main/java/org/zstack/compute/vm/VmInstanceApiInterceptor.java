@@ -955,17 +955,17 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             msg.getStaticIpMap().put(e.getKey(), e.getValue());
         }
 
-        if (msg.getVmNicParams() != null && !msg.getVmNicParams().isEmpty()) {
+        if (!StringUtils.isEmpty(msg.getVmNicParams())) {
             List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
 
-            List<VmNicParm> vmNicInventories;
+            VmNicParm vmNicParam;
             try {
-                vmNicInventories = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
+                vmNicParam = JSONObjectUtil.toObject(msg.getVmNicParams(), VmNicParm.class);
             } catch (JsonSyntaxException e) {
                 throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
             }
 
-            VmNicUtils.validateVmParms(vmNicInventories, Arrays.asList(msg.getL3NetworkUuid()), supportNicDriverTypes);
+            VmNicUtils.validateVmParms(Arrays.asList(vmNicParam), Arrays.asList(msg.getL3NetworkUuid()), supportNicDriverTypes);
         }
     }
 
