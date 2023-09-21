@@ -53,6 +53,9 @@ public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2Netw
     @APIParam(resourceType = ClusterVO.class)
     private String clusterUuid;
 
+    @APIParam(required = false, validValues = {"LinuxBridge"})
+    private String l2ProviderType;
+
     @Override
     public String getL2NetworkUuid() {
         return l2NetworkUuid;
@@ -69,7 +72,15 @@ public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2Netw
     public void setL2NetworkUuid(String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
     }
- 
+
+    public String getL2ProviderType() {
+        return l2ProviderType;
+    }
+
+    public void setL2ProviderType(String l2ProviderType) {
+        this.l2ProviderType = l2ProviderType;
+    }
+
     public static APIAttachL2NetworkToClusterMsg __example__() {
         APIAttachL2NetworkToClusterMsg msg = new APIAttachL2NetworkToClusterMsg();
 
