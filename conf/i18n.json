@@ -8439,7 +8439,7 @@
   {
     "raw": "rootDiskOfferingUuid cannot be null when create vm without image",
     "en_US": "rootDiskOfferingUuid cannot be null when create vm without image",
-    "zh_CN": "",
+    "zh_CN": "在不使用映像的情况下创建VM时，RootDiskOfferInGuuid不能为空",
     "arguments": [],
     "line": 2245,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
@@ -12028,7 +12028,7 @@
   {
     "raw": "the value[%s] is lesser than 0 or greater than 1 ",
     "en_US": "the value[{0}] is lesser than 0 or greater than 1 ",
-    "zh_CN": "",
+    "zh_CN": "值[{0}]小于0或大于1",
     "arguments": [
       "newValue"
     ],
@@ -16485,7 +16485,7 @@
   {
     "raw": " usb device can only be called by admin account",
     "en_US": " usb device can only be called by admin account",
-    "zh_CN": "",
+    "zh_CN": "USB设备只能由管理员帐户调用",
     "arguments": [],
     "line": 865,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
@@ -18568,7 +18568,7 @@
   {
     "raw": "could no set vm nic security group, because vm nic[uuid:%s] not found",
     "en_US": "could no set vm nic security group, because vm nic[uuid:{0}] not found",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为找不到VM NIC[UUID：{0}]",
     "arguments": [
       "msg.getVmNicUuid()"
     ],
@@ -18578,7 +18578,7 @@
   {
     "raw": "could no set vm nic security group, because the vm nic[uuid:%s] not attached to any security group",
     "en_US": "could no set vm nic security group, because the vm nic[uuid:{0}] not attached to any security group",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为VM NIC[UUID：{0}]未连接到任何安全组",
     "arguments": [
       "msg.getVmNicUuid()"
     ],
@@ -18588,7 +18588,7 @@
   {
     "raw": "could no set vm nic security group, because security group[uuid:%s] not found",
     "en_US": "could no set vm nic security group, because security group[uuid:{0}] not found",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为找不到安全组[UUID：{0}]",
     "arguments": [
       "ao.getSecurityGroupUuid()"
     ],
@@ -18598,7 +18598,7 @@
   {
     "raw": "could no set vm nic security group, because invalid priority, priority[%d] cannot be less than 1",
     "en_US": "could no set vm nic security group, because invalid priority, priority[{0}] cannot be less than 1",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为优先级无效，优先级[{0}]不能小于1",
     "arguments": [
       "priority"
     ],
@@ -18608,7 +18608,7 @@
   {
     "raw": "could no set vm nic security group, because duplicate priority, both security group %s and %s have priority[%d]",
     "en_US": "could no set vm nic security group, because duplicate priority, both security group {0} and {1} have priority[{2}]",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为优先级重复，安全组{0}和{1}都具有优先级[{2}]",
     "arguments": [
       "aoMap.get(priority)",
       "ao.getSecurityGroupUuid()",
@@ -18620,7 +18620,7 @@
   {
     "raw": "could no set vm nic security group, because duplicate security group[uuid:%s]",
     "en_US": "could no set vm nic security group, because duplicate security group[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为安全组[UUID：{0}]重复",
     "arguments": [
       "ao.getSecurityGroupUuid()"
     ],
@@ -18630,7 +18630,7 @@
   {
     "raw": "could no set vm nic security group, because invalid priority, priority expects to start at 1, but [%d]",
     "en_US": "could no set vm nic security group, because invalid priority, priority expects to start at 1, but [{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为优先级无效，优先级应从1开始，但[{0}]",
     "arguments": [
       "priorities[0]"
     ],
@@ -18640,7 +18640,7 @@
   {
     "raw": "could no set vm nic security group, because invalid priority, priority[%d] and priority[%d] expected to be consecutive",
     "en_US": "could no set vm nic security group, because invalid priority, priority[{0}] and priority[{1}] expected to be consecutive",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为优先级无效，优先级[{0}]和优先级[{1}]应是连续的",
     "arguments": [
       "priorities[i]",
       "priorities[i + 1]"
@@ -18651,7 +18651,7 @@
   {
     "raw": "could no set vm nic security Group, because securityGroup[uuid:%s] is already attached on this nic by account[uuid:%s], current user does not have permission to delete",
     "en_US": "could no set vm nic security Group, because securityGroup[uuid:{0}] is already attached on this nic by account[uuid:{1}], current user does not have permission to delete",
-    "zh_CN": "",
+    "zh_CN": "无法设置VM NIC安全组，因为SecurityGroup[UUID：{0}]已由帐户[UUID：{1}]附加在此NIC上，当前用户没有删除权限",
     "arguments": [
       "ref.getSecurityGroupUuid()",
       "sgOwnerAccountUuid"
@@ -18662,7 +18662,7 @@
   {
     "raw": "could no change security group rule state, because ruleUuids is empty",
     "en_US": "could no change security group rule state, because ruleUuids is empty",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则状态，因为RuleUIds为空",
     "arguments": [],
     "line": 310,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -18670,7 +18670,7 @@
   {
     "raw": "could no change security group rule state, because security group[uuid:%s] not found",
     "en_US": "could no change security group rule state, because security group[uuid:{0}] not found",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则状态，因为找不到安全组[UUID：{0}]",
     "arguments": [
       "msg.getSecurityGroupUuid()"
     ],
@@ -18680,7 +18680,7 @@
   {
     "raw": "could no change security group rule state, because security group rule[uuid:%s] not found",
     "en_US": "could no change security group rule state, because security group rule[uuid:{0}] not found",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则状态，因为找不到安全组规则[UUID：{0}]",
     "arguments": [
       "r"
     ],
@@ -18690,7 +18690,7 @@
   {
     "raw": "could no change security group rule state, because no security group rule state need to change",
     "en_US": "could no change security group rule state, because no security group rule state need to change",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则状态，因为无需更改安全组规则状态",
     "arguments": [],
     "line": 331,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -18698,7 +18698,7 @@
   {
     "raw": "could no change vm nic security policy, because ingress policy and egress policy cannot be both null",
     "en_US": "could no change vm nic security policy, because ingress policy and egress policy cannot be both null",
-    "zh_CN": "",
+    "zh_CN": "无法更改VM NIC安全策略，因为入口策略和出口策略不能同时为空",
     "arguments": [],
     "line": 339,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -18706,7 +18706,7 @@
   {
     "raw": "could no change vm nic security policy, because invalid ingress policy[%s]",
     "en_US": "could no change vm nic security policy, because invalid ingress policy[{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法更改VM NIC安全策略，因为入口策略[{0}]无效",
     "arguments": [
       "msg.getIngressPolicy()"
     ],
@@ -18716,7 +18716,7 @@
   {
     "raw": "could no change vm nic security policy, because invalid egress policy[%s]",
     "en_US": "could no change vm nic security policy, because invalid egress policy[{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法更改VM NIC安全策略，因为出口策略[{0}]无效",
     "arguments": [
       "msg.getEgressPolicy()"
     ],
@@ -18726,7 +18726,7 @@
   {
     "raw": "could no change vm nic security policy, because vm nic[uuid:%s] not found",
     "en_US": "could no change vm nic security policy, because vm nic[uuid:{0}] not found",
-    "zh_CN": "",
+    "zh_CN": "无法更改VM NIC安全策略，因为找不到VM NIC[UUID：{0}]",
     "arguments": [
       "msg.getVmNicUuid()"
     ],
@@ -18736,7 +18736,7 @@
   {
     "raw": "could no change vm nic security policy, because vm nic[uuid:%s] has no security policy",
     "en_US": "could no change vm nic security policy, because vm nic[uuid:{0}] has no security policy",
-    "zh_CN": "",
+    "zh_CN": "无法更改VM NIC安全策略，因为VM NIC[UUID：{0}]没有安全策略",
     "arguments": [
       "msg.getVmNicUuid()"
     ],
@@ -18746,7 +18746,7 @@
   {
     "raw": "could not update security group rule priority, because invalid type[%s]",
     "en_US": "could not update security group rule priority, because invalid type[{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为类型[{0}]无效",
     "arguments": [
       "msg.getType()"
     ],
@@ -18756,7 +18756,7 @@
   {
     "raw": "could not update security group rule priority, because security group[uuid:%s] is not exist",
     "en_US": "could not update security group rule priority, because security group[uuid:{0}] is not exist",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为安全组[UUID：{0}]不存在",
     "arguments": [
       "msg.getSecurityGroupUuid()"
     ],
@@ -18766,7 +18766,7 @@
   {
     "raw": "could not update security group rule priority, because rules is empty",
     "en_US": "could not update security group rule priority, because rules is empty",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为规则为空",
     "arguments": [],
     "line": 378,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -18774,7 +18774,7 @@
   {
     "raw": "could not update security group rule priority, because security group[uuid:%s] rules size not match",
     "en_US": "could not update security group rule priority, because security group[uuid:{0}] rules size not match",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为安全组[UUID：{0}]规则大小不匹配",
     "arguments": [
       "msg.getSecurityGroupUuid()"
     ],
@@ -18784,7 +18784,7 @@
   {
     "raw": "could not update security group rule priority, because rule priority[%d] is invalid",
     "en_US": "could not update security group rule priority, because rule priority[{0}] is invalid",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为规则优先级[{0}]无效",
     "arguments": [
       "ao.getPriority()"
     ],
@@ -18794,7 +18794,7 @@
   {
     "raw": "could not update security group rule priority, because priority[%d] has duplicate",
     "en_US": "could not update security group rule priority, because priority[{0}] has duplicate",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为优先级[{0}]重复",
     "arguments": [
       "ao.getPriority()"
     ],
@@ -18804,7 +18804,7 @@
   {
     "raw": "could not update security group rule priority, because rule[uuid:%s] not in security group[uuid:%s]",
     "en_US": "could not update security group rule priority, because rule[uuid:{0}] not in security group[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为规则[UUID：{0}]不在安全组[UUID：{1}]中",
     "arguments": [
       "ao.getRuleUuid()",
       "msg.getSecurityGroupUuid()"
@@ -18815,7 +18815,7 @@
   {
     "raw": "could not update security group rule priority, because priority[%d] not in security group[uuid:%s]",
     "en_US": "could not update security group rule priority, because priority[{0}] not in security group[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为优先级[{0}]不在安全组[UUID：{1}]中",
     "arguments": [
       "ao.getPriority()",
       "msg.getSecurityGroupUuid()"
@@ -18826,7 +18826,7 @@
   {
     "raw": "could not update security group rule priority, because rule uuid duplicate",
     "en_US": "could not update security group rule priority, because rule uuid duplicate",
-    "zh_CN": "",
+    "zh_CN": "无法更新安全组规则优先级，因为规则UUID重复",
     "arguments": [],
     "line": 410,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -18834,7 +18834,7 @@
   {
     "raw": "could not change security group rule, because security group rule uuid[%s] is not exist",
     "en_US": "could not change security group rule, because security group rule uuid[{0}] is not exist",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为安全组规则UUID[{0}]不存在",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -18844,7 +18844,7 @@
   {
     "raw": "could not change security group rule, because security group rule[%s] is default rule, only the description and status can be set",
     "en_US": "could not change security group rule, because security group rule[{0}] is default rule, only the description and status can be set",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为安全组规则[{0}]是默认规则，只能设置描述和状态",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -18854,7 +18854,7 @@
   {
     "raw": "could not change security group rule, because security group rule[%s] priority cannot be set to default rule priority[%d]",
     "en_US": "could not change security group rule, because security group rule[{0}] priority cannot be set to default rule priority[{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为安全组规则[{0}]优先级无法设置为默认规则优先级[{1}]",
     "arguments": [
       "msg.getUuid()",
       "SecurityGroupConstant.DEFAULT_RULE_PRIORITY"
@@ -18865,7 +18865,7 @@
   {
     "raw": "could not change security group rule, because security group %s rules number[%d] is out of max limit[%d]",
     "en_US": "could not change security group rule, because security group {0} rules number[{1}] is out of max limit[{2}]",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为安全组{0}规则编号[{1}]超出最大限制[{2}]",
     "arguments": [
       "vo.getType()",
       "count.intValue()",
@@ -18877,7 +18877,7 @@
   {
     "raw": "could not change security group rule, because the maximum priority of %s rule is [%d]",
     "en_US": "could not change security group rule, because the maximum priority of {0} rule is [{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为{0}规则的最高优先级为[{1}]",
     "arguments": [
       "vo.getType().toString()",
       "count.intValue()"
@@ -18888,7 +18888,7 @@
   {
     "raw": "could not change security group rule, because invalid state[%s]",
     "en_US": "could not change security group rule, because invalid state[{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为状态[{0}]无效",
     "arguments": [
       "msg.getState()"
     ],
@@ -18898,7 +18898,7 @@
   {
     "raw": "could not change security group rule, because invalid action[%s]",
     "en_US": "could not change security group rule, because invalid action[{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为操作[{0}]无效",
     "arguments": [
       "msg.getAction()"
     ],
@@ -18908,7 +18908,7 @@
   {
     "raw": "could not change security group rule, because invalid protocol[%s]",
     "en_US": "could not change security group rule, because invalid protocol[{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为协议[{0}]无效",
     "arguments": [
       "msg.getProtocol()"
     ],
@@ -18918,7 +18918,7 @@
   {
     "raw": "could not change security group rule, because security group rule[%s] type is Egress, srcIpRange[%s] cannot be set",
     "en_US": "could not change security group rule, because security group rule[{0}] type is Egress, srcIpRange[{1}] cannot be set",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为安全组规则[{0}]类型为出口，无法设置SrcIPRange[{1}]",
     "arguments": [
       "msg.getUuid()",
       "msg.getSrcIpRange()"
@@ -18929,7 +18929,7 @@
   {
     "raw": "could not change security group rule, because security group rule[%s] type is Ingress, dstIpRange[%s] cannot be set",
     "en_US": "could not change security group rule, because security group rule[{0}] type is Ingress, dstIpRange[{1}] cannot be set",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为安全组规则[{0}]类型为入口，无法设置DSTIPRange[{1}]",
     "arguments": [
       "msg.getUuid()",
       "msg.getDstIpRange()"
@@ -18940,7 +18940,7 @@
   {
     "raw": "could not change security group rule, because srcIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty",
     "en_US": "could not change security group rule, because srcIpRange[{0}] is set, remoteSecurityGroupUuid[{1}] must be empty",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为已设置SrcIPRange[{0}]，RemoteSecurityGroupUUID[{1}]必须为空",
     "arguments": [
       "msg.getSrcIpRange()",
       "msg.getRemoteSecurityGroupUuid()"
@@ -18951,7 +18951,7 @@
   {
     "raw": "could not change security group rule, because dstIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty",
     "en_US": "could not change security group rule, because dstIpRange[{0}] is set, remoteSecurityGroupUuid[{1}] must be empty",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为已设置DSTIPRange[{0}]，RemoteSecurityGroupUUID[{1}]必须为空",
     "arguments": [
       "msg.getDstIpRange()",
       "msg.getRemoteSecurityGroupUuid()"
@@ -18962,7 +18962,7 @@
   {
     "raw": "could not change security group rule, because remote security group[uuid:%s] not found",
     "en_US": "could not change security group rule, because remote security group[uuid:{0}] not found",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为找不到远程安全组[UUID：{0}]",
     "arguments": [
       "msg.getRemoteSecurityGroupUuid()"
     ],
@@ -18972,7 +18972,7 @@
   {
     "raw": "could not change security group rule, because remote security group[uuid:%s] is set, srcIpRange and dstIpRange must be empty",
     "en_US": "could not change security group rule, because remote security group[uuid:{0}] is set, srcIpRange and dstIpRange must be empty",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为已设置远程安全组[UUID：{0}]，SrcIPRange和DstIPRange必须为空",
     "arguments": [
       "msg.getRemoteSecurityGroupUuid()"
     ],
@@ -18982,7 +18982,7 @@
   {
     "raw": "could not change security group rule, because rule protocol is [%s], dstPortRange must be set",
     "en_US": "could not change security group rule, because rule protocol is [{0}], dstPortRange must be set",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为规则协议为[{0}]，必须设置DSTPortRange",
     "arguments": [
       "msg.getProtocol()"
     ],
@@ -18992,7 +18992,7 @@
   {
     "raw": "could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty",
     "en_US": "could not change security group rule, because rule protocol is [{0}], dstPortRange cannot be empty",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为规则协议为[{0}]，DstPortRange不能为空",
     "arguments": [
       "msg.getProtocol()"
     ],
@@ -19002,7 +19002,7 @@
   {
     "raw": "could not change security group rule, because rule protocol is [%s], dstPortRange cannot be set",
     "en_US": "could not change security group rule, because rule protocol is [{0}], dstPortRange cannot be set",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为规则协议为[{0}]，无法设置目标映射",
     "arguments": [
       "msg.getProtocol()"
     ],
@@ -19012,7 +19012,7 @@
   {
     "raw": "could not change security group rule, because rule[%s] is duplicated to rule[uuid:%s] in datebase",
     "en_US": "could not change security group rule, because rule[{0}] is duplicated to rule[uuid:{1}] in datebase",
-    "zh_CN": "",
+    "zh_CN": "无法更改安全组规则，因为规则[{0}]与数据库中的规则[UUID：{1}]重复",
     "arguments": [
       "JSONObjectUtil.toJsonString(sao)",
       "o.getUuid()"
@@ -19034,7 +19034,7 @@
   {
     "raw": "can\u0027t delete rules of different security group",
     "en_US": "can\u0027t delete rules of different security group",
-    "zh_CN": "",
+    "zh_CN": "无法删除不同安全组的规则",
     "arguments": [],
     "line": 757,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -19042,7 +19042,7 @@
   {
     "raw": "can\u0027t delete default rule[uuid:%s]",
     "en_US": "can\u0027t delete default rule[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法删除默认规则[UUID：{0}]",
     "arguments": [
       "vo.getUuid()"
     ],
@@ -19085,7 +19085,7 @@
   {
     "raw": "could not add security group rule, because security group[uuid:%s] does not exist",
     "en_US": "could not add security group rule, because security group[uuid:{0}] does not exist",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为安全组[UUID：{0}]不存在",
     "arguments": [
       "uuid"
     ],
@@ -19095,7 +19095,7 @@
   {
     "raw": "could not add security group rule, because the rules cannot be empty or exceed the max number %d",
     "en_US": "could not add security group rule, because the rules cannot be empty or exceed the max number {0}",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则不能为空或超过最大数量{0}",
     "arguments": [
       "SecurityGroupConstant.ONE_API_RULES_MAX_NUM"
     ],
@@ -19105,7 +19105,7 @@
   {
     "raw": "could not add security group rule, because duplicate uuid in remoteSecurityGroupUuids: %s",
     "en_US": "could not add security group rule, because duplicate uuid in remoteSecurityGroupUuids: {0}",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为RemoteSecurityGroupUUID中存在重复的UUID：{0}",
     "arguments": [
       "msg.getRemoteSecurityGroupUuids()"
     ],
@@ -19115,7 +19115,7 @@
   {
     "raw": "could not add security group rule, because the remote security group uuid is conflict",
     "en_US": "could not add security group rule, because the remote security group uuid is conflict",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为远程安全组UUID冲突",
     "arguments": [],
     "line": 891,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -19123,7 +19123,7 @@
   {
     "raw": "could not add security group rule, because rule priority must greater than %d or equals %d",
     "en_US": "could not add security group rule, because rule priority must greater than {0} or equals {1}",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则优先级必须大于{0}或等于{1}",
     "arguments": [
       "SecurityGroupConstant.DEFAULT_RULE_PRIORITY",
       "SecurityGroupConstant.LOWEST_RULE_PRIORITY"
@@ -19134,7 +19134,7 @@
   {
     "raw": "could not add security group rule, because invalid rule type[%s], valid types are %s",
     "en_US": "could not add security group rule, because invalid rule type[{0}], valid types are {1}",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则类型[{0}]无效，有效类型为{1}",
     "arguments": [
       "ao.getType()",
       "SecurityGroupRuleType.getAllType()"
@@ -19145,7 +19145,7 @@
   {
     "raw": "could not add security group rule, because invalid rule state[%s], valid states are %s",
     "en_US": "could not add security group rule, because invalid rule state[{0}], valid states are {1}",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则状态[{0}]无效，有效状态为{1}",
     "arguments": [
       "ao.getState()",
       "SecurityGroupRuleState.getAllState()"
@@ -19156,7 +19156,7 @@
   {
     "raw": "could not add security group rule, because invalid rule protocol[%s], valid protocols are %s",
     "en_US": "could not add security group rule, because invalid rule protocol[{0}], valid protocols are {1}",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则协议[{0}]无效，有效协议为{1}",
     "arguments": [
       "ao.getProtocol()",
       "SecurityGroupRuleProtocolType.getAllProtocol()"
@@ -19167,7 +19167,7 @@
   {
     "raw": "could not add security group rule, because invalid rule action[%s], valid actions are %s",
     "en_US": "could not add security group rule, because invalid rule action[{0}], valid actions are {1}",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则操作[{0}]无效，有效操作为{1}",
     "arguments": [
       "ao.getAction()",
       "SecurityGroupRuleAction.getAllAction()"
@@ -19178,7 +19178,7 @@
   {
     "raw": "could not add security group rule, because invalid rule ipVersion[%d], valid ipVersions are %d/%d",
     "en_US": "could not add security group rule, because invalid rule ipVersion[{0}], valid ipVersions are {1}/{2}",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则IPVersion[{0}]无效，有效的IPVersion为{1}/{2}",
     "arguments": [
       "ao.getIpVersion()",
       "IPv6Constants.IPv4",
@@ -19190,7 +19190,7 @@
   {
     "raw": "could not add security group rule, because the dstIpRange[%s] is not allowed to set for ingress rule",
     "en_US": "could not add security group rule, because the dstIpRange[{0}] is not allowed to set for ingress rule",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为不允许为入口规则设置DSTIPRange[{0}]",
     "arguments": [
       "ao.getDstIpRange()"
     ],
@@ -19200,7 +19200,7 @@
   {
     "raw": "could not add security group rule, because the allowedCidr[%s] and srcIpRange[%s] are in conflict",
     "en_US": "could not add security group rule, because the allowedCidr[{0}] and srcIpRange[{1}] are in conflict",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为allowedcidr[{0}]和srciprange[{1}]冲突",
     "arguments": [
       "ao.getAllowedCidr()",
       "ao.getSrcIpRange()"
@@ -19211,7 +19211,7 @@
   {
     "raw": "could not add security group rule, because the ip range[%s] and remoteSecurityGroupUuid[%s] are in conflict",
     "en_US": "could not add security group rule, because the ip range[{0}] and remoteSecurityGroupUuid[{1}] are in conflict",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为IP范围[{0}]和RemoteSecurityGroupUUID[{1}]冲突",
     "arguments": [
       "ao.getDstIpRange()",
       "ao.getRemoteSecurityGroupUuid()"
@@ -19222,7 +19222,7 @@
   {
     "raw": "could not add security group rule, because the srcIpRange[%s] is not allowed to set for egress rule",
     "en_US": "could not add security group rule, because the srcIpRange[{0}] is not allowed to set for egress rule",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为不允许为出口规则设置SrcIPRange[{0}]",
     "arguments": [
       "ao.getSrcIpRange()"
     ],
@@ -19232,7 +19232,7 @@
   {
     "raw": "could not add security group rule, because the allowedCidr[%s] and dstIpRange[%s] are in conflict",
     "en_US": "could not add security group rule, because the allowedCidr[{0}] and dstIpRange[{1}] are in conflict",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为AllowedCidr[{0}]和DSTIPRange[{1}]冲突",
     "arguments": [
       "ao.getAllowedCidr()",
       "ao.getDstIpRange()"
@@ -19243,7 +19243,7 @@
   {
     "raw": "could not add security group rule, because invalid rule endPort[%d], endPort must be greater than or equal to startPort[%d]",
     "en_US": "could not add security group rule, because invalid rule endPort[{0}], endPort must be greater than or equal to startPort[{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则endPort[{0}]无效，endPort必须大于或等于startPort[{1}]",
     "arguments": [
       "ao.getEndPort()",
       "ao.getStartPort()"
@@ -19254,7 +19254,7 @@
   {
     "raw": "could not add security group rule, because dstPortRange[%s] and starPort[%s] are in conflict",
     "en_US": "could not add security group rule, because dstPortRange[{0}] and starPort[{1}] are in conflict",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为DstPortRange[{0}]和StarPort[{1}]冲突",
     "arguments": [
       "ao.getDstPortRange()",
       "ao.getStartPort()"
@@ -19265,7 +19265,7 @@
   {
     "raw": "could not add security group rule, because the protocol type TCP/UDP must set dstPortRange",
     "en_US": "could not add security group rule, because the protocol type TCP/UDP must set dstPortRange",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为协议类型TCP/UDP必须设置DSTPortRange",
     "arguments": [],
     "line": 1040,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -19273,7 +19273,7 @@
   {
     "raw": "could not add security group rule, because the protocol type ALL or ICMP cant not set dstPortRange[%s]",
     "en_US": "could not add security group rule, because the protocol type ALL or ICMP cant not set dstPortRange[{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为协议类型ALL或ICMP无法设置DstPortRange[{0}]",
     "arguments": [
       "ao.getDstPortRange()"
     ],
@@ -19283,7 +19283,7 @@
   {
     "raw": "could not add security group rule, because the protocol type ALL or ICMP cant not set startPort or endPort",
     "en_US": "could not add security group rule, because the protocol type ALL or ICMP cant not set startPort or endPort",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为协议类型ALL或ICMP无法设置StartPort或EndPort",
     "arguments": [],
     "line": 1021,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
@@ -19291,7 +19291,7 @@
   {
     "raw": "could not add security group rule, because rule[%s] and rule[%s] are dupilicated",
     "en_US": "could not add security group rule, because rule[{0}] and rule[{1}] are dupilicated",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则[{0}]和规则[{1}]重复",
     "arguments": [
       "JSONObjectUtil.toJsonString(newRules.get(i))",
       "JSONObjectUtil.toJsonString(newRules.get(j))"
@@ -19302,7 +19302,7 @@
   {
     "raw": "could not add security group rule, because rule[%s] is duplicated to rule[uuid:%s] in datebase",
     "en_US": "could not add security group rule, because rule[{0}] is duplicated to rule[uuid:{1}] in datebase",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为规则[{0}]与数据库中的规则[UUID：{1}]重复",
     "arguments": [
       "JSONObjectUtil.toJsonString(sao)",
       "vo.getUuid()"
@@ -19313,7 +19313,7 @@
   {
     "raw": "could not add security group rule, because security group %s rules has reached the maximum limit[%d]",
     "en_US": "could not add security group rule, because security group {0} rules has reached the maximum limit[{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为安全组{0}规则已达到最大限制[{1}]",
     "arguments": [
       "SecurityGroupRuleType.Egress",
       "SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)"
@@ -19324,7 +19324,7 @@
   {
     "raw": "could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
     "en_US": "could not add security group rule, because security group {0} rules number[{1}] is out of max limit[{2}]",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为安全组{0}规则编号[{1}]超出最大限制[{2}]",
     "arguments": [
       "SecurityGroupRuleType.Egress",
       "(egressRuleCount + toCreateEgressRuleCount)",
@@ -19336,7 +19336,7 @@
   {
     "raw": "could not add security group rule, because priority[%d] must be consecutive, the ingress rule maximum priority is [%d]",
     "en_US": "could not add security group rule, because priority[{0}] must be consecutive, the ingress rule maximum priority is [{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为优先级[{0}]必须连续，入口规则最大优先级为[{1}]",
     "arguments": [
       "msg.getPriority()",
       "ingressRuleCount"
@@ -19347,7 +19347,7 @@
   {
     "raw": "could not add security group rule, because priority[%d] must be consecutive, the egress rule maximum priority is [%d]",
     "en_US": "could not add security group rule, because priority[{0}] must be consecutive, the egress rule maximum priority is [{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法添加安全组规则，因为优先级[{0}]必须是连续的，出口规则最大优先级为[{1}]",
     "arguments": [
       "msg.getPriority()",
       "egressRuleCount"
@@ -19358,7 +19358,7 @@
   {
     "raw": "vm nic[uuid:%s] has been attach to security group[uuid:%s]",
     "en_US": "vm nic[uuid:{0}] has been attach to security group[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "VM NIC[UUID：{0}]已连接到安全组[UUID：{1}]",
     "arguments": [
       "ref.getVmNicUuid()",
       "msg.getSecurityGroupUuid()"
@@ -19369,7 +19369,7 @@
   {
     "raw": "the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]",
     "en_US": "the netwotk service[type:{0}] not enabled on the l3Network[uuid:{1}] of nic[uuid:{2}]",
-    "zh_CN": "",
+    "zh_CN": "网络服务[类型：{0}]未在NIC[UUID：{2}]的L3网络[UUID：{1}]上启用",
     "arguments": [
       "SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE",
       "nic.getL3NetworkUuid()",
@@ -19381,7 +19381,7 @@
   {
     "raw": "the netwotk service[type:%s] not enabled on the l3Network[uuid:%s]",
     "en_US": "the netwotk service[type:{0}] not enabled on the l3Network[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "未在L3网络[UUID：{1}]上启用网络服务[类型：{0}]",
     "arguments": [
       "SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE",
       "l3Uuid"
@@ -19392,7 +19392,7 @@
   {
     "raw": "failed to chenge rule[uuid:%s] priority, beacuse it\u0027s not found",
     "en_US": "failed to chenge rule[uuid:{0}] priority, beacuse it\u0027s not found",
-    "zh_CN": "",
+    "zh_CN": "无法更改规则[UUID：{0}]的优先级，因为找不到该优先级",
     "arguments": [
       "ao.getRuleUuid()"
     ],
@@ -25894,7 +25894,7 @@
   {
     "raw": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
     "en_US": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
-    "zh_CN": "",
+    "zh_CN": "无法创建VM，因为至少应设置字段（L3NetworkUuids、ZoneUuid、ClusterUuid、HostUuid）中的一个",
     "arguments": [],
     "line": 355,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
@@ -33421,7 +33421,7 @@
   {
     "raw": "usb is already bound to vm[uuid:%s] and cannot be bound to other vm",
     "en_US": "usb is already bound to vm[uuid:{0}] and cannot be bound to other vm",
-    "zh_CN": "",
+    "zh_CN": "USB已绑定到VM[UUID：{0}]，无法绑定到其他VM",
     "arguments": [
       "deviceVO.getVmInstanceUuid()"
     ],
