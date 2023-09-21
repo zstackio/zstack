@@ -9,7 +9,9 @@ public class RBACInfo implements RBACDescription {
         permissionBuilder()
                 .name("global-config")
                 .adminOnlyAPIs("org.zstack.core.config.**")
-                .normalAPIs(APIQueryGlobalConfigMsg.class)
+                .normalAPIs(
+                        APIQueryGlobalConfigMsg.class,
+                        APIGetGlobalConfigOptionsMsg.class)
                 .build();
     }
 
@@ -17,7 +19,9 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("other")
-                .actions(APIQueryGlobalConfigMsg.class)
+                .actions(
+                        APIQueryGlobalConfigMsg.class,
+                        APIGetGlobalConfigOptionsMsg.class)
                 .build();
     }
 
