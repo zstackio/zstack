@@ -212,10 +212,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         private String sourceType;
         private String sourceUuid;
         private List<String> systemTags;
-        @APINoSee
-        private DiskOfferingVO diskOffering;
-        @APINoSee
-        private VolumeInventory volumeInventory;
+        private String name;
 
         public String getPrimaryStorageUuid() {
             return primaryStorageUuid;
@@ -273,20 +270,12 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
             this.systemTags = systemTags;
         }
 
-        public DiskOfferingVO getDiskOffering() {
-            return diskOffering;
+        public String getName() {
+            return name;
         }
 
-        public void setDiskOffering(DiskOfferingVO diskOffering) {
-            this.diskOffering = diskOffering;
-        }
-
-        public VolumeInventory getVolumeInventory() {
-            return volumeInventory;
-        }
-
-        public void setVolumeInventory(VolumeInventory volumeInventory) {
-            this.volumeInventory = volumeInventory;
+        public void setName(String name) {
+            this.name = name;
         }
     }
 

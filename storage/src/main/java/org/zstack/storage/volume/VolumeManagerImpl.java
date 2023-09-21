@@ -1322,7 +1322,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 .set(VolumeVO_.vmInstanceUuid, volume.isShareable() ? null : vm.getUuid())
                 .set(VolumeVO_.format, format != null ? format :
                         VolumeFormat.getVolumeFormatByMasterHypervisorType(vm.getHypervisorType()))
-                .set(VolumeVO_.lastAttachDate, Timestamp.valueOf(LocalDateTime.now()).getTime())
+                .set(VolumeVO_.lastAttachDate, Timestamp.valueOf(LocalDateTime.now()).toString())
                 .update();
     }
 

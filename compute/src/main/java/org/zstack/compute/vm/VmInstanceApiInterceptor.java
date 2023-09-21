@@ -54,6 +54,7 @@ import org.zstack.utils.network.NicIpAddressInfo;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
@@ -1239,6 +1240,44 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validatePsWhetherSameCluster(msg);
+        validateDiskAOs(msg);
+    }
+
+    private void validateDiskAOs(APICreateVmInstanceMsg msg) {
+        if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
+            return;
+        }
+        for (APICreateVmInstanceMsg.DiskAO diskAO : msg.getDiskAOs()) {
+            checkMutualExclusion(diskAO);
+        }
+    }
+
+    public void checkMutualExclusion(APICreateVmInstanceMsg.DiskAO diskAO) {
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("size", diskAO.getSize() > 0);
+        map.put("templateUuid", diskAO.getTemplateUuid() != null);
+        map.put("diskOfferingUuid", diskAO.getDiskOfferingUuid() != null);
+        map.put("sourceUuid", diskAO.getSourceUuid() != null);
+        int count = 0;
+        StringBuilder errorMsg = new StringBuilder();
+        for (Map.Entry<String, Boolean> entry : map.entrySet()) {
+            if (entry.getValue()) {
+                count++;
+                errorMsg.append(entry.getKey()).append(", ");
+            }
+        }
+
+        if (count > 1) {
+            throw new ApiMessageInterceptionException(operr("Cannot set the following properties at the same time : " + errorMsg));
+        }
+
+        if (count == 0) {
+            StringJoiner properties = new StringJoiner(", ");
+            for (String key : map.keySet()) {
+                properties.add(key);
+            }
+            throw new ApiMessageInterceptionException(operr("Need to set one of the following properties, and can only be one of them: " + properties));
+        }
     }
 
     private void validate(APICreateVmInstanceFromVolumeMsg msg) {
