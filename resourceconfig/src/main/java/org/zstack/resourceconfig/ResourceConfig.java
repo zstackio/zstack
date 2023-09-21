@@ -293,7 +293,7 @@ public class ResourceConfig {
                         Collectors.mapping(pair -> pair.get(1, String.class), Collectors.toList())));
     }
 
-    List<ResourceConfigInventory> getEffectiveResourceConfigs(String resourceUuid) {
+    public List<ResourceConfigInventory> getEffectiveResourceConfigs(String resourceUuid) {
         String resourceType = Q.New(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
         if (resourceType == null) {
             logger.warn(String.format("no resource[uuid:%s] found, cannot get it's resource config," +
