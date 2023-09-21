@@ -10,6 +10,7 @@ import org.zstack.header.vo.ShadowEntity;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 
 @MappedSuperclass
 public class VolumeAO extends ResourceVO implements ShadowEntity {
@@ -74,7 +75,7 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
     private Timestamp lastDetachDate;
 
     @Column
-    private long lastAttachDate;
+    private String lastAttachDate;
 
     @Column
     private boolean isShareable;
@@ -275,11 +276,17 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
         this.volumeQos = volumeQos;
     }
 
-    public long getLastAttachDate() {
-        return lastAttachDate;
+    public Timestamp getLastAttachDate() {
+        if (this.lastAttachDate == null) {
+            return null;
+        }
+        return Timestamp.valueOf(this.lastAttachDate);
     }
 
-    public void setLastAttachDate(long lastAttachDate) {
-        this.lastAttachDate = lastAttachDate;
+    public void setLastAttachDate(Timestamp lastAttachDate) {
+        if (lastAttachDate == null) {
+            return;
+        }
+        this.lastAttachDate = lastAttachDate.toString();
     }
 }

@@ -79,7 +79,7 @@ public class VolumeSnapshotGroupRefInventory {
         ref.volumeSnapshotName = vo.getVolumeSnapshotName();
         ref.createDate = vo.getCreateDate();
         ref.lastOpDate = vo.getLastOpDate();
-        ref.volumeLastAttachDate = new Timestamp(vo.getVolumeLastAttachDate());
+        ref.volumeLastAttachDate = vo.getVolumeLastAttachDate();
         return ref;
     }
 
