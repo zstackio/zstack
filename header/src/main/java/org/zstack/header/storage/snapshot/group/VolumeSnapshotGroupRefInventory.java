@@ -32,6 +32,7 @@ public class VolumeSnapshotGroupRefInventory {
     private String volumeSnapshotName;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+    private Timestamp volumeLastAttachDate;
 
     public String getVolumeSnapshotUuid() {
         return volumeSnapshotUuid;
@@ -78,6 +79,7 @@ public class VolumeSnapshotGroupRefInventory {
         ref.volumeSnapshotName = vo.getVolumeSnapshotName();
         ref.createDate = vo.getCreateDate();
         ref.lastOpDate = vo.getLastOpDate();
+        ref.volumeLastAttachDate = new Timestamp(vo.getVolumeLastAttachDate());
         return ref;
     }
 
@@ -139,5 +141,13 @@ public class VolumeSnapshotGroupRefInventory {
 
     public void setVolumeSnapshotName(String volumeSnapshotName) {
         this.volumeSnapshotName = volumeSnapshotName;
+    }
+
+    public Timestamp getVolumeLastAttachDate() {
+        return volumeLastAttachDate;
+    }
+
+    public void setVolumeLastAttachDate(Timestamp volumeLastAttachDate) {
+        this.volumeLastAttachDate = volumeLastAttachDate;
     }
 }

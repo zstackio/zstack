@@ -41,6 +41,11 @@ public class GsonUtil {
         _gsonBuilder.serializeNulls();
         return this;
     }
+
+    public GsonUtil setDateFormat(String dateFormat) {
+        _gsonBuilder.setDateFormat(dateFormat);
+        return this;
+    }
     
     public Gson create() {
         //TODO: configuration database

@@ -172,4 +172,12 @@ public class VolumeInventory  {
         return this.lastVmInstanceUuid;
     }
 
+    public java.sql.Timestamp lastAttachDate;
+    public void setLastAttachDate(java.sql.Timestamp lastAttachDate) {
+        this.lastAttachDate = lastAttachDate;
+    }
+    public java.sql.Timestamp getLastAttachDate() {
+        return this.lastAttachDate;
+    }
+
 }

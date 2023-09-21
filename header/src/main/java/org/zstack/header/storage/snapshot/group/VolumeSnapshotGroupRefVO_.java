@@ -22,4 +22,5 @@ public class VolumeSnapshotGroupRefVO_ {
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeSnapshotInstallPath;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, Timestamp> createDate;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, Long> volumeLastAttachDate;
 }
