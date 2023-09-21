@@ -3987,4 +3987,28 @@ public class KVMAgentCommands {
 
     public static class DetachVolumeRsp extends AgentResponse {
     }
+
+    public static class TakeVmConsoleScreenshotCmd extends AgentCommand {
+        private String vmUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
+
+    public static class TakeVmConsoleScreenshotRsp extends AgentResponse {
+        private String imageData;
+
+        public String getImageData() {
+            return imageData;
+        }
+
+        public void setImageData(String imageData) {
+            this.imageData = imageData;
+        }
+    }
 }
