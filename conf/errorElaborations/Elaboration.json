@@ -421,7 +421,7 @@
     "method": "regex",
     "regex": "host\\[.*] capacity is not enough to offer cpu\\[[0-9]], memory\\[[0-9] bytes]",
     "message_cn": "主机无法提供足够的资源 [CPU：%1$s，内存：%2$s 字节]。",
-    "message_en": "Host could not provide enough resources [CPU: %1$s, memory: %2$s bytes]."
+    "message_en": "Host could not provide enough resources [CPU: %2$s, memory: %3$s bytes]."
   },
   {
     "category": "HOST",
