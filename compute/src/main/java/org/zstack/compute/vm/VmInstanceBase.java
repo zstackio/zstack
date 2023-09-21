@@ -5343,6 +5343,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
                 msg.setHostUuid(self.getHostUuid());
                 msg.setFullAllocate(false);
+                msg.setAllowNoL3Networks(true);
                 msg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
                 msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
                 bus.send(msg, new CloudBusCallBack(chain) {
