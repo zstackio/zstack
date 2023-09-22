@@ -1579,6 +1579,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 }
             }, StartVmInstanceMsg.class);
+
+            pluginRgty.saveExtensionAsMap(VmAttachOtherDiskExtensionPoint.class, new Function<Object, VmAttachOtherDiskExtensionPoint>() {
+                @Override
+                public Object call(VmAttachOtherDiskExtensionPoint arg) {
+                    return arg.getDiskType();
+                }
+            });
+
             return true;
         } catch (Exception e) {
             throw new CloudConfigureFailException(VmInstanceManagerImpl.class, e.getMessage(), e);

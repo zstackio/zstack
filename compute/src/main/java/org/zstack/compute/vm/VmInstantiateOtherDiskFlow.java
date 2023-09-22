@@ -5,29 +5,29 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
-import org.zstack.header.vm.AttachDataVolumeToVmMsg;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -40,6 +40,8 @@ public class VmInstantiateOtherDiskFlow implements Flow {
     private AccountManager acntMgr;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     APICreateVmInstanceMsg.DiskAO diskAO;
     VolumeInventory volumeInventory;
@@ -64,19 +66,26 @@ public class VmInstantiateOtherDiskFlow implements Flow {
             @Override
             public void setup() {
                 if (diskAO.getSize() != 0) {
-                    setupVolumeFromDiskOfferingUuidFlows(diskAO.getSize());
+                    setupCreateVolumeFromDiskSizeFlows(diskAO.getSize());
+                    setupAttachVolumeFlows();
                 } else if (diskAO.getDiskOfferingUuid() != null) {
-                    Long diskSize = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, diskAO.getDiskOfferingUuid())
+                    Long size = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, diskAO.getDiskOfferingUuid())
                             .select(DiskOfferingVO_.diskSize).findValue();
-                    setupVolumeFromDiskOfferingUuidFlows(diskSize);
+                    setupCreateVolumeFromDiskSizeFlows(size);
+                    setupAttachVolumeFlows();
                 } else if (diskAO.getTemplateUuid() != null) {
                     setupVolumeFromTemplateUuidFlows();
-                } else if (diskAO.getSourceUuid() != null && Objects.equals(diskAO.getSourceType(), VolumeVO.class.getSimpleName())) {
+                    setupAttachVolumeFlows();
+                } else if (isAttachDataVolume()) {
                     VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, diskAO.getSourceUuid()).find();
                     volumeInventory = VolumeInventory.valueOf(volume);
+                    setupAttachVolumeFlows();
+                } else if (diskAO.getSourceUuid() != null && diskAO.getSourceType() != null) {
+                    setupAttachOtherDiskFlows();
+                } else {
+                    trigger.fail(operr("the diskAO parameter is incorrect. need to set one of the following properties, " +
+                            "and can only be one of them: size, templateUuid, diskOfferingUuid, sourceUuid-sourceType"));
                 }
-
-                setupAttachVolumeFlows();
 
                 done(new FlowDoneHandler(trigger) {
                     @Override
@@ -93,7 +102,11 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                 });
             }
 
-            private void setupVolumeFromDiskOfferingUuidFlows(Long diskSize) {
+            private boolean isAttachDataVolume() {
+                return diskAO.getSourceUuid() != null && diskAO.getSourceType() != null && Objects.equals(diskAO.getSourceType(), VolumeVO.class.getSimpleName());
+            }
+
+            private void setupCreateVolumeFromDiskSizeFlows(Long diskSize) {
                 flow(new Flow() {
                     String __name__ = "allocate-primaryStorage";
 
@@ -313,6 +326,33 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                                     return;
                                 }
                                 innerTrigger.next();
+                            }
+                        });
+                    }
+                });
+            }
+
+            private void setupAttachOtherDiskFlows() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("attach-other-Disk-to-vm-%s", vmUuid);
+
+                    @Override
+                    public void run(final FlowTrigger innerTrigger, Map data) {
+                        VmAttachOtherDiskExtensionPoint vmAttachOtherDiskExtensionPoint = pluginRgty
+                                .getExtensionFromMap(diskAO.getSourceType(), VmAttachOtherDiskExtensionPoint.class);
+                        if (vmAttachOtherDiskExtensionPoint == null) {
+                            innerTrigger.fail(operr("the disk does not support attachment. disk type is %s", diskAO.getSourceType()));
+                            return;
+                        }
+                        vmAttachOtherDiskExtensionPoint.attachOtherDiskToVm(diskAO, vmUuid, new Completion(innerTrigger) {
+                            @Override
+                            public void success() {
+                                innerTrigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                innerTrigger.fail(errorCode);
                             }
                         });
                     }
