@@ -90,7 +90,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
     @Override
     public void allocate() {
         if (spec.getL3NetworkUuids().isEmpty()) {
-            if (CoreGlobalProperty.UNIT_TEST_ON || spec.isAllowNoL3Networks()) {
+            if (spec.isAllowNoL3Networks()) {
                 skip();
                 return;
             } else {
