@@ -26,7 +26,6 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
@@ -83,7 +82,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
@@ -359,7 +357,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 ret.addAll(exp.getGroupMembers(sgUuid, ipVersion));
             }
 
-            return ret;
+            return ret.stream().distinct().collect(Collectors.toList());
         }
 
         @Transactional(readOnly = true)
@@ -741,70 +739,65 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new SQLBatch() {
-                            @Override
-                            protected void scripts() {
-                                List<VmNicSecurityGroupRefVO> toCreate = new ArrayList<>();
-                                List<VmNicSecurityGroupRefVO> toDelete = new ArrayList<>();
-                                List<VmNicSecurityGroupRefVO> toUpdate = new ArrayList<>();
-                                List<String> sgUuids = new ArrayList<>();
-                                Map<String, VmNicSecurityGroupRefVO> refMap = new HashMap<>();
+                        List<VmNicSecurityGroupRefVO> toCreate = new ArrayList<>();
+                        List<VmNicSecurityGroupRefVO> toDelete = new ArrayList<>();
+                        List<VmNicSecurityGroupRefVO> toUpdate = new ArrayList<>();
+                        List<String> sgUuids = new ArrayList<>();
+                        Map<String, VmNicSecurityGroupRefVO> refMap = new HashMap<>();
 
-                                VmNicVO nic = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
-                                List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, msg.getVmNicUuid()).list();
+                        VmNicVO nic = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+                        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, msg.getVmNicUuid()).list();
 
-                                refs.forEach(ref -> {
-                                    refMap.put(ref.getSecurityGroupUuid(), ref);
-                                });
+                        refs.forEach(ref -> {
+                            refMap.put(ref.getSecurityGroupUuid(), ref);
+                        });
 
-                                for (VmNicSecurityGroupRefAO ao : msg.getRefs()) {
-                                    if (!refMap.containsKey(ao.getSecurityGroupUuid())) {
-                                        // to create
-                                        VmNicSecurityGroupRefVO vo = new VmNicSecurityGroupRefVO();
-                                        vo.setUuid(Platform.getUuid());
-                                        vo.setVmNicUuid(nic.getUuid());
-                                        vo.setPriority(ao.getPriority());
-                                        vo.setVmInstanceUuid(nic.getVmInstanceUuid());
-                                        vo.setSecurityGroupUuid(ao.getSecurityGroupUuid());
-                                        toCreate.add(vo);
-                                        sgUuids.add(ao.getSecurityGroupUuid());
-                                    } else {
-                                        // to update
-                                        VmNicSecurityGroupRefVO vo = refMap.get(ao.getSecurityGroupUuid());
-                                        vo.setPriority(ao.getPriority());
-                                        toUpdate.add(vo);
-                                        refMap.remove(ao.getSecurityGroupUuid());
-                                    }
-                                }
-
-                                // to delete
-                                toDelete.addAll(refMap.values());
-                                refMap.values().forEach(ref -> sgUuids.add(ref.getSecurityGroupUuid()));
-
-                                if (!toCreate.isEmpty()) {
-                                    dbf.persistCollection(toCreate);
-                                }
-                                if (!toDelete.isEmpty()) {
-                                    dbf.removeCollection(toDelete, VmNicSecurityGroupRefVO.class);
-                                }
-                                if (!toUpdate.isEmpty()) {
-                                    dbf.updateCollection(toUpdate);
-                                }
-
-                                if (!toCreate.isEmpty() || !toUpdate.isEmpty()) {
-                                    if (!Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, msg.getVmNicUuid()).isExists()) {
-                                        VmNicSecurityPolicyVO vo = new VmNicSecurityPolicyVO();
-                                        vo.setUuid(Platform.getUuid());
-                                        vo.setVmNicUuid(msg.getVmNicUuid());
-                                        vo.setIngressPolicy(VmNicSecurityPolicy.DENY.toString());
-                                        vo.setEgressPolicy(VmNicSecurityPolicy.ALLOW.toString());
-                                        dbf.persist(vo);
-                                    }
-                                }
-                                
-                                data.put(SecurityGroupConstant.Param.SECURITY_GROUP_UUIDS, sgUuids);
+                        for (VmNicSecurityGroupRefAO ao : msg.getRefs()) {
+                            if (!refMap.containsKey(ao.getSecurityGroupUuid())) {
+                                // to create
+                                VmNicSecurityGroupRefVO vo = new VmNicSecurityGroupRefVO();
+                                vo.setUuid(Platform.getUuid());
+                                vo.setVmNicUuid(nic.getUuid());
+                                vo.setPriority(ao.getPriority());
+                                vo.setVmInstanceUuid(nic.getVmInstanceUuid());
+                                vo.setSecurityGroupUuid(ao.getSecurityGroupUuid());
+                                toCreate.add(vo);
+                                sgUuids.add(ao.getSecurityGroupUuid());
+                            } else {
+                                // to update
+                                VmNicSecurityGroupRefVO vo = refMap.get(ao.getSecurityGroupUuid());
+                                vo.setPriority(ao.getPriority());
+                                toUpdate.add(vo);
+                                refMap.remove(ao.getSecurityGroupUuid());
                             }
-                        }.execute();
+                        }
+
+                        // to delete
+                        toDelete.addAll(refMap.values());
+                        refMap.values().forEach(ref -> sgUuids.add(ref.getSecurityGroupUuid()));
+
+                        if (!toCreate.isEmpty()) {
+                            dbf.persistCollection(toCreate);
+                        }
+                        if (!toDelete.isEmpty()) {
+                            dbf.removeCollection(toDelete, VmNicSecurityGroupRefVO.class);
+                        }
+                        if (!toUpdate.isEmpty()) {
+                            dbf.updateCollection(toUpdate);
+                        }
+
+                        if (!toCreate.isEmpty() || !toUpdate.isEmpty()) {
+                            if (!Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, msg.getVmNicUuid()).isExists()) {
+                                VmNicSecurityPolicyVO vo = new VmNicSecurityPolicyVO();
+                                vo.setUuid(Platform.getUuid());
+                                vo.setVmNicUuid(msg.getVmNicUuid());
+                                vo.setIngressPolicy(VmNicSecurityPolicy.DENY.toString());
+                                vo.setEgressPolicy(VmNicSecurityPolicy.ALLOW.toString());
+                                dbf.persist(vo);
+                            }
+                        }
+
+                        data.put(SecurityGroupConstant.Param.SECURITY_GROUP_UUIDS, sgUuids);
 
                         trigger.next();
                     }
@@ -1504,25 +1497,20 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                             return;
                         }
 
-                        new SQLBatch() {
-                            @Override
-                            protected void scripts() {
-                                List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuids).list();
-                                List<VmNicSecurityGroupRefVO> toRemove = refs.stream().filter(ref -> ref.getSecurityGroupUuid().equals(sgUuid)).collect(Collectors.toList());
-                                dbf.removeCollection(toRemove, VmNicSecurityGroupRefVO.class);
-                                refs.removeAll(toRemove);
+                        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuids).list();
+                        List<VmNicSecurityGroupRefVO> toRemove = refs.stream().filter(ref -> ref.getSecurityGroupUuid().equals(sgUuid)).collect(Collectors.toList());
+                        dbf.removeCollection(toRemove, VmNicSecurityGroupRefVO.class);
+                        refs.removeAll(toRemove);
 
-                                for (String nicUuid : vmNicUuids) {
-                                    List<VmNicSecurityGroupRefVO> toUpdate = refs.stream().filter(ref -> ref.getVmNicUuid().equals(nicUuid)).sorted(Comparator.comparingInt(VmNicSecurityGroupRefVO::getPriority)).collect(Collectors.toList());
-                                    if (!toUpdate.isEmpty()) {
-                                        toUpdate.stream().forEach(ref ->{
-                                            ref.setPriority(toUpdate.indexOf(ref) + 1);
-                                        });
-                                        dbf.updateCollection(toUpdate);  
-                                    }
-                                }
+                        for (String nicUuid : vmNicUuids) {
+                            List<VmNicSecurityGroupRefVO> toUpdate = refs.stream().filter(ref -> ref.getVmNicUuid().equals(nicUuid)).sorted(Comparator.comparingInt(VmNicSecurityGroupRefVO::getPriority)).collect(Collectors.toList());
+                            if (!toUpdate.isEmpty()) {
+                                toUpdate.stream().forEach(ref ->{
+                                    ref.setPriority(toUpdate.indexOf(ref) + 1);
+                                });
+                                dbf.updateCollection(toUpdate);  
                             }
-                        }.execute();
+                        }
 
                         trigger.next();
                     }
@@ -1788,52 +1776,47 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             return;
         }
 
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
-                        .eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
-                        .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
-                        .list();
+        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
+                .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                .list();
 
-                boolean isUpdateIngress = false, isUpdateEgress = false;
-                List<SecurityGroupRuleVO> toUpdate = new ArrayList<>();
-                for (SecurityGroupRuleVO rvo : rvos) {
-                    if (ruleUuids.contains(rvo.getUuid())) {
-                        if (SecurityGroupRuleType.Ingress.equals(rvo.getType())) {
-                            isUpdateIngress = true;
-                        } else {
-                            isUpdateEgress = true;
-                        }
-                    } else {
-                        toUpdate.add(rvo);
-                    }
+        boolean isUpdateIngress = false, isUpdateEgress = false;
+        List<SecurityGroupRuleVO> toUpdate = new ArrayList<>();
+        for (SecurityGroupRuleVO rvo : rvos) {
+            if (ruleUuids.contains(rvo.getUuid())) {
+                if (SecurityGroupRuleType.Ingress.equals(rvo.getType())) {
+                    isUpdateIngress = true;
+                } else {
+                    isUpdateEgress = true;
                 }
-
-                dbf.removeByPrimaryKeys(ruleUuids, SecurityGroupRuleVO.class);
-
-                if (isUpdateIngress) {
-                    List<SecurityGroupRuleVO> ingressToUpdate = toUpdate.stream()
-                        .filter(rvo -> SecurityGroupRuleType.Ingress.equals(rvo.getType()))
-                        .sorted(Comparator.comparingInt(SecurityGroupRuleVO::getPriority)).collect(Collectors.toList());
-                    ingressToUpdate.stream().forEach(r -> {
-                        r.setPriority(ingressToUpdate.indexOf(r) + 1);
-                    });
-                    dbf.updateCollection(ingressToUpdate);
-                }
-
-                if (isUpdateEgress) {
-                    List<SecurityGroupRuleVO> egressToUpdate = toUpdate.stream()
-                        .filter(rvo -> SecurityGroupRuleType.Egress.equals(rvo.getType()))
-                        .sorted(Comparator.comparingInt(SecurityGroupRuleVO::getPriority)).collect(Collectors.toList());
-                    egressToUpdate.stream().forEach(r -> {
-                        r.setPriority(egressToUpdate.indexOf(r) + 1);
-                    });
-                    dbf.updateCollection(egressToUpdate);
-                }
+            } else {
+                toUpdate.add(rvo);
             }
-        }.execute();
-    
+        }
+
+        dbf.removeByPrimaryKeys(ruleUuids, SecurityGroupRuleVO.class);
+
+        if (isUpdateIngress) {
+            List<SecurityGroupRuleVO> ingressToUpdate = toUpdate.stream()
+                .filter(rvo -> SecurityGroupRuleType.Ingress.equals(rvo.getType()))
+                .sorted(Comparator.comparingInt(SecurityGroupRuleVO::getPriority)).collect(Collectors.toList());
+            ingressToUpdate.stream().forEach(r -> {
+                r.setPriority(ingressToUpdate.indexOf(r) + 1);
+            });
+            dbf.updateCollection(ingressToUpdate);
+        }
+
+        if (isUpdateEgress) {
+            List<SecurityGroupRuleVO> egressToUpdate = toUpdate.stream()
+                .filter(rvo -> SecurityGroupRuleType.Egress.equals(rvo.getType()))
+                .sorted(Comparator.comparingInt(SecurityGroupRuleVO::getPriority)).collect(Collectors.toList());
+            egressToUpdate.stream().forEach(r -> {
+                r.setPriority(egressToUpdate.indexOf(r) + 1);
+            });
+            dbf.updateCollection(egressToUpdate);
+        }
+
         return;
     }
 
@@ -2207,68 +2190,63 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new SQLBatch() {
-                            @Override
-                            protected void scripts() {
-                                Integer priority = msg.getPriority();
-                                List<SecurityGroupRuleVO> ruleVOs = Q.New(SecurityGroupRuleVO.class)
-                                    .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
-                                    .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY).list();
-                                List<SecurityGroupRuleVO> ingressRuleVOs = ruleVOs.stream().filter(r -> SecurityGroupRuleType.Ingress.equals(r.getType())).collect(Collectors.toList());
-                                List<SecurityGroupRuleVO> egressRuleVOs = ruleVOs.stream().filter(r -> SecurityGroupRuleType.Egress.equals(r.getType())).collect(Collectors.toList());
-                                List<SecurityGroupRuleVO> ingressToCreate = new ArrayList<SecurityGroupRuleVO>();
-                                List<SecurityGroupRuleVO> egressToCreate = new ArrayList<SecurityGroupRuleVO>();
-                                for (SecurityGroupRuleAO ao : msg.getRules()) {
-                                    SecurityGroupRuleVO vo = new SecurityGroupRuleVO();
-                                    vo.setUuid(Platform.getUuid());
-                                    vo.setSecurityGroupUuid(msg.getSecurityGroupUuid());
-                                    vo.setDescription(ao.getDescription());
-                                    vo.setType(SecurityGroupRuleType.valueOf(ao.getType()));
-                                    vo.setState(SecurityGroupRuleState.valueOf(ao.getState()));
-                                    vo.setIpVersion(ao.getIpVersion());
-                                    vo.setPriority(-1);
-                                    vo.setSrcIpRange(ao.getSrcIpRange());
-                                    vo.setDstIpRange(ao.getDstIpRange());
-                                    vo.setDstPortRange(ao.getDstPortRange());
-                                    vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(ao.getProtocol()));
-                                    vo.setRemoteSecurityGroupUuid(ao.getRemoteSecurityGroupUuid());
-                                    vo.setAllowedCidr(ao.getAllowedCidr());
-                                    vo.setStartPort(ao.getStartPort());
-                                    vo.setEndPort(ao.getEndPort());
-                                    vo.setAction(ao.getAction());
-                                    if (ao.getType().equals(SecurityGroupRuleType.Egress.toString())) {
-                                        egressToCreate.add(vo);
-                                    } else {
-                                        ingressToCreate.add(vo);
-                                    }
-                                }
-
-                                if (!ingressToCreate.isEmpty()) {
-                                    if (priority == -1) {
-                                        ingressToCreate.stream().forEach(r -> r.setPriority(ingressRuleVOs.size() + ingressToCreate.indexOf(r) + 1));
-                                        dbf.persistCollection(ingressToCreate);
-                                    } else {
-                                        ingressToCreate.stream().forEach(r -> r.setPriority(priority + ingressToCreate.indexOf(r)));
-                                        dbf.persistCollection(ingressToCreate);
-                                        List<SecurityGroupRuleVO> toUpdate = ingressRuleVOs.stream().filter(r -> r.getPriority() >= priority).collect(Collectors.toList());
-                                        toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() + ingressToCreate.size()));
-                                        dbf.updateCollection(toUpdate);
-                                    }
-                                }
-                                if (!egressToCreate.isEmpty()) {
-                                    if (priority == -1) {
-                                        egressToCreate.stream().forEach(r -> r.setPriority(egressRuleVOs.size() + egressToCreate.indexOf(r) + 1));
-                                        dbf.persistCollection(egressToCreate);
-                                    } else {
-                                        egressToCreate.stream().forEach(r -> r.setPriority(priority + egressToCreate.indexOf(r)));
-                                        dbf.persistCollection(egressToCreate);
-                                        List<SecurityGroupRuleVO> toUpdate = egressRuleVOs.stream().filter(r -> r.getPriority() >= priority).collect(Collectors.toList());
-                                        toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() + egressToCreate.size()));
-                                        dbf.updateCollection(toUpdate);
-                                    }
-                                }
+                        Integer priority = msg.getPriority();
+                        List<SecurityGroupRuleVO> ruleVOs = Q.New(SecurityGroupRuleVO.class)
+                            .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
+                            .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY).list();
+                        List<SecurityGroupRuleVO> ingressRuleVOs = ruleVOs.stream().filter(r -> SecurityGroupRuleType.Ingress.equals(r.getType())).collect(Collectors.toList());
+                        List<SecurityGroupRuleVO> egressRuleVOs = ruleVOs.stream().filter(r -> SecurityGroupRuleType.Egress.equals(r.getType())).collect(Collectors.toList());
+                        List<SecurityGroupRuleVO> ingressToCreate = new ArrayList<SecurityGroupRuleVO>();
+                        List<SecurityGroupRuleVO> egressToCreate = new ArrayList<SecurityGroupRuleVO>();
+                        for (SecurityGroupRuleAO ao : msg.getRules()) {
+                            SecurityGroupRuleVO vo = new SecurityGroupRuleVO();
+                            vo.setUuid(Platform.getUuid());
+                            vo.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+                            vo.setDescription(ao.getDescription());
+                            vo.setType(SecurityGroupRuleType.valueOf(ao.getType()));
+                            vo.setState(SecurityGroupRuleState.valueOf(ao.getState()));
+                            vo.setIpVersion(ao.getIpVersion());
+                            vo.setPriority(-1);
+                            vo.setSrcIpRange(ao.getSrcIpRange());
+                            vo.setDstIpRange(ao.getDstIpRange());
+                            vo.setDstPortRange(ao.getDstPortRange());
+                            vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(ao.getProtocol()));
+                            vo.setRemoteSecurityGroupUuid(ao.getRemoteSecurityGroupUuid());
+                            vo.setAllowedCidr(ao.getAllowedCidr());
+                            vo.setStartPort(ao.getStartPort());
+                            vo.setEndPort(ao.getEndPort());
+                            vo.setAction(ao.getAction());
+                            if (ao.getType().equals(SecurityGroupRuleType.Egress.toString())) {
+                                egressToCreate.add(vo);
+                            } else {
+                                ingressToCreate.add(vo);
                             }
-                        }.execute();
+                        }
+
+                        if (!ingressToCreate.isEmpty()) {
+                            if (priority == -1) {
+                                ingressToCreate.stream().forEach(r -> r.setPriority(ingressRuleVOs.size() + ingressToCreate.indexOf(r) + 1));
+                                dbf.persistCollection(ingressToCreate);
+                            } else {
+                                ingressToCreate.stream().forEach(r -> r.setPriority(priority + ingressToCreate.indexOf(r)));
+                                dbf.persistCollection(ingressToCreate);
+                                List<SecurityGroupRuleVO> toUpdate = ingressRuleVOs.stream().filter(r -> r.getPriority() >= priority).collect(Collectors.toList());
+                                toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() + ingressToCreate.size()));
+                                dbf.updateCollection(toUpdate);
+                            }
+                        }
+                        if (!egressToCreate.isEmpty()) {
+                            if (priority == -1) {
+                                egressToCreate.stream().forEach(r -> r.setPriority(egressRuleVOs.size() + egressToCreate.indexOf(r) + 1));
+                                dbf.persistCollection(egressToCreate);
+                            } else {
+                                egressToCreate.stream().forEach(r -> r.setPriority(priority + egressToCreate.indexOf(r)));
+                                dbf.persistCollection(egressToCreate);
+                                List<SecurityGroupRuleVO> toUpdate = egressRuleVOs.stream().filter(r -> r.getPriority() >= priority).collect(Collectors.toList());
+                                toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() + egressToCreate.size()));
+                                dbf.updateCollection(toUpdate);
+                            }
+                        }
 
                         trigger.next();
                     }

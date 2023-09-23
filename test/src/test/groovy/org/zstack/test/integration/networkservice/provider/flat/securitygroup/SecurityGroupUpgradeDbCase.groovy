@@ -19,6 +19,7 @@ import org.zstack.network.securitygroup.SecurityGroupRuleVO_
 import org.zstack.network.securitygroup.SecurityGroupVO
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.securitygroup.SecurityGroupRuleType
+import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType
 import org.zstack.network.securitygroup.SecurityGroupRuleState
 import org.zstack.network.securitygroup.SecurityGroupUpgradeExtension
 import org.zstack.sdk.L3NetworkInventory
@@ -41,7 +42,7 @@ class SecurityGroupUpgradeDbCase extends SubCase {
     DatabaseFacade dbf
     SecurityGroupUpgradeExtension upgradeExt
     L3NetworkInventory l3Net
-    VmInstanceInventory vm1, vm2, vm3
+    VmInstanceInventory vm1, vm2, vm3, vm4
     SecurityGroupInventory sg1, sg2, sg3
 
     void testUpgradeSecurityGroupRules() {
@@ -100,6 +101,21 @@ class SecurityGroupUpgradeDbCase extends SubCase {
             }
         }
 
+        SecurityGroupRuleAO ingressAllRule = new SecurityGroupRuleAO()
+        ingressAllRule.type = 'Ingress'
+        ingressAllRule.ipVersion = 4
+        ingressAllRule.protocol = 'ALL'
+
+        addSecurityGroupRule {
+            securityGroupUuid = sg1.uuid
+            rules = [ingressAllRule]
+        }
+
+        List<SecurityGroupRuleVO> oldIngressRules = Q.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
+                .eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.Ingress).list()
+        assert oldIngressRules.find {it.ipVersion == 4 && it.protocol == SecurityGroupRuleProtocolType.ALL && it.remoteSecurityGroupUuid == null}
+
         SQL.New(SecurityGroupRuleVO.class)
                 .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
                 .set(SecurityGroupRuleVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
@@ -136,6 +152,7 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         assert ingressRules.find {it.priority == 3}
         assert ingressRules.find {it.priority == 4}
         assert ingressRules.find {it.priority == 5}
+        assert ingressRules.find {it.ipVersion == 4 && it.protocol == SecurityGroupRuleProtocolType.ALL && it.remoteSecurityGroupUuid == null && it.description == null}
 
         assert egressRules.find {it.priority == 0 && it.ipVersion == 4 && it.description == "default rule"}
         assert egressRules.find {it.priority == 0 && it.ipVersion == 6 && it.description == "default rule"}
@@ -699,6 +716,90 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         for(int priority : priorities){
             assert rvos.find {it.securityGroupUuid == sg2.uuid && it.priority == priority}
         }
+
+        deleteSecurityGroup {
+            uuid = sg1.uuid
+        }
+        deleteSecurityGroup {
+            uuid = sg2.uuid
+        }
+    }
+
+    void testDeadlockAfterUpgradeDB() {
+        SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = true
+        sg1 = createSecurityGroup {
+            name = "sg-1"
+            ipVersion = 4
+        } as SecurityGroupInventory
+
+        sg2 = createSecurityGroup {
+            name = "sg-2"
+            ipVersion = 6
+        } as SecurityGroupInventory
+
+        VmNicSecurityGroupRefAO ref1 = new VmNicSecurityGroupRefAO()
+        ref1.securityGroupUuid = sg1.uuid
+        ref1.priority = 1
+
+        VmNicSecurityGroupRefAO ref2 = new VmNicSecurityGroupRefAO()
+        ref2.securityGroupUuid = sg2.uuid
+        ref2.priority = 2
+
+        List<VmInstanceInventory> vmInvs = [vm1, vm2, vm3, vm4]
+
+        def threads = []
+        for (int i = 0; i < 4; i++) {
+            String nicUuid = vmInvs[i].vmNics[0].uuid
+
+            def thread = Thread.start {
+                setVmNicSecurityGroup {
+                    vmNicUuid = nicUuid
+                    refs = [ref1, ref2]
+                }
+            }
+            threads.add(thread)
+        }
+
+        threads.each { it.join() }
+
+        List<VmNicSecurityGroupRefVO> refvos = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid, vm3.vmNics[0].uuid, vm4.vmNics[0].uuid]).list()
+        assert refvos.size() == 8
+        
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
+                .delete()
+
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid)
+                .delete()
+
+        SQL.New(VmNicSecurityPolicyVO.class)
+                .in(VmNicSecurityPolicyVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid, vm3.vmNics[0].uuid, vm4.vmNics[0].uuid])
+                .delete()
+        SQL.New(VmNicSecurityGroupRefVO.class)
+                .in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid, vm3.vmNics[0].uuid, vm4.vmNics[0].uuid])
+                .set(VmNicSecurityGroupRefVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
+                .update()
+
+        upgradeExt.start()
+
+        def threads2 = []
+        for (int i = 0; i < 4; i++) {
+            String nicUuid = vmInvs[i].vmNics[0].uuid
+
+            def thread = Thread.start {
+                setVmNicSecurityGroup {
+                    vmNicUuid = nicUuid
+                    refs = []
+                }
+            }
+            threads2.add(thread)
+        }
+
+        threads2.each { it.join() }
+
+        refvos = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid, vm3.vmNics[0].uuid, vm4.vmNics[0].uuid]).list()
+        assert refvos.size() == 0
     }
 
     @Override
@@ -727,6 +828,7 @@ class SecurityGroupUpgradeDbCase extends SubCase {
             vm1 = env.inventoryByName("vm1") as VmInstanceInventory // vm1 in host1
             vm2 = env.inventoryByName("vm2") as VmInstanceInventory // vm2 in host2
             vm3 = env.inventoryByName("vm3") as VmInstanceInventory // vm3 in host3
+            vm4 = env.inventoryByName("vm4") as VmInstanceInventory
 
             sg3 = createSecurityGroup {
                 name = "sg-3"
@@ -740,6 +842,7 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         testAttachNicToSecurityGroupAfterUpgradeDB()
         testSetVmNicSecurityGroupAfterUpgradeDB()
         testUpdateDBMutiple()
+        testDeadlockAfterUpgradeDB()
 
         SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = false
     }
