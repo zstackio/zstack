@@ -235,6 +235,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
                                     innerTrigger.fail(reply.getError());
+                                    return;
                                 }
                                 innerTrigger.next();
                             }
