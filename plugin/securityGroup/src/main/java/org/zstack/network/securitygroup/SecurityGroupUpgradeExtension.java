@@ -45,12 +45,20 @@ public class SecurityGroupUpgradeExtension implements Component {
 
     private SecurityGroupRuleVO getDefaultSecurityGroupRule(List<SecurityGroupRuleVO> rules, SecurityGroupRuleType type, Integer ipVersion) {
         String cidr = ipVersion == IPv6Constants.IPv4 ? SecurityGroupConstant.WORLD_OPEN_CIDR : SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6;
-        return rules.stream()
-                .filter(r -> r.getType().equals(type) && r.getIpVersion().equals(ipVersion) && r.getAllowedCidr().equals(cidr)
-                        && r.getStartPort() == -1 && r.getEndPort() == -1 && r.getProtocol().equals(SecurityGroupRuleProtocolType.ALL)
-                        && r.getRemoteSecurityGroupUuid().equals(r.getSecurityGroupUuid()))
-                .findFirst()
-                .orElse(null);
+
+        for (SecurityGroupRuleVO r : rules) {
+            if (r.getRemoteSecurityGroupUuid() == null || r.getIpVersion() == null) {
+                continue;
+            }
+            if (r.getType().equals(type) && r.getIpVersion().equals(ipVersion) && r.getAllowedCidr().equals(cidr)
+                && r.getStartPort() == -1 && r.getEndPort() == -1 && r.getProtocol().equals(SecurityGroupRuleProtocolType.ALL)
+                && r.getRemoteSecurityGroupUuid().equals(r.getSecurityGroupUuid())) {
+            
+                return r;
+            }
+        }
+
+        return null;
     }
 
     private void upgradeSecurityGroupRules(String sgUuid, List<SecurityGroupRuleVO> rules, SecurityGroupRuleType type) {
