@@ -63,6 +63,7 @@ import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.min;
@@ -418,6 +419,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     private void doPing(List<String> hostUuids, PrimaryStorageInventory psInv, Completion completion){
         List<ErrorCode> errs = new ArrayList<>();
+        AtomicBoolean isCapacityUpdated = new AtomicBoolean(false);
         new While<>(hostUuids).each((huuid, compl) -> {
             PingCmd cmd = new PingCmd();
             cmd.setUuid(psInv.getUuid());
@@ -436,6 +438,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         NfsPrimaryStorageAgentResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(NfsPrimaryStorageAgentResponse.class);
                         if (rsp.isSuccess()) {
                             nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Connected);
+                            if (isCapacityUpdated.compareAndSet(false, true)) {
+                                updatePrimaryStorageCapacity(psInv.getUuid(), rsp);
+                            }
                         } else {
                             ErrorCode err = operr("failed to ping nfs primary storage[uuid:%s] from host[uuid:%s],because %s. " +
                                             "disconnect this host-ps connection",
