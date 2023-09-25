@@ -2,6 +2,7 @@ package org.zstack.test.integration.networkservice.provider.flat.securitygroup
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.compute.vm.VmSystemTags
@@ -802,6 +803,98 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         assert refvos.size() == 0
     }
 
+    void testDuplicateRefAfterUpgradeDB() {
+        deleteSecurityGroup {
+            uuid = sg1.uuid
+        }
+        deleteSecurityGroup {
+            uuid = sg2.uuid
+        }
+        deleteSecurityGroup {
+            uuid = sg3.uuid
+        }
+
+        SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = true
+        sg1 = createSecurityGroup {
+            name = "sg-1"
+            ipVersion = 4
+        } as SecurityGroupInventory
+
+        sg2 = createSecurityGroup {
+            name = "sg-2"
+            ipVersion = 6
+        } as SecurityGroupInventory
+
+        sg3 = createSecurityGroup {
+            name = "sg-3"
+            ipVersion = 6
+        } as SecurityGroupInventory
+
+        VmNicSecurityGroupRefAO ref1 = new VmNicSecurityGroupRefAO()
+        ref1.securityGroupUuid = sg1.uuid
+        ref1.priority = 1
+
+        VmNicSecurityGroupRefAO ref2 = new VmNicSecurityGroupRefAO()
+        ref2.securityGroupUuid = sg2.uuid
+        ref2.priority = 2
+
+        VmNicSecurityGroupRefAO ref3 = new VmNicSecurityGroupRefAO()
+        ref3.securityGroupUuid = sg3.uuid
+        ref3.priority = 3
+
+        String nicUuid = vm4.vmNics[0].uuid
+        setVmNicSecurityGroup {
+            vmNicUuid = nicUuid
+            refs = [ref1, ref2, ref3]
+        }
+
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
+                .delete()
+
+        SQL.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid)
+                .delete()
+
+        SQL.New(VmNicSecurityPolicyVO.class)
+                .in(VmNicSecurityPolicyVO_.vmNicUuid, [nicUuid])
+                .delete()
+        SQL.New(VmNicSecurityGroupRefVO.class)
+                .in(VmNicSecurityGroupRefVO_.vmNicUuid, [nicUuid])
+                .set(VmNicSecurityGroupRefVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)
+                .update()
+
+        List<VmNicSecurityGroupRefVO> refvos = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [nicUuid]).list()
+        assert refvos.size() == 3
+
+        VmNicSecurityGroupRefVO vo1 = new VmNicSecurityGroupRefVO()
+        vo1.setUuid(Platform.getUuid())
+        vo1.setVmNicUuid(nicUuid)
+        vo1.setVmInstanceUuid(vm4.uuid)
+        vo1.setSecurityGroupUuid(sg1.uuid)
+        vo1.setPriority(-1)
+        dbf.persist(vo1)
+
+        VmNicSecurityGroupRefVO vo2 = new VmNicSecurityGroupRefVO()
+        vo2.setUuid(Platform.getUuid())
+        vo2.setVmNicUuid(nicUuid)
+        vo2.setVmInstanceUuid(vm4.uuid)
+        vo2.setSecurityGroupUuid(sg2.uuid)
+        vo2.setPriority(-1)
+        dbf.persist(vo2)
+
+        refvos = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [nicUuid]).list()
+        assert refvos.size() == 5
+
+        upgradeExt.start()
+
+        refvos = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, [nicUuid]).list()
+        assert refvos.size() == 3
+        assert refvos.find{it.securityGroupUuid == sg1.uuid}
+        assert refvos.find{it.securityGroupUuid == sg2.uuid}
+        assert refvos.find{it.securityGroupUuid == sg3.uuid}
+    }
+
     @Override
     void clean() {
         env.delete()
@@ -843,6 +936,7 @@ class SecurityGroupUpgradeDbCase extends SubCase {
         testSetVmNicSecurityGroupAfterUpgradeDB()
         testUpdateDBMutiple()
         testDeadlockAfterUpgradeDB()
+        testDuplicateRefAfterUpgradeDB()
 
         SecurityGroupGlobalProperty.UPGRADE_SECURITY_GROUP = false
     }
