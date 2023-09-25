@@ -3479,6 +3479,13 @@ public class VolumeBase extends AbstractVolume implements Volume {
     private void undoSnapShotCreation(UndoSnapshotCreationMsg msg, ReturnValueCompletion<UndoSnapshotCreationReply> completion) {
         UndoSnapshotCreationReply reply = new UndoSnapshotCreationReply();
         VolumeSnapshotVO snapShot = dbf.findByUuid(msg.getSnapShot().getUuid(), VolumeSnapshotVO.class);
+        if (snapShot == null) {
+            logger.info(String.format("snapshot:%s has been deleted", msg.getSnapShot().getUuid()));
+            reply.setVolume(getSelfInventory());
+            completion.success(reply);
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         // currently, we only deal with overlay commit to snapshot
         // TODO expand msg properties to support intermediate commit
