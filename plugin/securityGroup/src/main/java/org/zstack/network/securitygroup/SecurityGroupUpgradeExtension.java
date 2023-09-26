@@ -201,10 +201,28 @@ public class SecurityGroupUpgradeExtension implements Component {
                 return;
             }
 
-            List<VmNicSecurityGroupRefVO> toUpdate = refsOfNic.stream().sorted(Comparator.comparing(VmNicSecurityGroupRefVO::getCreateDate)).collect(Collectors.toList());
+            Map<String, String> sgMap = new HashMap<>();
+            List<VmNicSecurityGroupRefVO> toDeleteDuplicate = new ArrayList<>();
+            List<VmNicSecurityGroupRefVO> toUpdate = new ArrayList<>();
+            refsOfNic.forEach(ref -> {
+                if (!sgMap.containsKey(ref.getSecurityGroupUuid())) {
+                    sgMap.put(ref.getSecurityGroupUuid(), ref.getSecurityGroupUuid());
+                    toUpdate.add(ref);
+                } else {
+                    toDeleteDuplicate.add(ref);
+                }
+            });
+
+            if (!toDeleteDuplicate.isEmpty()) {
+                dbf.removeCollection(toDeleteDuplicate, VmNicSecurityGroupRefVO.class);
+            }
+
             if (!toUpdate.isEmpty()) {
-                toUpdate.forEach(v -> {v.setPriority(toUpdate.indexOf(v) + 1);});
-                dbf.updateCollection(toUpdate);
+                List<VmNicSecurityGroupRefVO> sortedRefs = toUpdate.stream().sorted(Comparator.comparing(VmNicSecurityGroupRefVO::getCreateDate)).collect(Collectors.toList());
+                sortedRefs.forEach(ref -> {
+                    ref.setPriority(sortedRefs.indexOf(ref) + 1);
+                });
+                dbf.updateCollection(sortedRefs);
             }
         });
     }
