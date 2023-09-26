@@ -75,7 +75,7 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
     private Timestamp lastDetachDate;
 
     @Column
-    private String lastAttachDate;
+    private Timestamp lastAttachDate;
 
     @Column
     private boolean isShareable;
@@ -277,16 +277,10 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
     }
 
     public Timestamp getLastAttachDate() {
-        if (this.lastAttachDate == null) {
-            return null;
-        }
-        return Timestamp.valueOf(this.lastAttachDate);
+        return lastAttachDate;
     }
 
     public void setLastAttachDate(Timestamp lastAttachDate) {
-        if (lastAttachDate == null) {
-            return;
-        }
-        this.lastAttachDate = lastAttachDate.toString();
+        this.lastAttachDate = lastAttachDate;
     }
 }
