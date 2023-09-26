@@ -2768,7 +2768,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void setup() {
 
-                flow(new NoRollbackFlow() {
+                flow(new Flow() {
                     String __name__ = "create-volume-snapshot";
 
                     @Override
@@ -2816,6 +2816,26 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             }
                         });
 
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg ||
+                                !PrimaryStorageGlobalConfig.UNDO_TEMP_SNAPSHOT.value(Boolean.class)) {
+                            trigger.rollback();
+                            return;
+                        }
+
+                        UndoSnapshotCreationMsg cmsg = new UndoSnapshotCreationMsg();
+                        cmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                        cmsg.setSnapShot(snapshot);
+                        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, snapshot.getVolumeUuid());
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                trigger.rollback();
+                            }
+                        });
                     }
                 });
 
@@ -2913,11 +2933,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
-        DeleteVolumeSnapshotMsg dmsg = new DeleteVolumeSnapshotMsg();
+        VolumeSnapshotDeletionMsg dmsg = new VolumeSnapshotDeletionMsg();
         dmsg.setTreeUuid(msg.getSnapshot().getTreeUuid());
         dmsg.setVolumeUuid(msg.getSnapshot().getVolumeUuid());
         dmsg.setSnapshotUuid(msg.getSnapshot().getUuid());
-        dmsg.setDeletionMode(APIDeleteMessage.DeletionMode.Permissive);
+        dmsg.setVolumeDeletion(false);
         bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeSnapshotConstant.SERVICE_ID, msg.getSnapshot().getUuid());
         bus.send(dmsg, new CloudBusCallBack(msg) {
             @Override
