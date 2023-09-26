@@ -261,6 +261,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
 
     private void handleRevert(APIRevertVmFromSnapshotGroupMsg msg, NoErrorCompletion completion) {
         APIRevertVmFromSnapshotGroupEvent event = new APIRevertVmFromSnapshotGroupEvent(msg.getId());
+        VolumeSnapshotGroupOperationValidator.validate(self.getVmInstanceUuid(),
+                VolumeSnapshotGroupOperationValidator.Operation.REVERT);
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("revert-vm-%s-from-snapshot-group-%s", self.getVmInstanceUuid(), msg.getGroupUuid()));
