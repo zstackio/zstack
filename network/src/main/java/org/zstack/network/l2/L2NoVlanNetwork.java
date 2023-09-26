@@ -45,6 +45,7 @@ import static org.zstack.core.Platform.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L2NoVlanNetwork implements L2Network {
     private static final CLogger logger = Utils.getLogger(L2NoVlanNetwork.class);
+    private static final L2NetworkHostHelper l2NetworkHostHelper = new L2NetworkHostHelper();
 
     @Autowired
     protected L2NetworkExtensionPointEmitter extpEmitter;
@@ -276,8 +277,14 @@ public class L2NoVlanNetwork implements L2Network {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
 
+        L2NetworkHostRefInventory hostRef = l2NetworkHostHelper.getL2NetworkHostRef(msg.getL2NetworkUuid(), msg.getHostUuid());
+        String providerType = null;
+        if (hostRef != null) {
+            providerType = hostRef.getL2ProviderType();
+        }
+
         final CheckL2NetworkOnHostReply reply = new CheckL2NetworkOnHostReply();
-        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType, providerType);
         ext.check(getSelfInventory(), msg.getHostUuid(), new Completion(msg) {
             @Override
             public void success() {
