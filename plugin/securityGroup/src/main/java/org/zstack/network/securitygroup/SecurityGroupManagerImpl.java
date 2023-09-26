@@ -39,6 +39,7 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.APIChangeResourceOwnerMsg;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
@@ -58,6 +59,7 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.securitygroup.APIUpdateSecurityGroupRulePriorityMsg.SecurityGroupRulePriorityAO;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
@@ -1893,11 +1895,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             });
         }
 
+        String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getSecurityGroupUuid());
         List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, uuids).list();
         for(VmNicVO nic : nics) {
             if (!Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, nic.getL3NetworkUuid())
                     .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE).isExists()) {
                 throw new OperationFailureException(argerr("the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, nic.getL3NetworkUuid(), nic.getUuid()));
+            }
+
+            String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
+            if (!AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !AccountConstant.isAdminPermission(vmAccountUuid) && !sgOwnerAccountUuid.equals(vmAccountUuid)) {
+                throw new OperationFailureException(argerr("security group[uuid:%s] is not owned by account[uuid:%s] or admin", msg.getSecurityGroupUuid(), vmAccountUuid));
             }
         }
 
@@ -1914,14 +1922,30 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         List<VmNicSecurityGroupRefVO> toCreateRefs = new ArrayList<VmNicSecurityGroupRefVO>();
         List<VmNicSecurityPolicyVO> toCreatePolicies = new ArrayList<VmNicSecurityPolicyVO>();
 
+        String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(sgUuid);
+
         for (VmNicVO nic : nicvos) {
             VmNicSecurityGroupRefVO vo = new VmNicSecurityGroupRefVO();
-            Long count = refs.stream().filter(r -> r.getVmNicUuid().equals(nic.getUuid())).count();
-            if (count > 0) {
-                vo.setPriority(count.intValue() + 1);
-            } else {
+
+            String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
+            if (AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !vmAccountUuid.equals(sgOwnerAccountUuid)) {
+                List<VmNicSecurityGroupRefVO> toUpdate = refs.stream().filter(ref -> ref.getVmNicUuid().equals(nic.getUuid())).collect(Collectors.toList());
+                if (!toUpdate.isEmpty()) {
+                    toUpdate.stream().forEach(r ->{
+                        r.setPriority(r.getPriority() + 1);
+                    });
+                    dbf.updateCollection(toUpdate);
+                }
                 vo.setPriority(1);
+            } else {
+                Long count = refs.stream().filter(r -> r.getVmNicUuid().equals(nic.getUuid())).count();
+                if (count > 0) {
+                    vo.setPriority(count.intValue() + 1);
+                } else {
+                    vo.setPriority(1);
+                }
             }
+
             vo.setSecurityGroupUuid(sgUuid);
             vo.setVmInstanceUuid(nic.getVmInstanceUuid());
             vo.setVmNicUuid(nic.getUuid());

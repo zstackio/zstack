@@ -13,7 +13,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.AccountConstant;
-import org.zstack.identity.AccountManager;
+import org.zstack.identity.Account;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
@@ -38,6 +38,7 @@ import static java.util.Arrays.asList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
@@ -244,7 +245,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APISetVmNicSecurityGroupMsg msg) {
-        if (!Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).isExists()) {
+        VmNicVO nic = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        if (nic == null) {
             throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because vm nic[uuid:%s] not found", msg.getVmNicUuid()));
         }
 
@@ -255,6 +257,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         }
 
         Map<Integer, String> aoMap = new HashMap<Integer, String>();
+        List<Integer> adminIntegers = new ArrayList<>();
+        final String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
+
         for (APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO ao : msg.getRefs()) {
 
             if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, ao.getSecurityGroupUuid()).isExists()) {
@@ -277,6 +282,14 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             if (!refs.stream().anyMatch(r -> r.getSecurityGroupUuid().equals(ao.getSecurityGroupUuid()))) {
                 checkIfL3NetworkSupportSecurityGroup(asList(msg.getVmNicUuid()));
             }
+
+            String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(ao.getSecurityGroupUuid());
+            if (!AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !AccountConstant.isAdminPermission(vmAccountUuid) && !sgOwnerAccountUuid.equals(vmAccountUuid)) {
+                throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because security group[uuid:%s] is not owned by account[uuid:%s] or admin", ao.getSecurityGroupUuid(), vmAccountUuid));
+            }
+            if (AccountConstant.isAdminPermission(sgOwnerAccountUuid)) {
+                adminIntegers.add(priority);
+            }
         }
         if (!aoMap.isEmpty()) {
             Integer[] priorities = aoMap.keySet().toArray(new Integer[aoMap.size()]);
@@ -291,14 +304,48 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        if (!msg.getSession().isAccountSession() && !AccountConstant.isAdminPermission(msg.getSession())) {
-            final String currentAccountUuid = msg.getSession().getAccountUuid();
+        if (!AccountConstant.isAdminPermission(msg.getSession())) {
+            List<VmNicSecurityGroupRefVO> userRefs = new ArrayList<>();
+            List<VmNicSecurityGroupRefVO> otherRefs = new ArrayList<>();
+
             for (VmNicSecurityGroupRefVO ref : refs) {
                 String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(ref.getSecurityGroupUuid());
+                if (sgOwnerAccountUuid.equals(vmAccountUuid)) {
+                    userRefs.add(ref);
+                } else {
+                    otherRefs.add(ref);
+                }
+            }
 
-                if (!sgOwnerAccountUuid.equals(currentAccountUuid)) {
-                    if (!aoMap.values().stream().anyMatch(value -> value.equals(ref.getSecurityGroupUuid()))) {
-                        throw new ApiMessageInterceptionException(argerr("could no set vm nic security Group, because securityGroup[uuid:%s] is already attached on this nic by account[uuid:%s], current user does not have permission to delete", ref.getSecurityGroupUuid(), sgOwnerAccountUuid));
+            List<VmNicSecurityGroupRefVO> sortedOtherRefs = otherRefs.stream().sorted(Comparator.comparingInt(VmNicSecurityGroupRefVO::getPriority)).collect(Collectors.toList());
+            List<APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO> sortedUserAOs = msg.getRefs().stream().sorted(Comparator.comparingInt(APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO::getPriority)).collect(Collectors.toList());
+
+            if (!sortedOtherRefs.isEmpty()) {
+                int count = sortedOtherRefs.size();
+                List<APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO> newAOs = new ArrayList<>();
+                sortedOtherRefs.forEach(r -> {
+                    APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO ao = new APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO();
+                    ao.setPriority(sortedOtherRefs.indexOf(r) + 1);
+                    ao.setSecurityGroupUuid(r.getSecurityGroupUuid());
+                    newAOs.add(ao);
+                });
+                sortedUserAOs.forEach(a -> {
+                    a.setPriority(sortedUserAOs.indexOf(a) + count + 1);
+                    newAOs.add(a);
+                });
+
+                msg.setRefs(newAOs);
+            }
+        } else {
+            if (!adminIntegers.isEmpty()) {
+                Integer[] priorities = adminIntegers.toArray(new Integer[adminIntegers.size()]);
+                Arrays.sort(priorities);
+                if (priorities[0] != 1) {
+                    throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because admin security group priority[%d] must be higher than users", priorities[0]));
+                }
+                for (int i = 0; i < priorities.length - 1; i++) {
+                    if (priorities[i] + 1 != priorities[i + 1]) {
+                        throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because admin security group priority[%d] must be higher than users", priorities[i + 1]));
                     }
                 }
             }
