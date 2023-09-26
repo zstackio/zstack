@@ -41,17 +41,32 @@ public class L2NetworkHostHelper {
     public void attachL2NetworksToHost(List<String> l2NetworkUuids, String hostUuid,
                                        String providerType,
                                        L2NetworkAttachStatus status) {
-        List<L2NetworkHostRefVO> refs = new ArrayList<>();
+        List<L2NetworkHostRefVO> newAdded = new ArrayList<>();
+        List<L2NetworkHostRefVO> updated = new ArrayList<>();
         for (String uuid : l2NetworkUuids) {
-            L2NetworkHostRefVO vo = new L2NetworkHostRefVO();
-            vo.setHostUuid(hostUuid);
-            vo.setL2NetworkUuid(uuid);
-            vo.setL2ProviderType(providerType);
-            vo.setAttachStatus(status);
-            refs.add(vo);
+            L2NetworkHostRefVO ref = Q.New(L2NetworkHostRefVO.class)
+                    .eq(L2NetworkHostRefVO_.l2NetworkUuid, uuid)
+                    .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).find();
+            if (ref != null) {
+                ref.setAttachStatus(status);
+                updated.add(ref);
+            } else {
+                L2NetworkHostRefVO vo = new L2NetworkHostRefVO();
+                vo.setHostUuid(hostUuid);
+                vo.setL2NetworkUuid(uuid);
+                vo.setL2ProviderType(providerType);
+                vo.setAttachStatus(status);
+                newAdded.add(vo);
+            }
         }
 
-        dbf.persistCollection(refs);
+        if (!newAdded.isEmpty()) {
+            dbf.persistCollection(newAdded);
+        }
+
+        if (!updated.isEmpty()) {
+            dbf.updateCollection(updated);
+        }
     }
 
     public L2NetworkHostRefInventory getL2NetworkHostRef(String l2NetworkUuid, String hostUuid) {
