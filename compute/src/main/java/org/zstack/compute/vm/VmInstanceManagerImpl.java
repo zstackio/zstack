@@ -1052,14 +1052,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     ImageVO.class.getSimpleName(),
                     finalVo.getUuid(),
                     VmInstanceVO.class.getSimpleName(), false);
-
-            if (ImageArchitecture.aarch64.toString().equals(finalVo.getArchitecture())) {
-                SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(finalVo.getUuid());
-                creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));
-                creator.recreate = true;
-                creator.create();
-            }
         }
+
+        if (ImageArchitecture.aarch64.toString().equals(finalVo.getArchitecture())) {
+            SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(finalVo.getUuid());
+            creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));
+            creator.recreate = true;
+            creator.create();
+        }
+
         SystemTagCreator creator = VmSystemTags.SYNC_PORTS.newSystemTagCreator(finalVo.getUuid());
         creator.recreate = true;
         creator.setTagByTokens(map(e(VmSystemTags.SYNC_PORTS_TOKEN, finalVo.getUuid())));
