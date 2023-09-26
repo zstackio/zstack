@@ -24,7 +24,8 @@ CREATE TABLE  IF NOT EXISTS `zstack`.`L2NetworkHostRefVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`),
     CONSTRAINT `fkL2NetworkHostRefVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fkL2NetworkHostRefVOL2NetworkEO` FOREIGN KEY (`l2NetworkUuid`) REFERENCES L2NetworkEO (`uuid`) ON DELETE CASCADE
+    CONSTRAINT `fkL2NetworkHostRefVOL2NetworkEO` FOREIGN KEY (`l2NetworkUuid`) REFERENCES L2NetworkEO (`uuid`) ON DELETE CASCADE,
+    UNIQUE KEY `ukL2NetworkHost` (`l2NetworkUuid`,`hostUuid`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`L2NetworkClusterRefVO` ADD COLUMN `l2ProviderType` varchar(32) default NULL;
