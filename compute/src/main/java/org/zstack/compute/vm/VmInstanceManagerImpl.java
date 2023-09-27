@@ -1144,9 +1144,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
         chain.setName(String.format("do-create-vmInstance-%s", vo.getUuid()));
         chain.then(new ShareFlow() {
             VmInstanceInventory instantiateVm;
+            List<APICreateVmInstanceMsg.DiskAO> otherDisks = new ArrayList<>();
+            boolean attachOtherDisk = false;
 
             @Override
             public void setup() {
+                if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
+                    otherDisks = msg.getDiskAOs().stream().filter(diskAO -> !diskAO.isBoot()).collect(Collectors.toList());
+                    setDiskAOsName(otherDisks);
+                    attachOtherDisk = !otherDisks.isEmpty();
+                }
+
                 if (VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class)) {
                     flow(new Flow() {
                         String __name__ = String.format("check-unique-name-for-vm-%s", finalVo.getUuid());
@@ -1272,7 +1280,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
                         smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
                         smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
-                        if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && !CollectionUtils.isEmpty(msg.getDiskAOs())) {
+                        if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && attachOtherDisk) {
                             smsg.setStrategy(VmCreationStrategy.CreateStopped.toString());
                         } else {
                             smsg.setStrategy(msg.getStrategy());
@@ -1328,14 +1336,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
 
-                List<APICreateVmInstanceMsg.DiskAO> dataDiskAOs = new ArrayList<>();
-                if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
-                    dataDiskAOs = msg.getDiskAOs().stream().filter(diskAO -> !diskAO.isBoot()).collect(Collectors.toList());
-                    setDiskAOsName(dataDiskAOs);
-                    dataDiskAOs.forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
+
+                if (!CollectionUtils.isEmpty(otherDisks)) {
+                    otherDisks.forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
                 }
 
-                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && !CollectionUtils.isEmpty(dataDiskAOs)) {
+                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && attachOtherDisk) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "start-vm";
 
