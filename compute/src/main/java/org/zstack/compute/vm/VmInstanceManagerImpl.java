@@ -1024,11 +1024,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), finalVo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
 
-        if ((msg.getVirtio() != null && msg.getVirtio())
-                || Q.New(ImageVO.class)
-                .eq(ImageVO_.uuid, msg.getImageUuid())
-                .eq(ImageVO_.virtio, true)
-                .isExists()) {
+        boolean isVirtio = false;
+        if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
+            isVirtio = msg.getVirtio();
+        } else {
+            if (Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).eq(ImageVO_.virtio, true).isExists()) {
+                isVirtio = true;
+            }
+        }
+        if (isVirtio) {
             SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
             creator.recreate = true;
             creator.inherent = false;
@@ -1284,12 +1288,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
 
+                List<APICreateVmInstanceMsg.DiskAO> dataDiskAOs = new ArrayList<>();
                 if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
-                    setDiskAOsName(msg.getDiskAOs());
-                    msg.getDiskAOs().forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
+                    dataDiskAOs = msg.getDiskAOs().stream().filter(diskAO -> !diskAO.isBoot()).collect(Collectors.toList());
+                    setDiskAOsName(dataDiskAOs);
+                    dataDiskAOs.forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
                 }
 
-                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && !CollectionUtils.isEmpty(msg.getDiskAOs())) {
+                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && !CollectionUtils.isEmpty(dataDiskAOs)) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "start-vm";
 
