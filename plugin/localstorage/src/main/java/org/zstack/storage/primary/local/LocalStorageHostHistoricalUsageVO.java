@@ -1,25 +1,25 @@
 package org.zstack.storage.primary.local;
 
-import org.zstack.header.storage.primary.HistoricalUsageAO;
-import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.storage.primary.PrimaryStorageHistoricalUsageBaseVO;
+import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vo.BaseResource;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @Entity
 @Table
-@org.zstack.header.vo.EntityGraph(
-        parents = {
-                @EntityGraph.Neighbour(type = LocalStorageHostRefVO.class, myField = "hostUuid", targetField = "hostUuid")
-        }
-)
-public class LocalStorageHostHistoricalUsageVO extends HistoricalUsageAO {
-    @Column
-    @ForeignKey(parentEntityClass = LocalStorageHostRefVO.class, parentKey = "hostUuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
-    private String hostUuid;
+@BaseResource
+@AutoDeleteTag
+public class LocalStorageHostHistoricalUsageVO extends PrimaryStorageHistoricalUsageBaseVO {
 
     public LocalStorageHostHistoricalUsageVO() {
+        resourceType = LocalStorageHostRefVO.class.getSimpleName();
     }
+
+    @Column
+    private String hostUuid;
 
     public String getHostUuid() {
         return hostUuid;
