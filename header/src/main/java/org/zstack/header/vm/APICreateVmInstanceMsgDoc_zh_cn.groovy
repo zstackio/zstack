@@ -278,7 +278,7 @@ doc {
 				colum
 					name "diskAOs"
 					enclosedIn "params"
-					desc ""
+					desc "boot=true表示diskAO用于设置云主机平台、架构、操作系统与根盘总线；diskAO.boot=false表示加载的硬盘"
 					location "body"
 					type "List"
 					optional true
