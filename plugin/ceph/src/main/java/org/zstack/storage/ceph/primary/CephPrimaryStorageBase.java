@@ -1161,6 +1161,41 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class DownloadBitsFromRemoteTargetRsp extends AgentResponse {
+        public long diskSize;
+    }
+
+    public static class DownloadBitsFromRemoteTargetCmd extends AgentCommand implements HasThreadContext, Serializable {
+        @NoLogging
+        private String remoteTargetUri;
+        private String primaryStorageInstallPath;
+        private String sendCommandUrl;
+
+        public String getPrimaryStorageInstallPath() {
+            return primaryStorageInstallPath;
+        }
+
+        public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
+            this.primaryStorageInstallPath = primaryStorageInstallPath;
+        }
+
+        public String getRemoteTargetUri() {
+            return remoteTargetUri;
+        }
+
+        public void setRemoteTargetUri(String remoteTargetUri) {
+            this.remoteTargetUri = remoteTargetUri;
+        }
+
+        public void setSendCommandUrl(String sendCommandUrl) {
+            this.sendCommandUrl = sendCommandUrl;
+        }
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
+        }
+    }
+
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand implements ReloadableCommand {
         private String hostname;
         private String username;
@@ -1321,6 +1356,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String GET_VOLUME_SNAPINFOS_PATH = "/ceph/primarystorage/volume/getsnapinfos";
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download";
     public static final String DOWNLOAD_BITS_FROM_NBD_EXPT_PATH = "/ceph/primarystorage/nbd/download";
+    public static final String DOWNLOAD_BITS_FROM_REMOTE_TARGET_PATH = "/ceph/primarystorage/remotetarget/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download/cancel";
     public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/ceph/primarystorage/kvmhost/download/progress";
@@ -4197,6 +4233,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if (msg instanceof DownloadBitsFromNbdToPrimaryStorageMsg) {
             handle((DownloadBitsFromNbdToPrimaryStorageMsg) msg);
+        } else if (msg instanceof DownloadBitsFromRemoteTargetToPrimaryStorageMsg) {
+            handle((DownloadBitsFromRemoteTargetToPrimaryStorageMsg) msg);
         } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if ((msg instanceof CleanUpTrashOnPrimaryStroageMsg)) {
@@ -4377,6 +4415,32 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(DOWNLOAD_BITS_FROM_NBD_EXPT_PATH, cmd, DownloadBitsFromNbdRsp.class, new ReturnValueCompletion<DownloadBitsFromNbdRsp>(msg) {
             @Override
             public void success(DownloadBitsFromNbdRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("%s", rsp.getError()));
+                } else {
+                    reply.setDiskSize(rsp.diskSize);
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(DownloadBitsFromRemoteTargetToPrimaryStorageMsg msg) {
+        DownloadBitsFromNbdToPrimaryStorageReply reply = new DownloadBitsFromNbdToPrimaryStorageReply();
+        DownloadBitsFromRemoteTargetCmd cmd = new DownloadBitsFromRemoteTargetCmd();
+        cmd.setSendCommandUrl(restf.getSendCommandUrl());
+        cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
+        cmd.setRemoteTargetUri(msg.getRemoteTargetUri());
+
+        httpCall(DOWNLOAD_BITS_FROM_REMOTE_TARGET_PATH, cmd, DownloadBitsFromRemoteTargetRsp.class, new ReturnValueCompletion<DownloadBitsFromRemoteTargetRsp>(msg) {
+            @Override
+            public void success(DownloadBitsFromRemoteTargetRsp rsp) {
                 if (!rsp.isSuccess()) {
                     reply.setError(operr("%s", rsp.getError()));
                 } else {
