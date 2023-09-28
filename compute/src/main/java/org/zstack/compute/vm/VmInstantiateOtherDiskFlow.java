@@ -256,8 +256,12 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         cmsg.setName(diskAO.getName());
                         cmsg.setAccountUuid(accountUuid);
                         cmsg.setSystemTags(diskAO.getSystemTags());
-                        cmsg.setPrimaryStorageUuid(diskAO.getPrimaryStorageUuid());
                         cmsg.setDescription(String.format("vm-%s-data-volume", vmUuid));
+                        if (diskAO.getPrimaryStorageUuid() != null) {
+                            cmsg.setPrimaryStorageUuid(diskAO.getPrimaryStorageUuid());
+                        } else {
+                            cmsg.setPrimaryStorageUuid(instantiateVm.getRootVolume().getPrimaryStorageUuid());
+                        }
                         bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
                         bus.send(cmsg, new CloudBusCallBack(innerTrigger) {
                             @Override
