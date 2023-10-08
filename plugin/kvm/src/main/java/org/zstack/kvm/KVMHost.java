@@ -10,6 +10,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -4383,9 +4385,18 @@ public class KVMHost extends HostBase implements Host {
                                         "/var/lib/zstack/kvm/kvmagent-iptables",
                                         KVMConstant.IPTABLES_COMMENTS,
                                         KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class)));
-                                
-                                builder.append(String.format("; ipset create ZS-PROMETHEUS-ALLOW hash:net -exist; ipset flush ZS-PROMETHEUS-ALLOW; ipset add ZS-PROMETHEUS-ALLOW 127.0.0.1; ipset add ZS-PROMETHEUS-ALLOW %s; ipset add ZS-PROMETHEUS-ALLOW %s; iptables -t mangle -I INPUT -m set ! --match-set ZS-PROMETHEUS-ALLOW src -p tcp -m comment --comment %s -m tcp --dport 7069 -j DROP",
-                                        getSelf().getManagementIp(), Platform.getManagementServerIp(), KVMConstant.IPTABLES_COMMENTS));
+
+                                // hard code for ali cube
+                                StringBuilder ipsetBuilder = new StringBuilder();
+                                ipsetBuilder.append("ipset add ZS-PROMETHEUS-ALLOW 127.0.0.1");
+                                ipsetBuilder.append(String.format("; ipset add ZS-PROMETHEUS-ALLOW %s", getSelf().getManagementIp()));
+                                List<String> mnIps = Q.New(ManagementNodeVO.class).select(ManagementNodeVO_.hostName).listValues();
+                                for (String mnIp : mnIps) {
+                                    ipsetBuilder.append(String.format("; ipset add ZS-PROMETHEUS-ALLOW %s", mnIp));
+                                }
+
+                                builder.append(String.format("; ipset create ZS-PROMETHEUS-ALLOW hash:net -exist; ipset flush ZS-PROMETHEUS-ALLOW; %s; iptables -t mangle -I INPUT -m set ! --match-set ZS-PROMETHEUS-ALLOW src -p tcp -m comment --comment %s -m tcp --dport 7069,9092,9100,9103 -j DROP",
+                                        ipsetBuilder.toString(), KVMConstant.IPTABLES_COMMENTS));
                             }
 
                             try {
