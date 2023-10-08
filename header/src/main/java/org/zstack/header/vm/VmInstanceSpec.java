@@ -347,6 +347,15 @@ public class VmInstanceSpec implements Serializable {
     private boolean skipIpAllocation = false;
 
     private List<String> disableL3Networks;
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
 
     public boolean isSkipIpAllocation() {
         return skipIpAllocation;

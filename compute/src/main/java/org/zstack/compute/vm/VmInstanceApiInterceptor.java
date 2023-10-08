@@ -11,7 +11,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.eventlog.L;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -1179,6 +1178,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             msg.setPlatform(rootDiskAO.getPlatform());
             msg.setGuestOsType(rootDiskAO.getGuestOsType());
             msg.setArchitecture(rootDiskAO.getArchitecture());
+            if (CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags()) && rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
+                msg.setVirtio(true);
+            }
         }
 
         ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
@@ -1261,10 +1263,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validatePsWhetherSameCluster(msg);
-        validateDateDiskAOs(msg);
+        validateDataDiskAOs(msg);
     }
 
-    private void validateDateDiskAOs(APICreateVmInstanceMsg msg) {
+    private void validateDataDiskAOs(APICreateVmInstanceMsg msg) {
         if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
             return;
         }

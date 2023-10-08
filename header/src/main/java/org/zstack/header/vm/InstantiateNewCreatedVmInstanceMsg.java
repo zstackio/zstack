@@ -22,6 +22,15 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private List<String> avoidHostUuids;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
 
     public List<String> getSoftAvoidHostUuids() {
         return softAvoidHostUuids;

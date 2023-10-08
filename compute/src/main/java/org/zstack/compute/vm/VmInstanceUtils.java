@@ -1,17 +1,11 @@
 package org.zstack.compute.vm;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.checkerframework.checker.units.qual.C;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.tag.SystemTagUtils;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
-import static org.zstack.core.Platform.argerr;
 
 /**
  * Created by Wenhao.Zhang on 22/03/10
@@ -33,8 +27,11 @@ public class VmInstanceUtils {
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
+        cmsg.setPlatform(msg.getPlatform());
+        cmsg.setGuestOsType(msg.getGuestOsType());
+        cmsg.setArchitecture(msg.getArchitecture());
+        cmsg.setVirtio(msg.isVirtio());
         cmsg.setDiskAOs(msg.getDiskAOs());
-        setVmInstanceInfoFromRootDiskAO(cmsg, msg);
         return cmsg;
     }
 
@@ -44,23 +41,5 @@ public class VmInstanceUtils {
         }
 
         return SystemTagUtils.findTagValue(systemTags, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
-    }
-
-    private static void setVmInstanceInfoFromRootDiskAO(CreateVmInstanceMsg cmsg, APICreateVmInstanceMsg msg) {
-        if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
-            return;
-        }
-        APICreateVmInstanceMsg.DiskAO rootdiskAO = msg.getDiskAOs().stream()
-                .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
-        if (rootdiskAO == null) {
-            return;
-        }
-        cmsg.setPlatform(rootdiskAO.getPlatform());
-        cmsg.setGuestOsType(rootdiskAO.getGuestOsType());
-        cmsg.setArchitecture(rootdiskAO.getArchitecture());
-        if (CollectionUtils.isNotEmpty(rootdiskAO.getSystemTags())
-                && rootdiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
-            cmsg.setVirtio(true);
-        }
     }
 }
