@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -15,17 +16,23 @@ import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Map;
-import java.util.Objects;
+import java.sql.Array;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -42,6 +49,8 @@ public class VmInstantiateOtherDiskFlow implements Flow {
     private DatabaseFacade dbf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    protected HostAllocatorManager hostAllocatorMgr;
 
     APICreateVmInstanceMsg.DiskAO diskAO;
     VolumeInventory volumeInventory;
@@ -245,6 +254,58 @@ public class VmInstantiateOtherDiskFlow implements Flow {
             }
 
             private void setupVolumeFromTemplateUuidFlows() {
+                final String[] allocatedPrimaryStorageUuid = new String[1];
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("dryrun-allocate-primary-storage-for-templateUuid-%s", diskAO.getTemplateUuid());
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return diskAO.getPrimaryStorageUuid() != null;
+                    }
+
+                    @Override
+                    public void run(final FlowTrigger innerTrigger, Map data) {
+                        ImageVO template = dbf.findByUuid(diskAO.getTemplateUuid(), ImageVO.class);
+
+                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+                        amsg.setDryRun(true);
+                        amsg.setSize(template.getSize());
+                        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
+                        amsg.setRequiredHostUuid(instantiateVm.getLastHostUuid());
+                        amsg.setRequiredClusterUuids(Collections.singletonList(instantiateVm.getClusterUuid()));
+                        List<String> bsUuids = template.getBackupStorageRefs().stream()
+                                .map(ImageBackupStorageRefVO::getBackupStorageUuid).collect(Collectors.toList());
+                        amsg.setPossiblePrimaryStorageTypes(possiblePrimaryStorageTypes(bsUuids));
+
+                        bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+                        bus.send(amsg, new CloudBusCallBack(innerTrigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    innerTrigger.fail(reply.getError());
+                                    return;
+                                }
+                                AllocatePrimaryStorageDryRunReply ar = (AllocatePrimaryStorageDryRunReply) reply;
+                                allocatedPrimaryStorageUuid[0] = ar.getPrimaryStorageInventories().get(0).getUuid();
+                                innerTrigger.next();
+                            }
+                        });
+                    }
+
+                    private List<String> possiblePrimaryStorageTypes(List<String> bsUuids) {
+                        if (CollectionUtils.isEmpty(bsUuids)) {
+                            return Collections.emptyList();
+                        }
+                        List<String> imageBsTypes = Q.New(BackupStorageVO.class).select(BackupStorageVO_.type)
+                                .in(BackupStorageVO_.uuid, bsUuids).listValues();
+                        List<String> possiblePrimaryStorageTypes = new ArrayList<>();
+                        imageBsTypes.forEach(imageBsType -> possiblePrimaryStorageTypes
+                                .addAll(hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(imageBsType)));
+                        return possiblePrimaryStorageTypes.stream().distinct().collect(Collectors.toList());
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = String.format("instantiate-data-volume-from-template-%s", diskAO.getTemplateUuid());
 
@@ -260,8 +321,9 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         if (diskAO.getPrimaryStorageUuid() != null) {
                             cmsg.setPrimaryStorageUuid(diskAO.getPrimaryStorageUuid());
                         } else {
-                            cmsg.setPrimaryStorageUuid(instantiateVm.getRootVolume().getPrimaryStorageUuid());
+                            cmsg.setPrimaryStorageUuid(allocatedPrimaryStorageUuid[0]);
                         }
+
                         bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
                         bus.send(cmsg, new CloudBusCallBack(innerTrigger) {
                             @Override
