@@ -450,11 +450,6 @@
                 <artifactId>caffeine</artifactId>
                 <version>2.5.2</version>
             </dependency>
-            <dependency>
-                <groupId>org.xerial</groupId>
-                <artifactId>sqlite-jdbc</artifactId>
-                <version>3.20.0</version>
-            </dependency>
 	        <dependency>
 	            <groupId>io.prometheus</groupId>
 	            <artifactId>simpleclient</artifactId>
