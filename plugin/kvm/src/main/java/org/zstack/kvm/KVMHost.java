@@ -4392,11 +4392,12 @@ public class KVMHost extends HostBase implements Host {
                                 ipsetBuilder.append(String.format("; ipset add ZS-PROMETHEUS-ALLOW %s", getSelf().getManagementIp()));
                                 List<String> mnIps = Q.New(ManagementNodeVO.class).select(ManagementNodeVO_.hostName).listValues();
                                 for (String mnIp : mnIps) {
+                                    if (getSelf().getManagementIp().equals(mnIp)) continue;
                                     ipsetBuilder.append(String.format("; ipset add ZS-PROMETHEUS-ALLOW %s", mnIp));
                                 }
 
-                                builder.append(String.format("; ipset create ZS-PROMETHEUS-ALLOW hash:net -exist; ipset flush ZS-PROMETHEUS-ALLOW; %s; iptables -t mangle -I INPUT -m set ! --match-set ZS-PROMETHEUS-ALLOW src -p tcp -m comment --comment %s -m tcp --dport 7069,9092,9100,9103 -j DROP",
-                                        ipsetBuilder.toString(), KVMConstant.IPTABLES_COMMENTS));
+                                builder.append(String.format("; ipset create ZS-PROMETHEUS-ALLOW hash:net -exist; ipset flush ZS-PROMETHEUS-ALLOW; %s; iptables -t mangle -I INPUT -m set ! --match-set ZS-PROMETHEUS-ALLOW src -p tcp -m comment --comment %s -m tcp --dport 7069 -j DROP; iptables -t mangle -I INPUT -m set ! --match-set ZS-PROMETHEUS-ALLOW src -p tcp -m comment --comment %s -m tcp --dport 9092 -j DROP; iptables -t mangle -I INPUT -m set ! --match-set ZS-PROMETHEUS-ALLOW src -p tcp -m comment --comment %s -m tcp --dport 9100 -j DROP; iptables -t mangle -I INPUT -m set ! --match-set ZS-PROMETHEUS-ALLOW src -p tcp -m comment --comment %s -m tcp --dport 9103 -j DROP;",
+                                        ipsetBuilder.toString(), KVMConstant.IPTABLES_COMMENTS, KVMConstant.IPTABLES_COMMENTS, KVMConstant.IPTABLES_COMMENTS, KVMConstant.IPTABLES_COMMENTS));
                             }
 
                             try {
