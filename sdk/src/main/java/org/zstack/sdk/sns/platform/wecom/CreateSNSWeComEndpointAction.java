@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.dingtalk;
+package org.zstack.sdk.sns.platform.wecom;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSNSDingTalkEndpointAction extends AbstractAction {
+public class CreateSNSWeComEndpointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSNSDingTalkEndpointAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointResult value;
+        public org.zstack.sdk.sns.platform.wecom.CreateSNSWeComEndpointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,11 +31,8 @@ public class CreateSNSDingTalkEndpointAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean atAll;
 
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String secret;
-
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List atPersonPhoneNumbers;
+    public java.util.List atPersonUserIds;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -84,8 +81,8 @@ public class CreateSNSDingTalkEndpointAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointResult() : value; 
+        org.zstack.sdk.sns.platform.wecom.CreateSNSWeComEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.wecom.CreateSNSWeComEndpointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.wecom.CreateSNSWeComEndpointResult() : value; 
 
         return ret;
     }
@@ -115,7 +112,7 @@ public class CreateSNSDingTalkEndpointAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/ding-talk";
+        info.path = "/sns/application-endpoints/we-com";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

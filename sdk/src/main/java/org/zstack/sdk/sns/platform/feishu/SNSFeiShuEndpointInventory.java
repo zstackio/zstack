@@ -1,8 +1,8 @@
-package org.zstack.sdk.sns.platform.dingtalk;
+package org.zstack.sdk.sns.platform.feishu;
 
 
 
-public class SNSDingTalkEndpointInventory extends org.zstack.sdk.sns.SNSApplicationEndpointInventory {
+public class SNSFeiShuEndpointInventory extends org.zstack.sdk.sns.SNSApplicationEndpointInventory {
 
     public java.lang.String url;
     public void setUrl(java.lang.String url) {
@@ -20,20 +20,20 @@ public class SNSDingTalkEndpointInventory extends org.zstack.sdk.sns.SNSApplicat
         return this.atAll;
     }
 
+    public java.util.List atPersonUserIds;
+    public void setAtPersonUserIds(java.util.List atPersonUserIds) {
+        this.atPersonUserIds = atPersonUserIds;
+    }
+    public java.util.List getAtPersonUserIds() {
+        return this.atPersonUserIds;
+    }
+
     public java.lang.String secret;
     public void setSecret(java.lang.String secret) {
         this.secret = secret;
     }
     public java.lang.String getSecret() {
         return this.secret;
-    }
-
-    public java.util.List atPersonPhoneNumbers;
-    public void setAtPersonPhoneNumbers(java.util.List atPersonPhoneNumbers) {
-        this.atPersonPhoneNumbers = atPersonPhoneNumbers;
-    }
-    public java.util.List getAtPersonPhoneNumbers() {
-        return this.atPersonPhoneNumbers;
     }
 
 }
