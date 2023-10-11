@@ -694,9 +694,15 @@ public class KVMHost extends HostBase implements Host {
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                TakeVmConsoleScreenshotRsp rsp = r.toResponse(TakeVmConsoleScreenshotRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(rsp.getError()));
                 } else {
-                    KVMHostAsyncHttpCallReply reply1 = reply.castReply();
-                    completion.success(reply1.toResponse(TakeVmConsoleScreenshotRsp.class));
+                    completion.success(r.toResponse(TakeVmConsoleScreenshotRsp.class));
                 }
             }
         });
