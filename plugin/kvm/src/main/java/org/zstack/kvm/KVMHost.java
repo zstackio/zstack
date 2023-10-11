@@ -4389,7 +4389,7 @@ public class KVMHost extends HostBase implements Host {
                                 // hard code for ali cube
                                 StringBuilder ipsetBuilder = new StringBuilder();
                                 ipsetBuilder.append("ipset add ZS-PROMETHEUS-ALLOW 127.0.0.1");
-                                ipsetBuilder.append("ipset add ZS-PROMETHEUS-ALLOW 169.254.64.2/18");
+                                ipsetBuilder.append("; ipset add ZS-PROMETHEUS-ALLOW 169.254.64.2/18");
                                 ipsetBuilder.append(String.format("; ipset add ZS-PROMETHEUS-ALLOW %s", getSelf().getManagementIp()));
                                 List<String> mnIps = Q.New(ManagementNodeVO.class).select(ManagementNodeVO_.hostName).listValues();
                                 for (String mnIp : mnIps) {
