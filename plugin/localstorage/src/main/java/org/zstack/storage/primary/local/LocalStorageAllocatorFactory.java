@@ -346,24 +346,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     @Override
     public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
-        String hostUuid = null;
-        if (msg.getRequiredInstallUri() != null) {
-            String protocol;
-            try {
-                protocol = new URI(msg.getRequiredInstallUri()).getScheme();
-            } catch (URISyntaxException e) {
-                throw new OperationFailureException(
-                        argerr("invalid uri, correct example is file://$URL;hostUuid://$HOSTUUID or volume://$VOLUMEUUID "));
-            }
-            hostUuid = uriParsers.get(protocol).parseUri(msg.getRequiredInstallUri()).hostUuid;
-        } else if (msg.getRequiredHostUuid() != null) {
-            hostUuid = msg.getRequiredHostUuid();
-        } else if (msg.getSystemTags() != null) {
-            PatternedSystemTag lsTag = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME;
-            hostUuid = msg.getSystemTags().stream().filter(lsTag::isMatch)
-                    .map(it -> lsTag.getTokenByTag(it, LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN))
-                    .findAny().orElse(null);
-        }
+        String hostUuid = getHostUuidFromAllocateMsg(msg);
 
         if (hostUuid == null) {
             throw new OperationFailureException(argerr("To create volume on the local primary storage, " +
@@ -376,6 +359,38 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         path.hostUuid = hostUuid;
 
         return path.makeFullPath();
+    }
+
+    private String getHostUuidFromAllocateMsg(AllocatePrimaryStorageSpaceMsg msg) {
+        String hostUuid = null;
+
+        if (msg.getSystemTags() != null) {
+            PatternedSystemTag lsTag = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME;
+            hostUuid = msg.getSystemTags().stream().filter(lsTag::isMatch)
+                    .map(it -> lsTag.getTokenByTag(it, LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN))
+                    .findAny().orElse(null);
+
+        }
+        if (hostUuid != null) {
+            return hostUuid;
+        }
+
+        if (msg.getRequiredInstallUri() != null) {
+            String protocol;
+            try {
+                protocol = new URI(msg.getRequiredInstallUri()).getScheme();
+            } catch (URISyntaxException e) {
+                throw new OperationFailureException(
+                        argerr("invalid uri, correct example is file://$URL;hostUuid://$HOSTUUID or volume://$VOLUMEUUID "));
+            }
+            hostUuid = uriParsers.get(protocol).parseUri(msg.getRequiredInstallUri()).hostUuid;
+        }
+
+        if (hostUuid != null) {
+            return hostUuid;
+        }
+
+        return msg.getRequiredHostUuid();
     }
 
     @Override

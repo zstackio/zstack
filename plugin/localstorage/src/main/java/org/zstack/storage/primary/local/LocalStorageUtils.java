@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -16,6 +17,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -271,5 +273,13 @@ public class LocalStorageUtils {
         p.fullPath = installUrl;
         p.disassemble();
         return p.hostUuid;
+    }
+
+    public static String getHostUuidFromSystemTags(List<String> systemTags) {
+        if (CollectionUtils.isEmpty(systemTags)) {
+            return null;
+        }
+        return SystemTagUtils.findTagValue(systemTags, LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME,
+                LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN);
     }
 }

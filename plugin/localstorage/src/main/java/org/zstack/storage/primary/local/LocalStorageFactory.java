@@ -1,7 +1,9 @@
 package org.zstack.storage.primary.local;
 
 import com.google.common.collect.Lists;
+import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.MigrateNetworkExtensionPoint;
 import org.zstack.compute.vm.*;
@@ -50,12 +52,14 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
+import org.zstack.storage.volume.ChangeVolumeInstallPathExtensionPoint;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -76,7 +80,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         RecoverDataVolumeExtensionPoint, RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
         HostAfterConnectedExtensionPoint, InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint,
         PostMarkRootVolumeAsSnapshotExtension, VolumeSnapshotCreationExtensionPoint, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint,
-        CreateRecycleExtensionPoint, AfterInstantiateVolumeExtensionPoint, CreateDataVolumeExtensionPoint {
+        CreateRecycleExtensionPoint, AfterInstantiateVolumeExtensionPoint, CreateDataVolumeExtensionPoint, OverwriteVolumeExtensionPoint {
+
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -461,6 +466,24 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 return new LocalStorageKvmMigrateVmFlow();
             } else {
                 throw new OperationFailureException(operr("local storage doesn't support live migration for hypervisor[%s]", spec.getVmInventory().getHypervisorType()));
+            }
+        }
+
+        if (VmImageSelectBackupStorageFlow.class.getName().equals(nextFlowName)) {
+            if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
+                if (CollectionUtils.isEmpty(spec.getRootVolumeSystemTags())) {
+                    return null;
+                }
+
+                for (String tag : spec.getRootVolumeSystemTags()) {
+                    if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_ROOT_VOLUME.isMatch(tag)) {
+                        String hostUuid = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_ROOT_VOLUME
+                                .getTokenByTag(tag, LocalStorageSystemTags.DEST_HOST_FOR_CREATING_ROOT_VOLUME_TOKEN);
+                        spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
+                        break;
+                    }
+                }
+                return null;
             }
         }
 
@@ -1383,5 +1406,29 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void afterVolumeSnapshotCreated(VolumeSnapshotInventory snapshot, Completion completion) {
         completion.success();
+    }
+
+    @Override
+    public void innerOverwriteVolume(VolumeInventory originVolume, VolumeInventory transientVolume, VolumeDeletionPolicyManager.VolumeDeletionPolicy originVolumeDeletionPolicy) {
+        String sql = "select ref.hostUuid from LocalStorageResourceRefVO ref " +
+                "where ref.resourceUuid = :uuid " +
+                "and ref.resourceType = :resourceType";
+        String originVolumeHostUuid = SQL.New(sql).param("uuid", originVolume.getUuid()).param("resourceType", VolumeVO.class.getSimpleName()).find();
+        String transientVolumeHostUuid = SQL.New(sql).param("uuid", transientVolume.getUuid()).param("resourceType", VolumeVO.class.getSimpleName()).find();
+        if (originVolumeHostUuid == null || transientVolumeHostUuid == null) {
+            return;
+        }
+        if (originVolumeHostUuid.equals(transientVolumeHostUuid)) {
+            return;
+        }
+
+        SQL.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, originVolume.getUuid())
+                .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                .set(LocalStorageResourceRefVO_.hostUuid, transientVolumeHostUuid).update();
+    }
+
+    @Override
+    public void afterOverwriteVolume(VolumeInventory volume, VolumeInventory transientVolume) {
     }
 }
