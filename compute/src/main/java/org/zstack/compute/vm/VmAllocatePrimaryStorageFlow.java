@@ -17,7 +17,6 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -54,7 +53,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         // allocate ps for root volume
         AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
-        rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
+        rmsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
             rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
@@ -78,7 +77,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         // allocate ps for data volumes
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-            amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
+            amsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForDataVolume());
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
@@ -113,8 +112,10 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                         volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
                         volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
                         if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
+                            spec.setAllocatedPrimaryStorageUuidForRootVolume(ar.getPrimaryStorageInventory().getUuid());
                             volumeSpec.setTags(spec.getRootVolumeSystemTags());
                         } else {
+                            spec.setAllocatedPrimaryStorageUuidForDataVolume(ar.getPrimaryStorageInventory().getUuid());
                             volumeSpec.setTags(spec.getDataVolumeSystemTags());
                         }
 

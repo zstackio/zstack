@@ -53,19 +53,9 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         TypedQuery<PrimaryStorageVO> query;
         String errorInfo;
         String sql;
-        if (spec.getRequiredPrimaryStorageUuid() != null) {
-            sql = "select pri" +
-                    " from PrimaryStorageVO pri" +
-                    " where pri.state = :priState" +
-                    " and pri.status = :status" +
-                    " and pri.uuid = :priUuid";
-            query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
-            query.setParameter("priState", PrimaryStorageState.Enabled);
-            query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("priUuid", spec.getRequiredPrimaryStorageUuid());
-            errorInfo = String.format("required primary storage[uuid:%s] cannot satisfy conditions[state:%s, status:%s, size:%s]",
-                    spec.getRequiredPrimaryStorageUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
-        } else if (spec.getRequiredHostUuid() != null) {
+        String primaryStorageCandidateSql = spec.getCandidatePrimaryStorageUuids().isEmpty() ? "" : String.format(" and pri.uuid in ('%s')",
+                String.join("','", spec.getCandidatePrimaryStorageUuids()));
+        if (spec.getRequiredHostUuid() != null) {
             sql = "select pri" +
                     " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host" +
                     " where host.uuid = :huuid" +
@@ -73,6 +63,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                     " and ref.primaryStorageUuid = pri.uuid" +
                     " and pri.status = :status" +
                     " and pri.state = :priState" +
+                    primaryStorageCandidateSql +
                     " and pri.uuid not in (" +
                     " select phref.primaryStorageUuid from PrimaryStorageHostRefVO phref" +
                     " where phref.hostUuid = :huuid" +
@@ -91,6 +82,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                     " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
                     " where ref.clusterUuid in (:clusterUuids)" +
                     " and ref.primaryStorageUuid = pri.uuid" +
+                    primaryStorageCandidateSql +
                     " and pri.status = :status" +
                     " and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
@@ -104,6 +96,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             sql = "select pri" +
                     " from PrimaryStorageVO pri" +
                     " where pri.zoneUuid = :zoneUuid" +
+                    primaryStorageCandidateSql +
                     " and pri.status = :status" +
                     " and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
@@ -116,6 +109,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             sql = "select pri" +
                     " from PrimaryStorageVO pri" +
                     " where pri.status = :status" +
+                    primaryStorageCandidateSql +
                     " and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("priState", PrimaryStorageState.Enabled);
@@ -127,11 +121,6 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         List<PrimaryStorageVO> vos = query.getResultList()
                 .stream().filter(distinctByKey(PrimaryStorageVO::getUuid)).collect(Collectors.toList());
         logger.debug("select primary storage by sql: " + sql);
-
-        if (spec.getRequiredPrimaryStorageUuids() != null && !spec.getRequiredPrimaryStorageUuids().isEmpty()) {
-            logger.debug(String.format("filter through primary storage uuids: %s", spec.getRequiredPrimaryStorageUuids()));
-            vos = vos.stream().filter(vo -> spec.getRequiredPrimaryStorageUuids().contains(vo.getUuid())).collect(Collectors.toList());
-        }
 
         /**
          * 1. if ps is indicated, then choose it directly
@@ -149,7 +138,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             }
         }
 
-        if (spec.getRequiredPrimaryStorageUuid() == null && spec.getExcludePrimaryStorageTypes() != null && !spec.getExcludePrimaryStorageTypes().isEmpty()) {
+        if (spec.getCandidatePrimaryStorageUuids().isEmpty() && spec.getExcludePrimaryStorageTypes() != null && !spec.getExcludePrimaryStorageTypes().isEmpty()) {
             Iterator<PrimaryStorageVO> it = vos.iterator();
             while (it.hasNext()) {
                 PrimaryStorageVO psvo = it.next();

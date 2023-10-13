@@ -835,16 +835,17 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         spec.setRequiredHostUuid(msg.getRequiredHostUuid());
         spec.setRequiredZoneUuid(msg.getRequiredZoneUuid());
         spec.setBackupStorageUuid(msg.getBackupStorageUuid());
-        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
         spec.setTags(msg.getTags());
         spec.setAllocationMessage(msg);
         spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
-        if (msg.getDiskOfferingUuid() != null && DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getDiskOfferingUuid())) {
+        spec.setCandidatePrimaryStorageUuids(msg.getCandidatePrimaryStorageUuids());
+        if (CollectionUtils.isEmpty(msg.getCandidatePrimaryStorageUuids()) && msg.getDiskOfferingUuid() != null
+                && DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getDiskOfferingUuid())) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getDiskOfferingUuid(), DiskOfferingUserConfig.class);
-            if (config.getAllocate() != null && config.getAllocate().getPrimaryStorages() != null) {
-                List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+            if (config.getAllocate() != null && config.getAllocate().getAllPrimaryStorages() != null) {
+                List<String> requiredPrimaryStorageUuidsFromDiskOffering = config.getAllocate().getAllPrimaryStorages().stream()
                         .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
-                spec.setRequiredPrimaryStorageUuids(requiredPrimaryStorageUuids);
+                spec.setCandidatePrimaryStorageUuids(requiredPrimaryStorageUuidsFromDiskOffering);
             }
         }
         return spec;
@@ -1293,9 +1294,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(instanceOffering, InstanceOfferingUserConfig.class);
             if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
                 String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-                if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
+                if (!msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty() && !msg.getCandidatePrimaryStorageUuidsForRootVolume().contains(psUuid)) {
                     throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the instance offering is %s, and the primary storage specified in the creation parameter is %s"
-                            , psUuid, msg.getPrimaryStorageUuidForRootVolume()));
+                            , psUuid, msg.getCandidatePrimaryStorageUuidsForRootVolume()));
                 }
                 msg.setPrimaryStorageUuidForRootVolume(psUuid);
             }
@@ -1311,21 +1312,15 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return;
         }
 
-        if (config.getAllocate().getPrimaryStorage() != null) {
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
-                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuidForRootVolume()));
-            }
-            msg.setPrimaryStorageUuidForRootVolume(psUuid);
-        } else if (!org.apache.commons.collections.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
-            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+        if (!config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                     .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
-            if (msg.getPrimaryStorageUuidForRootVolume() != null && !requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuidForRootVolume())) {
+            if (!msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty() && Collections.disjoint(requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForRootVolume())) {
                 throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
-                        requiredPrimaryStorageUuids, msg.getPrimaryStorageUuidForRootVolume()));
+                        requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForRootVolume()));
+            } else if (msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty()) {
+                msg.setCandidatePrimaryStorageUuidsForRootVolume(requiredPrimaryStorageUuids);
             }
-            msg.setPrimaryStorageUuidsForRootVolume(requiredPrimaryStorageUuids);
         }
     }
 
@@ -1344,21 +1339,15 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return;
         }
 
-        if (config.getAllocate().getPrimaryStorage() != null) {
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (msg.getPrimaryStorageUuidForDataVolume() != null && !msg.getPrimaryStorageUuidForDataVolume().equals(psUuid)) {
-                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuidForDataVolume()));
-            }
-            msg.setPrimaryStorageUuidForDataVolume(psUuid);
-        } else if (!org.apache.commons.collections.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
-            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+        if (!config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                     .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
-            if (msg.getPrimaryStorageUuidForDataVolume() != null && !requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuidForDataVolume())) {
+            if (!msg.getCandidatePrimaryStorageUuidsForDataVolume().isEmpty() && Collections.disjoint(requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForDataVolume())) {
                 throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
-                        requiredPrimaryStorageUuids, msg.getPrimaryStorageUuidForDataVolume()));
+                        requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForDataVolume()));
+             } else if (msg.getCandidatePrimaryStorageUuidsForDataVolume().isEmpty()) {
+                msg.setCandidatePrimaryStorageUuidsForDataVolume(requiredPrimaryStorageUuids);
             }
-            msg.setPrimaryStorageUuidsForDataVolume(requiredPrimaryStorageUuids);
         }
 
     }

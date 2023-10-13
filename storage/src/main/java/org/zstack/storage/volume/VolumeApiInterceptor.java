@@ -120,15 +120,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             return;
         }
 
-        if (config.getAllocate().getPrimaryStorage() != null) {
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (msg.getPrimaryStorageUuid() != null && !msg.getPrimaryStorageUuid().equals(psUuid)) {
-                throw new ApiMessageInterceptionException(argerr("primary storage uuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuid()));
-            }
-            msg.setPrimaryStorageUuid(psUuid);
-        } else if (!CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
-            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+        if (!config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                     .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
             if (msg.getPrimaryStorageUuid() != null && !requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuid())) {
                 throw new ApiMessageInterceptionException(operr("primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",

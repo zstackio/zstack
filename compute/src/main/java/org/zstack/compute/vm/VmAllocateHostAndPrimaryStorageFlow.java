@@ -64,21 +64,20 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         if (spec.getImageSpec().relyOnImageCache()) {
             String imageUuid = spec.getImageSpec().getInventory().getUuid();
-            String requirdPsUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
+            List<String> requirdPsUuids = spec.getCandidatePrimaryStorageUuidsForRootVolume();
             List<String> cachedPsUuids = Q.New(ImageCacheVO.class).select(ImageCacheVO_.primaryStorageUuid)
                     .eq(ImageCacheVO_.imageUuid, imageUuid)
                     .listValues();
-
-            if (requirdPsUuid != null && !cachedPsUuids.contains(requirdPsUuid)) {
+            if (!CollectionUtils.isEmpty(requirdPsUuids) && Collections.disjoint(requirdPsUuids, cachedPsUuids)) {
                 trigger.fail(operr("creation rely on image cache[uuid:%s, locate ps uuids: [%s]], cannot create other places.", imageUuid, cachedPsUuids));
                 return;
-            } else if (requirdPsUuid == null) {
-                spec.setRequiredPrimaryStorageUuidForRootVolume(cachedPsUuids.get(0));
+            } else if (!CollectionUtils.isEmpty(requirdPsUuids)) {
+                requirdPsUuids.retainAll(cachedPsUuids);
             }
         }
 
         // The creation parameter specifies the primary storage, no need to automatically allocate the primary storage
-        if (rootVolumePsSpecified(spec) && (!needCreateDataVolume(spec) || dataVolumePsSpecified(spec))) {
+        if (rootVolumePsUnique(spec) && (!needCreateDataVolume(spec) || dataVolumePsUnique(spec))) {
             allocate(trigger, spec);
             return;
         }
@@ -141,21 +140,21 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
-        if (!rootVolumePsSpecified(spec) && rootVolumePsOptional(spec)) {
-            List<String> filterPsUuids = spec.getRequiredPrimaryStorageUuidsForRootVolume().stream().filter(availablePsUuids::contains).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForRootVolume())) {
+            List<String> filterPsUuids = spec.getCandidatePrimaryStorageUuidsForRootVolume().stream().filter(availablePsUuids::contains).collect(Collectors.toList());
             if (filterPsUuids.isEmpty()) {
-                trigger.fail(Platform.operr(String.format("none of the specified primary storages%s are available",  spec.getRequiredPrimaryStorageUuidsForRootVolume())));
+                trigger.fail(Platform.operr(String.format("none of the specified primary storages%s are available",  spec.getCandidatePrimaryStorageUuidsForRootVolume())));
                 return;
             }
-            spec.setRequiredPrimaryStorageUuidsForRootVolume(filterPsUuids);
+            spec.setCandidatePrimaryStorageUuidsForRootVolume(filterPsUuids);
         }
-        if (needCreateDataVolume(spec) && !dataVolumePsSpecified(spec) && dataVolumePsOptional(spec)) {
-            List<String> filterPsUuids = spec.getRequiredPrimaryStorageUuidsForDataVolume().stream().filter(availablePsUuids::contains).collect(Collectors.toList());
+        if (needCreateDataVolume(spec) && !CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForDataVolume())) {
+            List<String> filterPsUuids = spec.getCandidatePrimaryStorageUuidsForDataVolume().stream().filter(availablePsUuids::contains).collect(Collectors.toList());
             if (filterPsUuids.isEmpty()) {
-                trigger.fail(Platform.operr(String.format("none of the specified primary storages%s are available",  spec.getRequiredPrimaryStorageUuidsForDataVolume())));
+                trigger.fail(Platform.operr(String.format("none of the specified primary storages%s are available",  spec.getCandidatePrimaryStorageUuidsForDataVolume())));
                 return;
             }
-            spec.setRequiredPrimaryStorageUuidsForDataVolume(filterPsUuids);
+            spec.setCandidatePrimaryStorageUuidsForDataVolume(filterPsUuids);
         }
 
         // local + non-local， need to automatically allocate the primary storage
@@ -318,8 +317,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         String l3Uuid = vm.getDefaultL3NetworkUuid();
         String zoneUuid = vm.getZoneUuid();
-        String rootVolumePsUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
-        String dataVolumePsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
 
         Q q = Q.New(ClusterVO.class).select(ClusterVO_.uuid);
         if (zoneUuid != null) {
@@ -327,36 +324,19 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }
         List<String> possibleClusterUuids = q.listValues();
         List<String> needClusterUuids;
-        if (rootVolumePsUuid != null || dataVolumePsUuid != null
-                || !CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForRootVolume())
-                || !CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForDataVolume())) {
-            if (rootVolumePsUuid != null) {
-                needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
-                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                        .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, rootVolumePsUuid)
-                        .listValues();
-                possibleClusterUuids.retainAll(needClusterUuids);
-            } else if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForRootVolume())) {
-                needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
-                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                        .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidsForRootVolume())
-                        .listValues();
-                possibleClusterUuids.retainAll(needClusterUuids);
-            }
-
-            if (dataVolumePsUuid != null) {
-                needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
-                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                        .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVolumePsUuid)
-                        .listValues();
-                possibleClusterUuids.retainAll(needClusterUuids);
-            } else if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForDataVolume())) {
-                needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
-                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                        .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidsForDataVolume())
-                        .listValues();
-                possibleClusterUuids.retainAll(needClusterUuids);
-            }
+        if (!CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForRootVolume())) {
+            needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                    .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getCandidatePrimaryStorageUuidsForRootVolume())
+                    .listValues();
+            possibleClusterUuids.retainAll(needClusterUuids);
+        }
+        if (!CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForDataVolume())) {
+            needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                    .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getCandidatePrimaryStorageUuidsForDataVolume())
+                    .listValues();
+            possibleClusterUuids.retainAll(needClusterUuids);
         }
 
         if (possibleClusterUuids.size() < 2) {
@@ -391,24 +371,17 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 .list();
     }
 
-    private boolean rootVolumePsSpecified(VmInstanceSpec spec) {
-        return spec.getRequiredPrimaryStorageUuidForRootVolume() != null;
+
+    private boolean rootVolumePsUnique(VmInstanceSpec spec) {
+        return spec.getCandidatePrimaryStorageUuidsForRootVolume().size() == 1;
     }
 
-    private boolean dataVolumePsSpecified(VmInstanceSpec spec) {
-        return spec.getRequiredPrimaryStorageUuidForDataVolume() != null;
+    private boolean dataVolumePsUnique(VmInstanceSpec spec) {
+        return spec.getCandidatePrimaryStorageUuidsForDataVolume().size() == 1;
     }
 
     private boolean needCreateDataVolume(VmInstanceSpec spec) {
         return !CollectionUtils.isEmpty(spec.getDataDiskOfferings());
-    }
-
-    private boolean rootVolumePsOptional(VmInstanceSpec spec) {
-        return !CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForRootVolume());
-    }
-
-    private boolean dataVolumePsOptional(VmInstanceSpec spec) {
-        return !CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForDataVolume());
     }
 
     private FlowChain buildAllocateHostAndPrimaryStorageFlowChain(final FlowTrigger trigger, VmInstanceSpec spec) {
@@ -452,10 +425,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         boolean autoAllocateDataVolumePs = false;
         List<String> rootPs = new ArrayList<>();
         List<String> dataPs = new ArrayList<>();
-        if (rootVolumePsSpecified(spec)) {
-            rootPs.add(spec.getRequiredPrimaryStorageUuidForRootVolume());
-        } else if (rootVolumePsOptional(spec)) {
-            rootPs.addAll(spec.getRequiredPrimaryStorageUuidsForRootVolume());
+        if (!CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForRootVolume())) {
+            rootPs.addAll(spec.getCandidatePrimaryStorageUuidsForRootVolume());
         } else {
             autoAllocateRootVolumePs = true;
             rootPs.addAll(availPsForRootVolume);
@@ -465,10 +436,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         sortPrimaryStorages(rootPs, rootVolumeStrategy, spec.getImageSpec());
 
         if (needCreateDataVolume(spec)) {
-            if (dataVolumePsSpecified(spec)) {
-                dataPs.add(spec.getRequiredPrimaryStorageUuidForDataVolume());
-            } else if (dataVolumePsOptional(spec)) {
-                dataPs.addAll(spec.getRequiredPrimaryStorageUuidsForDataVolume());
+            if (!CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForDataVolume())) {
+                dataPs.addAll(spec.getCandidatePrimaryStorageUuidsForDataVolume());
             } else {
                 autoAllocateDataVolumePs = true;
                 dataPs.addAll(availPsForDataVolume);

@@ -5,6 +5,7 @@ import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
 import org.zstack.header.vm.VmCreationStrategy;
 import org.zstack.header.vm.VmNicSpec;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,8 +19,6 @@ public class InstantiateVmFromNewCreatedStruct {
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private List<VmNicSpec> l3NetworkUuids;
     private String rootDiskOfferingUuid;
-    private String primaryStorageUuidForRootVolume;
-    private String primaryStorageUuidForDataVolume;
     private VmCreationStrategy strategy = VmCreationStrategy.InstantStart;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
@@ -29,23 +28,29 @@ public class InstantiateVmFromNewCreatedStruct {
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
     private List<String> sshKeyPairUuids;
-    private List<String> primaryStorageUuidsForRootVolume;
-    private List<String> primaryStorageUuidsForDataVolume;
+    private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
+    private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
 
-    public List<String> getPrimaryStorageUuidsForRootVolume() {
-        return primaryStorageUuidsForRootVolume;
+    public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
+        return candidatePrimaryStorageUuidsForRootVolume;
     }
 
-    public void setPrimaryStorageUuidsForRootVolume(List<String> primaryStorageUuidsForRootVolume) {
-        this.primaryStorageUuidsForRootVolume = primaryStorageUuidsForRootVolume;
+    public void setCandidatePrimaryStorageUuidsForRootVolume(List<String> candidatePrimaryStorageUuidsForRootVolume) {
+        this.candidatePrimaryStorageUuidsForRootVolume.clear();
+        if (candidatePrimaryStorageUuidsForRootVolume != null) {
+            this.candidatePrimaryStorageUuidsForRootVolume.addAll(candidatePrimaryStorageUuidsForRootVolume);
+        }
     }
 
-    public List<String> getPrimaryStorageUuidsForDataVolume() {
-        return primaryStorageUuidsForDataVolume;
+    public List<String> getCandidatePrimaryStorageUuidsForDataVolume() {
+        return candidatePrimaryStorageUuidsForDataVolume;
     }
 
-    public void setPrimaryStorageUuidsForDataVolume(List<String> primaryStorageUuidsForDataVolume) {
-        this.primaryStorageUuidsForDataVolume = primaryStorageUuidsForDataVolume;
+    public void setCandidatePrimaryStorageUuidsForDataVolume(List<String> candidatePrimaryStorageUuidsForDataVolume) {
+        this.candidatePrimaryStorageUuidsForDataVolume.clear();
+        if (candidatePrimaryStorageUuidsForDataVolume != null) {
+            this.candidatePrimaryStorageUuidsForDataVolume.addAll(candidatePrimaryStorageUuidsForDataVolume);
+        }
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -115,10 +120,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
-        struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
-        struct.setPrimaryStorageUuidsForRootVolume(msg.getPrimaryStorageUuidsForRootVolume());
-        struct.setPrimaryStorageUuidsForDataVolume(msg.getPrimaryStorageUuidsForDataVolume());
+        struct.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
+        struct.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
@@ -137,8 +140,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         struct.setL3NetworkUuids(msg.getL3NetworkSpecs());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
-        struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+        struct.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
+        struct.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
@@ -148,21 +151,28 @@ public class InstantiateVmFromNewCreatedStruct {
         return struct;
     }
 
-
+    @Deprecated
     public String getPrimaryStorageUuidForRootVolume() {
-        return primaryStorageUuidForRootVolume;
+        return this.candidatePrimaryStorageUuidsForRootVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForRootVolume.get(0);
     }
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
-        this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+        this.candidatePrimaryStorageUuidsForRootVolume.clear();
+        if (primaryStorageUuidForRootVolume != null) {
+            this.candidatePrimaryStorageUuidsForRootVolume.add(primaryStorageUuidForRootVolume);
+        }
     }
 
+    @Deprecated
     public String getPrimaryStorageUuidForDataVolume() {
-        return primaryStorageUuidForDataVolume;
+        return this.candidatePrimaryStorageUuidsForDataVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForDataVolume.get(0);
     }
 
     public void setPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
-        this.primaryStorageUuidForDataVolume = primaryStorageUuidForDataVolume;
+        this.candidatePrimaryStorageUuidsForDataVolume.clear();
+        if (primaryStorageUuidForDataVolume != null) {
+            this.candidatePrimaryStorageUuidsForDataVolume.add(primaryStorageUuidForDataVolume);
+        }
     }
 
     public String getRequiredHostUuid() {

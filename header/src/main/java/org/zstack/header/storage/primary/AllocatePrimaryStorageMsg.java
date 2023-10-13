@@ -17,7 +17,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String requiredZoneUuid;
     private List<String> requiredClusterUuids;
     private String requiredHostUuid;
-    private String requiredPrimaryStorageUuid;
+    private final List<String> candidatePrimaryStorageUuids = new ArrayList<>();
     private String backupStorageUuid;
     private List<String> possiblePrimaryStorageTypes;
     private List<String> excludePrimaryStorageTypes;
@@ -137,12 +137,27 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
         this.diskOfferingUuid = diskOfferingUuid;
     }
 
+    @Deprecated
     public String getRequiredPrimaryStorageUuid() {
-        return requiredPrimaryStorageUuid;
+        return this.candidatePrimaryStorageUuids.isEmpty() ? null : this.candidatePrimaryStorageUuids.get(0);
     }
 
     public void setRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
-        this.requiredPrimaryStorageUuid = requiredPrimaryStorageUuid;
+        this.candidatePrimaryStorageUuids.clear();
+        if (requiredPrimaryStorageUuid != null) {
+            this.candidatePrimaryStorageUuids.add(requiredPrimaryStorageUuid);
+        }
+    }
+
+    public List<String> getCandidatePrimaryStorageUuids() {
+        return candidatePrimaryStorageUuids;
+    }
+
+    public void setCandidatePrimaryStorageUuids(List<String> candidatePrimaryStorageUuids) {
+        this.candidatePrimaryStorageUuids.clear();
+        if (candidatePrimaryStorageUuids != null) {
+            this.candidatePrimaryStorageUuids.addAll(candidatePrimaryStorageUuids);
+        }
     }
 
     public String getAllocationStrategy() {

@@ -546,14 +546,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             return;
         }
 
-        if (config.getAllocate().getPrimaryStorage() != null) {
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (!msg.getPrimaryStorageUuid().equals(psUuid)) {
-                throw new OperationFailureException(argerr("primary storage uuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuid()));
-            }
-        } else if (!org.apache.commons.collections4.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
-            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+        if (!config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                     .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
             if (!requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuid())) {
                 throw new OperationFailureException(operr("primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
@@ -1028,8 +1022,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         List<String> requiredPrimaryStorageUuids = null;
         if (msg.getDiskOfferingUuid() != null && DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getDiskOfferingUuid())) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getDiskOfferingUuid(), DiskOfferingUserConfig.class);
-            if (config.getAllocate() != null && !org.apache.commons.collections.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
-                requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+            if (config.getAllocate() != null && !config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+                requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                         .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
             }
         }

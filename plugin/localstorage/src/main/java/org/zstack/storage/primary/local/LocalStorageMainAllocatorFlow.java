@@ -1,6 +1,5 @@
 package org.zstack.storage.primary.local;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -11,7 +10,6 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.storage.primary.*;
@@ -58,34 +56,9 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         Result ret = new Result();
         long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
 
-        if (spec.getRequiredPrimaryStorageUuid() != null) {
-            String sql = "select ref" +
-                    " from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host" +
-                    " where ref.primaryStorageUuid = pri.uuid" +
-                    " and pri.state = :state" +
-                    " and pri.status = :status" +
-                    " and pri.uuid = :uuid" +
-                    " and host.uuid = ref.hostUuid" +
-                    " and host.state = :hstate" +
-                    " and host.status = :hstatus" +
-                    " and pri.type = :ptype";
-            query = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
-            query.setParameter("state", PrimaryStorageState.Enabled);
-            query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("uuid", spec.getRequiredPrimaryStorageUuid());
-            query.setParameter("hstate", HostState.Enabled);
-            query.setParameter("hstatus", HostStatus.Connected);
-            query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-
-            ret.errStr = i18n("required local primary storage[uuid:%s] cannot satisfy conditions[state: %s, status: %s]," +
-                            " or hosts providing the primary storage don't satisfy conditions[state: %s, status: %s, size > %s bytes]",
-                    spec.getRequiredPrimaryStorageUuid(),
-                    PrimaryStorageState.Enabled,
-                    PrimaryStorageStatus.Connected,
-                    HostState.Enabled,
-                    HostStatus.Connected,
-                    spec.getSize());
-        } else if (spec.getRequiredHostUuid() != null) {
+        String primaryStorageCandidateSql = spec.getCandidatePrimaryStorageUuids().isEmpty() ? "" : String.format(" and pri.uuid in ('%s')",
+                String.join("','", spec.getCandidatePrimaryStorageUuids()));
+        if (spec.getRequiredHostUuid() != null) {
             String sql = "select lref" +
                     " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO pref, HostVO host, LocalStorageHostRefVO lref" +
                     " where pri.uuid = pref.primaryStorageUuid" +
@@ -95,6 +68,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                     " and host.clusterUuid = pref.clusterUuid" +
                     " and pri.state = :pstate" +
                     " and pri.status = :pstatus" +
+                    primaryStorageCandidateSql +
                     " and host.state = :hstate" +
                     " and host.status = :hstatus" +
                     " and pri.type = :ptype";
@@ -121,6 +95,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                     " and pri.state = :pstate" +
                     " and pri.status = :pstatus" +
                     " and pri.zoneUuid = :zoneUuid" +
+                    primaryStorageCandidateSql +
                     " and pri.type = :ptype" +
                     " and host.uuid = ref.hostUuid" +
                     " and host.state = :hstate" +
@@ -147,6 +122,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                     " and host.uuid = ref.hostUuid" +
                     " and pri.state = :pstate" +
                     " and pri.status = :pstatus" +
+                    primaryStorageCandidateSql +
                     " and host.state = :hstate" +
                     " and host.status = :hstatus" +
                     " and pri.type = :ptype";
@@ -173,12 +149,6 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             logger.debug(String.format("host[uuid:%s] is request, only check its capacity", spec.getRequiredHostUuid()));
             refs = refs.stream()
                     .filter(ref -> ref.getHostUuid().equals(spec.getRequiredHostUuid()))
-                    .collect(Collectors.toList());
-        }
-
-        if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuids())) {
-            logger.debug(String.format("filter through primary storage uuids: %s", spec.getRequiredPrimaryStorageUuids()));
-            refs = refs.stream().filter(ref -> spec.getRequiredPrimaryStorageUuids().contains(ref.getPrimaryStorageUuid()))
                     .collect(Collectors.toList());
         }
 
@@ -252,7 +222,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             }
         }
 
-        if (spec.getRequiredPrimaryStorageUuid() == null && spec.getExcludePrimaryStorageTypes() != null && !spec.getExcludePrimaryStorageTypes().isEmpty()) {
+        if (spec.getCandidatePrimaryStorageUuids().isEmpty() && spec.getExcludePrimaryStorageTypes() != null && !spec.getExcludePrimaryStorageTypes().isEmpty()) {
             Iterator<PrimaryStorageVO> it = res.iterator();
             while (it.hasNext()) {
                 PrimaryStorageVO psvo = it.next();

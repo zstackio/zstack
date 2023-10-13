@@ -1329,11 +1329,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return;
         }
 
+        msg.setPrimaryStorageUuid(config.getAllocate().getPrimaryStorage().getUuid());
         String psUuid = msg.getPrimaryStorageUuid();
         String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                 .eq(PrimaryStorageVO_.uuid,psUuid)
                 .findValue();
-        if (!psType.equals(type.toString())) {
+        if (!type.toString().equals(psType)) {
             return;
         }
 

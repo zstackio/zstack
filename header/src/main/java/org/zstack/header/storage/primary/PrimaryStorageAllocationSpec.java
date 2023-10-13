@@ -1,5 +1,6 @@
 package org.zstack.header.storage.primary;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -10,8 +11,7 @@ public class PrimaryStorageAllocationSpec {
     private String requiredZoneUuid;
     private List<String> requiredClusterUuids;
     private String requiredHostUuid;
-    private String requiredPrimaryStorageUuid;
-    private List<String> requiredPrimaryStorageUuids;
+    private List<String> candidatePrimaryStorageUuids;
     private List<String> tags;
     private AllocatePrimaryStorageMsg allocationMessage;
     private String vmInstanceUuid;
@@ -24,12 +24,12 @@ public class PrimaryStorageAllocationSpec {
     private List<String> excludePrimaryStorageTypes;
     private String backupStorageUuid;
 
-    public List<String> getRequiredPrimaryStorageUuids() {
-        return requiredPrimaryStorageUuids;
+    public List<String> getCandidatePrimaryStorageUuids() {
+        return candidatePrimaryStorageUuids == null ? Collections.emptyList() : candidatePrimaryStorageUuids;
     }
 
-    public void setRequiredPrimaryStorageUuids(List<String> requiredPrimaryStorageUuids) {
-        this.requiredPrimaryStorageUuids = requiredPrimaryStorageUuids;
+    public void setCandidatePrimaryStorageUuids(List<String> candidatePrimaryStorageUuids) {
+        this.candidatePrimaryStorageUuids = candidatePrimaryStorageUuids;
     }
 
     public List<String> getExcludePrimaryStorageTypes() {
@@ -102,14 +102,6 @@ public class PrimaryStorageAllocationSpec {
 
     public void setDiskOfferingUuid(String diskOfferingUuid) {
         this.diskOfferingUuid = diskOfferingUuid;
-    }
-
-    public String getRequiredPrimaryStorageUuid() {
-        return requiredPrimaryStorageUuid;
-    }
-
-    public void setRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
-        this.requiredPrimaryStorageUuid = requiredPrimaryStorageUuid;
     }
 
     public long getSize() {

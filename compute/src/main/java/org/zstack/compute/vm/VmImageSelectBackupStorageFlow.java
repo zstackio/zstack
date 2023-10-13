@@ -7,8 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -20,12 +18,13 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -92,22 +91,24 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     }
 
     private boolean imageNeedDownload(VmInstanceSpec spec, String imageUuid) {
-        String psUuid;
+        List<String> psUuid;
         if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
-            psUuid = spec.getVolumeSpecs().isEmpty() ? spec.getRequiredPrimaryStorageUuidForRootVolume() :
-                    spec.getVolumeSpecs().get(0).getPrimaryStorageInventory().getUuid();
+            psUuid = spec.getVolumeSpecs().isEmpty() ? spec.getCandidatePrimaryStorageUuidsForRootVolume() :
+                    Collections.singletonList(spec.getVolumeSpecs().get(0).getPrimaryStorageInventory().getUuid());
         } else {
-            psUuid = spec.getVmInventory().getRootVolume().getPrimaryStorageUuid();
+            psUuid = Collections.singletonList(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
         }
 
-        if (psUuid == null) {
+        if (psUuid.isEmpty()) {
             return true;
         }
 
-        SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-        q.add(ImageCacheVO_.imageUuid, Op.EQ, imageUuid);
-        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, psUuid);
-        return !q.isExists();
+        List<String> hasImageCachePsUuids = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, imageUuid)
+                .in(ImageCacheVO_.primaryStorageUuid, psUuid)
+                .select(ImageCacheVO_.primaryStorageUuid)
+                .listValues();
+
+        return new HashSet<>(hasImageCachePsUuids).size() < psUuid.size();
     }
 
     @Transactional(readOnly = true)

@@ -29,13 +29,13 @@ public class PrimaryStorageSortByCustomOrderFlow extends NoRollbackFlow {
             return;
         }
         PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(PrimaryStorageConstant.AllocatorParams.SPEC);
-        if (CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuids())) {
+        if (CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuids())) {
             data.put(PrimaryStorageConstant.AllocatorParams.CANDIDATES, candidates);
             trigger.next();
             return;
         }
         Set<String> candidateUuids = candidates.stream().map(ResourceVO::getUuid).collect(Collectors.toSet());
-        List<PrimaryStorageVO> ret = spec.getRequiredPrimaryStorageUuids().stream().filter(candidateUuids::contains)
+        List<PrimaryStorageVO> ret = spec.getCandidatePrimaryStorageUuids().stream().filter(candidateUuids::contains)
                 .map(psUuid -> dbf.findByUuid(psUuid, PrimaryStorageVO.class))
                 .collect(Collectors.toList());
 
