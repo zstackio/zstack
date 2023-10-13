@@ -67,7 +67,9 @@ public class ImageHelper {
     }
 
     public static void updateImageIfVirtioIsNull(ImageInventory imageInventory) {
-        updateImageFactory.get(imageInventory.getPlatform()).doUpdateImageIfVirtioIsNull(imageInventory);
+        if (imageInventory.getVirtio() == null && imageInventory.getPlatform() != null) {
+            updateImageFactory.get(imageInventory.getPlatform()).doUpdateImageIfVirtioIsNull(imageInventory);
+        }
     }
 
     public static abstract class ExportUrl {
