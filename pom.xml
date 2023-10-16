@@ -101,7 +101,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.10</version>
+                <version>4.13.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -278,7 +278,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20170516</version>
+                <version>20230618</version>
             </dependency>
             <dependency>
                 <groupId>com.github.mwiede</groupId>
@@ -298,7 +298,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>30.0-jre</version>
+                <version>32.1.2-jre</version>
             </dependency>
             <!--<dependency>
                 <groupId>org.bouncycastle</groupId>
