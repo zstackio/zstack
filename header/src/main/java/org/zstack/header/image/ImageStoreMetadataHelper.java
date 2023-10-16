@@ -41,7 +41,9 @@ public class ImageStoreMetadataHelper {
             imageInventory.setArchitecture(ImageArchitecture.defaultArch());
         }
 
-        ImageHelper.updateImageIfVirtioIsNull(imageInventory);
+        if (imageInventory.getVirtio() == null) {
+            ImageHelper.updateImageIfVirtioIsNull(imageInventory);
+        }
 
         return imageInventory;
     }
