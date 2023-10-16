@@ -30,6 +30,13 @@
     </config>
     <config>
         <category>vyos</category>
+        <name>enable.loadbalancer.full.log</name>
+        <description>open full haproxy log</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>false</defaultValue>
+    </config>
+    <config>
+        <category>vyos</category>
         <name>enable.vyos.cmd</name>
         <description>enable or disable vyos command</description>
         <type>java.lang.Boolean</type>

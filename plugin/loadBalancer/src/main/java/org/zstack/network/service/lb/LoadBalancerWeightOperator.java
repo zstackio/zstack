@@ -12,7 +12,9 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.TagUtils;
+import org.zstack.utils.network.IPv6Constants;
 
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +79,27 @@ public class LoadBalancerWeightOperator {
             String nicUuid = token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
             String weight = token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN);
             ret.put(nicUuid, Long.valueOf(weight));
+        }
+
+        return ret;
+    }
+
+    public Map<String, Integer> getBackendNicIpversion(List<String> systemTags) {
+        Map<String, Integer> ret = new HashMap<>();
+
+        if (systemTags == null) {
+            return ret;
+        }
+
+        for (String systemTag : systemTags) {
+            if(!LoadBalancerSystemTags.BALANCER_BACKEND_NIC_IPVERSION.isMatch(systemTag)) {
+                continue;
+            }
+
+            Map<String, String> token = TagUtils.parse(LoadBalancerSystemTags.BALANCER_BACKEND_NIC_IPVERSION.getTagFormat(), systemTag);
+            String nicUuid = token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
+            String ipVersion = token.get(LoadBalancerSystemTags.BALANCER_BACKEND_NIC_IPVERSION_TOKEN);
+            ret.put(nicUuid, Integer.valueOf(ipVersion));
         }
 
         return ret;

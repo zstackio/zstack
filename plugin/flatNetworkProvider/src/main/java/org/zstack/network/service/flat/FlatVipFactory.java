@@ -33,6 +33,11 @@ public class FlatVipFactory implements VipFactory {
                 bus.dealWithUnknownMessage(msg);
             }
 
+            @Override
+            protected void acquireVipOnSpecificBackend(String specificBackendUuid, Completion completion) {
+                completion.success();
+            }
+
         };
     }
 

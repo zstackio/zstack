@@ -1,5 +1,8 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.VipVO;
+
 import java.util.List;
 
 /**

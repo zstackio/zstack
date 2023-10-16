@@ -195,8 +195,15 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
 
     private void validate(APICreateLoadBalancerListenerMsg msg){
         String vipUuid = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).select(LoadBalancerVO_.vipUuid).findValue();
+        String ipv6Uuid = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).select(LoadBalancerVO_.ipv6VipUuid).findValue();
+
         RangeSet.Range cur = new RangeSet.Range(msg.getLoadBalancerPort(), msg.getLoadBalancerPort());
-        checkVipPortConfliction(vipUuid, msg.getProtocol(), cur);
+        if (!StringUtils.isEmpty(vipUuid)) {
+            checkVipPortConfliction(vipUuid, msg.getProtocol(), cur);
+        }
+        if (!StringUtils.isEmpty(ipv6Uuid)) {
+            checkVipPortConfliction(ipv6Uuid, msg.getProtocol(), cur);
+        }
     }
 
     private RangeSet getVipPortRangeList(String vipUuid, String protocol){

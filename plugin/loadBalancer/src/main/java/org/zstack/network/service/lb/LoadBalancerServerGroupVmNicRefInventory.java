@@ -28,6 +28,9 @@ public class LoadBalancerServerGroupVmNicRefInventory {
     private String serverGroupUuid;
     private String vmNicUuid;
     private Long weight;
+
+    private Integer ipVersion;
+
     private String status;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -35,6 +38,7 @@ public class LoadBalancerServerGroupVmNicRefInventory {
     public static LoadBalancerServerGroupVmNicRefInventory valueOf(LoadBalancerServerGroupVmNicRefVO vo) {
         LoadBalancerServerGroupVmNicRefInventory inv = new LoadBalancerServerGroupVmNicRefInventory();
         inv.setId(vo.getId());
+        inv.setIpVersion(vo.getIpVersion());
         inv.setListenerUuid(vo.getServerGroupUuid());
         inv.setVmNicUuid(vo.getVmNicUuid());
         inv.setWeight(vo.getWeight());
@@ -50,6 +54,14 @@ public class LoadBalancerServerGroupVmNicRefInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 
     public String getStatus() {

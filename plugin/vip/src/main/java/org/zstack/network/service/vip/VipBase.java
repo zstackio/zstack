@@ -1,5 +1,6 @@
 package org.zstack.network.service.vip;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -466,7 +467,15 @@ public class VipBase {
 
         VipFactory f = vipMgr.getVipFactory(self.getServiceProvider());
         VipBaseBackend vip = f.getVip(getSelf());
-        vip.acquireVipOnBackend(new Completion(completion) {
+        String providerUuid = null;
+        for (GetProviderUuidOfNetworkServiceUseTheVip ext : pluginRgty.getExtensionList(GetProviderUuidOfNetworkServiceUseTheVip.class)) {
+            providerUuid = ext.getProviderUuidOfNetworkServiceUseTheVip(s.getServiceUuid());
+            if (!StringUtils.isEmpty(providerUuid)) {
+                break;
+            }
+        }
+
+        vip.acquireVipOnSpecificBackend(providerUuid, new Completion(completion) {
             @Override
             public void success() {
                 logger.debug(String.format("successfully acquired vip[uuid:%s, name:%s, ip:%s] on service[%s]",

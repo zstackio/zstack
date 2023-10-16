@@ -227,31 +227,58 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APICreateLoadBalancerMsg msg) {
-        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, msg.getVipUuid()).listValues();
+        if (StringUtils.isEmpty(msg.getVipUuid()) && StringUtils.isEmpty(msg.getIpv6VipUuid())) {
+            throw new ApiMessageInterceptionException(argerr("could not create loadbalancer, because param of vip and ipv6 vip is empty"));
+        }
+
+        List<String> l3Uuids = Q.New(VipVO.class).select(VipVO_.l3NetworkUuid).in(VipVO_.uuid, Arrays.asList(msg.getIpv6VipUuid(), msg.getVipUuid())).listValues();
+        int countOfL3 = l3Uuids.stream().distinct().collect(Collectors.toList()).size();
+        if (countOfL3 > 1) {
+            throw new ApiMessageInterceptionException(argerr("could not create loadbalancer, because l3 network of vip and ipv6 vip are not the same l3 network"));
+        }
+
+        if (!StringUtils.isEmpty(msg.getVipUuid())) {
+            validateVipOfLoadBalancer(IPv6Constants.IPv4, msg.getVipUuid());
+        }
+
+        if (!StringUtils.isEmpty(msg.getIpv6VipUuid())) {
+            validateVipOfLoadBalancer(IPv6Constants.IPv6, msg.getIpv6VipUuid());
+        }
+    }
+
+    private void validateVipOfLoadBalancer(int vipIpVersion, String vipUuid) {
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, vipUuid).listValues();
         if(useFor != null && !useFor.isEmpty()){
             VipUseForList useForList = new VipUseForList(useFor);
             if(!useForList.validateNewAdded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)){
-                throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
+                throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", vipUuid, useForList.toString()));
             }
         }
 
         /* the vip can not the first of the last ip of the cidr */
-        VipVO vipVO = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
-        if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
-            AddressPoolVO addressPoolVO = dbf.findByUuid(vipVO.getIpRangeUuid(), AddressPoolVO.class);
-            if (addressPoolVO == null) {
-                return;
-            }
+        VipVO vipVO = dbf.findByUuid(vipUuid, VipVO.class);
+        if (IPv6Constants.IPv4 == vipIpVersion) {
+            if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
+                AddressPoolVO addressPoolVO = dbf.findByUuid(vipVO.getIpRangeUuid(), AddressPoolVO.class);
+                if (addressPoolVO == null) {
+                    return;
+                }
 
-            SubnetUtils utils = new SubnetUtils(addressPoolVO.getNetworkCidr());
-            SubnetUtils.SubnetInfo subnet = utils.getInfo();
-            String firstIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) - 1);
-            String lastIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) + 1);
-            if (vipVO.getIp().equals(firstIp) || vipVO.getIp().equals(lastIp)) {
-                throw new ApiMessageInterceptionException(argerr("Load balancer VIP [%s] cannot be the first or the last IP of the CIDR with the public address pool type", vipVO.getIp()));
+                SubnetUtils utils = new SubnetUtils(addressPoolVO.getNetworkCidr());
+                SubnetUtils.SubnetInfo subnet = utils.getInfo();
+                String firstIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) - 1);
+                String lastIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) + 1);
+                if (vipVO.getIp().equals(firstIp) || vipVO.getIp().equals(lastIp)) {
+                    throw new ApiMessageInterceptionException(argerr("Load balancer VIP [%s] cannot be the first or the last IP of the CIDR with the public address pool type", vipVO.getIp()));
+                }
+            } else {
+                throw new ApiMessageInterceptionException(argerr("cloud not create loadbalancer, because param vipUuid point to VIP[%s] is not ipv4 VIP", vipVO.getUuid()));
+            }
+        } else if (IPv6Constants.IPv6 == vipIpVersion) {
+            if (!IPv6NetworkUtils.isIpv6Address(vipVO.getIp())) {
+                throw new ApiMessageInterceptionException(argerr("cloud not create loadbalancer, because param ipv6VipUuid point to VIP[%s] is not ipv6 VIP", vipVO.getUuid()));
             }
         }
-
     }
 
     private boolean validateIpRange(String startIp, String endIp) {
@@ -1032,6 +1059,71 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(operr("the listener with protocol [%s] doesn't support select security policy", msg.getProtocol(), msg.getHealthCheckProtocol()));
             }
         }
+
+        if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
+                                msg.getProtocol(), msg.getHttpVersions()));
+            }
+
+            if (hasNotSupportedHttpVersion(msg.getHttpVersions())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not create the loadbalancer listener, because the listener with protocol https only support http version:[h1, h2]"));
+            }
+
+            String httpVersions = String.join(",", msg.getHttpVersions());
+            String httpVersion = httpVersions.replace("h1", "http1.1");
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.HTTP_VERSIONS,
+                    LoadBalancerSystemTags.HTTP_VERSIONS.instantiateTag(
+                            map(e(LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersion))
+                    )
+            );
+        }
+
+        if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not create the loadbalancer listener, because the listener with protocol tcp only support tcp proxy protocol param"));
+            }
+
+            if (!LbSupportTcpProxyProtocol.contains(msg.getTcpProxyProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not create the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
+            }
+
+            if (!msg.getTcpProxyProtocol().equals(DisableLbSupportTcpProxyProtocol)) {
+                insertTagIfNotExisting(
+                        msg, LoadBalancerSystemTags.TCP_PROXYPROTOCOL,
+                        LoadBalancerSystemTags.TCP_PROXYPROTOCOL.instantiateTag(
+                                map(e(LoadBalancerSystemTags.TCP_PROXYPROTOCOL_TOKEN, msg.getTcpProxyProtocol()))
+                        )
+                );
+            }
+        }
+
+        if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(msg.getProtocol()) && !LB_PROTOCOL_HTTP.equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not create the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
+                                msg.getProtocol(), msg.getHttpVersions()));
+            }
+
+            if (hasNotSupportedHttpCompressAlgos(msg.getHttpCompressAlgos())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not create the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
+            }
+
+            if (!msg.getHttpCompressAlgos().contains(DisableLbSupportHttpCompressAlgos)) {
+                insertTagIfNotExisting(
+                        msg, LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS,
+                        LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS.instantiateTag(
+                                map(e(LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS_TOKEN, String.join(" ", msg.getHttpCompressAlgos())))
+                        )
+                );
+            }
+        }
     }
 
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {
@@ -1269,8 +1361,62 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
+        if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(listener.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
+                                listenerVO.getProtocol(), msg.getHttpVersions()));
+            }
+
+            if (hasNotSupportedHttpVersion(msg.getHttpVersions())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol https only support http version:[h1, h2]"));
+            }
+        }
+
+        if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listener.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol tcp only support tcp proxy protocol for param"));
+            }
+
+            if (!LbSupportTcpProxyProtocol.contains(msg.getTcpProxyProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
+            }
+        }
+
+        if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(listener.getProtocol()) && !LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
+                                listenerVO.getProtocol(), msg.getHttpVersions()));
+            }
+
+            if (hasNotSupportedHttpCompressAlgos(msg.getHttpCompressAlgos())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
+            }
+        }
+
         msg.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, listenerVO.getLoadBalancerUuid());
+    }
+
+    private boolean hasNotSupportedHttpVersion(List<String> httpVersions) {
+        if (CollectionUtils.isEmpty(httpVersions)) {
+            return false;
+        }
+
+        return !LbSupportHttpVersion.containsAll(httpVersions);
+    }
+
+    private boolean hasNotSupportedHttpCompressAlgos(List<String> httpCompressAlgos) {
+        if (CollectionUtils.isEmpty(httpCompressAlgos)) {
+            return false;
+        }
+
+        return !LbSupportHttpCompressAlgos.containsAll(httpCompressAlgos);
     }
 
 
@@ -1423,7 +1569,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         List <String> serverIps = new ArrayList<>();
         if(servers != null && !servers.isEmpty()){
             for(Map<String,String> server:servers){
-                if(server.containsKey("ipAddress") && NetworkUtils.isIpv4Address(server.get("ipAddress"))){
+                if(server.containsKey("ipAddress") && NetworkUtils.isIpAddress(server.get("ipAddress"))){
                     if(usedIps.contains(server.get("ipAddress"))){
                         throw new ApiMessageInterceptionException(operr("could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is repeated",msg.getServerGroupUuid(),server.get("ipAddress")));
                     }

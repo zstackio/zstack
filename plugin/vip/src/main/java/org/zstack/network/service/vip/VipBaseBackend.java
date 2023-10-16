@@ -13,4 +13,5 @@ public abstract class VipBaseBackend extends VipBase {
     protected abstract void releaseVipOnBackend(Completion completion);
     protected abstract void acquireVipOnBackend(Completion completion);
     protected abstract void handleBackendSpecificMessage(Message msg);
+    protected abstract void acquireVipOnSpecificBackend(String specificBackendUuid,Completion completion);
 }

@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
@@ -21,6 +22,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
@@ -29,10 +32,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -46,7 +46,8 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
-
+    @Autowired
+    private LoadBalancerManager lbMgr;
     public void asyncCascade(CascadeAction action, Completion completion) {
         if (action.isActionCode(CascadeConstant.DELETION_CHECK_CODE)) {
             handleDeletionCheck(action, completion);
@@ -106,6 +107,26 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
         FlowChain chain = new SimpleFlowChain();
         chain.setName("delete-lb-and-lb-certs");
         chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                Map<String, LoadBalancerVO> vipLoadBalancerMap = vipDetachLoadBalancerMapFromAction(action);
+                if (vipLoadBalancerMap == null || vipLoadBalancerMap.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+                releaseOnlyVipOfLb(vipLoadBalancerMap, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 final List<LoadBalancerInventory> lbs = loadBalancerFromAction(action);
@@ -289,6 +310,7 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                 return LoadBalancerInventory.valueOf(vos);
             }
         } else if (VipVO.class.getSimpleName().equals(action.getParentIssuer())) {
+
             final List<String> vipUuids = CollectionUtils.transformToList((List<VipInventory>) action.getParentIssuerContext(), new Function<String, VipInventory>() {
                 @Override
                 public String call(VipInventory arg) {
@@ -304,12 +326,24 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                 @Override
                 @Transactional(readOnly = true)
                 public List<LoadBalancerVO> call() {
-                    String sql = "select d from LoadBalancerVO d where d.vipUuid in (:vipUuids)";
+                    String sql = "select d from LoadBalancerVO d where d.vipUuid in (:vipUuids) or d.ipv6VipUuid in (:vipUuids)";
                     TypedQuery<LoadBalancerVO> q = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);
                     q.setParameter("vipUuids", vipUuids);
                     return q.getResultList();
                 }
             }.call();
+
+            // if delete l3, will delete all vip of l3, and delete lb
+            // if delete iprange or delete vip, detach vip from lb ib lb has two vip
+            Iterator<LoadBalancerVO> iterator = vos.iterator();
+            while(iterator.hasNext()){
+                LoadBalancerVO loadBalancerVO = iterator.next();
+                if (!StringUtils.isEmpty(loadBalancerVO.getVipUuid()) && !StringUtils.isEmpty(loadBalancerVO.getIpv6VipUuid())) {
+                    if (!(vipUuids.contains(loadBalancerVO.getVipUuid()) && vipUuids.contains(loadBalancerVO.getIpv6VipUuid()))) {
+                        iterator.remove();
+                    }
+                }
+            }
 
             if (!vos.isEmpty()) {
                 return LoadBalancerInventory.valueOf(vos);
@@ -317,5 +351,88 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
         }
 
         return null;
+    }
+
+    private Map<String, LoadBalancerVO> vipDetachLoadBalancerMapFromAction(CascadeAction action) {
+        HashMap<String, LoadBalancerVO> vipLoadBalancerMap = new HashMap<>();
+        if (VipVO.class.getSimpleName().equals(action.getParentIssuer())) {
+
+            final List<String> vipUuids = CollectionUtils.transformToList((List<VipInventory>) action.getParentIssuerContext(), new Function<String, VipInventory>() {
+                @Override
+                public String call(VipInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+
+            if (vipUuids.isEmpty()) {
+                return vipLoadBalancerMap;
+            }
+
+            List<LoadBalancerVO> vos = new Callable<List<LoadBalancerVO>>() {
+                @Override
+                @Transactional(readOnly = true)
+                public List<LoadBalancerVO> call() {
+                    String sql = "select d from LoadBalancerVO d where (d.vipUuid in (:vipUuids) or d.ipv6VipUuid in (:vipUuids))";
+                    TypedQuery<LoadBalancerVO> q = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);
+                    q.setParameter("vipUuids", vipUuids);
+                    return q.getResultList();
+                }
+            }.call();
+
+            // detach vip from lb only when lb has two vip, and one is not in the vips will delete
+            for (LoadBalancerVO loadBalancerVO : vos) {
+                if (!StringUtils.isEmpty(loadBalancerVO.getVipUuid()) && !StringUtils.isEmpty(loadBalancerVO.getIpv6VipUuid())) {
+                    if (!(vipUuids.contains(loadBalancerVO.getVipUuid()) && vipUuids.contains(loadBalancerVO.getIpv6VipUuid()))) {
+                        if (vipUuids.contains(loadBalancerVO.getVipUuid())) {
+                            vipLoadBalancerMap.put(loadBalancerVO.getVipUuid(), loadBalancerVO);
+                        }
+                        if (vipUuids.contains(loadBalancerVO.getIpv6VipUuid())) {
+                            vipLoadBalancerMap.put(loadBalancerVO.getIpv6VipUuid(), loadBalancerVO);
+                        }
+                    }
+                }
+            }
+        }
+        return vipLoadBalancerMap;
+    }
+
+    private void releaseOnlyVipOfLb(Map<String, LoadBalancerVO> vipLoadBalancerMap, Completion completion) {
+        if (vipLoadBalancerMap == null || vipLoadBalancerMap.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        ArrayList<DetachVipFromLoadBalancerMsg> dMsgs = new ArrayList<>();
+        for (String vipUuid : vipLoadBalancerMap.keySet()) {
+            LoadBalancerVO vo = vipLoadBalancerMap.get(vipUuid);
+            DetachVipFromLoadBalancerMsg dmsg = new DetachVipFromLoadBalancerMsg();
+            dmsg.setVipUuid(vipUuid);
+            dmsg.setUuid(vo.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(dmsg, LoadBalancerConstants.SERVICE_ID, vipUuid);
+            dMsgs.add(dmsg);
+        }
+
+        new While<>(dMsgs).step((dmsg, whileCompletion) -> {
+            bus.send(dmsg, new CloudBusCallBack(dmsg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.debug(String.format("detach vip[%s] from lb[%s] error, because %s", dmsg.getVipUuid(), dmsg.getUuid(), reply.getError()));
+                        whileCompletion.addError(reply.getError());
+                    }
+                    whileCompletion.done();
+                }
+            });
+
+        }, dMsgs.size()).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+                completion.success();
+            }
+        });
     }
 }

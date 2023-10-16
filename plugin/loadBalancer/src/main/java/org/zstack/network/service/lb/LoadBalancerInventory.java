@@ -1,9 +1,8 @@
 package org.zstack.network.service.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
-import org.zstack.header.query.ExpandedQueryAlias;
-import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 import org.zstack.network.service.vip.VipInventory;
 
@@ -22,8 +21,10 @@ import java.util.List;
                 foreignKey = "uuid", expandedInventoryKey = "loadBalancerUuid"),
         @ExpandedQuery(expandedField = "vip", inventoryClass = VipInventory.class,
                 foreignKey = "vipUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "ipv6Vip", inventoryClass = VipInventory.class,
+                foreignKey = "ipv6VipUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(target = VipInventory.class, expandedField = "loadBalancer",
-                inventoryClass = LoadBalancerInventory.class, foreignKey = "uuid", expandedInventoryKey = "vipUuid")
+                inventoryClass = LoadBalancerInventory.class, foreignKey = "uuid", expandedInventoryKey = "vipUuid"),
 })
 public class LoadBalancerInventory implements Serializable {
     private String name;
@@ -33,6 +34,7 @@ public class LoadBalancerInventory implements Serializable {
     private String state;
     private String type;
     private String vipUuid;
+    private String ipv6VipUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<LoadBalancerListenerInventory> listeners;
@@ -43,6 +45,7 @@ public class LoadBalancerInventory implements Serializable {
         this.setDescription(vo.getDescription());
         this.setState(vo.getState().toString());
         this.setVipUuid(vo.getVipUuid());
+        this.setIpv6VipUuid(vo.getIpv6VipUuid());
         this.setServerGroupUuid(vo.getServerGroupUuid());
         this.setType(vo.getType().toString());
         this.setCreateDate(vo.getCreateDate());
@@ -74,6 +77,13 @@ public class LoadBalancerInventory implements Serializable {
         this.vipUuid = vipUuid;
     }
 
+    public String getIpv6VipUuid() {
+        return ipv6VipUuid;
+    }
+
+    public void setIpv6VipUuid(String ipv6VipUuid) {
+        this.ipv6VipUuid = ipv6VipUuid;
+    }
     public List<LoadBalancerListenerInventory> getListeners() {
         return listeners;
     }
@@ -144,5 +154,16 @@ public class LoadBalancerInventory implements Serializable {
 
     public void setServerGroupUuid(String serverGroupUuid) {
         this.serverGroupUuid = serverGroupUuid;
+    }
+
+    public List<String> getVipUuids() {
+        ArrayList<String> vipUuids  = new ArrayList<>();
+        if (!StringUtils.isEmpty(vipUuid)) {
+            vipUuids.add(vipUuid);
+        }
+        if (!StringUtils.isEmpty(ipv6VipUuid)) {
+            vipUuids.add(ipv6VipUuid);
+        }
+        return vipUuids;
     }
 }
