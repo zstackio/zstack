@@ -227,16 +227,39 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APICreateLoadBalancerMsg msg) {
-        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, msg.getVipUuid()).listValues();
+        if (StringUtils.isEmpty(msg.getVipUuid()) && StringUtils.isEmpty(msg.getIpv6VipUuid())) {
+            throw new ApiMessageInterceptionException(argerr("could not create loadbalancer, because param of vip and ipv6 vip is empty"));
+        }
+
+        List<String> l3Uuids = Q.New(VipVO.class).select(VipVO_.l3NetworkUuid).in(VipVO_.uuid, Arrays.asList(msg.getIpv6VipUuid(), msg.getVipUuid())).listValues();
+        int countOfL3 = l3Uuids.stream().distinct().collect(Collectors.toList()).size();
+        if (countOfL3 > 1) {
+            throw new ApiMessageInterceptionException(argerr("could not create loadbalancer, because l3 network of vip and ipv6 vip are not the same l3 network"));
+        }
+        msg.setVipUuids(new ArrayList<>());
+
+        if (!StringUtils.isEmpty(msg.getVipUuid())) {
+            validateVipOfLoadBalancer(msg.getVipUuid());
+            msg.getVipUuids().add(msg.getVipUuid());
+        }
+
+        if (!StringUtils.isEmpty(msg.getIpv6VipUuid())) {
+            validateVipOfLoadBalancer(msg.getIpv6VipUuid());
+            msg.getVipUuids().add(msg.getIpv6VipUuid());
+        }
+    }
+
+    private void validateVipOfLoadBalancer(String vipUuid) {
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, vipUuid).listValues();
         if(useFor != null && !useFor.isEmpty()){
             VipUseForList useForList = new VipUseForList(useFor);
             if(!useForList.validateNewAdded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)){
-                throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
+                throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", vipUuid, useForList.toString()));
             }
         }
 
         /* the vip can not the first of the last ip of the cidr */
-        VipVO vipVO = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+        VipVO vipVO = dbf.findByUuid(vipUuid, VipVO.class);
         if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
             AddressPoolVO addressPoolVO = dbf.findByUuid(vipVO.getIpRangeUuid(), AddressPoolVO.class);
             if (addressPoolVO == null) {
@@ -251,7 +274,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(argerr("Load balancer VIP [%s] cannot be the first or the last IP of the CIDR with the public address pool type", vipVO.getIp()));
             }
         }
-
     }
 
     private boolean validateIpRange(String startIp, String endIp) {
@@ -1032,6 +1054,62 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(operr("the listener with protocol [%s] doesn't support select security policy", msg.getProtocol(), msg.getHealthCheckProtocol()));
             }
         }
+
+        if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
+                                msg.getProtocol(), msg.getHttpVersions()));
+            }
+
+            if (hasNotSupportedHttpVersion(msg.getHttpVersions())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not create the loadbalancer listener, because the listener with protocol https only support http version:[h1, h2]"));
+            }
+
+            String httpVersions = String.join(",", msg.getHttpVersions());
+            String httpVersion = httpVersions.replace("h1", "http1.1");
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.HTTP_VERSIONS,
+                    LoadBalancerSystemTags.HTTP_VERSIONS.instantiateTag(
+                            map(e(LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersion))
+                    )
+            );
+        }
+
+        if (msg.isIpForwardFor()) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not create the loadbalancer listener, because the listener with protocol tcp only support ip forward for param"));
+            }
+
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.TCP_IPFORWARDFOR,
+                    LoadBalancerSystemTags.TCP_IPFORWARDFOR.instantiateTag(
+                            map(e(LoadBalancerSystemTags.TCP_IPFORWARDFOR_TOKEN, msg.isIpForwardFor()))
+                    )
+            );
+        }
+
+        if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(msg.getProtocol()) && !LB_PROTOCOL_HTTP.equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
+                                msg.getProtocol(), msg.getHttpVersions()));
+            }
+
+            if (hasNotSupportedHttpCompressAlgos(msg.getHttpCompressAlgos())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
+            }
+
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS,
+                    LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS.instantiateTag(
+                            map(e(LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS_TOKEN, String.join(" ", msg.getHttpCompressAlgos())))
+                    )
+            );
+        }
     }
 
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {
@@ -1269,8 +1347,50 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
+        if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
+            if (LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(listener.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
+                                listenerVO.getProtocol(), msg.getHttpVersions()));
+            }
+
+            if (hasNotSupportedHttpVersion(msg.getHttpVersions())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol https only support http version:[h1, h2]"));
+            }
+        }
+
+        if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(listener.getProtocol()) && !LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
+                                listenerVO.getProtocol(), msg.getHttpVersions()));
+            }
+
+            if (hasNotSupportedHttpCompressAlgos(msg.getHttpCompressAlgos())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
+            }
+        }
+
         msg.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, listenerVO.getLoadBalancerUuid());
+    }
+
+    private boolean hasNotSupportedHttpVersion(List<String> httpVersions) {
+        if (CollectionUtils.isEmpty(httpVersions)) {
+            return false;
+        }
+
+        return !LbSupportHttpVersion.containsAll(httpVersions);
+    }
+
+    private boolean hasNotSupportedHttpCompressAlgos(List<String> httpCompressAlgos) {
+        if (CollectionUtils.isEmpty(httpCompressAlgos)) {
+            return false;
+        }
+
+        return !LbSupportHttpCompressAlgos.containsAll(httpCompressAlgos);
     }
 
 

@@ -34,6 +34,9 @@ public class LoadBalancerServerGroupVmNicRefVO {
     private Long weight;
 
     @Column
+    private Integer ipVersion;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private LoadBalancerVmNicStatus status;
 
@@ -46,6 +49,14 @@ public class LoadBalancerServerGroupVmNicRefVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 
     public LoadBalancerVmNicStatus getStatus() {

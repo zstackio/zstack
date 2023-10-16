@@ -45,7 +45,7 @@ doc {
 					desc "VIP UUID"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 				}
 				column {
@@ -92,6 +92,15 @@ doc {
 					type "List"
 					optional true
 					since "3.4.0"
+				}
+				column {
+					name "vip6Uuid"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.7.21"
 				}
 			}
         }

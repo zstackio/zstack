@@ -67,6 +67,9 @@ public class LoadBalancerSystemTags {
     public static final String BALANCER_NIC_TOKEN = "balancerNic";
     public static PatternedSystemTag BALANCER_WEIGHT = new PatternedSystemTag(String.format("balancerWeight::{%s}::{%s}", BALANCER_NIC_TOKEN, BALANCER_WEIGHT_TOKEN), LoadBalancerListenerVO.class);
 
+    public static final String BALANCER_BACKEND_NIC_IPVERSION_TOKEN = "lbBackendNicIpversion";
+    public static PatternedSystemTag BALANCER_BACKEND_NIC_IPVERSION = new PatternedSystemTag(String.format("lbBackendNicIpversion::{%s}::{%s}", BALANCER_NIC_TOKEN, BALANCER_BACKEND_NIC_IPVERSION_TOKEN), LoadBalancerServerGroupVmNicRefVO.class);
+
     public static final String HEALTH_PARAMETER_TOKEN = "healthCheckParameter";
     public static PatternedSystemTag HEALTH_PARAMETER = new PatternedSystemTag(String.format("healthCheckParameter::{%s}", HEALTH_PARAMETER_TOKEN), LoadBalancerListenerVO.class);
 
@@ -76,4 +79,12 @@ public class LoadBalancerSystemTags {
     public static final String HTTP_MODE_TOKEN = "httpMode";
     public static PatternedSystemTag HTTP_MODE= new PatternedSystemTag(String.format("httpMode::{%s}", HTTP_MODE_TOKEN), LoadBalancerListenerVO.class);
 
+    public static final String HTTP_VERSIONS_TOKEN = "httpVersion";
+    public static PatternedSystemTag HTTP_VERSIONS= new PatternedSystemTag(String.format("httpVersions::{%s}", HTTP_VERSIONS_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String TCP_IPFORWARDFOR_TOKEN = "ipForwardFor";
+    public static PatternedSystemTag TCP_IPFORWARDFOR= new PatternedSystemTag(String.format("ipForwardFor::{%s}", TCP_IPFORWARDFOR_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String HTTP_COMPRESS_ALGOS_TOKEN = "httpCompressAlgos";
+    public static PatternedSystemTag HTTP_COMPRESS_ALGOS= new PatternedSystemTag(String.format("httpCompressAlgos::{%s}", HTTP_COMPRESS_ALGOS_TOKEN), LoadBalancerListenerVO.class);
 }

@@ -7,6 +7,8 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
 /**
  * Created by shixin.ruan on 02/25/2019.
  */
@@ -72,6 +74,9 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(validRegexValues = LoadBalancerConstants.COOKIE_NAME_REGEX, maxLength = LoadBalancerConstants.COOKIE_NAME_MAX, required = false)
     private String cookieName;
 
+    @APIParam(required = false)
+    private List<String> httpVersions;
+
     @APIParam(validValues = {"disable", "enable"}, required = false)
     private String httpRedirectHttps;
 
@@ -80,6 +85,12 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     @APIParam(validValues = {"301", "302", "303", "307", "308"}, required = false)
     private Integer statusCode;
+
+    @APIParam(required = false)
+    private boolean ipForwardFor;
+
+    @APIParam(required = false)
+    private List<String> httpCompressAlgos;
 
     @APINoSee
     private String loadBalancerUuid;
@@ -271,6 +282,30 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setHttpMode(String httpMode) {
         this.httpMode = httpMode;
+    }
+
+    public List<String> getHttpVersions() {
+        return httpVersions;
+    }
+
+    public void setHttpVersions(List<String> httpVersions) {
+        this.httpVersions = httpVersions;
+    }
+
+    public boolean isIpForwardFor() {
+        return ipForwardFor;
+    }
+
+    public void setIpForwardFor(boolean ipForwardFor) {
+        this.ipForwardFor = ipForwardFor;
+    }
+
+    public List<String> getHttpCompressAlgos() {
+        return httpCompressAlgos;
+    }
+
+    public void setHttpCompressAlgos(List<String> httpCompressAlgos) {
+        this.httpCompressAlgos = httpCompressAlgos;
     }
 
     public static APIChangeLoadBalancerListenerMsg __example__() {
