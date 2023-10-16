@@ -79,6 +79,7 @@ public interface KVMConstant {
     String KVM_CONFIG_SECONDARY_VM_PATH = "/secondary/vm/config";
     String KVM_START_COLO_SYNC_PATH = "/start/colo/sync";
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
+    String CLEAN_FIRMWARE_FLASH = "/clean/firmware/flash";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
@@ -98,6 +99,7 @@ public interface KVMConstant {
     String KVM_REPORT_VM_SHUTDOWN_EVENT = "/kvm/reportvmshutdown";
     String KVM_REPORT_VM_REBOOT_EVENT = "/kvm/reportvmreboot";
     String KVM_REPORT_VM_CRASH_EVENT = "/kvm/reportvmcrash";
+    String KVM_REPORT_HOST_STOP_EVENT = "/kvm/reporthoststop";
 
     String KVM_TRANSMIT_VM_OPERATION_TO_MN = "/host/transmitvmoperation";
     String KVM_HOST_PHYSICAL_NIC_ALARM_EVENT = "/host/physicalNic/alarm";
@@ -142,6 +144,8 @@ public interface KVMConstant {
                 return null;
             } else if (state == VmInstanceState.Paused) {
                 return Paused;
+            } else if (state == VmInstanceState.Migrating) {
+                return Running;
             } else {
                 return null;
             }
@@ -156,6 +160,8 @@ public interface KVMConstant {
                 return VmInstanceState.Paused;
             } else if (this == Crashed) {
                 return VmInstanceState.Crashed;
+            } else if (this == NoState) {
+                return VmInstanceState.NoState;
             } else {
                 return VmInstanceState.Unknown;
             }

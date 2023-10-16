@@ -39,6 +39,7 @@ class GetKvmHostWebSshCase extends SubCase {
             cluster1 = env.inventoryByName("cluster") as ClusterInventory
             host = env.inventoryByName("kvm") as KVMHostInventory
             testGetKvmHostWebSsh()
+            testGetKvmHostWebSshOnHttps()
         }
     }
 
@@ -49,5 +50,15 @@ class GetKvmHostWebSshCase extends SubCase {
 
         String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
         assert String.format("ws://{{ip}}:%s/ws?id=%s", port, "mockId") == ret.url
+    }
+
+    void testGetKvmHostWebSshOnHttps() {
+        def ret = getHostWebSshUrl {
+            uuid = host.uuid
+            https = true
+        } as GetHostWebSshUrlResult
+
+        String port = KVMGlobalConfig.HOST_WEBSSH_HTTPS_PORT.value();
+        assert String.format("wss://{{ip}}:%s/ws?id=%s", port, "mockId") == ret.url
     }
 }

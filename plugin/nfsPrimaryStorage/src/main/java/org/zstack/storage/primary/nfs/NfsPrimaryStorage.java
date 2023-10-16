@@ -815,9 +815,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             NfsPrimaryStorageBackend backend = factory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getFormat(), self.getUuid()));
-                            backend.createVolumeFromImageCache(primaryStorage, image, imageCache, volume, new ReturnValueCompletion<VolumeInfo>(trigger) {
+                            backend.createVolumeFromImageCache(primaryStorage, image, imageCache, volume, new ReturnValueCompletion<VolumeStats>(trigger) {
                                 @Override
-                                public void success(VolumeInfo returnValue) {
+                                public void success(VolumeStats returnValue) {
                                     volumeInstallPath = returnValue.getInstallPath();
                                     actualSize = returnValue.getActualSize();
                                     trigger.next();

@@ -1466,6 +1466,9 @@ public class KVMAgentCommands {
     public static class DeleteVHostUserClientRsp extends AgentResponse {
 
     }
+    public static class CleanVmFirmwareFlashCmd extends AgentCommand {
+        public String vmUuid;
+    }
 
     public static class HardenVmConsoleCmd extends AgentCommand {
         public String vmUuid;
@@ -1840,7 +1843,6 @@ public class KVMAgentCommands {
         private List<CdRomTO> cdRoms = new ArrayList<>();
         private List<VolumeTO> dataVolumes;
         private List<VolumeTO> cacheVolumes;
-        private List<VolumeTO> Volumes;
         private List<NicTO> nics;
         private long timeout;
         private Map<String, Object> addons;
@@ -3137,9 +3139,9 @@ public class KVMAgentCommands {
         private Integer downTime;
         private boolean xbzrle;
         private List<String> vdpaPaths;
-        private Long timeout; // in seconds
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
         private boolean reload;
+        private long bandwidth;
 
         public Integer getDownTime() {
             return downTime;
@@ -3229,14 +3231,6 @@ public class KVMAgentCommands {
             this.vdpaPaths = vdpaPaths;
         }
 
-        public Long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(Long timeout) {
-            this.timeout = timeout;
-        }
-
         public Map<String, VolumeTO> getDisks() {
             return disks;
         }
@@ -3251,6 +3245,14 @@ public class KVMAgentCommands {
 
         public void setDestHostManagementIp(String destHostManagementIp) {
             this.destHostManagementIp = destHostManagementIp;
+        }
+
+        public long getBandwidth() {
+            return bandwidth;
+        }
+
+        public void setBandwidth(long bandwidth) {
+            this.bandwidth = bandwidth;
         }
     }
 
@@ -3395,7 +3397,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class TakeSnapshotCmd extends AgentCommand {
+    public static class TakeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private String volumeUuid;
         private VolumeTO volume;
@@ -3408,8 +3410,6 @@ public class KVMAgentCommands {
 
         // for baremetal2 instance
         private boolean isBaremetal2InstanceOnlineSnapshot;
-
-        private long timeout;
 
         public boolean isOnline() {
             return online;
@@ -3489,14 +3489,6 @@ public class KVMAgentCommands {
 
         public void setBaremetal2InstanceOnlineSnapshot(boolean baremetal2InstanceOnlineSnapshot) {
             isBaremetal2InstanceOnlineSnapshot = baremetal2InstanceOnlineSnapshot;
-        }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
         }
     }
 
@@ -3713,6 +3705,10 @@ public class KVMAgentCommands {
 
     public static class ReportVmCrashEventCmd {
         public String vmUuid;
+    }
+
+    public static class ReportHostStopEventCmd {
+        public String hostIp;
     }
 
     public static class ShutdownHostCmd extends AgentCommand {

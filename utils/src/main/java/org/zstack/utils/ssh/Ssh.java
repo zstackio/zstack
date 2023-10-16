@@ -23,6 +23,8 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.ln;
 import static org.zstack.utils.StringDSL.s;
+import static org.zstack.utils.path.PathUtil.setFilePosixPermissions;
+import static org.zstack.utils.path.PathUtil.writeFile;
 
 /**
  */
@@ -398,16 +400,14 @@ public class Ssh {
             JSch jSch = new JSch();
             if (privateKey != null) {
                 privateKeyFile = File.createTempFile("zstack", "tmp");
-                FileUtils.writeStringToFile(privateKeyFile, privateKey);
+                writeSecretFile(privateKeyFile, privateKey);
                 jSch.addIdentity(privateKeyFile.getAbsolutePath());
             }
 
             session = jSch.getSession(username, hostname, port);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setPassword(password);
-            if (privateKey == null) {
-                session.setConfig("PreferredAuthentications", "password");
-            }
+            session.setConfig("PreferredAuthentications", privateKey == null ? "password" : "publickey,password");
             session.setTimeout(getTimeoutInMilli(socketTimeout)/2);
             session.connect(getTimeoutInMilli(timeout));
         } catch (JSchException ex) {
@@ -571,5 +571,11 @@ public class Ssh {
             close();
             throw e;
         }
+    }
+
+    private static void writeSecretFile(File file, String content) throws IOException {
+        writeFile(file, new byte[0]);
+        setFilePosixPermissions(file, "rw-------");
+        writeFile(file, content);
     }
 }

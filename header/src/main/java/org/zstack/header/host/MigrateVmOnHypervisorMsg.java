@@ -21,6 +21,7 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     private Map<String, String> diskMigrationMap;
     private boolean reload;
     private Integer downTime;
+    private long bandwidth;
 
     public Integer getDownTime() {
         return downTime;
@@ -97,5 +98,13 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
 
     public void setDiskMigrationMap(Map<String, String> diskMigrationMap) {
         this.diskMigrationMap = diskMigrationMap;
+    }
+
+    public long getBandwidth() {
+        return bandwidth;
+    }
+
+    public void setBandwidth(long bandwidth) {
+        this.bandwidth = bandwidth;
     }
 }

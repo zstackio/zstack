@@ -174,27 +174,27 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
             public void run(final FlowTrigger trigger, Map data) {
                 final ParamOut out = (ParamOut) data.get(ParamOut.class);
 
-                    BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
-                    ask.setImageUuid(paramIn.getImage().getUuid());
-                    ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
-                    ask.setImageMediaType(paramIn.getImage().getMediaType());
-                    bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
-                    MessageReply ar = bus.call(ask);
-                    if (!ar.isSuccess()) {
-                        trigger.fail(ar.getError());
-                        return;
-                    }
+                BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
+                ask.setImageUuid(paramIn.getImage().getUuid());
+                ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
+                ask.setImageMediaType(paramIn.getImage().getMediaType());
+                bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
+                MessageReply ar = bus.call(ask);
+                if (!ar.isSuccess()) {
+                    trigger.fail(ar.getError());
+                    return;
+                }
 
-                    String bsInstallPath = ((BackupStorageAskInstallPathReply)ar).getInstallPath();
+                String bsInstallPath = ((BackupStorageAskInstallPathReply)ar).getInstallPath();
 
-                    UploadBitsToBackupStorageMsg msg = new UploadBitsToBackupStorageMsg();
-                    msg.setImageUuid(paramIn.getImage().getUuid());
-                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
-                    msg.setHypervisorType(hvType.toString());
-                    msg.setPrimaryStorageInstallPath(ctx.temporaryInstallPath);
-                    msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
-                    msg.setBackupStorageInstallPath(bsInstallPath);
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                UploadBitsToBackupStorageMsg msg = new UploadBitsToBackupStorageMsg();
+                msg.setImageUuid(paramIn.getImage().getUuid());
+                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                msg.setHypervisorType(hvType.toString());
+                msg.setPrimaryStorageInstallPath(ctx.temporaryInstallPath);
+                msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
+                msg.setBackupStorageInstallPath(bsInstallPath);
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
 
 
                 bus.send(msg, new CloudBusCallBack(trigger) {

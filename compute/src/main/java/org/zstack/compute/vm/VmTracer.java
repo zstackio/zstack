@@ -179,7 +179,11 @@ public abstract class VmTracer {
         }
 
         for (VmInstanceState state : vmStates.values()) {
-            if (state != VmInstanceState.Running && state != VmInstanceState.Stopped && state != VmInstanceState.Paused && state != VmInstanceState.Crashed) {
+            if (state != VmInstanceState.Running
+                    && state != VmInstanceState.Stopped
+                    && state != VmInstanceState.Paused
+                    && state != VmInstanceState.Crashed
+                    && state != VmInstanceState.NoState) {
                 throw new CloudRuntimeException(String.format("host can only report vm state as Running, Stopped, Paused, Crashed, got %s", state));
             }
         }

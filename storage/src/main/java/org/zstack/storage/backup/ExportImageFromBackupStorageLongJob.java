@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.Constants;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
@@ -38,6 +40,7 @@ public class ExportImageFromBackupStorageLongJob implements LongJob {
     @Override
     public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         ExportImageFromBackupStorageMsg msg = JSONObjectUtil.toObject(job.getJobData(), ExportImageFromBackupStorageMsg.class);
+        msg.setImageName(Q.New(ImageVO.class).select(ImageVO_.name).eq(ImageVO_.uuid, msg.getImageUuid()).findValue());
         bus.makeLocalServiceId(msg, BackupStorageConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

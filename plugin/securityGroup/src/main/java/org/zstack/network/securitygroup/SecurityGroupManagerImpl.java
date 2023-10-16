@@ -1497,33 +1497,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Override
     public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-        RuleCalculator cal = new RuleCalculator();
-        cal.vmStates = asList(VmInstanceState.Migrating);
-        cal.vmNicUuids = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getUuid();
-            }
-        });
-        List<HostRuleTO> htos = cal.calculate();
-        if (htos.isEmpty()) {
-            return;
-        }
-
-        final HostRuleTO hto = htos.get(0);
-        SecurityGroupHypervisorBackend bkd = getHypervisorBackend(inv.getHypervisorType());
-        bkd.applyRules(hto, new Completion(null) {
-            @Override
-            public void success() {
-                logger.debug(String.format("vm[uuid:%s, name:%s] migrated to host[uuid:%s], successfully apply security group rules",  inv.getUuid(), inv.getName(), destHostUuid));
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.debug(String.format("failed to apply security group rules to host[uuid:%s], because %s, try it later", destHostUuid, errorCode));
-                createFailureHostTask(destHostUuid);
-            }
-        });
     }
 
     @Override
@@ -1539,7 +1512,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 return arg.getUuid();
             }
         });
-        cal.vmStates = asList(VmInstanceState.Running);
+        // if migrate vm with Storage,the vm stat is migrating
+        cal.vmStates = asList(VmInstanceState.Running, VmInstanceState.Migrating);
         List<HostRuleTO> htos = cal.calculate();
         applyRules(htos);
 

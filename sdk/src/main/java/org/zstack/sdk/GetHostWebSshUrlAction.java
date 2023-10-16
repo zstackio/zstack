@@ -28,6 +28,9 @@ public class GetHostWebSshUrlAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean https = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 

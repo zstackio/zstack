@@ -293,6 +293,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         vo.setPort(msg.getPort());
         vo.setType(msg.getType());
         vo.setVtepIp(msg.getVtepIp());
+        vo.setPhysicalInterface(msg.getPhysicalInterface());
         vo.setPoolUuid(msg.getPoolUuid());
         try {
             vo = dbf.persistAndRefresh(vo);

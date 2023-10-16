@@ -11,6 +11,8 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.smp.KvmBackend
+import org.zstack.storage.primary.smp.SftpBackupStorageKvmDownloader
+import org.zstack.storage.primary.smp.SftpBackupStorageKvmUploader
 import org.zstack.testlib.vfs.Qcow2
 import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.VFSFile
@@ -81,7 +83,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
 
             VFS.vfsHook(KvmBackend.DELETE_BITS_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.DeleteBitsCmd.class)
-                VFS vfs = vfs(cmd, spec)
+                VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
                 VFSFile file = vfs.getFile(cmd.path)
                 assert file != null : "cannot find file[${cmd.path}]"
                 file.delete()
@@ -94,7 +96,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
 
             VFS.vfsHook(KvmBackend.UNLINK_BITS_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.UnlinkBitsCmd.class)
-                VFS vfs = vfs(cmd, spec)
+                VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
                 assert vfs.exists(cmd.installPath)
                 vfs.unlink(cmd.installPath, cmd.onlyLinkedFile)
                 return rsp
@@ -133,15 +135,15 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(KvmBackend.UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH) {
+            simulator(SftpBackupStorageKvmUploader.UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH) {
                 return new KvmBackend.AgentRsp()
             }
 
-            simulator(KvmBackend.DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH) {
+            simulator(SftpBackupStorageKvmDownloader.DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH) {
                 return new KvmBackend.AgentRsp()
             }
 
-            VFS.vfsHook(KvmBackend.DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+            VFS.vfsHook(SftpBackupStorageKvmDownloader.DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.SftpDownloadBitsCmd.class)
                 VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
 
@@ -188,6 +190,15 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
 
             simulator(KvmBackend.MERGE_SNAPSHOT_PATH) {
                 return new KvmBackend.MergeSnapshotRsp()
+            }
+
+            VFS.vfsHook(KvmBackend.MERGE_SNAPSHOT_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.MergeSnapshotCmd.class)
+                VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
+                Qcow2 snapshot = vfs.getFile(cmd.snapshotInstallPath)
+                assert snapshot : "cannot find snapshot[${cmd.snapshotInstallPath}]"
+                vfs.createQcow2(cmd.workspaceInstallPath, 0L, 0L, null)
+                return rsp
             }
 
             simulator(KvmBackend.GET_VOLUME_SIZE_PATH) { HttpEntity<String> e, EnvSpec spec ->
@@ -274,7 +285,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
 
             VFS.vfsHook(KvmBackend.HARD_LINK_VOLUME, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.LinkVolumeNewDirCmd.class)
-                VFS vfs = vfs(cmd, spec)
+                VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
                 def links = vfs.link(cmd.dstDir, cmd.srcDir)
                 for (link in links) {
                     Qcow2 qf = vfs.getFile(link, true)

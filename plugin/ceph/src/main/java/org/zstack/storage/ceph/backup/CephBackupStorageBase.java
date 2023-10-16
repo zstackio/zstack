@@ -1728,6 +1728,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         emsg.setBackupStorageUuid(msg.getBackupStorageUuid());
         emsg.setImageUuid(msg.getImageUuid());
         emsg.setExportFormat(msg.getExportFormat());
+        emsg.setImageName(Q.New(ImageVO.class).select(ImageVO_.name).eq(ImageVO_.uuid, msg.getImageUuid()).findValue());
 
         bus.send(emsg, new CloudBusCallBack(msg) {
             @Override
@@ -1773,8 +1774,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
             @Override
             public void success(AddImageExportTokenRsp rsp) {
                 String url = buildUrl(rsp.handleMon.getHostname(), cmd.token);
-                String imageName = Q.New(ImageVO.class).select(ImageVO_.name)
-                        .eq(ImageVO_.uuid, msg.getImageUuid()).findValue();
+                String imageName = Q.New(ImageVO.class).select(ImageVO_.name).eq(ImageVO_.uuid, msg.getImageUuid()).findValue();
                 String exportUrl = CephBackStorageHelper.CephBackStorageExportUrl.addNameToExportUrl(url, imageName);
                 SQL.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
                         .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())

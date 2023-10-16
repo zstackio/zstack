@@ -256,6 +256,11 @@ class VFS {
     }
 
     private static VFSFile doFindFile(VFS vfs, Path path, Function<VFSFile, Boolean> c) {
+        // check exists to prevent NoSuchFileException from requiredExist() in Files.list
+        if (!Files.exists(path)) {
+            return null
+        }
+
         if (Files.isRegularFile(path)) {
             VFSFile f = vfs.getFile(path.toAbsolutePath().toString(), true)
             if (c.apply(f)) {

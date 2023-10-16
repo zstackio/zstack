@@ -9,6 +9,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -34,6 +35,9 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -54,6 +58,8 @@ public class L2NoVlanNetwork implements L2Network {
     protected DatabaseFacade dbf;
     @Autowired
     protected L2NetworkManager l2Mgr;
+    @Autowired
+    protected PluginRegistry pluginRgty;
     @Autowired
     protected CascadeFacade casf;
     @Autowired
@@ -203,6 +209,24 @@ public class L2NoVlanNetwork implements L2Network {
         }).start();
     }
 
+    private void syncManagementServiceType(ServiceTypeExtensionPoint ext, L2NetworkVO l2NetworkVO, List<String> hostUuids, boolean isDelete) {
+        String l2NetworkType = l2NetworkVO.getType();
+        switch (l2NetworkType) {
+            case L2NetworkConstant.VXLAN_NETWORK_TYPE:
+            case L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE:
+                ext.syncManagementServiceTypeExtensionPoint(hostUuids, "vxlan" + l2NetworkVO.getVirtualNetworkId(), null, isDelete);
+                break;
+
+            case L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE:
+            case L2NetworkConstant.L2_VLAN_NETWORK_TYPE:
+                ext.syncManagementServiceTypeExtensionPoint(hostUuids, l2NetworkVO.getPhysicalInterface(), l2NetworkVO.getVirtualNetworkId(), isDelete);
+                break;
+
+            default:
+                break;
+        }
+    }
+
     private void handle(DetachL2NetworkFromClusterMsg msg) {
         if (!L2NetworkGlobalConfig.DeleteL2BridgePhysically.value(Boolean.class)) {
             SQL.New(L2NetworkClusterRefVO.class)
@@ -220,6 +244,17 @@ public class L2NoVlanNetwork implements L2Network {
                     new Completion(msg) {
                         @Override
                         public void success() {
+                            L2NetworkVO l2NetworkVO = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
+                            List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                                    .eq(HostVO_.clusterUuid, msg.getClusterUuid()).listValues();
+                            boolean isExistSystemL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true)
+                                    .eq(L3NetworkVO_.l2NetworkUuid, l2NetworkVO.getUuid()).isExists();
+                            if (isExistSystemL3) {
+                                for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                                    syncManagementServiceType(ext, l2NetworkVO, hostUuids, true);
+                                }
+                            }
+
                             SQL.New(L2NetworkClusterRefVO.class)
                                     .eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
                                     .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid())
@@ -632,6 +667,17 @@ public class L2NoVlanNetwork implements L2Network {
             }
 
         }.execute();
+
+        L2NetworkVO l2NetworkVO = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
+        List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, msg.getClusterUuid()).listValues();
+        boolean isExistSystemL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true)
+                .eq(L3NetworkVO_.l2NetworkUuid, l2NetworkVO.getUuid()).isExists();
+        if (isExistSystemL3) {
+            for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                syncManagementServiceType(ext, l2NetworkVO, hostUuids, false);
+            }
+        }
 
         List<HostVO> hosts = Q.New(HostVO.class).eq(HostVO_.clusterUuid,msg.getClusterUuid())
                 .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))

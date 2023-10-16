@@ -28,6 +28,7 @@
         <value>NFS</value>
         <value>SharedMountPoint</value>
         <value>LocalStorage</value>
+        <value>Addon</value>
     </util:list>
 
     <util:list id="ImageStoreBackupStorageMetric">
@@ -35,6 +36,7 @@
         <value>SharedMountPoint</value>
         <value>LocalStorage</value>
         <value>Ceph</value>
+        <value>Addon</value>
     </util:list>
 
     <util:list id="CephMetric">

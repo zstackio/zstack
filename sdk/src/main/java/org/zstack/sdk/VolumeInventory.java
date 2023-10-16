@@ -172,4 +172,12 @@ public class VolumeInventory  {
         return this.lastVmInstanceUuid;
     }
 
+    public java.lang.String protocol;
+    public void setProtocol(java.lang.String protocol) {
+        this.protocol = protocol;
+    }
+    public java.lang.String getProtocol() {
+        return this.protocol;
+    }
+
 }

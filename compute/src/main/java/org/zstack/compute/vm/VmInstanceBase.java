@@ -1466,6 +1466,15 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmNoStateFromRunningStateHostNotChanged
+                || operation == VmAbnormalLifeCycleOperation.VmNoStateFromCrashedStateHostNotChanged) {
+            // the vm is detected on the host again. It's largely because the host disconnected before
+            // and now reconnected
+            changeVmStateInDb(VmInstanceStateEvent.noState, () -> self.setHostUuid(msg.getHostUuid()));
+            fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
+            return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromUnknownStateHostNotChanged) {
             // the vm comes out of the unknown state to the stopped state
             // it happens when an operation failure led the vm from the stopped state to the unknown state,
@@ -1482,8 +1491,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
-        } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged
-                || operation == VmAbnormalLifeCycleOperation.VmPausedFromStoppedStateHostNotChanged) {
+        } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged) {
             //some reason led vm to unknown state and the paused vm are detected on the host again
             changeVmStateInDb(VmInstanceStateEvent.paused, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
@@ -1545,6 +1553,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(Map data) {
                 if (currentState == VmInstanceState.Running) {
                     changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(currentHostUuid));
+                } else if (currentState == VmInstanceState.Paused) {
+                    changeVmStateInDb(VmInstanceStateEvent.paused, () -> self.setHostUuid(currentHostUuid));
                 } else if (currentState == VmInstanceState.Stopped) {
                     changeVmStateInDb(VmInstanceStateEvent.stopped);
                 }
@@ -6590,14 +6600,15 @@ public class VmInstanceBase extends AbstractVmInstance {
         Map data = new HashMap();
 
         final VolumeInventory volume = msg.getVolume();
+        final VmInstanceInventory vmInv = VmInstanceInventory.valueOf(self);
 
-        new VmAttachVolumeValidator().validate(msg.getVmInstanceUuid(), volume.getUuid());
+        new VmAttachVolumeValidator().validate(vmInv, volume.getUuid());
         extEmitter.preAttachVolume(getSelfInventory(), volume);
         extEmitter.beforeAttachVolume(getSelfInventory(), volume, data);
 
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
-        spec.setVmInventory(VmInstanceInventory.valueOf(self));
+        spec.setVmInventory(vmInv);
         spec.setCurrentVmOperation(VmOperation.AttachVolume);
         spec.setDestDataVolumes(list(volume));
         FlowChain chain;
@@ -6656,6 +6667,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+        String originState = inv.getState();
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("migrate-vm-%s", self.getUuid()));
@@ -6708,6 +6720,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                if (Objects.equals(VmInstanceState.Paused.toString(), originState)) {
+                    tagMgr.createNonInherentSystemTag(inv.getUuid(), VmSystemTags.VM_STATE_PAUSED_AFTER_MIGRATE.getTagFormat(), VmInstanceVO.class.getSimpleName());
+                }
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -6733,17 +6748,31 @@ public class VmInstanceBase extends AbstractVmInstance {
         String lastHostUuid = self.getHostUuid();
         chain.setName(String.format("do-migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.then(new NoRollbackFlow() {
+            final String __name__ = String.format("sync-vm-%s-stat-after-migrate", self.getUuid());
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                HostInventory host = spec.getDestHost();
+                checkState(host.getUuid(), new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
+                                .set(VmInstanceVO_.zoneUuid, host.getZoneUuid())
+                                .set(VmInstanceVO_.clusterUuid, host.getClusterUuid())
+                                .set(VmInstanceVO_.lastHostUuid, lastHostUuid)
+                                .set(VmInstanceVO_.hostUuid, host.getUuid())
+                                .update();
+                        self = dbf.reload(self);
+                        trigger.next();
+                    }
+                });
+            }
+        });
 
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(final Map data) {
-                HostInventory host = spec.getDestHost();
-                self = changeVmStateInDb(VmInstanceStateEvent.running, () -> {
-                    self.setZoneUuid(host.getZoneUuid());
-                    self.setClusterUuid(host.getClusterUuid());
-                    self.setLastHostUuid(lastHostUuid);
-                    self.setHostUuid(host.getUuid());
-                });
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
                 extEmitter.afterMigrateVm(vm, vm.getLastHostUuid());
                 completion.success();

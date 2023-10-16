@@ -116,6 +116,14 @@ public class LicenseInventory  {
         return this.source;
     }
 
+    public java.lang.String platformId;
+    public void setPlatformId(java.lang.String platformId) {
+        this.platformId = platformId;
+    }
+    public java.lang.String getPlatformId() {
+        return this.platformId;
+    }
+
     public java.lang.String licenseRequest;
     public void setLicenseRequest(java.lang.String licenseRequest) {
         this.licenseRequest = licenseRequest;

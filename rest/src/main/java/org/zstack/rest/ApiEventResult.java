@@ -7,7 +7,10 @@ import org.zstack.header.message.JsonSchemaBuilder;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by xing5 on 2017/1/2.

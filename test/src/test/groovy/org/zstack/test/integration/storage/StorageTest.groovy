@@ -11,6 +11,7 @@ class StorageTest extends Test {
         localStorage()
         nfsPrimaryStorage()
         sftpBackupStorage()
+        externalPrimaryStorage()
         smp()
         ceph()
         virtualRouter()
@@ -21,6 +22,8 @@ class StorageTest extends Test {
         eip()
         lb()
         portForwarding()
+        include("expon.xml")
+        include("vhost.xml")
     }
 
     @Override

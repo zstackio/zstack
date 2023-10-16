@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -222,5 +223,9 @@ public class TimeUtils {
 
     public static LocalDateTime toLocalDateTime(Instant instant) {
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+    }
+
+    public static OffsetDateTime offsetDateTimeOf(long timestampInMilli) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(timestampInMilli), ZoneId.systemDefault());
     }
 }

@@ -156,4 +156,12 @@ public class HostNetworkBondingInventory  {
         return this.slaves;
     }
 
+    public java.util.List serviceTypes;
+    public void setServiceTypes(java.util.List serviceTypes) {
+        this.serviceTypes = serviceTypes;
+    }
+    public java.util.List getServiceTypes() {
+        return this.serviceTypes;
+    }
+
 }

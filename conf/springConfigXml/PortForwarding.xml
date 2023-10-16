@@ -35,6 +35,7 @@
 	<bean id="PortForwardingExtension" class="org.zstack.network.service.portforwarding.PortForwardingExtension">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
+			<zstack:extension interface="org.zstack.header.vm.ReleaseNetworkServiceOnDeletingNicExtensionPoint"/>
 		</zstack:plugin>
     </bean>
 

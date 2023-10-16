@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
@@ -102,10 +103,18 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig SUSPEND_TO_DISK = new GlobalConfig(CATEGORY, "vm.suspend.to.disk");
+
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig WEBSSH_IDLE_TIMEOUT = new GlobalConfig(CATEGORY, "webssh.idleTimeout");
 
     @GlobalConfigValidation(numberGreaterThan = 0)
     @GlobalConfigDef(defaultValue = "8888", type = Long.class, description = "the default port used by web-based SSH server")
     public static GlobalConfig HOST_WEBSSH_PORT = new GlobalConfig(CATEGORY, "host.webssh.port");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigDef(defaultValue = "8889", type = Long.class, description = "the default https port used by web-based SSH server")
+    public static GlobalConfig HOST_WEBSSH_HTTPS_PORT = new GlobalConfig(CATEGORY, "host.webssh.https.port");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable install host shutdown hook")
+    public static GlobalConfig INSTALL_HOST_SHUTDOWN_HOOK = new GlobalConfig(CATEGORY, "install.host.shutdown.hook");
 }

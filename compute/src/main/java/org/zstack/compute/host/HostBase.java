@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.VmSchedHistoryRecorder;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -114,6 +113,10 @@ public abstract class HostBase extends AbstractHost {
     protected abstract int getVmMigrateQuantity();
 
     protected abstract void changeStateHook(HostState current, HostStateEvent stateEvent, HostState next);
+
+    protected void checkConnectConditions(ConnectHostInfo info, Completion complete) {
+        complete.success();
+    }
 
     protected abstract void connectHook(ConnectHostInfo info, Completion complete);
 
@@ -772,6 +775,8 @@ public abstract class HostBase extends AbstractHost {
             handle((ScanVmPortMsg) msg);
         } else if (msg instanceof UpdateHostOSMsg) {
             handle((UpdateHostOSMsg) msg);
+        } else if (msg instanceof ChangeHostStatusMsg) {
+            handle((ChangeHostStatusMsg) msg);
         } else {
             HostBaseExtensionFactory ext = hostMgr.getHostBaseExtensionFactory(msg);
             if (ext != null) {
@@ -784,6 +789,28 @@ public abstract class HostBase extends AbstractHost {
 
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(ChangeHostStatusMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                ChangeHostStatusReply reply = new ChangeHostStatusReply();
+                changeConnectionState(HostStatusEvent.valueOf(msg.getStatusEvent()));
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return String.format("change-host-%s-status", self.getUuid());
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
     }
 
     private void handle(UpdateHostOSMsg msg) {
@@ -843,13 +870,9 @@ public abstract class HostBase extends AbstractHost {
         }
 
         final Integer MAX_PING_CNT = HostGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
-        final List<Integer> stepCount = new ArrayList<>();
-        for (int i = 1; i <= MAX_PING_CNT; i++) {
-            stepCount.add(i);
-        }
 
         final List<ErrorCode> errs = new ArrayList<>();
-        new While<>(stepCount).each((currentStep, compl) -> pingHook(new Completion(compl) {
+        While.makeRetryWhile(MAX_PING_CNT).each((currentStep, compl) -> pingHook(new Completion(compl) {
             @Override
             public void success() {
                 compl.allDone();
@@ -860,7 +883,7 @@ public abstract class HostBase extends AbstractHost {
                 logger.warn(String.format("ping host failed (%d/%d): %s", currentStep, MAX_PING_CNT, errorCode.toString()));
                 errs.add(errorCode);
 
-                if (errs.size() != stepCount.size()) {
+                if (errs.size() != MAX_PING_CNT) {
                     int sleep = HostGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.value(Integer.class);
                     if (sleep > 0) {
                         try {
@@ -876,7 +899,7 @@ public abstract class HostBase extends AbstractHost {
         })).run(new WhileDoneCompletion(msg) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errs.size() == stepCount.size()) {
+                if (errs.size() == MAX_PING_CNT) {
                     final ErrorCode errorCode = errs.get(0);
                     reply.setConnected(false);
                     reply.setCurrentHostStatus(self.getStatus().toString());
@@ -899,12 +922,7 @@ public abstract class HostBase extends AbstractHost {
                     changeConnectionState(HostStatusEvent.disconnected);
 
                     CollectionUtils.safeForEach(pluginRgty.getExtensionList(PingHostFailedExtensionPoint.class),
-                        new ForEachFunction<PingHostFailedExtensionPoint>() {
-                            @Override
-                            public void run(PingHostFailedExtensionPoint arg) {
-                                arg.afterPingHostFailed(self.getUuid(), errorCode);
-                            }
-                    });
+                            extension -> extension.afterPingHostFailed(self.getUuid(), errorCode));
 
                     completion.success(reply);
                 } else {
@@ -1253,6 +1271,25 @@ public abstract class HostBase extends AbstractHost {
                     @Override
                     public void setup() {
                         flow(new NoRollbackFlow() {
+                            String __name__ = "check-conditions-of-connection";
+
+                            @Override
+                            public void run(final FlowTrigger trigger, Map data) {
+                                checkConnectConditions(ConnectHostInfo.fromConnectHostMsg(msg), new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                            }
+                        });
+
+                        flow(new NoRollbackFlow() {
                             String __name__ = "connect-host";
 
                             @Override
@@ -1366,8 +1403,7 @@ public abstract class HostBase extends AbstractHost {
                             public void handle(ErrorCode errCode, Map data) {
                                 changeConnectionState(HostStatusEvent.disconnected);
                                 if (!msg.isNewAdd()) {
-                                    tracker.trackHost(self.getUuid());
-                                    new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
+                                    connectHostFailHook(errCode);
                                 }
                                 completion.fail(errCode);
                             }
@@ -1393,6 +1429,11 @@ public abstract class HostBase extends AbstractHost {
                 return String.format("connect-host-%s", self.getUuid());
             }
         });
+    }
+
+    protected void connectHostFailHook(ErrorCode errorCode) {
+        tracker.trackHost(self.getUuid());
+        new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
     }
 
     private void handle(final ChangeHostStateMsg msg) {

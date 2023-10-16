@@ -419,6 +419,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                             "the vm[uuid:%s] is already on host[uuid:%s]", msg.getVmInstanceUuid(), msg.getHostUuid()
                     ));
                 }
+
+                if (vo.getState() == VmInstanceState.Paused && VmSystemTags.VM_STATE_PAUSED_AFTER_MIGRATE.hasTag(msg.getVmInstanceUuid())) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the vm[uuid:%s] is still paused after the last migration, please resume it before migrate.", msg.getVmInstanceUuid()));
+                }
             }
         }.execute();
     }

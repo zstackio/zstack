@@ -24,6 +24,8 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String updatePackages;
     @SerializedName("post_url")
     private String postUrl;
+    @SerializedName("isInstallHostShutdownHook")
+    private String isInstallHostShutdownHook;
 
     public String getInit() {
         return init;
@@ -95,6 +97,14 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setPostUrl(String postUrl) {
         this.postUrl = postUrl;
+    }
+
+    public String getIsInstallHostShutdownHook() {
+        return isInstallHostShutdownHook;
+    }
+
+    public void setIsInstallHostShutdownHook(String isInstallHostShutdownHook) {
+        this.isInstallHostShutdownHook = isInstallHostShutdownHook;
     }
 
     @Override

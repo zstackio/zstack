@@ -11,6 +11,7 @@ public class ExportImageFromBackupStorageMsg extends NeedReplyMessage implements
     private String rawPath;
     private String exportFormat;
     private Long requiredSize;
+    private String imageName;
 
     @Override
     public String getBackupStorageUuid() {
@@ -51,5 +52,13 @@ public class ExportImageFromBackupStorageMsg extends NeedReplyMessage implements
 
     public void setRequiredSize(Long requiredSize) {
         this.requiredSize = requiredSize;
+    }
+
+    public String getImageName() {
+        return imageName;
+    }
+
+    public void setImageName(String imageName) {
+        this.imageName = imageName;
     }
 }

@@ -9,6 +9,7 @@ import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.sdk.*
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -46,6 +47,7 @@ class LiveMigrateVmCase extends SubCase {
         env.create {
             testLiveMigrateVmFailure()
             testLiveMigrateVmWithDataVolume()
+            testPausedVmStateAfterMigrate()
         }
     }
     void testLiveMigrateVmFailure() {
@@ -148,5 +150,20 @@ class LiveMigrateVmCase extends SubCase {
         }
 
         SQL.New(SharedResourceVO.class).hardDelete()
+    }
+
+    void testPausedVmStateAfterMigrate() {
+        VmInstanceInventory vm = (VmInstanceInventory) env.inventoryByName("vm")
+        env.afterSimulator(KVMConstant.KVM_VM_CHECK_STATE) { KVMAgentCommands.CheckVmStateRsp rsp, HttpEntity<String> e ->
+            if (rsp.states.containsKey(vm.uuid)) {
+                rsp.states.put(vm.uuid, KVMConstant.KvmVmState.Paused.toString())
+            }
+            return rsp
+        }
+
+        vm = migrateVm {
+            vmInstanceUuid = vm.getUuid()
+        } as VmInstanceInventory
+        assert vm.state == KVMConstant.KvmVmState.Paused.toString()
     }
 }

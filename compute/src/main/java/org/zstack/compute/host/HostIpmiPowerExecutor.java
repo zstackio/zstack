@@ -5,7 +5,6 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostIpmiVO;
@@ -204,6 +203,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
         } else {
             return new Pair(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] can not connect ipmi[%s], because:%s",
                     ipmi.getUuid(),
+                    ipmi.getIpmiAddress(),
                     rst.getStderr()));
         }
     }

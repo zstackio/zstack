@@ -346,9 +346,8 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
 
     private List<Tuple> findPortForwardingTuplesOnVmNic(VmNicInventory nic) {
         return SQL.New("select pf, nic.ip, nic.mac " +
-                    "from PortForwardingRuleVO pf, VmNicVO nic, VmInstanceVO vm " +
+                    "from PortForwardingRuleVO pf, VmNicVO nic " +
                     "where pf.vmNicUuid = nic.uuid " +
-                    "and nic.vmInstanceUuid = vm.uuid " +
                     "and nic.l3NetworkUuid = :l3Uuid " +
                     "and pf.state = :enabledState", Tuple.class)
                     .param("l3Uuid", nic.getL3NetworkUuid())

@@ -156,7 +156,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
     }
 
     @Override
-    public ReservedHostCapacity getReservedHostCapacityByZones(List<String> zoneUuids) {
+    public ReservedHostCapacity getReservedHostCapacityByZones(List<String> zoneUuids, String hypervisorType) {
         ReservedHostCapacity ret = new ReservedHostCapacity();
         ret.setReservedCpuCapacity(0);
         ret.setReservedMemoryCapacity(0);
@@ -164,6 +164,9 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.zoneUuid, Op.IN, zoneUuids);
+        if (hypervisorType != null) {
+            q.add(HostVO_.hypervisorType, Op.EQ, hypervisorType);
+        }
         List<String> huuids = q.listValue();
         if (huuids.isEmpty()) {
             return ret;
@@ -181,7 +184,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
     }
 
     @Override
-    public ReservedHostCapacity getReservedHostCapacityByClusters(List<String> clusterUuids) {
+    public ReservedHostCapacity getReservedHostCapacityByClusters(List<String> clusterUuids, String hypervisorType) {
         ReservedHostCapacity ret = new ReservedHostCapacity();
         ret.setReservedCpuCapacity(0);
         ret.setReservedMemoryCapacity(0);
@@ -189,6 +192,9 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.IN, clusterUuids);
+        if (hypervisorType != null) {
+            q.add(HostVO_.hypervisorType, Op.EQ, hypervisorType);
+        }
         List<String> huuids = q.listValue();
         if (huuids.isEmpty()) {
             return ret;

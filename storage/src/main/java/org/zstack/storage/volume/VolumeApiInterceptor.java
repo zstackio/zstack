@@ -63,9 +63,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private Map<String, MaxDataVolumeNumberExtensionPoint> maxDataVolumeNumberExtensions = new ConcurrentHashMap<String, MaxDataVolumeNumberExtensionPoint>();
-    private static final int DEFAULT_MAX_DATA_VOLUME_NUMBER = 24;
-
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VolumeMessage) {
             VolumeMessage vmsg = (VolumeMessage) msg;
@@ -336,18 +333,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                     }
                 }
 
-                MaxDataVolumeNumberExtensionPoint ext = maxDataVolumeNumberExtensions.get(hvType);
-                int maxDataVolumeNum = DEFAULT_MAX_DATA_VOLUME_NUMBER;
-                if (ext != null) {
-                    maxDataVolumeNum = ext.getMaxDataVolumeNumber();
-                }
-
-                count = Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid()).count();
-                if (count + 1 > maxDataVolumeNum) {
-                    throw new ApiMessageInterceptionException(operr("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
-                            hvType, maxDataVolumeNum, count, msg.getVmInstanceUuid()));
-                }
-
                 String hostUuid = Q.New(VmInstanceVO.class)
                         .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
                         .select(VmInstanceVO_.hostUuid)
@@ -519,22 +504,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         }
     }
 
-    private void populateExtensions() {
-        for (MaxDataVolumeNumberExtensionPoint extp : pluginRgty.getExtensionList(MaxDataVolumeNumberExtensionPoint.class)) {
-            MaxDataVolumeNumberExtensionPoint old = maxDataVolumeNumberExtensions.get(extp.getHypervisorTypeForMaxDataVolumeNumberExtension());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate MaxDataVolumeNumberExtensionPoint[%s, %s] for hypervisor type[%s]",
-                        old.getClass().getName(), extp.getClass().getName(), extp.getHypervisorTypeForMaxDataVolumeNumberExtension())
-                );
-            }
-
-            maxDataVolumeNumberExtensions.put(extp.getHypervisorTypeForMaxDataVolumeNumberExtension(), extp);
-        }
-    }
-
     @Override
     public boolean start() {
-        populateExtensions();
         return true;
     }
 

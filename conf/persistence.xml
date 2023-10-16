@@ -32,6 +32,7 @@
         <class>org.zstack.header.storage.backup.BackupStorageVO</class>
         <class>org.zstack.header.storage.backup.BackupStorageEO</class>
         <class>org.zstack.header.storage.backup.BackupStorageZoneRefVO</class>
+        <class>org.zstack.header.storage.addon.backup.ExternalBackupStorageVO</class>
         <class>org.zstack.header.image.ImageVO</class>
         <class>org.zstack.header.image.ImageEO</class>
         <class>org.zstack.header.image.GuestOsCategoryVO</class>
@@ -128,6 +129,8 @@
         <class>org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageResourceRefVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostRefVO</class>
+        <class>org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO</class>
+        <class>org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO</class>
         <class>org.zstack.storage.ceph.backup.CephBackupStorageVO</class>
         <class>org.zstack.storage.ceph.backup.CephBackupStorageMonVO</class>
         <class>org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO</class>

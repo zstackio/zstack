@@ -89,3 +89,58 @@ BEGIN
     SELECT CURTIME();
 END $$
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `DELETE_INDEX`;
+
+DELIMITER $$
+CREATE PROCEDURE `DELETE_INDEX`(
+    IN tb_name VARCHAR(64),
+    IN idx_name VARCHAR(64)
+)
+DETERMINISTIC
+READS SQL DATA
+begin_label: BEGIN
+    IF idx_name = '' OR idx_name IS NULL THEN
+        LEAVE begin_label;
+    END IF;
+
+    IF EXISTS ( SELECT * FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                AND table_name = tb_name
+                AND index_name = idx_name ) THEN
+        SET @sql = CONCAT('ALTER TABLE ', tb_name, ' DROP INDEX ', idx_name);
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+    END IF;
+
+    SELECT CURTIME();
+END$$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `CREATE_INDEX`;
+
+DELIMITER $$
+CREATE PROCEDURE `CREATE_INDEX`(
+    IN tb_name VARCHAR(64),
+    IN idx_name VARCHAR(64),
+    IN col_name VARCHAR(64)
+)
+    DETERMINISTIC
+    READS SQL DATA
+begin_label: BEGIN
+    IF idx_name = '' OR idx_name IS NULL THEN
+        LEAVE begin_label;
+    END IF;
+
+    IF NOT EXISTS ( SELECT * FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = tb_name
+                  AND index_name = idx_name ) THEN
+        SET @sql = CONCAT('ALTER TABLE ', tb_name, ' ADD INDEX ', idx_name, ' (`', col_name, '`)');
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+    END IF;
+
+    SELECT CURTIME();
+END$$
+DELIMITER ;
