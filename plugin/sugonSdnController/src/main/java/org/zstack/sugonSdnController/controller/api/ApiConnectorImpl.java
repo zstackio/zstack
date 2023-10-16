@@ -225,6 +225,7 @@ class ApiConnectorImpl implements ApiConnector {
             request.setHeader("X-AUTH-TOKEN", _authtoken);
         }
         try {
+            _connection.setSocketTimeout(6000);
             _httpexecutor.preProcess(request, _httpproc, _httpcontext);
             response = _httpexecutor.execute(request, _connection, _httpcontext);
             response.setParams(_params);
