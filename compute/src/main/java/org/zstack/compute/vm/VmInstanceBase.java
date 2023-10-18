@@ -50,6 +50,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
+import org.zstack.header.vm.VmCanonicalEvents.VmStateChangedData;
 import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
@@ -73,7 +74,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -95,7 +95,6 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.*;
-
 
 public class VmInstanceBase extends AbstractVmInstance {
     protected static final CLogger logger = Utils.getLogger(VmInstanceBase.class);
@@ -5242,205 +5241,54 @@ public class VmInstanceBase extends AbstractVmInstance {
         exts.forEach(ext -> ext.preChangeInstanceOffering(vm, inv));
         CollectionUtils.safeForEach(exts, ext -> ext.beforeChangeInstanceOffering(vm, inv));
 
-        changeCpuAndMemory(inv.getCpuNum(), inv.getMemorySize(), new Completion(completion) {
+        UpdateVmOnHypervisorMsg innerMsg = new UpdateVmOnHypervisorMsg();
+        innerMsg.setSpec(VmInstanceUtils.convertToSpec(msg, inv, self));
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, innerMsg.getSpec().getHostUuid());
+        bus.send(innerMsg, new CloudBusCallBack(msg) {
             @Override
-            public void success() {
+            public void run(MessageReply innerReply) {
+                if (!innerReply.isSuccess()) {
+                    completion.fail(Platform.operr(innerReply.getError(),
+                            "Failed to update vm[uuid=%s] on hypervisor.", self.getUuid()));
+                    return;
+                }
+                final UpdateVmOnHypervisorReply casedReply = innerReply.castReply();
+                updateVmInstanceFromHypervisorReply(casedReply);
                 self.setAllocatorStrategy(inv.getAllocatorStrategy());
                 self.setInstanceOfferingUuid(msg.getInstanceOfferingUuid());
                 self = dbf.updateAndRefresh(self);
+                fireVmConfigChangedEvent(getSelfInventory());
                 CollectionUtils.safeForEach(exts, ext -> ext.afterChangeInstanceOffering(vm, inv));
-                completion.success();
-            }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                if (casedReply.getIgnoredErrors().isEmpty()) {
+                    completion.success();
+                    return;
+                }
+                final ErrorCodeList list = new ErrorCodeList();
+                list.getCauses().addAll(casedReply.getIgnoredErrors());
+                completion.fail(Platform.operr(list,
+                        "Failed to update vm[uuid=%s] on hypervisor: The modification of some properties failed",
+                        self.getUuid()));
             }
         });
     }
 
-    private void changeCpuAndMemory(final int cpuNum, final long memorySize, final Completion completion) {
-        if (self.getState() == VmInstanceState.Stopped) {
-            self.setCpuNum(cpuNum);
-            self.setMemorySize(memorySize);
-            self = dbf.updateAndRefresh(self);
-            completion.success();
-            return;
-        }
-
-        final int oldCpuNum = self.getCpuNum();
-        final long oldMemorySize = self.getMemorySize();
-
-        class AlignmentStruct {
-            long alignedMemory;
-        }
-
-        final AlignmentStruct struct = new AlignmentStruct();
-        struct.alignedMemory = memorySize;
-
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("change-cpu-and-memory-of-vm-%s", self.getUuid()));
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "align-memory";
-
-            @Override
-            public void run(FlowTrigger chain, Map data) {
-                // align memory
-                long increaseMemory = memorySize - oldMemorySize;
-                long remainderMemory = increaseMemory % SizeUnit.MEGABYTE.toByte(128);
-                if (increaseMemory != 0 && remainderMemory != 0) {
-                    if (remainderMemory < SizeUnit.MEGABYTE.toByte(128) / 2) {
-                        increaseMemory = increaseMemory / SizeUnit.MEGABYTE.toByte(128) * SizeUnit.MEGABYTE.toByte(128);
-                    } else {
-                        increaseMemory = (increaseMemory / SizeUnit.MEGABYTE.toByte(128) + 1) * SizeUnit.MEGABYTE.toByte(128);
-                    }
-
-                    if (increaseMemory == 0) {
-                        struct.alignedMemory = oldMemorySize + SizeUnit.MEGABYTE.toByte(128);
-                    } else {
-                        struct.alignedMemory = oldMemorySize + increaseMemory;
-                    }
-
-                    logger.debug(String.format("automatically align memory from %s to %s", memorySize, struct.alignedMemory));
-                }
-                chain.next();
-            }
-        }).then(new Flow() {
-            String __name__ = String.format("allocate-host-capacity-on-host-%s", self.getHostUuid());
-            boolean result = false;
-
-            @Override
-            public void run(FlowTrigger chain, Map data) {
-                DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
-                msg.setCpuCapacity((long) cpuNum - oldCpuNum);
-                msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
-                msg.setOldMemoryCapacity(oldMemorySize);
-                msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
-                msg.setVmInstance(VmInstanceInventory.valueOf(self));
-                if (self.getImageUuid() != null && dbf.isExist(self.getImageUuid(), ImageVO.class)) {
-                    msg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
-                }
-                msg.setHostUuid(self.getHostUuid());
-                msg.setFullAllocate(false);
-                msg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
-                msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-                bus.send(msg, new CloudBusCallBack(chain) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            ErrorCode err = operr("host[uuid:%s] capacity is not enough to offer cpu[%s], memory[%s bytes]",
-                                    self.getHostUuid(), cpuNum - oldCpuNum, struct.alignedMemory - oldMemorySize);
-                            err.setCause(reply.getError());
-                            chain.fail(err);
-                        } else {
-                            result = true;
-                            logger.debug(String.format("reserve memory %s bytes and cpu %s on host[uuid:%s]", memorySize - self.getMemorySize(), cpuNum - self.getCpuNum(), self.getHostUuid()));
-                            chain.next();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void rollback(FlowRollback chain, Map data) {
-                if (result) {
-                    ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
-                    msg.setCpuCapacity((long) cpuNum - oldCpuNum);
-                    msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
-                    msg.setHostUuid(self.getHostUuid());
-                    msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-                    bus.send(msg);
-                }
-
-                chain.rollback();
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = String.format("change-cpu-of-vm-%s", self.getUuid());
-
-            @Override
-            public void run(FlowTrigger chain, Map data) {
-                if (cpuNum != self.getCpuNum()) {
-                    IncreaseVmCpuMsg msg = new IncreaseVmCpuMsg();
-                    msg.setVmInstanceUuid(self.getUuid());
-                    msg.setHostUuid(self.getHostUuid());
-                    msg.setCpuNum(cpuNum);
-                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, self.getHostUuid());
-                    bus.send(msg, new CloudBusCallBack(chain) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.error("failed to update cpu");
-                                chain.fail(reply.getError());
-                            } else {
-                                IncreaseVmCpuReply r = reply.castReply();
-                                self.setCpuNum(r.getCpuNum());
-                                chain.next();
-                            }
-                        }
-                    });
-                } else {
-                    chain.next();
-                }
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = String.format("change-memory-of-vm-%s", self.getUuid());
-
-            @Override
-            public void run(FlowTrigger chain, Map data) {
-                if (struct.alignedMemory != self.getMemorySize()) {
-                    IncreaseVmMemoryMsg msg = new IncreaseVmMemoryMsg();
-                    msg.setVmInstanceUuid(self.getUuid());
-                    msg.setHostUuid(self.getHostUuid());
-                    msg.setMemorySize(struct.alignedMemory);
-                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, self.getHostUuid());
-                    bus.send(msg, new CloudBusCallBack(chain) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.error("failed to update memory");
-                                chain.fail(reply.getError());
-                            } else {
-                                IncreaseVmMemoryReply r = reply.castReply();
-                                self.setMemorySize(r.getMemorySize());
-                                chain.next();
-                            }
-                        }
-                    });
-                } else {
-                    chain.next();
-                }
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
-                dbf.update(self);
-                VmCanonicalEvents.VmConfigChangedData d = new VmCanonicalEvents.VmConfigChangedData();
-                d.setVmUuid(self.getUuid());
-                d.setInv(getSelfInventory());
-                d.setAccoundUuid(acntMgr.getOwnerAccountUuidOfResource(self.getUuid()));
-                evtf.fire(VmCanonicalEvents.VM_CONFIG_CHANGED_PATH, d);
-                completion.success();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
-            }
-        }).start();
-    }
-
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void doVmInstanceUpdate(final UpdateVmInstanceMsg msg, Completion completion) {
         refreshVO();
 
-        List<Runnable> extensions = new ArrayList<Runnable>();
+        List<Runnable> extensions = new ArrayList<>();
         final VmInstanceInventory vm = getSelfInventory();
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setVmInventory(vm);
         spec.setCurrentVmOperation(VmOperation.Update);
 
         FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("update-vm-instance-%s-in-database", self.getUuid()));
+
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.then(new NoRollbackFlow() {
+            String __name__ = "update-vm-properties-without-cpu-and-memory";
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 boolean update = false;
@@ -5456,20 +5304,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.setState(VmInstanceState.valueOf(msg.getState()));
                     update = true;
                     if (!vm.getState().equals(msg.getState())) {
-                        extensions.add(new Runnable() {
-                            @Override
-                            public void run() {
-                                logger.debug(String.format("vm[uuid:%s] changed state from %s to %s", self.getUuid(),
-                                        vm.getState(), msg.getState()));
-
-                                VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
-                                data.setVmUuid(self.getUuid());
-                                data.setOldState(vm.getState());
-                                data.setNewState(msg.getState());
-                                data.setInventory(getSelfInventory());
-                                evtf.fire(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, data);
-                            }
-                        });
+                        extensions.add(this::onStateUpdated);
                     }
                 }
 
@@ -5477,15 +5312,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
                     update = true;
                     if (!msg.getDefaultL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid())) {
-                        extensions.add(new Runnable() {
-                            @Override
-                            public void run() {
-                                for (VmDefaultL3NetworkChangedExtensionPoint ext :
-                                        pluginRgty.getExtensionList(VmDefaultL3NetworkChangedExtensionPoint.class)) {
-                                    ext.vmDefaultL3NetworkChanged(vm, vm.getDefaultL3NetworkUuid(), msg.getDefaultL3NetworkUuid());
-                                }
-                            }
-                        });
+                        extensions.add(this::onDefaultL3NetworkUpdated);
                     }
                 }
 
@@ -5493,15 +5320,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.setPlatform(msg.getPlatform());
                     update = true;
                     if (!msg.getPlatform().equals(vm.getPlatform())) {
-                        extensions.add(new Runnable() {
-                            @Override
-                            public void run() {
-                                for (VmPlatformChangedExtensionPoint ext :
-                                        pluginRgty.getExtensionList(VmPlatformChangedExtensionPoint.class)) {
-                                    ext.vmPlatformChange(vm, vm.getPlatform(), msg.getPlatform());
-                                }
-                            }
-                        });
+                        extensions.add(this::onPlatformUpdated);
                     }
                 }
 
@@ -5523,23 +5342,73 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 CollectionUtils.safeForEach(extensions, Runnable::run);
 
-                if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
-                    int cpuNum = msg.getCpuNum() == null ? self.getCpuNum() : msg.getCpuNum();
-                    long memory = msg.getMemorySize() == null ? self.getMemorySize() : msg.getMemorySize();
-                    changeCpuAndMemory(cpuNum, memory, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
+                trigger.next();
+            }
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
-                } else {
-                    trigger.next();
+            private void onStateUpdated() {
+                logger.debug(String.format("vm[uuid:%s] changed state from %s to %s", self.getUuid(),
+                        vm.getState(), msg.getState()));
+
+                VmStateChangedData canonicalEventsData = new VmStateChangedData();
+                canonicalEventsData.setVmUuid(self.getUuid());
+                canonicalEventsData.setOldState(vm.getState());
+                canonicalEventsData.setNewState(msg.getState());
+                canonicalEventsData.setInventory(getSelfInventory());
+                evtf.fire(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, canonicalEventsData);
+            }
+
+            private void onDefaultL3NetworkUpdated() {
+                for (VmDefaultL3NetworkChangedExtensionPoint ext :
+                        pluginRgty.getExtensionList(VmDefaultL3NetworkChangedExtensionPoint.class)) {
+                    ext.vmDefaultL3NetworkChanged(vm, vm.getDefaultL3NetworkUuid(), msg.getDefaultL3NetworkUuid());
                 }
+            }
+
+            private void onPlatformUpdated() {
+                for (VmPlatformChangedExtensionPoint ext :
+                        pluginRgty.getExtensionList(VmPlatformChangedExtensionPoint.class)) {
+                    ext.vmPlatformChange(vm, vm.getPlatform(), msg.getPlatform());
+                }
+            }
+        });
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "update-vm-properties-on-hypervisor";
+
+            @Override
+            public boolean skip(Map data) {
+                final VmInstanceType type = VmInstanceType.valueOf(self.getType());
+                return !type.isSupportUpdateOnHypervisor();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                UpdateVmOnHypervisorMsg innerMsg = new UpdateVmOnHypervisorMsg();
+                innerMsg.setSpec(VmInstanceUtils.convertToSpec(msg, self));
+                bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, innerMsg.getSpec().getHostUuid());
+                bus.send(innerMsg, new CloudBusCallBack(innerMsg) {
+                    @Override
+                    public void run(MessageReply innerReply) {
+                        if (!innerReply.isSuccess()) {
+                            trigger.fail(Platform.operr(innerReply.getError(),
+                                    "failed to update vm[uuid=%s] on hypervisor", self.getUuid()));
+                            return;
+                        }
+                        final UpdateVmOnHypervisorReply casedReply = innerReply.castReply();
+                        updateVmInstanceFromHypervisorReply(casedReply);
+                        fireVmConfigChangedEvent(getSelfInventory());
+
+                        if (casedReply.getIgnoredErrors().isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+                        final ErrorCodeList list = new ErrorCodeList();
+                        list.getCauses().addAll(casedReply.getIgnoredErrors());
+                        trigger.fail(Platform.operr(list,
+                                "failed to update vm[uuid=%s] on hypervisor: The modification of some properties failed",
+                                self.getUuid()));
+                    }
+                });
             }
         });
 
@@ -5587,7 +5456,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void handle(final UpdateVmInstanceMsg msg) {
+    private void handle(UpdateVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -5622,9 +5491,17 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    private void fireVmConfigChangedEvent(VmInstanceInventory inventory) {
+        VmCanonicalEvents.VmConfigChangedData d = new VmCanonicalEvents.VmConfigChangedData();
+        d.setVmUuid(self.getUuid());
+        d.setInv(inventory);
+        d.setAccoundUuid(acntMgr.getOwnerAccountUuidOfResource(self.getUuid()));
+        evtf.fire(VmCanonicalEvents.VM_CONFIG_CHANGED_PATH, d);
+    }
+
     // Specify an iso as the first one, restart vm effective
     private void updateVmIsoFirstOrder(List<String> systemTags) {
-        if (systemTags == null || systemTags.isEmpty()) {
+        if (CollectionUtils.isEmpty(systemTags)) {
             return;
         }
 
@@ -5672,6 +5549,23 @@ public class VmInstanceBase extends AbstractVmInstance {
                 merge(sourceCdRomVO);
             }
         }.execute();
+    }
+
+    private void updateVmInstanceFromHypervisorReply(UpdateVmOnHypervisorReply reply) {
+        if (!reply.hasAnythingUpdated()) {
+            return;
+        }
+        refreshVO();
+        if (reply.isCpuUpdated()) {
+            self.setCpuNum(reply.getCpuUpdatedTo());
+        }
+        if (reply.isMemoryUpdated()) {
+            self.setMemorySize(reply.getMemoryUpdatedTo());
+        }
+        if (reply.isNameUpdated()) {
+            self.setName(reply.getNameUpdatedTo());
+        }
+        dbf.update(self);
     }
 
     @Transactional(readOnly = true)
