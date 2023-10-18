@@ -123,9 +123,10 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
 
         //NOTE(weiw): not using batch sql to avoid deadlock
         for (String volumeUuid: dataVolumeUuids) {
-            String sql = "update VolumeVO vol set vol.vmInstanceUuid = null where vol.uuid in (:uuids)";
+            String sql = "update VolumeVO vol set vol.vmInstanceUuid = null, vol.lastVmInstanceUuid = :vmUuid where vol.uuid in (:uuids)";
             Query q = dbf.getEntityManager().createQuery(sql);
             q.setParameter("uuids", volumeUuid);
+            q.setParameter("vmUuid", spec.getVmInventory().getUuid());
             q.executeUpdate();
         }
     }
