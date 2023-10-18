@@ -309,6 +309,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         MigrateStruct struct = new MigrateStruct();
         VolumeStatus originStatus = Q.New(VolumeVO.class).select(VolumeVO_.status).eq(VolumeVO_.uuid, msg.getVolumeUuid()).findValue();
+        String lastHostUuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.lastHostUuid).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("local-storage-%s-migrate-volume-%s-to-host-%s", msg.getPrimaryStorageUuid(), msg.getVolumeUuid(), msg.getDestHostUuid()));
         chain.then(new Flow() {
@@ -493,7 +494,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 /* update vm last host uuid */
                 SQL.New(VmInstanceVO.class)
                         .eq(VmInstanceVO_.uuid, struct.getVmUuid())
-                        .set(VmInstanceVO_.lastHostUuid, msg.getDestHostUuid())
+                        .set(VmInstanceVO_.lastHostUuid, lastHostUuid)
                         .update();
 
                 bus.publish(evt);
