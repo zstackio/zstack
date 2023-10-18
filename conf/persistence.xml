@@ -61,6 +61,10 @@
         <class>org.zstack.header.network.l3.UsedIpVO</class>
         <class>org.zstack.header.network.l3.AddressPoolVO</class>
         <class>org.zstack.header.network.l3.NormalIpRangeVO</class>
+        <class>org.zstack.network.hostNetwork.HostNetworkBondingVO</class>
+        <class>org.zstack.network.hostNetwork.HostNetworkInterfaceVO</class>
+        <class>org.zstack.network.hostNetwork.HostNetworkBondingServiceRefVO</class>
+        <class>org.zstack.network.hostNetwork.HostNetworkInterfaceServiceRefVO</class>
         <class>org.zstack.network.service.vip.VipVO</class>
         <class>org.zstack.network.service.vip.VipNetworkServicesRefVO</class>
         <class>org.zstack.network.service.vip.VipPeerL3NetworkRefVO</class>
