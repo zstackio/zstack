@@ -141,9 +141,27 @@ class SimulatorHost extends HostBase {
             handle((DetachVolumeFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof DestroyVmOnHypervisorMsg) {
             handle((DestroyVmOnHypervisorMsg) msg);
+        } else if (msg instanceof UpdateVmOnHypervisorMsg) {
+            handle((UpdateVmOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(UpdateVmOnHypervisorMsg msg) {
+        UpdateVmOnHypervisorReply reply = new UpdateVmOnHypervisorReply();
+
+        if (msg.getSpec().isCpuChanged()) {
+            reply.setCpuUpdatedTo(msg.getSpec().getCpuNum());
+        }
+        if (msg.getSpec().isMemoryChanged()) {
+            reply.setMemoryUpdatedTo(msg.getSpec().getMemorySize());
+        }
+        if (msg.getSpec().isReservedMemoryChanged()) {
+            logger.info(String.format("%s ignored reserved memory change request", getClass().getSimpleName()));
+        }
+
+        bus.reply(msg, reply);
     }
 
     private void handle(MigrateVmOnHypervisorMsg msg) {
