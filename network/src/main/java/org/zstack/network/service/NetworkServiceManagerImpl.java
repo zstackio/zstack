@@ -12,10 +12,15 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostAfterConnectedExtensionPoint;
+import org.zstack.header.host.HostDeleteExtensionPoint;
+import org.zstack.header.host.HostException;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
@@ -36,7 +41,7 @@ import static org.zstack.core.Platform.operr;
 
 public class NetworkServiceManagerImpl extends AbstractService implements NetworkServiceManager, PreVmInstantiateResourceExtensionPoint,
         VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint,
-        InstantiateResourceOnAttachingNicExtensionPoint {
+        InstantiateResourceOnAttachingNicExtensionPoint, HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(NetworkServiceManagerImpl.class);
 
 	@Autowired
@@ -52,6 +57,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	private final Map<String, ApplyNetworkServiceExtensionPoint> providerExts = new HashMap<String, ApplyNetworkServiceExtensionPoint>();
 	private Set<String> supportedVmTypes = new HashSet<>();
     private List<NetworkServiceExtensionPoint> nsExts = new ArrayList<NetworkServiceExtensionPoint>();
+    private List<NetworkServiceHostExtensionPoint> nsHostExts = new ArrayList<NetworkServiceHostExtensionPoint>();
 
 
 	private void populateExtensions() {
@@ -74,6 +80,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         }
 
         nsExts = pluginRgty.getExtensionList(NetworkServiceExtensionPoint.class);
+        nsHostExts = pluginRgty.getExtensionList(NetworkServiceHostExtensionPoint.class);
 	}
 
 	private NetworkServiceProviderFactory getProviderFactory(String type) {
@@ -506,5 +513,92 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     public boolean isVmNeedNetworkService(String vmType, NetworkServiceType serviceType) {
 	    /* serviceType is not used now, maybe used in future */
         return supportedVmTypes.contains(vmType);
+    }
+
+    @Override
+    public void afterHostConnected(HostInventory host) {
+        FlowChain schain = FlowChainBuilder.newSimpleFlowChain()
+                .setName(String.format("host-%s-connected-network-service-action", host.getUuid()));
+        schain.allowEmptyFlow();
+
+        for (final NetworkServiceHostExtensionPoint ns : nsHostExts) {
+
+            NoRollbackFlow flow = new NoRollbackFlow() {
+                String __name__ = String.format("host-%s-connected-%s-action", host.getUuid(), ns.getNetworkServiceName());
+
+                @Override
+                public void run(final FlowTrigger chain, Map data) {
+                    ns.afterHostConnected(host, new Completion(chain) {
+                        @Override
+                        public void success() {
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            chain.fail(errorCode);
+                        }
+                    });
+                }
+            };
+
+            schain.then(flow);
+        }
+
+        schain.done(new FlowDoneHandler(new NopeCompletion()) {
+            @Override
+            public void handle(Map data) {
+                logger.debug(String.format("successfully finished network services after host [uuid:%s] connected"));
+            }
+        }).start();
+
+    }
+
+    @Override
+    public void preDeleteHost(HostInventory inventory) throws HostException {
+
+    }
+
+    @Override
+    public void beforeDeleteHost(HostInventory host) {
+        FlowChain schain = FlowChainBuilder.newSimpleFlowChain()
+                .setName(String.format("host-%s-deletion-network-service-action", host.getUuid()));
+        schain.allowEmptyFlow();
+
+        for (final NetworkServiceHostExtensionPoint ns : nsHostExts) {
+
+            NoRollbackFlow flow = new NoRollbackFlow() {
+                String __name__ = String.format("host-%s-deletion-%s-action", host.getUuid(), ns.getNetworkServiceName());
+
+                @Override
+                public void run(final FlowTrigger chain, Map data) {
+                    ns.beforeDeleteHost(host, new Completion(chain) {
+                        @Override
+                        public void success() {
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            chain.fail(errorCode);
+                        }
+                    });
+                }
+            };
+
+            schain.then(flow);
+        }
+
+        schain.done(new FlowDoneHandler(new NopeCompletion()) {
+            @Override
+            public void handle(Map data) {
+                logger.debug(String.format("successfully finished network services before host [uuid:%s] deletion"));
+            }
+        }).start();
+    }
+
+    @Override
+    public void afterDeleteHost(HostInventory inventory) {
+
     }
 }
