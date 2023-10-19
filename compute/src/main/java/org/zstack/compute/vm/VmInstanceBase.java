@@ -2227,8 +2227,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         setAdditionalFlow(flowChain, spec);
         if (self.getState() == VmInstanceState.Running) {
             flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
-            flowChain.then(new VmAttachNicOnHypervisorFlow());
         }
+        flowChain.then(new VmAttachNicOnHypervisorFlow());
 
         flowChain.done(new FlowDoneHandler(completion) {
             @Override
@@ -5104,7 +5104,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
         setAdditionalFlow(flowChain, spec);
-        if (!dbOnly && self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {
+        if (!dbOnly) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());
         }
         flowChain.then(new VmReleaseResourceOnDetachingNicFlow());

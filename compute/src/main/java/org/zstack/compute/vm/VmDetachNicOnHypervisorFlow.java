@@ -3,7 +3,6 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -13,6 +12,8 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.Map;
 
@@ -21,18 +22,28 @@ import java.util.Map;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
+    protected static final CLogger logger = Utils.getLogger(VmDetachNicOnHypervisorFlow.class);
     @Autowired
     private CloudBus bus;
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        final String hostUuid = spec.getVmInventory().getHostUuid() == null ?
+                spec.getVmInventory().getLastHostUuid() :
+                spec.getVmInventory().getHostUuid();
+        if (hostUuid == null) {
+            logger.info(String.format("Skip detaching nic on hypervisor: host of VM[uuid=%s] is not set",
+                    spec.getVmInventory().getUuid()));
+            trigger.next();
+            return;
+        }
 
         DetachNicFromVmOnHypervisorMsg msg = new DetachNicFromVmOnHypervisorMsg();
-        msg.setHostUuid(spec.getVmInventory().getHostUuid());
+        msg.setHostUuid(hostUuid);
         msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         msg.setNic(spec.getDestNics().get(0));
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(trigger) {
             @Override
             public void run(MessageReply reply) {

@@ -2020,6 +2020,23 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final DetachNicFromVmOnHypervisorMsg msg) {
+        if (msg.getNic().getL3NetworkUuid() == null) {
+            logger.debug(String.format("Skip detach nic[uuid=%s] on hypervisor: This nic is not attach any networks",
+                    msg.getNic().getUuid()));
+            bus.reply(msg, new VmAttachNicOnHypervisorReply());
+        }
+
+        boolean running = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                .eq(VmInstanceVO_.state, VmInstanceState.Running)
+                .isExists();
+        if (!running) {
+            logger.debug(String.format("Skip detach nic[uuid=%s] on hypervisor: VM[uuid=%s] is not running",
+                    msg.getNic().getUuid(), msg.getVmInstanceUuid()));
+            bus.reply(msg, new VmAttachNicOnHypervisorReply());
+            return;
+        }
+
         inQueue().name("detach-nic-on-kvm-host-" + self.getUuid())
                 .asyncBackup(msg)
                 .run(chain -> detachNic(msg, new NoErrorCompletion(chain) {
@@ -2878,6 +2895,17 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final VmAttachNicOnHypervisorMsg msg) {
+        boolean running = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, msg.getNicInventory().getVmInstanceUuid())
+                .eq(VmInstanceVO_.state, VmInstanceState.Running)
+                .isExists();
+        if (!running) {
+            logger.debug(String.format("Skip attach nic[uuid=%s] on hypervisor: VM[uuid=%s] is not running",
+                    msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid()));
+            bus.reply(msg, new VmAttachNicOnHypervisorReply());
+            return;
+        }
+
         inQueue().name(String.format("attach-nic-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> attachNic(msg, new NoErrorCompletion(chain) {
