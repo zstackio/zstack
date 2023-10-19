@@ -2004,10 +2004,19 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                detachVolume(msg, new NoErrorCompletion(chain) {
+                detachVolume(msg, new Completion(chain) {
                     @Override
-                    public void done() {
+                    public void success() {
                         chain.next();
+                        bus.reply(msg, new DetachDataVolumeFromVmReply());
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        chain.next();
+                        DetachDataVolumeFromVmReply reply = new DetachDataVolumeFromVmReply();
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
                     }
                 });
             }
@@ -6396,20 +6405,21 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void detachVolume(final DetachDataVolumeFromVmMsg msg, final NoErrorCompletion completion) {
-        final DetachDataVolumeFromVmReply reply = new DetachDataVolumeFromVmReply();
+    @SuppressWarnings("rawtypes")
+    private void detachVolume(final DetachDataVolumeFromVmMsg msg, final Completion completion) {
         refreshVO(true);
 
         if (self == null || VmInstanceState.Destroyed == self.getState()) {
             // the vm is destroyed, the data volume must have been detached
-            bus.reply(msg, reply);
-            completion.done();
+            completion.success();
             return;
         }
 
         ErrorCode allowed = validateOperationByState(msg, self.getState(), VmErrors.DETACH_VOLUME_ERROR);
         if (allowed != null) {
-            throw new OperationFailureException(allowed);
+            completion.fail(operr("Detaching volume is not allowed when VM[uuid=%s] is in state[%s]",
+                    self.getUuid(), self.getState()));
+            return;
         }
 
         final VolumeInventory volume = msg.getVolume();
@@ -6419,83 +6429,101 @@ public class VmInstanceBase extends AbstractVmInstance {
             extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
                 @Override
                 public void success() {
-                    bus.reply(msg, reply);
-                    completion.done();
+                    completion.success();
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    reply.setError(errorCode);
-                    bus.reply(msg, reply);
-                    completion.done();
+                    completion.fail(errorCode);
                 }
             });
 
             return;
         }
 
-        extEmitter.preDetachVolume(getSelfInventory(), volume);
-        extEmitter.beforeDetachVolume(getSelfInventory(), volume);
-
-        if (self.getState() == VmInstanceState.Stopped) {
-            extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
-                @Override
-                public void success() {
-                    bus.reply(msg, reply);
-                    SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
-                            .set(VolumeVO_.lastDetachDate, Timestamp.valueOf(LocalDateTime.now()))
-                            .set(VolumeVO_.lastVmInstanceUuid, msg.getVmInstanceUuid())
-                            .update();
-                    completion.done();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    reply.setError(errorCode);
-                    bus.reply(msg, reply);
-                    completion.done();
-                }
-            });
-            return;
-        }
-
-        // VmInstanceState.Running
-        String hostUuid = self.getHostUuid();
-        DetachVolumeFromVmOnHypervisorMsg dmsg = new DetachVolumeFromVmOnHypervisorMsg();
-        dmsg.setVmInventory(VmInstanceInventory.valueOf(self));
-        dmsg.setInventory(volume);
-        dmsg.setHostUuid(hostUuid);
-        bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(dmsg, new CloudBusCallBack(msg, completion) {
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("detach-volume-%s-from-vm-%s", self.getUuid(), msg.getVmInstanceUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "pre-detach-volume";
             @Override
-            public void run(final MessageReply r) {
-                if (!r.isSuccess()) {
-                    reply.setError(r.getError());
-                    extEmitter.failedToDetachVolume(getSelfInventory(), volume, r.getError());
-                    bus.reply(msg, reply);
-                    completion.done();
-                } else {
-                    vvo.setLastDetachDate(Timestamp.valueOf(LocalDateTime.now()));
-                    vvo.setLastVmInstanceUuid(msg.getVmInstanceUuid());
-                    dbf.update(vvo);
+            public void run(FlowTrigger trigger, Map data) {
+                extEmitter.beforeDetachVolume(getSelfInventory(), volume);
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "before-detaching-volume";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                extEmitter.preDetachVolume(getSelfInventory(), volume);
+                trigger.next();
+            }
+        }).then(new Flow() {
+            String __name__ = "detach-volume-from-vm-on-hypervisor";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String hostUuid = self.getHostUuid() == null ? self.getLastHostUuid() : self.getHostUuid();
 
-                    extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
-                        @Override
-                        public void success() {
-                            bus.reply(msg, reply);
-                            completion.done();
+                DetachVolumeFromVmOnHypervisorMsg innerMsg = new DetachVolumeFromVmOnHypervisorMsg();
+                innerMsg.setVmInventory(VmInstanceInventory.valueOf(self));
+                innerMsg.setInventory(volume);
+                innerMsg.setHostUuid(hostUuid);
+                bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, hostUuid);
+                bus.send(innerMsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply innerReply) {
+                        if (innerReply.isSuccess()) {
+                            trigger.next();
+                            return;
                         }
+                        trigger.fail(innerReply.getError());
+                    }
+                });
+            }
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            reply.setError(errorCode);
-                            bus.reply(msg, reply);
-                            completion.done();
-                        }
-                    });
-                }
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                extEmitter.failedToDetachVolume(getSelfInventory(), volume, trigger.getErrorCode());
+                trigger.rollback();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "update-volume-in-database";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                vvo.setLastDetachDate(Timestamp.valueOf(LocalDateTime.now()));
+                vvo.setLastVmInstanceUuid(msg.getVmInstanceUuid());
+                dbf.update(vvo);
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "after-detaching-volume";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
             }
         });
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(operr(errCode, "Failed to detach volume[uuid=%s] of VM[uuid=%s]",
+                        msg.getVolume().getUuid(), self.getUuid()));
+            }
+        }).start();
     }
 
     protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
