@@ -201,7 +201,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     private String architecture;
 
     @APINoSee
-    private Boolean virtio;
+    private boolean virtio = false;
 
     @PythonClassInventory
     public static class DiskAO {
@@ -527,11 +527,11 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.architecture = architecture;
     }
 
-    public Boolean getVirtio() {
+    public boolean isVirtio() {
         return virtio;
     }
 
-    public void setVirtio(Boolean virtio) {
+    public void setVirtio(boolean virtio) {
         this.virtio = virtio;
     }
 
