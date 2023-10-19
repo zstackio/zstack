@@ -38,6 +38,7 @@ import static org.zstack.longjob.LongJobUtils.setJobResult;
 /**
  * Created by on camile 2018/2/2.
  */
+@UseApiTimeout(APIAddImageMsg.class)
 @LongJobFor(APIAddImageMsg.class)
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AddImageLongJob implements LongJob {
