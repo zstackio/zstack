@@ -492,7 +492,7 @@
   {
     "raw": "panguPartitionUuid [%s] not be matched with identityZoneUuid [%s]",
     "en_US": "panguPartitionUuid [{0}] not be matched with identityZoneUuid [{1}]",
-    "zh_CN": "pAnguPartitionUuid[{0}]与IdentityZoneUuid[{1}]不匹配",
+    "zh_CN": "panguPartitionUuid[{0}]与identityZoneUuid[{1}]不匹配",
     "arguments": [
       "msg.getPanguPartitionUuid()",
       "msg.getIdentityZoneUuid()"
@@ -26713,7 +26713,7 @@
   {
     "raw": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
     "en_US": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
-    "zh_CN": "无法创建VM，因为至少应设置字段（L3NetworkUuids、ZoneUuid、ClusterUuid、HostUuid）中的一个",
+    "zh_CN": "无法创建VM，因为至少应设置字段（l3NetworkUuids、zoneUuid、clusterUuid、hostUuid）中的一个",
     "arguments": [],
     "line": 355,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
