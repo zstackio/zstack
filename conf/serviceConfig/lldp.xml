@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>hostNetwork.lldp</id>
+    <interceptor>LldpApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.network.hostNetwork.lldp.api.APIChangeHostNetworkInterfaceLldpModeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.hostNetwork.lldp.api.APIGetHostNetworkInterfaceLldpMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.hostNetwork.lldp.api.APIQueryHostNetworkInterfaceLldpMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

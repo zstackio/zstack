@@ -73,3 +73,33 @@ update EventSubscriptionVO set name = 'Host Physical Disk Insert Triggered' wher
 update EventSubscriptionVO set name = 'Host Physical Disk Status Abnormal' where uuid = '4b04f06e4ba24231ad67bd6f06093ba2';
 update EventSubscriptionVO set name = 'Host Physical Cpu Status Abnormal' where uuid = '8186fbbeab1d449b93e7be78d6045c7f';
 update EventSubscriptionVO set name = 'Host Physical Fan Status Abnormal' where uuid = '37e5bdfa2eaf49538931113ddaecf927';
+
+CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `interfaceUuid` varchar(32) NOT NULL UNIQUE,
+    `mode` varchar(32) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY  (`id`),
+    CONSTRAINT `fkHostNetworkInterfaceLldpVOHostNetworkInterfaceVO` FOREIGN KEY (`interfaceUuid`) REFERENCES HostNetworkInterfaceVO (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `interfaceUuid` varchar(32) NOT NULL,
+    `chassisId` varchar(32) NOT NULL,
+    `timeToLive` int(32) NOT NULL,
+    `managementAddress` varchar(32) NOT NULL,
+    `systemName` varchar(32) NOT NULL,
+    `systemDescription` varchar(32) NOT NULL,
+    `systemCapabilities` varchar(32) NOT NULL,
+    `portId` varchar(32) NOT NULL,
+    `portDescription` varchar(32) NOT NULL,
+    `vlanId` int(32) DEFAULT NULL,
+    `aggregationPortId` bigint unsigned DEFAULT NULL,
+    `mtu` varchar(128) DEFAULT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY  (`id`),
+    CONSTRAINT `fkHostNetworkInterfaceLldpRefVOHostNetworkInterfaceLldpVO` FOREIGN KEY (`interfaceUuid`) REFERENCES HostNetworkInterfaceLldpVO (`interfaceUuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
