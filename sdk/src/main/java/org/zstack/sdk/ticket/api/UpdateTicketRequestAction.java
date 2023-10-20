@@ -31,6 +31,9 @@ public class UpdateTicketRequestAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List requests;
 
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false)
     public java.util.List systemTags;
 
