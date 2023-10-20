@@ -429,8 +429,10 @@ public class SourceClassMap {
 			put("org.zstack.nas.NasFileSystemInventory", "org.zstack.sdk.NasFileSystemInventory");
 			put("org.zstack.nas.NasMountTargetInventory", "org.zstack.sdk.NasMountTargetInventory");
 			put("org.zstack.nas.NasProtocolType", "org.zstack.sdk.NasProtocolType");
-			put("org.zstack.network.hostNetwork.HostNetworkBondingInventory", "org.zstack.sdk.HostNetworkBondingInventory");
-			put("org.zstack.network.hostNetwork.HostNetworkInterfaceInventory", "org.zstack.sdk.HostNetworkInterfaceInventory");
+			put("org.zstack.network.hostNetworkInterface.HostNetworkBondingInventory", "org.zstack.sdk.HostNetworkBondingInventory");
+			put("org.zstack.network.hostNetworkInterface.HostNetworkInterfaceInventory", "org.zstack.sdk.HostNetworkInterfaceInventory");
+			put("org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpInventory", "org.zstack.sdk.HostNetworkInterfaceLldpInventory");
+			put("org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefInventory", "org.zstack.sdk.HostNetworkInterfaceLldpRefInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory", "org.zstack.sdk.L2PortGroupNetworkInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupVlanMode", "org.zstack.sdk.L2PortGroupVlanMode");
 			put("org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory", "org.zstack.sdk.L2VirtualSwitchNetworkInventory");
@@ -896,9 +898,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostIpmiInventory", "org.zstack.header.host.HostIpmiInventory");
 			put("org.zstack.sdk.HostLoad", "org.zstack.drs.api.HostLoad");
 			put("org.zstack.sdk.HostNUMANode", "org.zstack.header.host.HostNUMANode");
-			put("org.zstack.sdk.HostNetworkBondingInventory", "org.zstack.network.hostNetwork.HostNetworkBondingInventory");
+			put("org.zstack.sdk.HostNetworkBondingInventory", "org.zstack.network.hostNetworkInterface.HostNetworkBondingInventory");
 			put("org.zstack.sdk.HostNetworkBondingServiceRefInventory", "org.zstack.header.host.HostNetworkBondingServiceRefInventory");
-			put("org.zstack.sdk.HostNetworkInterfaceInventory", "org.zstack.network.hostNetwork.HostNetworkInterfaceInventory");
+			put("org.zstack.sdk.HostNetworkInterfaceInventory", "org.zstack.network.hostNetworkInterface.HostNetworkInterfaceInventory");
+			put("org.zstack.sdk.HostNetworkInterfaceLldpInventory", "org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpInventory");
+			put("org.zstack.sdk.HostNetworkInterfaceLldpRefInventory", "org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefInventory");
 			put("org.zstack.sdk.HostNetworkInterfaceServiceRefInventory", "org.zstack.header.host.HostNetworkInterfaceServiceRefInventory");
 			put("org.zstack.sdk.HostNetworkInterfaceServiceType", "org.zstack.header.host.HostNetworkInterfaceServiceType");
 			put("org.zstack.sdk.HostOsCategoryInventory", "org.zstack.kvm.hypervisor.datatype.HostOsCategoryInventory");
