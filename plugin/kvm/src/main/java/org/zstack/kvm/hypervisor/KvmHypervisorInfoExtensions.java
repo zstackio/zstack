@@ -11,15 +11,15 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.GetVirtualizerInfoMsg;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.SyncL2NetworkIsolatedOnHostMsg;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
 import org.zstack.kvm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMAgentCommands.*;
@@ -152,6 +152,7 @@ public class KvmHypervisorInfoExtensions implements
                 }
             }
         });
+
     }
 
     @Override

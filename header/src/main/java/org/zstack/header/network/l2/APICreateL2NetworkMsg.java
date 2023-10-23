@@ -74,6 +74,12 @@ public abstract class APICreateL2NetworkMsg extends APICreateMessage implements 
     @APIParam(required = false, maxLength = 1024, validValues = {"LinuxBridge", "OvsDpdk", "MacVlan"})
     private String vSwitchType = "LinuxBridge";
 
+    @APIParam(required = false)
+    private Boolean isolated = Boolean.FALSE;
+
+    @APIParam(required = false, emptyString = false)
+    private String pvlan;
+
     public String getName() {
         return name;
     }
@@ -120,6 +126,22 @@ public abstract class APICreateL2NetworkMsg extends APICreateMessage implements 
 
     public void setvSwitchType(String vSwitchType) {
         this.vSwitchType = vSwitchType;
+    }
+
+    public Boolean getIsolated() {
+        return isolated;
+    }
+
+    public void setIsolated(Boolean isolated) {
+        this.isolated = isolated;
+    }
+
+    public String getPvlan() {
+        return pvlan;
+    }
+
+    public void setPvlan(String pvlan) {
+        this.pvlan = pvlan;
     }
 
     public Result audit(APIMessage msg, APIEvent rsp) {

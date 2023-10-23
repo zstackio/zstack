@@ -43,6 +43,12 @@ public class CreateL2VxlanNetworkPoolAction extends AbstractAction {
     @Param(required = false, validValues = {"LinuxBridge","OvsDpdk","MacVlan"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vSwitchType = "LinuxBridge";
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean isolated = false;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String pvlan;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

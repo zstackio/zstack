@@ -30,6 +30,13 @@ public class L2NetworkAO extends ResourceVO {
     @Column
     private Integer virtualNetworkId;
 
+
+    @Column
+    private Boolean isolated;
+
+    @Column
+    private String pvlan;
+
     @Column
     @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ReferenceOption.RESTRICT)
     private String zoneUuid;
@@ -105,6 +112,22 @@ public class L2NetworkAO extends ResourceVO {
 
     public void setVirtualNetworkId(Integer virtualNetworkId){
         this.virtualNetworkId = virtualNetworkId;
+    }
+
+    public Boolean getIsolated() {
+        return isolated;
+    }
+
+    public void setIsolated(Boolean isolated) {
+        this.isolated = isolated;
+    }
+
+    public String getPvlan() {
+        return pvlan;
+    }
+
+    public void setPvlan(String pvlan) {
+        this.pvlan = pvlan;
     }
 
     public Timestamp getCreateDate() {

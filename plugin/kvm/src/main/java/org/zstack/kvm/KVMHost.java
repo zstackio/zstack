@@ -18,6 +18,7 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.ansible.*;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -38,10 +39,7 @@ import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -657,6 +655,8 @@ public class KVMHost extends HostBase implements Host {
             handle((GetHostPowerStatusMsg) msg);
         } else if (msg instanceof FstrimVmMsg) {
             handle((FstrimVmMsg) msg);
+        } else if (msg instanceof SyncL2NetworkIsolatedOnHostMsg) {
+            handle((SyncL2NetworkIsolatedOnHostMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -3637,9 +3637,10 @@ public class KVMHost extends HostBase implements Host {
         if (pci != null) {
             to.setPci(pci);
         }
-
+        to.setL2NetworkUuid(l2inv.getUuid());
         to.setResourceUuid(nic.getUuid());
         to.setState(nic.getState());
+        to.setIsolated(l2inv.getIsolated());
         return to;
     }
 
@@ -6152,5 +6153,136 @@ public class KVMHost extends HostBase implements Host {
                 completion.done();
             }
         });
+    }
+
+    private void handle(SyncL2NetworkIsolatedOnHostMsg msg){
+        SyncL2NetworkIsolatedOnHostReply reply = new SyncL2NetworkIsolatedOnHostReply();
+        List<L2VlanNetworkVO> l2VlanNetworkVOS = Q.New(L2VlanNetworkVO.class)
+                .in(L2VlanNetworkVO_.uuid, msg.getIsolatedL2NetworkMacMap().keySet())
+                .list();
+        Map<String, Integer> vlanMap = l2VlanNetworkVOS.stream()
+                .collect(Collectors.toMap(L2VlanNetworkVO::getUuid, L2VlanNetworkVO::getVlan));
+        Map<String, String> interfaceMap = l2VlanNetworkVOS.stream()
+                .collect(Collectors.toMap(L2VlanNetworkVO::getUuid, L2VlanNetworkVO::getPhysicalInterface));
+
+        if (msg.getOperate().equals(SyncL2NetworkIsolatedOnHostMsg.IpsetOperate.MIGRATE)) {
+            SyncIpsetCmd cmd = new SyncIpsetCmd();
+            cmd.l2MacMap = msg.getIsolatedL2NetworkMacMap();
+            cmd.vlanMap = vlanMap;
+            cmd.interfaceMap = interfaceMap;
+            KVMHostAsyncHttpCallMsg cmsg_src = new KVMHostAsyncHttpCallMsg();
+            cmsg_src.setHostUuid(msg.getMigrateHostUuid());
+            cmsg_src.setCommand(cmd);
+            cmsg_src.setPath(KVMConstant.KVM_HOST_IPSET_ATTACH_NIC_PATH);
+            cmsg_src.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(cmsg_src, HostConstant.SERVICE_ID, msg.getMigrateHostUuid());
+            KVMHostAsyncHttpCallMsg cmsg_dst = new KVMHostAsyncHttpCallMsg();
+            cmsg_dst.setHostUuid(msg.getHostUuid());
+            cmsg_dst.setCommand(cmd);
+            cmsg_dst.setPath(KVMConstant.KVM_HOST_IPSET_DETACH_NIC_PATH);
+            cmsg_dst.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(cmsg_dst, HostConstant.SERVICE_ID, msg.getHostUuid());
+
+            new While<>(Arrays.asList(cmsg_src, cmsg_dst)).each((cMsg, whileCompletion) -> {
+                bus.send(cMsg, new CloudBusCallBack(whileCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.error(String.format("sync l2Network isolated error, because:%s", reply.getError()));
+                            return;
+                        }
+                        whileCompletion.done();
+                    }
+                });
+            }).run(new WhileDoneCompletion(null) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
+                    if (!errorCodeList.getCauses().isEmpty()) {
+                        logger.error(String.format("failed to sync l2Network isolated, because:%s", errorCodeList.getCauses().get(0)));
+                    } else {
+                        logger.debug("sync l2Network isolated success");
+                        reply.setSuccess(Boolean.TRUE);
+                    }
+                }
+            });
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (msg.getOperate().equals(SyncL2NetworkIsolatedOnHostMsg.IpsetOperate.SYNC)) {
+            SyncIpsetCmd cmd = new SyncIpsetCmd();
+            cmd.l2MacMap = msg.getIsolatedL2NetworkMacMap();
+            cmd.vlanMap = vlanMap;
+            cmd.interfaceMap = interfaceMap;
+            KVMHostAsyncHttpCallMsg cmsg = new KVMHostAsyncHttpCallMsg();
+            cmsg.setHostUuid(msg.getHostUuid());
+            cmsg.setCommand(cmd);
+            cmsg.setPath(KVMConstant.KVM_HOST_IPSET_SYNC_PATH);
+            cmsg.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+            bus.send(cmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply r) {
+                    if (!r.isSuccess()) {
+                        reply.setError(r.getError());
+                    }
+                    reply.setSuccess(Boolean.TRUE);
+                }
+            });
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<String> hostUuids = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, self.getClusterUuid())
+                .eq(HostVO_.state, HostState.Enabled)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                .notEq(HostVO_.uuid, msg.getHostUuid()).listValues();
+
+        List<KVMHostAsyncHttpCallMsg> cmsgs = new ArrayList<>();
+        for (String hostUuid : hostUuids) {
+            SyncIpsetCmd cmd = new SyncIpsetCmd();
+            cmd.l2MacMap = msg.getIsolatedL2NetworkMacMap();
+            cmd.vlanMap = vlanMap;
+            cmd.interfaceMap = interfaceMap;
+            KVMHostAsyncHttpCallMsg cmsg = new KVMHostAsyncHttpCallMsg();
+            cmsg.setHostUuid(hostUuid);
+            cmsg.setCommand(cmd);
+            if (msg.getOperate().equals(SyncL2NetworkIsolatedOnHostMsg.IpsetOperate.ATTACH)){
+                cmsg.setPath(KVMConstant.KVM_HOST_IPSET_ATTACH_NIC_PATH);
+            } else {
+                cmsg.setPath(KVMConstant.KVM_HOST_IPSET_DETACH_NIC_PATH);
+            }
+            cmsg.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
+            cmsgs.add(cmsg);
+        }
+        if (!cmsgs.isEmpty()) {
+            new While<>(cmsgs).step((cMsg, whileCompletion) -> {
+                bus.send(cMsg, new CloudBusCallBack(whileCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.error(String.format("sync l2Network isolated error, because:%s", reply.getError()));
+                            return;
+                        }
+                        whileCompletion.done();
+                    }
+                });
+            }, 10).run(new WhileDoneCompletion(null) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
+                    if (!errorCodeList.getCauses().isEmpty()) {
+                        logger.error(String.format("failed to sync l2Network isolated, because:%s", errorCodeList.getCauses().get(0)));
+                    } else {
+                        logger.debug("sync l2Network isolated success");
+                        reply.setSuccess(Boolean.TRUE);
+                    }
+                }
+            });
+        }
+        bus.reply(msg, reply);
     }
 }

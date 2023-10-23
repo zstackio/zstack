@@ -107,6 +107,10 @@ public interface KVMConstant {
     String KVM_HOST_ATTACH_VOLUME_PATH = "/host/volume/attach";
     String KVM_HOST_DETACH_VOLUME_PATH = "/host/volume/detach";
 
+    String KVM_HOST_IPSET_ATTACH_NIC_PATH = "/host/ipset/attach";
+    String KVM_HOST_IPSET_DETACH_NIC_PATH = "/host/ipset/detach";
+    String KVM_HOST_IPSET_SYNC_PATH = "/host/ipset/sync";
+
     String KVM_AGENT_OWNER = "kvm";
 
     String ALI_REPO = "ali";

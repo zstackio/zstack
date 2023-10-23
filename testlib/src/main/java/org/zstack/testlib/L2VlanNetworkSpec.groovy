@@ -28,6 +28,8 @@ class L2VlanNetworkSpec extends L2NetworkSpec implements Simulator{
             delegate.sessionId = sessionId
             delegate.zoneUuid = (parent as ZoneSpec).inventory.uuid
             delegate.vSwitchType = vSwitchType
+            delegate.isolated = isolated
+            delegate.pvlan = pvlan
         } as L2NetworkInventory
 
         postCreate {

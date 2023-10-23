@@ -443,6 +443,8 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         vo.setvSwitchType(vSwitchType.toString());
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
+        vo.setIsolated(msg.getIsolated());
+        vo.setPvlan(msg.getPvlan());
         factory.createL2Network(vo, msg, new ReturnValueCompletion<L2NetworkInventory>(msg) {
             @Override
             public void success(L2NetworkInventory returnValue) {

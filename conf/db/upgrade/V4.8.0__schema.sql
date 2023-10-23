@@ -73,3 +73,12 @@ update EventSubscriptionVO set name = 'Host Physical Disk Insert Triggered' wher
 update EventSubscriptionVO set name = 'Host Physical Disk Status Abnormal' where uuid = '4b04f06e4ba24231ad67bd6f06093ba2';
 update EventSubscriptionVO set name = 'Host Physical Cpu Status Abnormal' where uuid = '8186fbbeab1d449b93e7be78d6045c7f';
 update EventSubscriptionVO set name = 'Host Physical Fan Status Abnormal' where uuid = '37e5bdfa2eaf49538931113ddaecf927';
+
+ALTER TABLE `zstack`.`L2NetworkEO` ADD COLUMN `isolated` boolean NOT NULL DEFAULT FALSE AFTER `virtualNetworkId`;
+ALTER TABLE `zstack`.`L2NetworkEO` ADD COLUMN `pvlan` varchar(128) DEFAULT NULL AFTER `virtualNetworkId`;
+DROP VIEW IF EXISTS `zstack`.L2NetworkVO;
+CREATE VIEW `zstack`.`L2NetworkVO` AS SELECT uuid, name, description, type, vSwitchType, virtualNetworkId, zoneUuid, physicalInterface, isolated, pvlan, createDate, lastOpDate FROM `zstack`.`L2NetworkEO` WHERE deleted IS NULL;
+
+ALTER TABLE `zstack`.`L3NetworkEO` ADD COLUMN `isolated` boolean NOT NULL DEFAULT FALSE AFTER `enableIPAM`;
+DROP VIEW IF EXISTS `zstack`.`L3NetworkVO`;
+CREATE VIEW `zstack`.`L3NetworkVO` AS SELECT uuid, name, description, state, type, zoneUuid, l2NetworkUuid, system, dnsDomain, createDate, lastOpDate, category, ipVersion, enableIPAM, isolated FROM `zstack`.`L3NetworkEO` WHERE deleted IS NULL;

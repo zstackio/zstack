@@ -573,5 +573,17 @@ class KVMSimulator implements Simulator {
             def rsp = new KVMAgentCommands.DetachVolumeRsp()
             return rsp
         }
+
+        spec.simulator(KVMConstant.KVM_HOST_IPSET_ATTACH_NIC_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_IPSET_DETACH_NIC_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_IPSET_SYNC_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
     }
 }

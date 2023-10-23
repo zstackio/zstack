@@ -788,6 +788,8 @@ public class KVMAgentCommands {
         private String l2NetworkUuid;
         private Boolean disableIptables;
         private Integer mtu;
+        private Boolean isolated;
+        private String pvlan;
 
         public String getL2NetworkUuid() {
             return l2NetworkUuid;
@@ -827,6 +829,22 @@ public class KVMAgentCommands {
 
         public void setMtu(Integer mtu) {
             this.mtu = mtu;
+        }
+
+        public Boolean getIsolated() {
+            return isolated;
+        }
+
+        public void setIsolated(Boolean isolated) {
+            this.isolated = isolated;
+        }
+
+        public String getPvlan() {
+            return pvlan;
+        }
+
+        public void setPvlan(String pvlan) {
+            this.pvlan = pvlan;
         }
     }
 
@@ -992,6 +1010,8 @@ public class KVMAgentCommands {
         
         private Boolean cleanTraffic;
 
+        private Boolean isolated;
+
         public List<String> getIps() {
             return ips;
         }
@@ -1150,6 +1170,14 @@ public class KVMAgentCommands {
 
         public void setCleanTraffic(Boolean cleanTraffic) {
             this.cleanTraffic = cleanTraffic;
+        }
+
+        public Boolean getIsolated() {
+            return isolated;
+        }
+
+        public void setIsolated(Boolean isolated) {
+            this.isolated = isolated;
         }
 
         public String getIpForTf() {
@@ -4013,5 +4041,14 @@ public class KVMAgentCommands {
     }
 
     public static class VmFstrimRsp extends AgentResponse {
+    }
+
+    public static class SyncIpsetCmd extends AgentCommand {
+        public Map<String, List<String>> l2MacMap;
+        public Map<String, String> interfaceMap;
+        public Map<String, Integer> vlanMap;
+    }
+
+    public static class SyncIpsetRsp extends AgentResponse {
     }
 }

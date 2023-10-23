@@ -81,6 +81,14 @@ public class L2NetworkInventory implements Serializable {
      */
     private Integer virtualNetworkId;
     /**
+     * @desc l2Network isolated flag
+     */
+    private Boolean isolated;
+    /**
+     * @desc l2Network private vlan id
+     */
+    private String pvlan;
+    /**
      * @desc the time this resource gets created
      */
     private Timestamp createDate;
@@ -107,6 +115,8 @@ public class L2NetworkInventory implements Serializable {
         this.setDescription(vo.getDescription());
         this.setName(vo.getName());
         this.setPhysicalInterface(vo.getPhysicalInterface());
+        this.setIsolated(vo.getIsolated());
+        this.setPvlan(vo.getPvlan());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
         this.attachedClusterUuids = new ArrayList<String>(vo.getAttachedClusterRefs().size());
@@ -213,5 +223,21 @@ public class L2NetworkInventory implements Serializable {
 
     public void setAttachedClusterUuids(List<String> attachedClusterUuids) {
         this.attachedClusterUuids = attachedClusterUuids;
+    }
+
+    public Boolean getIsolated() {
+        return isolated;
+    }
+
+    public void setIsolated(Boolean isolated) {
+        this.isolated = isolated;
+    }
+
+    public String getPvlan() {
+        return pvlan;
+    }
+
+    public void setPvlan(String pvlan) {
+        this.pvlan = pvlan;
     }
 }

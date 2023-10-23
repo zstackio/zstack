@@ -47,6 +47,9 @@ public class L3NetworkAO extends ResourceVO {
     private Boolean enableIPAM = Boolean.TRUE;
 
     @Column
+    private Boolean isolated = Boolean.FALSE;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -163,5 +166,13 @@ public class L3NetworkAO extends ResourceVO {
 
     public void setEnableIPAM(Boolean enableIPAM) {
         this.enableIPAM = enableIPAM;
+    }
+
+    public Boolean getIsolated() {
+        return isolated;
+    }
+
+    public void setIsolated(Boolean isolated) {
+        this.isolated = isolated;
     }
 }
