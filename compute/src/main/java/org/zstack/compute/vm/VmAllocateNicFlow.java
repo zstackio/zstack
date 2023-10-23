@@ -18,7 +18,6 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
@@ -89,8 +88,6 @@ public class VmAllocateNicFlow implements Flow {
             disableL3Networks.addAll(spec.getDisableL3Networks());
         }
 
-        Boolean allowDuplicatedAddress = (Boolean)data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString());
-
         // it's unlikely a vm having more than 512 nics
         final BitSet deviceIdBitmap = new BitSet(512);
         for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
@@ -118,30 +115,12 @@ public class VmAllocateNicFlow implements Flow {
             final String customNicUuid = nicOperator.getCustomNicId();
 
             // choose vnic factory based on enableSRIOV system tag & enableVhostUser globalConfig
-            VmInstanceNicFactory vnicFactory;
-            boolean enableSriov = Q.New(SystemTagVO.class)
-                    .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
-                    .eq(SystemTagVO_.resourceUuid, spec.getVmInventory().getUuid())
-                    .eq(SystemTagVO_.tag, String.format("enableSRIOV::%s", nw.getUuid()))
-                    .isExists();
-            logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
-                    enableSriov ? "vf nic" : "vnic", nw.getUuid()));
-            boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
-
-            L2NetworkVO l2nw = dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
-            VmNicType type;
-            if (l2nw.getType().equals(L2NetworkConstant.L2_TF_NETWORK_TYPE)) {
-                type = VmNicType.valueOf(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE);
-            } else {
-                VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
-                type = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
-            }
-
+            VmNicType type = nicManager.getVmNicType(spec.getVmInventory().getUuid(), nw);
             if (type == null) {
-                errs.add(Platform.operr("there is no available nicType on L2 network [%s]", l2nw.getUuid()));
+                errs.add(Platform.operr("there is no available nicType on L3 network [%s]", nw.getUuid()));
                 wcomp.allDone();
             }
-            vnicFactory = vmMgr.getVmInstanceNicFactory(type);
+            VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
 
             VmNicInventory nic = new VmNicInventory();
@@ -274,6 +253,10 @@ public class VmAllocateNicFlow implements Flow {
             for (VmDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class)) {
                 ext.afterDetachNic(vmNic);
             }
+
+            VmNicType type = VmNicType.valueOf(vmNic.getType());
+            VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
+            vnicFactory.releaseVmNic(vmNic);
         }
         dbf.removeByPrimaryKeys(destNics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList()), VmNicVO.class);
         chain.rollback();
