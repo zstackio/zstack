@@ -2191,6 +2191,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString(), setStaticIp.nicNetworkInfo);
+        for (VmNicPrepareResourceExtensionPoint exp : pluginRgty.getExtensionList(VmNicPrepareResourceExtensionPoint.class)) {
+            flowChain.then(exp.getPreparationFlow());
+        }
+
         flowChain.then(new VmAllocateNicFlow());
         flowChain.then(new VmAllocateNicIpFlow());
         flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
@@ -2423,6 +2427,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void rollback(FlowRollback trigger, Map data) {
                         refreshVO();
                         VmNicInventory nic = (VmNicInventory) data.get(vmNicInvKey);
+                        if (nic == null) {
+                            trigger.rollback();
+                            return;
+                        }
+
                         doDetachNic(nic, true, true, new Completion(trigger) {
                             @Override
                             public void success() {

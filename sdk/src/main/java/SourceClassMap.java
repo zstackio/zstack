@@ -282,6 +282,8 @@ public class SourceClassMap {
 			put("org.zstack.header.securitymachine.SecretResourcePoolInventory", "org.zstack.sdk.SecretResourcePoolInventory");
 			put("org.zstack.header.securitymachine.SecurityMachineInventory", "org.zstack.sdk.SecurityMachineInventory");
 			put("org.zstack.header.simulator.SimulatorHostInventory", "org.zstack.sdk.SimulatorHostInventory");
+			put("org.zstack.header.sriov.EthernetVfPciDeviceInventory", "org.zstack.sdk.EthernetVfPciDeviceInventory");
+			put("org.zstack.header.sriov.EthernetVfStatus", "org.zstack.sdk.EthernetVfStatus");
 			put("org.zstack.header.sriov.VmVfNicInventory", "org.zstack.sdk.VmVfNicInventory");
 			put("org.zstack.header.sshkeypair.SshKeyPairInventory", "org.zstack.sdk.SshKeyPairInventory");
 			put("org.zstack.header.sshkeypair.SshPrivateKeyPairInventory", "org.zstack.sdk.SshPrivateKeyPairInventory");
@@ -869,6 +871,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EmailTriggerActionInventory", "org.zstack.monitoring.actions.EmailTriggerActionInventory");
 			put("org.zstack.sdk.ErrorCode", "org.zstack.header.errorcode.ErrorCode");
 			put("org.zstack.sdk.ErrorCodeList", "org.zstack.header.errorcode.ErrorCodeList");
+			put("org.zstack.sdk.EthernetVfPciDeviceInventory", "org.zstack.header.sriov.EthernetVfPciDeviceInventory");
+			put("org.zstack.sdk.EthernetVfStatus", "org.zstack.header.sriov.EthernetVfStatus");
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");

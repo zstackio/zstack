@@ -146,8 +146,13 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         return inv;
     }
 
-    @Transactional
     private void removeNicFromDb(List<VmNicInventory> nics) {
+        for (VmNicInventory vmNic : nics) {
+            VmNicType type = VmNicType.valueOf(vmNic.getType());
+            VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
+            vnicFactory.releaseVmNic(vmNic);
+        }
+
         SQL.New(VmNicVO.class).in(VmNicVO_.uuid, nics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList())).delete();
     }
 
@@ -170,7 +175,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
             protected void scripts() {
                 Set<UsedIpVO> ipVOS = new HashSet<>();
                 nics.forEach(nic -> {
-                    VmNicType vmNicType = new VmNicType(nic.getType());
+                    VmNicType vmNicType = VmNicType.valueOf(nic.getType());
                     VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(vmNicType);
                     vnicFactory.createVmNic(nic, spec);
                     List<UsedIpInventory> ipInvList = new ArrayList<>();
@@ -194,47 +199,47 @@ public class ApplianceVmAllocateNicFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
-        try {
-            VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-            List<VmNicInventory> nics = spec.getDestNics();
-            if (nics.isEmpty()) {
-                return;
-            }
-
-            List<ReturnIpMsg> rmsgs = new ArrayList<>();
-            for (VmNicInventory nic : nics) {
-                if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
-                    continue;
-                }
-
-                for (UsedIpInventory ip : nic.getUsedIps()) {
-                    ReturnIpMsg msg = new ReturnIpMsg();
-                    msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-                    msg.setUsedIpUuid(ip.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-                    rmsgs.add(msg);
-                }
-            }
-
-            if (!rmsgs.isEmpty()) {
-                new While<>(rmsgs).each((msg, compl) -> {
-                    bus.send(msg, new CloudBusCallBack(compl) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            compl.done();
-                        }
-                    });
-                }).run(new WhileDoneCompletion(null) {
-                    @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        removeNicFromDb(nics);
-                    }
-                });
-            } else {
-                removeNicFromDb(nics);
-            }
-        } finally {
+        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        List<VmNicInventory> nics = spec.getDestNics();
+        if (nics.isEmpty()) {
             chain.rollback();
+            return;
         }
+
+        List<ReturnIpMsg> rmsgs = new ArrayList<>();
+        for (VmNicInventory nic : nics) {
+            if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
+                continue;
+            }
+
+            for (UsedIpInventory ip : nic.getUsedIps()) {
+                ReturnIpMsg msg = new ReturnIpMsg();
+                msg.setL3NetworkUuid(nic.getL3NetworkUuid());
+                msg.setUsedIpUuid(ip.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                rmsgs.add(msg);
+            }
+        }
+
+        if (rmsgs.isEmpty()) {
+            removeNicFromDb(nics);
+            chain.rollback();
+            return;
+        }
+
+        new While<>(rmsgs).each((msg, compl) -> {
+            bus.send(msg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(chain) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                removeNicFromDb(nics);
+                chain.rollback();
+            }
+        });
     }
 }
