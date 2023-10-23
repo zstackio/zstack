@@ -14,6 +14,10 @@ abstract class L2NetworkSpec extends Spec {
     String physicalInterface
     @SpecParam
     String vSwitchType
+    @SpecParam
+    Boolean isolated = Boolean.FALSE
+    @SpecParam
+    String pvlan
 
     L2NetworkInventory inventory
 

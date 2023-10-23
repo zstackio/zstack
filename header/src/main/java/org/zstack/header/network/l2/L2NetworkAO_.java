@@ -15,6 +15,8 @@ public class L2NetworkAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<L2NetworkAO, String> description;
     public static volatile SingularAttribute<L2NetworkAO, String> zoneUuid;
     public static volatile SingularAttribute<L2NetworkAO, String> physicalInterface;
+    public static volatile SingularAttribute<L2NetworkAO, Boolean> isolated;
+    public static volatile SingularAttribute<L2NetworkAO, String> pvlan;
     public static volatile SingularAttribute<L2NetworkAO, Timestamp> createDate;
     public static volatile SingularAttribute<L2NetworkAO, Timestamp> lastOpDate;
 }

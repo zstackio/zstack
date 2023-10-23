@@ -16,10 +16,7 @@ import org.zstack.kvm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMAgentCommands.*;
@@ -152,6 +149,7 @@ public class KvmHypervisorInfoExtensions implements
                 }
             }
         });
+
     }
 
     @Override

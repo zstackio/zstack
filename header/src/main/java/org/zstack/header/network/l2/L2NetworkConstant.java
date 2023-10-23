@@ -8,6 +8,8 @@ public interface L2NetworkConstant {
     public static final String SERVICE_ID = "network.l2";
     public static final String L2_VLAN_NETWORK_FACTORY_SERVICE_ID = "network.l2.vlan";
 
+    public static final String L2_PRIVATE_VLAN_SERVICE_ID = "network.l2.pvlan";
+
     public static final String ACTION_CATEGORY = "l2Network";
 
     @PythonClass

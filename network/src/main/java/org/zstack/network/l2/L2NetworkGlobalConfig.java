@@ -12,4 +12,7 @@ public class L2NetworkGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig DeleteL2BridgePhysically = new GlobalConfig(CATEGORY, "deleteL2.bridge");
+
+    @GlobalConfigValidation
+    public static GlobalConfig L2IsolatedWithPhysicalSwitch = new GlobalConfig(CATEGORY, "l2.isolated");
 }

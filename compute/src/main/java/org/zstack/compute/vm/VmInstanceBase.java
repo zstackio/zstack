@@ -44,6 +44,9 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkIsolatedAttachOnHostMsg;
+import org.zstack.header.network.l2.L2NetworkIsolatedDetachOnHostMsg;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
@@ -5992,6 +5995,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.getData().put(VmInstanceConstant.Params.L3NetworkInventory.toString(), destL3);
 
                 flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "before-change-nic-network-extension";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmUpdateNicExtensionPoint.class),
+                                arg -> arg.beforeUpdateNic(spec, nic, destL3));
+                        trigger.next();
+                    }
+                });
+
+                flowChain.then(new NoRollbackFlow() {
                     String __name__ = "allocate-ip-for-change-nic-network";
 
                     @Override
@@ -6225,6 +6239,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 trigger.next();
                             }
                         });
+                    }
+                });
+
+                flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "after-change-nic-network-extension";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmUpdateNicExtensionPoint.class),
+                                arg -> arg.afterUpdateNic(spec, nic, destL3));
+                        trigger.next();
                     }
                 });
 
