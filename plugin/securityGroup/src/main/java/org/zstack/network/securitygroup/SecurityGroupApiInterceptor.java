@@ -5,19 +5,25 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.APIChangeResourceOwnerMsg;
 import org.zstack.identity.Account;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.utils.Utils;
@@ -46,7 +52,7 @@ import static org.zstack.core.Platform.*;
 
 /**
  */
-public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
+public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(SecurityGroupApiInterceptor.class);
 
     @Autowired
@@ -67,6 +73,18 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             VmNicSecurityGroupMessage vmsg = (VmNicSecurityGroupMessage)msg;
             bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, vmsg.getVmNicUuid());
         }
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        List<Class> ret = new ArrayList<>();
+        ret.add(APIChangeResourceOwnerMsg.class);
+        return ret;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
     }
 
     @Override
@@ -99,11 +117,33 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmNicSecurityGroupMsg) msg);
         } else if (msg instanceof APIValidateSecurityGroupRuleMsg) {
             validate((APIValidateSecurityGroupRuleMsg) msg);
+        } else if (msg instanceof APIChangeResourceOwnerMsg) {
+            validate((APIChangeResourceOwnerMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIChangeResourceOwnerMsg msg) {
+        AccountResourceRefVO ref = Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, msg.getResourceUuid()).find();
+        if (ref == null) {
+            return;
+        }
+
+        if (VmInstanceVO.class.getSimpleName().equals(ref.getResourceType())) {
+            List<String> nics = SQL.New("select sgRef.vmNicUuid from VmInstanceVO vm, VmNicVO nic, VmNicSecurityGroupRefVO sgRef" +
+                    " where vm.uuid = :vmUuid" +
+                    " and nic.vmInstanceUuid = vm.uuid" +
+                    " and sgRef.vmNicUuid = nic.uuid", String.class)
+                    .param("vmUuid", ref.getResourceUuid())
+                    .list();
+            if (!nics.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("the resource[uuid:%s] tye vm has security group attached on its network, instead, " +
+                        "detach security group and try again"));
+            }
+        }
     }
 
     private void validate(APIValidateSecurityGroupRuleMsg msg) {
