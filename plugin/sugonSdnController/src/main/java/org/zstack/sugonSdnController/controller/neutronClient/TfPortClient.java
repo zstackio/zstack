@@ -22,7 +22,7 @@ import java.util.*;
 public class TfPortClient {
     private static final CLogger logger = Utils.getLogger(TfPortClient.class);
 
-    private ApiConnector apiConnector;
+    private TfHttpClient client;
 
     private String tenantId;
 
@@ -33,10 +33,7 @@ public class TfPortClient {
         if (sdn == null){
             throw new RuntimeException("Can not find a tf sdn controller.");
         }
-        apiConnector = ApiConnectorFactory.build(sdn.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
-        if (apiConnector == null) {
-            throw new RuntimeException(String.format("Can not connect to tf sdn controller: %s.", sdn.getIp()));
-        }
+        client = new TfHttpClient(sdn.getIp());
         tenantId = StringDSL.transToTfUuid(sdn.getAccountUuid());
     }
 
@@ -56,14 +53,14 @@ public class TfPortClient {
         ipEntities.add(ipEntity);
         requestPortResourceEntity.setFixdIps(ipEntities);
         try {
-            VirtualNetwork netObj = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, l2Id);
+            VirtualNetwork netObj = (VirtualNetwork) client.findById(VirtualNetwork.class, l2Id);
             if (netObj == null) {
                 throw new RuntimeException(String.format("Can not find tf virtualnetwork: %s.", l2Id));
             }
             //if mac-address is specified, check against the exisitng ports
             //to see if there exists a port with the same mac-address
             if (!Objects.isNull(mac)) {
-                List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) apiConnector.listWithDetail(
+                List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) client.listWithDetail(
                         VirtualMachineInterface.class, null, null);
 
                 for (VirtualMachineInterface port : ports) {
@@ -92,13 +89,13 @@ public class TfPortClient {
             port.setDisplayName(vmName);
             // always request for v4 and v6 ip object and handle the failure
             // create the object
-            Status result = apiConnector.create(port);
+            Status result = client.create(port);
             if (!result.isSuccess()) {
                 throw new RuntimeException(String.format("Failed to create tf VirtualMachineInterface: %s, reason: %s",
                         port.getUuid(), result.getMsg()));
             }
             // add support, nova boot --nic subnet-id=subnet_uuid
-            VirtualMachineInterface realPort = (VirtualMachineInterface) apiConnector.findById(
+            VirtualMachineInterface realPort = (VirtualMachineInterface) client.findById(
                     VirtualMachineInterface.class, port.getUuid());
 
             if (ip != null) {
@@ -106,7 +103,7 @@ public class TfPortClient {
                     portCreateInstanceIp(netObj, realPort, l3Id, ip);
                 } catch (Exception e) {
                     try {
-                        apiConnector.delete(realPort);
+                        client.delete(realPort);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -125,7 +122,7 @@ public class TfPortClient {
                     ipv4PortDelete = true;
                     // failure in creating the instance ip. Roll back.
                     try {
-                        apiConnector.delete(realPort);
+                        client.delete(realPort);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -133,13 +130,13 @@ public class TfPortClient {
                 }
                 if (ipv4PortDelete) {
                     try {
-                        apiConnector.delete(realPort);
+                        client.delete(realPort);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
             }
-            VirtualMachineInterface newestPort = (VirtualMachineInterface) apiConnector.findById(
+            VirtualMachineInterface newestPort = (VirtualMachineInterface) client.findById(
                     VirtualMachineInterface.class, realPort.getUuid());
             return getPortResponse(newestPort);
         } catch (Exception e) {
@@ -147,7 +144,7 @@ public class TfPortClient {
         }
     }
 
-    private TfPortResponse getPortResponse(VirtualMachineInterface portObj) throws IOException {
+    private TfPortResponse getPortResponse(VirtualMachineInterface portObj) {
         TfPortResponse tfPortResponse = new TfPortResponse();
         tfPortResponse.setPortId(portObj.getUuid());
         tfPortResponse.setCode(200);
@@ -156,7 +153,7 @@ public class TfPortClient {
         List<ObjectReference<ApiPropertyBase>> ipBackRefs = portObj.getInstanceIpBackRefs();
         if (ipBackRefs != null && ipBackRefs.size() > 0) {
             for (ObjectReference<ApiPropertyBase> ipBackRef : ipBackRefs) {
-                InstanceIp ipObj = (InstanceIp) apiConnector.findById(InstanceIp.class, ipBackRef.getUuid());
+                InstanceIp ipObj = (InstanceIp) client.findById(InstanceIp.class, ipBackRef.getUuid());
                 String ipAddr = ipObj != null ? ipObj.getAddress() : null;
                 String subnetId = Objects.requireNonNull(ipObj).getSubnetUuid();
                 ipEntity.setIpAddress(ipAddr);
@@ -169,7 +166,7 @@ public class TfPortClient {
     }
 
     private Status portCreateInstanceIp(VirtualNetwork virtualNetwork, VirtualMachineInterface port,
-                                      String subnetId, String ip) throws IOException {
+                                      String subnetId, String ip) {
         InstanceIp ipObj = new InstanceIp();
         String ipFamily = "v4";
         if (ip != null) {
@@ -192,12 +189,12 @@ public class TfPortClient {
         PermType2 permType2 = new PermType2();
         permType2.setOwner(tenantId);
         ipObj.setPerms2(permType2);
-        return apiConnector.create(ipObj);
+        return client.create(ipObj);
     }
 
     private VirtualMachineInterface getTfPortObject(TfPortRequestResource requestPortResourceEntity, VirtualNetwork virtualNetwork, String tfPortUUid) throws IOException {
         String projectId = requestPortResourceEntity.getTenantId();
-        Project projectObj = (Project) apiConnector.findById(Project.class, projectId);
+        Project projectObj = (Project) client.findById(Project.class, projectId);
         IdPermsType idPermsType = new IdPermsType();
         idPermsType.setEnable(true);
         String portUuid = String.valueOf(UUID.randomUUID());
@@ -231,11 +228,11 @@ public class TfPortClient {
     }
 
     public boolean ipInUseCheck(String ipAddr, String netId) throws IOException {
-        VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, netId);
+        VirtualNetwork virtualNetwork = (VirtualNetwork) client.findById(VirtualNetwork.class, netId);
         if (virtualNetwork != null) {
             List<ObjectReference<ApiPropertyBase>> instanceIpBackRefs = virtualNetwork.getInstanceIpBackRefs();
             if (instanceIpBackRefs != null) {
-                List<InstanceIp> ipObjects = (List<InstanceIp>) apiConnector.getObjects(InstanceIp.class, instanceIpBackRefs);
+                List<InstanceIp> ipObjects = (List<InstanceIp>) client.getObjects(InstanceIp.class, instanceIpBackRefs);
                 if (ipObjects != null) {
                     for (InstanceIp ipObj : ipObjects) {
                         if (ipObj.getAddress().equals(ipAddr)) {
@@ -252,7 +249,7 @@ public class TfPortClient {
     private VirtualMachine ensureInstanceExists(String deviceId, String projectId, boolean baremeetal) throws IOException {
         VirtualMachine instanceObj = null;
         try {
-            instanceObj = (VirtualMachine) apiConnector.findById(VirtualMachine.class, deviceId);
+            instanceObj = (VirtualMachine) client.findById(VirtualMachine.class, deviceId);
             if (instanceObj != null) {
                 return instanceObj;
             }
@@ -267,18 +264,18 @@ public class TfPortClient {
             } else {
                 instanceObj.setServerType("virtual-server");
             }
-            apiConnector.create(instanceObj);
+            client.create(instanceObj);
         } catch (Exception e) { // Exception......
             VirtualMachine dbInstanceObj = null;
             if (instanceObj.getUuid() != null) {
-                dbInstanceObj = (VirtualMachine) apiConnector.findById(VirtualMachine.class, instanceObj.getUuid());
+                dbInstanceObj = (VirtualMachine) client.findById(VirtualMachine.class, instanceObj.getUuid());
             } else {
-                dbInstanceObj = (VirtualMachine) apiConnector.findByFQN(VirtualMachine.class, instanceObj.getName());
+                dbInstanceObj = (VirtualMachine) client.findByFQN(VirtualMachine.class, instanceObj.getName());
 
             }
             if (dbInstanceObj != null) {
                 if (baremeetal && !Objects.equals(dbInstanceObj.getServerType(), "baremetal-server")) {
-                    apiConnector.update(instanceObj);
+                    client.update(instanceObj);
                 } else {
                     instanceObj = dbInstanceObj;
                 }
@@ -289,24 +286,24 @@ public class TfPortClient {
 
     public TfPortResponse getVirtualMachineInterface(String portId) {
         try {
-            VirtualMachineInterface port = (VirtualMachineInterface) apiConnector.findById(
+            VirtualMachineInterface port = (VirtualMachineInterface) client.findById(
                     VirtualMachineInterface.class, portId);
             if (port != null){
                 return getPortResponse(port);
             }else {
                 return null;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public List<VirtualMachineInterface> getVirtualMachineInterfaceDetail() {
         try {
-            List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) apiConnector.listWithDetail(
+            List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) client.listWithDetail(
                     VirtualMachineInterface.class, null, null);
             return ports;
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -314,7 +311,7 @@ public class TfPortClient {
     public TfPortResponse deletePort(String portId) {
         TfPortResponse response = new TfPortResponse();
         try {
-            VirtualMachineInterface portObj = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class, portId);
+            VirtualMachineInterface portObj = (VirtualMachineInterface) client.findById(VirtualMachineInterface.class, portId);
             if (portObj == null) {
                 response.setCode(200);
                 return response;
@@ -323,18 +320,18 @@ public class TfPortClient {
             List<ObjectReference<ApiPropertyBase>> iipBackRefs = portObj.getInstanceIpBackRefs();
             if (iipBackRefs != null && iipBackRefs.size() > 0) {
                 for (ObjectReference<ApiPropertyBase> iipBackRef : iipBackRefs) {
-                    InstanceIp iipObj = (InstanceIp) apiConnector.findById(InstanceIp.class, iipBackRef.getUuid());
+                    InstanceIp iipObj = (InstanceIp) client.findById(InstanceIp.class, iipBackRef.getUuid());
                     // in case of shared ip only delete the link to the VMI
                     if (iipObj != null) {
                         iipObj.removeVirtualMachineInterface(portObj);
                         List<ObjectReference<ApiPropertyBase>> virtualMachineInterface = iipObj.getVirtualMachineInterface();
                         if (virtualMachineInterface == null || virtualMachineInterface.size() == 0) {
-                            Status delResult = apiConnector.delete(InstanceIp.class, iipBackRef.getUuid());
+                            Status delResult = client.delete(InstanceIp.class, iipBackRef.getUuid());
                             if (!delResult.isSuccess()) {
                                 throw new RuntimeException("Tf instance ip delete failed: " + iipBackRef.getUuid());
                             }
                         } else {
-                            apiConnector.update(iipObj);
+                            client.update(iipObj);
                         }
                     }
                 }
@@ -345,12 +342,12 @@ public class TfPortClient {
                 for (ObjectReference<ApiPropertyBase> fipBackRef : fipBackRefs) {
                     FloatingIp fipObj = getTfFloatingipObject(fipBackRef.getUuid());
                     if (fipObj != null) {
-                        apiConnector.update(fipObj);
+                        client.update(fipObj);
                     }
                 }
             }
 
-            apiConnector.delete(VirtualMachineInterface.class, portId);
+            client.delete(VirtualMachineInterface.class, portId);
             // delete VirtualMachine if this was the last port
             String instanceId;
             if (Objects.equals(portObj.getParentType(), "virtual-machine")) {
@@ -364,9 +361,9 @@ public class TfPortClient {
                 }
             }
             if (instanceId != null) {
-                VirtualMachine vm = (VirtualMachine) apiConnector.findById(VirtualMachine.class, instanceId);
+                VirtualMachine vm = (VirtualMachine) client.findById(VirtualMachine.class, instanceId);
                 if (CollectionUtils.isEmpty(vm.getVirtualMachineInterfaceBackRefs())) {
-                    apiConnector.delete(VirtualMachine.class, instanceId);
+                    client.delete(VirtualMachine.class, instanceId);
                 }
             }
             response.setCode(200);
@@ -380,8 +377,8 @@ public class TfPortClient {
         }
     }
 
-    private FloatingIp getTfFloatingipObject(String uuid) throws IOException {
-        FloatingIp fipObj = (FloatingIp) apiConnector.findById(FloatingIp.class, uuid);
+    private FloatingIp getTfFloatingipObject(String uuid) {
+        FloatingIp fipObj = (FloatingIp) client.findById(FloatingIp.class, uuid);
         if (fipObj == null) {
             return null;
         }
@@ -399,7 +396,7 @@ public class TfPortClient {
      */
     public boolean checkTfIpAvailability(String ipAddr, String subnetId) throws IOException {
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, subnetId).find();
-        VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(
+        VirtualNetwork virtualNetwork = (VirtualNetwork) client.findById(
                 VirtualNetwork.class, StringDSL.transToTfUuid(l3Network.getL2NetworkUuid()));
 
         if (Objects.isNull(virtualNetwork)) {
@@ -413,11 +410,11 @@ public class TfPortClient {
             List<ObjectReference<ApiPropertyBase>> floatingIpPools = virtualNetwork.getFloatingIpPools();
             if (CollectionUtils.isNotEmpty(floatingIpPools)) {
                 for (ObjectReference<ApiPropertyBase> floatingIpPool : floatingIpPools) {
-                    FloatingIpPool floatingIpPoolObj = (FloatingIpPool) apiConnector.findById(FloatingIpPool.class, floatingIpPool.getUuid());
+                    FloatingIpPool floatingIpPoolObj = (FloatingIpPool) client.findById(FloatingIpPool.class, floatingIpPool.getUuid());
                     List<ObjectReference<ApiPropertyBase>> floatingIps = floatingIpPoolObj.getFloatingIps();
                     if (CollectionUtils.isNotEmpty(floatingIps)) {
                         for (ObjectReference<ApiPropertyBase> fip : floatingIps) {
-                            FloatingIp fipObj = (FloatingIp) apiConnector.findById(FloatingIp.class, fip.getUuid());
+                            FloatingIp fipObj = (FloatingIp) client.findById(FloatingIp.class, fip.getUuid());
                             if (fipObj.getAddress().equals(ipAddr)) {
                                 return true;
                             }
@@ -427,7 +424,7 @@ public class TfPortClient {
             }
         } else { // else instance ips.
             if (CollectionUtils.isNotEmpty(instanceIpBackRefs)) {
-                List<InstanceIp> ipObjects = (List<InstanceIp>) apiConnector.getObjects(InstanceIp.class, instanceIpBackRefs);
+                List<InstanceIp> ipObjects = (List<InstanceIp>) client.getObjects(InstanceIp.class, instanceIpBackRefs);
                 // check all instance ips.
                 if (CollectionUtils.isNotEmpty(ipObjects)) {
                     for (InstanceIp ipObj : ipObjects) {
@@ -480,11 +477,11 @@ public class TfPortClient {
 
     public void updateTfPort(String tfPortUUid, String accountId, String deviceId) {
         try {
-            VirtualMachineInterface port = (VirtualMachineInterface) apiConnector.findById(
+            VirtualMachineInterface port = (VirtualMachineInterface) client.findById(
                     VirtualMachineInterface.class, tfPortUUid);
             VirtualMachine vm = ensureInstanceExists(deviceId, accountId, false);
             port.setVirtualMachine(vm);
-            apiConnector.update(port);
+            client.update(port);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -16,9 +16,7 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.header.*;
-import org.zstack.sugonSdnController.controller.api.ApiConnector;
-import org.zstack.sugonSdnController.controller.api.ApiConnectorFactory;
-import org.zstack.sugonSdnController.controller.api.Status;
+import org.zstack.sugonSdnController.controller.api.*;
 import org.zstack.sugonSdnController.controller.api.types.*;
 import org.zstack.sugonSdnController.header.APICreateL2TfNetworkMsg;
 import org.zstack.utils.StringDSL;
@@ -26,7 +24,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
@@ -38,8 +35,11 @@ public class SugonSdnController implements TfSdnController, SdnController {
 
     private SdnControllerVO sdnControllerVO;
 
+    private TfHttpClient client;
+
     public SugonSdnController(SdnControllerVO vo) {
         sdnControllerVO = vo;
+        client = new TfHttpClient(vo.getIp());
     }
 
     @Override
@@ -56,21 +56,20 @@ public class SugonSdnController implements TfSdnController, SdnController {
                 return;
             }
             String accountUuid = StringDSL.transToTfUuid(accountVO.getUuid());
-            ApiConnector apiConnector = ApiConnectorFactory.build(msg.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
-            assert apiConnector != null;
-            Domain domain = (Domain) apiConnector.findByFQN(Domain.class, SugonSdnControllerConstant.TF_DEFAULT_DOMAIN);
+            client = new TfHttpClient(msg.getIp());
+            Domain domain = (Domain) client.getDomain();
             if(domain == null){
                 completion.fail(operr("get default domain on tf controller failed"));
                 return;
             }
-            Project defaultProject = (Project) apiConnector.findById(Project.class, accountUuid);
+            Project defaultProject = (Project) client.findById(Project.class, accountUuid);
             if(defaultProject == null){
                 Project project = new Project();
                 project.setParent(domain);
                 project.setDisplayName(SugonSdnControllerConstant.ZSTACK_DEFAULT_ACCOUNT);
                 project.setName(accountUuid);
                 project.setUuid(accountUuid);
-                Status status = apiConnector.create(project);
+                Status status = client.create(project);
                 if(status.isSuccess()){
                     logger.info("create tf project for zstack admin success");
                     completion.success();
@@ -81,7 +80,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                 logger.warn("tf project for zstack admin already exists: " + accountUuid);
                 completion.success();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             String message = String.format("create tf project for zstack admin on tf controller failed due to: %s", e.getMessage());
             logger.error(message, e);
             completion.fail(operr(message));
@@ -135,8 +134,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
         String name = l2NetworkVO.getName();
         try {
             APICreateL2TfNetworkMsg l2TfNetworkMsg = (APICreateL2TfNetworkMsg) msg;
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
-            Project project = (Project) apiConnector.findById(Project.class, accountUuid);
+            Project project = (Project) client.findById(Project.class, accountUuid);
             if(project == null) {
                 completion.fail(operr("get project[uuid:%s] on tf controller failed ", accountUuid));
             }else{
@@ -149,7 +147,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     IPSegmentType ipSegmentType = new IPSegmentType(l2TfNetworkMsg.getIpPrefix(), l2TfNetworkMsg.getIpPrefixLength());
                     virtualNetwork.setIpSegment(ipSegmentType);
                 }
-                Status status = apiConnector.create(virtualNetwork);
+                Status status = client.create(virtualNetwork);
                 if(status.isSuccess()){
                     logger.info("create tf l2 network success, name:" + name);
                     completion.success();
@@ -157,7 +155,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     completion.fail(operr("create tf l2 network[name:%s] on tf controller failed ", name));
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             String message = String.format("create tf l2 network[name:%s] on tf controller failed due to: %s", name, e.getMessage());
             logger.error(message, e);
             completion.fail(operr(message));
@@ -169,13 +167,12 @@ public class SugonSdnController implements TfSdnController, SdnController {
         String uuid = StringDSL.transToTfUuid(l2NetworkVO.getUuid());
         String name = l2NetworkVO.getName();
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
-            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, uuid);
+            VirtualNetwork virtualNetwork = (VirtualNetwork) client.findById(VirtualNetwork.class, uuid);
             if(virtualNetwork == null){
                 completion.fail(operr("get virtual network[uuid:%s] on tf controller failed ", uuid));
             }else{
                 virtualNetwork.setDisplayName(name);
-                Status status = apiConnector.update(virtualNetwork);
+                Status status = client.update(virtualNetwork);
                 if(status.isSuccess()){
                     logger.info("update tf l2 network success, name:" + name);
                     completion.success();
@@ -183,7 +180,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     completion.fail(operr("update tf l2 network[name:%s] on tf controller failed ", name));
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             String message = String.format("update tf l2 network[name:%s] on tf controller failed due to: %s ", name, e.getMessage());
             logger.error(message, e);
             completion.fail(operr(message));
@@ -194,15 +191,14 @@ public class SugonSdnController implements TfSdnController, SdnController {
     public void deleteL2Network(L2NetworkVO l2NetworkVO, List<String> systemTags, Completion completion) {
         String uuid = StringDSL.transToTfUuid(l2NetworkVO.getUuid());
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
-            Status status = apiConnector.delete(VirtualNetwork.class, uuid);
+            Status status = client.delete(VirtualNetwork.class, uuid);
             if(status.isSuccess()){
                 logger.info("delete tf l2 network success, uuid:" + uuid);
                 completion.success();
             }else{
                 completion.fail(operr("delete tf l2 network[uuid:%s] on tf controller failed ", uuid));
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             String message = String.format("delete tf l2 network[uuid:%s] on tf controller failed due to: %s", uuid, e.getMessage());
             logger.error(message, e);
             completion.fail(operr(message));
@@ -296,9 +292,8 @@ public class SugonSdnController implements TfSdnController, SdnController {
     @Override
     public void deleteL3Network(L3NetworkVO l3NetworkVO, Completion completion) {
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
             // 获取 tf 网络信息
-            VirtualNetwork vn = (VirtualNetwork)apiConnector.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
+            VirtualNetwork vn = (VirtualNetwork)client.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
             if(vn!=null){
                 // 判断tf网络是否存在
                 if(vn.getNetworkIpam()!=null)  {
@@ -313,7 +308,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                         }
                     }
                     // 更新 tf 网络信息
-                    Status status = apiConnector.update(vn);
+                    Status status = client.update(vn);
                     if(!status.isSuccess()){
                         completion.fail(operr("delete tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                        completion.fail(operr("delete tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
@@ -341,9 +336,8 @@ public class SugonSdnController implements TfSdnController, SdnController {
     @Override
     public void updateL3Network(L3NetworkVO l3NetworkVO, APIUpdateL3NetworkMsg msg, Completion completion) {
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
             // 获取 tf 网络信息
-            VirtualNetwork vn = (VirtualNetwork)apiConnector.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
+            VirtualNetwork vn = (VirtualNetwork)client.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
             // 判断tf网络是否存在
             if(vn!=null){
                 if(vn.getNetworkIpam()!=null) {
@@ -362,10 +356,9 @@ public class SugonSdnController implements TfSdnController, SdnController {
                             checkOp.get().addDnsNameservers(msg.getDnsDomain());
                         }
                         // 更新 tf 网络信息
-                        Status status = apiConnector.update(vn);
+                        Status status = client.update(vn);
                         if(!status.isSuccess()){
                             completion.fail(operr("update tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
-//                            completion.fail(operr("update tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else{
                             completion.success();
                         }
@@ -392,9 +385,8 @@ public class SugonSdnController implements TfSdnController, SdnController {
     @Override
     public void addL3IpRangeByCidr(L3NetworkVO l3NetworkVO, APIAddIpRangeByNetworkCidrMsg msg, Completion completion) {
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
             // 获取 tf 网络信息
-            VirtualNetwork vn = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
+            VirtualNetwork vn = (VirtualNetwork) client.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
             if(vn!=null){
                 IpamSubnetType ipamSubnetType = new IpamSubnetType();
                 // subnet_uuid
@@ -438,9 +430,6 @@ public class SugonSdnController implements TfSdnController, SdnController {
                 ipamSubnetType.addAllocationPools(allocationPoolType);
                 // 设置分配IP从小到大
                 ipamSubnetType.setAddrFromStart(true);
-                // 封装实体 -> ObjectReference<VnSubnetsType>
-                IpamSubnets ipamSubnets = new IpamSubnets();
-                ipamSubnets.addSubnets(ipamSubnetType);
                 VnSubnetsType vnSubnetsType = new VnSubnetsType();
                 vnSubnetsType.addIpamSubnets(ipamSubnetType);
                 if(vn.getNetworkIpam()!=null){
@@ -451,7 +440,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     vn.setNetworkIpam(networkIpam,vnSubnetsType);
                 }
                 // 更新 tf 网络信息
-                Status status = apiConnector.update(vn);
+                Status status = client.update(vn);
                 if(!status.isSuccess()){
                     completion.fail(operr("add tf l3 subnet[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                    completion.fail(operr("add tf l3 subnet[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
@@ -473,9 +462,8 @@ public class SugonSdnController implements TfSdnController, SdnController {
     @Override
     public void addL3HostRoute(L3NetworkVO l3NetworkVO, APIAddHostRouteToL3NetworkMsg msg, Completion completion) {
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
             // 获取 tf 网络信息
-            VirtualNetwork vn = (VirtualNetwork)apiConnector.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
+            VirtualNetwork vn = (VirtualNetwork)client.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
             if(vn!=null){
                 // 判断tf网络是否存在
                 if(vn.getNetworkIpam()!=null) {
@@ -496,7 +484,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                         // 替换host route
                         checkOp.get().setHostRoutes(routeTableType);
                         // 更新 tf 网络信息
-                        Status status = apiConnector.update(vn);
+                        Status status = client.update(vn);
                         if(!status.isSuccess()){
                             completion.fail(operr("add host router to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                            completion.fail(operr("add host router to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
@@ -526,9 +514,8 @@ public class SugonSdnController implements TfSdnController, SdnController {
     @Override
     public void deleteL3HostRoute(L3NetworkVO l3NetworkVO, APIRemoveHostRouteFromL3NetworkMsg msg, Completion completion) {
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
             // 获取 tf 网络信息
-            VirtualNetwork vn = (VirtualNetwork)apiConnector.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
+            VirtualNetwork vn = (VirtualNetwork)client.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
             if(vn!=null){
                 // 判断tf网络是否存在
                 if(vn.getNetworkIpam()!=null) {
@@ -550,7 +537,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                         // 替换host route
                         checkOp.get().setHostRoutes(routeTableType);
                         // 更新 tf 网络信息
-                        Status status = apiConnector.update(vn);
+                        Status status = client.update(vn);
                         if(!status.isSuccess()){
                             completion.fail(operr("delete host route from l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                            completion.fail(operr("delete host route from l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
@@ -580,9 +567,8 @@ public class SugonSdnController implements TfSdnController, SdnController {
     @Override
     public void addL3Dns(L3NetworkVO l3NetworkVO, APIAddDnsToL3NetworkMsg msg, Completion completion) {
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
             // 获取 tf 网络信息
-            VirtualNetwork vn = (VirtualNetwork)apiConnector.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
+            VirtualNetwork vn = (VirtualNetwork)client.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
             // 判断tf网络是否存在
             if(vn!=null){
                 if(vn.getNetworkIpam()!=null) {
@@ -608,7 +594,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                             checkOp.get().setDhcpOptionList(dhcpOptionsListType);
                         }
                         // 更新 tf 网络信息
-                        Status status = apiConnector.update(vn);
+                        Status status = client.update(vn);
                         if(!status.isSuccess()){
                             completion.fail(operr("add dns to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                            completion.fail(operr("add dns to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
@@ -638,9 +624,8 @@ public class SugonSdnController implements TfSdnController, SdnController {
     @Override
     public void deleteL3Dns(L3NetworkVO l3NetworkVO, APIRemoveDnsFromL3NetworkMsg msg, Completion completion) {
         try {
-            ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
             // 获取 tf 网络信息
-            VirtualNetwork vn = (VirtualNetwork)apiConnector.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
+            VirtualNetwork vn = (VirtualNetwork)client.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3NetworkVO.getL2NetworkUuid()));
             if(vn!=null){
                 // 判断tf网络是否存在
                 if(vn.getNetworkIpam()!=null) {
@@ -654,7 +639,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                         dnsValues.remove(msg.getDns());
                         checkOp.get().getDhcpOptionList().getDhcpOption().get(0).setDhcpOptionValue(StringUtils.join(dnsValues, " "));
                         // 更新 tf 网络信息
-                        Status status = apiConnector.update(vn);
+                        Status status = client.update(vn);
                         if (!status.isSuccess()) {
                             completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                            completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));

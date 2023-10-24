@@ -193,13 +193,6 @@ public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtension
 
     private void handle(APIDeleteL2NetworkMsg msg) {
         APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
-        if(Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, msg.getL2NetworkUuid()).count() > 0){
-            String error = String.format("L2Network[%s] still has some L3Networks, please delete L3Networks first.",
-                    msg.getL2NetworkUuid());
-            evt.setError(operr(error));
-            bus.publish(evt);
-            return;
-        }
         deleteTfL2NetworkOnSdnController(self, new Completion(msg) {
             @Override
             public void success() {

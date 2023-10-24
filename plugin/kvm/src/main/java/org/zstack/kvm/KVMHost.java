@@ -3571,7 +3571,8 @@ public class KVMHost extends HostBase implements Host {
         String nicType = nic.getType();
         if (!nicType.equals(VmInstanceConstant.VIRTUAL_NIC_TYPE) &&
             !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VDPA) &&
-            !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE)) {
+            !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE) &&
+            !nic.getType().equals(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE)) {
             return to;
         }
 
