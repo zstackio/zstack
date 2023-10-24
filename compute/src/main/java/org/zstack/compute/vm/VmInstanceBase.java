@@ -2063,6 +2063,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     @Deferred
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void attachNic(final Message msg, final List<String> l3Uuids, final ReturnValueCompletion<VmNicInventory> completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
@@ -2175,21 +2176,11 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
         setDefaultL3Network.set();
-        Defer.guard(new Runnable() {
-            @Override
-            public void run() {
-                setDefaultL3Network.rollback();
-            }
-        });
+        Defer.guard(setDefaultL3Network::rollback);
 
         final SetStaticIp setStaticIp = new SetStaticIp();
         setStaticIp.set();
-        Defer.guard(new Runnable() {
-            @Override
-            public void run() {
-                setStaticIp.rollback();
-            }
-        });
+        Defer.guard(setStaticIp::rollback);
 
         final SetL3SecurityGroupSystemTag setSystemTag = new SetL3SecurityGroupSystemTag();
         setSystemTag.set();
@@ -2212,7 +2203,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         spec.setL3Networks(list(new VmNicSpec(l3s)));
-        spec.setDestNics(new ArrayList<VmNicInventory>());
+        spec.setDestNics(new ArrayList<>());
 
         if (msg instanceof APIAttachL3NetworkToVmMsg) {
             APIAttachL3NetworkToVmMsg msg1 = (APIAttachL3NetworkToVmMsg) msg;
@@ -2222,14 +2213,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
-                new ForEachFunction<VmBeforeAttachL3NetworkExtensionPoint>() {
-                    @Override
-                    public void run(VmBeforeAttachL3NetworkExtensionPoint arg) {
-                        for (L3NetworkInventory l3 : l3s) {
-                            arg.vmBeforeAttachL3Network(vm, l3);
-                        }
-                    }
-                });
+                arg -> l3s.forEach(l3 -> arg.vmBeforeAttachL3Network(vm, l3)));
 
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         setFlowMarshaller(flowChain);
@@ -2243,21 +2227,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         setAdditionalFlow(flowChain, spec);
         if (self.getState() == VmInstanceState.Running) {
             flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
-            flowChain.then(new VmAttachNicOnHypervisorFlow());
         }
+        flowChain.then(new VmAttachNicOnHypervisorFlow());
 
         flowChain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterAttachL3NetworkExtensionPoint.class),
-                        new ForEachFunction<VmAfterAttachL3NetworkExtensionPoint>() {
-                            @Override
-                            public void run(VmAfterAttachL3NetworkExtensionPoint arg) {
-                                for (L3NetworkInventory l3 : l3s) {
-                                    arg.vmAfterAttachL3Network(vm, l3);
-                                }
-                            }
-                        });
+                        arg -> l3s.forEach(l3 -> arg.vmAfterAttachL3Network(vm, l3)));
                 VmNicInventory nic = spec.getDestNics().get(0);
                 completion.success(nic);
             }
@@ -2265,14 +2242,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmFailToAttachL3NetworkExtensionPoint.class),
-                        new ForEachFunction<VmFailToAttachL3NetworkExtensionPoint>() {
-                            @Override
-                            public void run(VmFailToAttachL3NetworkExtensionPoint arg) {
-                                for (L3NetworkInventory l3 : l3s) {
-                                    arg.vmFailToAttachL3Network(vm, l3, errCode);
-                                }
-                            }
-                        });
+                        arg -> l3s.forEach(l3 -> arg.vmFailToAttachL3Network(vm, l3, errCode)));
                 setDefaultL3Network.rollback();
                 setStaticIp.rollback();
                 setSystemTag.rollback();
@@ -5097,24 +5067,17 @@ public class VmInstanceBase extends AbstractVmInstance {
         self = dbf.updateAndRefresh(self);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void detachNic(final String nicUuid, boolean releaseNic, boolean isRollback, boolean dbOnly, final Completion completion) {
-        VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
-            @Override
-            public VmNicVO call(VmNicVO arg) {
-                return arg.getUuid().equals(nicUuid) ? arg : null;
-            }
-        });
+        VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), arg -> arg.getUuid().equals(nicUuid) ? arg : null);
         if (vmNicVO == null) {
             completion.success();
             return;
         }
         final VmNicInventory nic = VmNicInventory.valueOf(
-                CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
-                    @Override
-                    public VmNicVO call(VmNicVO arg) {
-                        return arg.getUuid().equals(nicUuid) ? arg : null;
-                    }
-                })
+                CollectionUtils.find(
+                        self.getVmNics(),
+                        (Function<VmNicVO, VmNicVO>) arg -> arg.getUuid().equals(nicUuid) ? arg : null)
         );
 
         for (VmDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class)) {
@@ -5122,12 +5085,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class),
-                new ForEachFunction<VmDetachNicExtensionPoint>() {
-                    @Override
-                    public void run(VmDetachNicExtensionPoint arg) {
-                        arg.beforeDetachNic(nic);
-                    }
-                });
+                arg -> arg.beforeDetachNic(nic));
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachNic);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
@@ -5146,7 +5104,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
         setAdditionalFlow(flowChain, spec);
-        if (!dbOnly && self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {
+        if (!dbOnly) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());
         }
         flowChain.then(new VmReleaseResourceOnDetachingNicFlow());
@@ -5173,12 +5131,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 selectDefaultL3(nic);
                 removeStaticIp();
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class),
-                        new ForEachFunction<VmDetachNicExtensionPoint>() {
-                            @Override
-                            public void run(VmDetachNicExtensionPoint arg) {
-                                arg.afterDetachNic(nic);
-                            }
-                        });
+                        arg -> arg.afterDetachNic(nic));
                 completion.success();
             }
 
@@ -5193,12 +5146,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class),
-                        new ForEachFunction<VmDetachNicExtensionPoint>() {
-                            @Override
-                            public void run(VmDetachNicExtensionPoint arg) {
-                                arg.failedToDetachNic(nic, errCode);
-                            }
-                        });
+                        arg -> arg.failedToDetachNic(nic, errCode));
                 completion.fail(errCode);
             }
         }).start();
