@@ -1,12 +1,3 @@
-ALTER TABLE `zstack`.`BlockPrimaryStorageVO` DROP `encryptGatewayIp`;
-ALTER TABLE `zstack`.`BlockPrimaryStorageVO` DROP `encryptGatewayPort`;
-ALTER TABLE `zstack`.`BlockPrimaryStorageVO` DROP `encryptGatewayUsername`;
-ALTER TABLE `zstack`.`BlockPrimaryStorageVO` DROP `encryptGatewayPassword`;
-ALTER TABLE `zstack`.`BlockScsiLunVO` DROP `type`;
-ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN `id` int unsigned default 0;
-ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN lunType varchar(256) DEFAULT NULL;
-ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN `lunMapId` int unsigned default 0;
-
 CREATE TABLE IF NOT EXISTS `zstack`.`BlockPrimaryStorageHostRefVO` (
     `id` BIGINT UNSIGNED NOT NULL UNIQUE AUTO_INCREMENT,
     `initiatorName` varchar(256) DEFAULT NULL,
@@ -14,6 +5,83 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BlockPrimaryStorageHostRefVO` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fkBlockPrimaryStorageHostRefVOPrimaryStorageHostRefVO` FOREIGN KEY (`id`) REFERENCES `zstack`.`PrimaryStorageHostRefVO` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP PROCEDURE IF EXISTS `AlterBlockPrimaryStorageTable`;
+DELIMITER $$
+CREATE PROCEDURE AlterBlockPrimaryStorageTable()
+    BEGIN
+        IF EXISTS( SELECT NULL
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE table_name = 'BlockPrimaryStorageVO'
+                            AND table_schema = 'zstack'
+                            AND column_name = 'encryptGatewayIp') THEN
+            ALTER TABLE `zstack`.`BlockPrimaryStorageVO` DROP `encryptGatewayIp`;
+        END IF;
+        IF EXISTS( SELECT NULL
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE table_name = 'BlockPrimaryStorageVO'
+                            AND table_schema = 'zstack'
+                            AND column_name = 'encryptGatewayPort') THEN
+            ALTER TABLE `zstack`.`BlockPrimaryStorageVO` DROP `encryptGatewayPort`;
+        END IF;
+        IF EXISTS( SELECT NULL
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE table_name = 'BlockPrimaryStorageVO'
+                            AND table_schema = 'zstack'
+                            AND column_name = 'encryptGatewayUsername') THEN
+            ALTER TABLE `zstack`.`BlockPrimaryStorageVO` DROP `encryptGatewayUsername`;
+        END IF;
+        IF EXISTS( SELECT NULL
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE table_name = 'BlockPrimaryStorageVO'
+                            AND table_schema = 'zstack'
+                            AND column_name = 'encryptGatewayPassword') THEN
+            ALTER TABLE `zstack`.`BlockPrimaryStorageVO` DROP `encryptGatewayPassword`;
+        END IF;
+    END $$
+DELIMITER ;
+call AlterBlockPrimaryStorageTable;
+DROP PROCEDURE IF EXISTS `AlterBlockPrimaryStorageTable`;
+
+DROP PROCEDURE IF EXISTS `AlterBlockScsiLunTable`;
+DELIMITER $$
+CREATE PROCEDURE AlterBlockScsiLunTable()
+    BEGIN
+        IF EXISTS( SELECT NULL
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE table_name = 'BlockScsiLunVO'
+                            AND table_schema = 'zstack'
+                            AND column_name = 'type') THEN
+            ALTER TABLE `zstack`.`BlockScsiLunVO` DROP `type`;
+        END IF;
+        IF EXISTS( SELECT NULL
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE table_name = 'BlockScsiLunVO'
+                            AND table_schema = 'zstack'
+                            AND column_name = 'id'
+                            AND column_type like 'smallint%') THEN
+            ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN `id` int unsigned default 0;
+        END IF;
+        IF EXISTS( SELECT NULL
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE table_name = 'BlockScsiLunVO'
+                            AND table_schema = 'zstack'
+                            AND column_name = 'lunType'
+                            AND is_nullable = 'YES') THEN
+            ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN lunType varchar(256) DEFAULT NULL;
+        END IF;
+        IF EXISTS( SELECT NULL
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE table_name = 'BlockScsiLunVO'
+                            AND table_schema = 'zstack'
+                            AND column_name = 'lunMapId'
+                            AND column_type like 'smallint%') THEN
+            ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN `lunMapId` int unsigned default 0;
+        END IF;
+    END $$
+DELIMITER ;
+call AlterBlockScsiLunTable;
+DROP PROCEDURE IF EXISTS `AlterBlockScsiLunTable`;
 
 DELIMITER $$
 CREATE PROCEDURE checkAllBlockHostInPrimaryHostRef()
@@ -83,4 +151,4 @@ call checkHostInitiatorRefVO();
 DROP PROCEDURE IF EXISTS migrateBlockPrimaryHostRef;
 DROP PROCEDURE IF EXISTS checkAllBlockHostInPrimaryHostRef;
 DROP PROCEDURE IF EXISTS checkHostInitiatorRefVO;
-DROP TABLE HostInitiatorRefVO;
+DROP TABLE IF EXISTS HostInitiatorRefVO;
