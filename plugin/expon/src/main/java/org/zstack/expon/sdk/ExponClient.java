@@ -17,7 +17,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
@@ -110,16 +109,10 @@ public class ExponClient {
     public <T extends ExponResponse> T call(ExponRequest req, Class<T> clz) {
         ApiResult ret = call(req);
         if (ret.error != null) {
-            throw new ExponApiException(ret.error.message);
-        }
-
-        return ret.getResult(clz);
-    }
-
-    public <T extends ExponQueryResponse> T query(ExponQueryRequest req, Class<T> clz) {
-        ApiResult ret = call(req);
-        if (ret.error != null) {
-            throw new ExponApiException(ret.error.message);
+            ExponResponse rsp = new ExponResponse();
+            rsp.retCode = ret.error.retCode;
+            rsp.message = ret.error.message;
+            return JSONObjectUtil.rehashObject(rsp, clz);
         }
 
         return ret.getResult(clz);
@@ -377,7 +370,7 @@ public class ExponClient {
         private ApiResult httpError(int code, String details) {
             ApiResult res = new ApiResult();
             if (details != null && details.startsWith("{")) {
-                ExponResponse rsp = JSONObjectUtil.toObject(details, ExponResponse.class);
+                ExponResponse rsp = gson.fromJson(details, ExponResponse.class);
                 if (rsp.message != null) {
                     res.error = errorCode(
                             rsp.retCode,

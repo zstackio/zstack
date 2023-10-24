@@ -1,15 +1,15 @@
 package org.zstack.expon;
 
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSvcBuilder;
-import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
-import org.zstack.header.storage.addon.primary.PrimaryStorageControllerSvc;
-import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
-import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
+import org.zstack.header.storage.addon.primary.*;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 
-public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder {
+public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, BackupStorageSelector {
+
+    private List<String> preferBackupStorageTypes;
+
     @Override
     public PrimaryStorageControllerSvc buildControllerSvc(ExternalPrimaryStorageVO vo) {
         return new ExponStorageController(vo);
@@ -29,5 +29,14 @@ public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder {
     @Override
     public String getIdentity() {
         return ExponConstants.IDENTITY;
+    }
+
+    @Override
+    public List<String> getPreferBackupStorageTypes() {
+        return preferBackupStorageTypes;
+    }
+
+    public void setPreferBackupStorageTypes(List<String> preferBackupStorageTypes) {
+        this.preferBackupStorageTypes = preferBackupStorageTypes;
     }
 }

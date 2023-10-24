@@ -16,8 +16,13 @@
           class=" org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" order="-1"/>
+            <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint" order="-1"/>
+            <zstack:extension interface="org.zstack.header.vm.VmAttachVolumeExtensionPoint" order="-1" />
+            <zstack:extension interface="org.zstack.header.vm.VmDetachVolumeExtensionPoint" order="-1" />
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory"/>
             <zstack:extension interface="org.zstack.header.storage.primary.PSCapacityExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.storage.snapshot.BeforeTakeLiveSnapshotsOnVolumes"/>
         </zstack:plugin>
     </bean>
     <bean id="ExternalPrimaryStorageManagerImpl" class="org.zstack.storage.addon.primary.ExternalPrimaryStorageManagerImpl">
