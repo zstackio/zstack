@@ -1,13 +1,23 @@
 package org.zstack.test.integration.storage.primary.addon
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.db.Q
+import org.zstack.expon.ExponStorageController
+import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetMsg
+import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetReply
 import org.zstack.header.storage.backup.ExportImageToRemoteTargetMsg
 import org.zstack.header.storage.backup.ExportImageToRemoteTargetReply
+import org.zstack.header.vm.devices.DeviceAddress
+import org.zstack.header.vm.devices.VirtualDeviceInfo
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
 import org.zstack.sdk.*
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -22,6 +32,9 @@ class ExternalPrimaryStorageCase extends SubCase {
     ImageInventory image
     L3NetworkInventory l3
     PrimaryStorageInventory ps
+    BackupStorageInventory bs
+    VmInstanceInventory vm
+    VolumeInventory vol, vol2
 
     @Override
     void clean() {
@@ -108,9 +121,34 @@ class ExternalPrimaryStorageCase extends SubCase {
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
             image = env.inventoryByName("image") as ImageInventory
             l3 = env.inventoryByName("l3") as L3NetworkInventory
+            bs = env.inventoryByName("sftp") as BackupStorageInventory
+            simulatorEnv()
             testCreateExponStorage()
-            testCreateDataVolume()
+            testSessionExpired()
             testCreateVm()
+            testCreateDataVolume()
+            testCreateSnapshot()
+            testCreateTemplate()
+            testClean()
+        }
+    }
+
+    void simulatorEnv() {
+        //TODO mock all
+        env.afterSimulator(KVMConstant.KVM_ATTACH_VOLUME) { KVMAgentCommands.AttachDataVolumeResponse rsp, HttpEntity<String> e ->
+            KVMAgentCommands.AttachDataVolumeCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachDataVolumeCmd.class)
+
+            VirtualDeviceInfo info = new VirtualDeviceInfo()
+            info.resourceUuid = cmd.volume.resourceUuid
+            info.deviceAddress = new DeviceAddress()
+            info.deviceAddress.domain = "0000"
+            info.deviceAddress.bus = "00"
+            info.deviceAddress.slot = Long.toHexString(Q.New(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, cmd.vmUuid).count())
+            info.deviceAddress.function = "0"
+
+            rsp.virtualDeviceInfoList = []
+            rsp.virtualDeviceInfoList.addAll(info)
+            return rsp
         }
     }
 
@@ -145,12 +183,10 @@ class ExternalPrimaryStorageCase extends SubCase {
         }
     }
 
-    void testCreateDataVolume() {
-        createDataVolume {
-            name = "test"
-            diskOfferingUuid = diskOffering.uuid
-            primaryStorageUuid = ps.uuid
-        }
+    void testSessionExpired() {
+        ExponStorageController svc = Platform.getComponentLoader().getComponent(ExternalPrimaryStorageFactory.class)
+                .getControllerSvc(ps.uuid) as ExponStorageController
+        svc.apiHelper.sessionId = "invalid"
     }
 
     void testCreateVm() {
@@ -175,7 +211,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             return rsp
         }
 
-        def vm = createVmInstance {
+        vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
@@ -193,9 +229,117 @@ class ExternalPrimaryStorageCase extends SubCase {
         rebootVmInstance {
             uuid = vm.uuid
         }
+    }
 
+    void testCreateDataVolume() {
+        vol = createDataVolume {
+            name = "test"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = vol.uuid
+        }
+
+        vol2 = createDataVolume {
+            name = "test"
+            diskOfferingUuid = diskOffering.uuid
+        } as VolumeInventory
+
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = vol2.uuid
+        }
+    }
+
+    void testCreateSnapshot() {
+        def snapshot = createVolumeSnapshot {
+            name = "test"
+            volumeUuid = vol.uuid
+        } as VolumeSnapshotInventory
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        revertVolumeFromSnapshot {
+            uuid = snapshot.uuid
+        }
+
+        deleteVolumeSnapshot {
+            uuid = snapshot.uuid
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+
+        /*
+        def group = createVolumeSnapshotGroup {
+            name = "test-snap"
+            rootVolumeUuid = vm.rootVolumeUuid
+        } as VolumeSnapshotGroupInventory
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        revertVmFromSnapshotGroup {
+            uuid = group.uuid
+        }
+
+        deleteVolumeSnapshotGroup {
+            uuid = group.uuid
+        }
+
+         */
+    }
+
+    void testCreateTemplate() {
+        env.message(DownloadImageFromRemoteTargetMsg.class){ DownloadImageFromRemoteTargetMsg msg, CloudBus bus ->
+            DownloadImageFromRemoteTargetReply r = new  DownloadImageFromRemoteTargetReply()
+            assert msg.getRemoteTargetUrl().startsWith("nvme://")
+            r.setInstallPath("zstore://test/image")
+            r.setSize(100L)
+            bus.reply(msg, r)
+        }
+
+        def dataImage = createDataVolumeTemplateFromVolume  {
+            name = "vol-image"
+            volumeUuid = vol.uuid
+            backupStorageUuids = [bs.uuid]
+        } as ImageInventory
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        def rootImage = createRootVolumeTemplateFromRootVolume {
+            name = "root-image"
+            rootVolumeUuid = vm.rootVolumeUuid
+            backupStorageUuids = [bs.uuid]
+        } as ImageInventory
+
+
+    }
+
+    void testClean() {
         destroyVmInstance {
             uuid = vm.uuid
+        }
+
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+
+        deleteDataVolume {
+            uuid = vol.uuid
+        }
+
+        expungeDataVolume {
+            uuid = vol.uuid
         }
     }
 }

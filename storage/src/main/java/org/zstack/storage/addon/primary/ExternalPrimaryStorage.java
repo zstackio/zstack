@@ -1,7 +1,12 @@
 package org.zstack.storage.addon.primary;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -23,11 +28,10 @@ import org.zstack.header.storage.addon.StorageHealthy;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
+import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -37,6 +41,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +50,8 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.*;
 
+
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public class ExternalPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(ExternalPrimaryStorage.class);
 
@@ -52,8 +59,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     private final PrimaryStorageControllerSvc controller;
 
     private ExternalPrimaryStorageVO externalVO;
-
     private LinkedHashMap selfConfig;
+
+    @Autowired
+    protected PluginRegistry pluginRgty;
+    @Autowired
+    protected AccountManager acntMgr;
 
 
     public ExternalPrimaryStorage(PrimaryStorageVO self, PrimaryStorageControllerSvc controller, PrimaryStorageNodeSvc node) {
@@ -70,6 +81,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof SelectBackupStorageMsg) {
+            handle((SelectBackupStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -120,6 +133,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         } else {
             createEmptyVolume(msg);
         }
+    }
+
+    @Override
+    protected void check(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
+    }
+    @Override
+    protected void check(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
     }
 
     private void createRootVolume(InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
@@ -228,6 +248,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 volume.setActualSize(stats.getActualSize());
                 volume.setSize(stats.getSize());
                 volume.setFormat(stats.getFormat());
+                volume.setInstallPath(stats.getInstallPath());
+                volume.setProtocol(externalVO.getDefaultProtocol());
                 reply.setVolume(volume);
                 bus.reply(msg, reply);
             }
@@ -257,7 +279,38 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    private void handle(final SelectBackupStorageMsg msg) {
+        SelectBackupStorageReply reply = new SelectBackupStorageReply();
 
+
+        BackupStorageSelector selector = pluginRgty.getExtensionFromMap(externalVO.getIdentity(), BackupStorageSelector.class);
+        List<String> preferBsTypes = selector.getPreferBackupStorageTypes();
+        if (!CollectionUtils.isEmpty(msg.getRequiredBackupStorageTypes())) {
+            preferBsTypes.removeAll(msg.getRequiredBackupStorageTypes());
+        }
+
+        if (CollectionUtils.isEmpty(preferBsTypes)) {
+            reply.setError(operr("no backup storage type specified support to primary storage[uuid:%s]", self.getUuid()));
+        }
+
+        List<BackupStorageVO> availableBs = SQL.New("select bs from BackupStorageVO bs, BackupStorageZoneRefVO ref" +
+                " where bs.uuid = ref.backupStorageUuid" +
+                " and ref.zoneUuid = :zoneUuid" +
+                " and bs.status = :status" +
+                " and bs.state = :state" +
+                " and bs.availableCapacity > :size", BackupStorageVO.class)
+                .param("zoneUuid", self.getZoneUuid())
+                .param("status", BackupStorageStatus.Connected)
+                .param("state", BackupStorageState.Enabled)
+                .param("size", msg.getRequiredSize())
+                .list();
+
+        // sort by prefer type
+        availableBs.sort(Comparator.comparingInt(o -> preferBsTypes.indexOf(o.getType())));
+        reply.setInventory(BackupStorageInventory.valueOf(availableBs.get(0)));
+
+        bus.reply(msg, reply);
+    }
 
     private void handle(TakeSnapshotMsg msg) {
         TakeSnapshotReply reply = new TakeSnapshotReply();
@@ -514,19 +567,22 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        CreateVolumeSnapshotSpec spec = new CreateVolumeSnapshotSpec();
-                        spec.setUuid(Platform.getUuid());
-                        spec.setVolumeInstallPath(msg.getVolumeInventory().getInstallPath());
-                        controller.createSnapshot(spec, new ReturnValueCompletion<VolumeSnapshotStats>(trigger) {
-                            @Override
-                            public void success(VolumeSnapshotStats stats) {
-                                snapshotPath = stats.getInstallPath();
-                                trigger.next();
-                            }
+                        CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
 
+                        String volumeAccountUuid = acntMgr.getOwnerAccountUuidOfResource(msg.getVolumeInventory().getUuid());
+                        cmsg.setName("snapshot-for-template-" + msg.getImageInventory().getUuid());
+                        cmsg.setVolumeUuid(msg.getVolumeInventory().getUuid());
+                        cmsg.setAccountUuid(volumeAccountUuid);
+                        bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    snapshotPath = ((CreateVolumeSnapshotReply) reply).getInventory().getPrimaryStorageInstallPath();
+                                    trigger.next();
+                                }
                             }
                         });
                     }
@@ -604,7 +660,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         DownloadImageFromRemoteTargetMsg umsg = new DownloadImageFromRemoteTargetMsg();
                         umsg.setBackupStorageUuid(msg.getBackupStorageUuid());
                         umsg.setImageUuid(msg.getImageInventory().getUuid());
-                        umsg.setRemoteTarget(remoteTarget);
+                        umsg.setRemoteTargetUrl(remoteTarget.getResourceURI());
                         bus.makeTargetServiceIdByResourceUuid(umsg, BackupStorageConstant.SERVICE_ID, msg.getBackupStorageUuid());
                         bus.send(umsg, new CloudBusCallBack(trigger) {
                             @Override
