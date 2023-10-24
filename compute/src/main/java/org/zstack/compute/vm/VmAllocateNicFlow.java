@@ -18,6 +18,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
@@ -95,6 +96,8 @@ public class VmAllocateNicFlow implements Flow {
                 customMac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
             }
             final String mac = customMac;
+            CustomNicOperator nicOperator = new CustomNicOperator(spec.getVmInventory().getUuid(),nw.getUuid());
+            final String customNicUuid = nicOperator.getCustomNicId();
 
             // choose vnic factory based on enableSRIOV system tag & enableVhostUser globalConfig
             VmInstanceNicFactory vnicFactory;
@@ -107,9 +110,15 @@ public class VmAllocateNicFlow implements Flow {
                     enableSriov ? "vf nic" : "vnic", nw.getUuid()));
             boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
 
-            L2NetworkVO l2nw =  dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
-            VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
-            VmNicType type = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+            L2NetworkVO l2nw = dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
+            VmNicType type;
+            if (l2nw.getType().equals(L2NetworkConstant.L2_TF_NETWORK_TYPE)) {
+                type = VmNicType.valueOf(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE);
+            } else {
+                VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
+                type = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+            }
+
             if (type == null) {
                 errs.add(Platform.operr("there is no available nicType on L2 network [%s]", l2nw.getUuid()));
                 wcomp.allDone();
@@ -118,7 +127,11 @@ public class VmAllocateNicFlow implements Flow {
 
 
             VmNicInventory nic = new VmNicInventory();
-            nic.setUuid(Platform.getUuid());
+            if (customNicUuid != null) {
+                nic.setUuid(customNicUuid);
+            } else {
+                nic.setUuid(Platform.getUuid());
+            }
             /* the first ip is ipv4 address for dual stack nic */
             nic.setVmInstanceUuid(spec.getVmInventory().getUuid());
             nic.setL3NetworkUuid(nw.getUuid());

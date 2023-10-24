@@ -151,7 +151,7 @@ public class KVMHost extends HostBase implements Host {
     @Autowired
     private TimeHelper timeHelper;
     @Autowired
-    private AccountManager accountManager;
+    private AccountManager accountMgr;
 
     private KVMHostContext context;
 
@@ -2530,6 +2530,9 @@ public class KVMHost extends HostBase implements Host {
         q.add(VmInstanceVO_.uuid, Op.EQ, vmUuid);
         final Long vmInternalId = q.findValue();
 
+        List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, s.vmUuid).list();
+        List<NicTO> nicTos = VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList());
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
         chain.then(new ShareFlow() {
@@ -2594,6 +2597,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setReload(s.reload);
                         cmd.setDownTime(s.downTime);
                         cmd.setBandwidth(s.bandwidth);
+                        cmd.setNics(nicTos);
 
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
@@ -2844,6 +2848,8 @@ public class KVMHost extends HostBase implements Host {
         UpdateNicCmd cmd = new UpdateNicCmd();
         cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmd.setNics(VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList()));
+        cmd.setNotifySugonSdn(msg.isNotifySugonSdn());
+        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KVMPreUpdateNicExtensionPoint ext : pluginRgty.getExtensionList(KVMPreUpdateNicExtensionPoint.class)) {
@@ -2893,6 +2899,7 @@ public class KVMHost extends HostBase implements Host {
         AttachNicCommand cmd = new AttachNicCommand();
         cmd.setVmUuid(msg.getNicInventory().getVmInstanceUuid());
         cmd.setNic(to);
+        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmUuid()));
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KvmPreAttachNicExtensionPoint ext : pluginRgty.getExtensionList(KvmPreAttachNicExtensionPoint.class)) {
@@ -3090,6 +3097,7 @@ public class KVMHost extends HostBase implements Host {
 
         DestroyVmCmd cmd = new DestroyVmCmd();
         cmd.setUuid(vminv.getUuid());
+        cmd.setVmNics(vminv.getVmNics());
 
         try {
             extEmitter.beforeDestroyVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);
@@ -3222,6 +3230,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUuid(vminv.getUuid());
         cmd.setType(msg.getType());
         cmd.setTimeout(120);
+        cmd.setVmNics(vminv.getVmNics());
 
         try {
             extEmitter.beforeStopVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);
@@ -3888,6 +3897,8 @@ public class KVMHost extends HostBase implements Host {
         extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
 
         extEmitter.addOn(khinv, spec, cmd);
+        //Set account uuid for kvm agent call vrouter agent api
+        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 
         new Http<>(startVmPath, cmd, StartVmResponse.class).call(new ReturnValueCompletion<StartVmResponse>(msg, completion) {
             @Override

@@ -55,7 +55,7 @@ public class VmNicFactory implements VmInstanceNicFactory {
         return vnic;
     }
 
-    private VmNicVO persistAndRetryIfMacCollision(VmNicVO vo) {
+    public VmNicVO persistAndRetryIfMacCollision(VmNicVO vo) {
         int tries = 5;
         while (tries-- > 0) {
             try {

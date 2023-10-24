@@ -47,8 +47,6 @@ public class VmAllocateNicIpFlow implements Flow {
     private VmNicManager nicManager;
     @Autowired
     protected VmInstanceManager vmMgr;
-    @Autowired
-    protected VmNicFactory vnicFactory;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
