@@ -4396,11 +4396,16 @@ public class KVMHost extends HostBase implements Host {
                             }
 
                             try {
-                                new Ssh().shell(builder.toString())
-                                        .setUsername(getSelf().getUsername())
-                                        .setPassword(getSelf().getPassword())
-                                        .setHostname(getSelf().getManagementIp())
-                                        .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
+                                SshShell sshShell = new SshShell();
+                                sshShell.setHostname(getSelf().getManagementIp());
+                                sshShell.setUsername(getSelf().getUsername());
+                                sshShell.setPassword(getSelf().getPassword());
+                                sshShell.setPort(getSelf().getPort());
+                                sshShell.setWithSudo(true);
+                                SshResult ret = sshShell.runCommand(builder.toString());
+                                if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                    trigger.fail(operr("failed configure iptables, %s", ret.getStderr()));
+                                }
                             } catch (SshException ex) {
                                 throw new OperationFailureException(operr(ex.toString()));
                             }
