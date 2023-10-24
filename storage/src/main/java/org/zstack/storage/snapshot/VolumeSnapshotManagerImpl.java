@@ -742,7 +742,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             protected VolumeSnapshotStruct scripts() {
                 VolumeSnapshotStruct s = null;
                 if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
-                    s = saveChainTypeSnapshot(vo, msg.getRequiredSnapShotMode());
+                    s = saveChainTypeSnapshot(vo, msg.getRequiredSnapshotMode());
                 } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
                     s = saveIndividualTypeSnapshot(vo);
                 } else {
