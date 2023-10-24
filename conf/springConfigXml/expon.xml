@@ -13,6 +13,11 @@
        default-init-method="init" default-destroy-method="destroy">
 
     <bean id="ExponStorageFactory" class = "org.zstack.expon.ExponStorageFactory">
+        <property name="preferBackupStorageTypes">
+            <list>
+                <value>ImageStoreBackupStorage</value>
+            </list>
+        </property>
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSvcBuilder" />
         </zstack:plugin>

@@ -2,21 +2,40 @@ package org.zstack.storage.addon.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
+import org.zstack.header.core.*;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.*;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.storage.addon.backup.ExternalBackupStorageFactory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Component, PSCapacityExtensionPoint {
+import static org.zstack.core.Platform.operr;
+
+public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Component, PSCapacityExtensionPoint,
+        PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
+        VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
 
@@ -27,6 +46,8 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     protected PluginRegistry pluginRgty;
     @Autowired
     protected DatabaseFacade dbf;
+    @Autowired
+    protected CloudBus bus;
 
 
     @Override
@@ -134,11 +155,282 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         return nodes.get(primaryStorageUuid);
     }
 
+    private PrimaryStorageNodeSvc getNodeSvcByVolume(VolumeInventory volumeInventory) {
+        if (volumeInventory.getPrimaryStorageUuid() == null) {
+            return null;
+        }
+
+        String identity = volumeInventory.getInstallPath().split("://")[0];
+        if (!support(identity)) {
+            return null;
+        }
+
+        return getNodeSvc(volumeInventory.getPrimaryStorageUuid());
+    }
+
     public boolean support(String identity) {
         return getSvcBuilder(identity) != null;
     }
 
     private ExternalPrimaryStorageSvcBuilder getSvcBuilder(String identity) {
         return pluginRgty.getExtensionFromMap(identity, ExternalPrimaryStorageSvcBuilder.class);
+    }
+
+    @Override
+    public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
+    }
+
+    @Override
+    public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
+        if (spec.getCurrentVmOperation().equals(VmInstanceConstant.VmOperation.ChangeImage)) {
+            completion.success();
+            return;
+        }
+
+        List<BaseVolumeInfo> vols = getManagerVolume(spec);
+
+        if (vols.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(vols).each((vol, compl) -> {
+            PrimaryStorageNodeSvc svc = getNodeSvc(vol.getPrimaryStorageUuid());
+            svc.activate(vol, spec.getDestHost(), vol.isShareable(), new ReturnValueCompletion<ActiveVolumeTO>(compl) {
+                @Override
+                public void success(ActiveVolumeTO v) {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    // todo rollback
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
+        if (spec.getCurrentVmOperation().equals(VmInstanceConstant.VmOperation.ChangeImage)) {
+            completion.success();
+            return;
+        }
+
+        List<BaseVolumeInfo> vols = getManagerVolume(spec);
+        if (vols.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(vols).each((vol, compl) -> {
+            PrimaryStorageNodeSvc svc = getNodeSvc(vol.getPrimaryStorageUuid());
+            svc.deactivate(vol, spec.getDestHost(), new Completion(compl) {
+                @Override
+                public void success() {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    // todo rollback
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void releaseVmResource(VmInstanceSpec spec, Completion completion) {
+        preReleaseVmResource(spec, completion);
+    }
+
+
+    private List<BaseVolumeInfo> getManagerVolume(VmInstanceSpec spec) {
+        List<BaseVolumeInfo> vols = new ArrayList<>();
+        vols.add(BaseVolumeInfo.valueOf(spec.getDestRootVolume()));
+        spec.getDestDataVolumes().forEach(vol -> vols.add(BaseVolumeInfo.valueOf(vol)));
+
+        spec.getCdRomSpecs().forEach(cdRomSpec -> {
+            if (cdRomSpec.getInstallPath() != null && cdRomSpec.getProtocol() != null) {
+                BaseVolumeInfo info = new BaseVolumeInfo();
+                info.setInstallPath(cdRomSpec.getInstallPath());
+                info.setProtocol(VolumeProtocol.valueOf(cdRomSpec.getProtocol()));
+                vols.add(info);
+            }
+        });
+
+        vols.removeIf(info -> {
+            String identity = info.getInstallPath().split("://")[0];
+            return !support(identity);
+        });
+
+        return vols;
+    }
+
+    private void activeVolumeIfNeed(VmInstanceInventory vm, VolumeInventory volume) {
+        PrimaryStorageNodeSvc svc = getNodeSvcByVolume(volume);
+        if (svc == null) {
+            return;
+        }
+
+        if (vm.getHostUuid() == null || VmInstanceState.Stopped.toString().equals(vm.getState())) {
+            return;
+        }
+
+        HostInventory host = HostInventory.valueOf(dbf.findByUuid(vm.getHostUuid(), HostVO.class));
+        // TODO change interface
+        svc.activate(BaseVolumeInfo.valueOf(volume), host, volume.isShareable(), new NopeReturnValueCompletion());
+    }
+
+    private void deactivateVolumeIfNeed(VmInstanceInventory vm, VolumeInventory volume) {
+        PrimaryStorageNodeSvc svc = getNodeSvcByVolume(volume);
+        if (svc == null) {
+            return;
+        }
+
+        if (vm.getHostUuid() == null) {
+            return;
+        }
+
+        HostInventory host = HostInventory.valueOf(dbf.findByUuid(vm.getHostUuid(), HostVO.class));
+        // TODO change interface
+        svc.deactivate(BaseVolumeInfo.valueOf(volume), host, new NopeCompletion());
+    }
+
+    @Override
+    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        activeVolumeIfNeed(vm, volume);
+    }
+
+    @Override
+    public void beforeAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Map data) {}
+
+    @Override
+    public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        activeVolumeIfNeed(vm, volume);
+    }
+
+    @Override
+    public void afterAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {}
+
+    @Override
+    public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode, Map data) {
+        deactivateVolumeIfNeed(vm, volume);
+    }
+
+    @Override
+    public void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {}
+
+    @Override
+    public void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {}
+
+    @Override
+    public void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
+        deactivateVolumeIfNeed(vm, volume);
+    }
+
+    @Override
+    public void failedToDetachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode) {}
+
+    @Override
+    public void beforeTakeLiveSnapshotsOnVolumes(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmMsg otmsg, Map flowData, Completion completion) {
+        List<CreateVolumesSnapshotsJobStruct> storageSnapshots = new ArrayList<>();
+        for (CreateVolumesSnapshotsJobStruct struct : msg.getVolumeSnapshotJobs()) {
+            PrimaryStorageControllerSvc svc = getControllerSvc(struct.getPrimaryStorageUuid());
+            if (svc != null && !svc.reportCapabilities().getSnapshotCapability().isSupportCreateOnHypervisor()) {
+                storageSnapshots.add(struct);
+                otmsg.getSnapshotJobs().removeIf(job -> job.getVolumeUuid().equals(struct.getVolumeUuid()));
+            }
+        }
+
+        if (storageSnapshots.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        if (otmsg.getSnapshotJobs().isEmpty()) {
+            flowData.put(VolumeSnapshotConstant.NEED_BLOCK_STREAM_ON_HYPERVISOR, false);
+            flowData.put(VolumeSnapshotConstant.NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR, false);
+        } else if (msg.getConsistentType() != ConsistentType.None) {
+            completion.fail(operr("not support take volumes snapshots " +
+                    "on multiple ps when including storage snapshot"));
+            return;
+        }
+
+        logger.info(String.format("take snapshots for volumes[%s] on %s",
+                msg.getLockedVolumeUuids(), getClass().getCanonicalName()));
+
+        ErrorCodeList errList = new ErrorCodeList();
+        new While<>(storageSnapshots).all((struct, whileCompletion) -> {
+            VolumeSnapshotVO vo = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, struct.getResourceUuid()).find();
+            if (vo.getStatus().equals(VolumeSnapshotStatus.Ready)) {
+                logger.warn(String.format("snapshot %s on volume %s is ready, no need to create again!",
+                        vo.getUuid(), vo.getVolumeUuid()));
+                whileCompletion.done();
+                return;
+            }
+            TakeSnapshotMsg tmsg = new TakeSnapshotMsg();
+            tmsg.setPrimaryStorageUuid(struct.getPrimaryStorageUuid());
+            tmsg.setStruct(struct.getVolumeSnapshotStruct());
+            bus.makeTargetServiceIdByResourceUuid(tmsg, PrimaryStorageConstant.SERVICE_ID, tmsg.getPrimaryStorageUuid());
+            bus.send(tmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        errList.getCauses().add(reply.getError());
+                        whileCompletion.done();
+                        return;
+                    }
+                    TakeSnapshotReply treply = reply.castReply();
+                    if (!treply.isSuccess()) {
+                        errList.getCauses().add(reply.getError());
+                        whileCompletion.done();
+                        return;
+                    }
+
+                    vo.setPrimaryStorageInstallPath(treply.getInventory().getPrimaryStorageInstallPath());
+                    vo.setSize(treply.getInventory().getSize());
+                    vo.setPrimaryStorageUuid(treply.getInventory().getPrimaryStorageUuid());
+                    vo.setType(treply.getInventory().getType());
+                    vo.setFormat(treply.getInventory().getFormat());
+                    vo.setStatus(VolumeSnapshotStatus.Ready);
+                    dbf.update(vo);
+
+                    struct.getVolumeSnapshotStruct().setCurrent(treply.getInventory());
+                    whileCompletion.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errList.getCauses().isEmpty()) {
+                    completion.fail(errList.getCauses().get(0));
+                    return;
+                }
+                completion.success();
+            }
+        });
     }
 }

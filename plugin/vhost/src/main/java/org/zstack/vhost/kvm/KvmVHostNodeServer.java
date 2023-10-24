@@ -1,20 +1,15 @@
 package org.zstack.vhost.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.storage.addon.primary.ActiveVolumeTO;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 
@@ -22,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint, PreVmInstantiateResourceExtensionPoint,
-        VmReleaseResourceExtensionPoint, KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
+public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint,
+        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
@@ -46,7 +41,7 @@ public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint, 
 
         cmd.setDataVolumes(dtos);
 
-        /* todo CD ROM, share mem
+        /* todo CD ROM
         for (KVMAgentCommands.CdRomTO cdRomTO : cmd.getCdRoms()) {
             if (cdRomTO.isEmpty()) {
                 continue;
@@ -70,13 +65,17 @@ public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint, 
     }
 
 
-    private VolumeTO convertVolumeIfNeeded(VolumeInventory volumeInventory, VolumeTO volumeTO) {
+    private PrimaryStorageNodeSvc getNodeService(VolumeInventory volumeInventory) {
         String identity = volumeInventory.getInstallPath().split("://")[0];
         if (!extPsFactory.support(identity)) {
-            return volumeTO;
+            return null;
         }
 
-        PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(volumeInventory.getPrimaryStorageUuid());
+        return extPsFactory.getNodeSvc(volumeInventory.getPrimaryStorageUuid());
+    }
+
+    private VolumeTO convertVolumeIfNeeded(VolumeInventory volumeInventory, VolumeTO volumeTO) {
+        PrimaryStorageNodeSvc nodeSvc = getNodeService(volumeInventory);
         if (nodeSvc == null) {
             return volumeTO;
         }
@@ -86,124 +85,6 @@ public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint, 
         return volumeTO;
     }
 
-    @Override
-    public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
-    }
-
-    @Override
-    public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
-        if (spec.getCurrentVmOperation().equals(VmInstanceConstant.VmOperation.ChangeImage)) {
-            completion.success();
-            return;
-        }
-
-        List<BaseVolumeInfo> vols = getManagerVolume(spec);
-
-        if (vols.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        new While<>(vols).each((vol, compl) -> {
-            PrimaryStorageNodeSvc svc = extPsFactory.getNodeSvc(vol.getPrimaryStorageUuid());
-            svc.activate(vol, spec.getDestHost(), vol.isShareable(), new ReturnValueCompletion<ActiveVolumeTO>(compl) {
-                @Override
-                public void success(ActiveVolumeTO v) {
-                    compl.done();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    compl.addError(errorCode);
-                    compl.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(completion) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success();
-                } else {
-                    // todo rollback
-                    completion.fail(errorCodeList.getCauses().get(0));
-                }
-            }
-        });
-    }
-
-    @Override
-    public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
-        if (spec.getCurrentVmOperation().equals(VmInstanceConstant.VmOperation.ChangeImage)) {
-            completion.success();
-            return;
-        }
-
-        List<BaseVolumeInfo> vols = getManagerVolume(spec);
-        if (vols.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        new While<>(vols).each((vol, compl) -> {
-            PrimaryStorageNodeSvc svc = extPsFactory.getNodeSvc(vol.getPrimaryStorageUuid());
-            svc.deactivate(vol, spec.getDestHost(), new Completion(compl) {
-                @Override
-                public void success() {
-                    compl.done();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    compl.addError(errorCode);
-                    compl.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(completion) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success();
-                } else {
-                    // todo rollback
-                    completion.fail(errorCodeList.getCauses().get(0));
-                }
-            }
-        });
-    }
-
-    @Override
-    public void releaseVmResource(VmInstanceSpec spec, Completion completion) {
-        preReleaseVmResource(spec, completion);
-    }
-
-    private List<BaseVolumeInfo> getManagerVolume(VmInstanceSpec spec) {
-        List<BaseVolumeInfo> vols = new ArrayList<>();
-        if (VolumeProtocol.VHost.toString().equals(spec.getDestRootVolume().getProtocol())) {
-            vols.add(BaseVolumeInfo.valueOf(spec.getDestRootVolume()));
-        }
-
-        spec.getDestDataVolumes().forEach(vol -> {
-            if (VolumeProtocol.VHost.toString().equals(vol.getProtocol())) {
-                vols.add(BaseVolumeInfo.valueOf(vol));
-            }
-        });
-
-        spec.getCdRomSpecs().forEach(cdRomSpec -> {
-            if (VolumeProtocol.VHost.toString().equals(cdRomSpec.getProtocol())) {
-                BaseVolumeInfo info = new BaseVolumeInfo();
-                info.setInstallPath(cdRomSpec.getInstallPath());
-                info.setProtocol(VolumeProtocol.valueOf(cdRomSpec.getProtocol()));
-                vols.add(info);
-            }
-        });
-
-        vols.removeIf(info -> {
-            String identity = info.getInstallPath().split("://")[0];
-            return !extPsFactory.support(identity);
-        });
-
-        return vols;
-    }
 
     @Override
     public boolean start() {

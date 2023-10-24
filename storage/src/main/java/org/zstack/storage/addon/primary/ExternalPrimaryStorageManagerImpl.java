@@ -135,6 +135,7 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
 
     @Override
     public boolean start() {
+        pluginRgty.saveExtensionAsMap(BackupStorageSelector.class, BackupStorageSelector::getIdentity);
         return true;
     }
 

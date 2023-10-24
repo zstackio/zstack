@@ -17,6 +17,7 @@ import java.util.Collections;
  * Created by MaJin on 2021/3/16.
  */
 public class ImageMessageFiller {
+
     public static void fillDefault(AddImageMessage msg) {
         if (ImageConstant.ImageMediaType.DataVolumeTemplate.toString().equals(msg.getMediaType())) {
             return;
