@@ -2942,7 +2942,18 @@ public class KVMHost extends HostBase implements Host {
     }
 
 
-    private void handle(final DetachVolumeFromVmOnHypervisorMsg msg) {
+    private void handle(DetachVolumeFromVmOnHypervisorMsg msg) {
+        VmInstanceState state = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, msg.getVmInventory().getUuid())
+                .select(VmInstanceVO_.state)
+                .findValue();
+        if (Objects.equals(state, VmInstanceState.Stopped)) {
+            logger.debug(String.format("skip detach volume[uuid=%s] on hypervisor when VM[uuid=%s] is stopped",
+                    msg.getInventory().getUuid(), msg.getVmInventory().getUuid()));
+            bus.reply(msg, new DetachVolumeFromVmOnHypervisorReply());
+            return;
+        }
+
         inQueue().name(String.format("detach-volume-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> detachVolume(msg, new NoErrorCompletion(chain) {
