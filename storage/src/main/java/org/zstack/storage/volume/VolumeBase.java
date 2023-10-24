@@ -2689,7 +2689,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 cmsg.setResourceUuid(msg.getResourceUuid());
                 cmsg.setAccountUuid(msg.getAccountUuid());
                 cmsg.setVolumeUuid(msg.getVolumeUuid());
-                cmsg.setRequiredSnapShotMode(msg.getRequiredSnapShotMode());
+                cmsg.setRequiredSnapshotMode(msg.getRequiredSnapshotMode());
                 bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
                 bus.send(cmsg, new CloudBusCallBack(msg, chain) {
                     @Override

@@ -16,11 +16,11 @@ public class VolumeCreateSnapshotMsg extends NeedReplyMessage implements VolumeM
     private String volumeUuid;
     private SnapshotMode requiredSnapshotMode = SnapshotMode.AUTO;
 
-    public SnapshotMode getRequiredSnapShotMode() {
+    public SnapshotMode getRequiredSnapshotMode() {
         return requiredSnapshotMode;
     }
 
-    public void setRequiredSnapShotMode(SnapshotMode requiredSnapshotMode) {
+    public void setRequiredSnapshotMode(SnapshotMode requiredSnapshotMode) {
         this.requiredSnapshotMode = requiredSnapshotMode;
     }
 

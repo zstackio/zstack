@@ -11,11 +11,11 @@ public class CreateVolumeSnapshotMsg extends NeedReplyMessage implements NeedQuo
     private String description;
     private SnapshotMode requiredSnapshotMode = SnapshotMode.AUTO;
 
-    public SnapshotMode getRequiredSnapShotMode() {
+    public SnapshotMode getRequiredSnapshotMode() {
         return requiredSnapshotMode;
     }
 
-    public void setRequiredSnapShotMode(SnapshotMode requiredSnapshotMode) {
+    public void setRequiredSnapshotMode(SnapshotMode requiredSnapshotMode) {
         this.requiredSnapshotMode = requiredSnapshotMode;
     }
 
