@@ -1038,12 +1038,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("could not update nic[uuid: %s] state, due to nic type[%s] not support",
                     msg.getVmNicUuid(), nicVO.getType()));
         }
-        if (!Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, nicVO.getVmInstanceUuid())
-                .eq(VmInstanceVO_.type, VmInstanceConstant.USER_VM_TYPE)
-                .eq(VmInstanceVO_.hypervisorType, VmInstanceConstant.KVM_HYPERVISOR_TYPE).isExists()) {
-            throw new ApiMessageInterceptionException(operr("could not update nic[uuid: %s] state, due to vm not support",
-                    msg.getVmNicUuid()));
-        }
         msg.setVmInstanceUuid(nicVO.getVmInstanceUuid());
         msg.l3Uuid = nicVO.getL3NetworkUuid();
     }
