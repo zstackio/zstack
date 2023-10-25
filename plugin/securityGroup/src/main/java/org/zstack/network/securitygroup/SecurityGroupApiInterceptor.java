@@ -140,8 +140,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                     .param("vmUuid", ref.getResourceUuid())
                     .list();
             if (!nics.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("the resource[uuid:%s] tye vm has security group attached on its network, instead, " +
-                        "detach security group and try again"));
+                throw new ApiMessageInterceptionException(argerr("could not change resource owner, because the resource[uuid:%s, type:VmInstance] has already attached security group", msg.getResourceUuid()));
             }
         }
     }
