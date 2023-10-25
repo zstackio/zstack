@@ -8,7 +8,7 @@ import org.zstack.core.GlobalPropertyDefinition;
  */
 @GlobalPropertyDefinition
 public class ApiTimeoutGlobalProperty {
-    @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APIAddImageMsg", defaultValue = "timeout::3h")
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APIAddImageMsg", defaultValue = "timeout::72h")
     @Deprecated
     public static String APIAddImageMsg;
     @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg", defaultValue = "timeout::72h")
