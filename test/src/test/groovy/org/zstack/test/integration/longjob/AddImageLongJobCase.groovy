@@ -8,6 +8,7 @@ import org.zstack.core.config.GlobalConfigVO
 import org.zstack.core.config.GlobalConfigVO_
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.core.timeout.ApiTimeoutGlobalProperty
 import org.zstack.header.image.APIAddImageMsg
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImagePlatform
@@ -17,6 +18,7 @@ import org.zstack.header.longjob.LongJobVO_
 import org.zstack.header.longjob.LongJobState
 import org.zstack.header.storage.backup.DownloadImageMsg
 import org.zstack.header.storage.backup.DownloadImageReply
+import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterMsg
 import org.zstack.longjob.LongJobGlobalConfig
 import org.zstack.sdk.*
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
@@ -165,8 +167,8 @@ class AddImageLongJobCase extends SubCase {
 
         assert null != dbFindByUuid(uuid, ImageVO.class)
         // timeout should be 3h from global property
-        assert timeout <= TimeUtils.parseTimeInMillis("3h")
-        assert timeout + TimeUtils.parseTimeInMillis("1m") > TimeUtils.parseTimeInMillis("3h")
+        assert timeout <= TimeUtils.parseTimeInMillis("72h")
+        assert timeout + TimeUtils.parseTimeInMillis("1m") > TimeUtils.parseTimeInMillis("72h")
 
         env.cleanMessageHandlers()
     }
@@ -278,8 +280,8 @@ class AddImageLongJobCase extends SubCase {
         }
 
         assert null != dbFindByUuid(uuid, ImageVO.class)
-        assert timeout <= 38000000
-        assert timeout + TimeUtils.parseTimeInMillis("1m") > 38000000
+        assert timeout <= 259200000
+        assert timeout + TimeUtils.parseTimeInMillis("1m") > 259200000
 
         env.cleanMessageHandlers()
     }
@@ -289,9 +291,12 @@ class AddImageLongJobCase extends SubCase {
 
         String uuid = Platform.uuid
 
-        def validators = new ArrayList<>(LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.validators)
-        LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.validators.clear()
-        LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.updateValue("1")
+        ApiTimeoutGlobalProperty.MINIMAL_TIMEOUT = "0"
+        updateGlobalConfig {
+            category = "apiTimeout"
+            name = APIAddImageMsg.class.getName()
+            value = "1"
+        }
 
         APIAddImageMsg msg = new APIAddImageMsg()
         msg.setName("TinyLinux")
@@ -306,7 +311,7 @@ class AddImageLongJobCase extends SubCase {
         env.message(DownloadImageMsg.class) { DownloadImageMsg dmsg, CloudBus bus ->
             timeout = dmsg.getTimeout()
 
-            sleep(1200)
+            sleep(100)
 
             def reply = new DownloadImageReply()
             reply.setSize(SizeUnit.GIGABYTE.toByte(8))
@@ -333,6 +338,6 @@ class AddImageLongJobCase extends SubCase {
             assert job.state.toString() == LongJobState.Failed.toString()
         }
         env.cleanMessageHandlers()
-        LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.validators = validators
+        ApiTimeoutGlobalProperty.MINIMAL_TIMEOUT = "5m"
     }
 }

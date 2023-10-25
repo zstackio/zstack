@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
         parameterName = "params",
         responseClass = APIAddImageEvent.class
 )
-@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
 public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddImageMessage {
     @APIParam(maxLength = 255)
     private String name;
