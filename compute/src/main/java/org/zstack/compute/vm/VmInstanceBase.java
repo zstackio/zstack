@@ -1094,6 +1094,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 ext.afterAddIpAddress(targetNic.getUuid(), ip.getUuid());
                             }
                         }
+
                         trigger.next();
                     }
                 });
@@ -1120,50 +1121,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
-                                trigger.next();
-                            }
-                        });
-
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "update-nic-on-host";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        if (self.getState() != VmInstanceState.Running) {
-                            logger.debug(String.format("vm[uuid:%s] state is %s, no need to update nic on host", self.getUuid(), self.getState()));
-                            trigger.next();
-                            return;
-                        }
-
-                        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                        VmNicVO nicVO = dbf.findByUuid(targetNic.getUuid(), VmNicVO.class);
-                        HostInventory dest = spec.getDestHost();
-                        data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
-
-                        if (dest == null) {
-                            trigger.next();
-                            return;
-                        }
-
-                        VmUpdateNicOnHypervisorMsg cmsg = new VmUpdateNicOnHypervisorMsg();
-                        cmsg.setVmInstanceUuid(getSelfInventory().getUuid());
-                        cmsg.setHostUuid(dest.getUuid());
-                        cmsg.setNicsUuid(list(nicVO.getUuid()));
-                        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, getSelfInventory().getUuid());
-                        bus.send(cmsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
+                                VmNicVO nicVO = dbf.findByUuid(targetNic.getUuid(), VmNicVO.class);
+                                data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
 
                                 trigger.next();
                             }
                         });
+
                     }
                 });
 
