@@ -264,11 +264,11 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             allocatorType = null;
         } else if (LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY.equals(msg.getAllocationStrategy())) {
             allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
-        } else if (msg.getRequiredPrimaryStorageUuid() != null) {
+        } else if (!msg.getCandidatePrimaryStorageUuids().isEmpty()) {
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
             q.add(PrimaryStorageVO_.type, Op.EQ, LocalStorageConstants.LOCAL_STORAGE_TYPE);
-            q.add(PrimaryStorageVO_.uuid, Op.EQ, msg.getRequiredPrimaryStorageUuid());
-            if (q.isExists()) {
+            q.add(PrimaryStorageVO_.uuid, Op.IN, msg.getCandidatePrimaryStorageUuids());
+            if (q.count() == msg.getCandidatePrimaryStorageUuids().size()) {
                 allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
             }
         } else if (msg.getRequiredHostUuid() != null) {

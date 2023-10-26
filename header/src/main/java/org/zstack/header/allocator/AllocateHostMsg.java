@@ -5,10 +5,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class AllocateHostMsg extends NeedReplyMessage {
     private long cpuCapacity;
@@ -26,11 +23,24 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
     private String requiredBackupStorageUuid;
+    // each primary storage in this set is required
     private Set<String> requiredPrimaryStorageUuids = new HashSet<>();
+    // for each set in the list, the primary storage inside is optional
+    private final List<Set<String>> optionalPrimaryStorageUuids = new ArrayList<>();
     private boolean fullAllocate = true;
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+
+    public List<Set<String>> getOptionalPrimaryStorageUuids() {
+        return optionalPrimaryStorageUuids;
+    }
+
+    public void addOptionalPrimaryStorageUuids(Set<String> optionalPrimaryStorageUuids) {
+        if (optionalPrimaryStorageUuids != null) {
+            this.optionalPrimaryStorageUuids.add(optionalPrimaryStorageUuids);
+        }
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;

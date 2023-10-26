@@ -14,7 +14,7 @@ public class DesignatedHostAllocatorStrategyFactory extends AbstractHostAllocato
     public void marshalSpec(HostAllocatorSpec spec, AllocateHostMsg msg) {
         DesignatedAllocateHostMsg dmsg = (DesignatedAllocateHostMsg)msg;
         spec.getExtraData().put(HostAllocatorConstant.LocationSelector.zone, dmsg.getZoneUuid());
-        spec.getExtraData().put(HostAllocatorConstant.LocationSelector.cluster, dmsg.getClusterUuid());
+        spec.getExtraData().put(HostAllocatorConstant.LocationSelector.cluster, dmsg.getClusterUuids());
         spec.getExtraData().put(HostAllocatorConstant.LocationSelector.host, dmsg.getHostUuid());
     }
 }

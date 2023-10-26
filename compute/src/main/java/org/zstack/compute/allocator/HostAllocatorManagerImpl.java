@@ -407,8 +407,10 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             DesignatedAllocateHostMsg dmsg = (DesignatedAllocateHostMsg) msg;
             if (dmsg.getHostUuid() != null) {
                 hvType = Q.New(HostVO.class).eq(HostVO_.uuid, dmsg.getHostUuid()).select(HostVO_.hypervisorType).findValue();
-            } else if (dmsg.getClusterUuid() != null) {
-                hvType = Q.New(ClusterVO.class).eq(ClusterVO_.uuid, dmsg.getClusterUuid()).select(ClusterVO_.hypervisorType).findValue();
+            } else if (!org.apache.commons.collections.CollectionUtils.isEmpty(dmsg.getClusterUuids())) {
+                List<String> hvTypes = Q.New(ClusterVO.class).in(ClusterVO_.uuid, dmsg.getClusterUuids())
+                        .groupBy(ClusterVO_.hypervisorType).select(ClusterVO_.hypervisorType).listValues();
+                hvType = hvTypes.size() == 1 ? hvTypes.get(0) : null;
             }
         }
 

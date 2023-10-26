@@ -9,11 +9,15 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
+import org.zstack.header.allocator.HostAllocatorSpec;
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -30,15 +34,36 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     @Autowired
     private PrimaryStorageOverProvisioningManager ratioMgr;
 
-    private List<HostVO> filterHostHavingAccessiblePrimaryStorage(List<String> huuids, Set<String> requiredPsUuids, String vmOperation){
-        String sqlappend = "";
+    private List<HostVO> filterHostHavingAccessiblePrimaryStorage(List<String> huuids, HostAllocatorSpec spec){
+        String vmOperation = spec.getVmOperation();
+        Set<String> requiredPsUuids = spec.getRequiredPrimaryStorageUuids();
+        List<Set<String>> optionalPrimaryStorageUuidList = spec.getOptionalPrimaryStorageUuids();
+        StringBuilder sqlappend = new StringBuilder();
         if (!requiredPsUuids.isEmpty()) {
-            sqlappend = requiredPsUuids.size() == 1 ?
+            sqlappend.append(requiredPsUuids.size() == 1 ?
                     String.format(" and ps.uuid = '%s'", requiredPsUuids.iterator().next()) :
                     String.format(" and ps.uuid in ('%s')" +
                                     " group by ref.clusterUuid" +
                                     " having count(distinct ref.primaryStorageUuid) = %d",
-                            String.join("','", requiredPsUuids), requiredPsUuids.size());
+                            String.join("','", requiredPsUuids), requiredPsUuids.size()));
+        }
+
+        List<String> clusterUuids = null;
+        for (Set<String> optionalPrimaryStorageUuids : optionalPrimaryStorageUuidList) {
+            if (CollectionUtils.isEmpty(optionalPrimaryStorageUuids)) {
+                continue;
+            }
+            List<String> tmpClusterUuids = Q.New(PrimaryStorageClusterRefVO.class).select(PrimaryStorageClusterRefVO_.clusterUuid)
+                    .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, optionalPrimaryStorageUuids)
+                    .listValues();
+            clusterUuids = clusterUuids != null ? clusterUuids.stream().filter(tmpClusterUuids::contains).collect(Collectors.toList())
+                    : tmpClusterUuids;
+            if (clusterUuids.isEmpty()) {
+                return Collections.emptyList();
+            }
+        }
+        if (clusterUuids != null) {
+            sqlappend.append(String.format(" and ref.clusterUuid in ('%s')", String.join("','", clusterUuids)));
         }
 
         String psStatus = "";
@@ -88,8 +113,30 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                     " and host[uuids:%s], remove these hosts", requiredPsUuids, disconnectHostUuids));
             Set<String> discHostSet = new HashSet<>(disconnectHostUuids);
             hosts.removeIf(it -> discHostSet.contains(it.getUuid()));
+            hostUuids = hosts.stream().map(HostVO::getUuid).collect(Collectors.toList());
         }
 
+        List<String> connectedHostUuids = null;
+        for (Set<String> optionalPrimaryStorageUuids : optionalPrimaryStorageUuidList) {
+            if (CollectionUtils.isEmpty(optionalPrimaryStorageUuids)) {
+                continue;
+            }
+
+            List<String> tmpHostUuids =  Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.hostUuid)
+                    .in(PrimaryStorageHostRefVO_.primaryStorageUuid, optionalPrimaryStorageUuids)
+                    .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .in(PrimaryStorageHostRefVO_.hostUuid, hostUuids)
+                    .listValues();
+            connectedHostUuids = connectedHostUuids == null ? tmpHostUuids : connectedHostUuids.stream().filter(tmpHostUuids::contains)
+                    .collect(Collectors.toList());
+            if (connectedHostUuids.isEmpty()) {
+                return Collections.emptyList();
+            }
+        }
+        if (connectedHostUuids != null) {
+            List<String> finalConnectedHostUuids = connectedHostUuids;
+            hosts = hosts.stream().filter(h -> finalConnectedHostUuids.contains(h.getUuid())).collect(Collectors.toList());
+        }
         return hosts;
     }
 
@@ -98,16 +145,16 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         List<String> huuids = getHostUuidsFromCandidates();
         Set<String> requiredPsUuids = spec.getRequiredPrimaryStorageUuids();
         if (!VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
-            return filterHostHavingAccessiblePrimaryStorage(huuids, requiredPsUuids, spec.getVmOperation());
+            return filterHostHavingAccessiblePrimaryStorage(huuids, spec);
         } else {
-            huuids = filterHostHavingAccessiblePrimaryStorage(huuids, requiredPsUuids, spec.getVmOperation())
+            huuids = filterHostHavingAccessiblePrimaryStorage(huuids, spec)
                     .stream().map(ResourceVO::getUuid).collect(Collectors.toList());
         }
 
         if (huuids.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
-        
+
         // for new created vm
         String sql = "select ps.uuid" +
                 " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps, HostVO h" +

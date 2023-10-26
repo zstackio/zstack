@@ -73,7 +73,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
             }
 
             AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
-            rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
+            rmsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForRootVolume());
             rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
             if (spec.getImageSpec() != null) {
                 rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());

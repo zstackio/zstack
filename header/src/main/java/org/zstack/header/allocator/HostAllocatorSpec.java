@@ -25,7 +25,10 @@ public class HostAllocatorSpec {
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
     private String requiredBackupStorageUuid;
+    // each primary storage in this set is required
     private Set<String> requiredPrimaryStorageUuids = new HashSet<>();
+    // for each set in the list, the primary storage inside is optional
+    private final List<Set<String>> optionalPrimaryStorageUuids = new ArrayList<>();
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private boolean dryRun;
     private List<String> systemTags;
@@ -65,6 +68,16 @@ public class HostAllocatorSpec {
 
     public Set<String> getRequiredPrimaryStorageUuids() {
         return requiredPrimaryStorageUuids;
+    }
+
+    public List<Set<String>> getOptionalPrimaryStorageUuids() {
+        return optionalPrimaryStorageUuids;
+    }
+
+    public void addOptionalPrimaryStorageUuids(Set<String> optionalPrimaryStorageUuids) {
+        if (optionalPrimaryStorageUuids != null) {
+            this.optionalPrimaryStorageUuids.add(optionalPrimaryStorageUuids);
+        }
     }
 
     public String getRequiredBackupStorageUuid() {
@@ -234,6 +247,7 @@ public class HostAllocatorSpec {
         spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
         spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());
         spec.setRequiredPrimaryStorageUuids(msg.getRequiredPrimaryStorageUuids());
+        msg.getOptionalPrimaryStorageUuids().forEach(spec::addOptionalPrimaryStorageUuids);
         spec.setAllocationScene(msg.getAllocationScene());
         spec.setArchitecture(msg.getArchitecture());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){

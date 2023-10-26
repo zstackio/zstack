@@ -1247,8 +1247,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
 
                         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
-                        smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-                        smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+                        smsg.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
+                        smsg.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
                         smsg.setStrategy(msg.getStrategy());
                         smsg.setTimeout(msg.getTimeout());
                         smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());

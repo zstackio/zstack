@@ -29,6 +29,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +77,7 @@ public class VmAllocateHostFlow implements Flow {
         msg.setDiskSize(diskSize);
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+        msg.setClusterUuids(spec.getRequiredClusterUuids());
         List<L3NetworkInventory> l3Invs = VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks());
         msg.setL3NetworkUuids(CollectionUtils.transformToList(l3Invs,
                 new Function<String, L3NetworkInventory>() {
@@ -99,11 +101,15 @@ public class VmAllocateHostFlow implements Flow {
         } else {
             msg.setAllocatorStrategy(spec.getVmInventory().getAllocatorStrategy());
         }
-        if (spec.getRequiredPrimaryStorageUuidForRootVolume() != null) {
-            msg.addRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
+        if (spec.getCandidatePrimaryStorageUuidsForRootVolume().size() == 1) {
+            msg.addRequiredPrimaryStorageUuid(spec.getCandidatePrimaryStorageUuidsForRootVolume().get(0));
+        } else if (spec.getCandidatePrimaryStorageUuidsForRootVolume().size() > 1) {
+            msg.addOptionalPrimaryStorageUuids(new HashSet<>(spec.getCandidatePrimaryStorageUuidsForRootVolume()));
         }
-        if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
-            msg.addRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
+        if (spec.getCandidatePrimaryStorageUuidsForDataVolume().size() == 1) {
+            msg.addRequiredPrimaryStorageUuid(spec.getCandidatePrimaryStorageUuidsForDataVolume().get(0));
+        } else if (spec.getCandidatePrimaryStorageUuidsForDataVolume().size() > 1) {
+            msg.addOptionalPrimaryStorageUuids(new HashSet<>(spec.getCandidatePrimaryStorageUuidsForDataVolume()));
         }
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setVmInstance(spec.getVmInventory());
