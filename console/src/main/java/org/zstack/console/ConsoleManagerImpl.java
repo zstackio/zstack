@@ -243,6 +243,11 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
 
     @Override
     public void releaseVmResource(VmInstanceSpec spec, final Completion completion) {
+        if (VmInstanceConstant.VmOperation.Reboot.equals(spec.getCurrentVmOperation())) {
+            completion.success();
+            return;
+        }
+
         ConsoleBackend bkd = getBackend();
         bkd.deleteConsoleSession(spec.getVmInventory(), new Completion(completion) {
             @Override
