@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener, Component, ManagementNodeReadyExtensionPoint {
     private final static CLogger logger = Utils.getLogger(HostTrackImpl.class);
 
-    private Map<String, Tracker> trackers = new HashMap<>();
+    private Map<String, Tracker> trackers = new ConcurrentHashMap<>();
     private static boolean alwaysStartRightNow = false;
 
     @Autowired
