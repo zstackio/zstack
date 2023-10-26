@@ -7,15 +7,11 @@ import org.zstack.header.core.validation.Validation;
 import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.vm.PriorityConfigStruct;
-import org.zstack.header.vm.VmBootDevice;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmPriorityConfigVO;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.network.securitygroup.RuleTO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
-import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.network.securitygroup.VmNicSecurityTO;
 
 import java.io.Serializable;
@@ -200,8 +196,6 @@ public class KVMAgentCommands {
         private List<KVMAgentCommands.NicTO> nics;
         private Map<String, Object> addons = new HashMap<>();
         private String accountUuid;
-        // This api may called after migration
-        private boolean notifySugonSdn;
 
         public List<NicTO> getNics() {
             return nics;
@@ -237,14 +231,6 @@ public class KVMAgentCommands {
 
         public void setAccountUuid(String accountUuid) {
             this.accountUuid = accountUuid;
-        }
-
-        public boolean isNotifySugonSdn() {
-            return notifySugonSdn;
-        }
-
-        public void setNotifySugonSdn(boolean notifySugonSdn) {
-            this.notifySugonSdn = notifySugonSdn;
         }
     }
 
