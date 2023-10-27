@@ -753,6 +753,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 }
                 return rsp
             }
+
+            simulator(CephPrimaryStorageBase.CLAEN_TRASH_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new CephPrimaryStorageBase.CleanTrashRsp()
+            }
         }
     }
 

@@ -408,6 +408,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
             handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {
+            handle((CleanUpStorageTrashOnPrimaryStorageMsg)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -444,6 +446,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void handle(CleanUpStorageTrashOnPrimaryStorageMsg msg) {
+        throw new OperationFailureException(operr("operation not supported"));
     }
 
     protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
@@ -914,6 +920,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((APICleanUpTrashOnPrimaryStorageMsg) msg);
         } else if (msg instanceof APIGetTrashOnPrimaryStorageMsg) {
             handle((APIGetTrashOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof APICleanUpStorageTrashOnPrimaryStorageMsg) {
+            handle((APICleanUpStorageTrashOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -938,6 +946,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
 
         bus.reply(msg, reply);
+    }
+
+    protected void handle(APICleanUpStorageTrashOnPrimaryStorageMsg msg) {
+        throw new OperationFailureException(operr("operation not supported"));
     }
 
     protected synchronized void updateTrashSize(CleanTrashResult result, Long size) {
