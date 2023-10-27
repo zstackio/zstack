@@ -5004,11 +5004,19 @@ public class KVMHost extends HostBase implements Host {
                         callbackChecker.setCallbackIp(Platform.getManagementServerIp());
                         callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
+                        KvmHostConfigChecker kvmHostConfigChecker = new KvmHostConfigChecker();
+                        kvmHostConfigChecker.setTargetIp(getSelf().getManagementIp());
+                        kvmHostConfigChecker.setUsername(getSelf().getUsername());
+                        kvmHostConfigChecker.setPassword(getSelf().getPassword());
+                        kvmHostConfigChecker.setSshPort(getSelf().getPort());
+                        kvmHostConfigChecker.setPrivateKey(asf.getPrivateKey());
+
                         AnsibleRunner runner = new AnsibleRunner();
                         runner.installChecker(checker);
                         runner.installChecker(chronyChecker);
                         runner.installChecker(repoChecker);
                         runner.installChecker(callbackChecker);
+                        runner.installChecker(kvmHostConfigChecker);
 
                         if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
                             CallBackNetworkChecker hostTcpConnectionCallbackChecker = new CallBackNetworkChecker();
@@ -5068,6 +5076,7 @@ public class KVMHost extends HostBase implements Host {
                         }
 
                         String enableKsm = rcf.getResourceConfigValue(KVMGlobalConfig.HOST_KSM, self.getUuid(), String.class);
+                        kvmHostConfigChecker.setRequireKsmCheck(enableKsm);
                         deployArguments.setIsEnableKsm(enableKsm);
 
                         if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
