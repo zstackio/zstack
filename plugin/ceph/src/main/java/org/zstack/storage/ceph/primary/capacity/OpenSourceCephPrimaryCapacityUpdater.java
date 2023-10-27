@@ -55,17 +55,6 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
 
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());
         updater.run(cap -> {
-            if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
-                // init
-                cap.setAvailableCapacity(avail);
-            }
-            cap.setTotalCapacity(total);
-            cap.setTotalPhysicalCapacity(total);
-            cap.setAvailablePhysicalCapacity(avail);
-            if (CollectionUtils.isEmpty(poolCapacities)) {
-                return cap;
-            }
-
             Map<String, CephPoolCapacity> osdPoolCapacity = new HashMap<>();
             List<String> poolsName = Q.New(CephPrimaryStoragePoolVO.class)
                     .select(CephPrimaryStoragePoolVO_.poolName)
@@ -95,12 +84,20 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
                 osdsTotalSize += cephPoolCapacity.getRelatedOsdCapacity().get(osdName).getSize() * cephPoolCapacity.getDiskUtilization();
                 osdsAvailCap += cephPoolCapacity.getRelatedOsdCapacity().get(osdName).getAvailableCapacity() * cephPoolCapacity.getDiskUtilization();
             }
-
-            if (osdsTotalSize != 0){
-                cap.setTotalCapacity(osdsTotalSize);
-                cap.setTotalPhysicalCapacity(osdsTotalSize);
-                cap.setAvailablePhysicalCapacity(osdsAvailCap);
+            if (osdsTotalSize == 0) {
+                logger.debug("no osds related to pool found, using bare capacity instead, fsid: " + cephPs.getFsid());
+                osdsTotalSize = total;
+                osdsAvailCap = avail;
             }
+
+            if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
+                // init
+                cap.setAvailableCapacity(osdsAvailCap);
+            }
+
+            cap.setTotalCapacity(osdsTotalSize);
+            cap.setTotalPhysicalCapacity(osdsTotalSize);
+            cap.setAvailablePhysicalCapacity(osdsAvailCap);
             return cap;
         });
 
