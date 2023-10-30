@@ -6675,8 +6675,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     });
                 } else {
-                    self.setState(originState);
-                    self = dbf.updateAndRefresh(self);
+                    changeVmStateInDb(originState.getDrivenEvent());
                     completion.fail(errCode);
                 }
             }
