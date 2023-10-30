@@ -282,6 +282,9 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         });
 
         vols.removeIf(info -> {
+            if (info.getInstallPath() == null) {
+                return true;
+            }
             String identity = info.getInstallPath().split("://")[0];
             return !support(identity);
         });

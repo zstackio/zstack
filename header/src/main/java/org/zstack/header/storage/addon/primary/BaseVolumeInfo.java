@@ -66,7 +66,9 @@ public class BaseVolumeInfo extends VolumeStats {
         info.uuid = vol.getUuid();
         info.setActualSize(vol.getActualSize());
         info.setInstallPath(vol.getInstallPath());
-        info.setProtocol(VolumeProtocol.valueOf(vol.getProtocol()));
+        if (vol.getProtocol() != null) {
+            info.setProtocol(VolumeProtocol.valueOf(vol.getProtocol()));
+        }
         info.setQos(VolumeQos.valueOf(vol.getVolumeQos()));
         info.setShareable(vol.isShareable());
         info.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());

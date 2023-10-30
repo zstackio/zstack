@@ -1,5 +1,6 @@
 package org.zstack.expon.sdk.uss;
 
+
 public class UssGatewayModule {
     private String id;
     private String name;

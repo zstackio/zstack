@@ -425,12 +425,17 @@ public class ExponApiHelper {
         callErrorOut(req, ChangeVolumeInNvmfClientGroupResponse.class);
     }
 
-    public void bindNvmfTargetToUss(String nvmfId, String ussGwId, int port) {
+    public NvmfBoundUssGatewayRefModule bindNvmfTargetToUss(String nvmfId, String ussGwId, int port) {
         BindNvmfTargetToUssRequest req = new BindNvmfTargetToUssRequest();
         req.setNvmfId(nvmfId);
         req.setUssGwId(Collections.singletonList(ussGwId));
         req.setPort(port);
         callErrorOut(req, BindNvmfTargetToUssResponse.class);
+        NvmfBoundUssGatewayRefModule ref = getNvmfBoundUssGateway(nvmfId, ussGwId);
+        if (ref == null) {
+            throw new ExponApiException(String.format("cannot find nvmf[id:%s] bound uss gateway[id:%s] ref after bind success", nvmfId, ussGwId));
+        }
+        return ref;
     }
 
     public void unbindNvmfTargetToUss(String nvmfId, String ussGwId) {
@@ -440,5 +445,17 @@ public class ExponApiHelper {
         callErrorOut(req, UnbindNvmfTargetFromUssResponse.class);
     }
 
+    public List<NvmfBoundUssGatewayRefModule> getNvmfBoundUssGateway(String nvmfId) {
+        GetNvmfTargetBoundUssRequest req = new GetNvmfTargetBoundUssRequest();
+        req.setNvmfId(nvmfId);
+        GetNvmfTargetBoundUssResponse rsp = callErrorOut(req, GetNvmfTargetBoundUssResponse.class);
+        return rsp.getResult();
+    }
 
+    public NvmfBoundUssGatewayRefModule getNvmfBoundUssGateway(String nvmfId, String ussGwId) {
+        GetNvmfTargetBoundUssRequest req = new GetNvmfTargetBoundUssRequest();
+        req.setNvmfId(nvmfId);
+        GetNvmfTargetBoundUssResponse rsp = callErrorOut(req, GetNvmfTargetBoundUssResponse.class);
+        return rsp.getResult().stream().filter(it -> it.getUssGwId().equals(ussGwId)).findFirst().orElse(null);
+    }
 }
