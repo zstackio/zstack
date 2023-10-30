@@ -4619,6 +4619,9 @@ public class KVMHost extends HostBase implements Host {
                                 }
 
                                 if (needReconnectHost(ret)) {
+                                    // reconnect host require many steps which may influence the results
+                                    // of extension points, so we skip them here and do it after next ping
+                                    data.put(KVMConstant.KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS, true);
                                     afterDone.add(() -> doReconnectHostDueToPingResult(ret));
                                 } else if (needUpdateHostConfiguration(ret)) {
                                     afterDone.add(KVMHost.this::doUpdateHostConfiguration);
@@ -4637,6 +4640,11 @@ public class KVMHost extends HostBase implements Host {
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "call-ping-no-failure-plugins";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return data.get(KVMConstant.KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS) != null;
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -4667,6 +4675,11 @@ public class KVMHost extends HostBase implements Host {
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "call-ping-plugins";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return data.get(KVMConstant.KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS) != null;
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
