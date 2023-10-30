@@ -1,10 +1,13 @@
 package org.zstack.test.integration.storage.primary.local
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.cloudbus.EventCallback
+import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SharedResourceVO
+import org.zstack.header.vm.VmCanonicalEvents
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -26,6 +29,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 class LiveMigrateVmCase extends SubCase {
     EnvSpec env
     DatabaseFacade dbf
+    EventFacade evtf
 
     @Override
     void clean() {
@@ -48,6 +52,7 @@ class LiveMigrateVmCase extends SubCase {
             testLiveMigrateVmFailure()
             testLiveMigrateVmWithDataVolume()
             testPausedVmStateAfterMigrate()
+            testVmStateChangedEventAfterMigrateFailure()
         }
     }
     void testLiveMigrateVmFailure() {
@@ -165,5 +170,36 @@ class LiveMigrateVmCase extends SubCase {
             vmInstanceUuid = vm.getUuid()
         } as VmInstanceInventory
         assert vm.state == KVMConstant.KvmVmState.Paused.toString()
+    }
+
+    void testVmStateChangedEventAfterMigrateFailure() {
+        evtf = bean(EventFacade.class)
+        VmInstanceInventory vm = (VmInstanceInventory) env.inventoryByName("vm")
+        env.afterSimulator(KVMConstant.KVM_CHECK_L2NOVLAN_NETWORK_PATH) { HttpEntity<String> e ->
+            def rsp = new KVMAgentCommands.AgentResponse()
+            rsp.success = false
+            return rsp
+        }
+
+        def fired = false
+        evtf.on(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                VmCanonicalEvents.VmStateChangedData d = (VmCanonicalEvents.VmStateChangedData) data
+                if (d.oldState == VmInstanceState.Migrating.toString()) {
+                    fired = true
+                }
+            }
+        })
+
+        expect(AssertionError.class) {
+            vm = migrateVm {
+                vmInstanceUuid = vm.getUuid()
+            } as VmInstanceInventory
+        }
+
+        retryInSecs {
+            assert fired == true
+        }
     }
 }
