@@ -123,6 +123,33 @@ abstract class ApiHelper {
     }
 
 
+    def createVmFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateVmFromVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.heder.storage.volume.backup.CreateVmFromVolumeBackupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateVolumeBackupAction.class) Closure c) {
         def a = new org.zstack.heder.storage.volume.backup.CreateVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
