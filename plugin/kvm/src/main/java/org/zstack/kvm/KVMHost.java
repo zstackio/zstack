@@ -4484,6 +4484,29 @@ public class KVMHost extends HostBase implements Host {
         return KVMHostInventory.valueOf(getSelf());
     }
 
+    private void doReconnectHostDueToPingResult(PingResponse ret) {
+        String info = i18n("detected abnormal status[host uuid change, expected: %s but: %s or agent version change, expected: %s but: %s] of kvmagent," +
+                        "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon",
+                self.getUuid(), ret.getHostUuid(), dbf.getDbVersion(), ret.getVersion());
+        logger.warn(info);
+
+        // when host is connecting, skip handling agent config changed issue
+        // and agent config change will be detected by next ping
+        self = dbf.reload(self);
+        if (self.getStatus() == HostStatus.Connecting) {
+            logger.debug("host status is %s, ignore version or host uuid changed issue");
+            return;
+        }
+
+        changeConnectionState(HostStatusEvent.disconnected);
+        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+
+        ReconnectHostMsg rmsg = new ReconnectHostMsg();
+        rmsg.setHostUuid(self.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
+        bus.send(rmsg);
+    }
+
     private void doUpdateHostConfiguration() {
         thdf.chainSubmit(new ChainTask(null) {
             @Override
@@ -4545,6 +4568,10 @@ public class KVMHost extends HostBase implements Host {
         return !self.getUuid().equals(rsp.getHostUuid()) || !dbf.getDbVersion().equals(rsp.getVersion());
     }
 
+    boolean inconsistentHostUuid(PingResponse rsp) {
+        return !self.getUuid().equals(rsp.getHostUuid());
+    }
+
     @Override
     protected void connectHostFailHook(ErrorCode errorCode) {
         if (errorCode.getRootCause().isError(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED)) {
@@ -4586,37 +4613,18 @@ public class KVMHost extends HostBase implements Host {
 
                             @Override
                             public void success(PingResponse ret) {
-                                if (ret.isSuccess()) {
-                                    if (needUpdateHostConfiguration(ret)) {
-                                        afterDone.add(KVMHost.this::doUpdateHostConfiguration);
-                                    } else if (needReconnectHost(ret)) {
-                                        afterDone.add(() -> {
-                                            String info = i18n("detected abnormal status[host uuid change, expected: %s but: %s or agent version change, expected: %s but: %s] of kvmagent," +
-                                                            "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon",
-                                                    self.getUuid(), ret.getHostUuid(), dbf.getDbVersion(), ret.getVersion());
-                                            logger.warn(info);
-
-                                            // when host is connecting, skip handling agent config changed issue
-                                            // and agent config change will be detected by next ping
-                                            self = dbf.reload(self);
-                                            if (self.getStatus() == HostStatus.Connecting) {
-                                                logger.debug("host status is %s, ignore version or host uuid changed issue");
-                                                return;
-                                            }
-
-                                            changeConnectionState(HostStatusEvent.disconnected);
-                                            new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
-
-                                            ReconnectHostMsg rmsg = new ReconnectHostMsg();
-                                            rmsg.setHostUuid(self.getUuid());
-                                            bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
-                                            bus.send(rmsg);
-                                        });
-                                    }
-                                    trigger.next();
-                                } else {
+                                if (!ret.isSuccess()) {
                                     trigger.fail(operr("%s", ret.getError()));
+                                    return;
                                 }
+
+                                if (needReconnectHost(ret)) {
+                                    afterDone.add(() -> doReconnectHostDueToPingResult(ret));
+                                } else if (needUpdateHostConfiguration(ret)) {
+                                    afterDone.add(KVMHost.this::doUpdateHostConfiguration);
+                                }
+
+                                trigger.next();
                             }
 
                             @Override
