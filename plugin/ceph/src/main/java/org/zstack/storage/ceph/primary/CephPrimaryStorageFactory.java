@@ -715,7 +715,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             return;
         }
 
-        if (cephStructs.size() == msg.getVolumeSnapshotJobs().size()) {
+        if (otmsg.getSnapshotJobs().isEmpty()) {
             flowData.put(VolumeSnapshotConstant.NEED_BLOCK_STREAM_ON_HYPERVISOR, false);
             flowData.put(VolumeSnapshotConstant.NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR, false);
         } else if (msg.getConsistentType() != ConsistentType.None) {

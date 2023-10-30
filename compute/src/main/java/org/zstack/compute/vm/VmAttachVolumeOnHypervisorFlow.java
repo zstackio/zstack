@@ -1,23 +1,24 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.host.HostManager;
-import org.zstack.core.db.Q;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
@@ -84,13 +85,16 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
         });
     }
 
+    @ExceptionSafe
     private void processDeviceAddressInfo(AttachVolumeToVmOnHypervisorReply reply, final VmInstanceSpec spec) {
-        if (reply.getVirtualDeviceInfoList() == null || reply.getVirtualDeviceInfoList().isEmpty()) {
+        if (CollectionUtils.isEmpty(reply.getVirtualDeviceInfoList())) {
             return;
         }
 
         for (VirtualDeviceInfo info : reply.getVirtualDeviceInfoList()) {
-            vidm.createOrUpdateVmDeviceAddress(info, spec.getVmInventory().getUuid());
+            if (info.isValid()) {
+                vidm.createOrUpdateVmDeviceAddress(info, spec.getVmInventory().getUuid());
+            }
         }
     }
 

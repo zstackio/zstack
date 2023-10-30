@@ -1,6 +1,7 @@
 package org.zstack.expon.sdk;
 
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.expon.ExponError;
 
 import static org.zstack.core.Platform.operr;
 
@@ -30,5 +31,19 @@ public class ExponResponse {
 
     public ErrorCode getError() {
         return operr(message);
+    }
+
+    public boolean sessionExpired() {
+        return isError(ExponError.SESSION_EXPIRED, ExponError.INVALID_SESSION);
+    }
+
+    public boolean isError(ExponError... errorEnums) {
+        for (ExponError e : errorEnums) {
+            if (e.toString().equals(retCode)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

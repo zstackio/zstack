@@ -11,6 +11,7 @@ import org.zstack.expon.sdk.uss.QueryUssGatewayResponse;
 import org.zstack.expon.sdk.uss.UssGatewayModule;
 import org.zstack.expon.sdk.vhost.*;
 import org.zstack.expon.sdk.volume.*;
+import org.zstack.header.expon.ExponError;
 import org.zstack.utils.CollectionUtils;
 
 import java.time.LocalDate;
@@ -24,48 +25,68 @@ public class ExponApiHelper {
     AccountInfo accountInfo;
     ExponClient client;
     String sessionId;
+    String refreshToken;
 
     ExponApiHelper(AccountInfo accountInfo, ExponClient client) {
         this.accountInfo = accountInfo;
         this.client = client;
     }
 
-    public <T extends ExponResponse> T call(ExponRequest req, Class<T> clz) {
+    private <T extends ExponResponse> T callWithExpiredSessionRetry(ExponRequest req, Class<T> clz) {
         req.setSessionId(sessionId);
-        return client.call(req, clz);
+        T rsp = client.call(req, clz);
+
+        if (!rsp.isSuccess() && rsp.sessionExpired()) {
+            refreshSession();
+            req.setSessionId(sessionId);
+            rsp = client.call(req, clz);
+        }
+        return rsp;
+    }
+
+    private synchronized void refreshSession() {
+        if (sessionExpired()) {
+            login();
+        }
+    }
+
+    private boolean sessionExpired() {
+        QueryTianshuClusterRequest req = new QueryTianshuClusterRequest();
+
+        req.setSessionId(sessionId);
+        QueryTianshuClusterResponse rsp = client.call(req, QueryTianshuClusterResponse.class);
+        return rsp.sessionExpired();
+    }
+
+    public <T extends ExponResponse> T call(ExponRequest req, Class<T> clz) {
+        return callWithExpiredSessionRetry(req, clz);
     }
 
     public <T extends ExponResponse> T callErrorOut(ExponRequest req, Class<T> clz) {
-        req.setSessionId(sessionId);
-        T rsp = client.call(req, clz);
-        if (!rsp.isSuccess()) {
-            throw new RuntimeException("incorrect password or username");
-        }
+        T rsp = callWithExpiredSessionRetry(req, clz);
+        errorOut(rsp);
         return rsp;
+    }
+
+    public void errorOut(ExponResponse rsp) {
+        if (!rsp.isSuccess()) {
+            throw new RuntimeException(String.format("expon request failed, code %s, message: %s.", rsp.getRetCode(), rsp.getMessage()));
+        }
     }
 
     public <T extends ExponQueryResponse> T query(ExponQueryRequest req, Class<T> clz) {
-        req.setSessionId(sessionId);
-        return client.query(req, clz);
+        return call(req, clz);
     }
 
     public <T extends ExponQueryResponse> T queryErrorOut(ExponQueryRequest req, Class<T> clz) {
-        req.setSessionId(sessionId);
-        T rsp = client.call(req, clz);
-        if (!rsp.isSuccess()) {
-            throw new RuntimeException("incorrect password or username");
-        }
-        return rsp;
+        return callErrorOut(req, clz);
     }
 
     public void login() {
         LoginExponRequest req = new LoginExponRequest();
         req.setName(accountInfo.username);
         req.setPassword(accountInfo.password);
-        LoginExponResponse rsp = call(req, LoginExponResponse.class);
-        if (!rsp.isSuccess()) {
-            throw new RuntimeException("incorrect password or username. " + rsp.getMessage());
-        }
+        LoginExponResponse rsp = callErrorOut(req, LoginExponResponse.class);
         sessionId = rsp.getAccessToken();
     }
 
@@ -152,7 +173,12 @@ public class ExponApiHelper {
         req.setLunId(volumeId);
         req.setVhostId(vhostId);
         req.setUssGwId(ussGwId);
-        RemoveVHostControllerFromUssResponse rsp = callErrorOut(req, RemoveVHostControllerFromUssResponse.class);
+        RemoveVHostControllerFromUssResponse rsp = call(req, RemoveVHostControllerFromUssResponse.class);
+        if (rsp.isError(ExponError.VHOST_ALREADY_UNBIND_USS)) {
+            return true;
+        }
+
+        errorOut(rsp);
         return true;
     }
 

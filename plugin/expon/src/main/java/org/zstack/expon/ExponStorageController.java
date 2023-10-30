@@ -60,6 +60,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         VolumeSnapshotCapability scap = new VolumeSnapshotCapability();
         scap.setSupport(true);
         scap.setArrangementType(VolumeSnapshotCapability.VolumeSnapshotArrangementType.INDIVIDUAL);
+        scap.setSupportCreateOnHypervisor(false);
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportedImageFormats(Collections.singletonList("qcow2"));
@@ -124,8 +125,13 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         return uss;
     }
 
-    private VHostControllerModule getVhostController(String name) {
-        return apiHelper.getVhostController(name);
+    private VHostControllerModule getOrCreateVhostController(String name) {
+        VHostControllerModule vhost = apiHelper.getVhostController(name);
+        if (vhost == null) {
+            vhost = apiHelper.createVHostController(name);
+        }
+
+        return vhost;
     }
 
     @Override
@@ -145,17 +151,12 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String vhostName = buildVhostControllerName(vol.getUuid());
 
         UssGatewayModule uss = getUssGateway(VolumeProtocol.VHost, h.getManagementIp());
-        VHostControllerModule vhost = getVhostController(vhostName);
         VolumeModule exponVol = apiHelper.queryVolume(buildVolumeName(vol.getUuid()));
-
-        if (vhost == null) {
-            vhost = apiHelper.createVHostController(vhostName);
-        }
-
         if (exponVol == null) {
             throw new RuntimeException("volume not found");
         }
 
+        VHostControllerModule vhost = getOrCreateVhostController(vhostName);
         apiHelper.addVhostVolumeToUss(exponVol.getId(), vhost.getId(), uss.getId());
         VHostVolumeTO to = new VHostVolumeTO();
         to.setInstallPath(vhost.getPath());
@@ -165,8 +166,12 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public ActiveVolumeTO getActiveResult(BaseVolumeInfo v, boolean shareable) {
+        if (v.getProtocol() != VolumeProtocol.VHost) {
+            throw new OperationFailureException(operr("not supported protocol[%s]", v.getProtocol()));
+        }
+
         String vhostName = buildVhostControllerName(v.getUuid());
-        VHostControllerModule vhost = getVhostController(vhostName);
+        VHostControllerModule vhost = getOrCreateVhostController(vhostName);
         VHostVolumeTO to = new VHostVolumeTO();
         to.setInstallPath(vhost.getPath());
         return to;
@@ -187,13 +192,12 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String vhostName = buildVhostControllerName(vol.getUuid());
 
         UssGatewayModule uss = getUssGateway(VolumeProtocol.VHost, h.getManagementIp());
-        VHostControllerModule vhost = getVhostController(vhostName);
-        VolumeModule exponVol = apiHelper.queryVolume(buildVolumeName(vol.getUuid()));
-
+        VHostControllerModule vhost = apiHelper.getVhostController(vhostName);
         if (vhost == null) {
             return;
         }
 
+        VolumeModule exponVol = apiHelper.queryVolume(buildVolumeName(vol.getUuid()));
         apiHelper.removeVhostVolumeFromUss(exponVol.getId(), vhost.getId(), uss.getId());
     }
 
@@ -527,7 +531,15 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     public void revertVolumeSnapshot(String snapshotInstallPath, ReturnValueCompletion<VolumeStats> comp) {
         String volId = getVolIdFromPath(snapshotInstallPath);
         String snapId = getSnapIdFromPath(snapshotInstallPath);
-        apiHelper.recoverySnapshot(volId, snapId);
+        String poolName = getPoolNameFromPath(snapshotInstallPath);
+        VolumeModule vol = apiHelper.recoverySnapshot(volId, snapId);
+
+        VolumeStats stats = new VolumeStats();
+        stats.setInstallPath(buildExponPath(poolName, volId));
+        stats.setSize(vol.getVolumeSize());
+        stats.setActualSize(vol.getDataSize());
+        stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+        comp.success(stats);
     }
 
     @Override
