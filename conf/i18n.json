@@ -11913,6 +11913,16 @@
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
   },
   {
+    "raw": "could not change resource owner, because the resource[uuid:%s, type:VmInstance] has already attached security group",
+    "en_US": "could not change resource owner, because the resource[uuid:{0}, type:VmInstance] has already attached security group",
+    "zh_CN": "无法更改资源所有者，因为资源[UUID:{0}, 类型:VmInstance] 已加载安全组",
+    "arguments": [
+      "msg.getResourceUuid()"
+    ],
+    "line": 143,
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
     "raw": "could no set vm nic security group, because vm nic[uuid:%s] not found",
     "en_US": "could no set vm nic security group, because vm nic[uuid:{0}] not found",
     "zh_CN": "无法设置VM NIC安全组，因为找不到VM NIC[UUID：{0}]",
@@ -12009,7 +12019,7 @@
   {
     "raw": "could no set vm nic security group, because admin security group priority[%d] must be higher than users",
     "en_US": "could no set vm nic security group, because admin security group priority[{0}] must be higher than users",
-    "zh_CN": "法设置VM NIC安全组，因为管理员安全组优先级[{0}]必须高于用户安全组",
+    "zh_CN": "无法设置VM NIC安全组，因为管理员安全组优先级[{0}]必须高于用户安全组",
     "arguments": [
       "priorities[i + 1]"
     ],
