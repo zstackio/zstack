@@ -55,6 +55,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private String name;
     private boolean skipRestRollbacks;
     private boolean allowEmptyFlow;
+    private boolean enableDebugLog = true;
     private FlowMarshaller flowMarshaller;
     private List<FlowChainProcessor> processors;
     private java.util.function.Function<Map, ErrorCode> preCheck;
@@ -76,7 +77,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 WorkFlowStatistic stat = statistics.get(cname);
                 stat.addStatistic(btime - stime);
 
-                logger.debug(String.format("[FlowChain(%s):%s, flow:%s] takes %sms to complete",
+                printDebugLog(String.format("[FlowChain(%s):%s, flow:%s] takes %sms to complete",
                         id, name, cname, stat.getTotalTime()));
             }
 
@@ -108,6 +109,10 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (stopWatch == null) {
             stopWatch = new FlowStopWatch();
         }
+    }
+
+    public void disableDebugLog() {
+        this.enableDebugLog = false;
     }
 
     {
@@ -298,6 +303,16 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
     }
 
+    private void printDebugLog(String msg) {
+        if (enableDebugLog) {
+            logger.debug(msg);
+        } else {
+            if (logger.isTraceEnabled()) {
+                logger.trace(msg);
+            }
+        }
+    }
+
     private void runFlow(Flow flow) {
         try {
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -316,7 +331,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 toRun = flowMarshaller.marshalTheNextFlow(currentFlow == null ? null : currentFlow.getClass().getName(),
                         flow.getClass().getName(), this, data);
                 if (toRun != null) {
-                    logger.debug(String.format("[FlowChain(%s): %s] FlowMarshaller[%s] replaces the next flow[%s] to the flow[%s]",
+                    printDebugLog(String.format("[FlowChain(%s): %s] FlowMarshaller[%s] replaces the next flow[%s] to the flow[%s]",
                             id, name, flowMarshaller.getClass(), flow.getClass(), toRun.getClass()));
                 }
             }
@@ -333,11 +348,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
             String flowName = getFlowName(currentFlow);
             String info = String.format("[FlowChain(%s): %s] start executing flow[%s]", id, name, flowName);
-            logger.debug(info);
+            printDebugLog(info);
+
             collectAfterRunnable(toRun);
 
             if (preCheck != null) {
-                logger.debug(String.format("[FlowChain(%s): %s] start executing pre-check for flow[%s]", id, name, flowName));
+                printDebugLog(String.format("[FlowChain(%s): %s] start executing pre-check for flow[%s]", id, name, flowName));
+
                 ErrorCode err = preCheck.apply(data);
                 if (err != null) {
                     this.fail(err);
@@ -375,7 +392,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void rollbackFlow(Flow flow) {
         try {
-            logger.debug(String.format("[FlowChain(%s): %s] start to rollback flow[%s]", id, name, getFlowName(flow)));
+            printDebugLog(String.format("[FlowChain(%s): %s] start to rollback flow[%s]", id, name, getFlowName(flow)));
+
             currentLoop --;
 
             if (contextHandler != null) {
@@ -397,7 +415,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void callErrorHandler(boolean info) {
         if (info) {
-            logger.debug(String.format("[FlowChain(%s): %s] rolled back all flows because error%s", id, name, errorCode));
+            printDebugLog(String.format("[FlowChain(%s): %s] rolled back all flows because error%s", id, name, errorCode));
         }
 
         if (errorHandler != null) {
@@ -482,17 +500,17 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 }
             });
 
-            logger.debug(String.format("[FlowChain(%s): %s] we are instructed to skip rollbacks for remaining flows%s",
+            printDebugLog(String.format("[FlowChain(%s): %s] we are instructed to skip rollbacks for remaining flows%s",
                     id, name, restRollbackNames));
             callErrorHandler(true);
             return;
         }
 
         if (currentRollbackFlow != null) {
-            logger.debug(String.format("[FlowChain(%s): %s] successfully rolled back flow[%s]",
+            printDebugLog(String.format("[FlowChain(%s): %s] successfully rolled back flow[%s]",
                     id, name, getFlowName(currentRollbackFlow)));
         } else {
-            logger.debug(String.format("[FlowChain(%s): %s] start to rollback", id, name));
+            printDebugLog(String.format("[FlowChain(%s): %s] start to rollback", id, name));
         }
 
         Flow flow = rollBackFlows.pop();
@@ -555,7 +573,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             }
         }
 
-        logger.debug(String.format("[FlowChain(%s): %s] successfully completed", id, name));
+        printDebugLog(String.format("[FlowChain(%s): %s] successfully completed", id, name));
 
         if (!afterDone.isEmpty()) {
             Collections.reverse(afterDone);
@@ -590,7 +608,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             skip = contextHandler.skipFlow(flow);
         }
         if (skip) {
-            logger.debug(String.format("[FlowChain: %s] skip flow[%s] because it's skip() returns true", name, getFlowName(flow)));
+            printDebugLog(String.format("[FlowChain: %s] skip flow[%s] because it's skip() returns true",
+                    name, getFlowName(flow)));
         }
         return skip;
     }
@@ -623,7 +642,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
         rollBackFlows.push(currentFlow);
 
-        logger.debug(String.format("[FlowChain(%s): %s] successfully executed flow[%s]", id, name, getFlowName(currentFlow)));
+        printDebugLog(String.format("[FlowChain(%s): %s] successfully executed flow[%s]",
+                id, name, getFlowName(currentFlow)));
 
         runFlowOrComplete();
     }
@@ -654,7 +674,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             name = "anonymous-chain";
         }
 
-        logger.debug(String.format("[FlowChain(%s): %s] starts", id, name));
+        printDebugLog(String.format("[FlowChain(%s): %s] starts", id, name));
 
         if (logger.isTraceEnabled()) {
             List<String> names = CollectionUtils.transformToList(flows, new Function<String, Flow>() {

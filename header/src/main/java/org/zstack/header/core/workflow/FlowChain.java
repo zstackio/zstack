@@ -46,4 +46,6 @@ public interface FlowChain {
     FlowChain allowEmptyFlow();
 
     void allowWatch();
+
+    void disableDebugLog();
 }
