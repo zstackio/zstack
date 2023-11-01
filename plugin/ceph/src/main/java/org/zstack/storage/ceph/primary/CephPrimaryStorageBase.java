@@ -416,6 +416,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class DeleteCmd extends AgentCommand {
         String installPath;
+        long expirationTime;
+
+        public long getExpirationTime() {
+            return expirationTime;
+        }
+
+        public void setExpirationTime(long expirationTime) {
+            this.expirationTime = expirationTime;
+        }
 
         public String getInstallPath() {
             return installPath;
@@ -996,6 +1005,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class DeleteVolumeChainRsp extends AgentResponse {
     }
 
+    public static class CleanTrashCmd extends AgentCommand {
+        public List<String> pools;
+        public boolean force;
+    }
+
+    public static class CleanTrashRsp extends AgentResponse {
+        public Map<String, List<String>> pool2TrashResult;
+    }
+
     public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext, Serializable {
         String parentUuid;
         String resourceUuid;
@@ -1331,6 +1349,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String GET_IMAGE_WATCHERS_PATH = "/ceph/primarystorage/getvolumewatchers";
     public static final String GET_BACKING_CHAIN_PATH = "/ceph/primarystorage/volume/getbackingchain";
     public static final String DELETE_VOLUME_CHAIN_PATH = "/ceph/primarystorage/volume/deletechain";
+    public static final String CLAEN_TRASH_PATH = "/ceph/primarystorage/trash/clean";
 
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
@@ -2003,6 +2022,36 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 return name;
             }
         });
+    }
+
+    protected void handle(final APICleanUpStorageTrashOnPrimaryStorageMsg msg) {
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+            .setSyncSignature("cleanup-ceph-trash-for-ps-" + msg.getPrimaryStorageUuid())
+            .run(comp -> {
+                cleanUpStorageTrash(new ReturnValueCompletion<Map>(comp) {
+                    @Override
+                    public void success(Map result) {
+                        comp.success(result);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        comp.fail(errorCode);
+                    }
+                }, msg.isForce());
+            })
+            .done(result -> {
+                APICleanUpStorageTrashOnPrimaryStorageEvent event = new APICleanUpStorageTrashOnPrimaryStorageEvent(msg.getId());
+                if (result.isSuccess()) {
+                    Map<String, List<String>> res = (Map<String, List<String>>) result.getResult();
+                    event.setResult(res);
+                    event.setTotal(res.values().stream().mapToInt(List::size).sum());
+                    bus.publish(event);
+                } else {
+                    event.setError(result.getErrorCode());
+                    bus.publish(event);
+                }
+            }));
     }
 
     @Override
@@ -3298,6 +3347,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         private void prepareCmd() {
+            if (cmd instanceof DeleteCmd) {
+                ((DeleteCmd) cmd).setExpirationTime(CephGlobalConfig.IMAGE_EXPIRATION_TIME.value(Long.class));
+            }
             cmd.setUuid(self.getUuid());
             cmd.setFsId(getSelf().getFsid());
         }
@@ -3906,6 +3958,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((APIUpdateCephPrimaryStoragePoolMsg) msg);
         } else if (msg instanceof APICleanUpTrashOnPrimaryStorageMsg) {
             handle((APICleanUpTrashOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof APICleanUpStorageTrashOnPrimaryStorageMsg) {
+            handle((APICleanUpStorageTrashOnPrimaryStorageMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -4251,6 +4305,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
         } else if (msg instanceof GetPrimaryStorageUsageReportMsg) {
             handle((GetPrimaryStorageUsageReportMsg) msg);
+        } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {
+            handle((CleanUpStorageTrashOnPrimaryStorageMsg)msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -5730,6 +5786,54 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         reply.setUsageReportMap(poolUsageReport);
         bus.reply(msg, reply);
+    }
+
+    protected void handle(CleanUpStorageTrashOnPrimaryStorageMsg msg) {
+        CleanUpStorageTrashOnPrimaryStorageReply reply = new CleanUpStorageTrashOnPrimaryStorageReply();
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+            .setSyncSignature("cleanup-ceph-trash-for-ps-" + msg.getPrimaryStorageUuid())
+            .run(completion ->
+                cleanUpStorageTrash(new ReturnValueCompletion<Map>(completion) {
+                    @Override
+                    public void success(Map result) {
+                        completion.success(result);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                }, msg.isForce())
+            ).done(result -> {
+                if (result.isSuccess()) {
+                    reply.setResult((Map) result.getResult());
+                    bus.reply(msg, reply);
+                } else {
+                    reply.setError(result.getErrorCode());
+                    bus.reply(msg, reply);
+                }
+            }));
+    }
+
+    private void cleanUpStorageTrash(ReturnValueCompletion<Map> completion, boolean force) {
+        List<String> pools = Q.New(CephPrimaryStoragePoolVO.class)
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
+                .select(CephPrimaryStoragePoolVO_.poolName)
+                .listValues();
+        CleanTrashCmd cmd = new CleanTrashCmd();
+        cmd.pools = pools;
+        cmd.force = force;
+        new HttpCaller<>(CLAEN_TRASH_PATH, cmd, CleanTrashRsp.class, new ReturnValueCompletion<CleanTrashRsp>(completion) {
+            @Override
+            public void success(CleanTrashRsp rsp) {
+                completion.success(rsp.pool2TrashResult);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        }).call();
     }
 
     private List<String> getPoolUuidsFromPoolUris(List<String> poolUris) {

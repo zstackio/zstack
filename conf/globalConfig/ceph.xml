@@ -17,6 +17,22 @@
     </config>
 
     <config>
+        <name>trash.cleanup.interval</name>
+        <description>interval to cleanup image trash on primary storage, in seconds.</description>
+        <category>ceph</category>
+        <defaultValue>43200</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <name>image.expiration.time</name>
+        <description>the expiration time in seconds of an image so it can be purged when it is stale.</description>
+        <category>ceph</category>
+        <defaultValue>604800</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
         <name>primaryStorage.deletePool</name>
         <description>delete all primary storage related pools when deleting the ceph primary storage</description>
         <category>ceph</category>
