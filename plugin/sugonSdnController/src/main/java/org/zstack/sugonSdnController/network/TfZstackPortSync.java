@@ -12,13 +12,13 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.sugonSdnController.controller.api.ApiPropertyBase;
 import org.zstack.sugonSdnController.controller.api.ObjectReference;
 import org.zstack.sugonSdnController.controller.api.types.VirtualMachineInterface;
-import org.zstack.sugonSdnController.controller.api.types.VirtualNetwork;
 import org.zstack.sugonSdnController.controller.neutronClient.TfPortResponse;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -32,6 +32,7 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
     @Autowired
     private TfPortService tfPortService;
     private final static CLogger logger = Utils.getLogger(TfZstackPortSync.class);
+    private final List<String> excludeTypes = new ArrayList<String>(Arrays.asList("neutron:LOADBALANCER", "VIP", "BMS"));
 
     @Override
     public void managementNodeReady() {
@@ -70,8 +71,8 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
                     if (!zstackL2NetworksUuid.contains(StringDSL.transToZstackUuid(tfNetworks.get(0).getUuid()))) {
                         continue;
                     }
-                    // exclude the virtualmachineinterface of vip
-                    if ("neutron:LOADBALANCER".equals(vmi.getDeviceOwner()) || "VIP".equals(vmi.getDeviceOwner())) {
+                    // exclude the virtualmachineinterface
+                    if (excludeTypes.contains(vmi.getDeviceOwner())) {
                         continue;
                     }
                     // exclude the virtualmachineinterface of tf lb
