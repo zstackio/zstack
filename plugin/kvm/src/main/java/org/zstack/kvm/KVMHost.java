@@ -80,6 +80,7 @@ import org.zstack.kvm.hypervisor.KvmHypervisorInfoManager;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -5258,7 +5259,7 @@ public class KVMHost extends HostBase implements Host {
                     }
                 });
 
-                flow(createCollectHostFactsFlow());
+                flow(createCollectHostFactsFlow(info));
 
                 if (info.isNewAdded()) {
                     flow(new NoRollbackFlow() {
@@ -5330,7 +5331,7 @@ public class KVMHost extends HostBase implements Host {
         }).start();
     }
 
-    private NoRollbackFlow createCollectHostFactsFlow() {
+    private NoRollbackFlow createCollectHostFactsFlow(final ConnectHostInfo info) {
         return new NoRollbackFlow() {
             String __name__ = "collect-kvm-host-facts";
 
@@ -5367,27 +5368,65 @@ public class KVMHost extends HostBase implements Host {
                         });
             }
 
+            private void recordHardwareChangesAndCreateTag(PatternedSystemTag systemTag, String token, String newValue, ErrorCodeList errorCodeList) {
+                if (StringUtils.isEmpty(newValue)) {
+                    return;
+                }
+
+                String oldValue = systemTag.getTokenByResourceUuid(self.getUuid(), token);
+                if (StringUtils.isEmpty(oldValue) || newValue.equals(oldValue)) {
+                    logger.trace(String.format("host[uuid:%s]'s %s not changed or not recorded, old:%s, new:%s",
+                            self.getUuid(),
+                            systemTag.getTagFormat(),
+                            oldValue, newValue));
+                    createTagWithoutNonValue(systemTag, token, newValue, true);
+                    return;
+                }
+
+                errorCodeList.getCauses().add(operr("host[uuid:%s]'s %s changed, old:%s, new:%s",
+                        self.getUuid(),
+                        systemTag.getTagFormat(),
+                        oldValue, newValue));
+
+                createTagWithoutNonValue(systemTag, token, newValue, true);
+            }
+
             private void saveGeneralHostHardwareFacts(HostFactResponse ret) {
-                createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
-                createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
-                createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), true);
-                createTagWithoutNonValue(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(),  true);
+                ErrorCodeList errorCodeList = new ErrorCodeList();
+
+                recordHardwareChangesAndCreateTag(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_MANUFACTURER, HostSystemTags.SYSTEM_MANUFACTURER_TOKEN, ret.getSystemManufacturer(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_UUID, HostSystemTags.SYSTEM_UUID_TOKEN, ret.getSystemUUID(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HostSystemTags.MEMORY_SLOTS_MAXIMUM, HostSystemTags.MEMORY_SLOTS_MAXIMUM_TOKEN, ret.getMemorySlotsMaximum(), errorCodeList);
+
                 createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
                 createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
                 createTagWithoutNonValue(HostSystemTags.IPMI_ADDRESS, HostSystemTags.IPMI_ADDRESS_TOKEN, ret.getIpmiAddress(), true);
                 createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
-                createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
-                createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
-                createTagWithoutNonValue(HostSystemTags.SYSTEM_MANUFACTURER, HostSystemTags.SYSTEM_MANUFACTURER_TOKEN, ret.getSystemManufacturer(), true);
-                createTagWithoutNonValue(HostSystemTags.SYSTEM_UUID, HostSystemTags.SYSTEM_UUID_TOKEN, ret.getSystemUUID(), true);
                 createTagWithoutNonValue(HostSystemTags.BIOS_VENDOR, HostSystemTags.BIOS_VENDOR_TOKEN, ret.getBiosVendor(), true);
                 createTagWithoutNonValue(HostSystemTags.BIOS_VERSION, HostSystemTags.BIOS_VERSION_TOKEN, ret.getBiosVersion(), true);
                 createTagWithoutNonValue(HostSystemTags.BIOS_RELEASE_DATE, HostSystemTags.BIOS_RELEASE_DATE_TOKEN, ret.getBiosReleaseDate(), true);
                 createTagWithoutNonValue(HostSystemTags.BMC_VERSION, HostSystemTags.BMC_VERSION_TOKEN, ret.getBmcVersion(), true);
                 createTagWithoutNonValue(HostSystemTags.UPTIME, HostSystemTags.UPTIME_TOKEN, ret.getUptime(), true);
-                createTagWithoutNonValue(HostSystemTags.MEMORY_SLOTS_MAXIMUM, HostSystemTags.MEMORY_SLOTS_MAXIMUM_TOKEN, ret.getMemorySlotsMaximum(), true);
 
                 saveHostExtraIps(ret);
+
+                if (errorCodeList.getCauses().isEmpty()) {
+                    return;
+                }
+
+                // only log the hardware info change for existing host
+                if (info.isNewAdded()) {
+                    logger.debug(String.format("host[uuid:%s]'s hardware info changed, %s", self.getUuid(), errorCodeList.getCauses()));
+                    return;
+                }
+
+                new HostHardwareChangedCanonicalEvent(self.getUuid(), errorCodeList).fire();
             }
 
             /**
