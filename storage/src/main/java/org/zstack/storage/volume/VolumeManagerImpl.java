@@ -277,6 +277,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             String primaryStorageInstallPath;
             String prePSInstallPath;
             String volumeFormat;
+            String volumeProtocol;
             String allocatedInstallUrl;
 
             @Override
@@ -435,6 +436,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                     DownloadDataVolumeToPrimaryStorageReply r = reply.castReply();
                                     primaryStorageInstallPath = r.getInstallPath();
                                     volumeFormat = r.getFormat();
+                                    volumeProtocol = r.getProtocol();
                                     trigger.next();
                                 }
                             }
@@ -481,6 +483,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         vo.setStatus(VolumeStatus.Ready);
                         if (volumeFormat != null) {
                             vo.setFormat(volumeFormat);
+                        }
+                        if (volumeProtocol != null) {
+                            vo.setProtocol(volumeProtocol);
                         }
                         dbf.updateAndRefresh(vo);
 

@@ -12,7 +12,7 @@ import java.util.Map;
         path = "/block/volumes/{volId}/qos",
         method = HttpMethod.PUT,
         responseClass = SetVolumeQosResponse.class,
-        sync = true
+        sync = false
 )
 public class SetVolumeQosRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
@@ -20,7 +20,7 @@ public class SetVolumeQosRequest extends ExponRequest {
     @Param
     private String volId;
     @Param
-    private VolumeQos qos;
+    private ExponVolumeQos qos;
 
 
     @Override
@@ -36,11 +36,11 @@ public class SetVolumeQosRequest extends ExponRequest {
         this.volId = volId;
     }
 
-    public VolumeQos getQos() {
+    public ExponVolumeQos getQos() {
         return qos;
     }
 
-    public void setQos(VolumeQos qos) {
+    public void setQos(ExponVolumeQos qos) {
         this.qos = qos;
     }
 }

@@ -198,7 +198,7 @@ public class ExponApiHelper {
         callErrorOut(req, DeleteVolumeResponse.class);
     }
     
-    public VolumeModule cloneVolume(String snapId, String name, VolumeQos qos) {
+    public VolumeModule cloneVolume(String snapId, String name, ExponVolumeQos qos) {
         CloneVolumeRequest req = new CloneVolumeRequest();
         req.setSnapshotId(snapId);
         if (qos != null) {
@@ -226,12 +226,17 @@ public class ExponApiHelper {
         return getVolume(volId);
     }
 
-    public VolumeModule setVolumeQos(String volId, VolumeQos qos) {
+    public VolumeModule setVolumeQos(String volId, ExponVolumeQos qos) {
         SetVolumeQosRequest req = new SetVolumeQosRequest();
         req.setQos(qos);
         req.setVolId(volId);
         SetVolumeQosResponse rsp = callErrorOut(req, SetVolumeQosResponse.class);
 
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return getVolume(volId);
     }
 

@@ -15,7 +15,7 @@ import org.zstack.expon.sdk.pool.FailureDomainModule;
 import org.zstack.expon.sdk.uss.UssGatewayModule;
 import org.zstack.expon.sdk.vhost.VHostControllerModule;
 import org.zstack.expon.sdk.volume.VolumeModule;
-import org.zstack.expon.sdk.volume.VolumeQos;
+import org.zstack.expon.sdk.volume.ExponVolumeQos;
 import org.zstack.expon.sdk.volume.VolumeSnapshotModule;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -67,7 +67,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         scap.setSupportCreateOnHypervisor(false);
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportCloneFromVolume(false);
-        capabilities.setSupportedImageFormats(Collections.singletonList("qcow2"));
+        capabilities.setSupportStorageQos(true);
+        capabilities.setSupportLiveExpandVolume(false);
+        capabilities.setSupportedImageFormats(Collections.singletonList("raw"));
     }
 
     public ExponStorageController(ExternalPrimaryStorageVO self) {
@@ -141,7 +143,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp) {
         ActiveVolumeTO to;
-        if (v.getProtocol() == VolumeProtocol.VHost) {
+        if (VolumeProtocol.VHost.toString().equals(v.getProtocol())) {
             to = activeVhostVolume(h, v);
             comp.success(to);
             return;
@@ -170,7 +172,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public ActiveVolumeTO getActiveResult(BaseVolumeInfo v, boolean shareable) {
-        if (v.getProtocol() != VolumeProtocol.VHost) {
+        if (!VolumeProtocol.VHost.toString().equals(v.getProtocol())) {
             throw new OperationFailureException(operr("not supported protocol[%s]", v.getProtocol()));
         }
 
@@ -183,7 +185,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void deactivate(BaseVolumeInfo vol, HostInventory h, Completion comp) {
-        if (vol.getProtocol() == VolumeProtocol.VHost) {
+        if (VolumeProtocol.VHost.toString().equals(vol.getProtocol())) {
             deactiveVhost(vol, h);
             comp.success();
             return;
@@ -349,7 +351,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void cloneVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats> comp) {
         String snapId = getSnapIdFromPath(srcInstallPath);
-        VolumeModule vol = apiHelper.cloneVolume(snapId, dst.getName(), VolumeQos.valueOf(dst.getQos()));
+        VolumeModule vol = apiHelper.cloneVolume(snapId, dst.getName(), ExponVolumeQos.valueOf(dst.getQos()));
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(buildExponPath(getPoolNameFromPath(srcInstallPath), vol.getId()));
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
@@ -393,7 +395,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void setVolumeQos(BaseVolumeInfo v, Completion comp) {
-        apiHelper.setVolumeQos(getVolIdFromPath(v.getInstallPath()), VolumeQos.valueOf(v.getQos()));
+        apiHelper.setVolumeQos(getVolIdFromPath(v.getInstallPath()), ExponVolumeQos.valueOf(v.getQos()));
         comp.success();
     }
 
@@ -407,7 +409,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
     }
 
-    NvmeRemoteTarget exportNvmf(ExportSpec espec) {
+    synchronized NvmeRemoteTarget exportNvmf(ExportSpec espec) {
         String lunId, lunType;
         String source = espec.getInstallPath();
         if (source.contains("@")) {
@@ -467,7 +469,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         comp.success();
     }
 
-    private void unexportNvmf(String source, NvmeRemoteTarget target) {
+    private synchronized void unexportNvmf(String source, NvmeRemoteTarget target) {
         String lunId, lunType;
         if (source.contains("@")) {
             lunId = getSnapIdFromPath(source);
