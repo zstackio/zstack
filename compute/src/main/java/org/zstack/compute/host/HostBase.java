@@ -104,6 +104,20 @@ public abstract class HostBase extends AbstractHost {
         }
     }
 
+    public static class HostHardwareChangedCanonicalEvent extends CanonicalEventEmitter {
+        HostCanonicalEvents.HostHardwareChangedData data;
+
+        public HostHardwareChangedCanonicalEvent(String hostUuid, ErrorCodeList reason) {
+            data = new HostCanonicalEvents.HostHardwareChangedData();
+            data.hostUuid = hostUuid;
+            data.reason = reason;
+        }
+
+        public void fire() {
+            fire(HostCanonicalEvents.HOST_HARDWARE_CHANGED_PATH, data);
+        }
+    }
+
     protected final String id;
 
     protected abstract void pingHook(Completion completion);
