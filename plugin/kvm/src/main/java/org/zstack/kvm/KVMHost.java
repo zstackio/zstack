@@ -5258,93 +5258,7 @@ public class KVMHost extends HostBase implements Host {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "collect-kvm-host-facts";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        HostFactCmd cmd = new HostFactCmd();
-                        new Http<>(hostFactPath, cmd, HostFactResponse.class)
-                                .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
-                            @Override
-                            public void success(HostFactResponse ret) {
-                                if (!ret.isSuccess()) {
-                                    trigger.fail(operr("operation error, because:%s", ret.getError()));
-                                    return;
-                                }
-
-                                deleteCpuHistoryVOIfCpuModeNameChange(ret.getCpuModelName());
-
-                                if (ret.getHvmCpuFlag() == null) {
-                                    trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
-                                    return;
-                                }
-
-                                updateHostOsInformation(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
-
-                                createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
-                                createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
-                                createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
-                                createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
-                                createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
-                                createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
-                                createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
-                                createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), true);
-                                createTagWithoutNonValue(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(),  true);
-                                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
-                                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
-                                createTagWithoutNonValue(HostSystemTags.IPMI_ADDRESS, HostSystemTags.IPMI_ADDRESS_TOKEN, ret.getIpmiAddress(), true);
-                                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
-                                createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
-                                createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
-                                createTagWithoutNonValue(HostSystemTags.SYSTEM_MANUFACTURER, HostSystemTags.SYSTEM_MANUFACTURER_TOKEN, ret.getSystemManufacturer(), true);
-                                createTagWithoutNonValue(HostSystemTags.SYSTEM_UUID, HostSystemTags.SYSTEM_UUID_TOKEN, ret.getSystemUUID(), true);
-                                createTagWithoutNonValue(HostSystemTags.BIOS_VENDOR, HostSystemTags.BIOS_VENDOR_TOKEN, ret.getBiosVendor(), true);
-                                createTagWithoutNonValue(HostSystemTags.BIOS_VERSION, HostSystemTags.BIOS_VERSION_TOKEN, ret.getBiosVersion(), true);
-                                createTagWithoutNonValue(HostSystemTags.BIOS_RELEASE_DATE, HostSystemTags.BIOS_RELEASE_DATE_TOKEN, ret.getBiosReleaseDate(), true);
-                                createTagWithoutNonValue(HostSystemTags.BMC_VERSION, HostSystemTags.BMC_VERSION_TOKEN, ret.getBmcVersion(), true);
-                                createTagWithoutNonValue(HostSystemTags.UPTIME, HostSystemTags.UPTIME_TOKEN, ret.getUptime(), true);
-
-                                createTagWithoutNonValue(HostSystemTags.MEMORY_SLOTS_MAXIMUM, HostSystemTags.MEMORY_SLOTS_MAXIMUM_TOKEN, ret.getMemorySlotsMaximum(), true);
-
-
-                                if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
-                                    recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
-                                }
-
-
-
-                                List<String> ips = ret.getIpAddresses();
-                                if (ips != null) {
-                                    ips.remove(self.getManagementIp());
-                                    if (CoreGlobalProperty.MN_VIP != null) {
-                                        ips.remove(CoreGlobalProperty.MN_VIP);
-                                    }
-                                    if (!ips.isEmpty()) {
-                                        recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
-                                    } else {
-                                        HostSystemTags.EXTRA_IPS.delete(self.getUuid());
-                                    }
-                                }
-
-                                List<String> libvirtCapabilities = ret.getLibvirtCapabilities();
-                                if (libvirtCapabilities != null) {
-                                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
-                                }
-
-                                ret.getVirtualizerInfo().setUuid(self.getUuid());
-                                hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());
-
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
+                flow(createCollectHostFactsFlow());
 
                 if (info.isNewAdded()) {
                     flow(new NoRollbackFlow() {
@@ -5414,6 +5328,117 @@ public class KVMHost extends HostBase implements Host {
                 });
             }
         }).start();
+    }
+
+    private NoRollbackFlow createCollectHostFactsFlow() {
+        return new NoRollbackFlow() {
+            String __name__ = "collect-kvm-host-facts";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                HostFactCmd cmd = new HostFactCmd();
+                new Http<>(hostFactPath, cmd, HostFactResponse.class)
+                        .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
+                            @Override
+                            public void success(HostFactResponse ret) {
+                                if (!ret.isSuccess()) {
+                                    trigger.fail(operr("operation error, because:%s", ret.getError()));
+                                    return;
+                                }
+
+                                if (!checkVirtualizationEnabled(ret)) {
+                                    trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
+                                    return;
+                                }
+
+                                saveKvmHostRelatedFacts(ret);
+                                saveGeneralHostHardwareFacts(ret);
+
+                                ret.getVirtualizerInfo().setUuid(self.getUuid());
+                                hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());
+
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+            }
+
+            private void saveGeneralHostHardwareFacts(HostFactResponse ret) {
+                createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
+                createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
+                createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), true);
+                createTagWithoutNonValue(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(),  true);
+                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
+                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
+                createTagWithoutNonValue(HostSystemTags.IPMI_ADDRESS, HostSystemTags.IPMI_ADDRESS_TOKEN, ret.getIpmiAddress(), true);
+                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
+                createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
+                createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
+                createTagWithoutNonValue(HostSystemTags.SYSTEM_MANUFACTURER, HostSystemTags.SYSTEM_MANUFACTURER_TOKEN, ret.getSystemManufacturer(), true);
+                createTagWithoutNonValue(HostSystemTags.SYSTEM_UUID, HostSystemTags.SYSTEM_UUID_TOKEN, ret.getSystemUUID(), true);
+                createTagWithoutNonValue(HostSystemTags.BIOS_VENDOR, HostSystemTags.BIOS_VENDOR_TOKEN, ret.getBiosVendor(), true);
+                createTagWithoutNonValue(HostSystemTags.BIOS_VERSION, HostSystemTags.BIOS_VERSION_TOKEN, ret.getBiosVersion(), true);
+                createTagWithoutNonValue(HostSystemTags.BIOS_RELEASE_DATE, HostSystemTags.BIOS_RELEASE_DATE_TOKEN, ret.getBiosReleaseDate(), true);
+                createTagWithoutNonValue(HostSystemTags.BMC_VERSION, HostSystemTags.BMC_VERSION_TOKEN, ret.getBmcVersion(), true);
+                createTagWithoutNonValue(HostSystemTags.UPTIME, HostSystemTags.UPTIME_TOKEN, ret.getUptime(), true);
+                createTagWithoutNonValue(HostSystemTags.MEMORY_SLOTS_MAXIMUM, HostSystemTags.MEMORY_SLOTS_MAXIMUM_TOKEN, ret.getMemorySlotsMaximum(), true);
+
+                saveHostExtraIps(ret);
+            }
+
+            /**
+             * save host extra ips to host tag
+             * host management network ip address and management node vip should be excluded
+             * @param response
+             */
+            private void saveHostExtraIps(HostFactResponse response) {
+                List<String> ips = response.getIpAddresses();
+                if (ips == null) {
+                    return;
+                }
+
+                ips.remove(self.getManagementIp());
+                if (CoreGlobalProperty.MN_VIP != null) {
+                    ips.remove(CoreGlobalProperty.MN_VIP);
+                }
+
+                if (ips.isEmpty()) {
+                    HostSystemTags.EXTRA_IPS.delete(self.getUuid());
+                    return;
+                }
+
+                recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
+            }
+
+            private boolean checkVirtualizationEnabled(HostFactResponse response) {
+                return response.getHvmCpuFlag() != null;
+            }
+
+            private void saveKvmHostRelatedFacts(HostFactResponse ret) {
+                updateHostOsInformation(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
+
+                createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
+                createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
+                createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
+                createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
+                createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
+
+                if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
+                    recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
+                }
+
+                List<String> libvirtCapabilities = ret.getLibvirtCapabilities();
+                if (libvirtCapabilities != null) {
+                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
+                }
+
+                deleteCpuHistoryVOIfCpuModeNameChange(ret.getCpuModelName());
+            }
+        };
     }
 
     private void deleteCpuHistoryVOIfCpuModeNameChange(String cpuModelName){
