@@ -9,4 +9,6 @@ public @interface Param {
     boolean required() default true;
 
     String[] validValues() default {};
+
+    long[] numberRange() default {};
 }

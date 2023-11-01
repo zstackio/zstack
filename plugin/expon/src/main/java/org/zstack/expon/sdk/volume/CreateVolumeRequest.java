@@ -24,7 +24,7 @@ public class CreateVolumeRequest extends ExponRequest {
     @Param
     private long volumeSize;
     @Param
-    private VolumeQos qos = new VolumeQos();
+    private ExponVolumeQos qos = new ExponVolumeQos();
 
     @Override
     protected Map<String, Parameter> getParameterMap() {
@@ -55,11 +55,11 @@ public class CreateVolumeRequest extends ExponRequest {
         this.volumeSize = volumeSize;
     }
 
-    public VolumeQos getQos() {
+    public ExponVolumeQos getQos() {
         return qos;
     }
 
-    public void setQos(VolumeQos qos) {
+    public void setQos(ExponVolumeQos qos) {
         this.qos = qos;
     }
 }
