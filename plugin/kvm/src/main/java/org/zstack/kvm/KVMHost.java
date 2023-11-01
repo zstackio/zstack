@@ -210,7 +210,6 @@ public class KVMHost extends HostBase implements Host {
     private String attachVolumePath;
     private String detachVolumePath;
     private String vmFstrimPath;
-
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
 
@@ -2865,7 +2864,6 @@ public class KVMHost extends HostBase implements Host {
         UpdateNicCmd cmd = new UpdateNicCmd();
         cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmd.setNics(VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList()));
-        cmd.setNotifySugonSdn(msg.isNotifySugonSdn());
         cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
