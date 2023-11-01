@@ -1,5 +1,7 @@
 package org.zstack.header.storage.addon.primary;
 
+import org.zstack.header.volume.VolumeQos;
+
 public class CreateVolumeSpec {
     private String name;
     private String uuid;

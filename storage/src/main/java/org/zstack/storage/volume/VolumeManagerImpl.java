@@ -1,6 +1,5 @@
 package org.zstack.storage.volume;
 
-import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +57,10 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -260,6 +262,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             String primaryStorageInstallPath;
             String prePSInstallPath;
             String volumeFormat;
+            String volumeProtocol;
             String allocatedInstallUrl;
 
             @Override
@@ -418,6 +421,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                     DownloadDataVolumeToPrimaryStorageReply r = reply.castReply();
                                     primaryStorageInstallPath = r.getInstallPath();
                                     volumeFormat = r.getFormat();
+                                    volumeProtocol = r.getProtocol();
                                     trigger.next();
                                 }
                             }
@@ -464,6 +468,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         vo.setStatus(VolumeStatus.Ready);
                         if (volumeFormat != null) {
                             vo.setFormat(volumeFormat);
+                        }
+                        if (volumeProtocol != null) {
+                            vo.setProtocol(volumeProtocol);
                         }
                         dbf.updateAndRefresh(vo);
 

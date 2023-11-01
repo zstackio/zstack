@@ -1,7 +1,7 @@
 package org.zstack.header.storage.addon.primary;
 
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeProtocol;
+import org.zstack.header.volume.VolumeQos;
 import org.zstack.header.volume.VolumeStats;
 
 import java.util.Collection;
@@ -14,7 +14,7 @@ public class BaseVolumeInfo extends VolumeStats {
     VolumeQos qos;
 
     protected String primaryStorageUuid;
-    protected VolumeProtocol protocol;
+    protected String protocol;
     protected boolean shareable;
 
     public BaseVolumeInfo(VolumeStats stats) {
@@ -25,11 +25,11 @@ public class BaseVolumeInfo extends VolumeStats {
         super();
     }
 
-    public void setProtocol(VolumeProtocol protocol) {
+    public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
 
-    public VolumeProtocol getProtocol() {
+    public String getProtocol() {
         return protocol;
     }
 
@@ -57,6 +57,10 @@ public class BaseVolumeInfo extends VolumeStats {
         return primaryStorageUuid;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     public String getUuid() {
         return uuid;
     }
@@ -66,9 +70,7 @@ public class BaseVolumeInfo extends VolumeStats {
         info.uuid = vol.getUuid();
         info.setActualSize(vol.getActualSize());
         info.setInstallPath(vol.getInstallPath());
-        if (vol.getProtocol() != null) {
-            info.setProtocol(VolumeProtocol.valueOf(vol.getProtocol()));
-        }
+        info.setProtocol(vol.getProtocol());
         info.setQos(VolumeQos.valueOf(vol.getVolumeQos()));
         info.setShareable(vol.isShareable());
         info.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());

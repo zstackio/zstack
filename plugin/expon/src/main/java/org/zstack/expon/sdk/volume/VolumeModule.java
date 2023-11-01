@@ -25,7 +25,7 @@ public class VolumeModule {
     private long dataSize;
     private boolean isDelete;
     private boolean qosStatus;
-    private VolumeQos qos;
+    private ExponVolumeQos qos;
 
     public String getId() {
         return id;
@@ -99,11 +99,11 @@ public class VolumeModule {
         this.qosStatus = qosStatus;
     }
 
-    public VolumeQos getQos() {
+    public ExponVolumeQos getQos() {
         return qos;
     }
 
-    public void setQos(VolumeQos qos) {
+    public void setQos(ExponVolumeQos qos) {
         this.qos = qos;
     }
 }

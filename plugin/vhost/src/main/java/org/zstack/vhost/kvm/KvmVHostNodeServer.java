@@ -10,6 +10,7 @@ import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeProtocolCapability;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 
@@ -23,6 +24,13 @@ public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint,
     private ExternalPrimaryStorageFactory extPsFactory;
 
     private PluginRegistry pluginRgty;
+
+    private static VolumeProtocolCapability capability = VolumeProtocolCapability.register("VHost", KVMConstant.KVM_HYPERVISOR_TYPE);
+
+    {
+        capability.setSupportQosOnHypervisor(false);
+        capability.setSupportResizeOnHypervisor(false);
+    }
 
 
     @Override

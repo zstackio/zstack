@@ -8,6 +8,10 @@ public class StorageCapabilities {
     private VolumeSnapshotCapability snapshotCapability;
 
     private boolean supportCloneFromVolume;
+
+    private boolean supportStorageQos;
+
+    private boolean supportLiveExpandVolume;
     public List<String> supportedImageFormats;
 
     public VolumeSnapshotCapability getSnapshotCapability() {
@@ -32,5 +36,21 @@ public class StorageCapabilities {
 
     public void setSupportedImageFormats(List<String> supportedImageFormats) {
         this.supportedImageFormats = supportedImageFormats;
+    }
+
+    public boolean isSupportStorageQos() {
+        return supportStorageQos;
+    }
+
+    public void setSupportStorageQos(boolean supportStorageQos) {
+        this.supportStorageQos = supportStorageQos;
+    }
+
+    public boolean isSupportLiveExpandVolume() {
+        return supportLiveExpandVolume;
+    }
+
+    public void setSupportLiveExpandVolume(boolean supportLiveExpandVolume) {
+        this.supportLiveExpandVolume = supportLiveExpandVolume;
     }
 }
