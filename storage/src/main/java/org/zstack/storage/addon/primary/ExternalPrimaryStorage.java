@@ -659,7 +659,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     public void run(FlowTrigger trigger, Map data) {
                         DownloadImageFromRemoteTargetMsg umsg = new DownloadImageFromRemoteTargetMsg();
                         umsg.setBackupStorageUuid(msg.getBackupStorageUuid());
-                        umsg.setImageUuid(msg.getImageInventory().getUuid());
+                        umsg.setImage(msg.getImageInventory());
                         umsg.setRemoteTargetUrl(remoteTarget.getResourceURI());
                         bus.makeTargetServiceIdByResourceUuid(umsg, BackupStorageConstant.SERVICE_ID, msg.getBackupStorageUuid());
                         bus.send(umsg, new CloudBusCallBack(trigger) {

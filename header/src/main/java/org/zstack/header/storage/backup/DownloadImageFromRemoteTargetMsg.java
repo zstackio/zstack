@@ -4,7 +4,6 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 
 public class DownloadImageFromRemoteTargetMsg extends NeedReplyMessage implements BackupStorageMessage {
-    private String imageUuid;
     private ImageInventory image;
     private String backupStorageUuid;
     private String remoteTargetUrl;
@@ -16,13 +15,7 @@ public class DownloadImageFromRemoteTargetMsg extends NeedReplyMessage implement
     public void setBackupStorageUuid(String backupStorageUuid) {
         this.backupStorageUuid = backupStorageUuid;
     }
-    public String getImageUuid() {
-        return imageUuid;
-    }
 
-    public void setImageUuid(String imageUuid) {
-        this.imageUuid = imageUuid;
-    }
 
     public ImageInventory getImage() {
         return image;

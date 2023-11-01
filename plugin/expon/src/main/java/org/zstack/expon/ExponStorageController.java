@@ -4,9 +4,11 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.expon.sdk.ExponClient;
 import org.zstack.expon.sdk.ExponConfig;
 import org.zstack.expon.sdk.cluster.TianshuClusterModule;
+import org.zstack.expon.sdk.nvmf.NvmfBoundUssGatewayRefModule;
 import org.zstack.expon.sdk.nvmf.NvmfClientGroupModule;
 import org.zstack.expon.sdk.nvmf.NvmfModule;
 import org.zstack.expon.sdk.pool.FailureDomainModule;
@@ -44,6 +46,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ThreadFacade thdf;
     private ExternalPrimaryStorageVO self;
     private ExponAddonInfo addonInfo;
 
@@ -417,21 +421,23 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String tianshuId = addonInfo.getClusters().get(0).getId();
         UssGatewayModule uss = getUssGateway(VolumeProtocol.NVMEoF, "zstack");
 
-        String nvmfControllerName = "nvmf_" + lunId;
+        String nvmfControllerName = "nvmf_zstack";
         NvmfModule nvmf = apiHelper.queryNvmfController(nvmfControllerName);
         if (nvmf == null) {
             nvmf = apiHelper.createNvmfController(nvmfControllerName, tianshuId, lunId);
         }
 
-        String nvmfClientName = "nvmf_" + lunId;
+        NvmfBoundUssGatewayRefModule ref = apiHelper.getNvmfBoundUssGateway(nvmf.getId(), uss.getId());
+        if (ref == null) {
+            ref = apiHelper.bindNvmfTargetToUss(nvmf.getId(), uss.getId(), 4420);
+        }
+
+        String nvmfClientName = "nvmf_zstack";
         NvmfClientGroupModule client = apiHelper.queryNvmfClient(nvmfClientName);
         if (client == null) {
             client = apiHelper.createNvmfClient(nvmfClientName, tianshuId, Collections.singletonList(hostNqn));
+            apiHelper.addNvmfClientToNvmfTarget(client.getId(), nvmf.getId());
         }
-
-        // TODO port is hardcode
-        apiHelper.bindNvmfTargetToUss(nvmf.getId(), uss.getId(), 4420);
-        apiHelper.addNvmfClientToNvmfTarget(client.getId(), nvmf.getId());
 
         if (lunType.equals("volume")) {
             apiHelper.addVolumeToNvmfClientGroup(lunId, client.getId(), nvmf.getId());
@@ -446,7 +452,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setPort(4420);
         target.setTransport("tcp");
         target.setNqn(nvmf.getNqn());
-        target.setIp(uss.getManagerIp());
+        target.setIp(ref.getBindIp());
         target.setDiskId(lunId);
         return target;
     }
@@ -471,20 +477,14 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             lunType = "volume";
         }
 
-        String tianshuId = addonInfo.getClusters().get(0).getId();
         UssGatewayModule uss = getUssGateway(VolumeProtocol.NVMEoF, "zstack");
 
-        String nvmfControllerName = "nvmf_" + lunId;
+        String nvmfControllerName = "nvmf_zstack";
         NvmfModule nvmf = apiHelper.queryNvmfController(nvmfControllerName);
 
-        String nvmfClientName = "nvmf_" + lunId;
+        String nvmfClientName = "nvmf_zstack";
         NvmfClientGroupModule client = apiHelper.queryNvmfClient(nvmfClientName);
-        if (nvmf == null && client == null) {
-            return;
-        }
-
-        if (client == null) {
-            apiHelper.deleteNvmfController(nvmf.getId());
+        if (nvmf == null || client == null) {
             return;
         }
 
@@ -496,10 +496,12 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
         sleep();
 
+        /*
         apiHelper.removeNvmfClientFromNvmfTarget(client.getId(), nvmf.getId());
         apiHelper.unbindNvmfTargetToUss(nvmf.getId(), uss.getId());
         apiHelper.deleteNvmfController(nvmf.getId());
         apiHelper.deleteNvmfClient(client.getId());
+         */
     }
 
     private void sleep() {
