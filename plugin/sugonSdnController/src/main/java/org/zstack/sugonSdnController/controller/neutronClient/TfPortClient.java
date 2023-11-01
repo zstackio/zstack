@@ -37,8 +37,18 @@ public class TfPortClient {
         tenantId = StringDSL.transToTfUuid(sdn.getAccountUuid());
     }
 
+    private boolean getVMType(KeyValuePairs bindInfo) {
+        List<KeyValuePair> bindings = bindInfo.getKeyValuePair();
+        for (KeyValuePair item : bindings) {
+            if (Objects.equals(item.getKey(), "vnic_type") && Objects.equals(item.getValue(), "baremetal")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip,
-                                     String vmInventeryId, String tfPortUuid, String vmName) {
+                                     String vmInventeryId, String tfPortUuid, String vmName, KeyValuePairs bindInfo) {
         TfPortRequestResource requestPortResourceEntity = new TfPortRequestResource();
         requestPortResourceEntity.setNetworkId(l2Id);
         requestPortResourceEntity.setSubnetId(l3Id);
@@ -82,6 +92,13 @@ public class TfPortClient {
                 port = getTfPortObject(requestPortResourceEntity, netObj, tfPortUuid);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            }
+            // set binding info
+            if (bindInfo != null) {
+                port.setBindings(bindInfo);
+                if (getVMType(bindInfo)) {
+                    port.setDeviceOwner("BMS");
+                }
             }
             PermType2 perms2 = new PermType2();
             perms2.setOwner(tenantId);
@@ -475,13 +492,18 @@ public class TfPortClient {
         return false;
     }
 
-    public void updateTfPort(String tfPortUUid, String accountId, String deviceId) {
+    public Status updateTfPort(String tfPortUUid, String accountId, String deviceId, KeyValuePairs bindInfo) {
         try {
             VirtualMachineInterface port = (VirtualMachineInterface) client.findById(
                     VirtualMachineInterface.class, tfPortUUid);
-            VirtualMachine vm = ensureInstanceExists(deviceId, accountId, false);
+            boolean isBms = false;
+            if (bindInfo != null) {
+                port.setBindings(bindInfo);
+                isBms = getVMType(bindInfo);
+            }
+            VirtualMachine vm = ensureInstanceExists(deviceId, accountId, isBms);
             port.setVirtualMachine(vm);
-            client.update(port);
+            return client.update(port);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
