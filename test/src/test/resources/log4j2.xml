@@ -154,6 +154,8 @@
 
         <Logger name="org.zstack.core.ansible" level="TRACE"/>
 
+        <Logger name="org.zstack.kvm" level="TRACE"/>
+
         <Logger name="org.springframework.data.cassandra.core" level="TRACE" />
 
         <Logger name="org.zstack.zwatch.namespace" level="TRACE"/>
