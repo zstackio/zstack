@@ -42,4 +42,19 @@ public class ZSha2Helper {
                 "ip addr show %s | grep -q '[^0-9]%s[^0-9]'", info.getNic(), info.getDbvip())).isReturnCode(0));
         return info;
     }
+
+    public static ZSha2StatusJsonInfo getStatusInfo() {
+        ShellResult result;
+
+        result = ShellUtils.runAndReturn("/usr/local/bin/zsha2 status -json");
+        if (!result.isReturnCode(0)) {
+            throw new RuntimeException(String.format("cannot get zsha2 status json, because %s.", result.getStderr()));
+        }
+
+        return JSONObjectUtil.toObject(result.getStdout(), ZSha2StatusJsonInfo.class);
+    }
+
+    public static boolean checkConnectivityOfPeerNode() {
+        return getStatusInfo().isPeerReachable();
+    }
 }
