@@ -10,8 +10,6 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String init;
     @SerializedName("skipIpv6")
     private String skipIpv6;
-    @SerializedName("isMini")
-    private String isMini;
     @SerializedName("isBareMetal2Gateway")
     private String isBareMetal2Gateway;
     @SerializedName("bridgeDisableIptables")
@@ -46,14 +44,6 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setSkipIpv6(String skipIpv6) {
         this.skipIpv6 = skipIpv6;
-    }
-
-    public String getIsMini() {
-        return isMini;
-    }
-
-    public void setIsMini(String isMini) {
-        this.isMini = isMini;
     }
 
     public String getIsBareMetal2Gateway() {

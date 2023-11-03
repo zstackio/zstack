@@ -5050,13 +5050,6 @@ public class KVMHost extends HostBase implements Host {
                         if (NetworkGlobalProperty.SKIP_IPV6) {
                             deployArguments.setSkipIpv6("true");
                         }
-                        for (CheckMiniExtensionPoint ext : pluginRegistry.getExtensionList(CheckMiniExtensionPoint.class)) {
-                            if (!ext.isMini()) {
-                                continue;
-                            }
-
-                            deployArguments.setIsMini("true");
-                        }
 
                         for (KvmHostGetExtraPackagesExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostGetExtraPackagesExtensionPoint.class)) {
                             String extraPackagesFromExt = ext.getExtraPackages(getSelfInventory());
