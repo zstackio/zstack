@@ -46,6 +46,9 @@ public class UpdateVCenterAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer port;
 
+    @Param(required = false, validValues = {"Enabled","Disabled"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state;
+
     @Param(required = false)
     public java.util.List systemTags;
 
