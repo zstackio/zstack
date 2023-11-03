@@ -34,4 +34,9 @@
     </bean>
     <bean id="tfPortService" class="org.zstack.sugonSdnController.network.TfPortService">
     </bean>
+    <bean id="InstanceBeforeAllocateIpExtensionPointImpl" class="org.zstack.sugonSdnController.network.InstanceBeforeAllocateIpExtensionPointImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.allocator.BeforeAllocateIpExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

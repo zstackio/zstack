@@ -40,7 +40,7 @@ public class VmPreAttachL3NetworkExtensionPointImpl implements VmPreAttachL3Netw
             tfPortUuid = StringDSL.transToTfUuid(nicAttach.getUuid());
             TfPortResponse port = tfPortService.getTfPort(tfPortUuid);
             if (port != null) {
-                tfPortService.updateTfPort(tfPortUuid, vm.getUuid());
+                tfPortService.updateTfPort(tfPortUuid, vm.getUuid(), null);
                 return;
             }
         }
