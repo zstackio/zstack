@@ -252,6 +252,15 @@ class ExternalPrimaryStorageCase extends SubCase {
             vmInstanceUuid = vm.uuid
             volumeUuid = vol2.uuid
         }
+
+        detachDataVolumeFromVm {
+            uuid = vol2.uuid
+        }
+
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = vol2.uuid
+        }
     }
 
     void testCreateSnapshot() {

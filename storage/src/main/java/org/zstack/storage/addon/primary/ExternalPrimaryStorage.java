@@ -31,6 +31,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeQos;
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
@@ -83,6 +84,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((TakeSnapshotMsg) msg);
         } else if (msg instanceof SelectBackupStorageMsg) {
             handle((SelectBackupStorageMsg) msg);
+        } else if (msg instanceof SetVolumeQosOnPrimaryStorageMsg) {
+            handle((SetVolumeQosOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ResizeVolumeOnPrimaryStorageMsg) {
+            handle((ResizeVolumeOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -312,6 +317,53 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
+    private void handle(SetVolumeQosOnPrimaryStorageMsg msg) {
+        SetVolumeQosOnPrimaryStorageReply reply = new SetVolumeQosOnPrimaryStorageReply();
+
+        VolumeInventory vol = VolumeInventory.valueOf(dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class));
+        BaseVolumeInfo v = BaseVolumeInfo.valueOf(vol);
+
+        VolumeQos qos = new VolumeQos();
+        qos.setTotalBandwidth(msg.getTotalBandWidth());
+        qos.setReadBandwidth(msg.getReadBandwidth());
+        qos.setWriteBandwidth(msg.getWriteBandwidth());
+        qos.setTotalIOPS(msg.getTotalIOPS());
+        qos.setReadIOPS(msg.getReadIOPS());
+        qos.setWriteIOPS(msg.getWriteIOPS());
+        v.setQos(qos);
+        controller.setVolumeQos(v, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(ResizeVolumeOnPrimaryStorageMsg msg) {
+        controller.expandVolume(msg.getVolume().getInstallPath(), msg.getSize(), new ReturnValueCompletion<VolumeStats>(msg) {
+            final ResizeVolumeOnPrimaryStorageReply reply = new ResizeVolumeOnPrimaryStorageReply();
+
+            @Override
+            public void success(VolumeStats stats) {
+                msg.getVolume().setSize(stats.getSize());
+                reply.setVolume(msg.getVolume());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     private void handle(TakeSnapshotMsg msg) {
         TakeSnapshotReply reply = new TakeSnapshotReply();
         VolumeSnapshotInventory sp = msg.getStruct().getCurrent();
@@ -324,6 +376,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void success(VolumeSnapshotStats stats) {
                 sp.setPrimaryStorageInstallPath(stats.getInstallPath());
+                sp.setPrimaryStorageUuid(self.getUuid());
+                sp.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
                 sp.setSize(stats.getActualSize());
                 reply.setInventory(sp);
                 bus.reply(msg, reply);
@@ -561,7 +615,15 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public boolean skip(Map data) {
-                        // TODO volume is online
+                        if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) {
+                            snapshotPath = Q.New(VolumeSnapshotVO.class)
+                                    .eq(VolumeSnapshotVO_.uuid, ((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg).getSnapshotUuid())
+                                    .select(VolumeSnapshotVO_.primaryStorageInstallPath)
+                                    .findValue();
+                            return true;
+                        }
+
+                        // TODO vm offline
                         return false;
                     }
 
@@ -743,6 +805,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             public void success(VolumeStats returnValue) {
                 reply.setInstallPath(returnValue.getInstallPath());
                 reply.setFormat(msg.getImage().getFormat());
+                reply.setProtocol(externalVO.getDefaultProtocol());
                 bus.reply(msg, reply);
             }
 

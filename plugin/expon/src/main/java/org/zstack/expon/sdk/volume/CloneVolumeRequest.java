@@ -25,7 +25,7 @@ public class CloneVolumeRequest extends ExponRequest {
     private String name;
 
     @Param
-    private VolumeQos qos = new VolumeQos();
+    private ExponVolumeQos qos = new ExponVolumeQos();
 
 
     @Override
@@ -49,11 +49,11 @@ public class CloneVolumeRequest extends ExponRequest {
         this.name = name;
     }
 
-    public VolumeQos getQos() {
+    public ExponVolumeQos getQos() {
         return qos;
     }
 
-    public void setQos(VolumeQos qos) {
+    public void setQos(ExponVolumeQos qos) {
         this.qos = qos;
     }
 }

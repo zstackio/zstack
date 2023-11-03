@@ -7,6 +7,7 @@ import org.zstack.header.message.MessageReply;
 public class DownloadDataVolumeToPrimaryStorageReply extends MessageReply {
     private String installPath;
     private String format;
+    private String protocol;
 
     public String getFormat() {
         return format;
@@ -22,5 +23,13 @@ public class DownloadDataVolumeToPrimaryStorageReply extends MessageReply {
 
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 }

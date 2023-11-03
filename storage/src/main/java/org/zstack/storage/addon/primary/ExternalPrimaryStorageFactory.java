@@ -10,6 +10,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NopeFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -17,11 +21,13 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.*;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeProtocol;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.addon.backup.ExternalBackupStorageFactory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -35,7 +41,8 @@ import static org.zstack.core.Platform.operr;
 
 public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Component, PSCapacityExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
-        VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes {
+        VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes,
+        CreateTemplateFromVolumeSnapshotExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
 
@@ -276,7 +283,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             if (cdRomSpec.getInstallPath() != null && cdRomSpec.getProtocol() != null) {
                 BaseVolumeInfo info = new BaseVolumeInfo();
                 info.setInstallPath(cdRomSpec.getInstallPath());
-                info.setProtocol(VolumeProtocol.valueOf(cdRomSpec.getProtocol()));
+                info.setProtocol(cdRomSpec.getProtocol());
                 vols.add(info);
             }
         });
@@ -352,6 +359,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     @Override
     public void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
         deactivateVolumeIfNeed(vm, volume);
+        completion.success();
     }
 
     @Override
@@ -435,5 +443,68 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
                 completion.success();
             }
         });
+    }
+
+    @Override
+    public WorkflowTemplate createTemplateFromVolumeSnapshot(ParamIn paramIn) {
+        WorkflowTemplate template = new WorkflowTemplate();
+
+
+        template.setCreateTemporaryTemplate(new NopeFlow());
+
+        template.setUploadToBackupStorage(new Flow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                final ParamOut out = (ParamOut) data.get(ParamOut.class);
+
+                CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg cmsg = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg();
+                cmsg.setSnapshotUuid(paramIn.getSnapshot().getUuid());
+                cmsg.setImageInventory(paramIn.getImage());
+                cmsg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
+
+                VolumeInventory vol = VolumeInventory.valueOf(dbf.findByUuid(paramIn.getSnapshot().getVolumeUuid(), VolumeVO.class));
+                cmsg.setVolumeInventory(vol);
+                bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        CreateTemplateFromVolumeOnPrimaryStorageReply r = reply.castReply();
+                        out.setBackupStorageInstallPath(r.getTemplateBackupStorageInstallPath());
+                        out.setActualSize(r.getActualSize());
+                        trigger.next();
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                final ParamOut out = (ParamOut) data.get(ParamOut.class);
+                if (out.getBackupStorageInstallPath() != null) {
+                    DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
+                    msg.setInstallPath(out.getBackupStorageInstallPath());
+                    msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
+                    bus.send(msg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            trigger.rollback();
+                        }
+                    });
+                }
+            }
+        });
+
+        template.setDeleteTemporaryTemplate(new NopeFlow());
+        return template;
+    }
+
+    @Override
+    public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
+        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE;
     }
 }
