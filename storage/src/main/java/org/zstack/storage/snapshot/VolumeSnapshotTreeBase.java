@@ -1302,6 +1302,12 @@ public class VolumeSnapshotTreeBase {
         APIGetVolumeSnapshotSizeEvent event = new APIGetVolumeSnapshotSizeEvent(msg.getId());
 
         VolumeSnapshotVO snapshotVO = dbf.findByUuid(msg.getUuid(), VolumeSnapshotVO.class);
+        if (snapshotVO.getPrimaryStorageUuid() == null) {
+            event.setActualSize(0L);
+            event.setSize(0L);
+            bus.publish(event);
+            return;
+        }
 
         GetVolumeSnapshotSizeOnPrimaryStorageMsg getVolumeSnapshotStatusMsg = new GetVolumeSnapshotSizeOnPrimaryStorageMsg();
         getVolumeSnapshotStatusMsg.setPrimaryStorageUuid(snapshotVO.getPrimaryStorageUuid());

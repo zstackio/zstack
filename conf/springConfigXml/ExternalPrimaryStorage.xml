@@ -24,6 +24,7 @@
             <zstack:extension interface="org.zstack.header.storage.primary.PSCapacityExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.storage.snapshot.BeforeTakeLiveSnapshotsOnVolumes"/>
             <zstack:extension interface="org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint" />
+            <zstack:extension interface="org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension" />
         </zstack:plugin>
     </bean>
     <bean id="ExternalPrimaryStorageManagerImpl" class="org.zstack.storage.addon.primary.ExternalPrimaryStorageManagerImpl">

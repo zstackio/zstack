@@ -10,10 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowRollback;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NopeFlow;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -29,6 +26,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.addon.backup.ExternalBackupStorageFactory;
+import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -42,7 +40,7 @@ import static org.zstack.core.Platform.operr;
 public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Component, PSCapacityExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes,
-        CreateTemplateFromVolumeSnapshotExtensionPoint {
+        CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
 
@@ -501,6 +499,60 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
         template.setDeleteTemporaryTemplate(new NopeFlow());
         return template;
+    }
+
+    @Override
+    public List<Flow> markRootVolumeAsSnapshot(VolumeInventory vol, VolumeSnapshotVO vo, String accountUuid) {
+        PrimaryStorageControllerSvc svc = getControllerSvc(vol.getPrimaryStorageUuid());
+        if (svc == null) {
+            return null;
+        }
+
+        VolumeSnapshotCapability snapCap = svc.reportCapabilities().getSnapshotCapability();
+        if (snapCap.getArrangementType() == VolumeSnapshotCapability.VolumeSnapshotArrangementType.CHAIN) {
+            return null;
+        }
+
+        List<Flow> flows = new ArrayList<>();
+        flows.add(new NoRollbackFlow() {
+            String __name__ = "create-snapshot-before-reimage";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+                cmsg.setAccountUuid(accountUuid);
+                cmsg.setVolumeUuid(vol.getUuid());
+                cmsg.setName(vol.getName());
+                cmsg.setDescription(vol.getDescription());
+                cmsg.setDescription(vol.getDescription());
+
+                bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        CreateVolumeSnapshotReply r = (CreateVolumeSnapshotReply)reply;
+                        vo.setUuid(r.getInventory().getUuid());
+                        if (snapCap.isSupportCreateOnHypervisor()) {
+                            vo.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
+                        } else {
+                            vo.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        });
+        return flows;
+    }
+
+    @Override
+    public String getExtensionPrimaryStorageType() {
+        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE;
     }
 
     @Override
