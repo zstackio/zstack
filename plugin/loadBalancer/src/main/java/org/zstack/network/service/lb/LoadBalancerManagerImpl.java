@@ -847,7 +847,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         }
 
         List<Tuple> lbPortList = SQL.New("select lbl.loadBalancerPort, lbl.loadBalancerPort from LoadBalancerListenerVO lbl, LoadBalancerVO lb "
-                + "where lbl.protocol in (:protocols) and lbl.loadBalancerUuid=lb.uuid and lb.vipUuid = :vipUuid", Tuple.class).
+                + "where lbl.protocol in (:protocols) and lbl.loadBalancerUuid=lb.uuid and (lb.vipUuid = :vipUuid or lb.ipv6VipUuid = :vipUuid)", Tuple.class).
                 param("protocols", protocols).
                 param("vipUuid", vipUuid).list();
 

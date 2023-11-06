@@ -62,7 +62,7 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private List<String> httpVersions;
 
     @APIParam(required = false)
-    private boolean ipForwardFor;
+    private boolean tcpIpForwardFor;
 
     @APIParam(required = false)
     private List<String> httpCompressAlgos;
@@ -200,12 +200,12 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
         this.httpVersions = httpVersions;
     }
 
-    public boolean isIpForwardFor() {
-        return ipForwardFor;
+    public boolean isTcpIpForwardFor() {
+        return tcpIpForwardFor;
     }
 
-    public void setIpForwardFor(boolean ipForwardFor) {
-        this.ipForwardFor = ipForwardFor;
+    public void setTcpIpForwardFor(boolean tcpIpForwardFor) {
+        this.tcpIpForwardFor = tcpIpForwardFor;
     }
 
     public List<String> getHttpCompressAlgos() {

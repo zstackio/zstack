@@ -1077,7 +1077,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             );
         }
 
-        if (msg.isIpForwardFor()) {
+        if (msg.isTcpIpForwardFor()) {
             if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(
                         argerr("cloud not create the loadbalancer listener, because the listener with protocol tcp only support ip forward for param"));
@@ -1086,7 +1086,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             insertTagIfNotExisting(
                     msg, LoadBalancerSystemTags.TCP_IPFORWARDFOR,
                     LoadBalancerSystemTags.TCP_IPFORWARDFOR.instantiateTag(
-                            map(e(LoadBalancerSystemTags.TCP_IPFORWARDFOR_TOKEN, msg.isIpForwardFor()))
+                            map(e(LoadBalancerSystemTags.TCP_IPFORWARDFOR_TOKEN, msg.isTcpIpForwardFor()))
                     )
             );
         }
@@ -1348,7 +1348,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         }
 
         if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
-            if (LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(listener.getProtocol())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(listener.getProtocol())) {
                 throw new ApiMessageInterceptionException(
                         argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
                                 listenerVO.getProtocol(), msg.getHttpVersions()));
