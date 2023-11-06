@@ -1,21 +1,21 @@
 package org.zstack.header.network.l2
 
-import org.zstack.header.network.l2.APIAttachL2NetworkToClusterEvent
+import org.zstack.header.network.l2.APIDetachL2NetworkFromHostEvent
 
 doc {
-    title "挂载二层网络到集群(AttachL2NetworkToCluster)"
+    title "从物理机上卸载二层网络(DetachL2NetworkFromCluster)"
 
     category "二层网络"
 
-    desc """挂载二层网络到集群"""
+    desc """从物理机上卸载二层网络"""
 
     rest {
         request {
-			url "POST /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}"
+			url "DELETE /v1/l2-networks/{l2NetworkUuid}/hosts/{hostUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachL2NetworkToClusterMsg.class
+            clz APIDetachL2NetworkFromHostMsg.class
 
             desc """"""
             
@@ -28,16 +28,16 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.0.1"
 				}
 				column {
-					name "clusterUuid"
+					name "hostUuid"
 					enclosedIn ""
-					desc "集群UUID"
+					desc "物理机UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.0.1"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.0.1"
 				}
 				column {
 					name "userTags"
@@ -55,23 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
-				}
-				column {
-					name "l2ProviderType"
-					enclosedIn ""
-					desc "二层网络实现类型"
-					location "body"
-					type "String"
-					optional true
-					since "4.7.21"
-					values ("LinuxBridge")
+					since "4.0.1"
 				}
 			}
         }
 
         response {
-            clz APIAttachL2NetworkToClusterEvent.class
+            clz APIDetachL2NetworkFromHostEvent.class
         }
     }
 }

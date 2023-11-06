@@ -8,6 +8,6 @@ public interface NetworkServiceHostExtensionPoint {
 
     void afterHostConnected(HostInventory host, Completion completion);
 
-    void beforeDeleteHost(HostInventory inventory, Completion completion);
+    void beforeDeleteHost(HostInventory host, Completion completion);
 
 }

@@ -1,0 +1,2 @@
+ALTER TABLE `zstack`.`L2NetworkHostRefVO` ADD COLUMN `l2NetworkClusterRefId` bigint unsigned NOT NULL AFTER `hostUuid`;
+ALTER TABLE `zstack`.`L2NetworkHostRefVO` ADD CONSTRAINT `fkL2NetworkHostRefVOL2NetworkClusterRefVO` FOREIGN KEY (`l2NetworkClusterRefId`) REFERENCES L2NetworkClusterRefVO (`id`) ON DELETE CASCADE;

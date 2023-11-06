@@ -3,6 +3,7 @@ package org.zstack.header.network.l2;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -18,6 +19,8 @@ import java.util.List;
                 foreignKey = "l2NetworkUuid", expandedInventoryKey = "uuid"),
 })
 public class L2NetworkClusterRefInventory {
+    @APINoSee
+    private long id;
     private String clusterUuid;
     private String l2NetworkUuid;
 
@@ -29,6 +32,7 @@ public class L2NetworkClusterRefInventory {
 
     public static L2NetworkClusterRefInventory valueOf(L2NetworkClusterRefVO vo) {
         L2NetworkClusterRefInventory inv = new L2NetworkClusterRefInventory();
+        inv.setId(vo.getId());
         inv.setClusterUuid(vo.getClusterUuid());
         inv.setL2NetworkUuid(vo.getL2NetworkUuid());
         inv.setL2ProviderType(vo.getL2ProviderType());
@@ -43,6 +47,14 @@ public class L2NetworkClusterRefInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getL2ProviderType() {

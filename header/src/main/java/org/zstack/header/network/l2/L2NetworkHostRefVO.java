@@ -1,7 +1,5 @@
 package org.zstack.header.network.l2;
 
-import org.zstack.header.cluster.ClusterEO;
-import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.search.SqlTrigger;
@@ -44,6 +42,10 @@ public class L2NetworkHostRefVO {
     private String l2NetworkUuid;
 
     @Column
+    @ForeignKey(parentEntityClass = L2NetworkClusterRefVO.class, onDeleteAction = ReferenceOption.CASCADE)
+    private long l2NetworkClusterRefId;
+
+    @Column
     private String l2ProviderType;
 
     @Column
@@ -83,6 +85,14 @@ public class L2NetworkHostRefVO {
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public long getL2NetworkClusterRefId() {
+        return l2NetworkClusterRefId;
+    }
+
+    public void setL2NetworkClusterRefId(long l2NetworkClusterRefId) {
+        this.l2NetworkClusterRefId = l2NetworkClusterRefId;
     }
 
     public L2NetworkAttachStatus getAttachStatus() {
