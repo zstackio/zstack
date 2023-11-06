@@ -7,7 +7,7 @@ import org.zstack.utils.CollectionDSL;
 
 import java.util.List;
 
-@RestResponse(allTo = "inventory")
+@RestResponse(allTo = "inventories")
 public class APIChangeHostNetworkInterfaceLldpModeEvent extends APIEvent {
     private List<HostNetworkInterfaceLldpInventory> inventories;
 
@@ -29,7 +29,6 @@ public class APIChangeHostNetworkInterfaceLldpModeEvent extends APIEvent {
         APIChangeHostNetworkInterfaceLldpModeEvent event = new APIChangeHostNetworkInterfaceLldpModeEvent();
         HostNetworkInterfaceLldpInventory inv = new HostNetworkInterfaceLldpInventory();
 
-        inv.setId(1);
         inv.setInterfaceUuid(uuid());
         inv.setMode("rx_only");
 

@@ -3,9 +3,11 @@ package org.zstack.network.hostNetwork.lldp.entity;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.Queryable;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
+import javax.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -14,28 +16,15 @@ import java.util.stream.Collectors;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = HostNetworkInterfaceLldpVO.class)
-@ExpandedQueries({
-        @ExpandedQuery(expandedField = "lldp", inventoryClass = HostNetworkInterfaceLldpRefInventory.class,
-                foreignKey = "interfaceUuid", expandedInventoryKey = "interfaceUuid")
-})
 public class HostNetworkInterfaceLldpInventory implements Serializable {
 
-    @APINoSee
-    private long id;
     private String interfaceUuid;
     private String mode;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
+    @Queryable(mappingClass = HostNetworkInterfaceLldpRefInventory.class, joinColumn = @JoinColumn(name = "interfaceUuid"))
     private HostNetworkInterfaceLldpRefInventory lldp;
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public String getInterfaceUuid() {
         return interfaceUuid;
@@ -82,7 +71,6 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
     }
 
     public HostNetworkInterfaceLldpInventory(HostNetworkInterfaceLldpVO vo) {
-        this.id = vo.getId();
         this.interfaceUuid = vo.getInterfaceUuid();
         this.mode = vo.getMode();
         this.createDate = vo.getCreateDate();

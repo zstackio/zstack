@@ -8,7 +8,6 @@ import java.sql.Timestamp;
 
 @StaticMetamodel(HostNetworkInterfaceLldpVO.class)
 public class HostNetworkInterfaceLldpVO_ extends ResourceVO_ {
-    public static volatile SingularAttribute<HostNetworkInterfaceLldpVO, Long> id;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpVO, String> interfaceUuid;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpVO, String> mode;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpVO, Timestamp> createDate;

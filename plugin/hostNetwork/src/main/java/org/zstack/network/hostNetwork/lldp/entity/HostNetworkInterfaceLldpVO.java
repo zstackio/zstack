@@ -1,6 +1,7 @@
 package org.zstack.network.hostNetwork.lldp.entity;
 
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.Index;
@@ -14,15 +15,15 @@ import java.sql.Timestamp;
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = HostNetworkInterfaceVO.class, joinColumn = "interfaceUuid")
 })
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = HostNetworkInterfaceLldpRefVO.class, myField = "interfaceUuid", targetField = "interfaceUuid")
+        }
+)
 public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventory, OwnedByAccount {
-    @Id
-    @Column
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
     @Column
     @Index
-    @ForeignKey(parentEntityClass = HostNetworkInterfaceLldpRefVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = HostNetworkInterfaceVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String interfaceUuid;
 
     @Column
@@ -44,15 +45,6 @@ public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventor
     @JoinColumn(name="interfaceUuid", insertable=false, updatable=false)
     @NoView
     private HostNetworkInterfaceLldpRefVO lldpRefVO;
-
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public String getInterfaceUuid() {
         return interfaceUuid;

@@ -1,4 +1,4 @@
-package org.zstack.network.hostNetwork.lldp;
+package org.zstack.network.hostNetwork.lldp.api;
 
 import org.zstack.header.identity.rbac.RBACDescription;
 

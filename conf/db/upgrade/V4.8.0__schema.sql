@@ -75,12 +75,11 @@ update EventSubscriptionVO set name = 'Host Physical Cpu Status Abnormal' where 
 update EventSubscriptionVO set name = 'Host Physical Fan Status Abnormal' where uuid = '37e5bdfa2eaf49538931113ddaecf927';
 
 CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpVO` (
-    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `interfaceUuid` varchar(32) NOT NULL UNIQUE,
     `mode` varchar(32) NOT NULL,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY  (`id`),
+    PRIMARY KEY  (`interfaceUuid`),
     CONSTRAINT `fkHostNetworkInterfaceLldpVOHostNetworkInterfaceVO` FOREIGN KEY (`interfaceUuid`) REFERENCES HostNetworkInterfaceVO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -89,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpRefVO` (
     `interfaceUuid` varchar(32) NOT NULL,
     `chassisId` varchar(32) NOT NULL,
     `timeToLive` int(32) NOT NULL,
-    `managementAddress` varchar(32) NOT NULL,
+    `managementAddress` varchar(32) DEFAULT NULL,
     `systemName` varchar(32) NOT NULL,
     `systemDescription` varchar(32) NOT NULL,
     `systemCapabilities` varchar(32) NOT NULL,

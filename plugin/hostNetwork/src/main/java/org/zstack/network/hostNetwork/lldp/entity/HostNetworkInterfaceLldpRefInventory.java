@@ -1,6 +1,9 @@
 package org.zstack.network.hostNetwork.lldp.entity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
@@ -11,8 +14,13 @@ import java.util.stream.Collectors;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = HostNetworkInterfaceLldpRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "lldp", inventoryClass = HostNetworkInterfaceLldpInventory.class,
+                foreignKey = "interfaceUuid", expandedInventoryKey = "interfaceUuid"),
+})
 public class HostNetworkInterfaceLldpRefInventory implements Serializable {
-
+    @APINoSee
+    private long id;
     private String interfaceUuid;
     private String chassisId;
     private Integer timeToLive;
@@ -27,6 +35,14 @@ public class HostNetworkInterfaceLldpRefInventory implements Serializable {
     private Integer mtu;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public String getInterfaceUuid() {
         return interfaceUuid;

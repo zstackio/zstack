@@ -1,4 +1,4 @@
-package org.zstack.test.integration.network.sdnController
+package org.zstack.test.integration.network.hostNetwork
 
 import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.Test
@@ -16,6 +16,7 @@ class HostNetworkTest extends Test {
         nfsPrimaryStorage()
         include("vip.xml")
         include("vxlan.xml")
+        include("HostNetworkManager.xml")
         eip()
         lb()
         portForwarding()

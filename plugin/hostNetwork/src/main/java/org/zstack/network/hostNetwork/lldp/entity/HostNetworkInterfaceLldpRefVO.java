@@ -1,9 +1,9 @@
 package org.zstack.network.hostNetwork.lldp.entity;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.*;
-import org.zstack.network.hostNetwork.HostNetworkInterfaceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -13,6 +13,11 @@ import java.sql.Timestamp;
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = HostNetworkInterfaceLldpVO.class, joinColumn = "interfaceUuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = HostNetworkInterfaceLldpVO.class, myField = "interfaceUuid", targetField = "interfaceUuid")
+        }
+)
 public class HostNetworkInterfaceLldpRefVO implements ToInventory {
     @Id
     @Column
@@ -21,7 +26,7 @@ public class HostNetworkInterfaceLldpRefVO implements ToInventory {
 
     @Column
     @Index
-    @ForeignKey(parentEntityClass = HostNetworkInterfaceVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = HostNetworkInterfaceLldpVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String interfaceUuid;
 
     @Column
