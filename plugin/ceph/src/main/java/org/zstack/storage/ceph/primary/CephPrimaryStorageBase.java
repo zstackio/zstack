@@ -4871,12 +4871,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 reply.setActualSize(asize);
                 reply.setIncremental(true);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
 
