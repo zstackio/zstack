@@ -9,9 +9,7 @@ import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.*;
 import org.zstack.core.db.*;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
 import org.zstack.utils.TypeUtils;
@@ -112,6 +110,11 @@ public class ResourceConfig {
         return TypeUtils.stringToValue(value, clz);
     }
 
+    public <T> T getResourceConfigValueByResourceType(String resourceUuid, String resourceType, Class<T> clz) {
+        String value = getResourceConfigValueByResourceType(resourceUuid, resourceType);
+        return TypeUtils.stringToValue(value, clz);
+    }
+
     public <T> Map<String, T> getResourceConfigValues(List<String> resourceUuids, Class<T> clz) {
         Map<String, T> values = new HashMap<>();
         getResourceConfigValues(resourceUuids).forEach((key, value) -> values.put(key, TypeUtils.stringToValue(value, clz)));
@@ -160,7 +163,7 @@ public class ResourceConfig {
                     return;
                 }
 
-                DeleteEvent evt = (DeleteEvent)data;
+                DeleteEvent evt = (DeleteEvent) data;
                 deleteValue(evt.getResourceUuid(), evt.getResourceType(), false);
                 logger.info(String.format("ResourceConfig[resourceUuid: %s category: %s, name: %s] was deleted from" +
                                 " other management node[uuid:%s], in line with that change, deleted ours.",
@@ -246,6 +249,24 @@ public class ResourceConfig {
     }
 
     @Transactional(readOnly = true)
+    protected String getResourceConfigValueByResourceType(String resourceUuid, String type) {
+        String resourceType = Q.New(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
+        if (resourceType == null || !resourceType.equals(type)) {
+            logger.warn(String.format("no resource[uuid:%s] by resourceType[%s] found, cannot get it's resource config", resourceUuid, type));
+            return null;
+        }
+
+        ResourceConfigGetter getter = configGetter.get(resourceType);
+        if (getter == null) {
+            logger.warn(String.format("resource[uuid:%s, type:%s] is not bound to global config[category:%s, name:%s]",
+                    resourceUuid, resourceType, globalConfig.getCategory(), globalConfig.getName()));
+            return null;
+        }
+
+        return loadConfigValue(resourceUuid);
+    }
+
+    @Transactional(readOnly = true)
     protected Map<String, String> getResourceConfigValues(List<String> resourceUuids) {
         Map<String, String> valuesByResourceUuids = new HashMap<>();
 
@@ -290,7 +311,7 @@ public class ResourceConfig {
 
     private Map<String, List<String>> groupResourceUuidsByType(List<Tuple> resourceTypeUuidPairs) {
         return resourceTypeUuidPairs.stream().collect(Collectors.groupingBy(pair -> pair.get(0, String.class),
-                        Collectors.mapping(pair -> pair.get(1, String.class), Collectors.toList())));
+                Collectors.mapping(pair -> pair.get(1, String.class), Collectors.toList())));
     }
 
     public List<ResourceConfigInventory> getEffectiveResourceConfigs(String resourceUuid) {
