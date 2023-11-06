@@ -1,77 +1,17 @@
-package org.zstack.network.hostNetwork.lldp.entity;
+package org.zstack.network.hostNetwork.lldp;
 
-import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.vo.ForeignKey;
-import org.zstack.header.vo.Index;
-import org.zstack.header.vo.*;
-import org.zstack.network.hostNetwork.HostNetworkInterfaceVO;
-
-import javax.persistence.*;
-import java.sql.Timestamp;
-
-@Entity
-@Table
-@SoftDeletionCascades({
-        @SoftDeletionCascade(parent = HostNetworkInterfaceLldpVO.class, joinColumn = "lldpUuid")
-})
-@EntityGraph(
-        parents = {
-                @EntityGraph.Neighbour(type = HostNetworkInterfaceLldpVO.class, myField = "lldpUuid", targetField = "uuid")
-        }
-)
-public class HostNetworkInterfaceLldpRefVO implements ToInventory {
-    @Id
-    @Column
-    @Index
-    @ForeignKey(parentEntityClass = HostNetworkInterfaceLldpVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
-    private String lldpUuid;
-
-    @Column
+public class LldpInfoStruct {
     private String chassisId;
-
-    @Column
     private Integer timeToLive;
-
-    @Column
     private String managementAddress;
-
-    @Column
     private String systemName;
-
-    @Column
     private String systemDescription;
-
-    @Column
     private String systemCapabilities;
-
-    @Column
     private String portId;
-
-    @Column
     private String portDescription;
-
-    @Column
     private Integer vlanId;
-
-    @Column
     private Long aggregationPortId;
-
-    @Column
     private Integer mtu;
-
-    @Column
-    private Timestamp createDate;
-
-    @Column
-    private Timestamp lastOpDate;
-
-    public String getLldpUuid() {
-        return lldpUuid;
-    }
-
-    public void setLldpUuid(String lldpUuid) {
-        this.lldpUuid = lldpUuid;
-    }
 
     public String getChassisId() {
         return chassisId;
@@ -161,24 +101,4 @@ public class HostNetworkInterfaceLldpRefVO implements ToInventory {
         this.mtu = mtu;
     }
 
-    public Timestamp getCreateDate() {
-        return createDate;
-    }
-
-    public void setCreateDate(Timestamp createDate) {
-        this.createDate = createDate;
-    }
-
-    public Timestamp getLastOpDate() {
-        return lastOpDate;
-    }
-
-    public void setLastOpDate(Timestamp lastOpDate) {
-        this.lastOpDate = lastOpDate;
-    }
-
-    @PreUpdate
-    private void preUpdate() {
-        lastOpDate = null;
-    }
 }

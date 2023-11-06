@@ -14,10 +14,6 @@ import java.util.stream.Collectors;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = HostNetworkInterfaceLldpVO.class)
-@ExpandedQueries({
-        @ExpandedQuery(expandedField = "interface", inventoryClass = HostNetworkInterfaceInventory.class,
-                foreignKey = "interfaceUuid", expandedInventoryKey = "uuid"),
-})
 public class HostNetworkInterfaceLldpInventory implements Serializable {
     private String uuid;
     private String interfaceUuid;
@@ -25,8 +21,9 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    @Queryable(mappingClass = HostNetworkInterfaceLldpRefInventory.class, joinColumn = @JoinColumn(name = "interfaceUuid"))
-    private HostNetworkInterfaceLldpRefInventory lldp;
+    @Queryable(mappingClass = HostNetworkInterfaceLldpRefInventory.class,
+            joinColumn = @JoinColumn(name = "lldpUuid", referencedColumnName = "neighborDevice"))
+    private HostNetworkInterfaceLldpRefInventory neighborDevice;
 
     public String getUuid() {
         return uuid;
@@ -52,13 +49,13 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
         this.mode = mode;
     }
 
-//    public HostNetworkInterfaceLldpRefInventory getLldp() {
-//        return lldp;
-//    }
-//
-//    public void setLldp(HostNetworkInterfaceLldpRefInventory lldp) {
-//        this.lldp = lldp;
-//    }
+    public HostNetworkInterfaceLldpRefInventory getNeighborDevice() {
+        return neighborDevice;
+    }
+
+    public void setNeighborDevice(HostNetworkInterfaceLldpRefInventory neighborDevice) {
+        this.neighborDevice = neighborDevice;
+    }
 
     public Timestamp getCreateDate() {
         return createDate;
@@ -86,7 +83,7 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
         this.mode = vo.getMode();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
-//        this.lldp = vo.getLldpRefVO() != null ? HostNetworkInterfaceLldpRefInventory.valueOf(vo.getLldpRefVO()) : null;
+        this.neighborDevice = vo.getNeighborDevice() != null ? HostNetworkInterfaceLldpRefInventory.valueOf(vo.getNeighborDevice()) : null;
     }
 
     public static HostNetworkInterfaceLldpInventory valueOf(HostNetworkInterfaceLldpVO vo) {

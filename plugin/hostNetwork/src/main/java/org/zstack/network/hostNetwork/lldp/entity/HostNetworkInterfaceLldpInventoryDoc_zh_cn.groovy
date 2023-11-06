@@ -39,8 +39,8 @@ doc {
 	}
 	ref {
 		name "lldp"
-		path "org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpInventory.lldp"
-		desc "物理网口lldp配置清单"
+		path "org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpInventory.neighborDevice"
+		desc "物理网口lldp信息清单"
 		type "HostNetworkInterfaceLldpRefInventory"
 		since "5.0.0"
 		clz HostNetworkInterfaceLldpRefInventory.class

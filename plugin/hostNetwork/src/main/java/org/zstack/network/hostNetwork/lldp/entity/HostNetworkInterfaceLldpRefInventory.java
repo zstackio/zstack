@@ -15,13 +15,11 @@ import java.util.stream.Collectors;
 @PythonClassInventory
 @Inventory(mappingVOClass = HostNetworkInterfaceLldpRefVO.class)
 @ExpandedQueries({
-        @ExpandedQuery(expandedField = "lldp", inventoryClass = HostNetworkInterfaceLldpInventory.class,
-                foreignKey = "interfaceUuid", expandedInventoryKey = "interfaceUuid"),
+        @ExpandedQuery(expandedField = "neighborDevice", inventoryClass = HostNetworkInterfaceLldpInventory.class,
+                foreignKey = "lldpUuid", expandedInventoryKey = "uuid"),
 })
 public class HostNetworkInterfaceLldpRefInventory implements Serializable {
-    @APINoSee
-    private long id;
-    private String interfaceUuid;
+    private String lldpUuid;
     private String chassisId;
     private Integer timeToLive;
     private String managementAddress;
@@ -36,20 +34,12 @@ public class HostNetworkInterfaceLldpRefInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    public long getId() {
-        return id;
+    public String getLldpUuid() {
+        return lldpUuid;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getInterfaceUuid() {
-        return interfaceUuid;
-    }
-
-    public void setInterfaceUuid(String interfaceUuid) {
-        this.interfaceUuid = interfaceUuid;
+    public void setLldpUuid(String lldpUuid) {
+        this.lldpUuid = lldpUuid;
     }
 
     public String getChassisId() {
@@ -161,7 +151,7 @@ public class HostNetworkInterfaceLldpRefInventory implements Serializable {
     }
 
     public HostNetworkInterfaceLldpRefInventory(HostNetworkInterfaceLldpRefVO vo) {
-        this.interfaceUuid = vo.getInterfaceUuid();
+        this.lldpUuid = vo.getLldpUuid();
         this.chassisId = vo.getChassisId();
         this.timeToLive = vo.getTimeToLive();
         this.managementAddress = vo.getManagementAddress();

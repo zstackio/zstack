@@ -809,5 +809,10 @@
             <artifactId>snmp</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>hostNetwork</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>
