@@ -2,6 +2,7 @@ package org.zstack.network.service.lb;
 
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +59,20 @@ public class LoadBalancerConstants {
         disable
     }
 
+    public static enum HttpVersions {
+        h1,
+        h2
+    }
+
+    public static final List<String> LbSupportHttpCompressAlgos = asList(
+            "deflate", "deflate", "gzip"
+    );
+
+    public static final List<String> LbSupportHttpVersion = asList(
+            HttpVersions.h1.toString(),
+            HttpVersions.h2.toString()
+    );
+
     public static final String HEALTH_CHECK_URI_REGEX = "^/[A-Za-z0-9-/.%?#&]*";
 
     public static final String COOKIE_NAME_REGEX = "[A-Za-z0-9_-]+";
@@ -84,6 +99,9 @@ public class LoadBalancerConstants {
     public static final long BALANCER_WEIGHT_MAX = 100;
     public static final long BALANCER_WEIGHT_MIN = 0;
     public static final long BALANCER_WEIGHT_default = 100;
+
+    public static final Integer BALANCER_BACKEND_NIC_IPVERSION_DEFAULT = IPv6Constants.IPv4;
+
     static {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_ROUND_ROBIN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_CONN);

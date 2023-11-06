@@ -82,6 +82,9 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, validRegexValues = "[A-Za-z0-9_-]+", maxLength = 20, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String cookieName;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List httpVersions;
+
     @Param(required = false, validValues = {"disable","enable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String httpRedirectHttps;
 
@@ -90,6 +93,12 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
 
     @Param(required = false, validValues = {"301","302","303","307","308"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer statusCode;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean ipForwardFor = false;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List httpCompressAlgos;
 
     @Param(required = false)
     public java.util.List systemTags;

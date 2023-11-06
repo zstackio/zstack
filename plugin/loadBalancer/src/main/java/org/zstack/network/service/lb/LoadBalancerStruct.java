@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class LoadBalancerStruct implements Serializable {
     private LoadBalancerInventory lb;
     private VipInventory vip;
+    private VipInventory ipv6Vip;
     private Map<String, VmNicInventory> vmNics;
     private List<LoadBalancerListenerInventory> listeners;
     private Map<String, List<LoadBalancerServerGroupInventory>> listenerServerGroupMap = new HashMap<>();
@@ -69,6 +70,14 @@ public class LoadBalancerStruct implements Serializable {
 
     public void setVip(VipInventory vip) {
         this.vip = vip;
+    }
+
+    public VipInventory getIpv6Vip() {
+        return ipv6Vip;
+    }
+
+    public void setIpv6Vip(VipInventory ipv6Vip) {
+        this.ipv6Vip = ipv6Vip;
     }
 
     public Map<String, List<LoadBalancerServerGroupInventory>> getListenerServerGroupMap() {

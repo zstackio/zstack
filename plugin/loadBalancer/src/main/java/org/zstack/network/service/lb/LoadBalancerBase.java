@@ -1,10 +1,12 @@
 package org.zstack.network.service.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -17,11 +19,14 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -36,9 +41,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.network.service.vip.ModifyVipAttributesStruct;
-import org.zstack.network.service.vip.Vip;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.*;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -46,16 +49,17 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -85,12 +89,12 @@ public class LoadBalancerBase {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    public static String getSyncId(String vipUuid) {
-        return String.format("operate-lb-with-vip-%s", vipUuid);
+    public static String getSyncId(String lbUuid) {
+        return String.format("operate-lb-%s", lbUuid);
     }
 
     private String getSyncId() {
-        return getSyncId(self.getVipUuid());
+        return getSyncId(self.getUuid());
     }
 
     private LoadBalancerVO self;
@@ -137,6 +141,10 @@ public class LoadBalancerBase {
             handle((LoadBalancerGetPeerL3NetworksMsg) msg);
         } else if (msg instanceof RemoveAccessControlListFromLoadBalancerMsg) {
             handle((RemoveAccessControlListFromLoadBalancerMsg)msg);
+        } else if (msg instanceof AttachVipToLoadBalancerMsg) {
+            handle((AttachVipToLoadBalancerMsg)msg);
+        } else if (msg instanceof DetachVipFromLoadBalancerMsg) {
+            handle((DetachVipFromLoadBalancerMsg)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -606,6 +614,8 @@ public class LoadBalancerBase {
             handle((APIGetCandidateVmNicsForLoadBalancerServerGroupMsg) msg);
         } else if(msg instanceof APIChangeLoadBalancerBackendServerMsg){
             handle((APIChangeLoadBalancerBackendServerMsg) msg);
+        } else if (msg instanceof APIAttachVipToLoadBalancerMsg) {
+            handle((APIAttachVipToLoadBalancerMsg)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -735,6 +745,205 @@ public class LoadBalancerBase {
             @Override
             public String getName() {
                 return "remove-acl-lb-listener";
+            }
+        });
+    }
+
+    private void handle(AttachVipToLoadBalancerMsg msg) {
+        AttachVipToLoadBalancerReply reply = new AttachVipToLoadBalancerReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                AttachVipToLoadBalancerReply reply = new AttachVipToLoadBalancerReply();
+                LoadBalancerBackend bkd = getBackend();
+                if (bkd == null) {
+                    chain.next();
+                    return;
+                }
+
+
+                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find();
+                if (StringUtils.isEmpty(vipVO.getIp())) {
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
+                    if (!StringUtils.isEmpty(self.getVipUuid())) {
+                        bus.reply(msg, reply);
+                        return;
+                    }
+                    self.setVipUuid(vipVO.getUuid());
+                } else {
+                    if (!StringUtils.isEmpty(self.getIpv6VipUuid())) {
+                        bus.reply(msg, reply);
+                        return;
+                    }
+                    self.setIpv6VipUuid(vipVO.getUuid());
+                }
+                LoadBalancerStruct lbStruct = lbMgr.makeStruct(self);
+
+                bkd.attachVipToLoadBalancer(lbStruct, vipVO, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "attach-vip-to-lb";
+            }
+        });
+    }
+
+    private void handle(DetachVipFromLoadBalancerMsg msg) {
+        LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                DetachVipFromLoadBalancerReply reply = new DetachVipFromLoadBalancerReply();
+                LoadBalancerBackend bkd = getBackend();
+                if (bkd == null) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find();
+
+                if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
+                    if (StringUtils.isEmpty(self.getVipUuid())) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                        return;
+                    }
+                    self.setVipUuid(null);
+                } else {
+                    if (StringUtils.isEmpty(self.getIpv6VipUuid())) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                        return;
+                    }
+                    self.setIpv6VipUuid(null);
+
+                }
+                LoadBalancerStruct lbStruct = lbMgr.makeStruct(self);
+
+                FlowChain flowChain = new SimpleFlowChain();
+                flowChain.setName("detach-vip-from-lb-and-release-vip");
+                flowChain.then(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        String __name__ = "detach-vip-from-lb";
+                        bkd.detachVipFromLoadBalancer(lbStruct, vipVO, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "release-vip";
+                    @Transactional(readOnly = true)
+                    private List<String> getGuestNetworkUuids() {
+                        List<String> vmNicUuids = new ArrayList<>();
+                        List<LoadBalancerServerGroupVO> groupVOS = Q.New(LoadBalancerServerGroupVO.class)
+                                .eq(LoadBalancerServerGroupVO_.loadBalancerUuid, self.getUuid()).list();
+                        for (LoadBalancerServerGroupVO groupVO : groupVOS) {
+                            vmNicUuids.addAll(groupVO.getLoadBalancerServerGroupVmNicRefs().stream()
+                                    .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList()));
+                        }
+                        if (vmNicUuids.isEmpty()) {
+                            return new ArrayList<>();
+                        }
+
+                        List<String> l3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid)
+                                .in(VmNicVO_.uuid, vmNicUuids).listValues();
+                        return l3Uuids.stream().distinct().collect(Collectors.toList());
+                    }
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                        struct.setUseFor(f.getNetworkServiceType());
+                        struct.setServiceUuid(self.getUuid());
+                        if (self.getProviderType() != null) {
+                            /* release vip peer networks */
+                            struct.setServiceProvider(self.getProviderType());
+                            List<String> guestNetworkUuids = getGuestNetworkUuids();
+                            if (!guestNetworkUuids.isEmpty()) {
+                                struct.setPeerL3NetworkUuids(guestNetworkUuids);
+                            }
+                        }
+                        Vip v = new Vip(msg.getVipUuid());
+                        v.setStruct(struct);
+                        v.release(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                data.put("releaseVipResult", true);
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                //TODO add GC
+                                data.put("releaseVipResult", false);
+                                logger.warn(errorCode.toString());
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).done(new FlowDoneHandler(chain) {
+                    @Override
+                    public void handle(Map data) {
+                        if (msg.getVipUuid().equals(self.getVipUuid())) {
+                            self.setVipUuid(null);
+                        } else if (msg.getVipUuid().equals(self.getIpv6VipUuid())) {
+                            self.setIpv6VipUuid(null);
+                        }
+                        dbf.update(self);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(chain) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        if (msg.isHardDeleteDb()) {
+                            dbf.update(self);
+                            //todo:add gc
+                        }
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return "detach-vip-to-lb";
             }
         });
     }
@@ -970,30 +1179,47 @@ public class LoadBalancerBase {
                         return l3Uuids.stream().distinct().collect(Collectors.toList());
                     }
 
+                    private final List<String> releasedVipUuids = Collections.synchronizedList(new ArrayList());
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(f.getNetworkServiceType());
-                        struct.setServiceUuid(self.getUuid());
-                        if (self.getProviderType() != null) {
-                            /* release vip peer networks */
-                            struct.setServiceProvider(self.getProviderType());
-                            List<String> guestNetworkUuids = getGuestNetworkUuids();
-                            if (!guestNetworkUuids.isEmpty()) {
-                                struct.setPeerL3NetworkUuids(guestNetworkUuids);
+                        data.put("releasedVipUuids", releasedVipUuids);
+                        new While<>(Arrays.asList(self.getVipUuid(), self.getIpv6VipUuid())).step((vipUuid, whileCompletion) -> {
+                            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                            struct.setUseFor(f.getNetworkServiceType());
+                            struct.setServiceUuid(self.getUuid());
+                            if (self.getProviderType() != null) {
+                                /* release vip peer networks */
+                                struct.setServiceProvider(self.getProviderType());
+                                List<String> guestNetworkUuids = getGuestNetworkUuids();
+                                if (!guestNetworkUuids.isEmpty()) {
+                                    struct.setPeerL3NetworkUuids(guestNetworkUuids);
+                                }
                             }
-                        }
-                        Vip v = new Vip(self.getVipUuid());
-                        v.setStruct(struct);
-                        v.release(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
+                            Vip v = new Vip(vipUuid);
+                            v.setStruct(struct);
+                            v.release(new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    whileCompletion.done();
+                                    releasedVipUuids.add(vipUuid);
+                                }
 
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO add GC
+                                    logger.warn(errorCode.toString());
+                                    whileCompletion.done();
+                                }
+                            });
+                        }, 2).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!CollectionUtils.isEmpty(errorCodeList.getCauses())) {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                    return;
+                                }
+                                trigger.next();
                             }
                         });
                     }
@@ -1042,6 +1268,14 @@ public class LoadBalancerBase {
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        // if release vip, it will delete the vip ref vo
+                        List<String> releasedVipUuids = (List<String>) data.get("releasedVipUuids");
+                        if (!releasedVipUuids.isEmpty()) {
+                            for (String vip : releasedVipUuids) {
+                                self.deleteVip(vip);
+                            }
+                            dbf.update(self);
+                        }
                         completion.fail(errCode);
                     }
                 });
@@ -1292,13 +1526,21 @@ public class LoadBalancerBase {
                 }
 
                 List<LoadBalancerServerGroupVmNicRefVO> refs = new ArrayList<>();
-                Map<String, Long> weight = new LoadBalancerWeightOperator().getWeight(msg.getSystemTags());
+                LoadBalancerWeightOperator ops = new LoadBalancerWeightOperator();
+                Map<String, Long> weight = ops.getWeight(msg.getSystemTags());
+                Map<String, Integer> backendNicIpversion = ops.getBackendNicIpversion(msg.getSystemTags());
 
                 for (String nicUuid : msg.getVmNicUuids()) {
                     LoadBalancerServerGroupVmNicRefVO ref = new LoadBalancerServerGroupVmNicRefVO();
                     ref.setServerGroupUuid(groupVO.getUuid());
                     ref.setVmNicUuid(nicUuid);
                     ref.setStatus(LoadBalancerVmNicStatus.Active);
+                    if (backendNicIpversion.get(nicUuid) != null) {
+                        ref.setIpVersion(backendNicIpversion.get(nicUuid));
+                    } else {
+                        ref.setIpVersion(LoadBalancerConstants.BALANCER_BACKEND_NIC_IPVERSION_DEFAULT);
+                    }
+
                     if (weight.get(nicUuid) != null) {
                         ref.setWeight(weight.get(nicUuid));
                     } else {
@@ -1985,6 +2227,20 @@ public class LoadBalancerBase {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.MAX_CONNECTION, msg.getUuid(), LoadBalancerSystemTags.MAX_CONNECTION_TOKEN, msg.getMaxConnection());
                 }
 
+                if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
+                    String httpVersions = String.join(",", msg.getHttpVersions());
+                    String httpVersion = httpVersions.replace("h1", "http1.1");
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_VERSIONS, msg.getUuid(), LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersion);
+                }
+
+                if (msg.isIpForwardFor()) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.TCP_IPFORWARDFOR, msg.getUuid(), LoadBalancerSystemTags.TCP_IPFORWARDFOR_TOKEN, msg.isIpForwardFor());
+                }
+
+                if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS, msg.getUuid(), LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS_TOKEN, String.join(" ", msg.getHttpCompressAlgos()));
+                }
+
                 String[] ts = getHeathCheckTarget(msg.getUuid());
                 if (msg.getHealthCheckProtocol() != null && !msg.getHealthCheckProtocol().equals(ts[0])) {
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
@@ -2420,6 +2676,12 @@ public class LoadBalancerBase {
                                 } else {
                                     refVO.setWeight(LoadBalancerConstants.BALANCER_WEIGHT_default);
                                 }
+                                if (vmNic.containsKey("ipVersion")) {
+                                    Integer ipVersion = Integer.valueOf(vmNic.get("ipVersion"));
+                                    refVO.setIpVersion(ipVersion);
+                                } else {
+                                    refVO.setIpVersion(LoadBalancerConstants.BALANCER_BACKEND_NIC_IPVERSION_DEFAULT);
+                                }
                                 refVO.setStatus(LoadBalancerVmNicStatus.Active);
                                 refVOs.add(refVO);
                             }
@@ -2834,4 +3096,25 @@ public class LoadBalancerBase {
     }
 
 
+    private void handle(APIAttachVipToLoadBalancerMsg msg) {
+        APIAttachVipToLoadBalancerEvent event = new APIAttachVipToLoadBalancerEvent(msg.getId());
+        AttachVipToLoadBalancerMsg amsg = new AttachVipToLoadBalancerMsg();
+        amsg.setUuid(msg.getLoadBalancerUuid());
+        amsg.setVipUuid(msg.getVipUuid());
+        bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
+
+        bus.send(amsg, new CloudBusCallBack(amsg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setError(reply.getError().getRootCause());
+                    bus.publish(event);
+                    return;
+                }
+                LoadBalancerVO lbVO = dbf.reload(self);
+                event.setInventory(LoadBalancerInventory.valueOf(lbVO));
+                bus.publish(event);
+            }
+        });
+    }
 }

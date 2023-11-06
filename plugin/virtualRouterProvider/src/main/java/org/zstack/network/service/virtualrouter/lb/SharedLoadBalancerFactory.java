@@ -33,6 +33,7 @@ public class SharedLoadBalancerFactory implements LoadBalancerFactory {
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vo.setDescription(msg.getDescription());
         vo.setVipUuid(msg.getVipUuid());
+        vo.setIpv6VipUuid(msg.getIpv6VipUuid());
         vo.setState(LoadBalancerState.Enabled);
         vo.setType(LoadBalancerType.Shared);
         vo.setAccountUuid(msg.getSession().getAccountUuid());

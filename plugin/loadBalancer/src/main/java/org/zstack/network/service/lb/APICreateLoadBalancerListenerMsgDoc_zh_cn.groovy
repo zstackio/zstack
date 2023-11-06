@@ -198,6 +198,33 @@ doc {
 					since "4.1"
 					values ("tls_cipher_policy_default","tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3")
 				}
+				column {
+					name "httpVersions"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "4.7.21"
+				}
+				column {
+					name "ipForwardFor"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "boolean"
+					optional true
+					since "4.7.21"
+				}
+				column {
+					name "httpCompressAlgos"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "4.7.21"
+				}
 			}
         }
 

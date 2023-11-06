@@ -5,6 +5,7 @@ import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -854,6 +855,9 @@ public class VirtualRouterCommands {
         private String ip;
         private String netmask;
         private String gateway;
+		private String ip6;
+		private int prefixLength;
+		private String gateway6;
         private String ownerEthernetMac;
         private String vipUuid;
         private boolean isSystem;
@@ -861,9 +865,16 @@ public class VirtualRouterCommands {
         
         public static VipTO valueOf(VipInventory inv, String ownerMac) {
             VipTO to = new VipTO();
-            to.setIp(inv.getIp());
-            to.setNetmask(inv.getNetmask());
-            to.setGateway(inv.getGateway());
+			if (NetworkUtils.isIpv4Address(inv.getIp())) {
+				to.setIp(inv.getIp());
+				to.setNetmask(inv.getNetmask());
+				to.setGateway(inv.getGateway());
+			} else {
+				to.setIp6(inv.getIp());
+				to.setNetmask(inv.getNetmask());
+				to.setGateway6(inv.getGateway());
+				to.setPrefixLength(inv.getPrefixLen());
+			}
             to.setOwnerEthernetMac(ownerMac);
             to.setVipUuid(inv.getUuid());
             to.setSystem(inv.isSystem());
@@ -921,6 +932,30 @@ public class VirtualRouterCommands {
 
 		public void setSystem(boolean system) {
 			isSystem = system;
+		}
+
+		public String getIp6() {
+			return ip6;
+		}
+
+		public void setIp6(String ip6) {
+			this.ip6 = ip6;
+		}
+
+		public int getPrefixLength() {
+			return prefixLength;
+		}
+
+		public void setPrefixLength(int prefixLength) {
+			this.prefixLength = prefixLength;
+		}
+
+		public String getGateway6() {
+			return gateway6;
+		}
+
+		public void setGateway6(String gateway6) {
+			this.gateway6 = gateway6;
 		}
 	}
 
