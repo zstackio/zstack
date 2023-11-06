@@ -227,4 +227,11 @@
             <zstack:extension interface="org.zstack.kvm.KVMSubTypeVmConfigurationFactory"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="VmCpuVendorKvmStartVmExtension" class="org.zstack.kvm.VmCpuVendorKvmStartVmExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.config.GlobalConfigInitExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

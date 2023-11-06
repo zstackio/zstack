@@ -129,4 +129,8 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "vm.ha.across.clusters")
     public static GlobalConfig VM_HA_ACROSS_CLUSTERS = new GlobalConfig(CATEGORY, "vm.ha.across.clusters");
+    @GlobalConfigDef(defaultValue = "AuthenticAMD", type = String.class, description = "set vm cpuid vendor")
+    @GlobalConfigValidation(validValues = {"None", "AuthenticAMD"})
+    @BindResourceConfig(value = {VmInstanceVO.class})
+    public static GlobalConfig VM_CPUID_VENDOR = new GlobalConfig(CATEGORY, "vm.cpuid.vendor");
 }
