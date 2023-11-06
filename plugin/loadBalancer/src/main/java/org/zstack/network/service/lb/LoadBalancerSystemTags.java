@@ -82,8 +82,8 @@ public class LoadBalancerSystemTags {
     public static final String HTTP_VERSIONS_TOKEN = "httpVersion";
     public static PatternedSystemTag HTTP_VERSIONS= new PatternedSystemTag(String.format("httpVersions::{%s}", HTTP_VERSIONS_TOKEN), LoadBalancerListenerVO.class);
 
-    public static final String TCP_IPFORWARDFOR_TOKEN = "ipForwardFor";
-    public static PatternedSystemTag TCP_IPFORWARDFOR= new PatternedSystemTag(String.format("ipForwardFor::{%s}", TCP_IPFORWARDFOR_TOKEN), LoadBalancerListenerVO.class);
+    public static final String TCP_IPFORWARDFOR_TOKEN = "tcpIpForwardFor";
+    public static PatternedSystemTag TCP_IPFORWARDFOR= new PatternedSystemTag(String.format("tcpIpForwardFor::{%s}", TCP_IPFORWARDFOR_TOKEN), LoadBalancerListenerVO.class);
 
     public static final String HTTP_COMPRESS_ALGOS_TOKEN = "httpCompressAlgos";
     public static PatternedSystemTag HTTP_COMPRESS_ALGOS= new PatternedSystemTag(String.format("httpCompressAlgos::{%s}", HTTP_COMPRESS_ALGOS_TOKEN), LoadBalancerListenerVO.class);

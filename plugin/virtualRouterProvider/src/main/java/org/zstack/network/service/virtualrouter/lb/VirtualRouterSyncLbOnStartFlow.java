@@ -1,10 +1,12 @@
 package org.zstack.network.service.virtualrouter.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
+import org.stringtemplate.v4.ST;
 import org.zstack.compute.vm.VmInstanceManager;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -27,6 +29,7 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.function.ListFunction;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -168,10 +171,17 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                         }
 
                         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-                        q.add(VipVO_.uuid, Op.IN, CollectionUtils.transformToList(finalLbs, new Function<String, LoadBalancerVO>() {
+                        q.add(VipVO_.uuid, Op.IN, CollectionUtils.transformToList(finalLbs, new ListFunction<String, LoadBalancerVO>() {
                             @Override
-                            public String call(LoadBalancerVO arg) {
-                                return arg.getVipUuid();
+                            public List<String> call(LoadBalancerVO arg) {
+                                ArrayList<String> vipUuids = new ArrayList<>();
+                                if (!StringUtils.isEmpty(arg.getVipUuid())) {
+                                    vipUuids.add(arg.getVipUuid());
+                                }
+                                if (!StringUtils.isEmpty(arg.getIpv6VipUuid())) {
+                                    vipUuids.add(arg.getIpv6VipUuid());
+                                }
+                                return vipUuids;
                             }
                         }));
                         List<VipVO> vipvos = q.list();

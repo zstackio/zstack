@@ -72,19 +72,11 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         List<VipInventory> notSystemVip = vips.stream().filter(v -> !v.isSystem()).collect(Collectors.toList());
 
         for (VipInventory vip : systemVip) {
-            /* TODO: not support ipv6 vip */
-            if (!NetworkUtils.isIpv4Address(vip.getIp())) {
-                continue;
-            }
             String mac = getOwnerMac(vr, vip);
             VipTO to = VipTO.valueOf(vip, mac);
             tos.add(to);
         }
         for (VipInventory vip : notSystemVip) {
-            /* TODO: not support ipv6 vip */
-            if (!NetworkUtils.isIpv4Address(vip.getIp())) {
-                continue;
-            }
             String mac = getOwnerMac(vr, vip);
             VipTO to = VipTO.valueOf(vip, mac);
             tos.add(to);
@@ -93,10 +85,6 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         List<NicIpTO> nicIps = new ArrayList<>();
         if (syncVip) {
             for (VmNicInventory nic : vr.getVmNics()) {
-                /* TODO: not support ipv6 vip */
-                if (!NetworkUtils.isIpv4Address(nic.getIp())) {
-                    continue;
-                }
                 nicIps.add(NicIpTO.valueOf(nic));
             }
         }
