@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -23,8 +21,6 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -53,10 +49,7 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
                 .findAny()
                 .orElse(null);
 
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.primaryStorageUuid);
-        q.add(VolumeVO_.uuid, Op.EQ, spec.getVmInventory().getRootVolumeUuid());
-        final String psUuid = q.findValue();
+        final String psUuid = spec.getVmInventory().getRootVolume().getPrimaryStorageUuid();
 
         final HostInventory host = spec.getDestHost();
         ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
@@ -102,6 +95,7 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
                     DownloadIsoToPrimaryStorageReply r = reply.castReply();
                     isoSpec.setInstallPath(r.getInstallPath());
                     isoSpec.setPrimaryStorageUuid(psUuid);
+                    isoSpec.setProtocol(r.getProtocol());
                 }
                 trigger.next();
             }

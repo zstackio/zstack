@@ -12,7 +12,7 @@ import java.util.Map;
         path = "/block/snaps/{snapshotId}",
         method = HttpMethod.DELETE,
         responseClass = DeleteVolumeSnapshotResponse.class,
-        sync = true
+        sync = false
 )
 public class DeleteVolumeSnapshotRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

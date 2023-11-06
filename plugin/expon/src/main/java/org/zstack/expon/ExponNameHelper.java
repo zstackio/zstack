@@ -1,10 +1,9 @@
 package org.zstack.expon;
 
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper;
+
 public class ExponNameHelper {
 
-    public static String buildVolumeName(String zsVolumeUuid) {
-        return "volume_" + zsVolumeUuid;
-    }
     public static String buildVhostControllerName(String zsVolumeUuid) {
         return "volume-" + zsVolumeUuid;
     }

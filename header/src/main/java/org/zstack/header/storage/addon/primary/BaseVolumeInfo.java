@@ -1,5 +1,8 @@
 package org.zstack.header.storage.addon.primary;
 
+import org.zstack.header.storage.primary.ImageCacheInventory;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeQos;
 import org.zstack.header.volume.VolumeStats;
@@ -15,6 +18,8 @@ public class BaseVolumeInfo extends VolumeStats {
 
     protected String primaryStorageUuid;
     protected String protocol;
+    // volume or image
+    protected String type;
     protected boolean shareable;
 
     public BaseVolumeInfo(VolumeStats stats) {
@@ -65,6 +70,14 @@ public class BaseVolumeInfo extends VolumeStats {
         return uuid;
     }
 
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
+    }
+
     public static BaseVolumeInfo valueOf(VolumeInventory vol) {
         BaseVolumeInfo info = new BaseVolumeInfo();
         info.uuid = vol.getUuid();
@@ -74,6 +87,40 @@ public class BaseVolumeInfo extends VolumeStats {
         info.setQos(VolumeQos.valueOf(vol.getVolumeQos()));
         info.setShareable(vol.isShareable());
         info.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+        info.setType("volume");
+        return info;
+    }
+
+    public static BaseVolumeInfo valueOf(ImageCacheInventory image, String protocol) {
+        BaseVolumeInfo info = new BaseVolumeInfo();
+        info.uuid = image.getImageUuid();
+        info.setActualSize(image.getSize());
+        info.setInstallPath(image.getInstallUrl());
+        info.setProtocol(protocol);
+        info.setShareable(true);
+        info.setPrimaryStorageUuid(image.getPrimaryStorageUuid());
+        info.setType("image");
+        return info;
+    }
+
+    public static BaseVolumeInfo valueOf(VmInstanceSpec.CdRomSpec image) {
+        BaseVolumeInfo info = new BaseVolumeInfo();
+        info.uuid = image.getImageUuid();
+        info.setInstallPath(image.getInstallPath());
+        info.setProtocol(image.getProtocol());
+        info.setShareable(true);
+        info.setPrimaryStorageUuid(image.getPrimaryStorageUuid());
+        info.setType("image");
+        return info;
+    }
+
+    public static BaseVolumeInfo valueOf(VmCdRomVO image) {
+        BaseVolumeInfo info = new BaseVolumeInfo();
+        info.uuid = image.getIsoUuid();
+        info.setInstallPath(image.getIsoInstallPath());
+        info.setProtocol(image.getProtocol());
+        info.setShareable(true);
+        info.setType("image");
         return info;
     }
 

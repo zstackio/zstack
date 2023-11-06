@@ -6,6 +6,7 @@ import org.zstack.header.storage.addon.RemoteTarget;
 import org.zstack.header.storage.addon.StorageCapacity;
 import org.zstack.header.storage.addon.StorageHealthy;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
+import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
 import org.zstack.header.volume.VolumeType;
 
@@ -40,7 +41,7 @@ public interface PrimaryStorageControllerSvc {
     void expandVolume(String installPath, long size, ReturnValueCompletion<VolumeStats> comp);
     void setVolumeQos(BaseVolumeInfo v, Completion comp);
 
-    <T extends RemoteTarget> void export(ExportSpec espec, Class<T> clz, ReturnValueCompletion<T> comp);
+    void export(ExportSpec espec, VolumeProtocol protocol, ReturnValueCompletion<RemoteTarget> comp);
     void unexport(String installPath, RemoteTarget target, Completion comp);
 
     void createSnapshot(CreateVolumeSnapshotSpec spec, ReturnValueCompletion<VolumeSnapshotStats> comp);

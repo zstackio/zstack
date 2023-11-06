@@ -4,6 +4,7 @@ import org.zstack.expon.sdk.*;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterRequest;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterResponse;
 import org.zstack.expon.sdk.cluster.TianshuClusterModule;
+import org.zstack.expon.sdk.iscsi.*;
 import org.zstack.expon.sdk.nvmf.*;
 import org.zstack.expon.sdk.pool.*;
 import org.zstack.expon.sdk.uss.QueryUssGatewayRequest;
@@ -164,7 +165,12 @@ public class ExponApiHelper {
         req.setLunId(volumeId);
         req.setVhostId(vhostId);
         req.setUssGwId(ussGwId);
-        AddVHostControllerToUssResponse rsp = callErrorOut(req, AddVHostControllerToUssResponse.class);
+        AddVHostControllerToUssResponse rsp = call(req, AddVHostControllerToUssResponse.class);
+        if (rsp.isError(ExponError.VHOST_BIND_USS_FAILED) && rsp.getMessage().contains("already bind")) {
+            return true;
+        }
+
+        errorOut(rsp);
         return true;
     }
 
@@ -462,5 +468,128 @@ public class ExponApiHelper {
         req.setNvmfId(nvmfId);
         GetNvmfTargetBoundUssResponse rsp = callErrorOut(req, GetNvmfTargetBoundUssResponse.class);
         return rsp.getResult().stream().filter(it -> it.getUssGwId().equals(ussGwId)).findFirst().orElse(null);
+    }
+
+    public IscsiModule createIscsiController(String name, String tianshuId, int port, IscsiUssResource uss) {
+        CreateIscsiTargetRequest req = new CreateIscsiTargetRequest();
+        req.setName(name);
+        req.setTianshuId(tianshuId);
+        req.setPort(port);
+        req.setNodes(Collections.singletonList(uss));
+        CreateIscsiTargetResponse rsp = callErrorOut(req, CreateIscsiTargetResponse.class);
+
+        sleep();
+        return queryIscsiController(name);
+    }
+
+    public IscsiModule queryIscsiController(String name) {
+        QueryIscsiTargetRequest req = new QueryIscsiTargetRequest();
+        req.addCond("name", name);
+        QueryIscsiTargetResponse rsp = queryErrorOut(req, QueryIscsiTargetResponse.class);
+        if (rsp.getTotal() == 0) {
+            return null;
+        }
+
+        return rsp.getGateways().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    public void deleteIscsiController(String id) {
+        DeleteIscsiTargetRequest req = new DeleteIscsiTargetRequest();
+        req.setId(id);
+        callErrorOut(req, DeleteIscsiTargetResponse.class);
+    }
+
+    public IscsiClientGroupModule queryIscsiClient(String name) {
+        QueryIscsiClientGroupRequest req = new QueryIscsiClientGroupRequest();
+        req.addCond("name", name);
+        QueryIscsiClientGroupResponse rsp = queryErrorOut(req, QueryIscsiClientGroupResponse.class);
+        if (rsp.getTotal() == 0) {
+            return null;
+        }
+
+        return rsp.getClients().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    public IscsiClientGroupModule createIscsiClient(String name, String tianshuId, List<String> ips) {
+        CreateIscsiClientGroupRequest req = new CreateIscsiClientGroupRequest();
+        req.setName(name);
+        req.setTianshuId(tianshuId);
+        List<IscsiClient> hosts = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(ips)) {
+            for (String ip : ips) {
+                IscsiClient host = new IscsiClient();
+                host.setHostType("ip");
+                host.setHost(ip);
+                hosts.add(host);
+            }
+            req.setHosts(hosts);
+        }
+        CreateIscsiClientGroupResponse rsp = callErrorOut(req, CreateIscsiClientGroupResponse.class);
+
+        sleep();
+        return queryIscsiClient(name);
+    }
+
+    public void deleteIscsiClient(String id) {
+        DeleteIscsiClientGroupRequest req = new DeleteIscsiClientGroupRequest();
+        req.setId(id);
+        callErrorOut(req, DeleteIscsiClientGroupResponse.class);
+    }
+
+    public void addIscsiClientToIscsiTarget(String clientId, String targetId) {
+        AddIscsiClientGroupToIscsiTargetRequest req = new AddIscsiClientGroupToIscsiTargetRequest();
+        req.setClients(Collections.singletonList(clientId));
+        req.setId(targetId);
+        callErrorOut(req, AddIscsiClientGroupToIscsiTargetResponse.class);
+    }
+
+    public void removeIscsiClientFromIscsiTarget(String clientId, String targetId) {
+        RemoveIscsiClientGroupFromIscsiTargetRequest req = new RemoveIscsiClientGroupFromIscsiTargetRequest();
+        req.setClients(Collections.singletonList(clientId));
+        req.setId(targetId);
+        callErrorOut(req, RemoveIscsiClientGroupFromIscsiTargetResponse.class);
+    }
+
+    public void addVolumeToIscsiClientGroup(String volId, String clientId, String targetId) {
+        ChangeVolumeInIscsiClientGroupRequest req = new ChangeVolumeInIscsiClientGroupRequest();
+        req.setId(clientId);
+        req.setAction(ExponAction.add.name());
+        req.setLuns(Collections.singletonList(new LunResource(volId, "volume")));
+        req.setGateways(Collections.singletonList(targetId));
+        callErrorOut(req, ChangeVolumeInIscsiClientGroupResponse.class);
+    }
+
+    public void addSnapshotToIscsiClientGroup(String snapId, String clientId, String targetId) {
+        ChangeSnapshotInIscsiClientGroupRequest req = new ChangeSnapshotInIscsiClientGroupRequest();
+        req.setId(clientId);
+        req.setAction(ExponAction.add.name());
+        req.setLuns(Collections.singletonList(new LunResource(snapId, "snapshot")));
+        req.setGateways(Collections.singletonList(targetId));
+        callErrorOut(req, ChangeSnapshotInIscsiClientGroupResponse.class);
+    }
+
+    public void removeVolumeFromIscsiClientGroup(String volId, String clientId) {
+        ChangeVolumeInIscsiClientGroupRequest req = new ChangeVolumeInIscsiClientGroupRequest();
+        req.setId(clientId);
+        req.setAction(ExponAction.remove.name());
+        req.setLuns(Collections.singletonList(new LunResource(volId, "volume")));
+        callErrorOut(req, ChangeVolumeInIscsiClientGroupResponse.class);
+    }
+
+    public void removeSnapshotFromIscsiClientGroup(String snapId, String clientId) {
+        ChangeSnapshotInIscsiClientGroupRequest req = new ChangeSnapshotInIscsiClientGroupRequest();
+        req.setId(clientId);
+        req.setAction(ExponAction.remove.name());
+        req.setLuns(Collections.singletonList(new LunResource(snapId, "snapshot")));
+        callErrorOut(req, ChangeSnapshotInIscsiClientGroupResponse.class);
+    }
+
+    private void sleep() {
+        // TODO remove it
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

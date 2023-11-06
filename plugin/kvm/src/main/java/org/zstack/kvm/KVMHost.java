@@ -2241,6 +2241,8 @@ public class KVMHost extends HostBase implements Host {
         iso.setImageUuid(msg.getIsoSpec().getImageUuid());
         iso.setPath(msg.getIsoSpec().getInstallPath());
         iso.setDeviceId(msg.getIsoSpec().getDeviceId());
+        iso.setPrimaryStorageUuid(msg.getIsoSpec().getPrimaryStorageUuid());
+        iso.setProtocol(msg.getIsoSpec().getProtocol());
 
         AttachIsoCmd cmd = new AttachIsoCmd();
         cmd.vmUuid = msg.getVmInstanceUuid();
@@ -4235,6 +4237,8 @@ public class KVMHost extends HostBase implements Host {
             cdRomTO.setImageUuid(cdRomSpec.getImageUuid());
             cdRomTO.setDeviceId(cdRomSpec.getDeviceId());
             cdRomTO.setEmpty(cdRomSpec.getImageUuid() == null);
+            cdRomTO.setPrimaryStorageUuid(cdRomSpec.getPrimaryStorageUuid());
+            cdRomTO.setProtocol(cdRomSpec.getProtocol());
             cmd.getCdRoms().add(cdRomTO);
         }
 

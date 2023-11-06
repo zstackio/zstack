@@ -34,7 +34,7 @@ public class ExponResponse {
     }
 
     public boolean sessionExpired() {
-        return isError(ExponError.SESSION_EXPIRED, ExponError.INVALID_SESSION);
+        return isError(ExponError.SESSION_EXPIRED, ExponError.SESSION_NOTFOUND, ExponError.INVALID_SESSION);
     }
 
     public boolean isError(ExponError... errorEnums) {
