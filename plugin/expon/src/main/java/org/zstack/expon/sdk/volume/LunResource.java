@@ -9,6 +9,9 @@ public class LunResource {
     @Param(validValues = {"volume", "snapshot"})
     private String lunType;
 
+    @Param(required = false)
+    private String isReadonly;
+
     public String getLunId() {
         return lunId;
     }
@@ -23,6 +26,14 @@ public class LunResource {
 
     public void setLunType(String lunType) {
         this.lunType = lunType;
+    }
+
+    public void setIsReadonly(String isReadonly) {
+        this.isReadonly = isReadonly;
+    }
+
+    public String getIsReadonly() {
+        return isReadonly;
     }
 
     public LunResource() {

@@ -4842,7 +4842,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                         .findAny()
                         .orElse(null);
                 targetVmCdRomVO.setIsoUuid(isoUuid);
-                targetVmCdRomVO.setIsoInstallPath(isoSpec != null ? isoSpec.getInstallPath() : null);
+                if (isoSpec != null) {
+                    targetVmCdRomVO.setIsoInstallPath(isoSpec.getInstallPath());
+                    targetVmCdRomVO.setProtocol(isoSpec.getProtocol());
+                } else {
+                    targetVmCdRomVO.setIsoInstallPath(null);
+                    targetVmCdRomVO.setProtocol(null);
+                }
+
                 dbf.update(targetVmCdRomVO);
                 new IsoOperator().syncVmIsoSystemTag(self.getUuid());
                 completion.success();
@@ -5571,10 +5578,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmCdRomVO targetCdRomVO = cdRomVOS.get(0);
         String targetCdRomIsoUuid = targetCdRomVO.getIsoUuid();
         String path = targetCdRomVO.getIsoInstallPath();
+        String protocol = targetCdRomVO.getProtocol();
         targetCdRomVO.setIsoUuid(sourceCdRomVO.getIsoUuid());
         targetCdRomVO.setIsoInstallPath(sourceCdRomVO.getIsoInstallPath());
+        targetCdRomVO.setProtocol(sourceCdRomVO.getProtocol());
+
         sourceCdRomVO.setIsoUuid(targetCdRomIsoUuid);
         sourceCdRomVO.setIsoInstallPath(path);
+        sourceCdRomVO.setIsoInstallPath(protocol);
 
         new SQLBatch() {
             @Override
@@ -6756,25 +6767,34 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final Map data) {
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
-                extEmitter.afterMigrateVm(vm, vm.getLastHostUuid());
-                completion.success();
+                extEmitter.afterMigrateVm(vm, vm.getLastHostUuid(), new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        completion.success();
+                    }
+                });
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 String destHostUuid = spec.getDestHost().getUuid().equals(lastHostUuid) ? null : spec.getDestHost().getUuid();
-                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode);
-                if (HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
-                        @Override
-                        public void done() {
+                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode, new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        if (!HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
+                            changeVmStateInDb(originState.getDrivenEvent());
                             completion.fail(errCode);
+                            return;
                         }
-                    });
-                } else {
-                    changeVmStateInDb(originState.getDrivenEvent());
-                    completion.fail(errCode);
-                }
+
+                        checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
+                            @Override
+                            public void done() {
+                                completion.fail(errCode);
+                            }
+                        });
+                    }
+                });
             }
         }).start();
     }
@@ -7556,6 +7576,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (dbf.isExist(isoUuid, ImageVO.class)) {
                     cdRomSpec.setImageUuid(isoUuid);
                     cdRomSpec.setInstallPath(cdRomVO.getIsoInstallPath());
+                    cdRomSpec.setProtocol(cdRomVO.getProtocol());
                 } else {
                     //TODO
                     logger.warn(String.format("iso[uuid:%s] is deleted, however, the VM[uuid:%s] still has it attached",
