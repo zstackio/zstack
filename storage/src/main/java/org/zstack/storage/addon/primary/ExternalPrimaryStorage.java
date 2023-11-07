@@ -18,6 +18,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -31,7 +32,6 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
-import org.zstack.header.volume.VolumeQos;
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
@@ -127,16 +127,25 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
+        VolumeInventory volume = msg.getVolume();
+        CreateVolumeSpec spec = new CreateVolumeSpec();
+        spec.setUuid(volume.getUuid());
+        spec.setSize(volume.getSize());
+        spec.setAllocatedUrl(msg.getAllocatedInstallUrl());
         if (msg instanceof InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            throw new UnsupportedOperationException();
+            spec.setName(buildReimageVolumeName(((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) msg).getOriginVolumeUuid()));
+            createRootVolume((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) msg, spec);
         } else if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
+            spec.setName(buildVolumeName(volume.getUuid()));
+            createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg, spec);
         } else if (msg instanceof InstantiateTemporaryVolumeOnPrimaryStorageMsg) {
-            throw new UnsupportedOperationException();
+            spec.setName(buildReimageVolumeName(((InstantiateTemporaryVolumeOnPrimaryStorageMsg) msg).getOriginVolumeUuid()));
+            createEmptyVolume(msg, spec);
         } else if (msg instanceof InstantiateMemoryVolumeOnPrimaryStorageMsg) {
             throw new UnsupportedOperationException();
         } else {
-            createEmptyVolume(msg);
+            spec.setName(buildVolumeName(volume.getUuid()));
+            createEmptyVolume(msg, spec);
         }
     }
 
@@ -147,12 +156,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     protected void check(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
     }
 
-    private void createRootVolume(InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+    private void createRootVolume(InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg, CreateVolumeSpec spec) {
         final VmInstanceSpec.ImageSpec ispec = msg.getTemplateSpec();
         final ImageInventory image = ispec.getInventory();
 
         if (!ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
-            createEmptyVolume(msg);
+            createEmptyVolume(msg, spec);
             return;
         }
 
@@ -193,10 +202,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        CreateVolumeSpec spec = new CreateVolumeSpec();
-                        spec.setName(buildVolumeName(volume.getUuid()));
-                        spec.setUuid(volume.getUuid());
-                        spec.setSize(volume.getSize());
                         controller.cloneVolume(pathInCache, spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats returnValue) {
@@ -239,13 +244,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }).start();
     }
 
-    private void createEmptyVolume(InstantiateVolumeOnPrimaryStorageMsg msg) {
+    private void createEmptyVolume(InstantiateVolumeOnPrimaryStorageMsg msg, CreateVolumeSpec spec) {
         InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         VolumeInventory volume = msg.getVolume();
-        CreateVolumeSpec spec = new CreateVolumeSpec();
-        spec.setName(buildVolumeName(volume.getUuid()));
-        spec.setSize(volume.getSize());
-        spec.setAllocatedUrl(msg.getAllocatedInstallUrl());
 
         controller.createVolume(spec, new ReturnValueCompletion<VolumeStats>(msg) {
             @Override
@@ -1267,8 +1268,88 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
-        // TODO
-        throw new UnsupportedOperationException();
+        final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
+
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("reimage-vm-root-volume-%s", msg.getVolume().getUuid()));
+        chain.then(new ShareFlow() {
+            String volumePath;
+            String installUrl;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "download-image-to-cache";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class));
+                        downloadImageCache(image, new ReturnValueCompletion<ImageCacheInventory>(trigger) {
+                            @Override
+                            public void success(ImageCacheInventory returnValue) {
+                                installUrl = returnValue.getInstallUrl();
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "clone-image";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        CreateVolumeSpec spec = new CreateVolumeSpec();
+                        spec.setName(buildReimageVolumeName(msg.getVolume().getUuid()));
+                        spec.setUuid(msg.getVolume().getUuid());
+                        spec.setSize(msg.getVolume().getSize());
+                        controller.cloneVolume(installUrl, spec, new ReturnValueCompletion<VolumeStats>(trigger) {
+                            @Override
+                            public void success(VolumeStats returnValue) {
+                                volumePath = returnValue.getInstallPath();
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        // TODO
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        reply.setNewVolumeInstallPath(volumePath);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
