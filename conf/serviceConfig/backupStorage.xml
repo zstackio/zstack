@@ -20,6 +20,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.storage.backup.APICalculateImageHashOnBackupStorageMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.storage.backup.APIScanBackupStorageMsg</name>
     </message>
 
