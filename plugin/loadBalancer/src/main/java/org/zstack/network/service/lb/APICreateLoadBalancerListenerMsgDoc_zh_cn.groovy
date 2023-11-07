@@ -208,11 +208,11 @@ doc {
 					since "4.7.21"
 				}
 				column {
-					name "ipForwardFor"
+					name "tcpProxyProtocol"
 					enclosedIn "params"
 					desc ""
 					location "body"
-					type "boolean"
+					type "String"
 					optional true
 					since "4.7.21"
 				}

@@ -74,7 +74,7 @@ public class CreateLoadBalancerListenerAction extends AbstractAction {
     public java.util.List httpVersions;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean tcpIpForwardFor = false;
+    public java.lang.String tcpProxyProtocol;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List httpCompressAlgos;

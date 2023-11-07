@@ -95,7 +95,7 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     public java.lang.Integer statusCode;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean tcpIpForwardFor = false;
+    public java.lang.String tcpProxyProtocol;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List httpCompressAlgos;

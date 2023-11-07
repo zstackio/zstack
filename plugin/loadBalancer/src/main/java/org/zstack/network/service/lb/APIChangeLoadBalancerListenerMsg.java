@@ -87,7 +87,7 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     private Integer statusCode;
 
     @APIParam(required = false)
-    private boolean tcpIpForwardFor;
+    private String tcpProxyProtocol;
 
     @APIParam(required = false)
     private List<String> httpCompressAlgos;
@@ -292,14 +292,13 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
         this.httpVersions = httpVersions;
     }
 
-    public boolean isTcpIpForwardFor() {
-        return tcpIpForwardFor;
+    public String getTcpProxyProtocol() {
+        return tcpProxyProtocol;
     }
 
-    public void setTcpIpForwardFor(boolean tcpIpForwardFor) {
-        this.tcpIpForwardFor = tcpIpForwardFor;
+    public void setTcpProxyProtocol(String tcpProxyProtocol) {
+        this.tcpProxyProtocol = tcpProxyProtocol;
     }
-
     public List<String> getHttpCompressAlgos() {
         return httpCompressAlgos;
     }
