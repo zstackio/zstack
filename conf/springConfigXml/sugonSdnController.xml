@@ -47,6 +47,7 @@
     <bean id="TfMigrateVmBackend" class="org.zstack.sugonSdnController.network.TfMigrateVmBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmPreMigrationExtensionPoint" />
         </zstack:plugin>
     </bean>
 
