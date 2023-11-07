@@ -216,8 +216,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         String vmInstanceUuid = volumeUuids.isEmpty() ? null : Q.New(VolumeVO.class).select(VolumeVO_.vmInstanceUuid)
                 .in(VolumeVO_.uuid, volumeUuids).eq(VolumeVO_.type, VolumeType.Root).findValue();
 
-        Map<String, List<String>> psVolumeRef = ts.stream().collect(Collectors.groupingBy(t -> ((Tuple)t).get(1, String.class),
-                        Collectors.mapping(t -> ((Tuple)t).get(0, String.class), Collectors.toList())));
+        Map<String, List<String>> psVolumeRef = ts.stream().
+                filter(t -> t.get(1, String.class) != null)
+                .collect(Collectors.groupingBy(t -> ((Tuple) t).get(1, String.class),
+                        Collectors.mapping(t -> ((Tuple) t).get(0, String.class), Collectors.toList())));
 
         final ErrorCode[] err = new ErrorCode[1];
         new While<>(psVolumeRef.entrySet()).each((e, completion) -> {
