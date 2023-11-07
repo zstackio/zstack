@@ -45,6 +45,7 @@ public class VmCdRomInventory implements Serializable {
         inv.setName(vo.getName());
         inv.setIsoUuid(vo.getIsoUuid());
         inv.setIsoInstallPath(vo.getIsoInstallPath());
+        inv.setProtocol(vo.getProtocol());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
 

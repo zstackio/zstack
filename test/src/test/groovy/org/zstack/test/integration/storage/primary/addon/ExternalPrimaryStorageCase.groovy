@@ -9,6 +9,7 @@ import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetMsg
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetReply
 import org.zstack.header.storage.backup.ExportImageToRemoteTargetMsg
 import org.zstack.header.storage.backup.ExportImageToRemoteTargetReply
+import org.zstack.header.vm.VmBootDevice
 import org.zstack.header.vm.devices.DeviceAddress
 import org.zstack.header.vm.devices.VirtualDeviceInfo
 import org.zstack.header.volume.VolumeVO
@@ -24,12 +25,14 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import static java.util.Arrays.asList
+
 class ExternalPrimaryStorageCase extends SubCase {
     EnvSpec env
     ClusterInventory cluster
     InstanceOfferingInventory instanceOffering
     DiskOfferingInventory diskOffering
-    ImageInventory image
+    ImageInventory image, iso
     L3NetworkInventory l3
     PrimaryStorageInventory ps
     BackupStorageInventory bs
@@ -65,12 +68,19 @@ class ExternalPrimaryStorageCase extends SubCase {
                 url = "/sftp"
                 username = "root"
                 password = "password"
-                hostname = "localhost"
+                hostname = "127.0.0.1"
 
                 image {
                     name = "image"
                     url = "http://zstack.org/download/test.qcow2"
                     size = SizeUnit.GIGABYTE.toByte(1)
+                }
+
+                image {
+                    name = "iso"
+                    url = "http://zstack.org/download/test.iso"
+                    size = SizeUnit.GIGABYTE.toByte(1)
+                    format = "iso"
                 }
             }
 
@@ -120,12 +130,14 @@ class ExternalPrimaryStorageCase extends SubCase {
             instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
             image = env.inventoryByName("image") as ImageInventory
+            iso = env.inventoryByName("iso") as ImageInventory
             l3 = env.inventoryByName("l3") as L3NetworkInventory
             bs = env.inventoryByName("sftp") as BackupStorageInventory
             simulatorEnv()
             testCreateExponStorage()
             testSessionExpired()
             testCreateVm()
+            testAttachIso()
             testCreateDataVolume()
             testCreateSnapshot()
             testCreateTemplate()
@@ -199,7 +211,7 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         env.message(ExportImageToRemoteTargetMsg.class){ ExportImageToRemoteTargetMsg msg, CloudBus bus ->
             ExportImageToRemoteTargetReply r = new  ExportImageToRemoteTargetReply()
-            assert msg.getRemoteTargetUrl().startsWith("nvme://")
+            assert msg.getRemoteTargetUrl().startsWith("iscsi://")
             bus.reply(msg, r)
         }
 
@@ -228,6 +240,39 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         rebootVmInstance {
             uuid = vm.uuid
+        }
+    }
+
+    void testAttachIso() {
+        attachIsoToVmInstance {
+            vmInstanceUuid = vm.uuid
+            isoUuid = iso.uuid
+        }
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
+        setVmBootOrder {
+            uuid = vm.uuid
+            bootOrder = asList(VmBootDevice.CdRom.toString(), VmBootDevice.HardDisk.toString(), VmBootDevice.Network.toString())
+        }
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
+        setVmBootOrder {
+            uuid = vm.uuid
+            bootOrder = asList(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString(), VmBootDevice.Network.toString())
+        }
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
+        detachIsoFromVmInstance {
+            vmInstanceUuid = vm.uuid
         }
     }
 
@@ -309,7 +354,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     void testCreateTemplate() {
         env.message(DownloadImageFromRemoteTargetMsg.class){ DownloadImageFromRemoteTargetMsg msg, CloudBus bus ->
             DownloadImageFromRemoteTargetReply r = new  DownloadImageFromRemoteTargetReply()
-            assert msg.getRemoteTargetUrl().startsWith("nvme://")
+            assert msg.getRemoteTargetUrl().startsWith("iscsi://")
             r.setInstallPath("zstore://test/image")
             r.setSize(100L)
             bus.reply(msg, r)
