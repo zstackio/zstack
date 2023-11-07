@@ -533,9 +533,13 @@ public class SourceClassMap {
 			put("org.zstack.sns.platform.email.SNSEmailAddressInventory", "org.zstack.sdk.sns.platform.email.SNSEmailAddressInventory");
 			put("org.zstack.sns.platform.email.SNSEmailEndpointInventory", "org.zstack.sdk.sns.platform.email.SNSEmailEndpointInventory");
 			put("org.zstack.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory");
+			put("org.zstack.sns.platform.feishu.SNSFeiShuAtPersonInventory", "org.zstack.sdk.sns.platform.feishu.SNSFeiShuAtPersonInventory");
+			put("org.zstack.sns.platform.feishu.SNSFeiShuEndpointInventory", "org.zstack.sdk.sns.platform.feishu.SNSFeiShuEndpointInventory");
 			put("org.zstack.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
 			put("org.zstack.sns.platform.snmp.SNSSnmpPlatformInventory", "org.zstack.sdk.sns.platform.snmp.SNSSnmpPlatformInventory");
+			put("org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory");
+			put("org.zstack.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory");
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
 			put("org.zstack.sso.header.CasState", "org.zstack.sdk.CasState");
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
@@ -1340,9 +1344,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.email.SNSEmailAddressInventory", "org.zstack.sns.platform.email.SNSEmailAddressInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailEndpointInventory", "org.zstack.sns.platform.email.SNSEmailEndpointInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sns.platform.email.SNSEmailPlatformInventory");
+			put("org.zstack.sdk.sns.platform.feishu.SNSFeiShuAtPersonInventory", "org.zstack.sns.platform.feishu.SNSFeiShuAtPersonInventory");
+			put("org.zstack.sdk.sns.platform.feishu.SNSFeiShuEndpointInventory", "org.zstack.sns.platform.feishu.SNSFeiShuEndpointInventory");
 			put("org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
 			put("org.zstack.sdk.sns.platform.snmp.SNSSnmpPlatformInventory", "org.zstack.sns.platform.snmp.SNSSnmpPlatformInventory");
+			put("org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory");
+			put("org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sns.platform.wecom.SNSWeComEndpointInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketInventory", "org.zstack.ticket.entity.ArchiveTicketInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketStatusHistoryInventory", "org.zstack.ticket.entity.ArchiveTicketStatusHistoryInventory");
 			put("org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory", "org.zstack.ticket.entity.TicketFlowCollectionInventory");
