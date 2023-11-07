@@ -1,5 +1,6 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.core.encrypt.EncryptColumn;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
@@ -18,6 +19,7 @@ public class AccountVO extends ResourceVO {
     @Column
     private String description;
 
+    @EncryptColumn
     @Column
     private String password;
 

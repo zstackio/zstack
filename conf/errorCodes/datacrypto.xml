@@ -1,0 +1,7 @@
+<error>
+    <prefix>DATA_CRYPTO</prefix>
+    <code>
+        <id>1001</id>
+        <description>The data integrity has been compromised.</description>
+    </code>
+</error>
