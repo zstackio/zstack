@@ -16,15 +16,15 @@ import java.util.List;
                 foreignKey = "hostUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "l2Network", inventoryClass = L2NetworkInventory.class,
                 foreignKey = "l2NetworkUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "l2NetworkClusterRef", inventoryClass = L2NetworkClusterRefInventory.class,
+                foreignKey = "l2NetworkClusterRefId", expandedInventoryKey = "id"),
 })
 public class L2NetworkHostRefInventory {
     private String hostUuid;
     private String l2NetworkUuid;
-
+    private long l2NetworkClusterRefId;
     private String l2ProviderType;
-
     private L2NetworkAttachStatus attachStatus;
-
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -33,6 +33,7 @@ public class L2NetworkHostRefInventory {
         L2NetworkHostRefInventory inv = new L2NetworkHostRefInventory();
         inv.setHostUuid(vo.getHostUuid());
         inv.setL2NetworkUuid(vo.getL2NetworkUuid());
+        inv.setL2NetworkClusterRefId(vo.getL2NetworkClusterRefId());
         inv.setL2ProviderType(vo.getL2ProviderType());
         inv.setAttachStatus(vo.getAttachStatus());
         inv.setCreateDate(vo.getCreateDate());
@@ -70,6 +71,14 @@ public class L2NetworkHostRefInventory {
 
     public void setL2NetworkUuid(String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
+    }
+
+    public long getL2NetworkClusterRefId() {
+        return l2NetworkClusterRefId;
+    }
+
+    public void setL2NetworkClusterRefId(long l2NetworkClusterRefId) {
+        this.l2NetworkClusterRefId = l2NetworkClusterRefId;
     }
 
     public Timestamp getCreateDate() {

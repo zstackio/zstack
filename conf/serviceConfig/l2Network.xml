@@ -16,7 +16,15 @@
     </message>
 
     <message>
+        <name>org.zstack.header.network.l2.APIAttachL2NetworkToHostMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIDetachL2NetworkFromHostMsg</name>
     </message>
 
     <message>

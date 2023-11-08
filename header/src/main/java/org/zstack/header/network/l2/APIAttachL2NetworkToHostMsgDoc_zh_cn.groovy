@@ -1,21 +1,21 @@
 package org.zstack.header.network.l2
 
-import org.zstack.header.network.l2.APIAttachL2NetworkToClusterEvent
+import org.zstack.header.network.l2.APIAttachL2NetworkToHostEvent
 
 doc {
-    title "挂载二层网络到集群(AttachL2NetworkToCluster)"
+    title "挂载二层网络到物理机(AttachL2NetworkToHost)"
 
     category "二层网络"
 
-    desc """挂载二层网络到集群"""
+    desc """挂载二层网络到物理机"""
 
     rest {
         request {
-			url "POST /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}"
+			url "POST /v1/l2-networks/{l2NetworkUuid}/hosts/{hostUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachL2NetworkToClusterMsg.class
+            clz APIAttachL2NetworkToHostMsg.class
 
             desc """"""
             
@@ -23,21 +23,31 @@ doc {
 
 				column {
 					name "l2NetworkUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "二层网络UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.0.1"
 				}
 				column {
-					name "clusterUuid"
-					enclosedIn ""
-					desc "集群UUID"
+					name "hostUuid"
+					enclosedIn "params"
+					desc "物理机UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.0.1"
+				}
+				column {
+					name "l2ProviderType"
+					enclosedIn "params"
+					desc "二层网络实现类型"
+					location "body"
+					type "String"
+					optional true
+					since "4.0.1"
+					values ("LinuxBridge")
 				}
 				column {
 					name "systemTags"
@@ -46,7 +56,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.0.1"
 				}
 				column {
 					name "userTags"
@@ -55,23 +65,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
-				}
-				column {
-					name "l2ProviderType"
-					enclosedIn ""
-					desc "二层网络实现类型"
-					location "body"
-					type "String"
-					optional true
-					since "4.7.21"
-					values ("LinuxBridge")
+					since "4.0.1"
 				}
 			}
         }
 
         response {
-            clz APIAttachL2NetworkToClusterEvent.class
+            clz APIAttachL2NetworkToHostEvent.class
         }
     }
 }

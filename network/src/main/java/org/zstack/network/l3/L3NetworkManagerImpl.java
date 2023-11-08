@@ -76,6 +76,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     private TagManager tagMgr;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    protected L3NetworkExtensionPointEmitter extpEmitter;
 
     private Map<String, IpRangeFactory> ipRangeFactories = Collections.synchronizedMap(new HashMap<String, IpRangeFactory>());
     private Map<String, L3NetworkFactory> l3NetworkFactories = Collections.synchronizedMap(new HashMap<String, L3NetworkFactory>());
@@ -445,6 +447,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             }
         }.execute();
 
+        extpEmitter.afterCreate(inv);
 
         APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
         evt.setInventory(inv);

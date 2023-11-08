@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
@@ -35,6 +36,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -548,7 +550,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         schain.done(new FlowDoneHandler(new NopeCompletion()) {
             @Override
             public void handle(Map data) {
-                logger.debug(String.format("successfully finished network services after host [uuid:%s] connected"));
+                logger.debug(String.format("successfully finished network services after host[uuid:%s] connected", host.getUuid()));
             }
         }).start();
 
@@ -565,6 +567,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
                 .setName(String.format("host-%s-deletion-network-service-action", host.getUuid()));
         schain.allowEmptyFlow();
 
+        final FutureCompletion completion = new FutureCompletion(null);
         for (final NetworkServiceHostExtensionPoint ns : nsHostExts) {
 
             NoRollbackFlow flow = new NoRollbackFlow() {
@@ -589,12 +592,15 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             schain.then(flow);
         }
 
-        schain.done(new FlowDoneHandler(new NopeCompletion()) {
+        schain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                logger.debug(String.format("successfully finished network services before host [uuid:%s] deletion"));
+                logger.debug(String.format("successfully finished network services before host[uuid:%s] deletion", host.getUuid()));
+                completion.success();
             }
         }).start();
+
+        completion.await(TimeUnit.SECONDS.toMillis(60));
     }
 
     @Override
