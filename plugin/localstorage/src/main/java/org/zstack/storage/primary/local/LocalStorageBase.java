@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
+import static org.zstack.storage.primary.local.LocalStorageUtils.getHostUuidFromInstallUrl;
 import static org.zstack.utils.CollectionDSL.*;
 
 /**
@@ -2265,9 +2266,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DownloadDataVolumeToPrimaryStorageMsg msg) {
-        if (msg.getHostUuid() == null) {
+        if (msg.getHostUuid() == null && msg.getAllocatedInstallUrl() == null) {
             throw new OperationFailureException(operr("unable to create the data volume[uuid: %s] on a local primary storage[uuid:%s], because the hostUuid is not specified.",
                     msg.getVolumeUuid(), self.getUuid()));
+        }
+
+        if (msg.getAllocatedInstallUrl() != null) {
+            msg.setHostUuid(getHostUuidFromInstallUrl(msg.getAllocatedInstallUrl()));
         }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -2324,9 +2329,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
-        if (msg.getHostUuid() == null) {
+        if (msg.getHostUuid() == null && msg.getAllocatedInstallUrl() == null) {
             throw new OperationFailureException(operr("unable to create the data volume[uuid: %s] on a local primary storage[uuid:%s], because the hostUuid is not specified.",
                     msg.getVolumeUuid(), self.getUuid()));
+        }
+
+        if (msg.getAllocatedInstallUrl() != null) {
+            msg.setHostUuid(getHostUuidFromInstallUrl(msg.getAllocatedInstallUrl()));
         }
 
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
