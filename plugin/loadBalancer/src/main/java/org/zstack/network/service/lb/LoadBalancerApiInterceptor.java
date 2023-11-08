@@ -1077,16 +1077,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             );
         }
 
-        if (msg.isTcpIpForwardFor()) {
+        if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
             if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not create the loadbalancer listener, because the listener with protocol tcp only support ip forward for param"));
+                        argerr("cloud not create the loadbalancer listener, because the listener with protocol tcp only support tcp proxy protocol param"));
+            }
+
+            if (!LbSupportTcpProxyProtocol.contains(msg.getTcpProxyProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not create the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
             }
 
             insertTagIfNotExisting(
-                    msg, LoadBalancerSystemTags.TCP_IPFORWARDFOR,
-                    LoadBalancerSystemTags.TCP_IPFORWARDFOR.instantiateTag(
-                            map(e(LoadBalancerSystemTags.TCP_IPFORWARDFOR_TOKEN, msg.isTcpIpForwardFor()))
+                    msg, LoadBalancerSystemTags.TCP_PROXYPROTOCOL,
+                    LoadBalancerSystemTags.TCP_PROXYPROTOCOL.instantiateTag(
+                            map(e(LoadBalancerSystemTags.TCP_PROXYPROTOCOL_TOKEN, msg.getTcpProxyProtocol()))
                     )
             );
         }
@@ -1094,13 +1099,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
             if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(msg.getProtocol()) && !LB_PROTOCOL_HTTP.equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
+                        argerr("cloud not create the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
                                 msg.getProtocol(), msg.getHttpVersions()));
             }
 
             if (hasNotSupportedHttpCompressAlgos(msg.getHttpCompressAlgos())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
+                        argerr("cloud not create the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
             }
 
             insertTagIfNotExisting(
@@ -1357,6 +1362,18 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (hasNotSupportedHttpVersion(msg.getHttpVersions())) {
                 throw new ApiMessageInterceptionException(
                         argerr("cloud not change the loadbalancer listener, because the listener with protocol https only support http version:[h1, h2]"));
+            }
+        }
+
+        if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
+            if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listener.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol tcp only support tcp proxy protocol for param"));
+            }
+
+            if (!LbSupportTcpProxyProtocol.contains(msg.getTcpProxyProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cloud not change the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
             }
         }
 

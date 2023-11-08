@@ -65,7 +65,11 @@ public class LoadBalancerConstants {
     }
 
     public static final List<String> LbSupportHttpCompressAlgos = asList(
-            "deflate", "deflate", "gzip"
+            "deflate", "raw-deflate", "gzip"
+    );
+
+    public static final List<String> LbSupportTcpProxyProtocol = asList(
+            "v1", "v2"
     );
 
     public static final List<String> LbSupportHttpVersion = asList(

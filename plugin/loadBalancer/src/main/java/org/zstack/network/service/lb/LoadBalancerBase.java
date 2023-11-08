@@ -2233,8 +2233,8 @@ public class LoadBalancerBase {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_VERSIONS, msg.getUuid(), LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersion);
                 }
 
-                if (msg.isTcpIpForwardFor()) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.TCP_IPFORWARDFOR, msg.getUuid(), LoadBalancerSystemTags.TCP_IPFORWARDFOR_TOKEN, msg.isTcpIpForwardFor());
+                if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.TCP_PROXYPROTOCOL, msg.getUuid(), LoadBalancerSystemTags.TCP_PROXYPROTOCOL_TOKEN, msg.getTcpProxyProtocol());
                 }
 
                 if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
