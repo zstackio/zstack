@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddBlockPrimaryStorageAction extends AbstractAction {
+public class UpdateBlockPrimaryStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddBlockPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddPrimaryStorageResult value;
+        public org.zstack.sdk.UpdateBlockPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,14 @@ public class AddBlockPrimaryStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vendorName;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String metadata;
 
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String type;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -84,8 +66,8 @@ public class AddBlockPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddPrimaryStorageResult value = res.getResult(org.zstack.sdk.AddPrimaryStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddPrimaryStorageResult() : value; 
+        org.zstack.sdk.UpdateBlockPrimaryStorageResult value = res.getResult(org.zstack.sdk.UpdateBlockPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateBlockPrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -114,11 +96,11 @@ public class AddBlockPrimaryStorageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/primary-storage/block";
+        info.httpMethod = "PUT";
+        info.path = "/primary-storage/block/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "param";
+        info.parameterName = "updateBlockPrimaryStorage";
         return info;
     }
 

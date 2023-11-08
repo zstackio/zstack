@@ -211,3 +211,27 @@ BEGIN
 SELECT CURTIME();
 END$$
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `DROP_COLUMN`;
+DELIMITER $$
+CREATE PROCEDURE `DROP_COLUMN`(
+	IN tb_name VARCHAR(64),
+	IN col_name VARCHAR(64)
+)
+BEGIN
+	DECLARE alter_sql VARCHAR(1000);
+	IF EXISTS( SELECT NULL
+		FROM INFORMATION_SCHEMA.COLUMNS
+		WHERE table_name = tb_name
+			AND table_schema = 'zstack'
+			AND column_name = col_name) THEN
+		SET @alter_sql = CONCAT('ALTER TABLE zstack.', tb_name, ' DROP ', col_name);
+		SELECT @alter_sql;
+		PREPARE stmt FROM @alter_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+	END IF;
+
+SELECT CURTIME();
+END$$
+DELIMITER ;
