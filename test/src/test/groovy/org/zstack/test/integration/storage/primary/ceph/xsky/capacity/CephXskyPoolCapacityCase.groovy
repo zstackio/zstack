@@ -22,6 +22,7 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.CephPrimaryStorageSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
@@ -57,15 +58,29 @@ class CephXskyPoolCapacityCase extends SubCase {
         PrimaryStorageInventory ps = env.inventoryByName("ceph-pri")
         CephBackupStorageInventory bs = env.inventoryByName("ceph-bk")
 
-        CephPrimaryStoragePoolInventory primaryStoragePool = queryCephPrimaryStoragePool {
+        CephPrimaryStoragePoolInventory dataPool = queryCephPrimaryStoragePool {
             conditions = ["type=Data"]
         }[0]
 
+        CephPrimaryStoragePoolInventory rootPool = queryCephPrimaryStoragePool {
+            conditions = ["type=Root"]
+        }[0]
+        CephPrimaryStoragePoolInventory cachePool = queryCephPrimaryStoragePool {
+            conditions = ["type=ImageCache"]
+        }[0]
         GetPrimaryStorageCapacityResult beforePsCapacity = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
-        long addSize = 1
+        long addSize = SizeUnit.GIGABYTE.toByte(100)
 
+        Map<String, CephPoolCapacity.OsdCapacity> osdMap = new HashMap<>()
+        osdMap.put("osd.1", new CephPoolCapacity.OsdCapacity(SizeUnit.GIGABYTE.toByte(90), SizeUnit.GIGABYTE.toByte(10), SizeUnit.GIGABYTE.toByte(100)))
+
+        Map<String, CephPoolCapacity.OsdCapacity> osdMap2 = new HashMap<>()
+        osdMap2.put("osd.1", new CephPoolCapacity.OsdCapacity(SizeUnit.GIGABYTE.toByte(200), SizeUnit.GIGABYTE.toByte(100), SizeUnit.GIGABYTE.toByte(300)))
+
+        Map<String, CephPoolCapacity.OsdCapacity> osdMap3 = new HashMap<>()
+        osdMap3.put("osd.2", new CephPoolCapacity.OsdCapacity(SizeUnit.GIGABYTE.toByte(100), SizeUnit.GIGABYTE.toByte(100), SizeUnit.GIGABYTE.toByte(200)))
         env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)
             CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
@@ -77,18 +92,39 @@ class CephXskyPoolCapacityCase extends SubCase {
             rsp.availableCapacity = 999
             rsp.poolCapacities = [
                     new CephPoolCapacity(
-                            name : primaryStoragePool.poolName,
-                            usedCapacity: primaryStoragePool.usedCapacity,
-                            availableCapacity : primaryStoragePool.availableCapacity + addSize,
-                            totalCapacity: primaryStoragePool.totalCapacity + addSize,
-                            relatedOsds: "osd.1"
+                            name : rootPool.poolName,
+                            usedCapacity: rootPool.usedCapacity,
+                            availableCapacity : rootPool.availableCapacity,
+                            totalCapacity: rootPool.totalCapacity,
+                            relatedOsds: "osd.1",
+                            diskUtilization: 0.5,
+                            relatedOsdCapacity: osdMap
+                    ),
+                    new CephPoolCapacity(
+                            name : dataPool.poolName,
+                            usedCapacity: dataPool.usedCapacity,
+                            availableCapacity : dataPool.availableCapacity,
+                            totalCapacity: dataPool.totalCapacity,
+                            relatedOsds: "osd.1",
+                            diskUtilization: 0.33,
+                            relatedOsdCapacity: osdMap2
+                    ),
+                    new CephPoolCapacity(
+                            name : cachePool.poolName,
+                            usedCapacity: cachePool.usedCapacity,
+                            availableCapacity : cachePool.availableCapacity,
+                            totalCapacity: cachePool.totalCapacity,
+                            diskUtilization: 0.33,
+                            relatedOsds: "osd.2",
+                            relatedOsdCapacity: osdMap3
                     ),
                     new CephPoolCapacity(
                             name : bs.poolName,
-                            usedCapacity: bs.getPoolUsedCapacity(),
+                            usedCapacity:  bs.getPoolUsedCapacity(),
                             availableCapacity : bs.availableCapacity + addSize,
                             totalCapacity: bs.totalCapacity + addSize,
-                            relatedOsds: "osd.2"
+                            relatedOsds: "osd.2",
+                            relatedOsdCapacity: osdMap3
                     ),
                     new CephPoolCapacity(
                             name : "other-pool",
@@ -96,11 +132,6 @@ class CephXskyPoolCapacityCase extends SubCase {
                             usedCapacity: 10,
                             totalCapacity: 20,
                             relatedOsds: "osd.3"
-                    ),
-                    new CephPoolCapacity(
-                            availableCapacity : 11,
-                            usedCapacity: 11,
-                            relatedOsds: "osd.4"
                     )
             ]
             rsp.type = "xsky"
@@ -111,21 +142,34 @@ class CephXskyPoolCapacityCase extends SubCase {
             uuid = ps.uuid
         }
 
-        GetPrimaryStorageCapacityResult afterPsCapacity = getPrimaryStorageCapacity {
+        GetPrimaryStorageCapacityResult beforeCap = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
-        assert afterPsCapacity.availablePhysicalCapacity - beforePsCapacity.availablePhysicalCapacity == addSize
-        assert afterPsCapacity.totalCapacity - beforePsCapacity.availablePhysicalCapacity == addSize
-        assert afterPsCapacity.totalPhysicalCapacity - beforePsCapacity.totalPhysicalCapacity == addSize
-        retryInSecs {
-            afterPsCapacity = getPrimaryStorageCapacity {
-                primaryStorageUuids = [ps.uuid]
-            }
-            assert addSize == afterPsCapacity.availableCapacity - beforePsCapacity.availableCapacity
+
+        // 200*0.33 + 100*0.33
+        assert beforeCap.totalCapacity == SizeUnit.GIGABYTE.toByte(165)
+        assert beforeCap.totalPhysicalCapacity == SizeUnit.GIGABYTE.toByte(165)
+        assert beforeCap.availablePhysicalCapacity == SizeUnit.GIGABYTE.toByte(99)
+
+        osdMap2.put("osd.1", new CephPoolCapacity.OsdCapacity(SizeUnit.GIGABYTE.toByte(200) + addSize, SizeUnit.GIGABYTE.toByte(100), SizeUnit.GIGABYTE.toByte(300) + addSize))
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
         }
 
-        CephPrimaryStoragePoolInventory afterPrimaryStoragePool = queryCephPrimaryStoragePool {}[0]
-        //assert afterPrimaryStoragePool.availableCapacity - primaryStoragePool.availableCapacity == addSize
+        GetPrimaryStorageCapacityResult afterCap = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+
+        assert afterCap.availablePhysicalCapacity - beforeCap.availablePhysicalCapacity == addSize * 0.33
+        assert afterCap.totalCapacity - beforeCap.totalCapacity == addSize * 0.33
+        assert afterCap.totalPhysicalCapacity - beforeCap.totalPhysicalCapacity == addSize * 0.33
+        retryInSecs {
+            afterCap = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+            assert addSize * 0.33 == afterCap.availableCapacity - beforeCap.availableCapacity
+        }
 
         BackupStorageInventory afterBs = queryBackupStorage {
             conditions = ["uuid=${bs.uuid}"]

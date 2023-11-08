@@ -51,9 +51,10 @@ public abstract class EnterpriseCephPrimaryCapacityBaseUpdater implements CephPr
             return;
         }
 
+        CephOsdGroupCapacityHelper osdHelper = new CephOsdGroupCapacityHelper(cephPs.getUuid());
+        osdHelper.calculatePrimaryStorageCapacityByOsds(cephCapacity);
+
         List<String> poolNames = new ArrayList<>();
-        List<Long> poolTotalCapacities = new ArrayList<>();
-        List<Long> poolAvailableCapacities = new ArrayList<>();
 
         new SQLBatch() {
             @Override
@@ -91,8 +92,6 @@ public abstract class EnterpriseCephPrimaryCapacityBaseUpdater implements CephPr
                             continue;
                         }
                         poolNames.add(poolVO.getPoolName());
-                        poolAvailableCapacities.add(poolVO.getAvailableCapacity());
-                        poolTotalCapacities.add(poolVO.getTotalCapacity());
                         continue;
                     }
 
@@ -102,8 +101,6 @@ public abstract class EnterpriseCephPrimaryCapacityBaseUpdater implements CephPr
 
                     if (!poolNames.contains(poolVO.getPoolName())) {
                         poolNames.add(poolVO.getPoolName());
-                        poolAvailableCapacities.add(poolCapacity.getAvailableCapacity());
-                        poolTotalCapacities.add(poolCapacity.getTotalCapacity());
                     }
 
                     CephOsdGroupVO osdGroupVO = Q.New(CephOsdGroupVO.class)
@@ -127,26 +124,7 @@ public abstract class EnterpriseCephPrimaryCapacityBaseUpdater implements CephPr
                     dbf.getEntityManager().merge(poolVO);
                 }
 
-
-                new CephOsdGroupCapacityHelper(cephPs.getUuid()).fillCapacityFromPool();
-                long psTotalPhysicalCapacity = poolTotalCapacities.stream().mapToLong(Long::longValue).sum();
-                long psAvailablePhysicalCapacity = poolAvailableCapacities.stream().mapToLong(Long::longValue).sum();
-
-                PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());
-                updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                    @Override
-                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                        if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
-                            // init
-                            cap.setAvailableCapacity(psTotalPhysicalCapacity);
-                        }
-                        cap.setTotalCapacity(psTotalPhysicalCapacity);
-                        cap.setTotalPhysicalCapacity(psTotalPhysicalCapacity);
-                        cap.setAvailablePhysicalCapacity(psAvailablePhysicalCapacity);
-
-                        return cap;
-                    }
-                });
+                osdHelper.fillCapacityFromPool();
             }
         }.execute();
     }
