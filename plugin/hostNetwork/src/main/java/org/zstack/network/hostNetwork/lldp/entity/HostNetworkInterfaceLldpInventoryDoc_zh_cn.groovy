@@ -8,6 +8,12 @@ doc {
 	title "物理网卡lldp配置清单"
 
 	field {
+		name "uuid"
+		desc "资源的UUID，唯一标示该资源"
+		type "String"
+		since "5.0.0"
+	}
+	field {
 		name "interfaceUuid"
 		desc "物理网口Uuid"
 		type "String"

@@ -4,8 +4,8 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.Queryable;
-import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
+import org.zstack.network.hostNetwork.HostNetworkInterfaceInventory;
 
 import javax.persistence.JoinColumn;
 import java.io.Serializable;
@@ -16,8 +16,12 @@ import java.util.stream.Collectors;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = HostNetworkInterfaceLldpVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "mode", inventoryClass = HostNetworkInterfaceInventory.class,
+                foreignKey = "interfaceUuid", expandedInventoryKey = "uuid"),
+})
 public class HostNetworkInterfaceLldpInventory implements Serializable {
-
+    private String uuid;
     private String interfaceUuid;
     private String mode;
     private Timestamp createDate;
@@ -25,6 +29,14 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
 
     @Queryable(mappingClass = HostNetworkInterfaceLldpRefInventory.class, joinColumn = @JoinColumn(name = "interfaceUuid"))
     private HostNetworkInterfaceLldpRefInventory lldp;
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
     public String getInterfaceUuid() {
         return interfaceUuid;
@@ -71,11 +83,12 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
     }
 
     public HostNetworkInterfaceLldpInventory(HostNetworkInterfaceLldpVO vo) {
+        this.uuid = vo.getUuid();
         this.interfaceUuid = vo.getInterfaceUuid();
         this.mode = vo.getMode();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
-        this.lldp = (HostNetworkInterfaceLldpRefInventory.valueOf(vo.getLldpRefVO()));
+        this.lldp = vo.getLldpRefVO() != null ? HostNetworkInterfaceLldpRefInventory.valueOf(vo.getLldpRefVO()) : null;
     }
 
     public static HostNetworkInterfaceLldpInventory valueOf(HostNetworkInterfaceLldpVO vo) {

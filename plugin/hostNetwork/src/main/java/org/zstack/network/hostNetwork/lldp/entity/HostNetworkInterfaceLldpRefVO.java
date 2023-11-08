@@ -4,6 +4,7 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.*;
+import org.zstack.network.hostNetwork.HostNetworkInterfaceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -11,10 +12,10 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @SoftDeletionCascades({
-        @SoftDeletionCascade(parent = HostNetworkInterfaceLldpVO.class, joinColumn = "interfaceUuid")
+        @SoftDeletionCascade(parent = HostNetworkInterfaceVO.class, joinColumn = "interfaceUuid")
 })
 @EntityGraph(
-        friends = {
+        parents = {
                 @EntityGraph.Neighbour(type = HostNetworkInterfaceLldpVO.class, myField = "interfaceUuid", targetField = "interfaceUuid")
         }
 )

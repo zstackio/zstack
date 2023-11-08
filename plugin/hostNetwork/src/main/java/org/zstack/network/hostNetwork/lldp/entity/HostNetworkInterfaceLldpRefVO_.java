@@ -7,7 +7,7 @@ import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 @StaticMetamodel(HostNetworkInterfaceLldpRefVO.class)
-public class HostNetworkInterfaceLldpRefVO_ extends ResourceVO_ {
+public class HostNetworkInterfaceLldpRefVO_ {
     public static volatile SingularAttribute<HostNetworkInterfaceLldpVO, Long> id;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, String> interfaceUuid;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, String> chassisId;

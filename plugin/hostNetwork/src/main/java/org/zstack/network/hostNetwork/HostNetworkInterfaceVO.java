@@ -2,9 +2,12 @@ package org.zstack.network.hostNetwork;
 
 import org.zstack.header.host.HostEO;
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.*;
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefVO;
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -87,6 +90,11 @@ public class HostNetworkInterfaceVO extends ResourceVO implements ToInventory, O
 
     @Transient
     private String accountUuid;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name="uuid", referencedColumnName = "interfaceUuid", insertable = false, updatable = false)
+    @NoView
+    private HostNetworkInterfaceLldpVO lldpVO;
 
     public String getHostUuid() {
         return hostUuid;
@@ -270,4 +278,13 @@ public class HostNetworkInterfaceVO extends ResourceVO implements ToInventory, O
     private void preUpdate() {
         lastOpDate = null;
     }
+
+    public HostNetworkInterfaceLldpVO getLldpVO() {
+        return lldpVO;
+    }
+
+    public void setLldpVO(HostNetworkInterfaceLldpVO lldpVO) {
+        this.lldpVO = lldpVO;
+    }
+
 }

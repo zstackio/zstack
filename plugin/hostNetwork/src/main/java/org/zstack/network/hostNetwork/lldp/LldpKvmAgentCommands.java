@@ -36,7 +36,7 @@ public class LldpKvmAgentCommands {
         }
     }
 
-    public static class ChangeLldpModeCmd extends org.zstack.header.agent.AgentCommand {
+    public static class ChangeLldpModeCmd extends AgentCommand {
         private List<String> physicalInterfaceNames;
 
         private String mode;
@@ -58,7 +58,7 @@ public class LldpKvmAgentCommands {
         }
     }
 
-    public static class ChangeLldpModeResponse extends org.zstack.header.agent.AgentResponse {
+    public static class ChangeLldpModeResponse extends AgentResponse {
     }
 
     public static class GetLldpInfoCmd extends AgentCommand {
@@ -73,7 +73,7 @@ public class LldpKvmAgentCommands {
         }
     }
 
-    public static class GetLldpInfoResponse extends org.zstack.header.agent.AgentResponse {
+    public static class GetLldpInfoResponse extends AgentResponse {
         private HostNetworkInterfaceLldpRefInventory lldpInventory;
 
         public HostNetworkInterfaceLldpRefInventory getLldpInventory() {

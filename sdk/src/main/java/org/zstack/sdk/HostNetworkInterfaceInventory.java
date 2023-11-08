@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.HostNetworkInterfaceLldpInventory;
 
 public class HostNetworkInterfaceInventory  {
 
@@ -178,6 +178,14 @@ public class HostNetworkInterfaceInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public HostNetworkInterfaceLldpInventory lldpMode;
+    public void setLldpMode(HostNetworkInterfaceLldpInventory lldpMode) {
+        this.lldpMode = lldpMode;
+    }
+    public HostNetworkInterfaceLldpInventory getLldpMode() {
+        return this.lldpMode;
     }
 
 }

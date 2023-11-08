@@ -3,8 +3,11 @@ package org.zstack.network.hostNetwork;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpInventory;
 
+import javax.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Arrays;
@@ -44,6 +47,9 @@ public class HostNetworkInterfaceInventory implements Serializable {
     private String description;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+
+    @Queryable(mappingClass = HostNetworkInterfaceLldpInventory.class, joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "interfaceUuid"))
+    private HostNetworkInterfaceLldpInventory lldpMode;
 
     public String getUuid() {
         return uuid;
@@ -221,6 +227,14 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.lastOpDate = lastOpDate;
     }
 
+    public HostNetworkInterfaceLldpInventory getLldpMode() {
+        return lldpMode;
+    }
+
+    public void setLldpMode(HostNetworkInterfaceLldpInventory lldpMode) {
+        this.lldpMode = lldpMode;
+    }
+
     public HostNetworkInterfaceInventory() {
 
     }
@@ -245,6 +259,7 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.description = vo.getDescription();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
+        this.lldpMode = vo.getLldpVO() != null ? HostNetworkInterfaceLldpInventory.valueOf(vo.getLldpVO()) : null;
     }
 
     public static HostNetworkInterfaceInventory valueOf(HostNetworkInterfaceVO vo) {

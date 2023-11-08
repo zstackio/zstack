@@ -4,6 +4,14 @@ import org.zstack.sdk.HostNetworkInterfaceLldpRefInventory;
 
 public class HostNetworkInterfaceLldpInventory  {
 
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
+    }
+
     public java.lang.String interfaceUuid;
     public void setInterfaceUuid(java.lang.String interfaceUuid) {
         this.interfaceUuid = interfaceUuid;

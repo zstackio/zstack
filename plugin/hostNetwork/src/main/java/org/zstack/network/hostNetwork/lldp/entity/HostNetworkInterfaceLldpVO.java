@@ -17,7 +17,7 @@ import java.sql.Timestamp;
 })
 @EntityGraph(
         parents = {
-                @EntityGraph.Neighbour(type = HostNetworkInterfaceLldpRefVO.class, myField = "interfaceUuid", targetField = "interfaceUuid")
+                @EntityGraph.Neighbour(type = HostNetworkInterfaceVO.class, myField = "interfaceUuid", targetField = "uuid")
         }
 )
 public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventory, OwnedByAccount {
@@ -25,9 +25,6 @@ public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventor
     @Index
     @ForeignKey(parentEntityClass = HostNetworkInterfaceVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String interfaceUuid;
-
-    @Column
-    private String hostUuid;
 
     @Column
     private String mode;
@@ -52,14 +49,6 @@ public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventor
 
     public void setInterfaceUuid(String interfaceUuid) {
         this.interfaceUuid = interfaceUuid;
-    }
-
-    public String getHostUuid() {
-        return hostUuid;
-    }
-
-    public void setHostUuid(String hostUuid) {
-        this.hostUuid = hostUuid;
     }
 
     public String getMode() {

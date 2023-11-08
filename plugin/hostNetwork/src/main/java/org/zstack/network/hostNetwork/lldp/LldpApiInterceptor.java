@@ -12,6 +12,7 @@ import org.zstack.network.hostNetwork.HostNetworkInterfaceVO_;
 import org.zstack.network.hostNetwork.lldp.api.APIChangeHostNetworkInterfaceLldpModeMsg;
 import org.zstack.network.hostNetwork.lldp.api.APIGetHostNetworkInterfaceLldpMsg;
 import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO;
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO_;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -51,9 +52,9 @@ public class LldpApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIGetHostNetworkInterfaceLldpMsg msg) {
-        HostNetworkInterfaceLldpVO interfaceLldpVO = dbf.findByUuid(msg.getInterfaceUuid(), HostNetworkInterfaceLldpVO.class);
-        if (interfaceLldpVO != null && !interfaceLldpVO.getMode().contains("rx")) {
-            throw new ApiMessageInterceptionException((argerr("could not get interface lldp info which mode is not in receive mode")));
+        String mode = Q.New(HostNetworkInterfaceLldpVO.class).select(HostNetworkInterfaceLldpVO_.mode).eq(HostNetworkInterfaceLldpVO_.interfaceUuid, msg.getInterfaceUuid()).findValue();
+        if (mode != null && !mode.contains("rx")) {
+            throw new ApiMessageInterceptionException((argerr("could not get interface lldp info which is not in receive mode")));
         }
     }
 }
