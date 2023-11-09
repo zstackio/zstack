@@ -159,7 +159,6 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     }
 
     @Override
-
     public <T> Map<String, T> getResourceConfigValues(GlobalConfig gc, List<String> resourceUuids, Class<T> clz) {
         ResourceConfig rc = resourceConfigs.get(gc.getIdentity());
         if (rc == null) {
@@ -188,7 +187,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
             resourceConfigMap.put(uuid, rc.getResourceConfigValue(uuid, clz));
         });
 
-        return resourceConfigMap;
+        return rc.getResourceConfigValues(resourceUuids, clz);
     }
 
     protected void buildResourceConfig(Field field) throws Exception {

@@ -109,7 +109,6 @@ public class ResourceConfig {
         return values;
     }
 
-
     void init() {
         installEventTrigger();
         initResourceConfigNodes();
