@@ -122,7 +122,7 @@ public class CloudBusGson {
                     return false;
                 }
             }
-    }).enableComplexMapKeySerialization().setDateFormat("MMM d, yyyy h:mm:ss.SSS a").create();
+    }).enableComplexMapKeySerialization().create();
 
     public static Message fromJson(String json) {
         return gson.fromJson(json, Message.class);

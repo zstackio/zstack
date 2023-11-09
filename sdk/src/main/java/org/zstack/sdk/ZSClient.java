@@ -37,7 +37,7 @@ public class ZSClient {
     private static final long ACTION_DEFAULT_POLLINGINTERVAL = -1;
 
     static {
-        gson = new GsonBuilder().setDateFormat("MMM d, yyyy h:mm:ss.SSS a").create();
+        gson = new GsonBuilder().create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
         formatter = new DateTimeFormatterBuilder()
                 .parseCaseInsensitive()

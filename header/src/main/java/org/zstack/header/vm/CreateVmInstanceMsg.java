@@ -377,11 +377,11 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         this.architecture = architecture;
     }
 
-    public Boolean getVirtio() {
+    public boolean getVirtio() {
         return virtio;
     }
 
-    public void setVirtio(Boolean virtio) {
+    public void setVirtio(boolean virtio) {
         this.virtio = virtio;
     }
 }
