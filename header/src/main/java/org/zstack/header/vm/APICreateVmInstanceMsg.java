@@ -200,14 +200,14 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
 
-    @APINoSee
+    @APIParam(required = false, maxLength = 255)
     private String guestOsType;
 
-    @APINoSee
+    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el", "loongarch64"})
     private String architecture;
 
-    @APINoSee
-    private boolean virtio = false;
+    @APIParam(required = false)
+    private Boolean virtio;
 
     @PythonClassInventory
     public static class DiskAO {
