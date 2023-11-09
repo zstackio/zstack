@@ -1770,7 +1770,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         saveRefVOByBsInventorys(backupStorages, image.getUuid());
                                         trigger.next();
                                     } else {
-                                        trigger.fail(operr(reply.getError(), "cannot find proper backup storage"));
+                                        trigger.fail(operr("cannot find proper backup storage").causedBy(reply.getError()));
                                     }
                                 }
                             });
