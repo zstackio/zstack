@@ -55,13 +55,8 @@ public class L2NetworkHostHelper {
             newAdded.add(vo);
         });
 
-        if (!newAdded.isEmpty()) {
-            dbf.persistCollection(newAdded);
-        }
-
-        if (!updated.isEmpty()) {
-            dbf.updateCollection(updated);
-        }
+        dbf.persistCollection(newAdded);
+        dbf.updateCollection(updated);
     }
 
     public void attachL2NetworkToHosts(String l2NetworkUuid, List<String> hostUuids,
@@ -88,9 +83,7 @@ public class L2NetworkHostHelper {
             refs.add(vo);
         });
 
-        if (!refs.isEmpty()) {
-            dbf.persistCollection(refs);
-        }
+        dbf.persistCollection(refs);
     }
 
     public L2NetworkHostRefInventory getL2NetworkHostRef(String l2NetworkUuid, String hostUuid) {
