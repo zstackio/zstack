@@ -1026,16 +1026,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), finalVo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
 
-        if ((msg.getVirtio() != null && msg.getVirtio())
-                || Q.New(ImageVO.class)
-                .eq(ImageVO_.uuid, msg.getImageUuid())
-                .eq(ImageVO_.virtio, true)
-                .isExists()) {
-            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
-            creator.recreate = true;
-            creator.inherent = false;
-            creator.tag = VmSystemTags.VIRTIO.getTagFormat();
-            creator.create();
+        if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
+            if (msg.getVirtio()) {
+                SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
+                creator.recreate = true;
+                creator.inherent = false;
+                creator.tag = VmSystemTags.VIRTIO.getTagFormat();
+                creator.create();
+            }
+        } else {
+            if (Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).eq(ImageVO_.virtio, true).isExists()) {
+                SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
+                creator.recreate = true;
+                creator.inherent = false;
+                creator.tag = VmSystemTags.VIRTIO.getTagFormat();
+                creator.create();
+            }
         }
 
         if (finalVo.getInstanceOfferingUuid() != null) {
@@ -1324,12 +1330,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
 
+                List<APICreateVmInstanceMsg.DiskAO> dataDiskAOs = new ArrayList<>();
                 if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
-                    setDiskAOsName(msg.getDiskAOs());
-                    msg.getDiskAOs().forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
+                    dataDiskAOs = msg.getDiskAOs().stream().filter(diskAO -> !diskAO.isBoot()).collect(Collectors.toList());
+                    setDiskAOsName(dataDiskAOs);
+                    dataDiskAOs.forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
                 }
 
-                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && !CollectionUtils.isEmpty(msg.getDiskAOs())) {
+                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && !CollectionUtils.isEmpty(dataDiskAOs)) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "start-vm";
 

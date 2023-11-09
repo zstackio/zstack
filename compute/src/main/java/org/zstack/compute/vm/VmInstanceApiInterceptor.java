@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.eventlog.L;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -55,7 +56,6 @@ import org.zstack.utils.network.NicIpAddressInfo;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
@@ -1210,6 +1210,17 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateVmInstanceMsg msg) {
         validate((NewVmInstanceMessage2) msg);
 
+        if (CollectionUtils.isNotEmpty(msg.getDiskAOs())) {
+            APICreateVmInstanceMsg.DiskAO rootDiskAO = msg.getDiskAOs().stream()
+                    .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
+            if (rootDiskAO == null) {
+                throw new ApiMessageInterceptionException(argerr("missing root disk"));
+            }
+            msg.setPlatform(rootDiskAO.getPlatform());
+            msg.setGuestOsType(rootDiskAO.getGuestOsType());
+            msg.setArchitecture(rootDiskAO.getArchitecture());
+        }
+
         ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
         if (image == null) {
             String err = "";
@@ -1290,14 +1301,17 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validatePsWhetherSameCluster(msg);
-        validateDiskAOs(msg);
+        validateDateDiskAOs(msg);
     }
 
-    private void validateDiskAOs(APICreateVmInstanceMsg msg) {
+    private void validateDateDiskAOs(APICreateVmInstanceMsg msg) {
         if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
             return;
         }
         for (APICreateVmInstanceMsg.DiskAO diskAO : msg.getDiskAOs()) {
+            if (diskAO.isBoot()) {
+                continue;
+            }
             checkMutualExclusion(diskAO);
         }
     }

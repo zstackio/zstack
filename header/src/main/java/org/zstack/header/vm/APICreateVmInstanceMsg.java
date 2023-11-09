@@ -200,17 +200,21 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
 
-    @APIParam(required = false, maxLength = 255)
+    @APINoSee
     private String guestOsType;
 
-    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el", "loongarch64"})
+    @APINoSee
     private String architecture;
 
-    @APIParam(required = false)
+    @APINoSee
     private Boolean virtio;
 
     @PythonClassInventory
     public static class DiskAO {
+        private boolean boot;
+        private String platform;
+        private String guestOsType;
+        private String architecture;
         private String primaryStorageUuid;
         private long size;
         private String templateUuid;
@@ -219,6 +223,38 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         private String sourceUuid;
         private List<String> systemTags;
         private String name;
+
+        public boolean isBoot() {
+            return boot;
+        }
+
+        public void setBoot(boolean boot) {
+            this.boot = boot;
+        }
+
+        public String getPlatform() {
+            return platform;
+        }
+
+        public void setPlatform(String platform) {
+            this.platform = platform;
+        }
+
+        public String getGuestOsType() {
+            return guestOsType;
+        }
+
+        public void setGuestOsType(String guestOsType) {
+            this.guestOsType = guestOsType;
+        }
+
+        public String getArchitecture() {
+            return architecture;
+        }
+
+        public void setArchitecture(String architecture) {
+            this.architecture = architecture;
+        }
 
         public String getPrimaryStorageUuid() {
             return primaryStorageUuid;

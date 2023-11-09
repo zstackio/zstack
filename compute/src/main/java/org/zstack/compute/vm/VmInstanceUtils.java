@@ -12,6 +12,7 @@ import org.zstack.header.vm.UpdateVmInstanceSpec;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.SystemTagUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,6 +44,7 @@ public class VmInstanceUtils {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
         cmsg.setDiskAOs(msg.getDiskAOs());
+        setVmInstanceInfoFromRootDiskAO(cmsg, msg);
         return cmsg;
     }
 
@@ -110,5 +112,23 @@ public class VmInstanceUtils {
         }
 
         return spec;
+    }
+
+    private static void setVmInstanceInfoFromRootDiskAO(CreateVmInstanceMsg cmsg, APICreateVmInstanceMsg msg) {
+        if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
+            return;
+        }
+        APICreateVmInstanceMsg.DiskAO rootdiskAO = msg.getDiskAOs().stream()
+                .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
+        if (rootdiskAO == null) {
+            return;
+        }
+        cmsg.setPlatform(rootdiskAO.getPlatform());
+        cmsg.setGuestOsType(rootdiskAO.getGuestOsType());
+        cmsg.setArchitecture(rootdiskAO.getArchitecture());
+        if (CollectionUtils.isNotEmpty(rootdiskAO.getSystemTags())
+                && rootdiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
+            cmsg.setVirtio(true);
+        }
     }
 }
