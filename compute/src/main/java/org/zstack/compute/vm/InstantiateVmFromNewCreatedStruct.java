@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
 import org.zstack.header.vm.VmCreationStrategy;

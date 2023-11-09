@@ -406,6 +406,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                         "but vm has hypervisor type[%s]. Can't attach", volumeVO.getUuid(), volumeVO.getFormat(), hvTypes, hvType);
             }
         }
+
+        return null;
     }
 
     private ErrorCode checkClusterAccessible(VolumeVO volumeVO, List<String> vmInstanceClusterUuids) {
