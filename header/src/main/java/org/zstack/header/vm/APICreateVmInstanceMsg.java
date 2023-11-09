@@ -406,7 +406,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
         this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
->>>>>>> cda41bc102 (<fix>[mevoco]: support vm management for virtualized)
     }
 
     public static APICreateVmInstanceMsg __example__() {
