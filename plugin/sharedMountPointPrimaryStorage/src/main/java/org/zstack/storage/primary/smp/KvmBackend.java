@@ -1753,6 +1753,58 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
+    void handle(UndoSnapshotCreationOnPrimaryStorageMsg msg, ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply> completion) {
+        VolumeInventory vol = msg.getVolume();
+        String hostUuid;
+        String connectedHostUuid = primaryStorageFactory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
+        if (vol.getVmInstanceUuid() != null){
+            Tuple t = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                    .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid())
+                    .findTuple();
+            VmInstanceState state = t.get(0, VmInstanceState.class);
+            String vmHostUuid = t.get(1, String.class);
+
+            if (state == VmInstanceState.Running || state == VmInstanceState.Paused){
+                DebugUtils.Assert(vmHostUuid != null,
+                        String.format("vm[uuid:%s] is Running or Paused, but has no hostUuid", vol.getVmInstanceUuid()));
+                hostUuid = vmHostUuid;
+            } else if (state == VmInstanceState.Stopped){
+                hostUuid = connectedHostUuid;
+            } else {
+                completion.fail(operr("vm[uuid:%s] is not Running, Paused or Stopped, current state[%s]",
+                        vol.getVmInstanceUuid(), state));
+                return;
+            }
+        } else {
+            hostUuid = connectedHostUuid;
+        }
+
+        BlockCommitVolumeOnHypervisorMsg hmsg = new BlockCommitVolumeOnHypervisorMsg();
+        hmsg.setHostUuid(hostUuid);
+        hmsg.setVmUuid(msg.getVmUuid());
+        hmsg.setVolume(msg.getVolume());
+        hmsg.setSrcPath(msg.getSrcPath());
+        hmsg.setDstPath(msg.getDstPath());
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(hmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                BlockCommitVolumeOnHypervisorReply treply = (BlockCommitVolumeOnHypervisorReply) reply;
+                ret.setSize(treply.getSize());
+                ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
+                completion.success(ret);
+            }
+        });
+    }
+
+    @Override
     void deleteBits(String path, final Completion completion) {
         deleteBits(path, false, completion);
     }

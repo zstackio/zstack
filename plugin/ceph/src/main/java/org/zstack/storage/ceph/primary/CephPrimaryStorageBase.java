@@ -45,6 +45,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -2860,7 +2861,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
         final TaskProgressRange parentStage = getTaskStage();
         final TaskProgressRange CREATE_SNAPSHOT_STAGE = new TaskProgressRange(0, 10);
-        final TaskProgressRange CREATE_IMAGE_STAGE = new TaskProgressRange(10, 100);
+        final TaskProgressRange CREATE_IMAGE_STAGE = new TaskProgressRange(10, 90);
+        final TaskProgressRange UNDO_SNAPSHOT_CREATION_STAGE = new TaskProgressRange(90, 100);
 
         checkCephFsId(msg.getPrimaryStorageUuid(), msg.getBackupStorageUuid());
 
@@ -2965,6 +2967,41 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "undo-snapshot-creation";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg ||
+                                !PrimaryStorageGlobalConfig.UNDO_TEMP_SNAPSHOT.value(Boolean.class)) {
+                            return true;
+                        }
+
+                        return false;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, UNDO_SNAPSHOT_CREATION_STAGE);
+                        UndoSnapshotCreationMsg cmsg = new UndoSnapshotCreationMsg();
+                        cmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                        cmsg.setSnapShot(snapshot);
+                        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, snapshot.getVolumeUuid());
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                reportProgress(stage.getEnd().toString());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -2985,6 +3022,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
+        DeleteVolumeSnapshotMsg dmsg = new DeleteVolumeSnapshotMsg();
+        dmsg.setTreeUuid(msg.getSnapshot().getTreeUuid());
+        dmsg.setVolumeUuid(msg.getSnapshot().getVolumeUuid());
+        dmsg.setSnapshotUuid(msg.getSnapshot().getUuid());
+        dmsg.setDeletionMode(APIDeleteMessage.DeletionMode.Permissive);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeSnapshotConstant.SERVICE_ID, msg.getSnapshot().getUuid());
+        bus.send(dmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
+                if (!reply.isSuccess()) {
+                    ret.setError(reply.getError());
+                    bus.reply(msg, ret);
+                    return;
+                }
+
+                ret.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
+                ret.setSize(msg.getVolume().getActualSize());
+                bus.reply(msg, ret);
+            }
+        });
     }
 
     @Override
@@ -4307,6 +4368,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetPrimaryStorageUsageReportMsg) msg);
         } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {
             handle((CleanUpStorageTrashOnPrimaryStorageMsg)msg);
+        } else if (msg instanceof UndoSnapshotCreationOnPrimaryStorageMsg) {
+            handle((UndoSnapshotCreationOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -4938,7 +5001,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
         final TaskProgressRange parentStage = getTaskStage();
-        final TaskProgressRange ROLLBACK_SNAPSHOT_STAGE = new TaskProgressRange(0, 70);
+        final TaskProgressRange UNDO_SNAPSHOT_CREATION_STAGE = new TaskProgressRange(0, 70);
         final TaskProgressRange DELETE_ORIGINAL_SNAPSHOT_STAGE = new TaskProgressRange(30, 100);
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -4953,7 +5016,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, ROLLBACK_SNAPSHOT_STAGE);
+                        TaskProgressRange stage = markTaskStage(parentStage, UNDO_SNAPSHOT_CREATION_STAGE);
 
                         RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
                         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();

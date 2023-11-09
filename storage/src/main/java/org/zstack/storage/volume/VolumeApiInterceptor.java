@@ -32,7 +32,7 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
-import org.zstack.header.storage.snapshot.ConsistentType;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -103,6 +103,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APIDetachDataVolumeFromHostMsg) msg);
         } else if (msg instanceof APIFlattenVolumeMsg) {
             validate((APIFlattenVolumeMsg) msg);
+        } else if (msg instanceof APIUndoSnapshotCreationMsg) {
+            validate((APIUndoSnapshotCreationMsg) msg);
         }
 
         setServiceId(msg);
@@ -505,6 +507,40 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         boolean isShareable = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).select(VolumeVO_.isShareable).findValue();
         if (isShareable) {
             throw new ApiMessageInterceptionException(argerr("cannot flatten a shareable volume[uuid:%s]", msg.getVolumeUuid()));
+        }
+    }
+
+    private void validate(APIUndoSnapshotCreationMsg msg) {
+        String currentTreeUuid = Q.New(VolumeSnapshotTreeVO.class)
+                .select(VolumeSnapshotTreeVO_.uuid)
+                .eq(VolumeSnapshotTreeVO_.current, true)
+                .eq(VolumeSnapshotTreeVO_.volumeUuid, msg.getUuid())
+                .findValue();
+        if (currentTreeUuid == null) {
+            throw new ApiMessageInterceptionException(operr("can not found in used snapshot tree of volume[uuid: %s]", msg.getUuid()));
+        }
+
+        boolean isLatest = Q.New(VolumeSnapshotVO.class)
+                .eq(VolumeSnapshotVO_.uuid, msg.getSnapShotUuid())
+                .eq(VolumeSnapshotVO_.latest, true)
+                .eq(VolumeSnapshotVO_.treeUuid, currentTreeUuid)
+                .isExists();
+
+        if (!isLatest) {
+            throw new ApiMessageInterceptionException(argerr("cannot undo not latest snapshot"));
+        }
+    }
+
+    private void populateExtensions() {
+        for (MaxDataVolumeNumberExtensionPoint extp : pluginRgty.getExtensionList(MaxDataVolumeNumberExtensionPoint.class)) {
+            MaxDataVolumeNumberExtensionPoint old = maxDataVolumeNumberExtensions.get(extp.getHypervisorTypeForMaxDataVolumeNumberExtension());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate MaxDataVolumeNumberExtensionPoint[%s, %s] for hypervisor type[%s]",
+                        old.getClass().getName(), extp.getClass().getName(), extp.getHypervisorTypeForMaxDataVolumeNumberExtension())
+                );
+            }
+
+            maxDataVolumeNumberExtensions.put(extp.getHypervisorTypeForMaxDataVolumeNumberExtension(), extp);
         }
     }
 

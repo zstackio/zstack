@@ -41,4 +41,8 @@ public class PrimaryStorageGlobalConfig {
             "If the predicted value exceeds this threshold, it indicates that the primary storage is expected to be full in the future.")
     public static GlobalConfig PRIMARY_STORAGE_USED_PHYSICAL_CAPACITY_FORECAST_THRESHOLD =
             new GlobalConfig(CATEGORY, "primaryStorage.used.physicalCapacity.forecast.threshold");
+    @GlobalConfigValidation()
+    @BindResourceConfig({PrimaryStorageVO.class})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "Whether undo temp snapshot after template uploaded")
+    public static GlobalConfig UNDO_TEMP_SNAPSHOT = new GlobalConfig(CATEGORY, "undo.tempSnapshot");
 }
