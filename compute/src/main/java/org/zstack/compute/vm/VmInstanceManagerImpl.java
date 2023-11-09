@@ -61,6 +61,7 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
+import org.zstack.header.vm.cdrom.VmCdRomInventory;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.*;
@@ -85,6 +86,7 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
@@ -1322,9 +1324,32 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 });
 
                 if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
-                    chain.getData().put(APICreateVmInstanceMsg.DiskAO.class.getSimpleName(), msg.getDiskAOs());
-                    chain.getData().put(VmCreationStrategy.class.getSimpleName(), msg.getStrategy());
-                    flow(new VmInstantiateOtherDiskFlow());
+                    setDiskAOsName(msg.getDiskAOs());
+                    msg.getDiskAOs().forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
+                }
+
+                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && !CollectionUtils.isEmpty(msg.getDiskAOs())) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "start-vm";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            StartVmInstanceMsg smsg = new StartVmInstanceMsg();
+                            smsg.setVmInstanceUuid(instantiateVm.getUuid());
+                            smsg.setHostUuid(instantiateVm.getLastHostUuid());
+                            bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
+                            bus.send(smsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(reply.getError());
+                                        return;
+                                    }
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
                 }
 
                 done(new FlowDoneHandler(completion) {
@@ -1342,6 +1367,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 });
             }
 
+            private void setDiskAOsName(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+                AtomicInteger count = new AtomicInteger(1);
+                diskAOs.stream().filter(diskAO -> diskAO.getSourceUuid() == null).filter(diskAO -> diskAO.getName() == null)
+                        .forEach(diskAO -> {
+                            diskAO.setName(String.format("DATA-for-%s-%d", finalVo.getName(), count.get()));
+                            count.getAndIncrement();
+                        });
+            }
         }).start();
     }
 

@@ -3200,7 +3200,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     ref.setVolumeSnapshotName(inv.getName());
                     ref.setVolumeSnapshotInstallPath(inv.getPrimaryStorageInstallPath());
                     ref.setDeviceId(vols.get(inv.getVolumeUuid()).getDeviceId());
-                    ref.setVolumeLastAttachDate(vols.get(inv.getVolumeUuid()).getLastAttachDate().getTime());
+                    ref.setVolumeLastAttachDate(vols.get(inv.getVolumeUuid()).getLastAttachDate());
                     refs.add(ref);
                 }
 

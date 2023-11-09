@@ -1978,7 +1978,7 @@ public class VolumeSnapshotTreeBase {
                             ref.setVolumeName(volumeInventory.getName());
                             ref.setVolumeType(volumeInventory.getType());
                             ref.setDeviceId(volumeInventory.getDeviceId());
-                            ref.setVolumeLastAttachDate(volumeInventory.getLastAttachDate().getTime());
+                            ref.setVolumeLastAttachDate(volumeInventory.getLastAttachDate());
                             dbf.persist(ref);
                             trigger.next();
                         }

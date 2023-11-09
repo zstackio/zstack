@@ -184,7 +184,8 @@ public class VolumeInventory implements Serializable {
     }
 
 
-    public static VolumeInventory valueOf(VolumeVO vo) {
+    public static VolumeInventory
+    valueOf(VolumeVO vo) {
         VolumeInventory inv = new VolumeInventory();
         inv.setRootImageUuid(vo.getRootImageUuid());
         inv.setCreateDate(vo.getCreateDate());
@@ -208,7 +209,7 @@ public class VolumeInventory implements Serializable {
         inv.setVolumeQos(vo.getVolumeQos());
         inv.setLastDetachDate(vo.getLastDetachDate());
         inv.setLastVmInstanceUuid(vo.getLastVmInstanceUuid());
-        inv.setLastAttachDate(new Timestamp(vo.getLastAttachDate()));
+        inv.setLastAttachDate(vo.getLastAttachDate());
         return inv;
     }
 

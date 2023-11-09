@@ -56,7 +56,7 @@ public class VolumeSnapshotGroupRefVO implements Serializable {
     private Timestamp lastOpDate;
 
     @Column
-    private long volumeLastAttachDate;
+    private String volumeLastAttachDate;
 
     @PreUpdate
     private void preUpdate() {
@@ -151,11 +151,17 @@ public class VolumeSnapshotGroupRefVO implements Serializable {
         this.snapshotDeleted = snapshotDeleted;
     }
 
-    public long getVolumeLastAttachDate() {
-        return volumeLastAttachDate;
+    public Timestamp getVolumeLastAttachDate() {
+        if (this.volumeLastAttachDate == null) {
+            return null;
+        }
+        return Timestamp.valueOf(this.volumeLastAttachDate);
     }
 
-    public void setVolumeLastAttachDate(long volumeLastAttachDate) {
-        this.volumeLastAttachDate = volumeLastAttachDate;
+    public void setVolumeLastAttachDate(Timestamp volumeLastAttachDate) {
+        if (volumeLastAttachDate == null) {
+            return;
+        }
+        this.volumeLastAttachDate = volumeLastAttachDate.toString();
     }
 }
