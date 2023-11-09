@@ -667,9 +667,62 @@ public class KVMHost extends HostBase implements Host {
             handle((FstrimVmMsg) msg);
         } else if (msg instanceof CommitVolumeOnHypervisorMsg) {
             handle((CommitVolumeOnHypervisorMsg) msg);
+        } else if (msg instanceof TakeVmConsoleScreenshotMsg) {
+            handle((TakeVmConsoleScreenshotMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(TakeVmConsoleScreenshotMsg msg) {
+        TakeVmConsoleScreenshotReply reply = new TakeVmConsoleScreenshotReply();
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("take-vm-%s-console-screenshot-on-host-%s", msg.getVmInstanceUuid(), msg.getHostUuid()))
+                .run(completion -> {
+                    takeVmConsoleScreenshot(msg.getVmInstanceUuid(), msg.getHostUuid(), new ReturnValueCompletion<TakeVmConsoleScreenshotRsp>(completion) {
+                        @Override
+                        public void success(TakeVmConsoleScreenshotRsp returnValue) {
+                            completion.success(returnValue.getImageData());
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+                })
+                .done(result -> {
+                    if (result.isSuccess()) {
+                        String returnValue = (String)result.getResult();
+                        reply.setImageData(returnValue);
+                    } else {
+                        reply.setError(result.getErrorCode());
+                    }
+                    bus.reply(msg, reply);
+                })
+        );
+    }
+
+    private void takeVmConsoleScreenshot(String vmInstanceUuid, String hostUuid, ReturnValueCompletion<TakeVmConsoleScreenshotRsp> completion) {
+        TakeVmConsoleScreenshotCmd cmd = new TakeVmConsoleScreenshotCmd();
+        cmd.setVmUuid(vmInstanceUuid);
+
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setPath(KVMConstant.TAKE_VM_CONSOLE_SCREENSHOT_PATH);
+        kmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(kmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    KVMHostAsyncHttpCallReply reply1 = reply.castReply();
+                    completion.success(reply1.toResponse(TakeVmConsoleScreenshotRsp.class));
+                }
+            }
+        });
     }
 
     private void handle(CommitVolumeOnHypervisorMsg msg) {

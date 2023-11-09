@@ -3274,6 +3274,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIFlattenVmInstanceMsg) msg);
         } else if (msg instanceof APIFstrimVmMsg) {
             handle((APIFstrimVmMsg) msg);
+        } else if (msg instanceof APITakeVmConsoleScreenshotMsg) {
+            handle((APITakeVmConsoleScreenshotMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -3283,6 +3285,27 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(APITakeVmConsoleScreenshotMsg msg) {
+        APITakeVmConsoleScreenshotEvent event = new APITakeVmConsoleScreenshotEvent(msg.getId());
+        TakeVmConsoleScreenshotMsg gmsg = new TakeVmConsoleScreenshotMsg();
+        gmsg.setVmInstanceUuid(self.getUuid());
+        gmsg.setHostUuid(self.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setSuccess(false);
+                    event.setError(reply.getError());
+                } else {
+                    TakeVmConsoleScreenshotReply re = (TakeVmConsoleScreenshotReply) reply;
+                    event.setImageData(re.getImageData());
+                }
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIGetCandidateIsoForAttachingVmMsg msg) {
