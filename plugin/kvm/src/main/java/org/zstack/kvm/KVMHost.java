@@ -3659,6 +3659,7 @@ public class KVMHost extends HostBase implements Host {
                 if (vm.getImageUuid() != null && dbf.isExist(vm.getImageUuid(), ImageVO.class)) {
                     msg.setImage(ImageInventory.valueOf(dbf.findByUuid(vm.getImageUuid(), ImageVO.class)));
                 }
+                msg.setAllowNoL3Networks(true);
                 msg.setHostUuid(self.getUuid());
                 msg.setFullAllocate(false);
                 msg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(vm.getVmNics())));
