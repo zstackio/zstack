@@ -329,7 +329,6 @@ class AttachAndDetachVmNicCase extends SubCase {
             l3Net_2 = env.inventoryByName("l3-2") as L3NetworkInventory
             offer = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             image = env.inventoryByName("image") as ImageInventory
-
             l3Net = env.inventoryByName("l3") as L3NetworkInventory
             vm1 = env.inventoryByName("vm1") as VmInstanceInventory // vm1 in host1
             vm2 = env.inventoryByName("vm2") as VmInstanceInventory // vm2 in host2

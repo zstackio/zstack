@@ -276,12 +276,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         private List<RuleTO> calculateRuleTOBySecurityGroup(String sgUuid, String l3Uuid, int ipVersion) {
-            boolean isAttached = Q.New(SecurityGroupL3NetworkRefVO.class).eq(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, l3Uuid)
-                    .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, sgUuid).isExists();
-            if (!isAttached) {
-                return new ArrayList<>();
-            }
-
             List<RuleTO> ret = new ArrayList<>();
             List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
                     .eq(SecurityGroupRuleVO_.ipVersion, ipVersion)
@@ -390,7 +384,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 return htoMap.values().stream().collect(Collectors.toList());
             }
 
-            List<SecurityGroupL3NetworkRefVO> l3Refs = Q.New(SecurityGroupL3NetworkRefVO.class).list();
             List<UsedIpVO> usedIps = Q.New(UsedIpVO.class).in(UsedIpVO_.vmNicUuid, vmNicUuids).list();
             List<VmNicSecurityPolicyVO> policies = Q.New(VmNicSecurityPolicyVO.class).in(VmNicSecurityPolicyVO_.vmNicUuid, vmNicUuids).list();
 
@@ -440,7 +433,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                 List<UsedIpVO> ips = usedIps.stream().filter(i -> i.getVmNicUuid().equals(nicUuid)).collect(Collectors.toList());
                 List<Tuple> sgRefs = refs.stream().filter(r -> r.get(0, String.class).equals(nicUuid)).collect(Collectors.toList());
-                if (ips.isEmpty() || sgRefs.isEmpty() || l3Refs.isEmpty()) {
+                if (ips.isEmpty() || sgRefs.isEmpty()) {
                     continue;
                 }
 
@@ -455,10 +448,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     for (Tuple sgRef : sgRefs) {
                         int priority = sgRef.get(1, Integer.class);
                         String sgUuid = sgRef.get(2, String.class);
-
-                        if (!l3Refs.stream().anyMatch(ref -> ref.getL3NetworkUuid().equals(l3Uuid) && ref.getSecurityGroupUuid().equals(sgUuid))) {
-                            continue;
-                        }
 
                         nicTo.getSecurityGroupRefs().put(sgUuid, priority);
 
