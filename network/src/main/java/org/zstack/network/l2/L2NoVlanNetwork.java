@@ -321,8 +321,7 @@ public class L2NoVlanNetwork implements L2Network {
 
         final CheckL2NetworkOnHostReply reply = new CheckL2NetworkOnHostReply();
         // TODO: this should be fixed
-        // L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
-        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType, providerType);
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
         ext.check(getSelfInventory(), msg.getHostUuid(), new Completion(msg) {
             @Override
             public void success() {
