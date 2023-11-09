@@ -25,6 +25,11 @@ public class HostNetworkInterfaceInventory implements Serializable {
     private String uuid;
     private String hostUuid;
     private String bondingUuid;
+    private String interfaceModel;
+    private String vendorId;
+    private String deviceId;
+    private String subvendorId;
+    private String subdeviceId;
     private String interfaceName;
     private String interfaceType;
     private Long speed;
@@ -62,6 +67,46 @@ public class HostNetworkInterfaceInventory implements Serializable {
 
     public void setBondingUuid(String bondingUuid) {
         this.bondingUuid = bondingUuid;
+    }
+
+    public String getInterfaceModel() {
+        return interfaceModel;
+    }
+
+    public void setInterfaceModel(String interfaceModel) {
+        this.interfaceModel = interfaceModel;
+    }
+
+    public String getVendorId() {
+        return vendorId;
+    }
+
+    public void setVendorId(String vendorId) {
+        this.vendorId = vendorId;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public String getSubvendorId() {
+        return subvendorId;
+    }
+
+    public void setSubvendorId(String subvendorId) {
+        this.subvendorId = subvendorId;
+    }
+
+    public String getSubdeviceId() {
+        return subdeviceId;
+    }
+
+    public void setSubdeviceId(String subdeviceId) {
+        this.subdeviceId = subdeviceId;
     }
 
     public String getInterfaceName() {

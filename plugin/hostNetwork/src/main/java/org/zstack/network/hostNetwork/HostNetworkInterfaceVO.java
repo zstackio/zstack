@@ -29,6 +29,21 @@ public class HostNetworkInterfaceVO extends ResourceVO implements ToInventory, O
     private String bondingUuid;
 
     @Column
+    private String interfaceModel;
+
+    @Column
+    private String vendorId;
+
+    @Column
+    private String deviceId;
+
+    @Column
+    private String subvendorId;
+
+    @Column
+    private String subdeviceId;
+
+    @Column
     private String interfaceName;
 
     @Column
@@ -87,6 +102,46 @@ public class HostNetworkInterfaceVO extends ResourceVO implements ToInventory, O
 
     public void setBondingUuid(String bondingUuid) {
         this.bondingUuid = bondingUuid;
+    }
+
+    public String getInterfaceModel() {
+        return interfaceModel;
+    }
+
+    public void setInterfaceModel(String interfaceModel) {
+        this.interfaceModel = interfaceModel;
+    }
+
+    public String getVendorId() {
+        return vendorId;
+    }
+
+    public void setVendorId(String vendorId) {
+        this.vendorId = vendorId;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public String getSubvendorId() {
+        return subvendorId;
+    }
+
+    public void setSubvendorId(String subvendorId) {
+        this.subvendorId = subvendorId;
+    }
+
+    public String getSubdeviceId() {
+        return subdeviceId;
+    }
+
+    public void setSubdeviceId(String subdeviceId) {
+        this.subdeviceId = subdeviceId;
     }
 
     public String getInterfaceName() {

@@ -13,6 +13,11 @@ import java.sql.Timestamp;
 public class HostNetworkInterfaceVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<HostNetworkInterfaceVO, String> hostUuid;
     public static volatile SingularAttribute<HostNetworkInterfaceVO, String> bondingUuid;
+    public static volatile SingularAttribute<HostNetworkInterfaceVO, String> interfaceModel;
+    public static volatile SingularAttribute<HostNetworkInterfaceVO, String> vendorId;
+    public static volatile SingularAttribute<HostNetworkInterfaceVO, String> deviceId;
+    public static volatile SingularAttribute<HostNetworkInterfaceVO, String> subvendorId;
+    public static volatile SingularAttribute<HostNetworkInterfaceVO, String> subdeviceId;
     public static volatile SingularAttribute<HostNetworkInterfaceVO, String> interfaceName;
     public static volatile SingularAttribute<HostNetworkInterfaceVO, String> interfaceType;
     public static volatile SingularAttribute<HostNetworkInterfaceVO, String> mac;
