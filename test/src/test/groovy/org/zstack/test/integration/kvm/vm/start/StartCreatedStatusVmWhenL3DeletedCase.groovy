@@ -1,5 +1,6 @@
 package org.zstack.test.integration.kvm.vm.start
 
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.sdk.StartVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
@@ -53,7 +54,7 @@ class StartCreatedStatusVmWhenL3DeletedCase extends SubCase {
         )
         StartVmInstanceAction.Result result = startVmInstanceAction.call()
         assert null != result.error
-        assert result.error.details.indexOf("Unable to find L3Network") > -1
+        assert result.error.cause.code == SysErrors.OPERATION_ERROR.toString()
     }
 
     @Override
