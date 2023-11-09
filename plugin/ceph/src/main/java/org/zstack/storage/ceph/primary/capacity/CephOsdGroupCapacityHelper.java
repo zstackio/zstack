@@ -16,17 +16,23 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+import org.zstack.storage.ceph.CephCapacity;
+import org.zstack.storage.ceph.CephPoolCapacity;
 import org.zstack.storage.ceph.primary.CephOsdGroupVO;
 import org.zstack.storage.ceph.primary.CephOsdGroupVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.stopwatch.StopWatch;
 
 import javax.transaction.Transactional;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -60,6 +66,7 @@ public class CephOsdGroupCapacityHelper {
                 .list();
         return pools.stream()
                 .filter(v -> v.getOsdGroup() != null && v.getOsdGroup().getUuid().equals(osdGroupUuid))
+                .sorted(Comparator.comparing(CephPrimaryStoragePoolVO::getTotalCapacity))
                 .collect(Collectors.toList());
     }
 
@@ -260,5 +267,59 @@ public class CephOsdGroupCapacityHelper {
         watch.stop();
         logger.info(String.format("it cost %d ms to calculate osdGroup[%s] used virtual size", watch.getLapse() ,osdGroup.getUuid()));
         return osdGroup.getTotalPhysicalCapacity() - usedSize;
+    }
+
+    public void calculatePrimaryStorageCapacityByOsds(CephCapacity cephCapacity) {
+        long total = cephCapacity.getTotalCapacity();
+        long avail = cephCapacity.getAvailableCapacity();
+        List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();
+
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(primaryStorageUuid);
+        updater.run(cap -> {
+            Map<String, CephPoolCapacity> osdPoolCapacity = new HashMap<>();
+            List<String> poolsName = Q.New(CephPrimaryStoragePoolVO.class)
+                    .select(CephPrimaryStoragePoolVO_.poolName)
+                    .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, primaryStorageUuid)
+                    .listValues();
+            for (CephPoolCapacity poolCapacitiy : poolCapacities) {
+                if (poolCapacitiy.getRelatedOsdCapacity() == null || !poolsName.contains(poolCapacitiy.getName())) {
+                    continue;
+                }
+
+                Map<String, CephPoolCapacity> osdPoolCap = poolCapacitiy.getRelatedOsdCapacity().keySet().stream()
+                        .collect(Collectors.toMap(osdName -> osdName, osdName -> {
+                            if (!osdPoolCapacity.containsKey(osdName)) {
+                                return poolCapacitiy;
+                            }
+                            // osd multiplexing
+                            Float diskUtilization = osdPoolCapacity.get(osdName).getDiskUtilization();
+                            return diskUtilization > poolCapacitiy.getDiskUtilization() ? poolCapacitiy : osdPoolCapacity.get(osdName);
+                        }));
+                osdPoolCapacity.putAll(osdPoolCap);
+            }
+
+            long osdsTotalSize = 0;
+            long osdsAvailCap = 0;
+            for (String osdName : osdPoolCapacity.keySet()) {
+                CephPoolCapacity cephPoolCapacity = osdPoolCapacity.get(osdName);
+                osdsTotalSize += cephPoolCapacity.getRelatedOsdCapacity().get(osdName).getSize() * cephPoolCapacity.getDiskUtilization();
+                osdsAvailCap += cephPoolCapacity.getRelatedOsdCapacity().get(osdName).getAvailableCapacity() * cephPoolCapacity.getDiskUtilization();
+            }
+            if (osdsTotalSize == 0) {
+                logger.debug("no osds related to pool found, using bare capacity instead, fsid: " + cephCapacity.getFsid());
+                osdsTotalSize = total;
+                osdsAvailCap = avail;
+            }
+
+            if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
+                // init
+                cap.setAvailableCapacity(osdsAvailCap);
+            }
+
+            cap.setTotalCapacity(osdsTotalSize);
+            cap.setTotalPhysicalCapacity(osdsTotalSize);
+            cap.setAvailablePhysicalCapacity(osdsAvailCap);
+            return cap;
+        });
     }
 }

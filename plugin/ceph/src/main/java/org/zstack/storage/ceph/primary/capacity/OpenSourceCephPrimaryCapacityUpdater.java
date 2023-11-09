@@ -40,8 +40,6 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
     @Override
     public void update(CephCapacity cephCapacity) {
         String fsid = cephCapacity.getFsid();
-        long total = cephCapacity.getTotalCapacity();
-        long avail = cephCapacity.getAvailableCapacity();
         List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();
 
         CephPrimaryStorageVO cephPs = SQL.New("select pri from CephPrimaryStorageVO pri where pri.fsid = :fsid",CephPrimaryStorageVO.class)
@@ -53,57 +51,11 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
 
         List<String> poolNames = new ArrayList<>();
 
-        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());
-        updater.run(cap -> {
-            Map<String, CephPoolCapacity> osdPoolCapacity = new HashMap<>();
-            List<String> poolsName = Q.New(CephPrimaryStoragePoolVO.class)
-                    .select(CephPrimaryStoragePoolVO_.poolName)
-                    .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, cephPs.getUuid())
-                    .listValues();
-            for (CephPoolCapacity poolCapacitiy : poolCapacities) {
-                if (poolCapacitiy.getRelatedOsdCapacity() == null || !poolsName.contains(poolCapacitiy.getName())) {
-                    continue;
-                }
-
-                Map<String, CephPoolCapacity> osdPoolCap = poolCapacitiy.getRelatedOsdCapacity().keySet().stream()
-                        .collect(Collectors.toMap(osdName -> osdName, osdName -> {
-                            if (!osdPoolCapacity.containsKey(osdName)) {
-                                return poolCapacitiy;
-                            }
-                            // osd multiplexing
-                            Float diskUtilization = osdPoolCapacity.get(osdName).getDiskUtilization();
-                            return diskUtilization > poolCapacitiy.getDiskUtilization() ? poolCapacitiy : osdPoolCapacity.get(osdName);
-                        }));
-                osdPoolCapacity.putAll(osdPoolCap);
-            }
-
-            long osdsTotalSize = 0;
-            long osdsAvailCap = 0;
-            for (String osdName : osdPoolCapacity.keySet()) {
-                CephPoolCapacity cephPoolCapacity = osdPoolCapacity.get(osdName);
-                osdsTotalSize += cephPoolCapacity.getRelatedOsdCapacity().get(osdName).getSize() * cephPoolCapacity.getDiskUtilization();
-                osdsAvailCap += cephPoolCapacity.getRelatedOsdCapacity().get(osdName).getAvailableCapacity() * cephPoolCapacity.getDiskUtilization();
-            }
-            if (osdsTotalSize == 0) {
-                logger.debug("no osds related to pool found, using bare capacity instead, fsid: " + cephPs.getFsid());
-                osdsTotalSize = total;
-                osdsAvailCap = avail;
-            }
-
-            if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
-                // init
-                cap.setAvailableCapacity(osdsAvailCap);
-            }
-
-            cap.setTotalCapacity(osdsTotalSize);
-            cap.setTotalPhysicalCapacity(osdsTotalSize);
-            cap.setAvailablePhysicalCapacity(osdsAvailCap);
-            return cap;
-        });
-
         if (poolCapacities == null) {
             return;
         }
+        CephOsdGroupCapacityHelper osdHelper = new CephOsdGroupCapacityHelper(cephPs.getUuid());
+        osdHelper.calculatePrimaryStorageCapacityByOsds(cephCapacity);
 
         new SQLBatch() {
             @Override
@@ -172,7 +124,7 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
                     dbf.getEntityManager().merge(poolVO);
                 }
 
-                new CephOsdGroupCapacityHelper(cephPs.getUuid()).fillCapacityFromPool();
+                osdHelper.fillCapacityFromPool();
             }
         }.execute();
     }
