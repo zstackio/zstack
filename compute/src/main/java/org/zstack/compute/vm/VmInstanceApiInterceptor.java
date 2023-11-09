@@ -1279,6 +1279,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             validateRootDiskOffering(imgFormat, msg);
+
+            if (image.getVirtio() != null) {
+                msg.setVirtio(image.getVirtio());
+            } else {
+                msg.setVirtio(false);
+            }
         }
 
         validateDataDiskSizes(msg);
