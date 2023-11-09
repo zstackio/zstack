@@ -74,7 +74,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					values ("UserVm","ApplianceVm")
+					values("UserVm", "ApplianceVm")
 				}
 				column {
 					name "rootDiskOfferingUuid"
@@ -201,7 +201,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					values ("InstantStart","JustCreate","CreateStopped")
+					values("InstantStart", "JustCreate", "CreateStopped")
 				}
 				column {
 					name "rootVolumeSystemTags"
@@ -275,7 +275,7 @@ doc {
 					optional true
 					since "4.7.0"
 				}
-				colum
+				colum {
 					name "diskAOs"
 					enclosedIn "params"
 					desc "boot=true表示diskAO用于设置云主机平台、架构、操作系统与根盘总线；diskAO.boot=false表示加载的硬盘"

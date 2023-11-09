@@ -525,22 +525,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.sshKeyPairUuids = sshKeyPairUuids;
     }
 
-    public List<String> getDataVolumeTemplateUuids() {
-        return dataVolumeTemplateUuids;
-    }
-
-    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
-        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
-    }
-
-    public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {
-        return dataVolumeFromTemplateSystemTags;
-    }
-
-    public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
-        this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
-    }
-
     public String getPlatform() {
         return platform;
     }
