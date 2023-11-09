@@ -5,6 +5,7 @@ import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
@@ -88,7 +89,7 @@ public class VmGlobalConfig {
     public static GlobalConfig RESOURCE_BINDING_SCENE = new GlobalConfig(CATEGORY, "resourceBinding.Scene");
 
     @GlobalConfigValidation(inNumberRange = {1, 256})
-    @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
+    @BindResourceConfig({VmNicVO.class, VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_NIC_MULTIQUEUE_NUM = new GlobalConfig(CATEGORY, "nicMultiQueueNum");
 
     @GlobalConfigValidation(numberGreaterThan = 1)

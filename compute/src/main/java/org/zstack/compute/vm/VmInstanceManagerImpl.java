@@ -1992,6 +1992,23 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installUsbRedirectValidator();
         installL3NetworkSecurityGroupValidator();
         installSeDeviceValidator();
+        installNicMultiQueueValidator();
+    }
+
+    private void installNicMultiQueueValidator() {
+        VmSystemTags.VM_NIC_MULTIQUEUE.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String s = VmSystemTags.VM_NIC_MULTIQUEUE.getTokenByTag(systemTag,
+                        VmSystemTags.VM_NIC_MULTIQUEUE_TOKEN);
+
+                try {
+                    Long.parseLong(s);
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(argerr("invalid nic multi queue num[%s], %s is not a number", systemTag, s));
+                }
+            }
+        });
     }
 
     private void installUsbRedirectValidator() {
