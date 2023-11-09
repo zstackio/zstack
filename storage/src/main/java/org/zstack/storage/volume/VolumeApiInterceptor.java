@@ -2,6 +2,7 @@ package org.zstack.storage.volume;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.cloudbus.CloudBus;
@@ -13,6 +14,8 @@ import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
@@ -34,6 +37,7 @@ import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -43,6 +47,9 @@ import org.zstack.header.volume.*;
 import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -378,7 +385,44 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                 }
             }
         }.execute();
+    }
 
+    private ErrorCode checkClusterAccessible(VolumeVO volumeVO, List<String> vmInstanceClusterUuids) {
+        if (CollectionUtils.isEmpty(vmInstanceClusterUuids)) {
+            return null;
+        }
+
+        List<String> volumeClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, volumeVO.getPrimaryStorageUuid())
+                .listValues();
+
+        vmInstanceClusterUuids.retainAll(volumeClusterUuids);
+
+        // if there is no cluster contains both vm root volume and data volume, the data volume won't be attachable
+        if (vmInstanceClusterUuids.isEmpty() && !volumeClusterUuids.isEmpty()) {
+            return operr("Can't attach volume to VM, no qualified cluster");
+        }
+
+        return null;
+    }
+
+    private ErrorCode checkHostAccessible(VolumeVO volumeVO, String hostUuid) {
+        if (hostUuid == null) {
+            return null;
+        }
+
+        PrimaryStorageHostStatus primaryStorageHostStatus = Q.New(PrimaryStorageHostRefVO.class)
+                .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, volumeVO.getPrimaryStorageUuid())
+                .select(PrimaryStorageHostRefVO_.status)
+                .findValue();
+        if (primaryStorageHostStatus == PrimaryStorageHostStatus.Disconnected) {
+            return operr("Can not attach volume to vm runs on host[uuid: %s] which is disconnected " +
+                    "with volume's storage[uuid: %s]", hostUuid, volumeVO.getPrimaryStorageUuid());
+        }
+
+        return null;
     }
 
     private void validate(APIBackupDataVolumeMsg msg) {
@@ -531,16 +575,61 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         }
     }
 
-    private void populateExtensions() {
-        for (MaxDataVolumeNumberExtensionPoint extp : pluginRgty.getExtensionList(MaxDataVolumeNumberExtensionPoint.class)) {
-            MaxDataVolumeNumberExtensionPoint old = maxDataVolumeNumberExtensions.get(extp.getHypervisorTypeForMaxDataVolumeNumberExtension());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate MaxDataVolumeNumberExtensionPoint[%s, %s] for hypervisor type[%s]",
-                        old.getClass().getName(), extp.getClass().getName(), extp.getHypervisorTypeForMaxDataVolumeNumberExtension())
-                );
+    @Transactional
+    protected void validate(APICreateVmInstanceMsg msg) {
+        if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
+            return;
+        }
+
+        List<String> volumeUuids = msg.getDiskAOs().stream()
+                .filter(diskAO -> Objects.equals(diskAO.getSourceType(), VolumeVO.class.getSimpleName()))
+                .map(APICreateVmInstanceMsg.DiskAO::getSourceUuid).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(volumeUuids)) {
+            return;
+        }
+
+        List<String> duplicateVolumeUuids = volumeUuids.stream()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet().stream().filter(entry -> entry.getValue() > 1).map(Map.Entry::getKey).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(duplicateVolumeUuids)) {
+            throw new ApiMessageInterceptionException(operr("duplicate volume uuids: %s", duplicateVolumeUuids.toString()));
+        }
+
+        List<String> clusterUuids = new ArrayList<>();
+        String hypervisorType = null;
+        if (msg.getHostUuid() != null) {
+            Tuple t = Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).select(HostVO_.clusterUuid, HostVO_.hypervisorType).findTuple();
+            clusterUuids.add(t.get(0, String.class));
+            hypervisorType = t.get(1, String.class);
+        } else if (msg.getClusterUuid() != null) {
+            clusterUuids.add(msg.getClusterUuid());
+            hypervisorType = Q.New(ClusterVO.class).eq(ClusterVO_.uuid, msg.getClusterUuid()).select(ClusterVO_.hypervisorType).findValue();
+        }
+
+        List<ErrorCode> errors = new ArrayList<>();
+
+        List<VolumeVO> volumeVOs = Q.New(VolumeVO.class).in(VolumeVO_.uuid, volumeUuids).list();
+        for (VolumeVO volume : volumeVOs) {
+            ErrorCode error = checkDataVolume(volume, hypervisorType, volumeUuids.size());
+            if (error != null) {
+                errors.add(error);
+                continue;
             }
 
-            maxDataVolumeNumberExtensions.put(extp.getHypervisorTypeForMaxDataVolumeNumberExtension(), extp);
+            error = checkClusterAccessible(volume, clusterUuids);
+            if (error != null) {
+                errors.add(error);
+                continue;
+            }
+
+            error = checkHostAccessible(volume, msg.getHostUuid());
+            if (error != null) {
+                errors.add(error);
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr(errors.toString()));
         }
     }
 
