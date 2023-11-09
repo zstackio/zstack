@@ -1,5 +1,3 @@
-ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `state` varchar(255) NOT NULL DEFAULT "enable";
-
 CREATE TABLE IF NOT EXISTS `zstack`.`BlockPrimaryStorageVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `vendorName` varchar(256) NOt NULL,
@@ -31,10 +29,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BlockScsiLunVO` (
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkScsiLunVOVolumeVO` FOREIGN KEY (`volumeUuid`) REFERENCES `zstack`.`VolumeEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN id smallint unsigned DEFAULT 0;
-ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN type VARCHAR(128) DEFAULT NULL;
-ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN lunType varchar(256) DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`HostInitiatorRefVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
