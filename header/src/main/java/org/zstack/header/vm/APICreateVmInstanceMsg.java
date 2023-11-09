@@ -103,7 +103,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     /**
      * @desc uuid of image. See :ref:`ImageInventory`
      */
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(resourceType = ImageVO.class, checkAccount = true, required = false)
     private String imageUuid;
     /**
      * @desc a list of L3Network uuid the vm will create nic on. See :ref:`L3NetworkInventory`
