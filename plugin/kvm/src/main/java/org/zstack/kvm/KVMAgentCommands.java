@@ -1171,7 +1171,7 @@ public class KVMAgentCommands {
             this.l2NetworkUuid = l2NetworkUuid;
         }
 
-        public static NicTO fromVmNicInventoy(VmNicInventory nic) {
+        public static NicTO fromVmNicInventory(VmNicInventory nic) {
             KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
             to.setMac(nic.getMac());
             to.setUuid(nic.getUuid());
