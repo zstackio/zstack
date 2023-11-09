@@ -1129,10 +1129,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validateZoneOrClusterOrHostOrL3Exist(APICreateVmInstanceMsg msg) {
+    private void validateZoneOrClusterOrHostOrL3Exist(NewVmInstanceMessage2 msg) {
         if (CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && StringUtils.isEmpty(msg.getZoneUuid())
                 && StringUtils.isEmpty(msg.getClusterUuid()) && StringUtils.isEmpty(msg.getHostUuid())) {
-            throw new ApiMessageInterceptionException(operr("could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set", msg.getImageUuid()));
+            throw new ApiMessageInterceptionException(operr("could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set"));
         }
     }
 
@@ -1271,8 +1271,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validatePsWhetherSameCluster(msg);
-
-        validateZoneOrClusterOrHostOrL3Exist(msg);
     }
 
     private void validate(APICreateVmInstanceFromVolumeMsg msg) {
@@ -1420,6 +1418,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validateCdRomsTag(msg);
+        validateZoneOrClusterOrHostOrL3Exist(msg);
     }
 
     private void validateCdRomsTag(NewVmInstanceMessage msg) {

@@ -60,6 +60,7 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         if (spec.getImageSpec() != null) {
             msg.setImage(spec.getImageSpec().getInventory());
         }
+        msg.setZoneUuid(spec.getVmInventory().getZoneUuid());
         msg.setVmInstance(spec.getVmInventory());
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setAllocatorStrategy(HostAllocatorConstant.MIGRATE_VM_ALLOCATOR_TYPE);
@@ -74,6 +75,7 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
                 return arg.getUuid();
             }
         }));
+        msg.setAllowNoL3Networks(true);
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
             public void run(MessageReply reply) {

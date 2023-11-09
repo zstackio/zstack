@@ -72,7 +72,7 @@ doc {
 					desc "三层网络UUID"
 					location "body"
 					type "List"
-					optional false
+					optional true
 					since "3.10.0"
 				}
 				column {
