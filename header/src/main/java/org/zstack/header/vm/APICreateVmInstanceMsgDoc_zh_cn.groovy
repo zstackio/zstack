@@ -253,9 +253,36 @@ doc {
 					enclosedIn "params"
 					desc ""
 					location "body"
-					type "String"
+					type "List"
 					optional true
 					since "4.7.21"
+				}
+				column {
+					name "dataVolumeTemplateUuids"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "4.7.0"
+				}
+				column {
+					name "dataVolumeFromTemplateSystemTags"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Map"
+					optional true
+					since "4.7.0"
+				}
+				column {
+					name "platform"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.7.0"
 				}
 				column {
 					name "guestOsType"
@@ -267,11 +294,11 @@ doc {
 					since "4.7.0"
 				}
 				column {
-					name "dataVolumeTemplateUuids"
+					name "architecture"
 					enclosedIn "params"
 					desc ""
 					location "body"
-					type "List"
+					type "String"
 					optional true
 					since "4.7.21"
 				}
@@ -285,11 +312,11 @@ doc {
 					since "4.7.21"
 				}
 				column {
-					name "dataVolumeFromTemplateSystemTags"
+					name "virtio"
 					enclosedIn "params"
 					desc ""
 					location "body"
-					type "Map"
+					type "Boolean"
 					optional true
 					since "4.7.0"
 				}

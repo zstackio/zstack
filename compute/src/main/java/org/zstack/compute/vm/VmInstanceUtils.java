@@ -24,7 +24,6 @@ public class VmInstanceUtils {
     public static CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
         CreateVmInstanceMsg cmsg = NewVmInstanceMsgBuilder.fromAPINewVmInstanceMsg(msg);
         cmsg.setImageUuid(msg.getImageUuid());
-        cmsg.setGuestOsType(msg.getGuestOsType());
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         if (msg.getRootDiskSize() != null) {
             cmsg.setRootDiskSize(msg.getRootDiskSize());
@@ -38,6 +37,10 @@ public class VmInstanceUtils {
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         cmsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         cmsg.setSshKeyPairUuids(msg.getSshKeyPairUuids());
+        cmsg.setPlatform(msg.getPlatform());
+        cmsg.setGuestOsType(msg.getGuestOsType());
+        cmsg.setArchitecture(msg.getArchitecture());
+        cmsg.setVirtio(msg.getVirtio());
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
