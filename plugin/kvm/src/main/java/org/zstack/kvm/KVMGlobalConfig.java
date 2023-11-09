@@ -6,6 +6,7 @@ import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
@@ -41,6 +42,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig ALLOW_LIVE_SNAPSHOT_ON_REDHAT = new GlobalConfig(CATEGORY, "redhat.liveSnapshotOn");
     @GlobalConfigValidation(validValues = {"none", "writethrough", "writeback"})
+    @BindResourceConfig({VolumeVO.class, VmInstanceVO.class})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.cacheMode");
     @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough", "Hygon_Customized",
             "Dhyana", "EPYC", "EPYC-IBPB", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX",
@@ -60,6 +62,7 @@ public class KVMGlobalConfig {
     @BindResourceConfig({ClusterVO.class})
     public static GlobalConfig AUTO_VM_NIC_MULTIQUEUE = new GlobalConfig(CATEGORY, "auto.set.vm.nic.multiqueue");
     @GlobalConfigValidation
+    @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig MIGRATE_AUTO_CONVERGE = new GlobalConfig(CATEGORY, "migrate.autoConverge");
     @GlobalConfigValidation
     public static GlobalConfig MIGRATE_XBZRLE = new GlobalConfig(CATEGORY, "migrate.xbzrle");

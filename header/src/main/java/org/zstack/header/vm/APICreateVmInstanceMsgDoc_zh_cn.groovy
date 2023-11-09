@@ -253,6 +253,24 @@ doc {
 					enclosedIn "params"
 					desc ""
 					location "body"
+					type "String"
+					optional true
+					since "4.7.21"
+				}
+				column {
+					name "guestOsType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.7.0"
+				}
+				column {
+					name "dataVolumeTemplateUuids"
+					enclosedIn "params"
+					desc ""
+					location "body"
 					type "List"
 					optional true
 					since "4.7.21"
@@ -265,6 +283,15 @@ doc {
 					type "Long"
 					optional true
 					since "4.7.21"
+				}
+				column {
+					name "dataVolumeFromTemplateSystemTags"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Map"
+					optional true
+					since "4.7.0"
 				}
 			}
         }

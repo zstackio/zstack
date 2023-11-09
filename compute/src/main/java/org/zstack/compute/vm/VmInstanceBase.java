@@ -5258,6 +5258,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(FlowTrigger trigger, Map data) {
                 boolean update = false;
                 if (msg.getName() != null) {
+                    Boolean unique = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
+                    boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).notEq(VmInstanceVO_.uuid, self.getUuid()).isExists();
+                    if (unique && exists) {
+                        trigger.fail(operr("could not create vm, a vm with the name [%s] already exists", msg.getName()));
+                        return;
+                    }
                     self.setName(msg.getName());
                     update = true;
                 }

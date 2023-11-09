@@ -447,7 +447,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 InstanceOfferingVO instanceOfferingVO = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid()).find();
 
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getVmInstanceUuid(), Boolean.class);
-                if (!numa && !VmInstanceState.Stopped.equals(vo.getState())) {
+                boolean hotPlugMemory = rcf.getResourceConfigValue(VmGlobalConfig.HOT_PLUG_MEMORY, msg.getVmInstanceUuid(), Boolean.class);
+                boolean hotPlugCpuAndMemory = numa && hotPlugMemory;
+                if (!hotPlugCpuAndMemory && !VmInstanceState.Stopped.equals(vo.getState())) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
                     ));
@@ -491,11 +493,27 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     return;
                 }
 
+                boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
+                if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).notEq(VmInstanceVO_.uuid, msg.getUuid()).isExists()) {
+                    throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
+                            msg.getName()));
+                }
+
+                Integer cpuSum = msg.getCpuNum();
+                Long memorySize = msg.getMemorySize();
+
                 VmInstanceState vmState = q(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getUuid(), Boolean.class);
-                if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
+                boolean hotPlugMemory = rcf.getResourceConfigValue(VmGlobalConfig.HOT_PLUG_MEMORY, msg.getVmInstanceUuid(), Boolean.class);
+                if (cpuSum != null && !numa && !VmInstanceState.Stopped.equals(vmState)) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
+                            "the VM cannot do online cpu update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu update again"
+                    ));
+                }
+
+                if (memorySize != null && !hotPlugMemory && !VmInstanceState.Stopped.equals(vmState)) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the VM cannot do online memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the memory update again"
                     ));
                 }
 
@@ -1235,6 +1253,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(NewVmInstanceMessage2 msg) {
         validateInstanceSettings(msg);
+        boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
+        if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).isExists()) {
+            throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
+                    msg.getName()));
+        }
 
         Set<String> macs = new HashSet<>();
         if (null != msg.getSystemTags()) {

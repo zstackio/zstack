@@ -179,6 +179,15 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, validValues = {"InstantStart", "JustCreate", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
+    @APIParam(required = false, maxLength = 255)
+    private String guestOsType;
+
+    @APIParam(required = false)
+    private List<String> dataVolumeTemplateUuids;
+
+    @APIParam(required = false)
+    private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
+
     @APIParam(required = false)
     private List<String> rootVolumeSystemTags;
 
@@ -373,6 +382,31 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setSshKeyPairUuids(List<String> sshKeyPairUuids) {
         this.sshKeyPairUuids = sshKeyPairUuids;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+
+    public List<String> getDataVolumeTemplateUuids() {
+        return dataVolumeTemplateUuids;
+    }
+
+    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
+        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
+    }
+
+    public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {
+        return dataVolumeFromTemplateSystemTags;
+    }
+
+    public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
+        this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
+>>>>>>> cda41bc102 (<fix>[mevoco]: support vm management for virtualized)
     }
 
     public static APICreateVmInstanceMsg __example__() {
