@@ -7010,6 +7010,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setRootDiskOffering(DiskOfferingInventory.valueOf(rootDisk));
         }
 
+        spec.setDiskAOs(struct.getDiskAOs());
+
         List<CdRomSpec> cdRomSpecs = buildVmCdRomSpecsForNewCreated(spec);
         spec.setCdRomSpecs(cdRomSpecs);
         buildImageSpec(spec);

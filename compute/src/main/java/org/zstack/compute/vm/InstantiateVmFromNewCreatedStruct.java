@@ -53,6 +53,16 @@ public class InstantiateVmFromNewCreatedStruct {
         }
     }
 
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
+
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
     }
@@ -130,6 +140,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setAvoidHostUuids(msg.getAvoidHostUuids());
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
+        struct.setDiskAOs(msg.getDiskAOs());
         return struct;
     }
 
@@ -148,6 +159,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRequiredHostUuid(msg.getHostUuid());
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
+        struct.setDiskAOs(msg.getDiskAOs());
         return struct;
     }
 

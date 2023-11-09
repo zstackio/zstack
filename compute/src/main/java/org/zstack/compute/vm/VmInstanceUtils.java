@@ -12,12 +12,10 @@ import org.zstack.header.vm.UpdateVmInstanceSpec;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.SystemTagUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
-
 /**
  * Created by Wenhao.Zhang on 22/03/10
  */
@@ -39,12 +37,15 @@ public class VmInstanceUtils {
         cmsg.setPlatform(msg.getPlatform());
         cmsg.setGuestOsType(msg.getGuestOsType());
         cmsg.setArchitecture(msg.getArchitecture());
-        cmsg.setVirtio(msg.getVirtio());
+        cmsg.setVirtio(msg.isVirtio());
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
+        cmsg.setPlatform(msg.getPlatform());
+        cmsg.setGuestOsType(msg.getGuestOsType());
+        cmsg.setArchitecture(msg.getArchitecture());
+        cmsg.setVirtio(msg.isVirtio());
         cmsg.setDiskAOs(msg.getDiskAOs());
-        setVmInstanceInfoFromRootDiskAO(cmsg, msg);
         return cmsg;
     }
 
