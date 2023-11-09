@@ -185,11 +185,6 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <osRelease>WindowsServer 2022</osRelease>
-    </osInfo>
-    <osInfo>
-        <architecture>x86_64</architecture>
-        <platform>Windows</platform>
         <osRelease>Windows 7</osRelease>
     </osInfo>
     <osInfo>
