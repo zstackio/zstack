@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -29,6 +30,7 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -148,21 +150,13 @@ public class VmAllocateNicFlow implements Flow {
                 return;
             }
 
-            if (nicSpec.getNicDriverType() != null) {
+            if (!StringUtils.isEmpty(nicSpec.getNicDriverType())) {
                 nic.setDriverType(nicSpec.getNicDriverType());
             } else {
-                boolean imageHasVirtio = false;
-                try {
-                    imageHasVirtio = spec.getImageSpec().getInventory().getVirtio();
-                } catch (Exception e) {
-                    logger.debug(String.format("there is no image spec for vm %s", spec.getVmInventory().getUuid()));
-                }
-
-                nicManager.setNicDriverType(nic,
-                        imageHasVirtio,
+                boolean vmHasVirtio = VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid());
+                nicManager.setNicDriverType(nic, vmHasVirtio,
                         ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization(),
-                        spec.getVmInventory()
-                );
+                        spec.getVmInventory());
             }
 
             nic.setDeviceId(deviceId);
@@ -212,26 +206,8 @@ public class VmAllocateNicFlow implements Flow {
                         }
                     }
                     nics.add(nic);
-                    dbf.updateAndRefresh(nicVO);
-
-                    //set nic multi queue config
-                    if(VmSystemTags.VM_NIC_MULTIQUEUE.hasTag(spec.getVmInventory().getUuid())) {
-                        List<String> tags = VmSystemTags.VM_NIC_MULTIQUEUE.getTags(spec.getVmInventory().getUuid());
-                        //every nic has different tag
-                        for (String tag : tags) {
-                            String l3Uuid = VmSystemTags.VM_NIC_MULTIQUEUE.getTokenByTag(tag, VmSystemTags.VM_NIC_MULTIQUEUE_L3_TOKEN);
-                            String tokenValue = VmSystemTags.VM_NIC_MULTIQUEUE.getTokenByTag(tag, VmSystemTags.VM_NIC_MULTIQUEUE_TOKEN);
-                            int nicMultiQueueNum = Integer.valueOf(tokenValue).intValue();
-
-                            if (!nic.getL3NetworkUuid().equals(l3Uuid)) {
-                                continue;
-                            }
-
-                            ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
-                            Integer queues = spec.getVmInventory().getCpuNum() > nicMultiQueueNum ? nicMultiQueueNum : spec.getVmInventory().getCpuNum();
-                            multiQueues.updateValue(nic.getUuid(), queues.toString());
-                        }
-                    }
+                    nicVO = dbf.updateAndRefresh(nicVO);
+                    addVmNicConfig(nicVO, spec, nicSpec);
                 }
             }.execute();
             wcomp.done();
@@ -239,8 +215,6 @@ public class VmAllocateNicFlow implements Flow {
         }).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                //delete all nic multi queue systemtag
-                VmSystemTags.VM_NIC_MULTIQUEUE.delete(spec.getVmInventory().getUuid());
                 if (errs.size() > 0) {
                     trigger.fail(errs.get(0));
                 } else {
@@ -248,6 +222,32 @@ public class VmAllocateNicFlow implements Flow {
                 }
             }
         });
+    }
+
+    private void addVmNicConfig(VmNicVO vmNicVO, VmInstanceSpec vmSpec, VmNicSpec nicSpec) {
+        if (nicSpec == null) {
+            return;
+        }
+
+        List<VmNicParm> vmNicParms = nicSpec.getVmNicParms();
+        if (CollectionUtils.isEmpty(vmNicParms)) {
+            return;
+        }
+
+        VmNicParm vmNicParm = vmNicParms.get(0);
+
+        // add vmnic bandwidth systemtag
+        if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {
+            VmNicQosConfigBackend backend = vmMgr.getVmNicQosConfigBackend(vmSpec.getVmInventory().getType());
+            backend.addNicQos(vmSpec.getVmInventory().getUuid(), vmNicVO.getUuid(), vmNicParm.getInboundBandwidth(), vmNicParm.getOutboundBandwidth());
+        }
+
+        //add vmnic multiqueue config
+        if (vmNicParm.getMultiQueueNum() != null) {
+            ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
+            Integer queues = vmSpec.getVmInventory().getCpuNum() > vmNicParm.getMultiQueueNum() ? vmNicParm.getMultiQueueNum() : vmSpec.getVmInventory().getCpuNum();
+            multiQueues.updateValue(vmNicVO.getUuid(), queues.toString());
+        }
     }
 
     @Override

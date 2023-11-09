@@ -110,6 +110,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
      */
     @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
     private List<String> l3NetworkUuids;
+
+    @APIParam(required = false)
+    private String vmNicParams;
     /**
      * @desc see type of :ref:`VmInstanceInventory`
      * @choices - UserVm
@@ -319,6 +322,15 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setL3NetworkUuids(List<String> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
+    }
+
+    @Override
+    public String getVmNicParams() {
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(String vmNicParams) {
+        this.vmNicParams = vmNicParams;
     }
 
     public List<String> getDataDiskOfferingUuids() {

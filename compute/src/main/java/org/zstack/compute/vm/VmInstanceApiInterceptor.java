@@ -6,6 +6,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.compute.VmNicUtils;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
@@ -43,7 +44,6 @@ import org.zstack.header.zone.ZoneVO_;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagUtils;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -981,6 +981,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
             msg.getStaticIpMap().put(e.getKey(), e.getValue());
         }
+
+        if (msg.getVmNicParams() != null && !msg.getVmNicParams().isEmpty()) {
+            List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
+
+            List<VmNicParm> vmNicInventories;
+            try {
+                vmNicInventories = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
+            } catch (JsonSyntaxException e) {
+                throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
+            }
+
+            VmNicUtils.validateVmParms(vmNicInventories, Arrays.asList(msg.getL3NetworkUuid()), supportNicDriverTypes);
+        }
     }
 
     private void validate(APIAttachVmNicToVmMsg msg) {
@@ -1273,6 +1286,22 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr(
                         "Not allowed same mac [%s]", duplicateMac.get()));
             }
+        }
+
+        if (msg.getVmNicParams() != null && !msg.getVmNicParams().isEmpty()) {
+            List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
+            if (msg.getL3NetworkUuids() == null || msg.getL3NetworkUuids().isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("l3NetworkUuids and vmNicInventories mustn't both be empty or both be set"));
+            }
+
+            List<VmNicParm> vmNicInventories;
+            try {
+                vmNicInventories = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
+            } catch (JsonSyntaxException e) {
+                throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
+            }
+
+            VmNicUtils.validateVmParms(vmNicInventories, msg.getL3NetworkUuids(), supportNicDriverTypes);
         }
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);

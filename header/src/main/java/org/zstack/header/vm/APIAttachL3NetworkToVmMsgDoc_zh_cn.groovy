@@ -84,6 +84,15 @@ doc {
 					optional true
 					since "4.0.0"
 				}
+				column {
+					name "vmNicParams"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.7.0"
+				}
 			}
         }
 
