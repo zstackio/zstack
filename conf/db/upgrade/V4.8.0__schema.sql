@@ -74,6 +74,8 @@ update EventSubscriptionVO set name = 'Host Physical Disk Status Abnormal' where
 update EventSubscriptionVO set name = 'Host Physical Cpu Status Abnormal' where uuid = '8186fbbeab1d449b93e7be78d6045c7f';
 update EventSubscriptionVO set name = 'Host Physical Fan Status Abnormal' where uuid = '37e5bdfa2eaf49538931113ddaecf927';
 
+CALL ADD_COLUMN('VmNicVO', 'state', 'varchar(255)', 0, 'enable');
+
 CREATE TABLE IF NOT EXISTS `zstack`.`BlockPrimaryStorageHostRefVO` (
     `id` BIGINT UNSIGNED NOT NULL UNIQUE AUTO_INCREMENT,
     `initiatorName` varchar(256) DEFAULT NULL,
@@ -105,7 +107,7 @@ CREATE PROCEDURE AlterBlockScsiLunTable()
                     WHERE table_name = 'BlockScsiLunVO'
                             AND table_schema = 'zstack'
                             AND column_name = 'lunType'
-                            AND is_nullable = 'YES') THEN
+                            AND is_nullable = 'NO') THEN
             ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN lunType varchar(256) DEFAULT NULL;
         END IF;
         IF EXISTS( SELECT NULL
