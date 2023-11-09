@@ -432,6 +432,9 @@ public class SourceClassMap {
 			put("org.zstack.nas.NasMountTargetInventory", "org.zstack.sdk.NasMountTargetInventory");
 			put("org.zstack.nas.NasProtocolType", "org.zstack.sdk.NasProtocolType");
 			put("org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory", "org.zstack.sdk.RemoteVtepInventory");
+			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory", "org.zstack.sdk.L2PortGroupNetworkInventory");
+			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupVlanMode", "org.zstack.sdk.L2PortGroupVlanMode");
+			put("org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory", "org.zstack.sdk.L2VirtualSwitchNetworkInventory");
 			put("org.zstack.network.l2.vxlan.vtep.VtepInventory", "org.zstack.sdk.VtepInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory", "org.zstack.sdk.L2VxlanNetworkInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory", "org.zstack.sdk.L2VxlanNetworkPoolInventory");
@@ -944,6 +947,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.KvmHypervisorInfoInventory", "org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory");
 			put("org.zstack.sdk.L2NetworkData", "org.zstack.header.network.l2.L2NetworkData");
 			put("org.zstack.sdk.L2NetworkInventory", "org.zstack.header.network.l2.L2NetworkInventory");
+			put("org.zstack.sdk.L2PortGroupNetworkInventory", "org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory");
+			put("org.zstack.sdk.L2PortGroupVlanMode", "org.zstack.network.l2.virtualSwitch.header.L2PortGroupVlanMode");
+			put("org.zstack.sdk.L2VirtualSwitchNetworkInventory", "org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory");
 			put("org.zstack.sdk.L2VlanNetworkInventory", "org.zstack.header.network.l2.L2VlanNetworkInventory");
 			put("org.zstack.sdk.L2VxlanNetworkInventory", "org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory");
 			put("org.zstack.sdk.L2VxlanNetworkPoolInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory");

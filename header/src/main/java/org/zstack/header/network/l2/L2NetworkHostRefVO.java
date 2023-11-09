@@ -2,9 +2,11 @@ package org.zstack.header.network.l2;
 
 import org.zstack.header.cluster.ClusterEO;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.vo.EntityGraph;
+import org.zstack.header.host.HostEO;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.search.SqlTrigger;
 import org.zstack.header.search.TriggerIndex;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -19,23 +21,23 @@ import java.sql.Timestamp;
 @SqlTrigger(foreignVOClass = L2NetworkVO.class, foreignVOJoinColumn = "l2NetworkUuid")
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = L2NetworkVO.class, joinColumn = "l2NetworkUuid"),
-        @SoftDeletionCascade(parent = ClusterVO.class, joinColumn = "clusterUuid")
+        @SoftDeletionCascade(parent = HostVO.class, joinColumn = "hostUuid")
 })
 @EntityGraph(
         friends = {
                 @EntityGraph.Neighbour(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = HostVO.class, myField = "hostUuid", targetField = "uuid"),
         }
 )
-public class L2NetworkClusterRefVO {
+public class L2NetworkHostRefVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
 
     @Column
-    @ForeignKey(parentEntityClass = ClusterEO.class, onDeleteAction = ReferenceOption.CASCADE)
-    private String clusterUuid;
+    @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
+    private String hostUuid;
 
     @Column
     @ForeignKey(parentEntityClass = L2NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
@@ -43,6 +45,10 @@ public class L2NetworkClusterRefVO {
 
     @Column
     private String l2ProviderType;
+
+    @Column
+    @Enumerated
+    private L2NetworkAttachStatus attachStatus;
 
     @Column
     private Timestamp createDate;
@@ -71,12 +77,20 @@ public class L2NetworkClusterRefVO {
         this.id = id;
     }
 
-    public String getClusterUuid() {
-        return clusterUuid;
+    public String getHostUuid() {
+        return hostUuid;
     }
 
-    public void setClusterUuid(String clusterUuid) {
-        this.clusterUuid = clusterUuid;
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+
+    public L2NetworkAttachStatus getAttachStatus() {
+        return attachStatus;
+    }
+
+    public void setAttachStatus(L2NetworkAttachStatus attachStatus) {
+        this.attachStatus = attachStatus;
     }
 
     public String getL2NetworkUuid() {

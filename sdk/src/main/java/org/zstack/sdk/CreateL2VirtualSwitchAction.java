@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachL2NetworkToClusterAction extends AbstractAction {
+public class CreateL2VirtualSwitchAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachL2NetworkToClusterResult value;
+        public org.zstack.sdk.CreateL2VirtualSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,32 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l2NetworkUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean isDistributed;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
+    public java.lang.String zoneUuid;
 
-    @Param(required = false, validValues = {"LinuxBridge"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l2ProviderType;
+    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String physicalInterface;
+
+    @Param(required = false)
+    public java.lang.String type;
+
+    @Param(required = false, validValues = {"LinuxBridge","OvsDpdk"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vSwitchType = "LinuxBridge";
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +84,8 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachL2NetworkToClusterResult value = res.getResult(org.zstack.sdk.AttachL2NetworkToClusterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachL2NetworkToClusterResult() : value; 
+        org.zstack.sdk.CreateL2VirtualSwitchResult value = res.getResult(org.zstack.sdk.CreateL2VirtualSwitchResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateL2VirtualSwitchResult() : value; 
 
         return ret;
     }
@@ -97,10 +115,10 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}";
+        info.path = "/l2-networks/virtual-switch";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "params";
         return info;
     }
 

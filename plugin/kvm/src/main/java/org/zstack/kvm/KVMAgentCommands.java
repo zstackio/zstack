@@ -14,6 +14,7 @@ import org.zstack.network.securitygroup.RuleTO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.network.securitygroup.VmNicSecurityTO;
+import org.zstack.network.service.MtuGetter;
 
 import java.io.Serializable;
 import java.util.*;
@@ -1170,9 +1171,8 @@ public class KVMAgentCommands {
             this.l2NetworkUuid = l2NetworkUuid;
         }
 
-        public static NicTO fromVmNicInventory(VmNicInventory nic) {
-            NicTO to = new NicTO();
-
+        public static NicTO fromVmNicInventoy(VmNicInventory nic) {
+            KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
             to.setMac(nic.getMac());
             to.setUuid(nic.getUuid());
             to.setDeviceId(nic.getDeviceId());

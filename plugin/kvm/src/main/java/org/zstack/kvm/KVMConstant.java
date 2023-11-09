@@ -135,6 +135,8 @@ public interface KVMConstant {
     int KVM_HOST_POWER_OPERATION_TIMEOUT_SECONDS = 300;
 
 
+    public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
+
     enum KvmVmState {
         NoState,
         Running,

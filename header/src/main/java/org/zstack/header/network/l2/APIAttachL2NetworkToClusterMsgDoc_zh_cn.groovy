@@ -57,6 +57,16 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "l2ProviderType"
+					enclosedIn ""
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.7.21"
+					values ("LinuxBridge")
+				}
 			}
         }
 

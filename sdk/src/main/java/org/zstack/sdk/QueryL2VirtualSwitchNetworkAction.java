@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachL2NetworkToClusterAction extends AbstractAction {
+public class QueryL2VirtualSwitchNetworkAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachL2NetworkToClusterResult value;
+        public org.zstack.sdk.QueryL2VirtualSwitchNetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l2NetworkUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false, validValues = {"LinuxBridge"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l2ProviderType;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachL2NetworkToClusterResult value = res.getResult(org.zstack.sdk.AttachL2NetworkToClusterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachL2NetworkToClusterResult() : value; 
+        org.zstack.sdk.QueryL2VirtualSwitchNetworkResult value = res.getResult(org.zstack.sdk.QueryL2VirtualSwitchNetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryL2VirtualSwitchNetworkResult() : value; 
 
         return ret;
     }
@@ -96,11 +64,11 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}";
+        info.httpMethod = "GET";
+        info.path = "/l2-networks/virtual-switch";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "null";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
