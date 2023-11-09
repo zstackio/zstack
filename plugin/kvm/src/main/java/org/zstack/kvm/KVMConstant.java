@@ -119,6 +119,7 @@ public interface KVMConstant {
     String CPU_MODE_CUSTOM = "custom";
     String CPU_MODE_HOST_MODEL = "host-model";
     String CPU_MODE_HOST_PASSTHROUGH = "host-passthrough";
+    String CPU_MODE_HYGON_CUSTOMIZED = "Hygon_Customized";
 
     String IPTABLES_COMMENTS = "kvmagent.allow.port";
 
