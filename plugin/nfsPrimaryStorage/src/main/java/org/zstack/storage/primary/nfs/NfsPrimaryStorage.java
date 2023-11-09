@@ -167,7 +167,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         } else {
             huuid = connectedHostUuid;
         }
-        BlockCommitVolumeOnHypervisorMsg hmsg = new BlockCommitVolumeOnHypervisorMsg();
+        CommitVolumeOnHypervisorMsg hmsg = new CommitVolumeOnHypervisorMsg();
         hmsg.setHostUuid(huuid);
         hmsg.setVmUuid(msg.getVmUuid());
         hmsg.setVolume(msg.getVolume());
@@ -184,7 +184,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     return;
                 }
 
-                BlockCommitVolumeOnHypervisorReply treply = (BlockCommitVolumeOnHypervisorReply) reply;
+                CommitVolumeOnHypervisorReply treply = (CommitVolumeOnHypervisorReply) reply;
                 ret.setSize(treply.getSize());
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 bus.reply(msg, ret);

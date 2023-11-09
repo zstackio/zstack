@@ -1780,7 +1780,7 @@ public class KvmBackend extends HypervisorBackend {
             hostUuid = connectedHostUuid;
         }
 
-        BlockCommitVolumeOnHypervisorMsg hmsg = new BlockCommitVolumeOnHypervisorMsg();
+        CommitVolumeOnHypervisorMsg hmsg = new CommitVolumeOnHypervisorMsg();
         hmsg.setHostUuid(hostUuid);
         hmsg.setVmUuid(msg.getVmUuid());
         hmsg.setVolume(msg.getVolume());
@@ -1796,7 +1796,7 @@ public class KvmBackend extends HypervisorBackend {
                     return;
                 }
 
-                BlockCommitVolumeOnHypervisorReply treply = (BlockCommitVolumeOnHypervisorReply) reply;
+                CommitVolumeOnHypervisorReply treply = (CommitVolumeOnHypervisorReply) reply;
                 ret.setSize(treply.getSize());
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 completion.success(ret);
