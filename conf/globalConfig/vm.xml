@@ -312,14 +312,6 @@
 
 	<config>
 		<category>vm</category>
-		<name>hotPlugMemory</name>
-		<description>whether to hot plug memory</description>
-		<type>java.lang.Boolean</type>
-		<defaultValue>false</defaultValue>
-	</config>
-
-	<config>
-		<category>vm</category>
 		<name>uniqueVmName</name>
 		<description>enable vm name unique</description>
 		<type>java.lang.Boolean</type>
