@@ -275,12 +275,12 @@ doc {
 					optional true
 					since "4.7.0"
 				}
-				column {
-					name "dataVolumeFromTemplateSystemTags"
+				colum
+					name "diskAOs"
 					enclosedIn "params"
 					desc ""
 					location "body"
-					type "Map"
+					type "List"
 					optional true
 					since "4.7.0"
 				}

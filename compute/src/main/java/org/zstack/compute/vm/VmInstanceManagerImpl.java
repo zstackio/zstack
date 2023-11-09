@@ -1229,7 +1229,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
 
-                flow(new NoRollbackFlow() {
+                flow(new Flow() {
                     String __name__ = "instantiate-new-created-vmInstance";
 
                     @Override
@@ -1263,9 +1263,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
 
                         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
-                        smsg.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
-                        smsg.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
-                        smsg.setStrategy(msg.getStrategy());
+                        smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
+                        smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+                        if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && !CollectionUtils.isEmpty(msg.getDiskAOs())) {
+                            smsg.setStrategy(VmCreationStrategy.CreateStopped.toString());
+                        } else {
+                            smsg.setStrategy(msg.getStrategy());
+                        }
+
                         smsg.setTimeout(msg.getTimeout());
                         smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
                         smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
@@ -1285,6 +1290,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                 if (reply.isSuccess()) {
                                     InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
                                     instantiateVm = r.getVmInventory();
+                                    data.put(VmInstanceInventory.class.getSimpleName(), instantiateVm);
                                     trigger.next();
                                     return;
                                 }
@@ -1292,7 +1298,34 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             }
                         });
                     }
+
+                    @Override
+                    public void rollback(FlowRollback chain, Map data) {
+                        if (instantiateVm == null) {
+                            chain.rollback();
+                            return;
+                        }
+                        DestroyVmInstanceMsg dmsg = new DestroyVmInstanceMsg();
+                        dmsg.setVmInstanceUuid(finalVo.getUuid());
+                        dmsg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct);
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
+                        bus.send(dmsg, new CloudBusCallBack(null) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("failed to delete vm [%s]", instantiateVm.getUuid()));
+                                }
+                                chain.rollback();
+                            }
+                        });
+                    }
                 });
+
+                if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
+                    chain.getData().put(APICreateVmInstanceMsg.DiskAO.class.getSimpleName(), msg.getDiskAOs());
+                    chain.getData().put(VmCreationStrategy.class.getSimpleName(), msg.getStrategy());
+                    flow(new VmInstantiateOtherDiskFlow());
+                }
 
                 done(new FlowDoneHandler(completion) {
                     @Override

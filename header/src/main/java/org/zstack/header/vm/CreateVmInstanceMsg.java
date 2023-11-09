@@ -76,6 +76,16 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         this.guestOsType = guestOsType;
     }
 
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
+
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
     }

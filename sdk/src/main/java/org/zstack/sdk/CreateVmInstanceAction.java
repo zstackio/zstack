@@ -86,12 +86,6 @@ public class CreateVmInstanceAction extends AbstractAction {
     public java.lang.String strategy = "InstantStart";
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataVolumeTemplateUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map dataVolumeFromTemplateSystemTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List rootVolumeSystemTags;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -114,6 +108,9 @@ public class CreateVmInstanceAction extends AbstractAction {
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean virtio;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List diskAOs;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
