@@ -100,7 +100,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (ref == null) {
             String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
             throw new ApiMessageInterceptionException(operr("could not attach l2Network[uuid:%s] to host[uuid:%s]," +
-                            " because type %s must attach all hosts", msg.getL2NetworkUuid(), msg.getHostUuid(), type));
+                    " because it has not attached to cluster of host, or type %s must attach all hosts", msg.getL2NetworkUuid(), msg.getHostUuid(), type));
         }
 
         if (L2NetworkAttachStatus.Attached.equals(ref.getAttachStatus())) {
@@ -115,7 +115,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (ref == null) {
             String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
             throw new ApiMessageInterceptionException(operr("could not detach l2Network[uuid:%s] from host[uuid:%s]," +
-                    " because type %s must attach all hosts", msg.getL2NetworkUuid(), msg.getHostUuid(), type));
+                    " because it has not attached to cluster of host, or type %s must attach all hosts", msg.getL2NetworkUuid(), msg.getHostUuid(), type));
         }
 
         if (!L2NetworkAttachStatus.Attached.equals(ref.getAttachStatus())) {

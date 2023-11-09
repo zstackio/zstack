@@ -914,6 +914,14 @@ public class L2NoVlanNetwork implements L2Network {
         if (mustAttachAllHosts()) {
             completion.fail(operr("could not attach l2Network[uuid:%s] to host[uuid:%s]," +
                     " because type %s must attach all hosts", msg.getL2NetworkUuid(), msg.getHostUuid(), self.getType()));
+            return;
+        }
+
+        L2NetworkHostRefInventory ref = l2NetworkHostHelper.getL2NetworkHostRef(msg.getL2NetworkUuid(), msg.getHostUuid());
+        if (ref == null) {
+            completion.fail(operr("could not attach l2Network[uuid:%s] to host[uuid:%s]," +
+                    " because it has not attached to cluster of host", msg.getL2NetworkUuid(), msg.getHostUuid()));
+            return;
         }
 
         HostVO host = Q.New(HostVO.class)
