@@ -222,8 +222,6 @@ public class VmSystemTags {
     public static PatternedSystemTag VM_ATTACH_USB = new PatternedSystemTag(String.format("usbDeviceUuid::{%s}::attachType::{%s}",
             USBDEVICE_UUID_TOKEN, usbDevice_attach_type_token), VmInstanceVO.class);
 
-    public static String GUEST_OS_TYPE_TOKEN = "guestOsType";
-    public static PatternedSystemTag GUEST_OS_TYPE = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
     public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
         private final String chpasswd = "chpasswd";
         private final String list = "list";
