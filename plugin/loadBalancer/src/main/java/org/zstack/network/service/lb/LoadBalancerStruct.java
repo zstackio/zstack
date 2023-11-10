@@ -1,13 +1,11 @@
 package org.zstack.network.service.lb;
 
+import com.google.common.collect.Lists;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipInventory;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -129,6 +127,15 @@ public class LoadBalancerStruct implements Serializable {
         }
 
         return attachedVmNicUuids;
+    }
+
+    public List<VmNicInventory> getAllVmNicsInventory() {
+        if (vmNics == null || vmNics.isEmpty()) {
+            return Collections.EMPTY_LIST;
+        }
+
+        Collection<VmNicInventory> vmNicsIn = vmNics.values();
+        return Lists.newArrayList(vmNicsIn);
     }
 
     public List<String> getAllVmNicsOfListener(LoadBalancerListenerInventory listener) {

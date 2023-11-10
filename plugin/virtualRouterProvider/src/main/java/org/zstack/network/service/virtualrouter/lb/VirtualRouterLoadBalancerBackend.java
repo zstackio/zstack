@@ -1253,12 +1253,16 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     private void acquireVip(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, final List<VmNicInventory> nics, final List<String> acquiredVipUuids, final Completion completion) {
+        acquireSpecifyedVip(vr, struct, struct.getLb().getVipUuids(), nics, acquiredVipUuids, completion);
+    }
+
+    private void acquireSpecifyedVip(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, final List<String> specifyedVip , final List<VmNicInventory> nics, final List<String> acquiredVipUuids, final Completion completion) {
         List<String> vipUuidsAcquireSuccess = Collections.synchronizedList(new ArrayList<>());
 
         LoadBalancerVO loadBalancerVO = dbf.findByUuid(struct.getLb().getUuid(), LoadBalancerVO.class);
         LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(loadBalancerVO.getType().toString());
 
-        new While<>(Arrays.asList(loadBalancerVO.getVipUuid(), loadBalancerVO.getIpv6VipUuid())).step((vipUuid, whileCompletion) -> {
+        new While<>(specifyedVip).step((vipUuid, whileCompletion) -> {
             if (StringUtils.isEmpty(vipUuid)) {
                 whileCompletion.done();
                 return;
@@ -1314,7 +1318,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 completion.success();
             }
         });
-
     }
 
     private void releaseVipForLoadBalancer(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, final List<VmNicInventory> nics, List<String> vipUuids, final Completion completion) {
@@ -2678,10 +2681,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         SimpleFlowChain flowChain = new SimpleFlowChain();
         flowChain.setName("attach-vip-to-lb");
+        ArrayList<String> vipAcquire = new ArrayList<>();
         flowChain.then(new Flow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                acquireVip(vr, struct, vr.getGuestNics(), Arrays.asList(vip.getUuid()), new Completion(trigger) {
+                acquireSpecifyedVip(vr, struct, Arrays.asList(vip.getUuid()) , struct.getAllVmNicsInventory(), vipAcquire, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -2696,7 +2700,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                releaseVipForLoadBalancer(vr, struct, vr.getGuestNics(), Arrays.asList(vip.getUuid()), new Completion(trigger) {
+                if (vipAcquire.isEmpty()) {
+                    trigger.rollback();
+                    return;
+                }
+                releaseVipForLoadBalancer(vr, struct, vr.getGuestNics(), vipAcquire, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.rollback();

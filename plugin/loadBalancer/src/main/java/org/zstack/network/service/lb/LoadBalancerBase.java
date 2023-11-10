@@ -750,7 +750,6 @@ public class LoadBalancerBase {
     }
 
     private void handle(AttachVipToLoadBalancerMsg msg) {
-        AttachVipToLoadBalancerReply reply = new AttachVipToLoadBalancerReply();
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -766,23 +765,19 @@ public class LoadBalancerBase {
                     return;
                 }
 
-
                 VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find();
                 if (StringUtils.isEmpty(vipVO.getIp())) {
-                    bus.reply(msg, reply);
-                    return;
+                    throw new OperationFailureException(operr("fail to attach vip to lb , because vip[%s] has no ip", vipVO.getUuid()));
                 }
 
                 if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
                     if (!StringUtils.isEmpty(self.getVipUuid())) {
-                        bus.reply(msg, reply);
-                        return;
+                        throw new OperationFailureException(operr("fail to attach ipv4 vip to lb , because lb[%s] has ipv4 vip[%s]", self.getUuid(), self.getVipUuid()));
                     }
                     self.setVipUuid(vipVO.getUuid());
                 } else {
                     if (!StringUtils.isEmpty(self.getIpv6VipUuid())) {
-                        bus.reply(msg, reply);
-                        return;
+                        throw new OperationFailureException(operr("fail to attach ipv6 vip to lb , because lb[%s] has ipv6 vip[%s]", self.getUuid(), self.getVipUuid()));
                     }
                     self.setIpv6VipUuid(vipVO.getUuid());
                 }
@@ -791,13 +786,16 @@ public class LoadBalancerBase {
                 bkd.attachVipToLoadBalancer(lbStruct, vipVO, new Completion(chain) {
                     @Override
                     public void success() {
+                        dbf.update(self);
                         bus.reply(msg, reply);
+                        chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
+                        chain.next();
                     }
                 });
             }
@@ -975,17 +973,8 @@ public class LoadBalancerBase {
                             .list();
                 }
 
-                /* TODO: lb only support ipv4 */
-                LoadBalancerVO lbVO = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
-                VipVO vipVO = dbf.findByUuid(lbVO.getVipUuid(), VipVO.class);
-                List<VmNicInventory> nicInvs;
-                if (IPv6NetworkUtils.isIpv6Address(vipVO.getIp())) {
-                    nicInvs = new ArrayList<>();
-                } else {
-                    nicInvs = l3Mgr.filterVmNicByIpVersion(VmNicInventory.valueOf(nics), IPv6Constants.IPv4);
-                }
 
-                reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, nicInvs));
+                reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
             }
         }.execute();
 
@@ -3101,7 +3090,7 @@ public class LoadBalancerBase {
         AttachVipToLoadBalancerMsg amsg = new AttachVipToLoadBalancerMsg();
         amsg.setUuid(msg.getLoadBalancerUuid());
         amsg.setVipUuid(msg.getVipUuid());
-        bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
+        bus.makeLocalServiceId(amsg, LoadBalancerConstants.SERVICE_ID);
 
         bus.send(amsg, new CloudBusCallBack(amsg) {
             @Override
