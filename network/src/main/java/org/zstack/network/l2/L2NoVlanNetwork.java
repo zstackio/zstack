@@ -823,7 +823,7 @@ public class L2NoVlanNetwork implements L2Network {
             HypervisorType hvType = HypervisorType.valueOf(host.getHypervisorType());
             L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
             VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
-            L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType, hostL2ProviderMap.get(host.getUuid()));
+            L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
             ext.delete(getSelfInventory(), host.getUuid(), new Completion(compl){
                 @Override
                 public void success() {
