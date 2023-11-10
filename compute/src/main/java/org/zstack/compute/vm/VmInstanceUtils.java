@@ -37,14 +37,17 @@ public class VmInstanceUtils {
         cmsg.setPlatform(msg.getPlatform());
         cmsg.setGuestOsType(msg.getGuestOsType());
         cmsg.setArchitecture(msg.getArchitecture());
-        cmsg.setVirtio(msg.isVirtio());
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
         cmsg.setPlatform(msg.getPlatform());
         cmsg.setGuestOsType(msg.getGuestOsType());
         cmsg.setArchitecture(msg.getArchitecture());
-        cmsg.setVirtio(msg.isVirtio());
+        if (msg.getVirtio() == null) {
+            cmsg.setVirtio(false);
+        } else {
+            cmsg.setVirtio(msg.isVirtio());
+        }
         cmsg.setDiskAOs(msg.getDiskAOs());
         return cmsg;
     }
