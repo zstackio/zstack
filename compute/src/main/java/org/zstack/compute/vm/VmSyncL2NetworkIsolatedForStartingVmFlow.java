@@ -14,8 +14,11 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.SyncL2NetworkIsolatedOnHostMsg;
+import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.network.l2.L2NetworkIsolatedAttachOnHostMsg;
+import org.zstack.header.network.l2.L2NetworkIsolatedDetachOnHostMsg;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
@@ -54,31 +57,29 @@ public class VmSyncL2NetworkIsolatedForStartingVmFlow implements Flow {
             return;
         }
 
-        List<SyncL2NetworkIsolatedOnHostMsg> smsgList = new ArrayList<>();
+        List<NeedReplyMessage> hmsgList = new ArrayList<>();
         if (spec.getVmInventory().getLastHostUuid() != null &&
                 !Objects.equals(spec.getVmInventory().getLastHostUuid(), spec.getDestHost().getUuid())) {
-            SyncL2NetworkIsolatedOnHostMsg dmsg = new SyncL2NetworkIsolatedOnHostMsg();
-            dmsg.setOperate(SyncL2NetworkIsolatedOnHostMsg.IpsetOperate.MIGRATE);
+            L2NetworkIsolatedDetachOnHostMsg dmsg = new L2NetworkIsolatedDetachOnHostMsg();
             dmsg.setHostUuid(spec.getDestHost().getUuid());
             dmsg.setMigrateHostUuid(spec.getVmInventory().getLastHostUuid());
             dmsg.setIsolatedL2NetworkMacMap(vmNicIsolated);
             bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
-            smsgList.add(dmsg);
+            hmsgList.add(dmsg);
         }
         if (spec.getVmInventory().getLastHostUuid() == null || spec.getVmInventory().getLastHostUuid().isEmpty()) {
-            SyncL2NetworkIsolatedOnHostMsg amsg = new SyncL2NetworkIsolatedOnHostMsg();
-            amsg.setOperate(SyncL2NetworkIsolatedOnHostMsg.IpsetOperate.ATTACH);
+            L2NetworkIsolatedAttachOnHostMsg amsg = new L2NetworkIsolatedAttachOnHostMsg();
             amsg.setHostUuid(spec.getDestHost().getUuid());
             amsg.setIsolatedL2NetworkMacMap(vmNicIsolated);
             bus.makeTargetServiceIdByResourceUuid(amsg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
-            smsgList.add(amsg);
+            hmsgList.add(amsg);
         }
-        if (smsgList.isEmpty()) {
+        if (hmsgList.isEmpty()) {
             trigger.next();
             return;
         }
         List<ErrorCode> errs = new ArrayList<>();
-        new While<>(smsgList).each((msg, wcompl) -> {
+        new While<>(hmsgList).each((msg, wcompl) -> {
             bus.send(msg, new CloudBusCallBack(wcompl) {
                 @Override
                 public void run(MessageReply reply) {

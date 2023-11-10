@@ -277,8 +277,7 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
     }
 
     private void syncIsolatedL2NetworkMacMap(FlowTrigger trigger, String hostUuid, Map<String, List<String>> isolatedL2NetworkMacMap) {
-        SyncL2NetworkIsolatedOnHostMsg smsg = new SyncL2NetworkIsolatedOnHostMsg();
-        smsg.setOperate(SyncL2NetworkIsolatedOnHostMsg.IpsetOperate.SYNC);
+        L2NetworkIsolatedSyncOnHostMsg smsg= new L2NetworkIsolatedSyncOnHostMsg();
         smsg.setHostUuid(hostUuid);
         smsg.setIsolatedL2NetworkMacMap(isolatedL2NetworkMacMap);
         bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, hostUuid);

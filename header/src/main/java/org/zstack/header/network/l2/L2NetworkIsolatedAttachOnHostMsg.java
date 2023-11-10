@@ -7,17 +7,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by boce.wang on 10/27/2023.
+ * Created by boce.wang on 11/10/2023.
  */
-public class SyncL2NetworkIsolatedOnHostMsg extends NeedReplyMessage implements HostMessage {
-
+public class L2NetworkIsolatedAttachOnHostMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
 
     private String migrateHostUuid;
 
     private Map<String, List<String>> isolatedL2NetworkMacMap;
-
-    private IpsetOperate operate;
 
     @Override
     public String getHostUuid() {
@@ -43,17 +40,5 @@ public class SyncL2NetworkIsolatedOnHostMsg extends NeedReplyMessage implements 
 
     public void setIsolatedL2NetworkMacMap(Map<String, List<String>> isolatedL2NetworkMacMap) {
         this.isolatedL2NetworkMacMap = isolatedL2NetworkMacMap;
-    }
-
-    public IpsetOperate getOperate() {
-        return operate;
-    }
-
-    public void setOperate(IpsetOperate operate) {
-        this.operate = operate;
-    }
-
-    public enum IpsetOperate {
-        ATTACH, DETACH, SYNC, MIGRATE
     }
 }

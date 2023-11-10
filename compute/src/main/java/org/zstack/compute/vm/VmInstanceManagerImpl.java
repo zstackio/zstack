@@ -49,7 +49,6 @@ import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
-import org.zstack.header.network.l2.SyncL2NetworkIsolatedOnHostMsg;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
@@ -2594,38 +2593,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             }
         });
-
-        final Map<String, List<String>> vmNicIsolated = new HashMap<>();
-        for (VmNicInventory nic : inv.getVmNics()) {
-            L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nic.getL3NetworkUuid()).find();
-            if (l3NetworkVO.getIsolated()) {
-                vmNicIsolated.compute(l3NetworkVO.getL2NetworkUuid(), (key, macList) -> {
-                    if (macList == null) {
-                        return new ArrayList<>(Collections.singletonList(nic.getMac()));
-                    }
-                    macList.add(nic.getMac());
-                    return macList;
-                });
-            }
-        }
-
-        if (!vmNicIsolated.keySet().isEmpty() && inv.getHostUuid() != null) {
-            // After Migrate
-            SyncL2NetworkIsolatedOnHostMsg smsg = new SyncL2NetworkIsolatedOnHostMsg();
-            smsg.setOperate(SyncL2NetworkIsolatedOnHostMsg.IpsetOperate.MIGRATE);
-            smsg.setHostUuid(inv.getHostUuid());
-            smsg.setMigrateHostUuid(srcHostUuid);
-            smsg.setIsolatedL2NetworkMacMap(vmNicIsolated);
-            bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, inv.getHostUuid());
-            bus.send(smsg, new CloudBusCallBack(null) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(reply.getError().toString());
-                    }
-                }
-            });
-        }
     }
 
     @Override
