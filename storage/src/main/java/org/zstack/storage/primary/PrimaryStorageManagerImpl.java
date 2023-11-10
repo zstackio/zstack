@@ -981,7 +981,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 PrimaryStorageAllocatorStrategyType.valueOf(allocateStrategy));
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
         PrimaryStorageAllocationSpec allocationSpec = new PrimaryStorageAllocationSpec();
-        if (imageSpec != null) {
+        if (imageSpec != null && imageSpec.getInventory() != null) {
             allocationSpec.setImageUuid(imageSpec.getInventory().getUuid());
             Optional.ofNullable(imageSpec.getSelectedBackupStorage())
                     .ifPresent(it -> allocationSpec.setBackupStorageUuid(it.getBackupStorageUuid()));
