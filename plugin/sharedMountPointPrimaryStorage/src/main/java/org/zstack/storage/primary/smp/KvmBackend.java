@@ -14,6 +14,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
@@ -85,6 +86,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class AgentCmd extends KVMAgentCommands.PrimaryStorageCommand {
+        @GrayVersion(value = "5.0.0")
         public String mountPoint;
     }
 
@@ -102,8 +104,11 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class ResizeVolumeCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         private String installPath;
+        @GrayVersion(value = "5.0.0")
         private long size;
+        @GrayVersion(value = "5.0.0")
         private boolean force;
 
         public String getInstallPath() {
@@ -154,7 +159,9 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class ConnectCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String uuid;
+        @GrayVersion(value = "5.0.0")
         public List<String> existUuids;
     }
 
@@ -163,9 +170,13 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class CreateVolumeFromCacheCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String templatePathInCache;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public long virtualSize;
     }
 
@@ -175,8 +186,11 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class CreateVolumeWithBackingCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String templatePathInCache;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
     }
 
@@ -186,15 +200,19 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class CreateFolderCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String installPath;
     }
 
     public static class DeleteBitsCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String path;
+        @GrayVersion(value = "5.0.0")
         public boolean folder = false;
     }
 
     public static class GetSubPathCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String path;
     }
 
@@ -203,7 +221,9 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class CreateTemplateFromVolumeCmd extends AgentCmd implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         public String installPath;
+        @GrayVersion(value = "5.0.0")
         public String volumePath;
     }
 
@@ -213,6 +233,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class EstimateTemplateSizeCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String volumePath;
     }
 
@@ -222,34 +243,50 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class SftpUploadBitsCmd extends AgentCmd implements HasThreadContext{
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String hostname;
+        @GrayVersion(value = "5.0.0")
         public String username;
+        @GrayVersion(value = "5.0.0")
         public String sshKey;
+        @GrayVersion(value = "5.0.0")
         public int sshPort;
     }
 
     public static class SftpDownloadBitsCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String sshKey;
+        @GrayVersion(value = "5.0.0")
         public int sshPort;
+        @GrayVersion(value = "5.0.0")
         public String hostname;
+        @GrayVersion(value = "5.0.0")
         public String username;
+        @GrayVersion(value = "5.0.0")
         public String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageInstallPath;
     }
 
     public static class ReInitImageCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String volumeInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String imageInstallPath;
     }
 
     public static class RevertVolumeFromSnapshotCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String snapshotInstallPath;
     }
 
     public static class ReInitImageRsp extends AgentRsp {
         @Validation
+        @GrayVersion(value = "5.0.0")
         public String newVolumeInstallPath;
     }
 
@@ -262,8 +299,11 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class MergeSnapshotCmd extends AgentCmd implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String snapshotInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String workspaceInstallPath;
     }
 
@@ -273,23 +313,32 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class GetDownloadBitsFromKVMHostProgressCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public List<String> volumePaths;
     }
 
     public static class GetDownloadBitsFromKVMHostProgressRsp extends AgentRsp {
+        @GrayVersion(value = "5.0.0")
         public long totalSize;
     }
 
     public static class OfflineMergeSnapshotCmd extends AgentCmd implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         public String srcPath;
+        @GrayVersion(value = "5.0.0")
         public String destPath;
+        @GrayVersion(value = "5.0.0")
         public boolean fullRebase;
     }
 
     public static class CreateEmptyVolumeCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String installPath;
+        @GrayVersion(value = "5.0.0")
         public long size;
+        @GrayVersion(value = "5.0.0")
         public String name;
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
     }
 
@@ -299,6 +348,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class CheckBitsCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String path;
     }
 
@@ -307,7 +357,9 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class GetVolumeSizeCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
     }
 
@@ -321,24 +373,36 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class DownloadBitsFromKVMHostCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String hostname;
+        @GrayVersion(value = "5.0.0")
         public String username;
+        @GrayVersion(value = "5.0.0")
         public String sshKey;
+        @GrayVersion(value = "5.0.0")
         public int sshPort;
         // it's file path on kvm host actually
+        @GrayVersion(value = "5.0.0")
         public String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public Long bandWidth;
+        @GrayVersion(value = "5.0.0")
         public String identificationCode;
     }
 
     public static class CancelDownloadBitsFromKVMHostCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageInstallPath;
     }
 
     public static class LinkVolumeNewDirCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String srcDir;
+        @GrayVersion(value = "5.0.0")
         public String dstDir;
     }
 
@@ -346,7 +410,9 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class UnlinkBitsCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String installPath;
+        @GrayVersion(value = "5.0.0")
         public boolean onlyLinkedFile = true;
     }
 
@@ -354,6 +420,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class GetQcow2HashValueCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         private String installPath;
 
         public String getInstallPath() {
@@ -378,7 +445,9 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class GetBackingChainCmd extends AgentCmd {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
     }
 
