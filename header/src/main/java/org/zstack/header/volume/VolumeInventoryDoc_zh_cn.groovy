@@ -7,7 +7,7 @@ import java.lang.Boolean
 
 doc {
 
-	title "云盘清单"
+	title "在这里输入结构的名称"
 
 	field {
 		name "uuid"

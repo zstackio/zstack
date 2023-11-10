@@ -2,6 +2,7 @@ package org.zstack.header.volume;
 
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.storage.snapshot.SnapshotMode;
 
 /**
  * Created by david on 10/7/16.
@@ -13,6 +14,15 @@ public class VolumeCreateSnapshotMsg extends NeedReplyMessage implements VolumeM
     private String name;
     private String description;
     private String volumeUuid;
+    private SnapshotMode requiredSnapshotMode = SnapshotMode.AUTO;
+
+    public SnapshotMode getRequiredSnapshotMode() {
+        return requiredSnapshotMode;
+    }
+
+    public void setRequiredSnapshotMode(SnapshotMode requiredSnapshotMode) {
+        this.requiredSnapshotMode = requiredSnapshotMode;
+    }
 
     @Override
     public String getVolumeUuid() {

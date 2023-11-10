@@ -13,6 +13,9 @@ import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.core.timeout.TimeHelper;
+import org.zstack.header.vm.devices.VirtualDeviceInfo;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -28,7 +31,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
@@ -69,8 +71,6 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
-import org.zstack.header.vm.devices.VirtualDeviceInfo;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.*;
@@ -84,6 +84,9 @@ import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
+import org.zstack.resourceconfig.ResourceConfigVO;
+import org.zstack.resourceconfig.ResourceConfigVO_;
+import org.zstack.tag.*;
 import org.zstack.utils.*;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -211,6 +214,7 @@ public class KVMHost extends HostBase implements Host {
     private String attachVolumePath;
     private String detachVolumePath;
     private String vmFstrimPath;
+    private String blockCommitVolumePath;
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
 
@@ -431,6 +435,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.FSTRIM_VM_PATH);
         vmFstrimPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH);
+        blockCommitVolumePath = ub.build().toString();
     }
 
     class Http<T> {
@@ -657,9 +665,226 @@ public class KVMHost extends HostBase implements Host {
             handle((GetHostPowerStatusMsg) msg);
         } else if (msg instanceof FstrimVmMsg) {
             handle((FstrimVmMsg) msg);
+        } else if (msg instanceof CommitVolumeOnHypervisorMsg) {
+            handle((CommitVolumeOnHypervisorMsg) msg);
+        } else if (msg instanceof TakeVmConsoleScreenshotMsg) {
+            handle((TakeVmConsoleScreenshotMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(TakeVmConsoleScreenshotMsg msg) {
+        TakeVmConsoleScreenshotReply reply = new TakeVmConsoleScreenshotReply();
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("take-vm-%s-console-screenshot-on-host-%s", msg.getVmInstanceUuid(), msg.getHostUuid()))
+                .run(completion -> {
+                    takeVmConsoleScreenshot(msg.getVmInstanceUuid(), msg.getHostUuid(), new ReturnValueCompletion<TakeVmConsoleScreenshotRsp>(completion) {
+                        @Override
+                        public void success(TakeVmConsoleScreenshotRsp returnValue) {
+                            completion.success(returnValue.getImageData());
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+                })
+                .done(result -> {
+                    if (result.isSuccess()) {
+                        String returnValue = (String)result.getResult();
+                        reply.setImageData(returnValue);
+                    } else {
+                        reply.setError(result.getErrorCode());
+                    }
+                    bus.reply(msg, reply);
+                })
+        );
+    }
+
+    private void takeVmConsoleScreenshot(String vmInstanceUuid, String hostUuid, ReturnValueCompletion<TakeVmConsoleScreenshotRsp> completion) {
+        TakeVmConsoleScreenshotCmd cmd = new TakeVmConsoleScreenshotCmd();
+        cmd.setVmUuid(vmInstanceUuid);
+
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setPath(KVMConstant.TAKE_VM_CONSOLE_SCREENSHOT_PATH);
+        kmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(kmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                TakeVmConsoleScreenshotRsp rsp = r.toResponse(TakeVmConsoleScreenshotRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(rsp.getError()));
+                } else {
+                    completion.success(r.toResponse(TakeVmConsoleScreenshotRsp.class));
+                }
+            }
+        });
+    }
+
+    private void handle(CommitVolumeOnHypervisorMsg msg) {
+        inQueue().name(String.format("block-commit-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> {
+                    commitVolume(msg);
+                    chain.next();
+                });
+    }
+
+    private void commitVolume(final CommitVolumeOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doCommitVolume(msg, new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return KVMGlobalConfig.HOST_SNAPSHOT_SYNC_LEVEL.value(Integer.class);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("block-commit-volume-on-kvm-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void doCommitVolume(final CommitVolumeOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        checkStateAndStatus();
+        final CommitVolumeOnHypervisorReply reply = new CommitVolumeOnHypervisorReply();
+
+        BlockCommitVolumeCmd cmd = new BlockCommitVolumeCmd();
+        if (msg.getVmUuid() != null) {
+            VmInstanceState state = Q.New(VmInstanceVO.class)
+                    .eq(VmInstanceVO_.uuid, msg.getVmUuid())
+                    .select(VmInstanceVO_.state)
+                    .findValue();
+
+            if (state != VmInstanceState.Running && state != VmInstanceState.Stopped && state != VmInstanceState.Paused) {
+                throw new OperationFailureException(operr("vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), state));
+            }
+        }
+
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
+        cmd.setTop(msg.getSrcPath());
+        cmd.setBase(msg.getDstPath());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("block-commit-for-volume-%s", msg.getVolume().getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("before-block-commit-for-volume-%s", msg.getVolume().getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        extEmitter.beforeCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("do-block-commit-for-volume-%s", msg.getVolume().getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new Http<>(blockCommitVolumePath, cmd, BlockCommitVolumeResponse.class).call(new ReturnValueCompletion<BlockCommitVolumeResponse>(msg, trigger) {
+                            @Override
+                            public void success(BlockCommitVolumeResponse ret) {
+                                if (ret.isSuccess()) {
+                                    if (Objects.equals(ret.getNewVolumeInstallPath(), cmd.getTop())) {
+                                        throw new OperationFailureException(operr("after block commit, new volume path still use %s", ret.getNewVolumeInstallPath()));
+                                    }
+                                } else {
+                                    ErrorCode err = operr("operation error, because:%s", ret.getError());
+                                    extEmitter.failedToCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
+                                    trigger.fail(err);
+                                    return;
+                                }
+
+                                reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
+                                reply.setSize(ret.getSize());
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                extEmitter.failedToCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, null, errorCode);
+                                reply.setError(errorCode);
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("after-block-commit-for-volume-%s", msg.getVolume().getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        extEmitter.afterCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, reply, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handle(GetHostPowerStatusMsg msg) {
@@ -2441,14 +2666,14 @@ public class KVMHost extends HostBase implements Host {
 
             cmd.setOnline(vmState != VmInstanceState.Stopped);
             cmd.setVmUuid(msg.getVmUuid());
-            cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
         }
 
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
         cmd.setVolumeUuid(msg.getVolume().getUuid());
-
+        cmd.setTimeout(timeoutManager.getTimeout());
+        cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
         completeTakeSnapshotCmd(msg, cmd);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -2593,7 +2818,7 @@ public class KVMHost extends HostBase implements Host {
                     public void run(final FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, MIGRATE_VM_STAGE);
 
-                        boolean autoConverage = KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.value(Boolean.class);
+                        boolean autoConverage = rcf.getResourceConfigValue(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE, vmUuid, Boolean.class);
                         if (!autoConverage) {
                             autoConverage = s.strategy != null && s.strategy.equals("auto-converge");
                         }
@@ -3440,6 +3665,7 @@ public class KVMHost extends HostBase implements Host {
                 if (vm.getImageUuid() != null && dbf.isExist(vm.getImageUuid(), ImageVO.class)) {
                     msg.setImage(ImageInventory.valueOf(dbf.findByUuid(vm.getImageUuid(), ImageVO.class)));
                 }
+                msg.setAllowNoL3Networks(true);
                 msg.setHostUuid(self.getUuid());
                 msg.setFullAllocate(false);
                 msg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(vm.getVmNics())));
@@ -3615,7 +3841,18 @@ public class KVMHost extends HostBase implements Host {
         VHostAddOn vHostAddOn = new VHostAddOn();
 
         if (to.getDriverType().equals(nicManager.getDefaultPVNicDriver())) {
-            vHostAddOn.setQueueNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM, nic.getVmInstanceUuid(), Integer.class));
+            int nicMultiQueueNum = 1;
+
+            List<String> numInStrings = Q.New(ResourceConfigVO.class).eq(ResourceConfigVO_.name, VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getName())
+                    .eq(ResourceConfigVO_.resourceUuid, nic.getUuid())
+                    .select(ResourceConfigVO_.value).listValues();
+            if (!numInStrings.isEmpty()) {
+                nicMultiQueueNum = TypeUtils.stringToValue(numInStrings.get(0), Integer.class);
+            } else {
+                nicMultiQueueNum =  rcf.getResourceConfigValue(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM, nic.getVmInstanceUuid(), Integer.class);
+            }
+
+            vHostAddOn.setQueueNum(nicMultiQueueNum);
         } else {
             vHostAddOn.setQueueNum(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.defaultValue(Integer.class));
         }
@@ -3691,15 +3928,20 @@ public class KVMHost extends HostBase implements Host {
             cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
         }
 
-        if (VmHardwareSystemTags.CPU_SOCKETS.hasTag(spec.getVmInventory().getUuid())) {
+        if (VmHardwareSystemTags.CPU_SOCKETS.hasTag(spec.getVmInventory().getUuid())
+                || VmHardwareSystemTags.CPU_CORES.hasTag(spec.getVmInventory().getUuid())
+                || VmHardwareSystemTags.CPU_THREADS.hasTag(spec.getVmInventory().getUuid())) {
             String sockets = VmHardwareSystemTags.CPU_SOCKETS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
             String cores = VmHardwareSystemTags.CPU_CORES.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_CORES_TOKEN);
             String threads = VmHardwareSystemTags.CPU_THREADS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_THREADS_TOKEN);
 
-            cmd.setSocketNum(Integer.parseInt(sockets));
-            cmd.setCpuOnSocket(Integer.parseInt(cores));
-            cmd.setThreadsPerCore(Integer.parseInt(threads));
+            CpuTopology cpuTopology = new CpuTopology(cmd.getMaxVcpuNum() == 0 ? cpuNum : cmd.getMaxVcpuNum(), sockets, cores, threads);
+            cpuTopology.calculateValidTopology(true);
+            cmd.setSocketNum(cpuTopology.getCpuSockets());
+            cmd.setCpuOnSocket(cpuTopology.getCpuCores());
+            cmd.setThreadsPerCore(cpuTopology.getCpuThreads());
 
+            // change max vcpu num to the real vcpu num
             if (cmd.isUseNuma()) {
                 cmd.setMaxVcpuNum(cmd.getSocketNum() * cmd.getCpuOnSocket() * cmd.getThreadsPerCore());
             }
@@ -3710,7 +3952,6 @@ public class KVMHost extends HostBase implements Host {
         // cpu topology is hard-coded in agent, so we only set max vcpu num here
         // topology will be set in agent
         if (cmd.isUseNuma()) {
-            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
             return;
         }
 
@@ -3777,7 +4018,7 @@ public class KVMHost extends HostBase implements Host {
         }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
-        cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
+        cmd.setSpiceStreamingMode(rcf.getResourceConfigValue(VmGlobalConfig.VM_SPICE_STREAMING_MODE, spec.getVmInventory().getUuid(), String.class));
 
         boolean emulateHyperV = false;
         if (ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio)
@@ -3832,7 +4073,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setUseVirtio(VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid()));
         rootVolume.setUseVirtioSCSI(ImagePlatform.Other.toString().equals(platform) ? false : KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
-        rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
+        rootVolume.setCacheMode(rcf.getResourceConfigValue(KVMGlobalConfig.LIBVIRT_CACHE_MODE, spec.getDestRootVolume().getUuid(), String.class));
 
         String vmCpuMode = rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, spec.getVmInventory().getUuid(), String.class);
         if (vmCpuMode.equals(KVMConstant.CPU_MODE_NONE) || vmCpuMode.equals(KVMConstant.CPU_MODE_HOST_MODEL) || vmCpuMode.equals(KVMConstant.CPU_MODE_HOST_PASSTHROUGH)) {
@@ -3908,7 +4149,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUsbRedirect(spec.isUsbRedirect());
         cmd.setEnableSecurityElement(spec.isEnableSecurityElement());
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
-        cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
+        cmd.setVmPortOff(rcf.getResourceConfigValue(VmGlobalConfig.VM_PORT_OFF, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setConsoleMode("vnc");
         cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
         cmd.setConsoleLogToFile(rcf.getResourceConfigValue(KVMGlobalConfig.REDIRECT_CONSOLE_LOG_TO_FILE, spec.getVmInventory().getUuid(), Boolean.class));

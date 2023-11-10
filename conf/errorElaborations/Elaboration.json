@@ -68,7 +68,7 @@
     "code": "1002",
     "method": "regex",
     "regex": ".*Failed to download image\\[name:.*] on all backup storage.*",
-    "message_cn": "在镜像服务器上下载镜像失败。",
+    "message_cn": "在镜像存储上下载镜像失败。",
     "message_en": "Failed to download image on backup storage [%2$s]."
   },
   {
@@ -76,7 +76,7 @@
     "code": "1003",
     "method": "regex",
     "regex": ".*More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage \\[hostname:.*] existing. The BackupStorage type to be added is ImageStoreBackupStorage.*",
-    "message_cn": "同一 IP 只能添加成为一个镜像服务器。目前已经存在一个 Sftp 类型镜像服务器。",
+    "message_cn": "同一 IP 只能添加成为一个镜像存储。目前已经存在一个 Sftp 类型镜像存储。",
     "message_en": "An IP can be used to add only one backup storage. An SFTP backup storage already exists."
   },
   {
@@ -84,7 +84,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "System can't find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),.*",
-    "message_cn": "无法找到镜像仓库服务器，请勿将镜像服务器的地址设置为 localhost (127.*.*.*)。",
+    "message_cn": "无法找到镜像仓库服务器，请勿将镜像存储的地址设置为 localhost (127.*.*.*)。",
     "message_en": "Could not find ImageStore backup storage. Do not use the localhost (127.*.*.*) as the IP of an ImageStore backup storage."
   },
   {
@@ -92,7 +92,7 @@
     "code": "1005",
     "method": "regex",
     "regex": "failed to download bits from the imagestore backup storage\\[hostname:.*, path:.*] to the local primary storage\\[uuid:.*, path:.*].*",
-    "message_cn": "无法从镜像仓库服务器 [主机名：%2$s，路径：%3$s] 下载资源到本地主存储 [uuid：%4$s，路径：%5$s]。",
+    "message_cn": "无法从镜像仓库服务器 [主机名：%2$s，路径：%3$s] 下载资源到本地存储 [uuid：%4$s，路径：%5$s]。",
     "message_en": "Could not download resources from the ImageStore backup storage [hostname: %2$s, path: %3$s] to the local primary storage [uuid: %4$s, path: %5$s]."
   },
   {
@@ -100,7 +100,7 @@
     "code": "1006",
     "method": "regex",
     "regex": ".*, because:can not find lv .* after create, lvcreate return: .*, , WARNING: Not using lvmetad because config setting use_lvmetad=0.*",
-    "message_cn": "在存储上创建云盘后找不到逻辑卷 [WARNING: Not using lvmetad because config setting use_lvmetad=0]。",
+    "message_cn": "在存储上创建硬盘后找不到逻辑卷 [WARNING: Not using lvmetad because config setting use_lvmetad=0]。",
     "message_en": "Failed to locate logical volume after creating volume. WARNING: Not using lvmetad because config setting use_lvmetad=0."
   },
   {
@@ -116,7 +116,7 @@
     "code": "1008",
     "method": "regex",
     "regex": ".*, because:cannot find pool\\[.*] in the ceph cluster, you must create it manually",
-    "message_cn": "未能在 Ceph 集群中找到存储池 [%1$s]，您需要先手动创建。",
+    "message_cn": "未能在 分布式存储 集群中找到存储池 [%1$s]，您需要先手动创建。",
     "message_en": "Could not find pool [%1$s] in Ceph cluster. You need to create one manually."
   },
   {
@@ -124,7 +124,7 @@
     "code": "1009",
     "method": "regex",
     "regex": "failed to download image[url: .*] on backup storage[uuid: .*], because: .*",
-    "message_cn": "在镜像服务器上下载镜像失败。",
+    "message_cn": "在镜像存储上下载镜像失败。",
     "message_en": "Failed to download image on backup storage [%2$s]."
   },
   {
@@ -132,7 +132,7 @@
     "code": "1000",
     "method": "regex",
     "regex": ".*cannot add ceph primary storage, there has been some ceph primary storage using mon\\[hostnames:.*].*",
-    "message_cn": "无法添加 Ceph 主存储，监控节点 [%1$s] 已被占用。",
+    "message_cn": "无法添加 分布式存储，监控节点 [%1$s] 已被占用。",
     "message_en": "Could not add Ceph primary storage. The mon [%1$s] is occupied."
   },
   {
@@ -140,7 +140,7 @@
     "code": "1001",
     "method": "regex",
     "regex": "cannot find any Connected ceph mon for the primary storage.*",
-    "message_cn": "无法为 Ceph 主存储找到一个已连接的监控节点。",
+    "message_cn": "无法为 分布式存储找到一个已连接的监控节点。",
     "message_en": "Could not find any connected Ceph mon for the Ceph primary storage."
   },
   {
@@ -148,7 +148,7 @@
     "code": "1002",
     "method": "regex",
     "regex": "operation error, because:The ceph storage type to be added does not support auto initialize pool, please create it manually",
-    "message_cn": "要添加的 Ceph 存储类型不支持自动创建存储池，请手动创建。",
+    "message_cn": "要添加的 分布式存储类型不支持自动创建存储池，请手动创建。",
     "message_en": "The Ceph storage type to be added does not support auto creation of storage pools. Please create one manually."
   },
   {
@@ -156,7 +156,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "there is another CEPH primary storage.* with the same FSID.*, you cannot add the same CEPH setup as two different primary storage",
-    "message_cn": "已经存在一个 FSID 为 [%3$s] 的 Ceph 主存储，您不能将同一个 Ceph 集群设置为两个不同的主存储。",
+    "message_cn": "已经存在一个 FSID 为 [%3$s] 的 分布式存储，您不能将同一个 分布式存储 集群设置为两个不同的数据存储。",
     "message_en": "A Ceph primary storage with the FSID [%3$s] already exists. You could not add a Ceph cluster as two different primary storages."
   },
   {
@@ -252,7 +252,7 @@
     "code": "1000",
     "method": "distance",
     "regex": "host is connecting, ping failed",
-    "message_cn": "物理机正在连接，无法进行 ping 操作。",
+    "message_cn": "主机正在连接，无法进行 ping 操作。",
     "message_en": "Could not ping the host, because the host is connecting."
   },
   {
@@ -268,7 +268,7 @@
     "code": "1002",
     "method": "distance",
     "regex": "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation",
-    "message_cn": "物理机 [%2$s] 正处于 [%3$s] 状态，当前状态不允许进行该操作。",
+    "message_cn": "主机 [%2$s] 正处于 [%3$s] 状态，当前状态不允许进行该操作。",
     "message_en": "Could not perform this operation, because host [%2$s] is in state of [%3$s]."
   },
   {
@@ -276,7 +276,7 @@
     "code": "1003",
     "method": "distance",
     "regex": "unable to do the operation because the host is in status of Disconnected",
-    "message_cn": "物理机正处于己失联 [Disconnected] 状态，物理机不能进行该操作。",
+    "message_cn": "主机正处于己失联 [Disconnected] 状态，主机不能进行该操作。",
     "message_en": "Could not perform this operation, because the host is in state of [Disconnected]."
   },
   {
@@ -284,7 +284,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "unable to connect to KVM\\[ip:.*, username:.*, sshPort:.*] to check the management node connectivity,please check if username/password is wrong;.*",
-    "message_cn": "无法连接物理机，可能由于物理机的 ssh 端口与管理节点不通，或者 ssh 端口的用户名密码有误。",
+    "message_cn": "无法连接主机，可能由于主机的 ssh 端口与管理节点不通，或者 ssh 端口的用户名密码有误。",
     "message_en": "Could not connect to KVM Host. Possible reason: The SSH port cannot reach the management node, or the SSH port username or password is incorrect."
   },
   {
@@ -300,7 +300,7 @@
     "code": "1006",
     "method": "regex",
     "regex": "can not update host\\[uuid:.*]which is connecting or creating, please wait.*",
-    "message_cn": "无法更新正在连接中的物理机 [uuid：%1$s] 信息，请稍候。",
+    "message_cn": "无法更新正在连接中的主机 [uuid：%1$s] 信息，请稍候。",
     "message_en": "Could not update information about host [uuid: %1$s] that is connecting. Please wait."
   },
   {
@@ -308,7 +308,7 @@
     "code": "1007",
     "method": "regex",
     "regex": ".*the host\\[.*] ssh port\\[.*] not open after [0-9]* seconds, connect timeout.*",
-    "message_cn": "物理机 [%1$s] 的 ssh 端口 [%2$s] 在 %3$s 秒内未开放，连接超时。",
+    "message_cn": "主机 [%1$s] 的 ssh 端口 [%2$s] 在 %3$s 秒内未开放，连接超时。",
     "message_en": "Connection timeout. The SSH port [%2$s] of host [%1$s] is not open after %3$s seconds."
   },
   {
@@ -316,7 +316,7 @@
     "code": "1008",
     "method": "regex",
     "regex": ".*failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because Traceback .*exceeds max disk limit.*",
-    "message_cn": "在物理机上启动云主机失败，因为挂载的云盘数量超过上限。",
+    "message_cn": "在主机上启动虚拟机失败，因为挂载的硬盘数量超过上限。",
     "message_en": "Failed to start VM on KVM host, because the number of attached volumes exceeds the upper limit."
   },
   {
@@ -324,7 +324,7 @@
     "code": "1009",
     "method": "regex",
     "regex": ".*can not update host\\[uuid:.*]which is connecting or creating, please wait.*",
-    "message_cn": "无法更新正在连接或创建的物理机 [uuid：%1$s] 状态，请稍候。",
+    "message_cn": "无法更新正在连接或创建的主机 [uuid：%1$s] 状态，请稍候。",
     "message_en": "Could not update host [uuid: %1$s] that is being connected or created. Please wait."
   },
   {
@@ -332,7 +332,7 @@
     "code": "1010",
     "method": "regex",
     "regex": ".*failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because No enough physical memory for guest.*",
-    "message_cn": "在物理机上启动云主机失败，因为物理机已经没有足够的物理内存可供虚拟机使用。",
+    "message_cn": "在主机上启动虚拟机失败，因为主机已经没有足够的物理内存可供虚拟机使用。",
     "message_en": "Failed to start VM on KVM host, because host does not have enough physical memory for VM."
   },
   {
@@ -340,7 +340,7 @@
     "code": "1011",
     "method": "regex",
     "regex": ".*connection error for KVM host\\[uuid:.*, ip:.*].*",
-    "message_cn": "物理机 [uuid：%1$s，ip：%2$s] 连接错误。",
+    "message_cn": "主机 [uuid：%1$s，ip：%2$s] 连接错误。",
     "message_en": "Connection error for KVM host [uuid: %1$s, ip: %2$s]."
   },
   {
@@ -348,7 +348,7 @@
     "code": "1012",
     "method": "regex",
     "regex": ".*host \\[uuid:.*] cannot be added to cluster \\[uuid:.*] because qemu/libvirt version does not match.*",
-    "message_cn": "由于 qemu/libvirt 版本不匹配，无法将物理机添加至集群。",
+    "message_cn": "由于 qemu/libvirt 版本不匹配，无法将主机添加至集群。",
     "message_en": "Could not add host to cluster, because qemu/libvirt version does not match."
   },
   {
@@ -364,7 +364,7 @@
     "code": "1014",
     "method": "regex",
     "regex": "the KVM host\\[.*] cannot access the management node's callback url. It seems that the KVM host cannot reach the management IP.*",
-    "message_cn": "KVM 物理机 [ip：%1$s] 无法访问管理节点的回调地址。",
+    "message_cn": "KVM 主机 [ip：%1$s] 无法访问管理节点的回调地址。",
     "message_en": "The KVM host [ip: %1$s] cannot access the management callback URL."
   },
   {
@@ -372,7 +372,7 @@
     "code": "1015",
     "method": "regex",
     "regex": ".*the host' ssh port\\[.*] not open after .* seconds, connect timeout.*",
-    "message_cn": "物理机 ssh 端口连接超时。",
+    "message_cn": "主机 ssh 端口连接超时。",
     "message_en": "Host SSH port connection timeout."
   },
   {
@@ -380,7 +380,7 @@
     "code": "1016",
     "method": "regex",
     "regex": ".*No Host state is Enabled, Please check the availability of the host.*",
-    "message_cn": "没有处于可用状态的物理机。",
+    "message_cn": "没有处于可用状态的主机。",
     "message_en": "No hosts with the Enabled state available."
   },
   {
@@ -388,7 +388,7 @@
     "code": "1017",
     "method": "regex",
     "regex": ".*failed to check physical network interfaces\\[names :.*] on kvm host\\[uuid:.*, ip:.*",
-    "message_cn": "未能在 KVM 物理机 [uuid：%2$s，ip：%3$s] 上找到物理网络接口 [names：%1$s]。",
+    "message_cn": "未能在 KVM 主机 [uuid：%2$s，ip：%3$s] 上找到物理网络接口 [names：%1$s]。",
     "message_en": "No physical network interface [names: %1$s] found on KVM host [uuid: %2$s, ip: %3$s]."
   },
   {
@@ -396,7 +396,7 @@
     "code": "1018",
     "method": "regex",
     "regex": ".*field\\[hostname] cannot be an empty string",
-    "message_cn": "物理机名称不能为空。",
+    "message_cn": "主机名称不能为空。",
     "message_en": "Hostname could not be null."
   },
   {
@@ -404,7 +404,7 @@
     "code": "1019",
     "method": "regex",
     "regex": "unable to resume vm.*on kvm host.*failed to resume vm ,timeout.*",
-    "message_cn": "恢复云主机运行超时。",
+    "message_cn": "恢复虚拟机运行超时。",
     "message_en": "VM resume timeout."
   },
   {
@@ -412,7 +412,7 @@
     "code": "1020",
     "method": "regex",
     "regex": "failed to start vm\\[.*] on kvm host.*KvmError: vm\\[.*] is already running.*",
-    "message_cn": "无法启动云主机 [名称：%2$s，uuid：%1$s]，因为它已在运行。",
+    "message_cn": "无法启动虚拟机 [名称：%2$s，uuid：%1$s]，因为它已在运行。",
     "message_en": "Failed to start VM [name: %2$s, uuid: %1$s], because it is already running."
   },
   {
@@ -420,15 +420,15 @@
     "code": "1021",
     "method": "regex",
     "regex": "host\\[.*] capacity is not enough to offer cpu\\[[0-9]], memory\\[[0-9] bytes]",
-    "message_cn": "物理机无法提供足够的资源 [CPU：%1$s，内存：%2$s 字节]。",
-    "message_en": "Host could not provide enough resources [CPU: %1$s, memory: %2$s bytes]."
+    "message_cn": "主机无法提供足够的资源 [CPU：%1$s，内存：%2$s 字节]。",
+    "message_en": "Host could not provide enough resources [CPU: %2$s, memory: %3$s bytes]."
   },
   {
     "category": "HOST",
     "code": "1022",
     "method": "regex",
     "regex": "the local primary storage has no hosts with enough disk capacity.*required by the vm.*",
-    "message_cn": "没有物理机能为云主机 [uuid：%2$s] 提供所请求的磁盘空间 [%1$s 字节]。",
+    "message_cn": "没有主机能为虚拟机 [uuid：%2$s] 提供所请求的磁盘空间 [%1$s 字节]。",
     "message_en": "Could not find hosts with enough disk capacity [%1$s bytes] required by VM [uuid: %2$s]."
   },
   {
@@ -436,7 +436,7 @@
     "code": "1023",
     "method": "regex",
     "regex": ".*change kernel module kvm_intel status to present failed  error: modprobe: ERROR: could not insert 'kvm_intel': Operation not supported.*",
-    "message_cn": "物理机未加载 kvm_intel（虚拟化）模块，无法执行当前操作。",
+    "message_cn": "主机未加载 kvm_intel（虚拟化）模块，无法执行当前操作。",
     "message_en": "Could not perform this operation, because the kvm_intel module is not attached to hosts."
   },
   {
@@ -444,7 +444,7 @@
     "code": "1024",
     "method": "regex",
     "regex": "unable to connect to KVM\\[ip:.*, username:.*, sshPort:.*] to check the management node connectivity,.*",
-    "message_cn": "无法登陆到 KVM 物理机 [ip：%1$s，sshPort：%3$s] 上检测物理机到管理节点的连通性。",
+    "message_cn": "无法登陆到 KVM 主机 [ip：%1$s，sshPort：%3$s] 上检测主机到管理节点的连通性。",
     "message_en": "Cloud not connect to KVM host [ip: %1$s, sshPort: %3$s] to check the connectivity between the host and the management node."
   },
   {
@@ -452,7 +452,7 @@
     "code": "1025",
     "method": "regex",
     "regex": "The host\\[uuid:.*]'s available memory capacity\\[.*] is lower than the reserved capacity\\[.*]",
-    "message_cn": "物理机 [uuid：%1$s] 的可用内存容量 [%2$s] 低于预留容量 [%3$s]。",
+    "message_cn": "主机 [uuid：%1$s] 的可用内存容量 [%2$s] 低于预留容量 [%3$s]。",
     "message_en": "The available memory capacity [%2$s] of host [uuid: %1$s] is lower than the reserved capacity [%3$s]."
   },
   {
@@ -468,7 +468,7 @@
     "code": "1027",
     "method": "regex",
     "regex": ".*, because:.*SSH Error: ssh: connect to host .* port .*: No route to host.*",
-    "message_cn": "找不到访问物理机的路由。",
+    "message_cn": "找不到访问主机的路由。",
     "message_en": "Could not find the route to host."
   },
   {
@@ -484,7 +484,7 @@
     "code": "1029",
     "method": "regex",
     "regex": "Unable to reconnect host",
-    "message_cn": "无法重连物理机。",
+    "message_cn": "无法重连主机。",
     "message_en": "Could not reconnect host."
   },
   {
@@ -492,7 +492,7 @@
     "code": "1030",
     "method": "regex",
     "regex": "This host is disconnected, cannot perform the required operation",
-    "message_cn": "物理机己失联，不能执行相应操作。",
+    "message_cn": "主机己失联，不能执行相应操作。",
     "message_en": "Could not perform this operation, because the host is disconnected."
   },
   {
@@ -500,7 +500,7 @@
     "code": "1031",
     "method": "regex",
     "regex": ".*failed to migrate vm\\[uuid:.*] from kvm host\\[uuid:.*, ip:.*] to dest host\\[ip:.*].*.No enough physical memory for guest.*",
-    "message_cn": "在物理机上迁移云主机失败，因为物理机已经没有足够的物理内存可供虚拟机使用。",
+    "message_cn": "在主机上迁移虚拟机失败，因为主机已经没有足够的物理内存可供虚拟机使用。",
     "message_en": "Failed to migrate VM on KVM host, because host does not have enough physical memory for VM."
   },
   {
@@ -588,7 +588,7 @@
     "code": "1000",
     "method": "regex",
     "regex": ".*cannot allocate vni\\[.*] in l2Network\\[uuid:.*], out of vni range",
-    "message_cn": "不能在二层网络 [uuid：%2$s] 中创建 vni [%1$s]，vni 超出范围。",
+    "message_cn": "不能在分布式交换机 [uuid：%2$s] 中创建 vni [%1$s]，vni 超出范围。",
     "message_en": "Could not create VNI range [%1$s] in L2 network [uuid: %2$s]. The VNI is out of range."
   },
   {
@@ -612,7 +612,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "There has been a l2Network\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*]. Failed to attach l2Network\\[uuid:.*]",
-    "message_cn": "二层网络挂载失败，物理网络接口设备 [%4$s] 已经被二层网络 [%2$s] 使用并挂载到集群上。",
+    "message_cn": "分布式交换机挂载失败，物理网络接口设备 [%4$s] 已经被分布式交换机 [%2$s] 使用并挂载到集群上。",
     "message_en": "Failed to attach L2 network, because the physical interface [%4$s] is already attached to the cluster by L2 network [%2$s]."
   },
   {
@@ -620,7 +620,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "failed to check physical network interfaces\\[names.*] on kvm host\\[uuid:.*, ip:.*]",
-    "message_cn": "二层网络挂载失败，未能在 KVM 物理机上找到 [%1$s] 这个物理网络接口。",
+    "message_cn": "分布式交换机挂载失败，未能在 KVM 主机上找到 [%1$s] 这个物理网络接口。",
     "message_en": "Failed to attach L2 network, because the physical network interfaces [%1$s] not found on KVM host."
   },
   {
@@ -628,7 +628,7 @@
     "code": "1005",
     "method": "regex",
     "regex": ".*failed to check cidr\\[.*] for l2VxlanNetworkPool\\[uuid:.*, name:.*] .*, can not find qualify interface .*",
-    "message_cn": "未能在 KVM 物理机上设置 cidr [%1$s] 上的 L2 VXLAN 网络池 [name：%3$s]，因为无法找到 cidr [%1$s] 中的可用接口。",
+    "message_cn": "未能在 KVM 主机上设置 cidr [%1$s] 上的 L2 VXLAN 网络池 [name：%3$s]，因为无法找到 cidr [%1$s] 中的可用接口。",
     "message_en": "Failed to check l2VxlanNetworkPool [name: %3$s] for CIDR [%1$s], because no qualified interface for CIDR [%1$s] is found."
   },
   {
@@ -644,7 +644,7 @@
     "code": "1001",
     "method": "regex",
     "regex": "there is already a vip\\[.*] on l3Network\\[uuid:.*]",
-    "message_cn": "在三层网络 [uuid：%2$s] 中，已经存在一个地址为 [%1$s] 的虚拟 IP。",
+    "message_cn": "在分布式端口组 [uuid：%2$s] 中，已经存在一个地址为 [%1$s] 的虚拟 IP。",
     "message_en": "A VIP [%1$s] already exists in L3 network [uuid: %2$s]."
   },
   {
@@ -660,7 +660,7 @@
     "code": "1003",
     "method": "regex",
     "regex": ".*unable to attach a L3 network to the vm\\[uuid:.*], Unable to create tap device vnic.*: Device or resource busy.*",
-    "message_cn": "无法将三层网络连接到云主机，因为无法创建 tap 设备：设备或资源忙。请重试或者手动删除网络接口 [%6$s]。",
+    "message_cn": "无法将分布式端口组连接到虚拟机，因为无法创建 tap 设备：设备或资源忙。请重试或者手动删除网络接口 [%6$s]。",
     "message_en": "Could not attach L3 network to VM or create tap device: Device or resource busy. Please try again or delete device [%6$s] manually."
   },
   {
@@ -668,7 +668,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "multiple CIDR on the same L3 network is not allowed. There has been a IP range.* is not in the CIDR with the existing one",
-    "message_cn": "同一三层网络上不能加载多个 CIDR。",
+    "message_cn": "同一分布式端口组上不能加载多个 CIDR。",
     "message_en": "Multiple CIDRs on the same L3 network is not allowed."
   },
   {
@@ -692,7 +692,7 @@
     "code": "1007",
     "method": "regex",
     "regex": ".*IP allocator strategy\\[RandomIpAllocatorStrategy] failed, because no ip is available in this l3Network.*",
-    "message_cn": "分配 IP 失败，三层网络 [name：%1$s，uuid：%2$s] 中已经没有可用的 IP 地址。",
+    "message_cn": "分配 IP 失败，分布式端口组 [name：%1$s，uuid：%2$s] 中已经没有可用的 IP 地址。",
     "message_en": "Failed to allocate IP. No available IPs in L3 network [name: %1$s, uuid: %2$s]."
   },
   {
@@ -804,7 +804,7 @@
     "code": "1000",
     "method": "distance",
     "regex": "failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because unable to detach the volume from the vm;it's still attached after 5 seconds",
-    "message_cn": "由于云主机操作系统限制可能会导致卸载云盘失败，请尝试对云主机关机后再次卸载。",
+    "message_cn": "由于虚拟机操作系统限制可能会导致卸载硬盘失败，请尝试对虚拟机关机后再次卸载。",
     "message_en": "Detaching volume may fail due to limitations of the VM operating system. Please try again after VM shutdown."
   },
   {
@@ -812,7 +812,7 @@
     "code": "1001",
     "method": "regex",
     "regex": ".*the physical capacity usage of the host.* has exceeded the threshold.*",
-    "message_cn": "物理机 [uuid：%1$s] 的己用容量超过了阈值 [%2$s]。",
+    "message_cn": "主机 [uuid：%1$s] 的己用容量超过了阈值 [%2$s]。",
     "message_en": "The physical capacity usage of host [uuid: %1$s] has exceeded the threshold [%2$s]."
   },
   {
@@ -820,7 +820,7 @@
     "code": "1002",
     "method": "regex",
     "regex": "required local primary storage.* cannot satisfy conditions.*, or hosts providing the primary storage don't satisfy conditions\\[.*, size \u003e .*]",
-    "message_cn": "本地主存储的状态不是 Enabled/Connected，或者主存储内的物理机状态不满足条件：[状态为 Enabled/Connected，存储容量 \u003e %6$s 字节]。",
+    "message_cn": "本地存储的状态不是 Enabled/Connected，或者数据存储内的主机状态不满足条件：[状态为 Enabled/Connected，存储容量 \u003e %6$s 字节]。",
     "message_en": "Status/State of the local primary storage is not Enabled/Connected. Or hosts providing the primary storage do not satisfy conditions: [Status/State: Enabled/Connected, storage capacity: \u003e %6$s bytes]."
   },
   {
@@ -828,7 +828,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "the required host.*, size \u003e .* or doesn't belong to a local primary storage satisfying conditions.* or its cluster doesn't attach to any local primary storage",
-    "message_cn": "所需要的物理机都不满足以下条件：1 状态为 Enabled/Connected，并且存储容量 \u003e %4$s 字节； 2 所属于的本地主存储状态为 Enabled/Connected； 3 有符合条件的本地主存储加载到物理机所属的集群上。",
+    "message_cn": "所需要的主机都不满足以下条件：1 状态为 Enabled/Connected，并且存储容量 \u003e %4$s 字节； 2 所属于的本地存储状态为 Enabled/Connected； 3 有符合条件的本地存储加载到主机所属的集群上。",
     "message_en": "The required host does not meet the following requirements: 1 Status/State: Enabled/Connected, size: \u003e %4$s bytes. 2 Status/State of the local primary storages: Enabled/Connected. 3 The cluster is attached to a local primary storage."
   },
   {
@@ -836,7 +836,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "no local primary storage in zone.* or contain hosts satisfying conditions.*",
-    "message_cn": "该区域内所有的本地主存储都不满足以下条件：1 状态为 Enabled/Connected；2 没有包含任何状态为 Enabled/Connected，并且存储容量 \u003e %6$s 字节的物理机。",
+    "message_cn": "该数据中心内所有的本地存储都不满足以下条件：1 状态为 Enabled/Connected；2 没有包含任何状态为 Enabled/Connected，并且存储容量 \u003e %6$s 字节的主机。",
     "message_en": "No local primary storage in the zone meets the following requirements: 1 Status/State: Enabled/Connected. 2 The zone has hosts with the status/state Enabled/Connected and storage capacity \u003e %6$s bytes."
   },
   {
@@ -844,7 +844,7 @@
     "code": "1005",
     "method": "regex",
     "regex": "no local primary storage can satisfy conditions.* or contain hosts satisfying conditions.*, size .*",
-    "message_cn": "所有的本地主存储都不满足以下条件：1 状态为 Enabled/Connected；2 没有包含任何状态为 Enabled/Connected，并且存储容量 \u003e %6$s 字节的物理机。",
+    "message_cn": "所有的本地存储都不满足以下条件：1 状态为 Enabled/Connected；2 没有包含任何状态为 Enabled/Connected，并且存储容量 \u003e %6$s 字节的主机。",
     "message_en": "No local primary storage meets the following requirements: 1 Status/State: Enabled/Connected. 2 The zone has hosts with the status/state Enabled/Connected and storage capacity \u003e %6$s bytes."
   },
   {
@@ -852,7 +852,7 @@
     "code": "1006",
     "method": "regex",
     "regex": "cannot find any qualified primary storage, errors are.*physical capacity usage has exceeded the threshold.*",
-    "message_cn": "找不到符合条件的主存储，主存储的己用物理容量超过了所设阈值。",
+    "message_cn": "找不到符合条件的数据存储，数据存储的己用物理容量超过了所设阈值。",
     "message_en": "Could not find any qualified primary storage. Physical capacity usage has exceeded the threshold."
   },
   {
@@ -860,7 +860,7 @@
     "code": "1007",
     "method": "regex",
     "regex": "cannot find any qualified primary storage, errors are.*it has no space.*",
-    "message_cn": "找不到符合条件的主存储，主存储己经没有空间分配所需的容量。",
+    "message_cn": "找不到符合条件的数据存储，数据存储己经没有空间分配所需的容量。",
     "message_en": "Could not find any qualified primary storage. No space available."
   },
   {
@@ -868,7 +868,7 @@
     "code": "1008",
     "method": "regex",
     "regex": "[0-9]* is Integer overflow",
-    "message_cn": "找不到符合条件的主存储，主存储己经没有空间分配所需的容量。",
+    "message_cn": "找不到符合条件的数据存储，数据存储己经没有空间分配所需的容量。",
     "message_en": "Could not find any qualified primary storage. No space available."
   },
   {
@@ -876,7 +876,7 @@
     "code": "1009",
     "method": "regex",
     "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*] to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*",
-    "message_cn": "无法将主机上的 SharedBlock 主存储加载到集群。",
+    "message_cn": "无法将主机上的 SharedBlock 数据存储加载到集群。",
     "message_en": "Could not attach SharedBlock storage to cluster."
   },
   {
@@ -884,7 +884,7 @@
     "code": "1010",
     "method": "regex",
     "regex": "operation error, because:\\[Errno 30] Read-only file system:.*",
-    "message_cn": "操作错误，因为主存储所在的文件系统是只读的。",
+    "message_cn": "操作错误，因为数据存储所在的文件系统是只读的。",
     "message_en": "Operation error, because the primary storage path is on a read-only file system."
   },
   {
@@ -892,7 +892,7 @@
     "code": "1011",
     "method": "regex",
     "regex": ".*after subtracting reserved capacity\\[.*], there is no primary storage having required size\\[.* bytes].*",
-    "message_cn": "减去保留容量 [%1$s] 后，没有主存储有所需的容量大小 [%2$s]，可能是主存储使用阈值设置较低。",
+    "message_cn": "减去保留容量 [%1$s] 后，没有数据存储有所需的容量大小 [%2$s]，可能是数据存储使用阈值设置较低。",
     "message_en": "No required primary storage size \\[%1$s] available after subtracting reserved capacity. Possible reason: threshold of the primary storage usage is relatively low."
   },
   {
@@ -900,7 +900,7 @@
     "code": "1012",
     "method": "regex",
     "regex": ".*the NFS primary storage\\[uuid:.*, name:.*] has not attached to any clusters, or no hosts in the attached clusters are connected.*",
-    "message_cn": "NFS 主存储没有连接到任何集群，或者没有连接到所连接集群中的主机。",
+    "message_cn": "NFS 数据存储没有连接到任何集群，或者没有连接到所连接集群中的主机。",
     "message_en": "The NFS primary storage is not attached to any clusters, or no hosts in the attached clusters are connected."
   },
   {
@@ -940,7 +940,7 @@
     "code": "1017",
     "method": "regex",
     "regex": ".*operation error, because:unable to mount the nfs primary storage\\[url:.*] in .*",
-    "message_cn": "挂载 NFS 主存储超时。",
+    "message_cn": "挂载 NFS 数据存储超时。",
     "message_en": "NFS primary storage attach timeout."
   },
   {
@@ -948,7 +948,7 @@
     "code": "1018",
     "method": "regex",
     "regex": "There is no LocalStorage primary storage.*when the cluster mounts multiple primary storage, the system uses the local primary storage.*",
-    "message_cn": "集群内没有正处于已启用且已连接状态的本地主存储，请检查集群内主存储的启用和就绪状态。",
+    "message_cn": "集群内没有正处于已启用且已连接状态的本地存储，请检查集群内数据存储的启用和就绪状态。",
     "message_en": "Mo local primary storages with [state: Enabled, status: Connected] available in the cluster. Please check the state/status of the local primary storages."
   },
   {
@@ -956,7 +956,7 @@
     "code": "1019",
     "method": "regex",
     "regex": ".*can not find vg .* and create vg with forceWipw=.*",
-    "message_cn": "无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。",
+    "message_cn": "无法将主机上的共享块数据存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。",
     "message_en": "Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again."
   },
   {
@@ -964,7 +964,7 @@
     "code": "1020",
     "method": "regex",
     "regex": ".*after subtracting reserved capacity\\[.*], primary storage\\[.*] don't have required size\\[.* bytes].*",
-    "message_cn": "减去保留容量 [%1$s] 后，主存储 [%2$s] 没有所需的容量大小 [%3$s bytes]，可能是主存储使用阈值设置较低。",
+    "message_cn": "减去保留容量 [%1$s] 后，数据存储 [%2$s] 没有所需的容量大小 [%3$s bytes]，可能是数据存储使用阈值设置较低。",
     "message_en": "primary storage [%1$s] don't have required size [%2$s] after subtracting reserved capacity. Possible reason: threshold of the primary storage usage is relatively low."
   },
 
@@ -1061,7 +1061,7 @@
     "code": "1001",
     "method": "regex",
     "regex": ".*underlying host of conversion host\\[uuid:.*] should be Connected.*",
-    "message_cn": "v2v 迁移时所使用的迁移物理机应处于己连接状态。",
+    "message_cn": "v2v 迁移时所使用的迁移主机应处于己连接状态。",
     "message_en": "The status of the conversion host must be Connected during V2V migration."
   },
   {
@@ -1093,7 +1093,7 @@
     "code": "1002",
     "method": "regex",
     "regex": "VNC not enabled for vmUuid .* in ESX host .*",
-    "message_cn": "第一次被接管的 ESX 物理机上的云主机，由于没有配置 vnc，无法打开控制台，需要重启或迁移云主机后才能使用。",
+    "message_cn": "第一次被接管的 ESX 主机上的虚拟机，由于没有配置 vnc，无法打开控制台，需要重启或迁移虚拟机后才能使用。",
     "message_en": "VNC not enabled for VM in ESX host. You need to reboot or migrate VM at least once."
   },
   {
@@ -1141,7 +1141,7 @@
     "code": "1000",
     "method": "regex",
     "regex": "Destination PrimaryStorageType is .* but the selected BackupStorageType for source Volume is .* which cannot be matched",
-    "message_cn": "克隆指定的主存储类型是 %1$s，但源主存储对应的备份存储类型是 %2$s，这两者无法共同使用，请重新检查参数。",
+    "message_cn": "克隆指定的数据存储类型是 %1$s，但源数据存储对应的备份存储类型是 %2$s，这两者无法共同使用，请重新检查参数。",
     "message_en": "Destination PrimaryStorageType is %1$s but the selected BackupStorageType for source volume is %2$s. Please check the parameters again."
   },
   {
@@ -1149,7 +1149,7 @@
     "code": "1001",
     "method": "distance",
     "regex": "The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.",
-    "message_cn": "云主机的状态为 %2$s，只有状态 [Running，Stopped] 允许升级 CPU/内存。",
+    "message_cn": "虚拟机的状态为 %2$s，只有状态 [Running，Stopped] 允许升级 CPU/内存。",
     "message_en": "Only VMs with the status [Running, Stopped] support CPU/memory update. Current status: %2$s."
   },
   {
@@ -1157,7 +1157,7 @@
     "code": "1002",
     "method": "regex",
     "regex": "no Enabled hosts found in the \\[[0-9]*] candidate hosts",
-    "message_cn": "找不到合适的物理机来启动云主机，因为满足分配条件的 %1$s 个物理机都不处于 Enabled 状态。",
+    "message_cn": "找不到合适的主机来启动虚拟机，因为满足分配条件的 %1$s 个主机都不处于 Enabled 状态。",
     "message_en": "Could not allocate hosts, because the %1$s qualified hosts are not in Enabled state."
   },
   {
@@ -1165,7 +1165,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "no Connected hosts found in the \\[[0-9]*] candidate hosts",
-    "message_cn": "找不到合适的物理机来启动云主机，因为满足分配条件的 %1$s 个物理机都不处于 Connected 状态。",
+    "message_cn": "找不到合适的主机来启动虚拟机，因为满足分配条件的 %1$s 个主机都不处于 Connected 状态。",
     "message_en": "Could not allocate hosts, because the %1$s qualified hosts are not in Connected status."
   },
   {
@@ -1173,7 +1173,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "no Connected hosts found in the \\[[0-9]*] candidate hosts having the hypervisor type \\[.*]",
-    "message_cn": "找不到合适的物理机来启动云主机，因为满足分配条件的 %1$s 个物理机都不是 %2$s 的虚拟化类型。",
+    "message_cn": "找不到合适的主机来启动虚拟机，因为满足分配条件的 %1$s 个主机都不是 %2$s 的虚拟化类型。",
     "message_en": "Could not allocate hosts, because the %1$s qualified hosts are not %2$s hypervisor."
   },
   {
@@ -1181,7 +1181,7 @@
     "code": "1005",
     "method": "regex",
     "regex": "no host having cpu\\[[0-9]*], memory\\[[0-9]* bytes] found",
-    "message_cn": "找不到合适的物理机来启动云主机，因为可以用于分配云主机的物理机都没有足够的资源：CPU [%1$s]，内存 [%2$s 字节]。",
+    "message_cn": "找不到合适的主机来启动虚拟机，因为可以用于分配虚拟机的主机都没有足够的资源：CPU [%1$s]，内存 [%2$s 字节]。",
     "message_en": "Could not allocate hosts, because no hosts have enough resource: CPU [%1$s], memory [%2$s bytes]."
   },
   {
@@ -1189,7 +1189,7 @@
     "code": "1006",
     "method": "regex",
     "regex": "the vm.*, but the host is either not having enough CPU/memory or in the state\\[Enabled] or status\\[Connected] to start the vm",
-    "message_cn": "找不到合适的物理机来启动云主机，因为使用该主存储的云主机只能启动在物理机 [%2$s] 上，但这个物理机没有足够的 CPU/内存资源，或不处于 Enabled/Connected 状态。",
+    "message_cn": "找不到合适的主机来启动虚拟机，因为使用该数据存储的虚拟机只能启动在主机 [%2$s] 上，但这个主机没有足够的 CPU/内存资源，或不处于 Enabled/Connected 状态。",
     "message_en": "VM on this primary storage can only be started on host [%2$s], but the host does not have enough CPU/memory, or is not in the Enabled/Connected state/status."
   },
   {
@@ -1197,7 +1197,7 @@
     "code": "1007",
     "method": "regex",
     "regex": "after filtering, .* returns zero candidate host, it means: .*",
-    "message_cn": "创建/启动云主机失败，未找到合适的物理机。",
+    "message_cn": "创建/启动虚拟机失败，未找到合适的主机。",
     "message_en": "Failed to create/start VM, because no qualified host found."
   },
   {
@@ -1205,7 +1205,7 @@
     "code": "1008",
     "method": "regex",
     "regex": "No host with .* found",
-    "message_cn": "以下条件导致分配时没有满足条件的物理机：%1$s",
+    "message_cn": "以下条件导致分配时没有满足条件的主机：%1$s",
     "message_en": "No host with [%1$s] found."
   },
   {
@@ -1213,7 +1213,7 @@
     "code": "1009",
     "method": "regex",
     "regex": "unable to start the vm.*It doesn't have any nic, please attach a nic and try again",
-    "message_cn": "无法启动没有连接网卡的云主机，请连接一个网卡后重试。",
+    "message_cn": "无法启动没有连接网卡的虚拟机，请连接一个网卡后重试。",
     "message_en": "Failed to start VM because no NIC found. Please attach a NIC and try again."
   },
   {
@@ -1221,7 +1221,7 @@
     "code": "1010",
     "method": "regex",
     "regex": "The vm's root volume is on the local storage.* however, the host on which the root volume is has been deleted",
-    "message_cn": "云主机的根盘在本地主存储上，但该根盘所在的物理机己经下线。",
+    "message_cn": "虚拟机的根盘在本地存储上，但该根盘所在的主机己经下线。",
     "message_en": "The VM's root volume is on the local primary storage. However, the host where the root volume resides is deleted."
   },
   {
@@ -1229,7 +1229,7 @@
     "code": "1011",
     "method": "regex",
     "regex": "no host having state=Enabled status=Connected.*found",
-    "message_cn": "找不到状态为 Enabled/Connected 的物理机。",
+    "message_cn": "找不到状态为 Enabled/Connected 的主机。",
     "message_en": "No host with the state/status Enabled/Connected found."
   },
   {
@@ -1237,7 +1237,7 @@
     "code": "1012",
     "method": "regex",
     "regex": "no host found in clusters that has attached to L2Networks which have L3Networks.*",
-    "message_cn": "这个三层网络所在的二层网络加载到的所有集群中，都没有找到物理机。",
+    "message_cn": "这个分布式端口组所在的分布式交换机加载到的所有集群中，都没有找到主机。",
     "message_en": "No host found in cluster to which the L2 networks of the L3 networks are attached."
   },
   {
@@ -1245,7 +1245,7 @@
     "code": "1013",
     "method": "regex",
     "regex": "no host found in clusters which have attached to all primary storage .* volumes locate",
-    "message_cn": "与云主机的根盘所在的主存储所关联的所有集群中，都没有找到物理机。",
+    "message_cn": "与虚拟机的根盘所在的数据存储所关联的所有集群中，都没有找到主机。",
     "message_en": "No host found in cluster to which all primary storages of the VM's volumes are attached."
   },
   {
@@ -1253,7 +1253,7 @@
     "code": "1014",
     "method": "regex",
     "regex": ".*requested vcpus is greater than max allowable vcpus for the live domain: .* make Instance Offering Online Modification take effect.*",
-    "message_cn": "请求的 vCPU 超过允许最大 vCPU 的范围，请尝试重新启动云主机以使 计算规格在线修改 生效。",
+    "message_cn": "请求的 vCPU 超过允许最大 vCPU 的范围，请尝试重新启动虚拟机以使 计算规格在线修改 生效。",
     "message_en": "Requested vCPU count exceeds the upper limit. Please reboot the VM to make Instance Offering Online Modification take effect."
   },
   {
@@ -1261,7 +1261,7 @@
     "code": "1015",
     "method": "regex",
     "regex": ".*host\\[uuid: .*] of local primary storage\\[uuid: .*] doesn't have enough capacity\\[current: .*bytes, needed: .*]",
-    "message_cn": "在物理机 [uuid：%1$s] 的本地主存储 [%2$s] 上没有足够的容量 [当前：%3$s 字节，需要：%4$s 字节]。",
+    "message_cn": "在主机 [uuid：%1$s] 的本地存储 [%2$s] 上没有足够的容量 [当前：%3$s 字节，需要：%4$s 字节]。",
     "message_en": "Host [uuid: %1$s] of local primary storage [%2$s] does not have enough capacity [current: %3$s bytes, needed: %4$s bytes]."
   },
   {
@@ -1269,7 +1269,7 @@
     "code": "1016",
     "method": "regex",
     "regex": ".*unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; [\\s\\S]*no Connected hosts found in the \\[[0-9]*] candidate hosts.*",
-    "message_cn": "找不到合适的物理机来启动云主机。",
+    "message_cn": "找不到合适的主机来启动虚拟机。",
     "message_en": "Failed to allocate hosts."
   },
   {
@@ -1285,7 +1285,7 @@
     "code": "1018",
     "method": "regex",
     "regex": ".*unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; [\\s\\S]*after filtering, HostAllocatorFilterExtensionPoint\\[class org.zstack.vmware.VCenterHostAllocatorFilterExtensionPoint] returns zero candidate host.*",
-    "message_cn": "找不到合适的物理机来启动云主机。",
+    "message_cn": "找不到合适的主机来启动虚拟机。",
     "message_en": "Failed to allocate hosts."
   },
   {
@@ -1293,7 +1293,7 @@
     "code": "1019",
     "method": "regex",
     "regex": "unable to start the vm\\[uuid:.*]. It doesn't have any nic, please attach a nic and try again",
-    "message_cn": "无法启动没有连接网卡的云主机，请连接一个网卡后重试。",
+    "message_cn": "无法启动没有连接网卡的虚拟机，请连接一个网卡后重试。",
     "message_en": "Failed to start VM because no NIC found. Please attach a NIC and try again."
   },
   {
@@ -1301,7 +1301,7 @@
     "code": "1020",
     "method": "regex",
     "regex": "unable to recover the vm.*. The vm's root volume is on the local storage.* however, the host on which the root volume is has been deleted",
-    "message_cn": "无法恢复云主机，因为虚拟机的根盘处于物理机的本地存储上，但该物理机已经下线。",
+    "message_cn": "无法恢复虚拟机，因为虚拟机的根盘处于主机的本地存储上，但该主机已经下线。",
     "message_en": "Could not recover VM. The VN's root volume is on a local storage; however, the host where the root volume resides is deleted."
   },
   {
@@ -1309,7 +1309,7 @@
     "code": "1021",
     "method": "regex",
     "regex": "the vm\\[uuid:.*] doesn't support to online attach volume\\[.*] on the basis of that the image platform type of the vm is other.*",
-    "message_cn": "该虚拟机不支持在线添加云盘，因为这台虚拟机的基础镜像平台类型为“其他”。",
+    "message_cn": "该虚拟机不支持在线添加硬盘，因为这台虚拟机的基础镜像平台类型为“其他”。",
     "message_en": "Could not attach volume to the VM online, because the image platform type of the VM is \"Other\"."
   },
   {
@@ -1317,7 +1317,7 @@
     "code": "1022",
     "method": "regex",
     "regex": "unable to allocate hosts; .* HostAllocatorFilterExtensionPoint.*AffinityGroupFilterFlow] returns zero candidate host}]",
-    "message_cn": "创建云主机不能满足亲和组的条件。",
+    "message_cn": "创建虚拟机不能满足亲和组的条件。",
     "message_en": "Affinity group condition is not met."
   },
   {
@@ -1325,7 +1325,7 @@
     "code": "1023",
     "method": "regex",
     "regex": ".*can't decrease cpu of vm.* when it is running.*",
-    "message_cn": "当云主机运行时，无法在线减少 CPU 数量。",
+    "message_cn": "当虚拟机运行时，无法在线减少 CPU 数量。",
     "message_en": "Could not decrease CPU count when VM is running."
   },
   {
@@ -1333,7 +1333,7 @@
     "code": "1024",
     "method": "regex",
     "regex": "Message\\[name: .*StartNewCreatedApplianceVmMsg.* timeout after .* seconds.*",
-    "message_cn": "启动云主机超时。",
+    "message_cn": "启动虚拟机超时。",
     "message_en": "VM start timeout."
   },
   {
@@ -1357,7 +1357,7 @@
     "code": "1027",
     "method": "regex",
     "regex": ".*no host having cpu\\[.*], memory\\[.*bytes] found.*",
-    "message_cn": "没有找到可以提供 CPU [%1$s]，内存 [%2$s 字节] 的物理机。",
+    "message_cn": "没有找到可以提供 CPU [%1$s]，内存 [%2$s 字节] 的主机。",
     "message_en": "No host that can provide CPU [%1$s] and memory [%2$s bytes] found."
   },
   {
@@ -1365,7 +1365,7 @@
     "code": "1028",
     "method": "regex",
     "regex": ".*because:NIC device is still attached after.*",
-    "message_cn": "卸载网络接口控制器设备失败，请检查 virtio 驱动是否正常运行或关闭云主机后尝试重新卸载设备。",
+    "message_cn": "卸载网络接口控制器设备失败，请检查 virtio 驱动是否正常运行或关闭虚拟机后尝试重新卸载设备。",
     "message_en": "Failed to detach NIC device. Please check virtio driver or stop VM and try again."
   },
   {
@@ -1373,7 +1373,7 @@
     "code": "1029",
     "method": "regex",
     "regex": ".*The vm\\[.*] state is in shutdown for a long time, check whether the vm is normal.*",
-    "message_cn": "云主机 [uuid：%1$s] 长时间处于“in shutdown”状态，请检查云主机是否正常。",
+    "message_cn": "虚拟机 [uuid：%1$s] 长时间处于“in shutdown”状态，请检查虚拟机是否正常。",
     "message_en": "The VM [uuid: %1$s] state is in shutdown for a long time. Check whether the VM is normal."
   },
   {
@@ -1381,7 +1381,7 @@
     "code": "1030",
     "method": "regex",
     "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message[org.zstack.header.vm.APIStartVmInstanceMsg], allowed states are [Stopped, Created]",
-    "message_cn": "只有状态为已创建或者已停止的云主机允许被启动。",
+    "message_cn": "只有状态为已创建或者已停止的虚拟机允许被启动。",
     "message_en": "The Start action can be performed only on VMs whose state is Stopped or Created."
   },
   {
@@ -1389,7 +1389,7 @@
     "code": "1031",
     "method": "regex",
     "regex": ".*user \\[.*] not exist on vm\\[.*]!",
-    "message_cn": "云主机用户不存在。",
+    "message_cn": "虚拟机用户不存在。",
     "message_en": "VM user does not exist."
   },
   {
@@ -1397,7 +1397,7 @@
     "code": "1032",
     "method": "regex",
     "regex": "current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.APIStartVmInstanceMsg], allowed states are \\[.*, .*]",
-    "message_cn": "云主机当前状态 [%1$s] 不支持该操作。",
+    "message_cn": "虚拟机当前状态 [%1$s] 不支持该操作。",
     "message_en": "Operation is not supported, because the current VM state is [%1$s]."
   },
   {
@@ -1421,7 +1421,7 @@
     "code": "1035",
     "method": "regex",
     "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because Traceback .*libvirt error.*error reading header from.*Remote I/O error.*",
-    "message_cn": "启动云主机失败，因为读取云主机 xml 文件错误。",
+    "message_cn": "启动虚拟机失败，因为读取虚拟机 xml 文件错误。",
     "message_en": "Failed to start VM, because failed to read VM xml file."
   },
   {
@@ -1453,7 +1453,7 @@
     "code": "1039",
     "method": "regex",
     "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*libvirt error: cannot read header '.*': Input/output error.*",
-    "message_cn": "启动云主机失败，因为读取云盘时发生了 libvirt 和 I/O 错误。",
+    "message_cn": "启动虚拟机失败，因为读取硬盘时发生了 libvirt 和 I/O 错误。",
     "message_en": "Failed to start VM, because libvirt and I/O errors occurred while reading volume."
   },
   {
@@ -1461,7 +1461,7 @@
     "code": "1040",
     "method": "regex",
     "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.* error reading header from .*: Operation not permitted.*",
-    "message_cn": "无法启动云主机，因为云盘对应的 Ceph 文件读取失败。",
+    "message_cn": "无法启动虚拟机，因为硬盘对应的 分布式存储 文件读取失败。",
     "message_en": "Failed to start VM, because failed to read the Ceph file of the volume."
   },
   {
@@ -1469,7 +1469,7 @@
     "code": "1041",
     "method": "regex",
     "regex": "the vm.*, but the host is either not having enough CPU/memory/GPU/VFNIC or in the state\\[Enabled] or status\\[Connected] to start the vm",
-    "message_cn": "找不到合适的物理机来启动云主机，因为使用该主存储的云主机只能启动在物理机 [%2$s]上，但这个物理机没有足够的 CPU/内存/GPU/vfnic 资源，或不处于 Enabled/Connected 状态。",
+    "message_cn": "找不到合适的主机来启动虚拟机，因为使用该数据存储的虚拟机只能启动在主机 [%2$s]上，但这个主机没有足够的 CPU/内存/GPU/vfnic 资源，或不处于 Enabled/Connected 状态。",
     "message_en": "VM on this primary storage can only be started on host[%2$s], but the host does not have enough CPU/memory/GPU/VF NIC, or is not in the Enabled/Connected state/status."
   },
   {
@@ -1477,7 +1477,7 @@
     "code": "1042",
     "method": "regex",
     "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is gateway.*",
-    "message_cn": "在三层网络 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 是网关地址。",
+    "message_cn": "在分布式端口组 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 是网关地址。",
     "message_en": "IP [%1$s] is not available on L3 network [uuid: %2$s], because the IP is a gateway."
   },
   {
@@ -1485,7 +1485,7 @@
     "code": "1043",
     "method": "regex",
     "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is not in this range.*",
-    "message_cn": "在三层网络 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 不在网络段范围内。",
+    "message_cn": "在分布式端口组 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 不在网络段范围内。",
     "message_en": "IP[%1$s] is not available on L3 network[uuid: %2$s], because the IP is not in the network range."
   },
   {
@@ -1493,7 +1493,7 @@
     "code": "1044",
     "method": "regex",
     "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is used.*",
-    "message_cn": "在三层网络 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 已被占用。",
+    "message_cn": "在分布式端口组 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 已被占用。",
     "message_en": "IP [%1$s] is not available on L3 network [uuid: %2$s], because the IP is occupied."
   },
   {
@@ -1501,7 +1501,7 @@
     "code": "1045",
     "method": "regex",
     "regex": "cannot attach the usb device.* to vm.*, possibly reasons include: the device is not enabled or had been attached to a vm, or the device and the vm are not on same host.",
-    "message_cn": "无法挂载 USB 设备到云主机，可能因为该 USB 设备没有被启用或已经挂载到一台云主机，或者 USB 设备与云主机不在同一台物理机上。",
+    "message_cn": "无法挂载 USB 设备到虚拟机，可能因为该 USB 设备没有被启用或已经挂载到一台虚拟机，或者 USB 设备与虚拟机不在同一台主机上。",
     "message_en": "Could not attach USB device to VM. Possible reasons: The device is not enabled or is attached to a VM, or the device and the VM are not on same host."
   },
   {
@@ -1509,7 +1509,7 @@
     "code": "1046",
     "method": "regex",
     "regex": "the host that the usb device\\[.*] pluged in is not in valid state\\[.*] or status\\[.*]",
-    "message_cn": "接入 USB 设备的物理机当前不是启用且已连接的状态。",
+    "message_cn": "接入 USB 设备的主机当前不是启用且已连接的状态。",
     "message_en": "The host which the USB device plugged in is not Enabled and Connected."
   },
   {
@@ -1517,7 +1517,7 @@
     "code": "1047",
     "method": "regex",
     "regex": "unable to attach the L3 network.*L3 network is providing EIP.*",
-    "message_cn": "无法为云主机 [名称：%4$s，uuid：%3$s] 分配指定的 IP 地址，因为该地址已经被用于为一个网络接口控制设备提供 EIP 服务。",
+    "message_cn": "无法为虚拟机 [名称：%4$s，uuid：%3$s] 分配指定的 IP 地址，因为该地址已经被用于为一个网络接口控制设备提供 EIP 服务。",
     "message_en": "Could not assign a specific IP to VM [name: %4$s, uuid: %3$s], because this IP is occupied by a NIC to provide EIP services."
   },
   {
@@ -1525,7 +1525,7 @@
     "code": "1048",
     "method": "regex",
     "regex": "failed to increase vm cpu, error details:.*",
-    "message_cn": "升级云主机 CPU 失败，错误详情：%1$s",
+    "message_cn": "升级虚拟机 CPU 失败，错误详情：%1$s",
     "message_en": "Failed to upgrade CPU of this VM. Error details: %1$s"
   },
   {
@@ -1533,7 +1533,7 @@
     "code": "1000",
     "method": "regex",
     "regex": "data volume can only be attached when status is .*, current is .*",
-    "message_cn": "云盘只能在状态就绪或未初始化时加载，当前状态为 %3$s。",
+    "message_cn": "硬盘只能在状态就绪或未初始化时加载，当前状态为 %3$s。",
     "message_en": "Data volume can only be attached when status is Ready/NotInstantiated. Current: %3$s."
   },
   {
@@ -1541,7 +1541,7 @@
     "code": "1001",
     "method": "regex",
     "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.DetachDataVolumeFromVmMsg], allowed states are .*",
-    "message_cn": "当前云主机状态 [%1$s] 不能卸载云盘，允许此操作的状态是 [%3$s]。",
+    "message_cn": "当前虚拟机状态 [%1$s] 不能卸载硬盘，允许此操作的状态是 [%3$s]。",
     "message_en": "Could not detach volume because the current VM state is\\[%1$s]. Allowed states: [%3$s]."
   },
   {
@@ -1557,7 +1557,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "failed to create data volume template from volume.*on all backup storage.*. See cause for one of errors.*",
-    "message_cn": "无法在任何一个镜像服务器上成功创建数据磁盘 [uuid：%1$s] 的磁盘镜像。",
+    "message_cn": "无法在任何一个镜像存储上成功创建数据磁盘 [uuid：%1$s] 的磁盘镜像。",
     "message_en": "Failed to create data volume image from volume [uuid: %1$s] on any backup storage."
   },
   {
@@ -1565,7 +1565,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "failed to attach data volume\\[.*] on kvm host\\[.*], because failed to execute shell command:.*: No such file or directory.*",
-    "message_cn": "将云盘[ %1$s，%2$s] 挂载到云主机 [uuid：%3$s，name：%4$s] 时失败，因为云盘路径 [%2$s] 不存在。",
+    "message_cn": "将硬盘[ %1$s，%2$s] 挂载到虚拟机 [uuid：%3$s，name：%4$s] 时失败，因为硬盘路径 [%2$s] 不存在。",
     "message_en": "Failed to attach data volume [uuid: %1$s, name: %2$s] to VM [uuid: %3$s, name: %4$s], because data volume path [%2$s] not found."
   },
   {
@@ -1573,7 +1573,7 @@
     "code": "1005",
     "method": "regex",
     "regex": "shareable volume\\(s\\)\\[.*] attached, not support to group snapshot.",
-    "message_cn": "共享云盘 [%1$s] 已经被挂载，不支持快照组。",
+    "message_cn": "共享硬盘 [%1$s] 已经被挂载，不支持快照组。",
     "message_en": "Could not create snapshot group because shared volumes [%1$s] are attached."
   },
   {
@@ -1581,7 +1581,7 @@
     "code": "1006",
     "method": "regex",
     "regex": "Could not attach volume.The VM instance is running a CDP task. After the volume is attached, the capacity required for full backup will exceed the CDP task planned size. Please plan the size properly and try again.*",
-    "message_cn": "无法加载云盘。检测到云主机正在运行 CDP 任务，加载云盘后全量备份所需容量将超过 CDP 任务规划容量，请合理规划后再执行此操作。",
+    "message_cn": "无法加载硬盘。检测到虚拟机正在运行 CDP 任务，加载硬盘后全量备份所需容量将超过 CDP 任务规划容量，请合理规划后再执行此操作。",
     "message_en": "Could not attach volume.The VM instance is running a CDP task. After the volume is attached, the capacity required for full backup will exceed the CDP task planned size. Please plan the size properly and try again."
   },
   {
@@ -1613,7 +1613,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "the L3 network[uuid: .*] is same network address with [uuid: .*], it cannot be used for virtual router",
-    "message_cn": "三层网络地址与另一个三层网络重复，无法被用于 VPC 路由器。",
+    "message_cn": "三层网络地址与另一个分布式端口组重复，无法被用于 VPC 路由器。",
     "message_en": "The L3 network address is duplicated with another one, and therefore cannot be used for VPC vRouters."
   },
   {
@@ -1637,7 +1637,7 @@
     "code": "3001",
     "method": "regex",
     "regex": "the vm scheduling group.* has already had a vm antiaffinity from each other scheduling rule attached.* attaching another one is not allowed.",
-    "message_cn": "该云主机调度组已绑定互斥云主机调度策略，不可重复绑定。",
+    "message_cn": "该虚拟机调度组已绑定互斥虚拟机调度策略，不可重复绑定。",
     "message_en": "The VM scheduling group has already had a VM Exclusive from Each Other scheduling policy attached. Attaching another one is not allowed."
   },
   {
@@ -1645,7 +1645,7 @@
     "code": "3002",
     "method": "regex",
     "regex": "the vm scheduling group.* has already had a vm affinitive to each other scheduling rule attached. Attaching a vm antiaffinity from each other scheduling rule is not allowed.",
-    "message_cn": "该云主机调度组已绑定聚集云主机调度策略，不可绑定互斥云主机调度策略。",
+    "message_cn": "该虚拟机调度组已绑定聚集虚拟机调度策略，不可绑定互斥虚拟机调度策略。",
     "message_en": "The VM scheduling group has already had a VM Affinitive to Each Other scheduling policy attached. Attaching a VM Exclusive from Each Other scheduling policy is not allowed."
   },
   {
@@ -1653,7 +1653,7 @@
     "code": "3003",
     "method": "regex",
     "regex": "the vm scheduling group.* has already had a vm affinitive to each other scheduling rule attached.attaching another one is not allowed.",
-    "message_cn": "该云主机调度组已绑定聚集云主机调度策略，不可重复绑定。",
+    "message_cn": "该虚拟机调度组已绑定聚集虚拟机调度策略，不可重复绑定。",
     "message_en": "The VM scheduling group has already had a VM Affinitive to Each Other scheduling policy attached. Attaching another one is not allowed."
   },
   {
@@ -1661,7 +1661,7 @@
     "code": "3004",
     "method": "regex",
     "regex": "the vm scheduling group.* has already had a vm exclusive from each other scheduling rule attached.* Attaching a vm affinitive to each other scheduling policy is not allowed.",
-    "message_cn": "该云主机调度组已绑定互斥云主机调度策略，不可绑定聚集云主机调度策略。",
+    "message_cn": "该虚拟机调度组已绑定互斥虚拟机调度策略，不可绑定聚集虚拟机调度策略。",
     "message_en": "The VM scheduling group has already had a VM Exclusive from Each Other scheduling policy attached. Attaching a VM Affinitive to Each Other scheduling policy is not allowed."
   },
   {
@@ -1669,7 +1669,7 @@
     "code": "3005",
     "method": "regex",
     "regex": "the vm scheduling group.* has already had a vms affinitive to hosts scheduling rule attached.* you cannot attach another one to the group again.",
-    "message_cn": "该云主机调度组已绑定云主机亲和物理机调度策略，不可重复绑定。",
+    "message_cn": "该虚拟机调度组已绑定虚拟机亲和主机调度策略，不可重复绑定。",
     "message_en": "The VM scheduling group has already had a VMs Affinitive to Hosts scheduling policy attached. You cannot attach another one to the group again."
   },
   {
@@ -1677,7 +1677,7 @@
     "code": "3006",
     "method": "regex",
     "regex": "the vm scheduling group.* has already had a vm antiaffinity from host scheduling rule attached.* you cannot attach a vms affinitive to host scheduling rule to the group.",
-    "message_cn": "该云主机调度组已绑定云主机互斥物理机调度策略，不可绑定云主机亲和物理机调度策略。",
+    "message_cn": "该虚拟机调度组已绑定虚拟机互斥主机调度策略，不可绑定虚拟机亲和主机调度策略。",
     "message_en": "The VM scheduling group has already had a VMs Exclusive from Hosts scheduling policy attached. You cannot attach a VMs Affinitive to Hosts scheduling policy to the group."
   },
   {
@@ -1685,7 +1685,7 @@
     "code": "3007",
     "method": "regex",
     "regex": "the vm scheduling group.* has already had a vm affinitive to hosts scheduling rule attached.* you cannot attach a vm antiaffinity from hosts scheduling rule to the group.",
-    "message_cn": "该云主机调度组已绑定云主机亲和物理机调度策略，不可绑定云主机互斥物理机调度策略。",
+    "message_cn": "该虚拟机调度组已绑定虚拟机亲和主机调度策略，不可绑定虚拟机互斥主机调度策略。",
     "message_en": "The VM scheduling group has already had a VMs Affinitive to Hosts scheduling policy attached. You cannot attach a VMs Exclusive from Hosts scheduling policy to the group."
   },
   {
@@ -1693,7 +1693,7 @@
     "code": "3008",
     "method": "regex",
     "regex": "the vm scheduling group has already had a vm antiaffinity from each other scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vms affinitive to hosts scheduling policy to the group.",
-    "message_cn": "该云主机调度组已绑定互斥云主机调度策略，若再绑定云主机亲和物理机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_cn": "该虚拟机调度组已绑定互斥虚拟机调度策略，若再绑定虚拟机亲和主机调度策略，当前可供组内虚拟机运行的主机数量将少于虚拟机数量，导致部分虚拟机无法分配主机。请按需调整主机/虚拟机数量后重试。",
     "message_en": "The VM scheduling group has already had a VM Exclusive from Each Other scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VMs Affinitive to Hosts scheduling policy to the group."
   },
   {
@@ -1701,7 +1701,7 @@
     "code": "3009",
     "method": "regex",
     "regex": "the vm scheduling group has already had a vms Affinitive to Hosts scheduling policy attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vm antiaffinity from each other scheduling rule to the group again.",
-    "message_cn": "该云主机调度组已绑定云主机亲和物理机调度策略，若再绑定互斥云主机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_cn": "该虚拟机调度组已绑定虚拟机亲和主机调度策略，若再绑定互斥虚拟机调度策略，当前可供组内虚拟机运行的主机数量将少于虚拟机数量，导致部分虚拟机无法分配主机。请按需调整主机/虚拟机数量后重试。",
     "message_en": "The VM scheduling group has already had a VMs Affinitive to Hosts scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VM Exclusive from Each Other scheduling policy to the group again."
   },
   {
@@ -1709,7 +1709,7 @@
     "code": "3010",
     "method": "regex",
     "regex": "the vm scheduling group has already had a vm antiaffinity from each other scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vms antiaffinity from Hosts scheduling policy to the group.",
-    "message_cn": "该云主机调度组已绑定互斥云主机调度策略，若再绑定云主机互斥物理机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_cn": "该虚拟机调度组已绑定互斥虚拟机调度策略，若再绑定虚拟机互斥主机调度策略，当前可供组内虚拟机运行的主机数量将少于虚拟机数量，导致部分虚拟机无法分配主机。请按需调整主机/虚拟机数量后重试。",
     "message_en": "The VM scheduling group has already had a VM Exclusive from Each Other scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VMs Exclusive from Hosts scheduling policy to the group."
   },
   {
@@ -1717,7 +1717,7 @@
     "code": "3011",
     "method": "regex",
     "regex": "the vm scheduling group has already had a vms antiaffinity from hosts scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vm antiaffinity from Each Other scheduling rule to the group",
-    "message_cn": "该云主机调度组已绑定云主机互斥物理机调度策略，若再绑定互斥云主机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_cn": "该虚拟机调度组已绑定虚拟机互斥主机调度策略，若再绑定互斥虚拟机调度策略，当前可供组内虚拟机运行的主机数量将少于虚拟机数量，导致部分虚拟机无法分配主机。请按需调整主机/虚拟机数量后重试。",
     "message_en": "The VM scheduling group has already had a VMs Exclusive from Hosts scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VM Exclusive from Each Other scheduling policy to the group."
   }
 ]

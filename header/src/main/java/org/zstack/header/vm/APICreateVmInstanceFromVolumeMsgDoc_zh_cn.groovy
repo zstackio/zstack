@@ -72,8 +72,17 @@ doc {
 					desc "三层网络UUID"
 					location "body"
 					type "List"
-					optional false
+					optional true
 					since "3.10.0"
+				}
+				column {
+					name "vmNicParams"
+					enclosedIn "params"
+					desc "网卡信息"
+					location "body"
+					type "String"
+					optional true
+					since "4.7.0"
 				}
 				column {
 					name "type"

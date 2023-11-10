@@ -5,6 +5,7 @@ import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
@@ -32,6 +33,7 @@ public class VmGlobalConfig {
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_SOUND_TYPE = new GlobalConfig(CATEGORY, "soundType");
     @GlobalConfigValidation(validValues = {"off","all", "filter"})
+    @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_SPICE_STREAMING_MODE= new GlobalConfig(CATEGORY, "spiceStreamingMode");
     @GlobalConfigValidation
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
@@ -41,13 +43,14 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_MAX_VCPU = new GlobalConfig(CATEGORY, "vm.max.vcpu");
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
-    @GlobalConfigValidation(numberGreaterThan = 3000, numberLessThan = 65535)
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 65535)
     @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_BOOT_MENU_SPLASH_TIMEOUT = new GlobalConfig(CATEGORY, "bootMenuSplashTimeout");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig KVM_HIDDEN_STATE = new GlobalConfig(CATEGORY, "kvmHiddenState");
     @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_PORT_OFF = new GlobalConfig(CATEGORY, "vmPortOff");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
@@ -86,7 +89,7 @@ public class VmGlobalConfig {
     public static GlobalConfig RESOURCE_BINDING_SCENE = new GlobalConfig(CATEGORY, "resourceBinding.Scene");
 
     @GlobalConfigValidation(inNumberRange = {1, 256})
-    @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
+    @BindResourceConfig({VmNicVO.class, VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_NIC_MULTIQUEUE_NUM = new GlobalConfig(CATEGORY, "nicMultiQueueNum");
 
     @GlobalConfigValidation(numberGreaterThan = 1)
@@ -118,4 +121,12 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_VM_INTERNAL_IP_OVERWRITE = new GlobalConfig(CATEGORY, "enable.vm.internal.ip.overwrite");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig UNIQUE_VM_NAME = new GlobalConfig(CATEGORY, "uniqueVmName");
+
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "vm.ha.across.clusters")
+    public static GlobalConfig VM_HA_ACROSS_CLUSTERS = new GlobalConfig(CATEGORY, "vm.ha.across.clusters");
 }

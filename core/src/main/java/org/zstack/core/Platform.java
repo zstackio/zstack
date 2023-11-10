@@ -1064,6 +1064,24 @@ public class Platform {
         }
     }
 
+    public static String missingVariables(Object...args) {
+        if (args.length == 1) {
+            return String.format("[%s] is required", args[0]);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (Object arg : args) {
+            if (arg == null) {
+                continue;
+            }
+
+            sb.append(arg).append(", ");
+        }
+        sb.append("] ");
+        return sb.append("are required").toString();
+    }
+
     public static ErrorCode inerr(String fmt, Object...args) {
         return err(SysErrors.INTERNAL, fmt, args);
     }

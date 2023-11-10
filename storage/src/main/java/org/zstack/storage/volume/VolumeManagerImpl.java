@@ -1,6 +1,5 @@
 package org.zstack.storage.volume;
 
-import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +60,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -238,6 +238,19 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vol.setAccountUuid(msg.getAccountUuid());
         vol.setShareable(getShareableCapabilityFromMsg(msg));
+
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vol.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
+
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
@@ -579,6 +592,21 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             vo.setDeviceId(0);
         }
         vo.setAccountUuid(msg.getAccountUuid());
+        if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
+            vo.setShareable(true);
+        }
+
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vo.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
 
         List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {
@@ -994,6 +1022,18 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setStatus(VolumeStatus.NotInstantiated);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
 
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vo.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
+
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);
         }
@@ -1305,12 +1345,22 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {}
 
     @Override
+    public void afterInstantiateVolumeForNewCreatedVm(VmInstanceInventory vm, VolumeInventory volume) {
+        updateVolumeInfo(vm, volume);
+    }
+
+    @Override
     public void afterAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        updateVolumeInfo(vm, volume);
+    }
+
+    private void updateVolumeInfo(VmInstanceInventory vm, VolumeInventory volume) {
         String format = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid()).select(VolumeVO_.format).findValue();
         SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
                 .set(VolumeVO_.vmInstanceUuid, volume.isShareable() ? null : vm.getUuid())
                 .set(VolumeVO_.format, format != null ? format :
                         VolumeFormat.getVolumeFormatByMasterHypervisorType(vm.getHypervisorType()))
+                .set(VolumeVO_.lastAttachDate, Timestamp.valueOf(LocalDateTime.now()))
                 .update();
     }
 

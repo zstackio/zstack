@@ -15,6 +15,8 @@ public interface VmAttachVolumeExtensionPoint {
 
     void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume);
 
+    default void afterInstantiateVolumeForNewCreatedVm(VmInstanceInventory vm, VolumeInventory volume) {}
+
     void afterAttachVolume(VmInstanceInventory vm, VolumeInventory volume);
 
     void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode, Map data);

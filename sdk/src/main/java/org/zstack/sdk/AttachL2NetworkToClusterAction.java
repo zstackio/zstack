@@ -31,6 +31,9 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clusterUuid;
 
+    @Param(required = false, validValues = {"LinuxBridge"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String l2ProviderType;
+
     @Param(required = false)
     public java.util.List systemTags;
 

@@ -75,6 +75,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         }
     }
 
+
     @Override
     public List<Class> getMessageClassToIntercept() {
         List<Class> ret = new ArrayList<>();
@@ -125,6 +126,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         return msg;
     }
+
 
     private void validate(APIChangeResourceOwnerMsg msg) {
         AccountResourceRefVO ref = Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, msg.getResourceUuid()).find();
@@ -298,7 +300,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         Map<Integer, String> aoMap = new HashMap<Integer, String>();
         List<Integer> adminIntegers = new ArrayList<>();
         final String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
-
         for (APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO ao : msg.getRefs()) {
 
             if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, ao.getSecurityGroupUuid()).isExists()) {
@@ -342,6 +343,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 }
             }
         }
+
 
         if (!AccountConstant.isAdminPermission(msg.getSession())) {
             List<VmNicSecurityGroupRefVO> userRefs = new ArrayList<>();
@@ -945,6 +947,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (SecurityGroupConstant.WORLD_OPEN_CIDR.equals(cidr) || SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(cidr)) {
             return false;
+
         }
 
         return true;
@@ -965,10 +968,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             if (msg.getRemoteSecurityGroupUuids().stream().distinct().count() != msg.getRemoteSecurityGroupUuids().size()) {
                 throw new ApiMessageInterceptionException(argerr("could not add security group rule, because duplicate uuid in remoteSecurityGroupUuids: %s", msg.getRemoteSecurityGroupUuids()));
             }
-            
+
             List<String> sgUuids = Q.New(SecurityGroupVO.class).select(SecurityGroupVO_.uuid).in(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuids()).listValues();
             msg.getRemoteSecurityGroupUuids().stream().forEach(uuid -> {
-                sgUuids.stream().filter(s -> s.equals(uuid)).findFirst().orElseThrow(() -> 
+                sgUuids.stream().filter(s -> s.equals(uuid)).findFirst().orElseThrow(() ->
                         new ApiMessageInterceptionException(argerr("could not add security group rule, because security group[uuid:%s] does not exist", uuid)));
             });
 
@@ -977,7 +980,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                     throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the remote security group uuid is conflict"));
                 }
             });
-            
+
             List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> aos = new ArrayList<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO>();
 
             msg.getRemoteSecurityGroupUuids().stream().forEach(uuid -> {
@@ -1017,18 +1020,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         // Basic check
         for (APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao : newRules) {
-            if (!SecurityGroupRuleType.isValid(ao.getType())) {
-                throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule type[%s], valid types are %s", ao.getType(), SecurityGroupRuleType.getAllType()));
-            }
-
-            if (ao.getState() == null) {
-                ao.setState(SecurityGroupRuleState.Enabled.toString());
-            } else {
-                if (!SecurityGroupRuleState.isValid(ao.getState())) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule state[%s], valid states are %s", ao.getState(), SecurityGroupRuleState.getAllState()));
-                }
-            }
-
             if (!SecurityGroupRuleProtocolType.isValid(ao.getProtocol())) {
                 throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule protocol[%s], valid protocols are %s", ao.getProtocol(), SecurityGroupRuleProtocolType.getAllProtocol()));
             }
@@ -1115,6 +1106,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                         throw new ApiMessageInterceptionException(argerr("could not add security group rule, because dstPortRange[%s] and starPort[%s] are in conflict", ao.getDstPortRange(), ao.getStartPort()));
                     }
 
+
                     if (ao.getStartPort().equals(ao.getEndPort())) {
                         ao.setDstPortRange(String.valueOf(ao.getStartPort()));
                     } else {
@@ -1134,7 +1126,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             for (int j = newRules.size() - 1; j > i; j--) {
                 if (newRules.get(i).equals(newRules.get(j))) {
                     throw new ApiMessageInterceptionException(argerr("could not add security group rule, because rule[%s] and rule[%s] are dupilicated",
-                                    JSONObjectUtil.toJsonString(newRules.get(i)), JSONObjectUtil.toJsonString(newRules.get(j))));
+                            JSONObjectUtil.toJsonString(newRules.get(i)), JSONObjectUtil.toJsonString(newRules.get(j))));
                 }
             }
         }

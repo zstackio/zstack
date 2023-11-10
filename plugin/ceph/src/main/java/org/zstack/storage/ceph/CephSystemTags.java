@@ -46,4 +46,7 @@ public class CephSystemTags {
 
     public static final String THIRDPARTY_PLATFORM_TOKEN = "thirdPartyPlatformToken";
     public static PatternedSystemTag THIRDPARTY_PLATFORM = new PatternedSystemTag(String.format("ceph::thirdPartyPlatform::{%s}", THIRDPARTY_PLATFORM_TOKEN), PrimaryStorageVO.class);
+
+    public static final String CUSTOM_INITIALIZATION_POOL_NAME_TOKEN= "customInitializationPoolNameToken";
+    public static PatternedSystemTag CUSTOM_INITIALIZATION_POOL_NAME = new PatternedSystemTag(String.format("ceph::customInitializationPoolName::{%s}", CUSTOM_INITIALIZATION_POOL_NAME_TOKEN), PrimaryStorageVO.class);
 }

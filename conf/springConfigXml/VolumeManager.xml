@@ -28,6 +28,7 @@
     <bean id="VolumeApiInterceptor" class="org.zstack.storage.volume.VolumeApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>

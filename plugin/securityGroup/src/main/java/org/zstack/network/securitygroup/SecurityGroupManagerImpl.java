@@ -26,6 +26,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
@@ -84,6 +85,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
@@ -916,7 +918,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                             rvo.setState(SecurityGroupRuleState.valueOf(msg.getState()));
                         });
                         dbf.updateCollection(rvos);
-
                         trigger.next();
                     }
                 });
@@ -2027,7 +2028,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         completion.fail(errCode);
                     }
                 });
-                
             }
         }).start();
     }
@@ -2036,7 +2036,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         AddVmNicToSecurityGroupReply reply = new AddVmNicToSecurityGroupReply();
 
         validate(msg);
-
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {

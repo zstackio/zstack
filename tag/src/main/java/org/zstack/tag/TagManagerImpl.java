@@ -356,6 +356,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     public void createNonInherentSystemTags(List<String> sysTags, String resourceUuid, String resourceType) {
         for (String tag : sysTags) {
+            if (TagConstant.isEphemeralTag(tag)) {
+                continue;
+            }
             createNonInherentSystemTag(resourceUuid, tag, resourceType);
         }
     }
@@ -624,6 +627,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             handle((APICreateUserTagMsg) msg);
         } else if (msg instanceof APICreateSystemTagMsg) {
             handle((APICreateSystemTagMsg) msg);
+        } else if (msg instanceof APICreateSystemTagsMsg) {
+            handle((APICreateSystemTagsMsg) msg);  
         } else if (msg instanceof APIDeleteTagMsg) {
             handle((APIDeleteTagMsg) msg);
         } else if (msg instanceof APIUpdateSystemTagMsg) {
@@ -631,6 +636,32 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APICreateSystemTagsMsg msg) {
+        APICreateSystemTagsEvent evt = new APICreateSystemTagsEvent(msg.getId());
+
+        for (String tag : msg.getTags()) {
+            ErrorCode err = checkPemission(tag, msg.getSession());
+            if (err != null) {
+                evt.setError(err);
+                bus.publish(evt);
+                return;
+            }
+
+            if (resourceConfigSystemTag.isMatch(tag)) {
+                throw new ApiMessageInterceptionException(
+                        argerr("no system tag matches[%s] for resourceType[%s]", tag, msg.getResourceType()));
+            }
+        }
+
+        ArrayList<SystemTagInventory> inventories = new ArrayList<>();
+        for (String tag : msg.getTags()) {
+            SystemTagInventory inv = createNonInherentSystemTag(msg.getResourceUuid(), tag, msg.getResourceType());
+            inventories.add(inv);
+        }
+        evt.setInventories(inventories);
+        bus.publish(evt);
     }
 
     @Deferred

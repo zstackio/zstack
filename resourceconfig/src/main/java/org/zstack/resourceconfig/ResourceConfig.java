@@ -84,6 +84,15 @@ public class ResourceConfig {
                 it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
     }
 
+    public void validateNewValue(String resourceUuid, String newValue) {
+        String originValue = loadConfigValue(resourceUuid);
+        String oldValue = originValue == null ? globalConfig.value() : originValue;
+
+        globalConfig.getValidators().forEach(it ->
+                it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
+        validatorExtensions.forEach(it -> it.validateResourceConfig(resourceUuid, oldValue, newValue));
+    }
+
     public void updateValue(String resourceUuid, String newValue) {
         String resourceType = getResourceType(resourceUuid);
         updateValue(resourceUuid, resourceType, newValue, true);
@@ -108,7 +117,6 @@ public class ResourceConfig {
         getResourceConfigValues(resourceUuids).forEach((key, value) -> values.put(key, TypeUtils.stringToValue(value, clz)));
         return values;
     }
-
 
     void init() {
         installEventTrigger();
@@ -285,7 +293,7 @@ public class ResourceConfig {
                         Collectors.mapping(pair -> pair.get(1, String.class), Collectors.toList())));
     }
 
-    List<ResourceConfigInventory> getEffectiveResourceConfigs(String resourceUuid) {
+    public List<ResourceConfigInventory> getEffectiveResourceConfigs(String resourceUuid) {
         String resourceType = Q.New(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
         if (resourceType == null) {
             logger.warn(String.format("no resource[uuid:%s] found, cannot get it's resource config," +

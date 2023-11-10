@@ -18,6 +18,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.tag.APICreateSystemTagsMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.tag.APICreateUserTagMsg</name>
     </message>
 

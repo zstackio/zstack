@@ -1093,6 +1093,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 ext.afterAddIpAddress(targetNic.getUuid(), ip.getUuid());
                             }
                         }
+
                         trigger.next();
                     }
                 });
@@ -1119,50 +1120,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
-                                trigger.next();
-                            }
-                        });
-
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "update-nic-on-host";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        if (self.getState() != VmInstanceState.Running) {
-                            logger.debug(String.format("vm[uuid:%s] state is %s, no need to update nic on host", self.getUuid(), self.getState()));
-                            trigger.next();
-                            return;
-                        }
-
-                        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                        VmNicVO nicVO = dbf.findByUuid(targetNic.getUuid(), VmNicVO.class);
-                        HostInventory dest = spec.getDestHost();
-                        data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
-
-                        if (dest == null) {
-                            trigger.next();
-                            return;
-                        }
-
-                        VmUpdateNicOnHypervisorMsg cmsg = new VmUpdateNicOnHypervisorMsg();
-                        cmsg.setVmInstanceUuid(getSelfInventory().getUuid());
-                        cmsg.setHostUuid(dest.getUuid());
-                        cmsg.setNicsUuid(list(nicVO.getUuid()));
-                        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, getSelfInventory().getUuid());
-                        bus.send(cmsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
+                                VmNicVO nicVO = dbf.findByUuid(targetNic.getUuid(), VmNicVO.class);
+                                data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
 
                                 trigger.next();
                             }
                         });
+
                     }
                 });
 
@@ -2202,15 +2166,24 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
-        spec.setL3Networks(list(new VmNicSpec(l3s)));
-        spec.setDestNics(new ArrayList<>());
-
+        spec.setDisableL3Networks(new ArrayList<>());
+        VmNicSpec nicSpec = new VmNicSpec(l3s);
         if (msg instanceof APIAttachL3NetworkToVmMsg) {
             APIAttachL3NetworkToVmMsg msg1 = (APIAttachL3NetworkToVmMsg) msg;
-            for (VmNicSpec vmNicSpec : spec.getL3Networks()) {
-                vmNicSpec.setNicDriverType(msg1.getDriverType());
+            nicSpec.setNicDriverType(msg1.getDriverType());
+
+            String vmNicParams = msg1.getVmNicParams();
+            if (!StringUtils.isEmpty(vmNicParams)) {
+                VmNicParm nicParams = JSONObjectUtil.toObject(vmNicParams, VmNicParm.class);
+                nicSpec.setVmNicParms(Arrays.asList(nicParams));
+                if (VmNicState.disable.toString().equals(nicParams.getState())) {
+                    spec.getDisableL3Networks().add(nicParams.getL3NetworkUuid());
+                }
             }
         }
+
+        spec.setL3Networks(list(nicSpec));
+        spec.setDestNics(new ArrayList<VmNicInventory>());
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
                 arg -> l3s.forEach(l3 -> arg.vmBeforeAttachL3Network(vm, l3)));
@@ -2313,6 +2286,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 spec.setL3Networks(list(new VmNicSpec(l3)));
+
 
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
                         new ForEachFunction<VmBeforeAttachL3NetworkExtensionPoint>() {
@@ -3264,6 +3238,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIFlattenVmInstanceMsg) msg);
         } else if (msg instanceof APIFstrimVmMsg) {
             handle((APIFstrimVmMsg) msg);
+        } else if (msg instanceof APITakeVmConsoleScreenshotMsg) {
+            handle((APITakeVmConsoleScreenshotMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -3273,6 +3249,27 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(APITakeVmConsoleScreenshotMsg msg) {
+        APITakeVmConsoleScreenshotEvent event = new APITakeVmConsoleScreenshotEvent(msg.getId());
+        TakeVmConsoleScreenshotMsg gmsg = new TakeVmConsoleScreenshotMsg();
+        gmsg.setVmInstanceUuid(self.getUuid());
+        gmsg.setHostUuid(self.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setSuccess(false);
+                    event.setError(reply.getError());
+                } else {
+                    TakeVmConsoleScreenshotReply re = (TakeVmConsoleScreenshotReply) reply;
+                    event.setImageData(re.getImageData());
+                }
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIGetCandidateIsoForAttachingVmMsg msg) {
@@ -5258,6 +5255,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(FlowTrigger trigger, Map data) {
                 boolean update = false;
                 if (msg.getName() != null) {
+                    Boolean unique = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
+                    boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).notEq(VmInstanceVO_.uuid, self.getUuid()).isExists();
+                    if (unique && exists) {
+                        trigger.fail(operr("could not create vm, a vm with the name [%s] already exists", msg.getName()));
+                        return;
+                    }
                     self.setName(msg.getName());
                     update = true;
                 }
@@ -6928,6 +6931,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!l3s.isEmpty()) {
                     VmNicSpec nicSpec1 = new VmNicSpec(l3s);
                     nicSpec1.setNicDriverType(nicSpec.getNicDriverType());
+                    nicSpec1.setVmNicParms(nicSpec.getVmNicParms());
                     nicSpecs.add(nicSpec1);
                 }
             }
@@ -6970,39 +6974,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setRootDiskOffering(DiskOfferingInventory.valueOf(rootDisk));
         }
 
-        ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
+        spec.setDiskAOs(struct.getDiskAOs());
+
         List<CdRomSpec> cdRomSpecs = buildVmCdRomSpecsForNewCreated(spec);
         spec.setCdRomSpecs(cdRomSpecs);
-
-        if (imvo != null) {
-            spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
-        } else {
-            ImageInventory image = new ImageInventory();
-            image.setUuid(spec.getVmInventory().getImageUuid());
-            image.setSize(spec.getRootDiskOffering().getDiskSize());
-
-            List<Long> resultList = Q.New(ImageCacheVO.class)
-                    .select(ImageCacheVO_.size)
-                    .eq(ImageCacheVO_.imageUuid, spec.getVmInventory().getImageUuid())
-                    .limit(1)
-                    .listValues();
-            if (resultList.isEmpty()) {
-                resultList = Q.New(ImageCacheShadowVO.class)
-                        .select(ImageCacheShadowVO_.size)
-                        .eq(ImageCacheShadowVO_.imageUuid, spec.getVmInventory().getImageUuid())
-                        .limit(1)
-                        .listValues();
-
-                if (resultList.isEmpty()) {
-                    throw new OperationFailureException(operr("no way to get image size of %s, report exception.", spec.getVmInventory().getImageUuid()));
-                }
-            }
-
-            image.setActualSize(resultList.get(0));
-            spec.getImageSpec().setInventory(image);
-        }
+        buildImageSpec(spec);
         spec.setCurrentVmOperation(VmOperation.NewCreate);
-        if (struct.getRequiredHostUuid() != null) {
+        if (struct.getRequiredHostUuid() != null || CollectionUtils.isEmpty(struct.getL3NetworkUuids())) {
             spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
         }
         buildHostname(spec);
@@ -7343,6 +7321,44 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
             }
         }).start();
+    }
+
+    protected void buildImageSpec(VmInstanceSpec spec) {
+        if (spec.getVmInventory().getImageUuid() == null) {
+            // create vm without image, skip downloading image
+            spec.getImageSpec().setNeedDownload(false);
+            return;
+        }
+
+        ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
+
+        if (imvo != null) {
+            spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
+        } else {
+            ImageInventory image = new ImageInventory();
+            image.setUuid(spec.getVmInventory().getImageUuid());
+            image.setSize(spec.getRootDiskOffering().getDiskSize());
+
+            List<Long> resultList = Q.New(ImageCacheVO.class)
+                    .select(ImageCacheVO_.size)
+                    .eq(ImageCacheVO_.imageUuid, spec.getVmInventory().getImageUuid())
+                    .limit(1)
+                    .listValues();
+            if (resultList.isEmpty()) {
+                resultList = Q.New(ImageCacheShadowVO.class)
+                        .select(ImageCacheShadowVO_.size)
+                        .eq(ImageCacheShadowVO_.imageUuid, spec.getVmInventory().getImageUuid())
+                        .limit(1)
+                        .listValues();
+
+                if (resultList.isEmpty()) {
+                    throw new OperationFailureException(operr("no way to get image size of %s, report exception.", spec.getVmInventory().getImageUuid()));
+                }
+            }
+
+            image.setActualSize(resultList.get(0));
+            spec.getImageSpec().setInventory(image);
+        }
     }
 
     protected void buildHostname(VmInstanceSpec spec) {

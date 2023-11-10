@@ -17,6 +17,7 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.zone.ZoneVO;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
     /**
      * @desc a list of L3Network uuid the vm will create nic on. See :ref:`L3NetworkInventory`
      */
-    @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, required = false)
     private List<String> l3NetworkUuids;
     /**
      * @desc see type of :ref:`VmInstanceInventory`
@@ -170,6 +171,11 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
 
     public void setL3NetworkUuids(List<String> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
+    }
+
+    @Override
+    public String getVmNicParams() {
+        return null;
     }
 
     public String getType() {

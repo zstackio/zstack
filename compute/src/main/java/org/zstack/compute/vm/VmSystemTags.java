@@ -2,6 +2,7 @@ package org.zstack.compute.vm;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.zstack.header.tag.AdminOnlyTag;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
@@ -75,6 +76,7 @@ public class VmSystemTags {
     public static PatternedSystemTag ISO = new PatternedSystemTag(String.format("iso::{%s}::{%s}", ISO_TOKEN, ISO_DEVICEID_TOKEN), VmInstanceVO.class);
 
     public static String BOOT_ORDER_TOKEN = "bootOrder";
+    @AdminOnlyTag
     public static PatternedSystemTag BOOT_ORDER = new PatternedSystemTag(String.format("bootOrder::{%s}", BOOT_ORDER_TOKEN), VmInstanceVO.class);
 
     //this tag is deprecated.
@@ -156,6 +158,11 @@ public class VmSystemTags {
     public static String CD_ROM_UUID_TOKEN = "cdromUuid";
     public static PatternedSystemTag CD_ROM = new PatternedSystemTag(String.format("cdromUuid::{%s}", CD_ROM_UUID_TOKEN), VmInstanceVO.class);
 
+    public static String VM_NIC_MULTIQUEUE_TOKEN = "nicMultiQueueNum";
+    public static String VM_NIC_MULTIQUEUE_L3_TOKEN = "l3Uuid";
+    public static PatternedSystemTag VM_NIC_MULTIQUEUE = new PatternedSystemTag(String.format("nicMultiQueueNum::{%s}::{%s}", VM_NIC_MULTIQUEUE_L3_TOKEN, VM_NIC_MULTIQUEUE_TOKEN), VmInstanceVO.class);
+
+    @Deprecated
     public static final String V2V_VM_CDROMS_TOKEN = "v2vVmCdroms";
     public static PatternedSystemTag V2V_VM_CDROMS = new PatternedSystemTag(
             String.format("v2vVmCdroms::{%s}", V2V_VM_CDROMS_TOKEN),
@@ -170,8 +177,7 @@ public class VmSystemTags {
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VmInstanceVO.class);
     public static final String VM_PRIORITY_TOKEN = "vmPriority";
-    public static PatternedSystemTag VM_PRIORITY = new PatternedSystemTag(String.format("vmPriority::{%s}", VM_PRIORITY_TOKEN), VmInstanceVO.class
-    );
+    public static PatternedSystemTag VM_PRIORITY = new PatternedSystemTag(String.format("vmPriority::{%s}", VM_PRIORITY_TOKEN), VmInstanceVO.class);
 
     public static String SOUND_TYPE_TOKEN = "soundType";
     public static PatternedSystemTag SOUND_TYPE = new PatternedSystemTag(String.format("soundType::{%s}", SOUND_TYPE_TOKEN), VmInstanceVO.class);
@@ -210,6 +216,11 @@ public class VmSystemTags {
 
     public static String DIRECTORY_UUID_TOKEN = "directoryUuid";
     public static PatternedSystemTag DIRECTORY_UUID = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
+
+    public static String USBDEVICE_UUID_TOKEN = "usbDeviceUuid";
+    public static String usbDevice_attach_type_token = "attachType";
+    public static PatternedSystemTag VM_ATTACH_USB = new PatternedSystemTag(String.format("usbDeviceUuid::{%s}::attachType::{%s}",
+            USBDEVICE_UUID_TOKEN, usbDevice_attach_type_token), VmInstanceVO.class);
 
     public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
         private final String chpasswd = "chpasswd";

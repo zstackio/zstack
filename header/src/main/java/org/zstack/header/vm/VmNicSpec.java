@@ -14,6 +14,10 @@ public class VmNicSpec implements Serializable {
     public List<L3NetworkInventory> l3Invs;
     public String nicDriverType;
 
+    //from api msg
+    /* due to the design changed, single nic will only has 1 l3 network */
+    public List<VmNicParm> vmNicParms;
+
     public VmNicSpec(List<L3NetworkInventory> l3Invs) {
         this.l3Invs = l3Invs;
     }
@@ -65,7 +69,7 @@ public class VmNicSpec implements Serializable {
         List<VmNicSpec> nicSpecs =  new ArrayList<>();
         for (VmNicSpec spec: specs) {
             if (spec.l3Invs != null && !spec.l3Invs.isEmpty()) {
-                nicSpecs.add(new VmNicSpec(spec.l3Invs.get(0), spec.getNicDriverType()));
+                nicSpecs.add(spec);
             }
         }
         return nicSpecs;
@@ -79,5 +83,13 @@ public class VmNicSpec implements Serializable {
             }
         }
         return res;
+    }
+
+    public List<VmNicParm> getVmNicParms() {
+        return vmNicParms;
+    }
+
+    public void setVmNicParms(List<VmNicParm> vmNicParms) {
+        this.vmNicParms = vmNicParms;
     }
 }

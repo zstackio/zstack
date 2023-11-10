@@ -239,6 +239,12 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
     }
 
     private Collection<? extends String> considerImageCache(PrimaryStorageAllocationSpec spec, List<LocalStorageHostRefVO> candidateHosts) {
+        if (spec.getImageUuid() == null) {
+            return candidateHosts.stream()
+                    .map(LocalStorageHostRefVO::getPrimaryStorageUuid)
+                    .collect(Collectors.toList());
+        }
+
         List<String> ret = new ArrayList<>();
 
         String sql = "select i.actualSize from ImageVO i where i.uuid = :uuid";

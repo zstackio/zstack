@@ -559,6 +559,21 @@
                     <artifactId>zops-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>zsv</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>virtualSwitchNetwork</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>hostNetwork</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
     </profiles>
@@ -802,6 +817,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>snmp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>hostNetwork</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

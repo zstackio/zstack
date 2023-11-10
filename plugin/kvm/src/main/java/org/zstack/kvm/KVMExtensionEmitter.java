@@ -8,10 +8,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.host.CheckSnapshotOnHypervisorMsg;
-import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
+import org.zstack.header.host.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
@@ -46,6 +43,7 @@ public class KVMExtensionEmitter implements Component {
     private List<KVMMergeSnapshotExtensionPoint> mergeSnapshotExts = new ArrayList<>();
     private List<KVMCheckVmStateExtensionPoint> checkVmStateExts = new ArrayList<>();
     private List<KVMSyncVmDeviceInfoExtensionPoint> syncVmDeviceInfoExts = new ArrayList<>();
+    private List<KVMBlockCommitExtensionPoint> blockCommitExts = new ArrayList<>();
 
     private void populateExtensions() {
         startVmExts = pluginRgty.getExtensionList(KVMStartVmExtensionPoint.class);
@@ -60,6 +58,7 @@ public class KVMExtensionEmitter implements Component {
         checkVmStateExts = pluginRgty.getExtensionList(KVMCheckVmStateExtensionPoint.class);
         checkSnapshotExts = pluginRgty.getExtensionList(KVMCheckSnapshotExtensionPoint.class);
         syncVmDeviceInfoExts = pluginRgty.getExtensionList(KVMSyncVmDeviceInfoExtensionPoint.class);
+        blockCommitExts = pluginRgty.getExtensionList(KVMBlockCommitExtensionPoint.class);
     }
 
     public void afterReceiveSyncVmDeviceInfoRespoinse(final VmInstanceInventory vm, final KVMAgentCommands.VmDevicesInfoResponse rsp, VmInstanceSpec spec) {
@@ -230,6 +229,62 @@ public class KVMExtensionEmitter implements Component {
                 completion.success();
             }
         });
+    }
+
+    public void doBeforeCommitVolume(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion) {
+        if (!it.hasNext()) {
+            completion.success();
+            return;
+        }
+
+        KVMBlockCommitExtensionPoint ext = it.next();
+        ext.beforeCommitVolume(host, msg, cmd, new Completion(completion) {
+            @Override
+            public void success() {
+                doBeforeCommitVolume(it, host, msg, cmd, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    public void beforeCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion) {
+        Iterator<KVMBlockCommitExtensionPoint> it = blockCommitExts.iterator();
+        doBeforeCommitVolume(it, host, msg, cmd, completion);
+    }
+
+    public void doAfterCommitVolume(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, CommitVolumeOnHypervisorReply reply, Completion completion) {
+        if (!it.hasNext()) {
+            completion.success();
+            return;
+        }
+
+        KVMBlockCommitExtensionPoint ext = it.next();
+        ext.afterCommitVolume(host, msg, cmd, reply, new Completion(completion) {
+            @Override
+            public void success() {
+                doAfterCommitVolume(it, host, msg, cmd, reply, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    public void afterCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, CommitVolumeOnHypervisorReply reply, Completion completion) {
+        Iterator<KVMBlockCommitExtensionPoint> it = blockCommitExts.iterator();
+        doAfterCommitVolume(it, host, msg, cmd, reply, completion);
+    }
+
+    public void failedToCommitVolume(KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, KVMAgentCommands.BlockCommitVolumeResponse rsp, ErrorCode err) {
+        for (KVMBlockCommitExtensionPoint ext : blockCommitExts) {
+            ext.failedToCommitVolume(host, msg, cmd, rsp, err);
+        }
     }
 
     public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {

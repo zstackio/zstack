@@ -146,7 +146,9 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
-            rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+            if (spec.getImageSpec().getInventory() != null) {
+                rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+            }
             Optional.ofNullable(spec.getImageSpec().getSelectedBackupStorage())
                     .ifPresent(it -> rmsg.setBackupStorageUuid(it.getBackupStorageUuid()));
         }
@@ -209,7 +211,11 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
 
                 amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
                 amsg.setDiskOfferingUuid(dinv.getUuid());
-                rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+
+                if (spec.getImageSpec().getInventory() != null) {
+                    rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+                }
+
                 amsg.setSystemTags(spec.getDataVolumeSystemTags());
                 bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                 msgs.add(amsg);

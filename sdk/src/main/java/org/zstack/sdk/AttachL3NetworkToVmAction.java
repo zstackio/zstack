@@ -40,6 +40,9 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String customMac;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmNicParams;
+
     @Param(required = false)
     public java.util.List systemTags;
 

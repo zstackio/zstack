@@ -116,7 +116,6 @@ class SecurityGroupUpgradeDbCase extends SubCase {
                 .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
                 .eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.Ingress).list()
         assert oldIngressRules.find {it.ipVersion == 4 && it.protocol == SecurityGroupRuleProtocolType.ALL && it.remoteSecurityGroupUuid == null}
-
         SQL.New(SecurityGroupRuleVO.class)
                 .eq(SecurityGroupRuleVO_.securityGroupUuid, sg1.uuid)
                 .set(SecurityGroupRuleVO_.priority, SecurityGroupConstant.LOWEST_RULE_PRIORITY)

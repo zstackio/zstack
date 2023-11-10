@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.image.ImageInventory;
@@ -152,6 +153,8 @@ public class VolumeInventory implements Serializable {
 
     private String lastVmInstanceUuid;
 
+    private Timestamp lastAttachDate;
+
     public VolumeInventory() {
     }
 
@@ -177,10 +180,12 @@ public class VolumeInventory implements Serializable {
         this.volumeQos = other.volumeQos;
         this.lastDetachDate = other.lastDetachDate;
         this.lastVmInstanceUuid = other.lastVmInstanceUuid;
+        this.lastAttachDate = other.lastAttachDate;
     }
 
 
-    public static VolumeInventory valueOf(VolumeVO vo) {
+    public static VolumeInventory
+    valueOf(VolumeVO vo) {
         VolumeInventory inv = new VolumeInventory();
         inv.setRootImageUuid(vo.getRootImageUuid());
         inv.setCreateDate(vo.getCreateDate());
@@ -204,6 +209,7 @@ public class VolumeInventory implements Serializable {
         inv.setVolumeQos(vo.getVolumeQos());
         inv.setLastDetachDate(vo.getLastDetachDate());
         inv.setLastVmInstanceUuid(vo.getLastVmInstanceUuid());
+        inv.setLastAttachDate(vo.getLastAttachDate());
         return inv;
     }
 
@@ -411,5 +417,13 @@ public class VolumeInventory implements Serializable {
 
     public static void setAttachedJudgers(List<VolumeAttachedJudger> attachedJudgers) {
         VolumeInventory.attachedJudgers = attachedJudgers;
+    }
+
+    public Timestamp getLastAttachDate() {
+        return lastAttachDate;
+    }
+
+    public void setLastAttachDate(Timestamp lastAttachDate) {
+        this.lastAttachDate = lastAttachDate;
     }
 }

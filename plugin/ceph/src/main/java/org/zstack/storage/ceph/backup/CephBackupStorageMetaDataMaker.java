@@ -159,6 +159,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 if (imageInventory.getPlatform() != null) {
                     imageVO.setPlatform(ImagePlatform.valueOf(imageInventory.getPlatform()));
                 }
+                imageVO.setArchitecture(imageInventory.getArchitecture());
                 imageVO.setSize(imageInventory.getSize());
                 imageVO.setState(ImageState.valueOf(imageInventory.getState()));
                 imageVO.setSystem(imageInventory.isSystem());

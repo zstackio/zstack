@@ -26,6 +26,7 @@ public class VolumeAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VolumeAO, Timestamp> createDate;
     public static volatile SingularAttribute<VolumeAO, Timestamp> lastOpDate;
     public static volatile SingularAttribute<VolumeAO, Timestamp> lastDetachDate;
+    public static volatile SingularAttribute<VolumeAO, Timestamp> lastAttachDate;
     public static volatile SingularAttribute<VolumeAO, String> lastVmInstanceUuid;
     public static volatile SingularAttribute<VolumeAO, Boolean> isShareable;
     public static volatile SingularAttribute<VolumeAO, String> volumeQos;

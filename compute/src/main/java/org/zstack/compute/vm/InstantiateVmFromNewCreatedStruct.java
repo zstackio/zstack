@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
 import org.zstack.header.vm.VmCreationStrategy;
@@ -51,6 +52,16 @@ public class InstantiateVmFromNewCreatedStruct {
         if (candidatePrimaryStorageUuidsForDataVolume != null) {
             this.candidatePrimaryStorageUuidsForDataVolume.addAll(candidatePrimaryStorageUuidsForDataVolume);
         }
+    }
+
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -130,6 +141,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setAvoidHostUuids(msg.getAvoidHostUuids());
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
+        struct.setDiskAOs(msg.getDiskAOs());
         return struct;
     }
 
@@ -148,6 +160,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRequiredHostUuid(msg.getHostUuid());
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
+        struct.setDiskAOs(msg.getDiskAOs());
         return struct;
     }
 

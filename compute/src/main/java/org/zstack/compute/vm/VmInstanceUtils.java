@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
-
 /**
  * Created by Wenhao.Zhang on 22/03/10
  */
@@ -32,13 +31,24 @@ public class VmInstanceUtils {
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         cmsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         cmsg.setSshKeyPairUuids(msg.getSshKeyPairUuids());
+        cmsg.setPlatform(msg.getPlatform());
+        cmsg.setGuestOsType(msg.getGuestOsType());
+        cmsg.setArchitecture(msg.getArchitecture());
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
+        cmsg.setPlatform(msg.getPlatform());
+        cmsg.setGuestOsType(msg.getGuestOsType());
+        cmsg.setArchitecture(msg.getArchitecture());
+        if (msg.getVirtio() == null) {
+            cmsg.setVirtio(false);
+        } else {
+            cmsg.setVirtio(msg.isVirtio());
+        }
+        cmsg.setDiskAOs(msg.getDiskAOs());
         return cmsg;
     }
 
@@ -106,5 +116,23 @@ public class VmInstanceUtils {
         }
 
         return spec;
+    }
+
+    private static void setVmInstanceInfoFromRootDiskAO(CreateVmInstanceMsg cmsg, APICreateVmInstanceMsg msg) {
+        if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
+            return;
+        }
+        APICreateVmInstanceMsg.DiskAO rootdiskAO = msg.getDiskAOs().stream()
+                .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
+        if (rootdiskAO == null) {
+            return;
+        }
+        cmsg.setPlatform(rootdiskAO.getPlatform());
+        cmsg.setGuestOsType(rootdiskAO.getGuestOsType());
+        cmsg.setArchitecture(rootdiskAO.getArchitecture());
+        if (CollectionUtils.isNotEmpty(rootdiskAO.getSystemTags())
+                && rootdiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
+            cmsg.setVirtio(true);
+        }
     }
 }

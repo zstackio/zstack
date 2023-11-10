@@ -34,6 +34,10 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String defaultL3NetworkUuid;
     private String allocatorStrategy;
     private String strategy;
+    private String platform;
+    private String guestOsType;
+    private String architecture;
+    private Boolean virtio;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
@@ -62,6 +66,24 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         if (candidatePrimaryStorageUuidsForDataVolume != null) {
             this.candidatePrimaryStorageUuidsForDataVolume.addAll(candidatePrimaryStorageUuidsForDataVolume);
         }
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -337,5 +359,29 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setSshKeyPairUuids(List<String> sshKeyPairUuids) {
         this.sshKeyPairUuids = sshKeyPairUuids;
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 }

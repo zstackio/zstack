@@ -42,4 +42,7 @@ public class VolumeSystemTags {
 
     @NonCloneable
     public static EphemeralSystemTag FLATTEN = new EphemeralSystemTag("volume::flatten");
+
+    public static String VOLUME_QOS_TOKEN = "qos";
+    public static PatternedSystemTag VOLUME_QOS = new PatternedSystemTag(String.format("%s::{%s}", VOLUME_QOS_TOKEN, VOLUME_QOS_TOKEN), VolumeVO.class);
 }

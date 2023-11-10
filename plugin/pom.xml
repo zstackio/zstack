@@ -32,6 +32,7 @@
         <module>sugonSdnController</module>
         <module>directory</module>
         <module>sshKeyPair</module>
+        <module>hostNetwork</module>
     </modules>
     <dependencies>
         <dependency>
