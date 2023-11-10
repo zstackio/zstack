@@ -1221,9 +1221,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
                 if (rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
                     msg.setVirtio(true);
-                } else {
-                    msg.setVirtio(false);
                 }
+            } else {
+                msg.setVirtio(false);
             }
         }
 
