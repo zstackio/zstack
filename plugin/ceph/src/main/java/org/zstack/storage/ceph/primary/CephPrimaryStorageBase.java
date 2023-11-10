@@ -19,6 +19,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
@@ -904,7 +905,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CreateKvmSecretCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         String userKey;
+        @GrayVersion(value = "5.0.0")
         String uuid;
 
         public String getUserKey() {

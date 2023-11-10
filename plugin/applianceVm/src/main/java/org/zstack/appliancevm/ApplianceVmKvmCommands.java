@@ -1,5 +1,6 @@
 package org.zstack.appliancevm;
 
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.kvm.KVMAgentCommands;
 
 import java.util.Map;
@@ -9,9 +10,11 @@ import java.util.Map;
 public interface ApplianceVmKvmCommands {
     public static class PrepareBootstrapInfoCmd extends KVMAgentCommands.AgentCommand {
         public static final String PATH = "/appliancevm/setbootstrapinfo";
-
+        @GrayVersion(value = "5.0.0")
         private Map<String, Object> info;
+        @GrayVersion(value = "5.0.0")
         private String socketPath;
+        @GrayVersion(value = "5.0.0")
         private Integer bootStrapInfoTimeout;
 
         public Map<String, Object> getInfo() {

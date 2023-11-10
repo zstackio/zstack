@@ -12,6 +12,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
@@ -47,6 +48,9 @@ import static org.zstack.utils.CollectionDSL.list;
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
     @Autowired
     private RESTFacade restf;
+    
+    @Autowired
+    private UpgradeChecker upgradeChecker;
 
     static {
         allowedOperations.addState(VmInstanceState.Created, StartNewCreatedApplianceVmMsg.class.getName());
@@ -815,6 +819,10 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
 
     private FlowChain addBootstrapFlows(FlowChain chain, HypervisorType hvType) {
+        if (upgradeChecker.skipConnectAgent(self.getUuid())) {
+            return chain;
+        }
+        
         for (Flow flow : createBootstrapFlows(hvType)) {
             chain.then(flow);
         }

@@ -1,5 +1,7 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.core.upgrade.GrayUpgradeAgent;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
@@ -14,10 +16,10 @@ import java.util.List;
 import java.util.Map;
 
 public class VirtualRouterCommands {
-	public static class AgentCommand implements Serializable {
+	public static class AgentCommand extends GrayUpgradeAgent implements Serializable {
 	}
 	
-	public static class AgentResponse {
+	public static class AgentResponse extends GrayUpgradeAgent {
 		public boolean success = true;
 		public String error;
 		public boolean isSuccess() {
@@ -35,6 +37,7 @@ public class VirtualRouterCommands {
 	}
 
 	public static class GetTypeCommand extends AgentCommand{
+		@GrayVersion(value = "5.0.0")
 		private String uuid;
 
 		public String getUuid() {
@@ -47,6 +50,7 @@ public class VirtualRouterCommands {
 	}
 
 	public static class GetTypeRsp extends AgentResponse {
+		@GrayVersion(value = "5.0.0")
 		private boolean isVyos;
 
 		public boolean isVyos() {
@@ -59,11 +63,17 @@ public class VirtualRouterCommands {
 	}
 
     public static class InitCommand extends AgentCommand {
+	    @GrayVersion(value = "5.0.0")
 		private String uuid;
+	    @GrayVersion(value = "5.0.0")
         private int restartDnsmasqAfterNumberOfSIGUSER1;
+	    @GrayVersion(value = "5.0.0")
 		private String mgtCidr;
+	    @GrayVersion(value = "5.0.0")
 		private String logLevel;
+	    @GrayVersion(value = "5.0.0")
 		private List<String> timeServers;
+	    @GrayVersion(value = "5.0.0")
 		private Map<String,String> parms;
 
 		public String getUuid() {
@@ -116,10 +126,15 @@ public class VirtualRouterCommands {
 	}
 
     public static class InitRsp extends AgentResponse {
+	    @GrayVersion(value = "5.0.0")
 		private String zvrVersion;
+	    @GrayVersion(value = "5.0.0")
 		private String vyosVersion;
+	    @GrayVersion(value = "5.0.0")
 		private String kernelVersion;
+	    @GrayVersion(value = "5.0.0")
 		private String ipsecCurrentVersion;
+	    @GrayVersion(value = "5.0.0")
 		private String ipsecLatestVersion;
 
 		public String getZvrVersion() {
@@ -303,6 +318,7 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class ConfigureNicCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private List<NicInfo> nics;
 
 		public List<NicInfo> getNics() {
@@ -318,6 +334,7 @@ public class VirtualRouterCommands {
 	}
 
 	public static class ConfigureNicFirewallDefaultActionCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private List<NicInfo> nics;
 
 		public List<NicInfo> getNics() {
@@ -333,6 +350,7 @@ public class VirtualRouterCommands {
 	}
 
 	public static class RemoveNicCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private List<NicInfo> nics;
 
 		public List<NicInfo> getNics() {
@@ -504,6 +522,7 @@ public class VirtualRouterCommands {
 	}
 
 	public static class RemoveDhcpEntryCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private List<DhcpInfo> dhcpEntries;
 
 		public List<DhcpInfo> getDhcpEntries() {
@@ -519,7 +538,9 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class AddDhcpEntryCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private List<DhcpInfo> dhcpEntries;
+		@GrayVersion(value = "5.0.0")
 		private boolean rebuild;
 
 		public List<DhcpInfo> getDhcpEntries() {
@@ -546,6 +567,7 @@ public class VirtualRouterCommands {
 	}
 
 	public static class RefreshDHCPServerCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private List<DhcpServerInfo> dhcpServers;
 
 		public List<DhcpServerInfo> getDhcpServers() {
@@ -618,7 +640,9 @@ public class VirtualRouterCommands {
 	}
 
     public static class SyncSNATCmd extends AgentCommand {
+	    @GrayVersion(value = "5.0.0")
         private List<SNATInfo> snats;
+	    @GrayVersion(value = "5.0.0")
         private Boolean enable;
 
         public List<SNATInfo> getSnats() {
@@ -641,6 +665,7 @@ public class VirtualRouterCommands {
     }
 	
 	public static class SetSNATCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
         private SNATInfo snat;
 
         public SNATInfo getSnat() {
@@ -656,6 +681,7 @@ public class VirtualRouterCommands {
 	}
 
     public static class RemoveSNATCmd extends AgentCommand {
+	    @GrayVersion(value = "5.0.0")
         private List<SNATInfo> natInfo;
 
         public List<SNATInfo> getNatInfo() {
@@ -671,6 +697,7 @@ public class VirtualRouterCommands {
     }
 	
 	public static class SyncPortForwardingRuleCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 	    private List<PortForwardingRuleTO> rules;
 
         public List<PortForwardingRuleTO> getRules() {
@@ -685,6 +712,7 @@ public class VirtualRouterCommands {
 	}
 
 	public static class CreatePortForwardingRuleCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 	    private List<PortForwardingRuleTO> rules;
 
         public List<PortForwardingRuleTO> getRules() {
@@ -699,6 +727,7 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class RevokePortForwardingRuleCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 	    private List<PortForwardingRuleTO> rules;
 
         public List<PortForwardingRuleTO> getRules() {
@@ -734,6 +763,7 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class SetDnsCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private List<DnsInfo> dns;
 
 		public List<DnsInfo> getDns() {
@@ -749,10 +779,15 @@ public class VirtualRouterCommands {
 	}
 
 	public static class SetForwardDnsCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private String dns;
+		@GrayVersion(value = "5.0.0")
         private String mac;
+		@GrayVersion(value = "5.0.0")
         private String bridgeName;
+		@GrayVersion(value = "5.0.0")
         private String nameSpace;
+		@GrayVersion(value = "5.0.0")
         private List<String> wrongDns;
 
         public String getNameSpace() {
@@ -800,8 +835,11 @@ public class VirtualRouterCommands {
 	}
 
 	public static class RemoveForwardDnsCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private String mac;
+		@GrayVersion(value = "5.0.0")
 		private String bridgeName;
+		@GrayVersion(value = "5.0.0")
 		private String nameSpace;
 
 		public String getNameSpace() {
@@ -834,6 +872,7 @@ public class VirtualRouterCommands {
 	}
 
     public static class RemoveDnsCmd extends AgentCommand {
+	    @GrayVersion(value = "5.0.0")
         private List<DnsInfo> dns;
 
         public List<DnsInfo> getDns() {
@@ -1004,9 +1043,12 @@ public class VirtualRouterCommands {
 	}
 
 	public static class CreateVipCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private Boolean syncVip;
+		@GrayVersion(value = "5.0.0")
 	    private List<VipTO> vips;
 	    /* sync all vips to virtual router together with nic ips*/
+	    @GrayVersion(value = "5.0.0")
 	    private List<NicIpTO> nicIps;
 
 		public Boolean getSyncVip() {
@@ -1035,6 +1077,7 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class RemoveVipCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 	    private List<VipTO> vips;
 
         public List<VipTO> getVips() {
@@ -1051,6 +1094,7 @@ public class VirtualRouterCommands {
 	}
 
     public static class CreateEipCmd extends AgentCommand {
+	    @GrayVersion(value = "5.0.0")
         private EipTO eip;
 
         public EipTO getEip() {
@@ -1066,6 +1110,7 @@ public class VirtualRouterCommands {
     }
 
     public static class RemoveEipCmd extends AgentCommand {
+	    @GrayVersion(value = "5.0.0")
         private EipTO eip;
 
         public EipTO getEip() {
@@ -1081,6 +1126,7 @@ public class VirtualRouterCommands {
     }
 
     public static class SyncEipCmd extends AgentCommand {
+	    @GrayVersion(value = "5.0.0")
         private List<EipTO> eips;
 
         public List<EipTO> getEips() {
@@ -1165,7 +1211,9 @@ public class VirtualRouterCommands {
 	}
 
 	public static class ChangeDefaultNicCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private NicInfo newNic;
+		@GrayVersion(value = "5.0.0")
 		private List<SNATInfo> snats;
 
 		public NicInfo getNewNic() {
@@ -1190,6 +1238,7 @@ public class VirtualRouterCommands {
 	}
 
 	public static class ConfigureNtpCmd extends AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private List<String> timeServers;
 
 		public List<String> getTimeServers() {

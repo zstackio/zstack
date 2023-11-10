@@ -14,6 +14,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -498,7 +499,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public static class RefreshLbCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         List<LbTO> lbs;
+        @GrayVersion(value = "5.0.0")
         public Boolean enableHaproxyLog;
 
         public List<LbTO> getLbs() {
@@ -511,6 +514,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public static class RefreshLbLogLevelCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         String level;
 
         public String getLevel() {
@@ -529,7 +533,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public static class CertificateCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         String uuid;
+        @GrayVersion(value = "5.0.0")
         String certificate;
 
         public String getUuid() {
@@ -553,6 +559,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public static class DeleteLbCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         List<LbTO> lbs;
 
         public List<LbTO> getLbs() {
