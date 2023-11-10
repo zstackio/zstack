@@ -4,4 +4,9 @@
     <message>
         <name>org.zstack.header.core.APIGetChainTaskMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.agent.versioncontrol.APIQueryAgentVersionMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.kvm.KVMAgentCommands;
 
 import java.util.List;
@@ -73,7 +74,9 @@ public class VirtualRouterKvmBackendCommands {
 	}
 	
 	public static class CreateVritualRouterBootstrapIsoCmd extends KVMAgentCommands.AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		private BootstrapIsoInfo isoInfo;
+		@GrayVersion(value = "5.0.0")
 		private String isoPath;
 		public BootstrapIsoInfo getIsoInfo() {
 			return isoInfo;
@@ -93,6 +96,7 @@ public class VirtualRouterKvmBackendCommands {
 	}
 	
 	public static class DeleteVirtualRouterBootstrapIsoCmd extends KVMAgentCommands.AgentCommand {
+		@GrayVersion(value = "5.0.0")
 		public String isoPath;
 
 		public String getIsoPath() {

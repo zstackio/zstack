@@ -6,6 +6,7 @@ public class ConnectHostMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
     private boolean isStartPingTaskOnFailure;
     private boolean newAdd;
+    private boolean calledByAPI;
 
     public ConnectHostMsg() {
     }
@@ -37,6 +38,14 @@ public class ConnectHostMsg extends NeedReplyMessage implements HostMessage {
 
     public void setStartPingTaskOnFailure(boolean isStartPingTaskOnFailure) {
         this.isStartPingTaskOnFailure = isStartPingTaskOnFailure;
+    }
+
+    public boolean isCalledByAPI() {
+        return calledByAPI;
+    }
+
+    public void setCalledByAPI(boolean calledByAPI) {
+        this.calledByAPI = calledByAPI;
     }
 
     @Override

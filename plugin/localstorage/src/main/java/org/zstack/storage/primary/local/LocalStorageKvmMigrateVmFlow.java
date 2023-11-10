@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
@@ -85,22 +86,32 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     }
 
     public static class VerifySnapshotChainCmd extends LocalStorageKvmBackend.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<SnapshotTO> snapshots;
     }
 
     public static class RebaseSnapshotBackingFilesCmd extends LocalStorageKvmBackend.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<SnapshotTO> snapshots;
     }
 
     public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext, Serializable {
+        @GrayVersion(value = "5.0.0")
         public String sendCommandUrl;
+        @GrayVersion(value = "5.0.0")
         public List<String> paths;
+        @GrayVersion(value = "5.0.0")
         public String dstIp;
         @NoLogging
+        @GrayVersion(value = "5.0.0")
         public String dstPassword;
+        @GrayVersion(value = "5.0.0")
         public String dstUsername;
+        @GrayVersion(value = "5.0.0")
         public Integer dstPort = 22;
+        @GrayVersion(value = "5.0.0")
         public String stage;
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
     }
 

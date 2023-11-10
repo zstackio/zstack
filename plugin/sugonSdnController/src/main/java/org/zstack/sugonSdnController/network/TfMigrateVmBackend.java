@@ -1,40 +1,29 @@
 package org.zstack.sugonSdnController.network;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmGlobalConfig;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.sugonSdnController.userdata.TfUserdataBackend;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -51,10 +40,13 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint, VmPr
     protected DatabaseFacade dbf;
 
     public static class SugonNicNotifyCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String sugonSdnAction;
+        @GrayVersion(value = "5.0.0")
         private List<KVMAgentCommands.NicTO> nics;
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
-
+        @GrayVersion(value = "5.0.0")
         private String accountUuid;
         public String getSugonSdnAction() {
             return sugonSdnAction;

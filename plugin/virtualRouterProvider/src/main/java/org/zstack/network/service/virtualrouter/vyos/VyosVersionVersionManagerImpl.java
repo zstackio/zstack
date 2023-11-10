@@ -1,19 +1,10 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.rest.RESTFacade;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VersionComparator;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
-
-import java.io.*;
 
 public class VyosVersionVersionManagerImpl implements VyosVersionManager {
     private final static CLogger logger = Utils.getLogger(VyosVersionVersionManagerImpl.class);
@@ -22,7 +13,7 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
     public void vyosRouterVersionCheck(String vrUuid, ReturnValueCompletion<VyosVersionCheckResult> completion) {
         VyosVersionCheckResult result = new VyosVersionCheckResult();
 
-        String managementVersion = getManagementVersion();
+        String managementVersion = new VirtualRouterMetadataOperator().getManagementVersion();
         if (managementVersion == null) {
             completion.success(result);
             return;
@@ -59,34 +50,5 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
             logger.debug(String.format("virtual router[uuid: %s] successfully finish the version check", vrUuid));
         }
         completion.success(result);
-    }
-
-    private String getManagementVersion() {
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
-            return "3.10.0.0";
-        }
-
-        String managementVersion = null;
-        String path = null;
-        try {
-            path = PathUtil.findFileOnClassPath(VyosConstants.VYOS_VERSION_PATH, true).getAbsolutePath();
-        } catch (RuntimeException e) {
-            logger.error(String.format("vyos version file find file because %s", e.getMessage()));
-            return null;
-        }
-
-        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-            managementVersion = br.readLine();
-        } catch (IOException e) {
-            logger.error(String.format("vyos version file %s read error: %s", path, e.getMessage()));
-            return null;
-        }
-
-        if (!(VirtualRouterMetadataOperator.zvrVersionCheck(managementVersion))) {
-            logger.error(String.format("vyos version file format error: %s", managementVersion));
-            return null;
-        }
-
-        return managementVersion;
     }
 }

@@ -585,6 +585,7 @@ public abstract class HostBase extends AbstractHost {
     private void handle(final APIReconnectHostMsg msg) {
         ReconnectHostMsg rmsg = new ReconnectHostMsg();
         rmsg.setHostUuid(self.getUuid());
+        rmsg.setCalledByAPI(true);
         bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
         bus.send(rmsg, new CloudBusCallBack(msg) {
             @Override
@@ -934,10 +935,6 @@ public abstract class HostBase extends AbstractHost {
                     }
 
                     changeConnectionState(HostStatusEvent.disconnected);
-
-                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(PingHostFailedExtensionPoint.class),
-                            extension -> extension.afterPingHostFailed(self.getUuid(), errorCode));
-
                     completion.success(reply);
                 } else {
                     reply.setConnected(true);
@@ -1023,19 +1020,24 @@ public abstract class HostBase extends AbstractHost {
             return true;
         }
 
-        if (skipConnectHost()) {
-            return true;
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            if (msg.isCalledByAPI()) {
+                return false;
+            }
+            return skipConnectHost();
         }
 
         return false;
     }
 
     private boolean skipConnectHost() {
-        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
-            if (agentVersionVO == null) {
-                return true;
-            }
+        AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
+        if (agentVersionVO == null) {
+            return true;
+        }
+
+        if (!agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
+            return true;
         }
 
         return false;
@@ -1066,6 +1068,7 @@ public abstract class HostBase extends AbstractHost {
 
                 ConnectHostMsg connectMsg = new ConnectHostMsg(self.getUuid());
                 connectMsg.setNewAdd(false);
+                connectMsg.setCalledByAPI(msg.isCalledByAPI());
                 bus.makeTargetServiceIdByResourceUuid(connectMsg, HostConstant.SERVICE_ID, self.getUuid());
                 bus.send(connectMsg, new CloudBusCallBack(msg, chain, completion) {
                     @Override
@@ -1272,10 +1275,13 @@ public abstract class HostBase extends AbstractHost {
             public void run(SyncTaskChain chain) {
                 checkState();
 
-                if (skipConnectHost()) {
-                    completion.success();
-                    chain.next();
-                    return;
+                // avoid connect host when grayScaleUpgrade
+                if (!msg.isNewAdd() && UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+                    if (!msg.isCalledByAPI() && skipConnectHost()) {
+                        completion.success();
+                        chain.next();
+                        return;
+                    }
                 }
 
                 final FlowChain flowChain = FlowChainBuilder.newShareFlowChain();

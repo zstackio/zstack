@@ -11,6 +11,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -220,8 +221,11 @@ public class SshKeyPairBase {
     }
 
     public static class AttachSshKeyPairToVmInstanceCommand extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String sshKeyPairUuid;
+        @GrayVersion(value = "5.0.0")
         public String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         public String publicKey;
 
         public String getSshKeyPairUuid() {
@@ -313,8 +317,11 @@ public class SshKeyPairBase {
     }
 
     public static class DetachSshKeyPairFromVmInstanceCommand extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String sshKeyPairUuid;
+        @GrayVersion(value = "5.0.0")
         public String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         public String publicKey;
 
         public String getSshKeyPairUuid() {

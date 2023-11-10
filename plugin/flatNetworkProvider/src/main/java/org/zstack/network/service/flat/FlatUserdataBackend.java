@@ -13,6 +13,7 @@ import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -483,8 +484,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     public static class CleanupUserdataCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String bridgeName;
+        @GrayVersion(value = "5.0.0")
         public String l3NetworkUuid;
+        @GrayVersion(value = "5.0.0")
         public String namespaceName;
     }
 
@@ -493,12 +497,16 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     public static class BatchApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<UserdataTO> userdata;
+        @GrayVersion(value = "5.0.0")
         public boolean rebuild;
     }
 
     public static class ApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String hostUuid;
+        @GrayVersion(value = "5.0.0")
         public UserdataTO userdata;
     }
 
@@ -507,9 +515,13 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     public static class ReleaseUserdataCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String hostUuid;
+        @GrayVersion(value = "5.0.0")
         public String vmIp;
+        @GrayVersion(value = "5.0.0")
         public String bridgeName;
+        @GrayVersion(value = "5.0.0")
         public String namespaceName;
     }
 
