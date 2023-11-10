@@ -553,6 +553,10 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         return virtio;
     }
 
+    public Boolean getVirtio() {
+        return virtio;
+    }
+
     public void setVirtio(boolean virtio) {
         this.virtio = virtio;
     }

@@ -1218,8 +1218,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             msg.setPlatform(rootDiskAO.getPlatform());
             msg.setGuestOsType(rootDiskAO.getGuestOsType());
             msg.setArchitecture(rootDiskAO.getArchitecture());
-            if (CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags()) && rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
-                msg.setVirtio(true);
+            if (CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
+                if (rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
+                    msg.setVirtio(true);
+                } else {
+                    msg.setVirtio(false);
+                }
             }
         }
 
@@ -1280,10 +1284,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             validateRootDiskOffering(imgFormat, msg);
 
-            if (image.getVirtio() != null) {
-                msg.setVirtio(image.getVirtio());
-            } else {
-                msg.setVirtio(false);
+            if (msg.getVirtio() == null) {
+                if (image.getVirtio() != null) {
+                    msg.setVirtio(image.getVirtio());
+                } else {
+                    msg.setVirtio(false);
+                }
             }
         }
 
