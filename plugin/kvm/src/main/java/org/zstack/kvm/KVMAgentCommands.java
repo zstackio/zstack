@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import org.zstack.core.upgrade.GrayUpgradeAgent;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
@@ -37,8 +39,10 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class AgentResponse implements ConditionalValidation {
+    public static class AgentResponse extends GrayUpgradeAgent implements ConditionalValidation {
+        @GrayVersion(value = "5.0.0")
         private boolean success = true;
+        @GrayVersion(value = "5.0.0")
         private String error;
 
         public boolean isSuccess() {
@@ -64,20 +68,25 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class AgentCommand {
+    public static class AgentCommand extends GrayUpgradeAgent {
+        @GrayVersion(value = "5.0.0")
         public LinkedHashMap kvmHostAddons;
     }
 
     public static class CheckVmStateCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<String> vmUuids;
+        @GrayVersion(value = "5.0.0")
         public String hostUuid;
     }
 
     public static class CheckVmStateRsp extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public Map<String, String> states;
     }
 
     public static class UpdateVmPriorityCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<PriorityConfigStruct> priorityConfigStructs;
     }
 
@@ -85,8 +94,11 @@ public class KVMAgentCommands {
     }
 
     public static class ChangeVmNicStateCommand extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private String state;
+        @GrayVersion(value = "5.0.0")
         private NicTO nic;
 
         public String getVmUuid() {
@@ -119,7 +131,9 @@ public class KVMAgentCommands {
     }
 
     public static class DetachNicCommand extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private NicTO nic;
 
         public String getVmUuid() {
@@ -144,9 +158,13 @@ public class KVMAgentCommands {
     }
 
     public static class AttachNicCommand extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private NicTO nic;
+        @GrayVersion(value = "5.0.0")
         private String accountUuid;
+        @GrayVersion(value = "5.0.0")
         private Map addons = new HashMap();
 
         public Map getAddons() {
@@ -183,6 +201,7 @@ public class KVMAgentCommands {
     }
 
     public static class AttachNicResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         List<VirtualDeviceInfo> virtualDeviceInfoList;
 
         public List<VirtualDeviceInfo> getVirtualDeviceInfoList() {
@@ -195,9 +214,13 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateNicCmd extends AgentCommand implements VmAddOnsCmd {
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         private List<KVMAgentCommands.NicTO> nics;
+        @GrayVersion(value = "5.0.0")
         private Map<String, Object> addons = new HashMap<>();
+        @GrayVersion(value = "5.0.0")
         private String accountUuid;
 
         public List<NicTO> getNics() {
@@ -388,6 +411,7 @@ public class KVMAgentCommands {
     }
 
     public static class CheckPhysicalNetworkInterfaceCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private List<String> interfaceNames = new ArrayList<>(2);
 
         public CheckPhysicalNetworkInterfaceCmd addInterfaceName(String name) {
@@ -405,6 +429,7 @@ public class KVMAgentCommands {
     }
 
     public static class CheckPhysicalNetworkInterfaceResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private List<String> failedInterfaceNames;
 
         public List<String> getFailedInterfaceNames() {
@@ -423,35 +448,65 @@ public class KVMAgentCommands {
     }
 
     public static class HostFactResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private String osDistribution;
+        @GrayVersion(value = "5.0.0")
         private String osVersion;
+        @GrayVersion(value = "5.0.0")
         private String osRelease;
+        @GrayVersion(value = "5.0.0")
         private String qemuImgVersion;
+        @GrayVersion(value = "5.0.0")
         private String libvirtVersion;
+        @GrayVersion(value = "5.0.0")
         private String hvmCpuFlag;
+        @GrayVersion(value = "5.0.0")
         private String eptFlag;
+        @GrayVersion(value = "5.0.0")
         private String cpuArchitecture;
+        @GrayVersion(value = "5.0.0")
         private String cpuModelName;
+        @GrayVersion(value = "5.0.0")
         private String cpuGHz;
+        @GrayVersion(value = "5.0.0")
         private String cpuProcessorNum;
+        @GrayVersion(value = "5.0.0")
         private String powerSupplyModelName;
+        @GrayVersion(value = "5.0.0")
         private String powerSupplyManufacturer;
+        @GrayVersion(value = "5.0.0")
         private String ipmiAddress;
+        @GrayVersion(value = "5.0.0")
         private String powerSupplyMaxPowerCapacity;
+        @GrayVersion(value = "5.0.0")
         private String hostCpuModelName;
+        @GrayVersion(value = "5.0.0")
         private String systemProductName;
+        @GrayVersion(value = "5.0.0")
         private String systemSerialNumber;
+        @GrayVersion(value = "5.0.0")
         private String systemManufacturer;
+        @GrayVersion(value = "5.0.0")
         private String systemUUID;
+        @GrayVersion(value = "5.0.0")
         private String biosVendor;
+        @GrayVersion(value = "5.0.0")
         private String biosVersion;
+        @GrayVersion(value = "5.0.0")
         private String biosReleaseDate;
+        @GrayVersion(value = "5.0.0")
         private String bmcVersion;
+        @GrayVersion(value = "5.0.0")
         private String uptime;
+        @GrayVersion(value = "5.0.0")
         private String memorySlotsMaximum;
+        @GrayVersion(value = "5.0.0")
         private String cpuCache;
+        @GrayVersion(value = "5.0.0")
         private List<String> ipAddresses;
+        @GrayVersion(value = "5.0.0")
         private List<String> libvirtCapabilities;
+        @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO virtualizerInfo;
 
         public String getOsDistribution() {
@@ -696,11 +751,17 @@ public class KVMAgentCommands {
     }
 
     public static class HostCapacityResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private long cpuNum;
+        @GrayVersion(value = "5.0.0")
         private long cpuSpeed;
+        @GrayVersion(value = "5.0.0")
         private long usedCpu;
+        @GrayVersion(value = "5.0.0")
         private long totalMemory;
+        @GrayVersion(value = "5.0.0")
         private long usedMemory;
+        @GrayVersion(value = "5.0.0")
         private int cpuSockets;
 
         public int getCpuSockets() {
@@ -753,8 +814,11 @@ public class KVMAgentCommands {
     }
 
     public static class DeleteBridgeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String physicalInterfaceName;
+        @GrayVersion(value = "5.0.0")
         private String bridgeName;
+        @GrayVersion(value = "5.0.0")
         private String l2NetworkUuid;
 
         public String getPhysicalInterfaceName() {
@@ -786,10 +850,15 @@ public class KVMAgentCommands {
 
 
     public static class CreateBridgeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String physicalInterfaceName;
+        @GrayVersion(value = "5.0.0")
         private String bridgeName;
+        @GrayVersion(value = "5.0.0")
         private String l2NetworkUuid;
+        @GrayVersion(value = "5.0.0")
         private Boolean disableIptables;
+        @GrayVersion(value = "5.0.0")
         private Integer mtu;
 
         public String getL2NetworkUuid() {
@@ -840,7 +909,9 @@ public class KVMAgentCommands {
     public static class DeleteBridgeResponse extends AgentResponse {
     }
     public static class CheckBridgeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String physicalInterfaceName;
+        @GrayVersion(value = "5.0.0")
         private String bridgeName;
 
         public String getPhysicalInterfaceName() {
@@ -864,6 +935,7 @@ public class KVMAgentCommands {
     }
 
     public static class CheckVlanBridgeCmd extends CheckBridgeCmd {
+        @GrayVersion(value = "5.0.0")
         private int vlan;
 
         public int getVlan() {
@@ -880,7 +952,9 @@ public class KVMAgentCommands {
     }
 
     public static class AddInterfaceToBridgeCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String physicalInterfaceName;
+        @GrayVersion(value = "5.0.0")
         private String bridgeName;
 
         public String getPhysicalInterfaceName() {
@@ -904,6 +978,7 @@ public class KVMAgentCommands {
     }
 
     public static class DeleteVlanBridgeCmd extends DeleteBridgeCmd {
+        @GrayVersion(value = "5.0.0")
         private int vlan;
 
         public int getVlan() {
@@ -920,6 +995,7 @@ public class KVMAgentCommands {
 
 
     public static class CreateVlanBridgeCmd extends CreateBridgeCmd {
+        @GrayVersion(value = "5.0.0")
         private int vlan;
 
         public int getVlan() {
@@ -1244,7 +1320,9 @@ public class KVMAgentCommands {
     }
 
     public static class DetachDataVolumeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private VolumeTO volume;
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
 
         public VolumeTO getVolume() {
@@ -1268,8 +1346,11 @@ public class KVMAgentCommands {
     }
 
     public static class AttachDataVolumeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private VolumeTO volume;
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         private Map<String, Object> addons;
 
         public Map<String, Object> getAddons() {
@@ -1301,6 +1382,7 @@ public class KVMAgentCommands {
     }
 
     public static class AttachDataVolumeResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         List<VirtualDeviceInfo> virtualDeviceInfoList;
 
         public List<VirtualDeviceInfo> getVirtualDeviceInfoList() {
@@ -1412,7 +1494,9 @@ public class KVMAgentCommands {
     }
 
     public static class GenerateVdpaCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
+        @GrayVersion(value = "5.0.0")
         public List<NicTO> nics;
 
         public String getVmUuid() {
@@ -1433,6 +1517,7 @@ public class KVMAgentCommands {
     }
 
     public static class GenerateVdpaResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public List<String> vdpaPaths;
 
         public List<String> getVdpaPaths() {
@@ -1445,7 +1530,9 @@ public class KVMAgentCommands {
     }
 
     public static class DeleteVdpaCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
+        @GrayVersion(value = "5.0.0")
         public String nicInternalName;
 
         public String getVmUuid() {
@@ -1469,7 +1556,9 @@ public class KVMAgentCommands {
     }
 
     public static class GenerateVHostUserClientCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
+        @GrayVersion(value = "5.0.0")
         public List<NicTO> nics;
 
         public String getVmUuid() {
@@ -1494,7 +1583,9 @@ public class KVMAgentCommands {
     }
 
     public static class DeleteVHostUserClientCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
+        @GrayVersion(value = "5.0.0")
         public String nicInternalName;
 
         public String getVmUuid() {
@@ -1518,18 +1609,25 @@ public class KVMAgentCommands {
 
     }
     public static class CleanVmFirmwareFlashCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
     }
 
     public static class HardenVmConsoleCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
+        @GrayVersion(value = "5.0.0")
         public Long vmInternalId;
+        @GrayVersion(value = "5.0.0")
         public String hostManagementIp;
     }
 
     public static class DeleteVmConsoleFirewallCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
+        @GrayVersion(value = "5.0.0")
         public Long vmInternalId;
+        @GrayVersion(value = "5.0.0")
         public String hostManagementIp;
     }
 
@@ -1576,14 +1674,22 @@ public class KVMAgentCommands {
     }
 
     public static class vdiCmd extends AgentCommand implements Serializable {
+        @GrayVersion(value = "5.0.0")
         private String consoleMode;
+        @GrayVersion(value = "5.0.0")
         private String videoType;
+        @GrayVersion(value = "5.0.0")
         private String soundType;
+        @GrayVersion(value = "5.0.0")
         private String spiceStreamingMode;
+        @GrayVersion(value = "5.0.0")
         private Integer VDIMonitorNumber;
         @NoLogging
+        @GrayVersion(value = "5.0.0")
         private String consolePassword;
+        @GrayVersion(value = "5.0.0")
         private Map<String, String> qxlMemory;
+        @GrayVersion(value = "5.0.0")
         private List<String> spiceChannels;
 
         public String getConsoleMode() {
@@ -1652,8 +1758,11 @@ public class KVMAgentCommands {
     }
 
     public static class ConfigPrimaryVmCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private List<VmNicRedirectConfig> configs;
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         private String hostIp;
 
         public String getVmInstanceUuid() {
@@ -1682,12 +1791,19 @@ public class KVMAgentCommands {
     }
 
     public static class RegisterPrimaryVmHeartbeatCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String hostUuid;
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         private Integer heartbeatPort;
+        @GrayVersion(value = "5.0.0")
         private String targetHostIp;
+        @GrayVersion(value = "5.0.0")
         private boolean coloPrimary;
+        @GrayVersion(value = "5.0.0")
         private Integer redirectNum;
+        @GrayVersion(value = "5.0.0")
         private List<VolumeTO> volumes;
 
         public Integer getRedirectNum() {
@@ -1748,13 +1864,21 @@ public class KVMAgentCommands {
     }
 
     public static class StartColoSyncCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         private Integer blockReplicationPort;
+        @GrayVersion(value = "5.0.0")
         private Integer nbdServerPort;
+        @GrayVersion(value = "5.0.0")
         private String secondaryVmHostIp;
+        @GrayVersion(value = "5.0.0")
         private Long checkpointDelay;
+        @GrayVersion(value = "5.0.0")
         private boolean fullSync;
+        @GrayVersion(value = "5.0.0")
         private List<VolumeTO> volumes = new ArrayList<>();
+        @GrayVersion(value = "5.0.0")
         private List<NicTO> nics = new ArrayList<>();
 
         public String getVmInstanceUuid() {
@@ -1823,10 +1947,15 @@ public class KVMAgentCommands {
     }
 
     public static class ConfigSecondaryVmCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         private Integer mirrorPort;
+        @GrayVersion(value = "5.0.0")
         private Integer secondaryInPort;
+        @GrayVersion(value = "5.0.0")
         private Integer nbdServerPort;
+        @GrayVersion(value = "5.0.0")
         private String primaryVmHostIp;
 
         public Integer getMirrorPort() {
@@ -1872,83 +2001,148 @@ public class KVMAgentCommands {
 
     public static class StartVmCmd extends vdiCmd implements VmAddOnsCmd {
         private String accountUuid;
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
+        @GrayVersion(value = "5.0.0")
         private long vmInternalId;
+        @GrayVersion(value = "5.0.0")
         private String vmName;
+        @GrayVersion(value = "5.0.0")
         private String imagePlatform;
+        @GrayVersion(value = "5.0.0")
         private String imageArchitecture;
+        @GrayVersion(value = "5.0.0")
         private long memory;
+        @GrayVersion(value = "5.0.0")
         private long maxMemory;
+        @GrayVersion(value = "5.0.0")
         private long reservedMemory;
+        @GrayVersion(value = "5.0.0")
         private int cpuNum;
+        @GrayVersion(value = "5.0.0")
         private int maxVcpuNum;
+        @GrayVersion(value = "5.0.0")
         private long cpuSpeed;
         // cpu topology
+        @GrayVersion(value = "5.0.0")
         private Integer socketNum;
+        @GrayVersion(value = "5.0.0")
         private Integer cpuOnSocket;
         // set thread per core default 1 to keep backward compatibility
+        @GrayVersion(value = "5.0.0")
         private Integer threadsPerCore = 1;
-
+        @GrayVersion(value = "5.0.0")
         private List<String> bootDev;
+        @GrayVersion(value = "5.0.0")
         private VolumeTO rootVolume;
+        @GrayVersion(value = "5.0.0")
         private VirtualDeviceInfo memBalloon;
+        @GrayVersion(value = "5.0.0")
         private List<IsoTO> bootIso = new ArrayList<>();
+        @GrayVersion(value = "5.0.0")
         private List<CdRomTO> cdRoms = new ArrayList<>();
+        @GrayVersion(value = "5.0.0")
         private List<VolumeTO> dataVolumes;
+        @GrayVersion(value = "5.0.0")
         private List<VolumeTO> cacheVolumes;
+        @GrayVersion(value = "5.0.0")
         private List<VolumeTO> Volumes;
+        @GrayVersion(value = "5.0.0")
         private List<NicTO> nics;
+        @GrayVersion(value = "5.0.0")
         private long timeout;
+        @GrayVersion(value = "5.0.0")
         private Map<String, Object> addons;
+        @GrayVersion(value = "5.0.0")
         private boolean instanceOfferingOnlineChange;
+        @GrayVersion(value = "5.0.0")
         private String nestedVirtualization;
+        @GrayVersion(value = "5.0.0")
         private String hostManagementIp;
+        @GrayVersion(value = "5.0.0")
         private String clock;
+        @GrayVersion(value = "5.0.0")
         private String clockTrack;
+        @GrayVersion(value = "5.0.0")
         private boolean useNuma;
+        @GrayVersion(value = "5.0.0")
         private String MemAccess;
+        @GrayVersion(value = "5.0.0")
         private boolean usbRedirect;
+        @GrayVersion(value = "5.0.0")
         private boolean enableSecurityElement;
+        @GrayVersion(value = "5.0.0")
         private boolean useBootMenu;
+        @GrayVersion(value = "5.0.0")
         private Integer bootMenuSplashTimeout;
+        @GrayVersion(value = "5.0.0")
         private boolean createPaused;
+        @GrayVersion(value = "5.0.0")
         private boolean kvmHiddenState;
+        @GrayVersion(value = "5.0.0")
         private boolean vmPortOff;
+        @GrayVersion(value = "5.0.0")
         private String vmCpuModel;
+        @GrayVersion(value = "5.0.0")
         private boolean emulateHyperV;
 
         // hyperv features
+        @GrayVersion(value = "5.0.0")
         private boolean hypervClock;
+        @GrayVersion(value = "5.0.0")
         private String vendorId;
 
         // suspend features
+        @GrayVersion(value = "5.0.0")
         private boolean suspendToRam;
+        @GrayVersion(value = "5.0.0")
         private boolean suspendToDisk;
 
+        @GrayVersion(value = "5.0.0")
         private boolean additionalQmp;
+        @GrayVersion(value = "5.0.0")
         private boolean isApplianceVm;
+        @GrayVersion(value = "5.0.0")
         private String systemSerialNumber;
+        @GrayVersion(value = "5.0.0")
         private String bootMode;
         // used when bootMode == 'UEFI'
+        @GrayVersion(value = "5.0.0")
         private boolean secureBoot;
+        @GrayVersion(value = "5.0.0")
         private boolean fromForeignHypervisor;
+        @GrayVersion(value = "5.0.0")
         private String machineType;
+        @GrayVersion(value = "5.0.0")
         private Integer pciePortNums;
+        @GrayVersion(value = "5.0.0")
         private Integer predefinedPciBridgeNum;
+        @GrayVersion(value = "5.0.0")
         private boolean useHugePage;
+        @GrayVersion(value = "5.0.0")
         private String chassisAssetTag;
+        @GrayVersion(value = "5.0.0")
         private PriorityConfigStruct priorityConfigStruct;
+        @GrayVersion(value = "5.0.0")
         private String memorySnapshotPath;
+        @GrayVersion(value = "5.0.0")
         private boolean coloPrimary;
+        @GrayVersion(value = "5.0.0")
         private boolean coloSecondary;
+        @GrayVersion(value = "5.0.0")
         private boolean consoleLogToFile;
+        @GrayVersion(value = "5.0.0")
         private boolean acpi;
+        @GrayVersion(value = "5.0.0")
         private boolean x2apic = true;
         // cpuid hypervisor feature
+        @GrayVersion(value = "5.0.0")
         private boolean cpuHypervisorFeature = true;
+        @GrayVersion(value = "5.0.0")
         private List<String> oemStrings = new ArrayList<>();
 
         // TODO: only for test
+        @GrayVersion(value = "5.0.0")
         private boolean useColoBinary;
 
         public void setSocketNum(Integer socketNum) {
@@ -2502,9 +2696,13 @@ public class KVMAgentCommands {
     }
 
     public static class VmDevicesInfoResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private List<VmNicInfo> nicInfos;
+        @GrayVersion(value = "5.0.0")
         private List<VirtualDeviceInfo> virtualDeviceInfoList;
+        @GrayVersion(value = "5.0.0")
         private VirtualDeviceInfo memBalloonInfo;
+        @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO virtualizerInfo;
 
         public VirtualDeviceInfo getMemBalloonInfo() {
@@ -2541,6 +2739,7 @@ public class KVMAgentCommands {
     }
 
     public static class SyncVmDeviceInfoCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
 
         public String getVmInstanceUuid() {
@@ -2577,8 +2776,11 @@ public class KVMAgentCommands {
     }
 
     public static class ChangeCpuMemoryCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private int cpuNum;
+        @GrayVersion(value = "5.0.0")
         private long memorySize;
 
         public void setVmUuid(String vmUuid) {
@@ -2607,7 +2809,9 @@ public class KVMAgentCommands {
     }
 
     public static class ChangeCpuMemoryResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private int cpuNum;
+        @GrayVersion(value = "5.0.0")
         private long memorySize;
 
         public void setCpuNum(int cpuNum) {
@@ -2628,7 +2832,9 @@ public class KVMAgentCommands {
     }
 
     public static class IncreaseCpuCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private int cpuNum;
 
         public void setVmUuid(String vmUuid) {
@@ -2649,6 +2855,7 @@ public class KVMAgentCommands {
     }
 
     public static class IncreaseCpuResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private int cpuNum;
 
         public void setCpuNum(int cpuNum) {
@@ -2661,7 +2868,9 @@ public class KVMAgentCommands {
     }
 
     public static class IncreaseMemoryCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private long memorySize;
 
         public void setVmUuid(String vmUuid) {
@@ -2682,6 +2891,7 @@ public class KVMAgentCommands {
     }
 
     public static class IncreaseMemoryResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private long memorySize;
 
         public void setMemorySize(long memorySize) {
@@ -2694,8 +2904,11 @@ public class KVMAgentCommands {
     }
 
     public static class ScanVmPortCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String ip;
+        @GrayVersion(value = "5.0.0")
         private String brname;
+        @GrayVersion(value = "5.0.0")
         private int port;
 
         public String getIp() {
@@ -2724,6 +2937,7 @@ public class KVMAgentCommands {
     }
 
     public static class ScanVmPortResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private Map<String, String> portStatus;
 
         public Map<String, String> getPortStatus() {
@@ -2736,6 +2950,7 @@ public class KVMAgentCommands {
     }
 
     public static class GetVncPortCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
 
         public String getVmUuid() {
@@ -2748,10 +2963,15 @@ public class KVMAgentCommands {
     }
 
     public static class GetVncPortResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private int port;
+        @GrayVersion(value = "5.0.0")
         private String protocol;
+        @GrayVersion(value = "5.0.0")
         private Integer vncPort;
+        @GrayVersion(value = "5.0.0")
         private Integer spicePort;
+        @GrayVersion(value = "5.0.0")
         private Integer spiceTlsPort;
 
         public int getPort() {
@@ -2796,8 +3016,11 @@ public class KVMAgentCommands {
     }
 
     public static class StopVmCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String uuid;
+        @GrayVersion(value = "5.0.0")
         private String type;
+        @GrayVersion(value = "5.0.0")
         private long timeout;
         private List<VmNicInventory> vmNics;
 
@@ -2838,7 +3061,9 @@ public class KVMAgentCommands {
     }
 
     public static class PauseVmCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String uuid;
+        @GrayVersion(value = "5.0.0")
         private long timeout;
 
         public String getUuid() {
@@ -2863,7 +3088,9 @@ public class KVMAgentCommands {
     }
 
     public static class ResumeVmCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String uuid;
+        @GrayVersion(value = "5.0.0")
         private long timeout;
 
         public String getUuid() {
@@ -2888,8 +3115,11 @@ public class KVMAgentCommands {
     }
 
     public static class RebootVmCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String uuid;
+        @GrayVersion(value = "5.0.0")
         private long timeout;
+        @GrayVersion(value = "5.0.0")
         private List<String> bootDev;
 
         public List<String> getBootDev() {
@@ -2918,6 +3148,7 @@ public class KVMAgentCommands {
     }
 
     public static class RebootVmResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO virtualizerInfo;
 
         public VirtualizerInfoTO getVirtualizerInfo() {
@@ -2930,7 +3161,9 @@ public class KVMAgentCommands {
     }
 
     public static class DestroyVmCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String uuid;
+        @GrayVersion(value = "5.0.0")
         private List<VmNicInventory> vmNics;
 
         public String getUuid() {
@@ -2955,6 +3188,7 @@ public class KVMAgentCommands {
     }
 
     public static class GetVmFirstBootDeviceCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String uuid;
 
         public String getUuid() {
@@ -2967,6 +3201,7 @@ public class KVMAgentCommands {
     }
 
     public static class GetVmFirstBootDeviceResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private String firstBootDevice;
 
         public String getFirstBootDevice() {
@@ -2979,7 +3214,9 @@ public class KVMAgentCommands {
     }
 
     public static class GetVmDeviceAddressCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String uuid;
+        @GrayVersion(value = "5.0.0")
         private Map<String, List> deviceTOs = new HashMap<>();
 
         public void setUuid(String uuid) {
@@ -3004,6 +3241,7 @@ public class KVMAgentCommands {
     }
 
     public static class GetVmDeviceAddressRsp extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private Map<String, List<VmDeviceAddressTO>> addresses;
 
         public Map<String, List<VmDeviceAddressTO>> getAddresses() {
@@ -3020,6 +3258,7 @@ public class KVMAgentCommands {
     }
 
     public static class GetVirtualizerInfoCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private List<String> vmUuids;
 
         public List<String> getVmUuids() {
@@ -3032,7 +3271,9 @@ public class KVMAgentCommands {
     }
 
     public static class GetVirtualizerInfoRsp extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO hostInfo;
+        @GrayVersion(value = "5.0.0")
         private List<VirtualizerInfoTO> vmInfoList;
 
         public VirtualizerInfoTO getHostInfo() {
@@ -3125,8 +3366,9 @@ public class KVMAgentCommands {
     }
 
     public static class VmSyncResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private HashMap<String, String> states;
-
+        @GrayVersion(value = "5.0.0")
         private List<String> vmInShutdowns;
 
         public HashMap<String, String> getStates() {
@@ -3147,8 +3389,11 @@ public class KVMAgentCommands {
     }
 
     public static class RefreshAllRulesOnHostCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private List<VmNicSecurityTO> vmNicTOs;
+        @GrayVersion(value = "5.0.0")
         private Map<String, List<RuleTO>> ruleTOs;
+        @GrayVersion(value = "5.0.0")
         private Map<String, List<RuleTO>> ip6RuleTOs;
 
         public RefreshAllRulesOnHostCmd() {
@@ -3186,6 +3431,7 @@ public class KVMAgentCommands {
     }
 
     public static class CheckDefaultSecurityGroupCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         Boolean skipIpv6;
     }
 
@@ -3194,6 +3440,7 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateGroupMemberCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private List<SecurityGroupMembersTO> updateGroupTOs;
 
         public void setUpdateGroupTOs(List<SecurityGroupMembersTO> updateGroupTOs) {
@@ -3209,6 +3456,7 @@ public class KVMAgentCommands {
     }
 
     public static class CleanupUnusedRulesOnHostCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         Boolean skipIpv6;
     }
 
@@ -3217,8 +3465,11 @@ public class KVMAgentCommands {
 
 
     public static class ApplySecurityGroupRuleCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private List<VmNicSecurityTO> vmNicTOs;
+        @GrayVersion(value = "5.0.0")
         private Map<String, List<RuleTO>> ruleTOs;
+        @GrayVersion(value = "5.0.0")
         private Map<String, List<RuleTO>> ip6RuleTOs;
 
         public ApplySecurityGroupRuleCmd() {
@@ -3256,20 +3507,35 @@ public class KVMAgentCommands {
     }
 
     public static class MigrateVmCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private String destHostIp;
+        @GrayVersion(value = "5.0.0")
         private String destHostManagementIp;
+        @GrayVersion(value = "5.0.0")
         private String storageMigrationPolicy;
+        @GrayVersion(value = "5.0.0")
         private String srcHostIp;
+        @GrayVersion(value = "5.0.0")
         private boolean useNuma;
+        @GrayVersion(value = "5.0.0")
         private boolean migrateFromDestination;
+        @GrayVersion(value = "5.0.0")
         private boolean autoConverge;
+        @GrayVersion(value = "5.0.0")
         private Integer downTime;
+        @GrayVersion(value = "5.0.0")
         private boolean xbzrle;
+        @GrayVersion(value = "5.0.0")
         private List<String> vdpaPaths;
+        @GrayVersion(value = "5.0.0")
         private List<NicTO> nics;
+        @GrayVersion(value = "5.0.0")
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
+        @GrayVersion(value = "5.0.0")
         private boolean reload;
+        @GrayVersion(value = "5.0.0")
         private long bandwidth;
 
         public Integer getDownTime() {
@@ -3400,7 +3666,9 @@ public class KVMAgentCommands {
     }
 
     public static class VmGetCpuXmlResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private String cpuXml;
+        @GrayVersion(value = "5.0.0")
         private String cpuModelName;
 
         public String getCpuModelName() {
@@ -3421,6 +3689,7 @@ public class KVMAgentCommands {
     }
 
     public static class VmCompareCpuFunctionCmd extends AgentCommand{
+        @GrayVersion(value = "5.0.0")
         private String cpuXml;
 
         public String getCpuXml() {
@@ -3439,10 +3708,15 @@ public class KVMAgentCommands {
     }
 
     public static class MergeSnapshotCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private VolumeTO volume;
+        @GrayVersion(value = "5.0.0")
         private String srcPath;
+        @GrayVersion(value = "5.0.0")
         private String destPath;
+        @GrayVersion(value = "5.0.0")
         private boolean fullRebase;
 
         public boolean isFullRebase() {
@@ -3487,10 +3761,15 @@ public class KVMAgentCommands {
     }
 
     public static class CheckSnapshotCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         private String currentInstallPath;
+        @GrayVersion(value = "5.0.0")
         private List<String> excludeInstallPaths;
+        @GrayVersion(value = "5.0.0")
         private Map<String, Integer> volumeChainToCheck;
 
         public String getVmUuid() {
@@ -3606,14 +3885,23 @@ public class KVMAgentCommands {
     }
 
     public static class TakeSnapshotCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         private String vmUuid;
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         private VolumeTO volume;
+        @GrayVersion(value = "5.0.0")
         private String installPath;
+        @GrayVersion(value = "5.0.0")
         private boolean fullSnapshot;
+        @GrayVersion(value = "5.0.0")
         private String volumeInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String newVolumeUuid;
+        @GrayVersion(value = "5.0.0")
         private String newVolumeInstallPath;
+        @GrayVersion(value = "5.0.0")
         private boolean online;
         private long timeout;
 
@@ -3715,10 +4003,13 @@ public class KVMAgentCommands {
 
     public static class TakeSnapshotResponse extends AgentResponse {
         @Validation
+        @GrayVersion(value = "5.0.0")
         private String newVolumeInstallPath;
         @Validation
+        @GrayVersion(value = "5.0.0")
         private String snapshotInstallPath;
         @Validation(notZero = true)
+        @GrayVersion(value = "5.0.0")
         private long size;
 
         public long getSize() {
@@ -3747,8 +4038,11 @@ public class KVMAgentCommands {
     }
 
     public static class LogoutIscsiTargetCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String hostname;
+        @GrayVersion(value = "5.0.0")
         private int port;
+        @GrayVersion(value = "5.0.0")
         private String target;
 
         public String getHostname() {
@@ -3780,11 +4074,16 @@ public class KVMAgentCommands {
     }
 
     public static class LoginIscsiTargetCmd extends AgentCommand implements Serializable {
+        @GrayVersion(value = "5.0.0")
         private String hostname;
+        @GrayVersion(value = "5.0.0")
         private int port;
+        @GrayVersion(value = "5.0.0")
         private String target;
+        @GrayVersion(value = "5.0.0")
         private String chapUsername;
         @NoLogging
+        @GrayVersion(value = "5.0.0")
         private String chapPassword;
 
         public String getChapUsername() {
@@ -3832,7 +4131,9 @@ public class KVMAgentCommands {
     }
 
     public static class AttachIsoCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public IsoTO iso;
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
     }
 
@@ -3840,8 +4141,11 @@ public class KVMAgentCommands {
     }
 
     public static class DetachIsoCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
+        @GrayVersion(value = "5.0.0")
         public String isoUuid;
+        @GrayVersion(value = "5.0.0")
         public int deviceId;
     }
 
@@ -3850,10 +4154,15 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateHostOSCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String hostUuid;
+        @GrayVersion(value = "5.0.0")
         public String excludePackages;
+        @GrayVersion(value = "5.0.0")
         public String updatePackages;
+        @GrayVersion(value = "5.0.0")
         public String releaseVersion;
+        @GrayVersion(value = "5.0.0")
         public boolean enableExpRepo;
     }
 
@@ -3861,10 +4170,15 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateDependencyCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String hostUuid;
+        @GrayVersion(value = "5.0.0")
         public boolean enableExpRepo;
+        @GrayVersion(value = "5.0.0")
         public String excludePackages;
+        @GrayVersion(value = "5.0.0")
         public String updatePackages;
+        @GrayVersion(value = "5.0.0")
         public String zstackRepo;
     }
 
@@ -3944,16 +4258,21 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateSpiceChannelConfigResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public boolean restartLibvirt = false;
     }
 
     public static class PrimaryStorageCommand extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageUuid;
     }
 
     public static class CancelCmd extends AgentCommand implements CancelCommand {
+        @GrayVersion(value = "5.0.0")
         private String cancellationApiId;
+        @GrayVersion(value = "5.0.0")
         private Integer times;
+        @GrayVersion(value = "5.0.0")
         private Integer interval;
 
         public Integer getTimes() {
@@ -3987,25 +4306,33 @@ public class KVMAgentCommands {
     }
 
     public static class GetDevCapacityCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String dirPath;
     }
 
     public static class GetDevCapacityResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public long totalSize;
+        @GrayVersion(value = "5.0.0")
         public long availableSize;
+        @GrayVersion(value = "5.0.0")
         public long dirSize;
     }
 
     public static class CheckFileOnHostCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public Set<String> paths;
+        @GrayVersion(value = "5.0.0")
         public boolean md5Return;
     }
 
     public static class CheckFileOnHostResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public Map<String, String> existPaths;
     }
 
     public static class GetHostNUMATopologyCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String HostUuid;
 
         public void setHostUuid(String hostUuid) {
@@ -4018,6 +4345,7 @@ public class KVMAgentCommands {
     }
 
     public static class GetHostNUMATopologyResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public Map<String, HostNUMANode> topology;
 
 
@@ -4079,19 +4407,27 @@ public class KVMAgentCommands {
     }
 
     public static class AttachVolumeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumePrimaryStorageUuid;
+        @GrayVersion(value = "5.0.0")
         public String volumeInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String mountPath;
+        @GrayVersion(value = "5.0.0")
         public String device;
     }
 
     public static class AttachVolumeRsp extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public String device;
     }
 
     public static class DetachVolumeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String mountPath;
+        @GrayVersion(value = "5.0.0")
         public String device;
     }
 
@@ -4099,6 +4435,7 @@ public class KVMAgentCommands {
     }
 
     public static class VmFstrimCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
     }
 

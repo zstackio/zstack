@@ -32,6 +32,8 @@ Options:
 
   globalconfigdocmd   generate global config markdown docs
 
+  grayupgrade         generate gray upgrade config
+
   i18n                generate i18n properties for zstack
 
   i18njson            generate JSON files containing all i18n from zstack
@@ -299,6 +301,12 @@ globalconfigdocmd() {
   cd - >/dev/null
 }
 
+grayupgrade() {
+  cd premium/test-premium
+  $MVNTest -Dtest=TestGenerateGrayUpgradeConfig
+  cd - > /dev/null
+}
+
 zprint() {
   # NOTE(weiw): `sh` in CentOS is an alias of `bash` actually
   # and `echo` behaves different for `sh` in MacOS and CentOS
@@ -534,6 +542,8 @@ run_profile() {
     ts
   elif test x$1 = x'globalconfigdocmd'; then
     globalconfigdocmd
+  elif test x$1 = x'grayupgrade'; then
+    grayupgrade
   elif test x$1 = x'git'; then
     gitconfig $@
   elif test x$1 = x'gosdk'; then
