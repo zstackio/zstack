@@ -62,6 +62,7 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
         cmd.setVlan(vlanId);
         cmd.setMtu(new MtuGetter().getL2Mtu(vxlan));
         cmd.setL2NetworkUuid(l2Network.getUuid());
+        cmd.setIsolated(vxlan.getIsolated());
 
         int finalVlanId = vlanId;
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

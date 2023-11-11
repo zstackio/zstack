@@ -33,6 +33,7 @@ public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAcco
     public L2NetworkVO() {
         this.setvSwitchType(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
         this.setVirtualNetworkId(L2NetworkConstant.VIRTUAL_NETWORK_ID_DEFAULT_VALUE);
+        this.setIsolated(Boolean.FALSE);
     }
 
     public L2NetworkVO(L2NetworkVO vo) {
@@ -46,6 +47,8 @@ public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAcco
         this.setType(vo.getType());
         this.setvSwitchType(vo.getvSwitchType());
         this.setVirtualNetworkId(vo.getVirtualNetworkId());
+        this.setIsolated(vo.getIsolated());
+        this.setPvlan(vo.getPvlan());
         this.setZoneUuid(vo.getZoneUuid());
         this.setAccountUuid(vo.getAccountUuid());
     }

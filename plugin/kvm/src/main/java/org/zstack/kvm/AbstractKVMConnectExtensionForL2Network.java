@@ -6,6 +6,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -17,6 +18,9 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.vm.*;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -204,6 +208,34 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
             }
         });
 
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "sync_vlan_isolated";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<L2NetworkInventory> vlanNetworks = l2Networks.stream()
+                        .filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE) && l2.getIsolated())
+                        .collect(Collectors.toList());
+                List<String> localVmUuidList = Q.New(VmInstanceVO.class)
+                        .select(VmInstanceVO_.uuid)
+                        .eq(VmInstanceVO_.hostUuid, hostUuid)
+                        .notEq(VmInstanceVO_.state, VmInstanceState.Stopped)
+                        .listValues();
+                List<String> localStopVmUuidList = Q.New(VmInstanceVO.class)
+                        .select(VmInstanceVO_.uuid)
+                        .eq(VmInstanceVO_.lastHostUuid, hostUuid)
+                        .eq(VmInstanceVO_.state, VmInstanceState.Stopped)
+                        .listValues();
+                localVmUuidList.addAll(localStopVmUuidList);
+                Map<String, List<String>> isolatedL2NetworkMacMap = buildIsolatedL2NetworkMacMap(vlanNetworks, localVmUuidList);
+                if (isolatedL2NetworkMacMap.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+                syncIsolatedL2NetworkMacMap(trigger, hostUuid, isolatedL2NetworkMacMap);
+            }
+        });
+
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
@@ -215,5 +247,50 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    private Map<String, List<String>> buildIsolatedL2NetworkMacMap(List<L2NetworkInventory> vlanNetworks, List<String> localVmUuidList) {
+        Map<String, List<String>> isolatedL2NetworkMacMap = new HashMap<>();
+        for (L2NetworkInventory l2inv : vlanNetworks) {
+            List<String> l3Uuids = Q.New(L3NetworkVO.class)
+                    .select(L3NetworkVO_.uuid)
+                    .eq(L3NetworkVO_.l2NetworkUuid, l2inv.getUuid())
+                    .listValues();
+            List<String> macList;
+            if (localVmUuidList != null && !localVmUuidList.isEmpty()) {
+                macList = Q.New(VmNicVO.class)
+                        .select(VmNicVO_.mac)
+                        .in(VmNicVO_.l3NetworkUuid, l3Uuids)
+                        .notIn(VmNicVO_.vmInstanceUuid, localVmUuidList)
+                        .listValues();
+            } else {
+                macList = Q.New(VmNicVO.class)
+                        .select(VmNicVO_.mac)
+                        .in(VmNicVO_.l3NetworkUuid, l3Uuids)
+                        .listValues();
+            }
+            if (macList != null && !macList.isEmpty()) {
+                isolatedL2NetworkMacMap.put(l2inv.getUuid(), macList);
+            }
+        }
+        return isolatedL2NetworkMacMap;
+    }
+
+    private void syncIsolatedL2NetworkMacMap(FlowTrigger trigger, String hostUuid, Map<String, List<String>> isolatedL2NetworkMacMap) {
+        L2NetworkIsolatedSyncOnHostMsg smsg= new L2NetworkIsolatedSyncOnHostMsg();
+        smsg.setHostUuid(hostUuid);
+        smsg.setIsolatedL2NetworkMacMap(isolatedL2NetworkMacMap);
+        bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(smsg, new CloudBusCallBack(smsg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(reply.getError().toString());
+                    trigger.fail(reply.getError());
+                    return;
+                }
+                trigger.next();
+            }
+        });
     }
 }

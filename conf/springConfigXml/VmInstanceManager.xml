@@ -38,6 +38,7 @@
 		<value>org.zstack.compute.vm.VmPreAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicIpFlow</value>
+                <value>org.zstack.compute.vm.VmSyncL2NetworkIsolatedForStartingVmFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
@@ -59,6 +60,7 @@
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicForStartingVmFlow</value>
+                <value>org.zstack.compute.vm.VmSyncL2NetworkIsolatedForStartingVmFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
@@ -69,6 +71,7 @@
                 <value>org.zstack.compute.vm.VmAllocateHostForStoppedVmFlow</value>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicForStartingVmFlow</value>
+                <value>org.zstack.compute.vm.VmSyncL2NetworkIsolatedForStartingVmFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
@@ -80,6 +83,7 @@
                 <value>org.zstack.compute.vm.VmAllocateHostForMigrateVmFlow</value>
                 <value>org.zstack.compute.vm.VmMigrateCallExtensionFlow</value>
                 <value>org.zstack.compute.vm.VmMigrateOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmSyncL2NetworkIsolatedForStartingVmFlow</value>
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
             </list>
         </property>
