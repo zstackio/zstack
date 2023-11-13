@@ -232,7 +232,21 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
                     trigger.next();
                     return;
                 }
-                syncIsolatedL2NetworkMacMap(trigger, hostUuid, isolatedL2NetworkMacMap);
+                L2NetworkIsolatedSyncOnHostMsg smsg= new L2NetworkIsolatedSyncOnHostMsg();
+                smsg.setHostUuid(hostUuid);
+                smsg.setIsolatedL2NetworkMacMap(isolatedL2NetworkMacMap);
+                bus.makeTargetServiceIdByResourceUuid(smsg, L2NetworkConstant.L2_PRIVATE_VLAN_SERVICE_ID, hostUuid);
+                bus.send(smsg, new CloudBusCallBack(smsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(reply.getError().toString());
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+                        trigger.next();
+                    }
+                });
             }
         });
 
@@ -274,23 +288,5 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
             }
         }
         return isolatedL2NetworkMacMap;
-    }
-
-    private void syncIsolatedL2NetworkMacMap(FlowTrigger trigger, String hostUuid, Map<String, List<String>> isolatedL2NetworkMacMap) {
-        L2NetworkIsolatedSyncOnHostMsg smsg= new L2NetworkIsolatedSyncOnHostMsg();
-        smsg.setHostUuid(hostUuid);
-        smsg.setIsolatedL2NetworkMacMap(isolatedL2NetworkMacMap);
-        bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(smsg, new CloudBusCallBack(smsg) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    logger.warn(reply.getError().toString());
-                    trigger.fail(reply.getError());
-                    return;
-                }
-                trigger.next();
-            }
-        });
     }
 }
