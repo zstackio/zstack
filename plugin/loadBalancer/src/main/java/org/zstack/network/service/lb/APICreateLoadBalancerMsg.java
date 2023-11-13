@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
@@ -11,7 +12,10 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.utils.CollectionUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -74,13 +78,19 @@ public class APICreateLoadBalancerMsg extends APICreateMessage implements APIAud
     }
 
     public List<String> getVipUuids() {
+        if (!CollectionUtils.isEmpty(vipUuids)) {
+            return vipUuids;
+        }
+
+        vipUuids = new ArrayList<>();
+        if (!StringUtils.isEmpty(vipUuid)) {
+            vipUuids.add(vipUuid);
+        }
+        if (!StringUtils.isEmpty(ipv6VipUuid)) {
+            vipUuids.add(ipv6VipUuid);
+        }
         return vipUuids;
     }
-
-    public void setVipUuids(List<String> vipUuids) {
-        this.vipUuids = vipUuids;
-    }
-
     public String getType() {
         return type;
     }

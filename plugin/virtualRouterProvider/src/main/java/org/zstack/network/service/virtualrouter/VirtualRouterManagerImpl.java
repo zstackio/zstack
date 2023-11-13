@@ -1748,7 +1748,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         final List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
                 "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
-                "where lb.vipUuid = vip.uuid " +
+                "where (lb.vipUuid = vip.uuid or lb.ipv6VipUuid = vip.uuid) " +
                 "and vip.uuid = peer.vipUuid " +
                 "and lb.uuid = :lbUuid").param("lbUuid", lbUuid).list();
 
@@ -1903,7 +1903,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         final List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
                 "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
-                "where lb.vipUuid = vip.uuid " +
+                "where (lb.vipUuid = vip.uuid or lb.ipv6VipUuid = vip.uuid) " +
                 "and vip.uuid = peer.vipUuid " +
                 "and lb.uuid = :lbUuid")
                 .param("lbUuid", msg.getLoadBalancerUuid())
@@ -1917,10 +1917,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
             @Override
             protected List<VmNicInventory> scripts() {
-                VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
-                        "where lb.vipUuid = vip.uuid " +
+                List<VipVO> lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
+                        "where (lb.vipUuid = vip.uuid or lb.ipv6VipUuid = vip.uuid) " +
                         "and lb.uuid = :lbUuid")
-                                   .param("lbUuid", msg.getLoadBalancerUuid()).find();
+                                   .param("lbUuid", msg.getLoadBalancerUuid()).list();
 
                 //1.get the l3 networks which has the vrouter lb network service.
                 List<String>  inners = sql("select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
@@ -1936,7 +1936,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
 
                 //2.check the l3 of vm nic is peer l3 of the loadbalancer
-                L3NetworkVO vipNetwork = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, lbVipVO.getL3NetworkUuid()).find();
+                L3NetworkVO vipNetwork = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, lbVipVO.get(0).getL3NetworkUuid()).find();
                 List<String> peerL3Uuids = SQL.New("select l3.uuid" +
                         " from VmNicVO nic, L3NetworkVO l3"  +
                         " where nic.vmInstanceUuid in " +

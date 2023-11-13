@@ -373,7 +373,7 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                 @Override
                 @Transactional(readOnly = true)
                 public List<LoadBalancerVO> call() {
-                    String sql = "select d from LoadBalancerVO d where d.vipUuid in (:vipUuids) or d.ipv6VipUuid in (:vipUuids)";
+                    String sql = "select d from LoadBalancerVO d where (d.vipUuid in (:vipUuids) or d.ipv6VipUuid in (:vipUuids))";
                     TypedQuery<LoadBalancerVO> q = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);
                     q.setParameter("vipUuids", vipUuids);
                     return q.getResultList();
@@ -410,7 +410,7 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
             dmsg.setHardDeleteDb(true);
             dmsg.setVipUuid(vipUuid);
             dmsg.setUuid(vo.getUuid());
-            bus.makeTargetServiceIdByResourceUuid(dmsg, LoadBalancerConstants.SERVICE_ID,  LoadBalancerConstants.SERVICE_ID);
+            bus.makeTargetServiceIdByResourceUuid(dmsg, LoadBalancerConstants.SERVICE_ID, vipUuid);
             dMsgs.add(dmsg);
         }
 

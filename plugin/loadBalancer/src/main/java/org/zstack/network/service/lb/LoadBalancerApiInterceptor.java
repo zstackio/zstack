@@ -236,20 +236,17 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (countOfL3 > 1) {
             throw new ApiMessageInterceptionException(argerr("could not create loadbalancer, because l3 network of vip and ipv6 vip are not the same l3 network"));
         }
-        msg.setVipUuids(new ArrayList<>());
 
         if (!StringUtils.isEmpty(msg.getVipUuid())) {
-            validateVipOfLoadBalancer(msg.getVipUuid());
-            msg.getVipUuids().add(msg.getVipUuid());
+            validateVipOfLoadBalancer(IPv6Constants.IPv4, msg.getVipUuid());
         }
 
         if (!StringUtils.isEmpty(msg.getIpv6VipUuid())) {
-            validateVipOfLoadBalancer(msg.getIpv6VipUuid());
-            msg.getVipUuids().add(msg.getIpv6VipUuid());
+            validateVipOfLoadBalancer(IPv6Constants.IPv6, msg.getIpv6VipUuid());
         }
     }
 
-    private void validateVipOfLoadBalancer(String vipUuid) {
+    private void validateVipOfLoadBalancer(int vipIpVersion, String vipUuid) {
         List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, vipUuid).listValues();
         if(useFor != null && !useFor.isEmpty()){
             VipUseForList useForList = new VipUseForList(useFor);
@@ -260,18 +257,26 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
         /* the vip can not the first of the last ip of the cidr */
         VipVO vipVO = dbf.findByUuid(vipUuid, VipVO.class);
-        if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
-            AddressPoolVO addressPoolVO = dbf.findByUuid(vipVO.getIpRangeUuid(), AddressPoolVO.class);
-            if (addressPoolVO == null) {
-                return;
-            }
+        if (IPv6Constants.IPv4 == vipIpVersion) {
+            if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
+                AddressPoolVO addressPoolVO = dbf.findByUuid(vipVO.getIpRangeUuid(), AddressPoolVO.class);
+                if (addressPoolVO == null) {
+                    return;
+                }
 
-            SubnetUtils utils = new SubnetUtils(addressPoolVO.getNetworkCidr());
-            SubnetUtils.SubnetInfo subnet = utils.getInfo();
-            String firstIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) - 1);
-            String lastIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) + 1);
-            if (vipVO.getIp().equals(firstIp) || vipVO.getIp().equals(lastIp)) {
-                throw new ApiMessageInterceptionException(argerr("Load balancer VIP [%s] cannot be the first or the last IP of the CIDR with the public address pool type", vipVO.getIp()));
+                SubnetUtils utils = new SubnetUtils(addressPoolVO.getNetworkCidr());
+                SubnetUtils.SubnetInfo subnet = utils.getInfo();
+                String firstIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) - 1);
+                String lastIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) + 1);
+                if (vipVO.getIp().equals(firstIp) || vipVO.getIp().equals(lastIp)) {
+                    throw new ApiMessageInterceptionException(argerr("Load balancer VIP [%s] cannot be the first or the last IP of the CIDR with the public address pool type", vipVO.getIp()));
+                }
+            } else {
+                throw new ApiMessageInterceptionException(argerr("cloud not create loadbalancer, because param vipUuid point to VIP[%s] is not ipv4 VIP", vipVO.getUuid()));
+            }
+        } else if (IPv6Constants.IPv6 == vipIpVersion) {
+            if (!IPv6NetworkUtils.isIpv6Address(vipVO.getIp())) {
+                throw new ApiMessageInterceptionException(argerr("cloud not create loadbalancer, because param ipv6VipUuid point to VIP[%s] is not ipv6 VIP", vipVO.getUuid()));
             }
         }
     }

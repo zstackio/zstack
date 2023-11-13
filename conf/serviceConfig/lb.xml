@@ -147,4 +147,8 @@
         <name>org.zstack.network.service.lb.APIChangeLoadBalancerBackendServerMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.network.service.lb.APIAttachVipToLoadBalancerMsg</name>
+    </message>
+
 </service>
