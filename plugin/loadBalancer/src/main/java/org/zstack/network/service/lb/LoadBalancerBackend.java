@@ -34,4 +34,7 @@ public interface LoadBalancerBackend {
     void detachVipFromLoadBalancer(LoadBalancerStruct struct, VipVO vip, Completion completion);
 
     void attachVipToLoadBalancer(LoadBalancerStruct struct, VipVO vip, Completion completion);
+
+    //the method should put the service layer, but ha not abstract the business layer yet
+    boolean canDetachVipFromLb(LoadBalancerStruct struct, VipVO vip);
 }
