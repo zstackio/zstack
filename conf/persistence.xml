@@ -199,5 +199,7 @@
         <class>org.zstack.header.storage.primary.PrimaryStorageHistoricalUsageVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupHistoricalUsageVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostHistoricalUsageVO</class>
+        <class>org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO </class>
+        <class>org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefVO</class>
     </persistence-unit>
 </persistence>
