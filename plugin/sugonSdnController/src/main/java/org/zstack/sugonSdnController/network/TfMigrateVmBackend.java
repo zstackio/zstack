@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
@@ -39,7 +40,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.operr;
 
 
-public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint {
+public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint, VmPreMigrationExtensionPoint {
     private static final CLogger logger = Utils.getLogger(TfMigrateVmBackend.class);
     public static final String NOTIFY_TF_NIC = "/vm/nodifytfnic";
     @Autowired
@@ -48,6 +49,7 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint {
     private AccountManager accountMgr;
     @Autowired
     protected DatabaseFacade dbf;
+
     public static class SugonNicNotifyCmd extends KVMAgentCommands.AgentCommand {
         private String sugonSdnAction;
         private List<KVMAgentCommands.NicTO> nics;
@@ -89,6 +91,17 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint {
 
     public static class SugonNicNotifyCmdRsp extends KVMAgentCommands.AgentResponse {
 
+    }
+
+
+    @Override
+    public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
+        try {
+            notifySugonSdn(vm, dstHostUuid, "add");
+            completion.success();
+        } catch (OperationFailureException e) {
+            completion.fail(e.getErrorCode());
+        }
     }
 
     @Override
