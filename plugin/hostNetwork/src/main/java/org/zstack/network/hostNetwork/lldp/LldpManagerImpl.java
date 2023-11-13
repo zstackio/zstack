@@ -1,14 +1,12 @@
 package org.zstack.network.hostNetwork.lldp;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.Platform;
-import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.APIMessage;
@@ -19,12 +17,9 @@ import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.network.hostNetwork.*;
 import org.zstack.network.hostNetwork.lldp.api.*;
 import org.zstack.network.hostNetwork.lldp.entity.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -74,7 +69,7 @@ public class LldpManagerImpl extends AbstractService {
         List <HostNetworkInterfaceVO> interfaceVOS = Q.New(HostNetworkInterfaceVO.class)
                 .in(HostNetworkInterfaceVO_.uuid, msg.getInterfaceUuids())
                 .list();
-        List<String> interfaceNames = interfaceVOS.stream().map(HostNetworkInterfaceVO::getUuid).collect(Collectors.toList());
+        List<String> interfaceNames = interfaceVOS.stream().map(HostNetworkInterfaceVO::getInterfaceName).collect(Collectors.toList());
         String hostUuid = interfaceVOS.get(0).getHostUuid();
         cmd.setPhysicalInterfaceNames(interfaceNames);
         cmd.setMode(msg.getMode());
@@ -112,7 +107,6 @@ public class LldpManagerImpl extends AbstractService {
         });
     }
 
-    @Transactional
     private synchronized void syncHostNetworkInterfaceLldpInDb(String interfaceUuid, HostNetworkInterfaceLldpRefInventory inv) {
         if (inv == null) {
             return;
@@ -164,8 +158,10 @@ public class LldpManagerImpl extends AbstractService {
                         greply.setError(operr("operation error, because %s", rsp.getError()));
                     } else {
                         syncHostNetworkInterfaceLldpInDb(msg.getInterfaceUuid(), rsp.getLldpInventory());
-                        greply.setLldp(HostNetworkInterfaceLldpRefInventory.valueOf(
-                                (HostNetworkInterfaceLldpRefVO) Q.New(HostNetworkInterfaceLldpRefVO.class).eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, msg.getInterfaceUuid()).find()));
+                        HostNetworkInterfaceLldpRefVO lldpRefVO =  Q.New(HostNetworkInterfaceLldpRefVO.class)
+                                .eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, msg.getInterfaceUuid())
+                                .find();
+                        greply.setLldp(lldpRefVO != null ? HostNetworkInterfaceLldpRefInventory.valueOf(lldpRefVO) : null);
                     }
                 }
                 bus.reply(msg, greply);

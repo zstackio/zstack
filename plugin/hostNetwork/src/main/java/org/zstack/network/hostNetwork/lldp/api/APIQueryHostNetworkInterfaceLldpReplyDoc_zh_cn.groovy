@@ -13,7 +13,7 @@ doc {
 		desc "物理网卡lldp信息清单"
 		type "List"
 		since "5.0.0"
-		clz HostNetworkInterfaceLldpRefInventory.class
+		clz HostNetworkInterfaceLldpInventory.class
 	}
 	field {
 		name "success"

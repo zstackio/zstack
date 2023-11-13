@@ -1,9 +1,7 @@
 package org.zstack.network.hostNetwork.lldp.entity;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.query.ExpandedQueries;
-import org.zstack.header.query.ExpandedQuery;
-import org.zstack.header.query.Queryable;
+import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.network.hostNetwork.HostNetworkInterfaceInventory;
 
@@ -17,7 +15,7 @@ import java.util.stream.Collectors;
 @PythonClassInventory
 @Inventory(mappingVOClass = HostNetworkInterfaceLldpVO.class)
 @ExpandedQueries({
-        @ExpandedQuery(expandedField = "mode", inventoryClass = HostNetworkInterfaceInventory.class,
+        @ExpandedQuery(expandedField = "interface", inventoryClass = HostNetworkInterfaceInventory.class,
                 foreignKey = "interfaceUuid", expandedInventoryKey = "uuid"),
 })
 public class HostNetworkInterfaceLldpInventory implements Serializable {
