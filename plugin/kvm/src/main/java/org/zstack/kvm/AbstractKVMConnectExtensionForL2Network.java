@@ -270,6 +270,9 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
                     .select(L3NetworkVO_.uuid)
                     .eq(L3NetworkVO_.l2NetworkUuid, l2inv.getUuid())
                     .listValues();
+            if (l3Uuids == null || l3Uuids.isEmpty()) {
+                continue;
+            }
             List<String> macList;
             if (localVmUuidList != null && !localVmUuidList.isEmpty()) {
                 macList = Q.New(VmNicVO.class)
