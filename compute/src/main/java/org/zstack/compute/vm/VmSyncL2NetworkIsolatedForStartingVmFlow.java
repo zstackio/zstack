@@ -17,6 +17,7 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkIsolatedAttachOnHostMsg;
 import org.zstack.header.network.l2.L2NetworkIsolatedDetachOnHostMsg;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -64,14 +65,14 @@ public class VmSyncL2NetworkIsolatedForStartingVmFlow implements Flow {
             dmsg.setHostUuid(spec.getDestHost().getUuid());
             dmsg.setMigrateHostUuid(spec.getVmInventory().getLastHostUuid());
             dmsg.setIsolatedL2NetworkMacMap(vmNicIsolated);
-            bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
+            bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.L2_PRIVATE_VLAN_SERVICE_ID, spec.getDestHost().getUuid());
             hmsgList.add(dmsg);
         }
         if (spec.getVmInventory().getLastHostUuid() == null || spec.getVmInventory().getLastHostUuid().isEmpty()) {
             L2NetworkIsolatedAttachOnHostMsg amsg = new L2NetworkIsolatedAttachOnHostMsg();
             amsg.setHostUuid(spec.getDestHost().getUuid());
             amsg.setIsolatedL2NetworkMacMap(vmNicIsolated);
-            bus.makeTargetServiceIdByResourceUuid(amsg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
+            bus.makeTargetServiceIdByResourceUuid(amsg, L2NetworkConstant.L2_PRIVATE_VLAN_SERVICE_ID, spec.getDestHost().getUuid());
             hmsgList.add(amsg);
         }
         if (hmsgList.isEmpty()) {
