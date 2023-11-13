@@ -71,8 +71,8 @@ public abstract class APICreateL2NetworkMsg extends APICreateMessage implements 
     /**
      * @desc vSwitch type
      */
-    @APIParam(required = false, maxLength = 1024, validValues = {"LinuxBridge", "OvsDpdk"})
-    private String vSwitchType = "LinuxBridge";
+    @APIParam(required = false, maxLength = 1024, validValues = {L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE, L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK})
+    private String vSwitchType = L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE;
 
     public String getName() {
         return name;

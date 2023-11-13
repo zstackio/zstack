@@ -3,7 +3,6 @@ package org.zstack.network.l2;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.stringtemplate.v4.ST;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -15,7 +14,6 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -38,7 +36,7 @@ public class L2NetworkHostHelper {
             vo.setHostUuid(uuid);
             vo.setL2NetworkUuid(l2NetworkUuid);
             vo.setL2ProviderType(l2ProviderType);
-            vo.setAttachStatus(L2NetworkAttachStatus.AttachFailed);
+            vo.setAttachStatus(L2NetworkAttachStatus.Detached);
             vos.add(vo);
             logger.debug(String.format("add L2NetworkHostRefVO, l2NetworkUuid:%s, hostUuid:%s",
                     l2NetworkUuid, uuid));
@@ -49,7 +47,7 @@ public class L2NetworkHostHelper {
         }
     }
 
-    public void initL2NetworkHostRefOrSetFailed(List<String> l2NetworkUuids, List<String> hostUuids, String l2ProviderType) {
+    public void initL2NetworkHostRefOrSetDetached(List<String> l2NetworkUuids, List<String> hostUuids, String l2ProviderType) {
         List<L2NetworkHostRefVO> newVos = new ArrayList<>();
         List<L2NetworkHostRefVO> oldVos = new ArrayList<>();
         for (String l2Uuid : l2NetworkUuids) {
@@ -58,14 +56,14 @@ public class L2NetworkHostHelper {
                         .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2Uuid)
                         .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).find();
                 if (ref != null) {
-                    ref.setAttachStatus(L2NetworkAttachStatus.AttachFailed);
+                    ref.setAttachStatus(L2NetworkAttachStatus.Detached);
                     oldVos.add(ref);
                 } else {
                     L2NetworkHostRefVO vo = new L2NetworkHostRefVO();
                     vo.setHostUuid(hostUuid);
                     vo.setL2NetworkUuid(l2Uuid);
                     vo.setL2ProviderType(l2ProviderType);
-                    vo.setAttachStatus(L2NetworkAttachStatus.AttachFailed);
+                    vo.setAttachStatus(L2NetworkAttachStatus.Detached);
                     newVos.add(vo);
                 }
             }
@@ -90,23 +88,23 @@ public class L2NetworkHostHelper {
                 .delete();
     }
 
-    public void changeL2NetworkToHostRefFailed(String l2NetworkUuid, String hostUuid) {
+    public void changeL2NetworkToHostRefDetached(String l2NetworkUuid, String hostUuid) {
         if (!Q.New(L2NetworkHostRefVO.class)
                 .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
                 .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid).isExists()) {
-            throw  new CloudRuntimeException(String.format("can not find host l2 network ref[l2NetworkUuid: %s, hostUuid: %s]",
+            throw new CloudRuntimeException(String.format("can not find host l2 network ref[l2NetworkUuid: %s, hostUuid: %s]",
                     l2NetworkUuid, hostUuid));
         }
 
-        logger.debug(String.format("change L2NetworkHostRefVO to AttachFailed, l2NetworkUuid:%s, hostUuid:%s",
+        logger.debug(String.format("change L2NetworkHostRefVO to Detached, l2NetworkUuid:%s, hostUuid:%s",
                 l2NetworkUuid, hostUuid));
         SQL.New(L2NetworkHostRefVO.class)
                 .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
                 .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .set(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.AttachFailed).update();
+                .set(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Detached).update();
     }
 
-    public void changeL2NetworkToHostRefSuccess(String l2NetworkUuid, String hostUuid) {
+    public void changeL2NetworkToHostRefAttached(String l2NetworkUuid, String hostUuid) {
         if (!Q.New(L2NetworkHostRefVO.class)
                 .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
                 .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid).isExists()) {

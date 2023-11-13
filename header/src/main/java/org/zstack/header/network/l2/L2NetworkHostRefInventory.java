@@ -25,7 +25,6 @@ public class L2NetworkHostRefInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-
     public static L2NetworkHostRefInventory valueOf(L2NetworkHostRefVO vo) {
         L2NetworkHostRefInventory inv = new L2NetworkHostRefInventory();
         inv.setHostUuid(vo.getHostUuid());

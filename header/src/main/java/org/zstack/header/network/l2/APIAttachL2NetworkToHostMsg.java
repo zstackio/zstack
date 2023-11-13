@@ -24,7 +24,7 @@ public class APIAttachL2NetworkToHostMsg extends APIMessage implements L2Network
     @APIParam(resourceType = HostVO.class)
     private String hostUuid;
 
-    @APIParam(required = false, validValues = {"LinuxBridge"})
+    @APIParam(required = false, validValues = {L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE})
     private String l2ProviderType;
 
     @Override
@@ -57,7 +57,7 @@ public class APIAttachL2NetworkToHostMsg extends APIMessage implements L2Network
 
         msg.setL2NetworkUuid(uuid());
         msg.setHostUuid(uuid());
-        msg.setL2ProviderType("LinuxBridge");
+        msg.setL2ProviderType(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
 
         return msg;
     }

@@ -98,10 +98,10 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void handleDetachFromHost(CascadeAction action, final Completion completion) {
-        List<L2NetworkDetachFromHostStruct> structs = action.getParentIssuerContext();
-        List<DetachL2NetworkFromHostMsg> msgs = CollectionUtils.transformToList(structs, new Function<DetachL2NetworkFromHostMsg, L2NetworkDetachFromHostStruct>() {
+        List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
+        List<DetachL2NetworkFromHostMsg> msgs = CollectionUtils.transformToList(structs, new Function<DetachL2NetworkFromHostMsg, L2NetworkDetachStruct>() {
             @Override
-            public DetachL2NetworkFromHostMsg call(L2NetworkDetachFromHostStruct arg) {
+            public DetachL2NetworkFromHostMsg call(L2NetworkDetachStruct arg) {
                 DetachL2NetworkFromHostMsg msg = new DetachL2NetworkFromHostMsg();
                 msg.setHostUuid(arg.getHostUuid());
                 msg.setL2NetworkUuid(arg.getL2NetworkUuid());
@@ -279,7 +279,8 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             if (ctx != null) {
                 return action.copy().setParentIssuer(NAME).setParentIssuerContext(ctx);
             }
-        } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_CODE)) {
+        } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_CODE) ||
+                action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_FROM_HOST_CODE)) {
             return action.copy().setParentIssuer(NAME);
         }
 
