@@ -227,10 +227,4 @@
             <zstack:extension interface="org.zstack.kvm.KVMSubTypeVmConfigurationFactory"/>
         </zstack:plugin>
     </bean>
-
-    <bean id="HygonTagKvmStartVmExtension" class="org.zstack.kvm.HygonTagKvmStartVmExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
-        </zstack:plugin>
-    </bean>
 </beans>
