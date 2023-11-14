@@ -20,6 +20,7 @@ import org.zstack.network.hostNetwork.lldp.entity.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -95,6 +96,8 @@ public class LldpManagerImpl extends AbstractService {
                             vo = new HostNetworkInterfaceLldpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setInterfaceUuid(interfaceVO.getUuid());
+                            vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
+                            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
                         }
                         vo.setMode(msg.getMode());
                         lldpVOS.add(vo);
@@ -108,14 +111,18 @@ public class LldpManagerImpl extends AbstractService {
     }
 
     private synchronized void syncHostNetworkInterfaceLldpInDb(String interfaceUuid, HostNetworkInterfaceLldpRefInventory inv) {
+        logger.debug(String.format("33333333333333 db"));
         if (inv == null) {
             return;
         }
 
         HostNetworkInterfaceLldpRefVO vo = Q.New(HostNetworkInterfaceLldpRefVO.class).eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, interfaceUuid).find();
         if (vo == null) {
+            logger.debug(String.format("33333333333333 new vo "));
             vo = new HostNetworkInterfaceLldpRefVO();
-            vo.setInterfaceUuid(inv.getInterfaceUuid());
+            vo.setInterfaceUuid(interfaceUuid);
+            vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
+            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
         }
         vo.setChassisId(inv.getChassisId());
         vo.setTimeToLive(inv.getTimeToLive());
@@ -129,6 +136,7 @@ public class LldpManagerImpl extends AbstractService {
         vo.setAggregationPortId(inv.getAggregationPortId());
         vo.setMtu(inv.getMtu());
 
+        logger.debug(String.format("222222222222222 rsp : %s", vo.getInterfaceUuid()));
         dbf.updateAndRefresh(vo);
     }
 
@@ -154,10 +162,12 @@ public class LldpManagerImpl extends AbstractService {
                 } else {
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     LldpKvmAgentCommands.GetLldpInfoResponse rsp = r.toResponse(LldpKvmAgentCommands.GetLldpInfoResponse.class);
+                    logger.debug(String.format("00000000000000000 reply : %s", r));
+                    logger.debug(String.format("00000000000000000 rsp : %s", rsp.getLldpInfo()));
                     if (!rsp.isSuccess()) {
                         greply.setError(operr("operation error, because %s", rsp.getError()));
                     } else {
-                        syncHostNetworkInterfaceLldpInDb(msg.getInterfaceUuid(), rsp.getLldpInventory());
+                        syncHostNetworkInterfaceLldpInDb(msg.getInterfaceUuid(), rsp.getLldpInfo());
                         HostNetworkInterfaceLldpRefVO lldpRefVO =  Q.New(HostNetworkInterfaceLldpRefVO.class)
                                 .eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, msg.getInterfaceUuid())
                                 .find();

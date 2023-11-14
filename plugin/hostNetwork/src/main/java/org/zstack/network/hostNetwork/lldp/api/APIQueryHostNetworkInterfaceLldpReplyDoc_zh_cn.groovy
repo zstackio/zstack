@@ -1,6 +1,6 @@
 package org.zstack.network.hostNetwork.lldp.api
 
-import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefInventory
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpInventory
 import org.zstack.header.errorcode.ErrorCode
 
 doc {

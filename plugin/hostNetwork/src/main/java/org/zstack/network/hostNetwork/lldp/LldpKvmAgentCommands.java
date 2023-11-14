@@ -74,14 +74,14 @@ public class LldpKvmAgentCommands {
     }
 
     public static class GetLldpInfoResponse extends AgentResponse {
-        private HostNetworkInterfaceLldpRefInventory lldpInventory;
+        private HostNetworkInterfaceLldpRefInventory lldpInfo;
 
-        public HostNetworkInterfaceLldpRefInventory getLldpInventory() {
-            return lldpInventory;
+        public HostNetworkInterfaceLldpRefInventory getLldpInfo() {
+            return lldpInfo;
         }
 
-        public void setLldpInventory(HostNetworkInterfaceLldpRefInventory lldpInventory) {
-            this.lldpInventory = lldpInventory;
+        public void setLldpInfo(HostNetworkInterfaceLldpRefInventory lldpInfo) {
+            this.lldpInfo = lldpInfo;
         }
     }
 }
