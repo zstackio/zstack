@@ -86,11 +86,11 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.resourceconfig.ResourceConfigVO;
 import org.zstack.resourceconfig.ResourceConfigVO_;
-import org.zstack.tag.*;
 import org.zstack.utils.*;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.message.OperationChecker;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
@@ -120,6 +120,8 @@ import static org.zstack.utils.CollectionDSL.map;
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
     private static final ZTester tester = Utils.getTester();
+    protected static OperationChecker allowedOperations = new OperationChecker(true);
+    protected static OperationChecker skipOperations = new OperationChecker(true);
 
     @Autowired
     @Qualifier("KVMHostFactory")
@@ -439,6 +441,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH);
         blockCommitVolumePath = ub.build().toString();
+    }
+
+    static {
+        allowedOperations
+                .addState(VmInstanceState.Running, AttachVolumeToVmOnHypervisorMsg.class.getName())
+                .addState(VmInstanceState.Paused, AttachVolumeToVmOnHypervisorMsg.class.getName());
+        skipOperations
+                .addState(VmInstanceState.Stopped, AttachVolumeToVmOnHypervisorMsg.class.getName());
     }
 
     class Http<T> {
@@ -3257,6 +3267,11 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final AttachVolumeToVmOnHypervisorMsg msg) {
+        if (!allowToAttachVolumeOnHypervisor(msg)) {
+            bus.reply(msg, new AttachVolumeToVmOnHypervisorReply());
+            return;
+        }
+
         inQueue().name(String.format("attach-volume-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> attachVolume(msg, new NoErrorCompletion(chain) {
@@ -3265,6 +3280,27 @@ public class KVMHost extends HostBase implements Host {
                         chain.next();
                     }
                 }));
+    }
+
+    private boolean allowToAttachVolumeOnHypervisor(AttachVolumeToVmOnHypervisorMsg msg) {
+        final String state = msg.getVmInventory().getState();
+        final boolean skipped = skipOperations.isOperationAllowed(msg.getClass().getName(), state);
+        if (skipped) {
+            logger.debug(String.format(
+                    "Skip attach volume[uuid=%s] on hypervisor: state of VM[uuid=%s] is %s",
+                    msg.getInventory().getUuid(), msg.getVmInventory().getUuid(), state));
+            return false;
+        }
+
+        boolean allowed = allowedOperations.isOperationAllowed(msg.getClass().getName(), state);
+        if (!allowed) {
+            ErrorCode errorCode = err(VmErrors.ATTACH_VOLUME_ERROR,
+                        "In the hypervisorType[%s], attach volume is not allowed in the current vm instance state[%s].",
+                        self.getHypervisorType(), state);
+            throw new OperationFailureException(errorCode);
+        }
+
+        return true;
     }
 
     static String computeWwnIfAbsent(String volumeUUid) {
