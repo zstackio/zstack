@@ -19,6 +19,9 @@ import org.zstack.header.image.*;
 import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.CalculateImageHashOnBackupStorageMsg;
+import org.zstack.header.storage.backup.ImageHashAlgorithm;
 import org.zstack.longjob.LongJobGlobalConfig;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.Utils;
@@ -71,6 +74,7 @@ public class AddImageLongJob implements LongJob {
                 event.setInventory(image);
                 job = setJobResult(job.getUuid(), event);
                 completion.success(event);
+                calculateImageHash(image);
             }
         }
 
@@ -115,6 +119,17 @@ public class AddImageLongJob implements LongJob {
                     }
                 }
             });
+        }
+
+        void calculateImageHash(ImageInventory image) {
+            for (ImageBackupStorageRefInventory ref : image.getBackupStorageRefs()) {
+                CalculateImageHashOnBackupStorageMsg msg = new CalculateImageHashOnBackupStorageMsg();
+                msg.setAlgorithm(ImageHashAlgorithm.MD5.toString());
+                msg.setImageUuid(image.getUuid());
+                msg.setBackupStorageUuid(ref.getBackupStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, msg.getBackupStorageUuid());
+                bus.send(msg);
+            }
         }
     }
 

@@ -2041,6 +2041,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
         bus.reply(msg, reply);
     }
 
+    @Override
+    protected void handle(CalculateImageHashOnBackupStorageMsg msg) {
+        CalculateImageHashOnBackupStorageReply reply = new CalculateImageHashOnBackupStorageReply();
+        reply.setError(operr("ceph backup storage do not support calculate image hash"));
+        bus.reply(msg, reply);
+    }
+
     @SyncThread(signature = RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE)
     private void doRestoreImagesBackupStorageMetadataToDatabase(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
         metaDataMaker.restoreImagesBackupStorageMetadataToDatabase(msg.getImagesMetadata(), msg.getBackupStorageUuid());

@@ -9,3 +9,5 @@ END IF;
 END $$
 DELIMITER ;
 CALL AddFkPciDeviceVOVmInstanceEO();
+
+UPDATE ImageEO SET md5sum = NULL;
