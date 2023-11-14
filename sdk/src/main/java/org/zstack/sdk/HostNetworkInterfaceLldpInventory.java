@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class HostNetworkInterfaceLldpInventory  {
 
     public java.lang.String uuid;
