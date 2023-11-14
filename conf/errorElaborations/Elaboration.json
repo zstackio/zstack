@@ -68,7 +68,7 @@
     "code": "1002",
     "method": "regex",
     "regex": ".*Failed to download image\\[name:.*] on all backup storage.*",
-    "message_cn": "在镜像存储上下载镜像失败。",
+    "message_cn": "在镜像服务器上下载镜像失败。",
     "message_en": "Failed to download image on backup storage [%2$s]."
   },
   {
@@ -76,7 +76,7 @@
     "code": "1003",
     "method": "regex",
     "regex": ".*More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage \\[hostname:.*] existing. The BackupStorage type to be added is ImageStoreBackupStorage.*",
-    "message_cn": "同一 IP 只能添加成为一个镜像存储。目前已经存在一个 Sftp 类型镜像存储。",
+    "message_cn": "同一 IP 只能添加成为一个镜像服务器。目前已经存在一个 Sftp 类型镜像服务器。",
     "message_en": "An IP can be used to add only one backup storage. An SFTP backup storage already exists."
   },
   {
@@ -84,7 +84,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "System can't find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),.*",
-    "message_cn": "无法找到镜像仓库服务器，请勿将镜像存储的地址设置为 localhost (127.*.*.*)。",
+    "message_cn": "无法找到镜像仓库服务器，请勿将镜像服务器的地址设置为 localhost (127.*.*.*)。",
     "message_en": "Could not find ImageStore backup storage. Do not use the localhost (127.*.*.*) as the IP of an ImageStore backup storage."
   },
   {
@@ -124,7 +124,7 @@
     "code": "1009",
     "method": "regex",
     "regex": "failed to download image[url: .*] on backup storage[uuid: .*], because: .*",
-    "message_cn": "在镜像存储上下载镜像失败。",
+    "message_cn": "在镜像服务器上下载镜像失败。",
     "message_en": "Failed to download image on backup storage [%2$s]."
   },
   {
@@ -140,7 +140,7 @@
     "code": "1001",
     "method": "regex",
     "regex": "cannot find any Connected ceph mon for the primary storage.*",
-    "message_cn": "无法为 分布式存储找到一个已连接的监控节点。",
+    "message_cn": "无法为 Ceph主存储找到一个已连接的监控节点。",
     "message_en": "Could not find any connected Ceph mon for the Ceph primary storage."
   },
   {
@@ -148,7 +148,7 @@
     "code": "1002",
     "method": "regex",
     "regex": "operation error, because:The ceph storage type to be added does not support auto initialize pool, please create it manually",
-    "message_cn": "要添加的 分布式存储类型不支持自动创建存储池，请手动创建。",
+    "message_cn": "要添加的 Ceph主存储类型不支持自动创建存储池，请手动创建。",
     "message_en": "The Ceph storage type to be added does not support auto creation of storage pools. Please create one manually."
   },
   {
@@ -156,7 +156,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "there is another CEPH primary storage.* with the same FSID.*, you cannot add the same CEPH setup as two different primary storage",
-    "message_cn": "已经存在一个 FSID 为 [%3$s] 的 分布式存储，您不能将同一个 分布式存储 集群设置为两个不同的数据存储。",
+    "message_cn": "已经存在一个 FSID 为 [%3$s] 的 Ceph主存储，您不能将同一个 Ceph主存储 集群设置为两个不同的数据存储。",
     "message_en": "A Ceph primary storage with the FSID [%3$s] already exists. You could not add a Ceph cluster as two different primary storages."
   },
   {
@@ -1461,7 +1461,7 @@
     "code": "1040",
     "method": "regex",
     "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.* error reading header from .*: Operation not permitted.*",
-    "message_cn": "无法启动虚拟机，因为硬盘对应的 分布式存储 文件读取失败。",
+    "message_cn": "无法启动虚拟机，因为硬盘对应的 Ceph主存储 文件读取失败。",
     "message_en": "Failed to start VM, because failed to read the Ceph file of the volume."
   },
   {
@@ -1557,7 +1557,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "failed to create data volume template from volume.*on all backup storage.*. See cause for one of errors.*",
-    "message_cn": "无法在任何一个镜像存储上成功创建数据磁盘 [uuid：%1$s] 的磁盘镜像。",
+    "message_cn": "无法在任何一个镜像服务器上成功创建数据磁盘 [uuid：%1$s] 的磁盘镜像。",
     "message_en": "Failed to create data volume image from volume [uuid: %1$s] on any backup storage."
   },
   {
