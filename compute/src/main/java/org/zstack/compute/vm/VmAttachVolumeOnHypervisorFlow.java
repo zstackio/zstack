@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.host.HostManager;
 import org.zstack.core.db.Q;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.cloudbus.CloudBus;
@@ -23,8 +22,6 @@ import org.zstack.header.volume.VolumeInventory;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.core.Platform.err;
-
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAttachVolumeOnHypervisorFlow implements Flow {
     @Autowired
@@ -38,7 +35,6 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
     @Autowired
     private HostManager hostManager;
 
-    
     @Override
     public void run(final FlowTrigger chain, Map ctx) {
         final VolumeInventory volume = (VolumeInventory) ctx.get(VmInstanceConstant.Params.AttachingVolumeInventory.toString());
@@ -48,18 +44,11 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
         assert spec != null;
         assert attachedDataVolumes != null;
 
-        String vmState = spec.getVmInventory().getState();
         String hostUuid = spec.getVmInventory().getHostUuid();
+        hostUuid = hostUuid == null ? spec.getVmInventory().getLastHostUuid() : hostUuid;
         HostVO hostVO = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).find();
         if (hostVO == null) {
             chain.next();
-            return;
-        }
-        HypervisorFactory hypervisorFactory = hostManager.getHypervisorFactory(HypervisorType.valueOf(hostVO.getHypervisorType()));
-        if (!hypervisorFactory.isAllowedOperation(AttachVolumeToVmOnHypervisorMsg.class.getName(), vmState)) {
-            chain.fail(err(VmErrors.ATTACH_VOLUME_ERROR,
-                    "In the hypervisorType[%s], attach volume is not allowed in the current vm instance state[%s].",
-                    hostVO.getHypervisorType(), vmState));
             return;
         }
 
