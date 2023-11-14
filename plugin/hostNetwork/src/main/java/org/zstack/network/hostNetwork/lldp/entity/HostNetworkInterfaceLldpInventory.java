@@ -25,8 +25,8 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    @Queryable(mappingClass = HostNetworkInterfaceLldpRefInventory.class, joinColumn = @JoinColumn(name = "interfaceUuid"))
-    private HostNetworkInterfaceLldpRefInventory lldp;
+//    @Queryable(mappingClass = HostNetworkInterfaceLldpRefInventory.class, joinColumn = @JoinColumn(name = "interfaceUuid"))
+//    private HostNetworkInterfaceLldpRefInventory lldp;
 
     public String getUuid() {
         return uuid;
@@ -52,13 +52,13 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
         this.mode = mode;
     }
 
-    public HostNetworkInterfaceLldpRefInventory getLldp() {
-        return lldp;
-    }
-
-    public void setLldp(HostNetworkInterfaceLldpRefInventory lldp) {
-        this.lldp = lldp;
-    }
+//    public HostNetworkInterfaceLldpRefInventory getLldp() {
+//        return lldp;
+//    }
+//
+//    public void setLldp(HostNetworkInterfaceLldpRefInventory lldp) {
+//        this.lldp = lldp;
+//    }
 
     public Timestamp getCreateDate() {
         return createDate;
@@ -86,7 +86,7 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
         this.mode = vo.getMode();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
-        this.lldp = vo.getLldpRefVO() != null ? HostNetworkInterfaceLldpRefInventory.valueOf(vo.getLldpRefVO()) : null;
+//        this.lldp = vo.getLldpRefVO() != null ? HostNetworkInterfaceLldpRefInventory.valueOf(vo.getLldpRefVO()) : null;
     }
 
     public static HostNetworkInterfaceLldpInventory valueOf(HostNetworkInterfaceLldpVO vo) {

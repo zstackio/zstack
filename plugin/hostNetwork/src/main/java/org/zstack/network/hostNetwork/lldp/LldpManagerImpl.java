@@ -111,14 +111,12 @@ public class LldpManagerImpl extends AbstractService {
     }
 
     private synchronized void syncHostNetworkInterfaceLldpInDb(String interfaceUuid, HostNetworkInterfaceLldpRefInventory inv) {
-        logger.debug(String.format("33333333333333 db"));
         if (inv == null) {
             return;
         }
 
         HostNetworkInterfaceLldpRefVO vo = Q.New(HostNetworkInterfaceLldpRefVO.class).eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, interfaceUuid).find();
         if (vo == null) {
-            logger.debug(String.format("33333333333333 new vo "));
             vo = new HostNetworkInterfaceLldpRefVO();
             vo.setInterfaceUuid(interfaceUuid);
             vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
@@ -136,7 +134,6 @@ public class LldpManagerImpl extends AbstractService {
         vo.setAggregationPortId(inv.getAggregationPortId());
         vo.setMtu(inv.getMtu());
 
-        logger.debug(String.format("222222222222222 rsp : %s", vo.getInterfaceUuid()));
         dbf.updateAndRefresh(vo);
     }
 

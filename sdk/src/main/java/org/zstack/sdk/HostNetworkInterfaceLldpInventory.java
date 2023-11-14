@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.HostNetworkInterfaceLldpRefInventory;
-
 public class HostNetworkInterfaceLldpInventory  {
 
     public java.lang.String uuid;
@@ -42,14 +40,6 @@ public class HostNetworkInterfaceLldpInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
-    }
-
-    public HostNetworkInterfaceLldpRefInventory lldp;
-    public void setLldp(HostNetworkInterfaceLldpRefInventory lldp) {
-        this.lldp = lldp;
-    }
-    public HostNetworkInterfaceLldpRefInventory getLldp() {
-        return this.lldp;
     }
 
 }

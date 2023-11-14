@@ -37,12 +37,12 @@ doc {
 		type "Timestamp"
 		since "5.0.0"
 	}
-	ref {
-		name "lldp"
-		path "org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpInventory.lldp"
-		desc "物理网卡lldp信息清单"
-		type "HostNetworkInterfaceLldpRefInventory"
-		since "5.0.0"
-		clz HostNetworkInterfaceLldpRefInventory.class
-	}
+//	ref {
+//		name "lldp"
+//		path "org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpInventory.lldp"
+//		desc "物理网卡lldp信息清单"
+//		type "HostNetworkInterfaceLldpRefInventory"
+//		since "5.0.0"
+//		clz HostNetworkInterfaceLldpRefInventory.class
+//	}
 }
