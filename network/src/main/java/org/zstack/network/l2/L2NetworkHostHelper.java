@@ -3,10 +3,14 @@ package org.zstack.network.l2;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.stringtemplate.v4.ST;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l2.*;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,124 +22,85 @@ public class L2NetworkHostHelper {
     @Autowired
     DatabaseFacade dbf;
 
-    public void attachL2NetworkToHost(String l2NetworkUuid, String hostUuid,
-                                      String providerType,
-                                      L2NetworkAttachStatus status) {
-        L2NetworkHostRefVO ref = Q.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).find();
-        if (ref != null) {
-            ref.setL2ProviderType(providerType);
-            ref.setAttachStatus(status);
-            dbf.updateAndRefresh(ref);
-        }
-    }
+    private static final CLogger logger = Utils.getLogger(L2NetworkHostHelper.class);
 
-    public void attachL2NetworksToHost(List<L2NetworkClusterRefVO> l2NetworkClusterRefs, String hostUuid,
-                                       L2NetworkAttachStatus status) {
-        List<L2NetworkHostRefVO> newAdded = new ArrayList<>();
-        List<L2NetworkHostRefVO> updated = Q.New(L2NetworkHostRefVO.class)
-                .in(L2NetworkHostRefVO_.l2NetworkClusterRefId,
-                        l2NetworkClusterRefs.stream().map(L2NetworkClusterRefVO::getId).collect(Collectors.toList()))
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).list();
-        updated.forEach(ref -> ref.setAttachStatus(status));
-
-        List<L2NetworkClusterRefVO> newAddedRefs = l2NetworkClusterRefs.stream().filter(ref ->
-                        !updated.stream().map(L2NetworkHostRefVO::getL2NetworkClusterRefId).collect(Collectors.toList()).contains(ref.getId()))
-                .collect(Collectors.toList());
-
-
-        newAddedRefs.forEach(ref -> {
-            L2NetworkHostRefVO vo = new L2NetworkHostRefVO();
-            vo.setHostUuid(hostUuid);
-            vo.setL2NetworkUuid(ref.getL2NetworkUuid());
-            vo.setL2NetworkClusterRefId(ref.getId());
-            vo.setL2ProviderType(ref.getL2ProviderType());
-            vo.setAttachStatus(status);
-            newAdded.add(vo);
-        });
-
-        dbf.persistCollection(newAdded);
-        dbf.updateCollection(updated);
-    }
-
-    public void attachL2NetworkToHosts(String l2NetworkUuid, List<String> hostUuids,
-                                       L2NetworkAttachStatus status) {
-        SQL.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .in(L2NetworkHostRefVO_.hostUuid, hostUuids)
-                .set(L2NetworkHostRefVO_.attachStatus, status)
-                .update();
-    }
-
-    public void attachL2NetworkToHosts(String l2NetworkUuid, List<String> hostUuids,
-                                       long l2NetworkClusterRefId, String providerType,
-                                       L2NetworkAttachStatus status) {
-        List<L2NetworkHostRefVO> refs = new ArrayList<>();
-
+    public boolean initL2NetworkHostRef(String l2NetworkUuid, List<String> hostUuids, String l2ProviderType) {
+        List<L2NetworkHostRefVO> vos = new ArrayList<>();
         hostUuids.forEach(uuid -> {
+            if (Q.New(L2NetworkHostRefVO.class)
+                    .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
+                    .eq(L2NetworkHostRefVO_.hostUuid, uuid).isExists()) {
+                return;
+            }
+
             L2NetworkHostRefVO vo = new L2NetworkHostRefVO();
             vo.setHostUuid(uuid);
             vo.setL2NetworkUuid(l2NetworkUuid);
-            vo.setL2NetworkClusterRefId(l2NetworkClusterRefId);
-            vo.setL2ProviderType(providerType);
-            vo.setAttachStatus(status);
-            refs.add(vo);
+            vo.setL2ProviderType(l2ProviderType);
+            vo.setAttachStatus(L2NetworkAttachStatus.AttachFailed);
+            vos.add(vo);
+            logger.debug(String.format("add L2NetworkHostRefVO, l2NetworkUuid:%s, hostUuid:%s",
+                    l2NetworkUuid, uuid));
         });
 
-        dbf.persistCollection(refs);
-    }
-
-    public L2NetworkHostRefInventory getL2NetworkHostRef(String l2NetworkUuid, String hostUuid) {
-        L2NetworkHostRefVO ref = Q.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).find();
-        if (ref == null) {
-            return null;
+        if (!vos.isEmpty()) {
+            dbf.persistCollection(vos);
+            return true;
         } else {
-            return L2NetworkHostRefInventory.valueOf(ref);
+            return false;
         }
     }
 
-    public L2NetworkHostRefInventory getL2NetworkHostRef(String l2NetworkUuid, String hostUuid, L2NetworkAttachStatus status) {
-        L2NetworkHostRefVO ref = Q.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
-                .eq(L2NetworkHostRefVO_.attachStatus, status).find();
-        if (ref == null) {
-            return null;
-        } else {
-            return L2NetworkHostRefInventory.valueOf(ref);
-        }
-    }
-
-    public List<L2NetworkHostRefInventory> getL2NetworkHostRefs(String l2NetworkUuid, List<String> hostUuids, L2NetworkAttachStatus status) {
-        return L2NetworkHostRefInventory.valueOf(Q.New(L2NetworkHostRefVO.class)
+    public void deleteL2NetworkHostRef(String l2NetworkUuid, List<String> hostUuids) {
+        logger.debug(String.format("del L2NetworkHostRefVO, l2NetworkUuid:%s, hostUuids:%s",
+                l2NetworkUuid, hostUuids));
+        SQL.New(L2NetworkHostRefVO.class)
                 .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
                 .in(L2NetworkHostRefVO_.hostUuid, hostUuids)
-                .eq(L2NetworkHostRefVO_.attachStatus, status)
-                .list());
+                .delete();
     }
 
-    public List<L2NetworkHostRefInventory> getL2NetworkHostRefs(List<String> l2NetworkUuids, String hostUuid, L2NetworkAttachStatus status) {
-        return L2NetworkHostRefInventory.valueOf(Q.New(L2NetworkHostRefVO.class)
-                .in(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuids)
+    public void changeL2NetworkToHostRefFailed(String l2NetworkUuid, String hostUuid) {
+        if (!Q.New(L2NetworkHostRefVO.class)
                 .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
-                .eq(L2NetworkHostRefVO_.attachStatus, status)
-                .list());
-    }
+                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid).isExists()) {
+            throw  new CloudRuntimeException(String.format("can not find host l2 network ref[l2NetworkUuid: %s, hostUuid: %s]",
+                    l2NetworkUuid, hostUuid));
+        }
 
-    public List<L2NetworkHostRefInventory> getL2NetworkHostRefs(String l2NetworkUuid, L2NetworkAttachStatus status) {
-        return L2NetworkHostRefInventory.valueOf(Q.New(L2NetworkHostRefVO.class)
+        logger.debug(String.format("change L2NetworkHostRefVO to AttachFailed, l2NetworkUuid:%s, hostUuid:%s",
+                l2NetworkUuid, hostUuid));
+        SQL.New(L2NetworkHostRefVO.class)
+                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
                 .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .eq(L2NetworkHostRefVO_.attachStatus, status)
-                .list());
+                .set(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.AttachFailed).update();
     }
 
-    public List<L2NetworkHostRefInventory> getL2NetworkHostRefs(Long l2NetworkClusterRefId, L2NetworkAttachStatus status) {
-        return L2NetworkHostRefInventory.valueOf(Q.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.l2NetworkClusterRefId, l2NetworkClusterRefId)
-                .eq(L2NetworkHostRefVO_.attachStatus, status)
-                .list());
+    public void changeL2NetworkToHostRefSuccess(String l2NetworkUuid, String hostUuid) {
+        if (!Q.New(L2NetworkHostRefVO.class)
+                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
+                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid).isExists()) {
+            throw  new CloudRuntimeException(String.format("can not find host l2 network ref[l2NetworkUuid: %s, hostUuid: %s]",
+                    l2NetworkUuid, hostUuid));
+        }
+
+        logger.debug(String.format("change L2NetworkHostRefVO to Attached, l2NetworkUuid:%s, hostUuid:%s",
+                l2NetworkUuid, hostUuid));
+        SQL.New(L2NetworkHostRefVO.class)
+                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
+                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
+                .set(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Attached).update();
+    }
+
+
+    public List<String> getL2NetworkUuidsRefToHost(String hostUuid) {
+        return Q.New(L2NetworkHostRefVO.class)
+                .select(L2NetworkHostRefVO_.l2NetworkUuid)
+                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).listValues();
+    }
+
+    public List<String> getHostUuidsRefToL2NetworkUuid(String l2NetworkUuid) {
+        return Q.New(L2NetworkHostRefVO.class).select(L2NetworkHostRefVO_.hostUuid)
+                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid).listValues();
     }
 }
