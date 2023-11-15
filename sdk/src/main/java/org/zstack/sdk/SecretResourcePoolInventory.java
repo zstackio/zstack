@@ -92,4 +92,12 @@ public class SecretResourcePoolInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String ability;
+    public void setAbility(java.lang.String ability) {
+        this.ability = ability;
+    }
+    public java.lang.String getAbility() {
+        return this.ability;
+    }
+
 }
