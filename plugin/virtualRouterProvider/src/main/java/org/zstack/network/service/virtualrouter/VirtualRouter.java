@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
+import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -83,6 +84,8 @@ public class VirtualRouter extends ApplianceVmBase {
     protected VirtualRouterHaBackend haBackend;
     @Autowired
     protected VirutalRouterDefaultL3ConfigProxy defaultL3ConfigProxy;
+    @Autowired
+    protected UpgradeChecker upgradeChecker;
 
     protected VirtualRouterVmInventory vr;
 
@@ -205,7 +208,19 @@ public class VirtualRouter extends ApplianceVmBase {
                 if (!ret.isSuccess()) {
                     logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will reconnect it soon", self.getUuid(), ret.getError()));
                     reply.setConnected(false);
+                    
+                    if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+                        changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                    }
+                    
                 } else {
+                    // update vyos agent version when open grayScaleUpgrade
+                    upgradeChecker.updateAgentVersion(self.getUuid(), VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, new VirtualRouterMetadataOperator().getManagementVersion(), ret.getVersion());
+
+                    if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class) && !new VirtualRouterMetadataOperator().getManagementVersion().equals(ret.getVersion())) {
+                        changeApplianceVmStatus(ApplianceVmStatus.Connected);
+                    }
+                    
                     boolean connected = self.getUuid().equals(ret.getUuid());
                     if (!connected) {
                         logger.warn(String.format("a signature lost on the virtual router vm[uuid:%s] changed, it's probably caused by the agent restart. We will issue a reconnect soon", self.getUuid()));
@@ -449,6 +464,11 @@ public class VirtualRouter extends ApplianceVmBase {
                             reply1.setConnected(true);
                             replies.add(reply1);
                         }
+
+                        if (replies.size() == steps.size()) {
+                            changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                        }
+                        
                         bus.reply(msg, replies.get(0));
                         chain.next();
                     }
@@ -579,6 +599,11 @@ public class VirtualRouter extends ApplianceVmBase {
             if (agentVersionVO == null) {
                 return true;
             }
+
+            if (!agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
+                return true;
+            }
+            return false;
         }
 
         return false;
@@ -640,6 +665,22 @@ public class VirtualRouter extends ApplianceVmBase {
         return vrMgr.buildUrl(mgmtIp, path);
     }
 
+    protected boolean checkVirtualRouterAgentChanges(String commandName){
+        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            return false;
+        }
+
+        AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
+        if (agentVersionVO == null) {
+            return true;
+        }
+        if(agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())){
+            return false;
+        }
+
+        return upgradeChecker.checkAgentHttpParamChanges(commandName);
+    }
+
     private void handle(final VirtualRouterAsyncHttpCallMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -650,6 +691,10 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 refreshVO();
+
+                if(checkVirtualRouterAgentChanges(msg.getCommandClassName())){
+                    throw new OperationFailureException(operr("No operations allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+                }
 
                 final VirtualRouterAsyncHttpCallReply reply = new VirtualRouterAsyncHttpCallReply();
                 if (msg.isCheckStatus() && getSelf().getState() != VmInstanceState.Running) {

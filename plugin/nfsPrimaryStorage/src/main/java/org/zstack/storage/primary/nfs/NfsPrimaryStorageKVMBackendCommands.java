@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.kvm.KVMAgentCommands;
@@ -12,7 +13,9 @@ import java.util.Map;
 
 public class NfsPrimaryStorageKVMBackendCommands {
     public static class NfsPrimaryStorageAgentResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private Long totalCapacity;
+        @GrayVersion(value = "5.0.0")
         private Long availableCapacity;
 
         public Long getTotalCapacity() {
@@ -33,6 +36,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class NfsPrimaryStorageAgentCommand extends KVMAgentCommands.PrimaryStorageCommand {
+        @GrayVersion(value = "5.0.0")
         private String uuid;
 
         public String getUuid() {
@@ -46,36 +50,51 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class DownloadBitsFromKVMHostRsp extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public String format;
     }
 
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String hostname;
+        @GrayVersion(value = "5.0.0")
         public String username;
+        @GrayVersion(value = "5.0.0")
         public String sshKey;
+        @GrayVersion(value = "5.0.0")
         public int sshPort;
         // it's file path on kvm host actually
+        @GrayVersion(value = "5.0.0")
         public String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public Long bandWidth;
+        @GrayVersion(value = "5.0.0")
         public String identificationCode;
     }
 
     public static class CancelDownloadBitsFromKVMHostCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageInstallPath;
     }
 
     public static class GetDownloadBitsFromKVMHostProgressCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<String> volumePaths;
     }
 
     public static class GetDownloadBitsFromKVMHostProgressRsp extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         public long totalSize;
     }
 
     public static class MountCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String url;
+        @GrayVersion(value = "5.0.0")
         private String mountPath;
+        @GrayVersion(value = "5.0.0")
         private String options;
 
         public String getOptions() {
@@ -105,6 +124,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     
     public static class GetCapacityCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String mountPath;
 
         public String getMountPath() {
@@ -120,7 +140,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     
     public static class UnmountCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String mountPath;
+        @GrayVersion(value = "5.0.0")
         private String url;
         
         public String getUrl() {
@@ -140,8 +162,11 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class CreateTemplateFromVolumeCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
+        @GrayVersion(value = "5.0.0")
         private String installPath;
+        @GrayVersion(value = "5.0.0")
         private String rootVolumePath;
+        @GrayVersion(value = "5.0.0")
         private boolean incremental;
 
         public String getInstallPath() {
@@ -167,7 +192,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
     public static class CreateTemplateFromVolumeRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         private long size;
+        @GrayVersion(value = "5.0.0")
         private long actualSize;
 
         public long getActualSize() {
@@ -188,6 +215,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class EstimateTemplateSizeCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String volumePath;
 
         public String getVolumePath() {
@@ -200,7 +228,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class EstimateTemplateSizeRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         private long size;
+        @GrayVersion(value = "5.0.0")
         private long actualSize;
 
         public long getActualSize() {
@@ -221,11 +251,17 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class DownloadBitsFromSftpBackupStorageCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String sshKey;
+        @GrayVersion(value = "5.0.0")
         private String hostname;
+        @GrayVersion(value = "5.0.0")
         private String username;
+        @GrayVersion(value = "5.0.0")
         private int sshPort;
+        @GrayVersion(value = "5.0.0")
         private String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String primaryStorageInstallPath;
 
         public String getUsername() {
@@ -277,7 +313,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class CheckIsBitsExistingCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String installPath;
+        @GrayVersion(value = "5.0.0")
         private String hostUuid;
 
         public String getHostUuid() {
@@ -298,6 +336,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class CheckIsBitsExistingRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         private boolean existing;
 
         public boolean isExisting() {
@@ -310,6 +349,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class CreateFolderCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String installUrl;
 
         public String getInstallUrl() {
@@ -322,10 +362,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public abstract static class CreateVolumeCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String installUrl;
+        @GrayVersion(value = "5.0.0")
         private String accountUuid;
+        @GrayVersion(value = "5.0.0")
         private String hypervisorType;
+        @GrayVersion(value = "5.0.0")
         private String name;
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
 
         public String getInstallUrl() {
@@ -362,8 +407,11 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class CreateRootVolumeFromTemplateCmd extends CreateVolumeCmd {
+        @GrayVersion(value = "5.0.0")
         private String templatePathInCache;
+        @GrayVersion(value = "5.0.0")
         private long timeout;
+        @GrayVersion(value = "5.0.0")
         private long virtualSize;
         
         public long getTimeout() {
@@ -387,11 +435,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     
     public static class CreateRootVolumeFromTemplateResponse extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         public Long actualSize;
+        @GrayVersion(value = "5.0.0")
         public Long size;
     }
 
     public static class CreateVolumeWithBackingCmd extends CreateVolumeCmd {
+        @GrayVersion(value = "5.0.0")
         private String templatePathInCache;
 
         public String getTemplatePathInCache() {
@@ -403,7 +454,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class CreateVolumeWithBackingRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         private long size;
+        @GrayVersion(value = "5.0.0")
         private long actualSize;
 
         public long getActualSize() {
@@ -421,7 +474,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class CreateEmptyVolumeCmd extends CreateVolumeCmd {
+        @GrayVersion(value = "5.0.0")
         private long size;
+        @GrayVersion(value = "5.0.0")
         private boolean withoutVolume;
 
         public long getSize() {
@@ -440,12 +495,16 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         public Long actualSize;
+        @GrayVersion(value = "5.0.0")
         public Long size;
     }
 
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private boolean folder;
+        @GrayVersion(value = "5.0.0")
         private String installPath;
 
         public boolean isFolder() {
@@ -466,11 +525,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class DeleteResponse extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         public boolean inUse;
     }
 
     public static class UnlinkBitsCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String installPath;
+        @GrayVersion(value = "5.0.0")
         public boolean onlyLinkedFile = true;
     }
 
@@ -478,6 +540,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class ListDirectionCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String path;
 
         public String getPath() {
@@ -490,6 +553,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class ListDirectionResponse extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         private List<String> paths;
 
         public List<String> getPaths() {
@@ -502,6 +566,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     
     public static class RevertVolumeFromSnapshotCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String snapshotInstallPath;
 
         public String getSnapshotInstallPath() {
@@ -515,9 +580,11 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class RevertVolumeFromSnapshotResponse extends NfsPrimaryStorageAgentResponse {
         @Validation
+        @GrayVersion(value = "5.0.0")
         private String newVolumeInstallPath;
 
         @Validation
+        @GrayVersion(value = "5.0.0")
         private long size;
 
         public String getNewVolumeInstallPath() {
@@ -538,7 +605,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class ReInitImageCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String imagePath;
+        @GrayVersion(value = "5.0.0")
         private String volumePath;
 
         public String getImagePath() {
@@ -560,6 +629,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class ReInitImageRsp extends NfsPrimaryStorageAgentResponse {
         @Validation
+        @GrayVersion(value = "5.0.0")
         private String newVolumeInstallPath;
 
         public String getNewVolumeInstallPath() {
@@ -572,11 +642,17 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class UploadToSftpCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
+        @GrayVersion(value = "5.0.0")
         private String primaryStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String backupStorageHostName;
+        @GrayVersion(value = "5.0.0")
         private String backupStorageUserName;
+        @GrayVersion(value = "5.0.0")
         private String backupStorageSshKey;
+        @GrayVersion(value = "5.0.0")
         private int backupStorageSshPort;
         public String getBackupStorageUserName() {
             return backupStorageUserName;
@@ -627,8 +703,11 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class MergeSnapshotCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         private String snapshotInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String workspaceInstallPath;
 
         public String getVolumeUuid() {
@@ -657,7 +736,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class MergeSnapshotResponse extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         private long size;
+        @GrayVersion(value = "5.0.0")
         private long actualSize;
 
         public long getActualSize() {
@@ -678,8 +759,11 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class RebaseAndMergeSnapshotsCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         private List<String> snapshotInstallPaths;
+        @GrayVersion(value = "5.0.0")
         private String workspaceInstallPath;
 
         public String getVolumeUuid() {
@@ -708,7 +792,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class RebaseAndMergeSnapshotsResponse extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         private long size;
+        @GrayVersion(value = "5.0.0")
         private long actualSize;
 
         public long getActualSize() {
@@ -729,7 +815,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class MoveBitsCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String srcPath;
+        @GrayVersion(value = "5.0.0")
         private String destPath;
 
         public String getSrcPath() {
@@ -753,8 +841,11 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class OfflineMergeSnapshotCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         private String srcPath;
+        @GrayVersion(value = "5.0.0")
         private String destPath;
+        @GrayVersion(value = "5.0.0")
         private boolean fullRebase;
 
         public boolean isFullRebase() {
@@ -786,31 +877,42 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class RemountCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String url;
+        @GrayVersion(value = "5.0.0")
         public String mountPath;
+        @GrayVersion(value = "5.0.0")
         public String options;
     }
 
     public static class GetVolumeActualSizeCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
     }
 
     public static class GetBatchVolumeActualSizeCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public Map<String, String> volumeUuidInstallPaths;
     }
 
     public static class GetVolumeActualSizeRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         public long actualSize;
+        @GrayVersion(value = "5.0.0")
         public long size;
     }
 
     public static class GetBatchVolumeActualSizeRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         public Map<String, Long> actualSizes;
     }
 
     public static class PingCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String mountPath;
+        @GrayVersion(value = "5.0.0")
         public String url;
     }
 
@@ -820,29 +922,41 @@ public class NfsPrimaryStorageKVMBackendCommands {
      * This takes into consideration multiple snapshot chains and chain-based image.
      */
     public static class GetVolumeBaseImagePathCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String volumeInstallDir;
+        @GrayVersion(value = "5.0.0")
         public String imageCacheDir;
     }
 
     public static class GetVolumeBaseImagePathRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         public String path;
     }
 
     public static class GetBackingChainCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
     }
 
     public static class GetBackingChainRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         public List<String> backingChain;
+        @GrayVersion(value = "5.0.0")
         public long totalSize;
     }
 
     public static class UpdateMountPointCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String oldMountPoint;
+        @GrayVersion(value = "5.0.0")
         public String newMountPoint;
+        @GrayVersion(value = "5.0.0")
         public String mountPath;
+        @GrayVersion(value = "5.0.0")
         public String options;
     }
 
@@ -850,27 +964,41 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class NfsToNfsMigrateBitsCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         public String srcFolderPath;
+        @GrayVersion(value = "5.0.0")
         public String dstFolderPath;
+        @GrayVersion(value = "5.0.0")
         public List<String> filtPaths;
-
+        @GrayVersion(value = "5.0.0")
         public String independentPath;
+        @GrayVersion(value = "5.0.0")
         public boolean isMounted = false;
+        @GrayVersion(value = "5.0.0")
         public String url;
+        @GrayVersion(value = "5.0.0")
         public String options;
+        @GrayVersion(value = "5.0.0")
         public String mountPath;
+        @GrayVersion(value = "5.0.0")
         public String volumeInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String srcPrimaryStorageUuid;
     }
 
     public static class NfsToNfsMigrateBitsRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         public Map<String, Long> dstFilesActualSize;
     }
 
     public static class NfsRebaseVolumeBackingFileCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String srcPsMountPath;
+        @GrayVersion(value = "5.0.0")
         public String dstPsMountPath;
+        @GrayVersion(value = "5.0.0")
         public String dstVolumeFolderPath;
+        @GrayVersion(value = "5.0.0")
         public String dstImageCacheTemplateFolderPath;
     }
 
@@ -879,8 +1007,11 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class LinkVolumeNewDirCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String srcDir;
+        @GrayVersion(value = "5.0.0")
         public String dstDir;
     }
 
@@ -888,7 +1019,9 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class GetQcow2HashValueCmd extends NfsPrimaryStorageAgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String hostUuid;
+        @GrayVersion(value = "5.0.0")
         private String installPath;
 
         public String getHostUuid() {
@@ -909,6 +1042,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class GetQcow2HashValueRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.0.0")
         private String hashValue;
 
         public String getHashValue() {

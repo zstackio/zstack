@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
@@ -49,10 +50,13 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint {
     @Autowired
     protected DatabaseFacade dbf;
     public static class SugonNicNotifyCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String sugonSdnAction;
+        @GrayVersion(value = "5.0.0")
         private List<KVMAgentCommands.NicTO> nics;
+        @GrayVersion(value = "5.0.0")
         private String vmInstanceUuid;
-
+        @GrayVersion(value = "5.0.0")
         private String accountUuid;
         public String getSugonSdnAction() {
             return sugonSdnAction;

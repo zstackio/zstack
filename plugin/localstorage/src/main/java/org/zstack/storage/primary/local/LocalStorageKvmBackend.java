@@ -16,6 +16,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -91,7 +92,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private PluginRegistry pluginRgty;
 
     public static class AgentCommand extends KVMAgentCommands.PrimaryStorageCommand {
+        @GrayVersion(value = "5.0.0")
         public String uuid;
+        @GrayVersion(value = "5.0.0")
         public String storagePath;
     }
 
@@ -144,8 +147,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class InitCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String path;
+        @GrayVersion(value = "5.0.0")
         private String hostUuid;
+        @GrayVersion(value = "5.0.0")
         private String initFilePath;
 
         public String getHostUuid() {
@@ -186,6 +192,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateFolderCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String installUrl;
 
         public String getInstallUrl() {
@@ -198,11 +205,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateEmptyVolumeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String installUrl;
+        @GrayVersion(value = "5.0.0")
         private long size;
+        @GrayVersion(value = "5.0.0")
         private String accountUuid;
+        @GrayVersion(value = "5.0.0")
         private String name;
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         private String backingFile;
 
         public String getBackingFile() {
@@ -260,6 +273,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class GetPhysicalCapacityCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String hostUuid;
 
         public String getHostUuid() {
@@ -272,9 +286,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateVolumeFromCacheCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String templatePathInCache;
+        @GrayVersion(value = "5.0.0")
         private String installUrl;
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         private long virtualSize;
 
         public String getTemplatePathInCache() {
@@ -316,8 +334,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateVolumeWithBackingCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String templatePathInCache;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
     }
 
@@ -327,8 +348,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class DeleteBitsCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String hostUuid;
+        @GrayVersion(value = "5.0.0")
         private String path;
+        @GrayVersion(value = "5.0.0")
         private String username;
 
         public String getHostUuid() {
@@ -367,7 +391,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class UnlinkBitsCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String installPath;
+        @GrayVersion(value = "5.0.0")
         public boolean onlyLinkedFile = true;
     }
 
@@ -375,7 +401,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class ListPathCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String path;
+        @GrayVersion(value = "5.0.0")
         private String hostUuid;
 
         public String getPath() {
@@ -408,7 +436,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateTemplateFromVolumeCmd extends AgentCommand implements HasThreadContext{
+        @GrayVersion(value = "5.0.0")
         private String installPath;
+        @GrayVersion(value = "5.0.0")
         private String volumePath;
 
         public String getInstallPath() {
@@ -450,6 +480,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class EstimateTemplateSizeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String volumePath;
 
         public String getVolumePath() {
@@ -483,6 +514,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class RevertVolumeFromSnapshotCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String snapshotInstallPath;
 
         public String getSnapshotInstallPath() {
@@ -495,7 +527,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class ReinitImageCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String imagePath;
+        @GrayVersion(value = "5.0.0")
         private String volumePath;
 
         public String getImagePath() {
@@ -553,8 +587,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class MergeSnapshotCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         private String snapshotInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String workspaceInstallPath;
 
         public String getVolumeUuid() {
@@ -604,8 +641,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class RebaseAndMergeSnapshotsCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         private List<String> snapshotInstallPaths;
+        @GrayVersion(value = "5.0.0")
         private String workspaceInstallPath;
 
         public String getVolumeUuid() {
@@ -655,8 +695,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class OfflineMergeSnapshotCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         private String srcPath;
+        @GrayVersion(value = "5.0.0")
         private String destPath;
+        @GrayVersion(value = "5.0.0")
         private boolean fullRebase;
 
         public boolean isFullRebase() {
@@ -688,7 +731,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CheckBitsCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String path;
+        @GrayVersion(value = "5.0.0")
         public String username;
     }
 
@@ -702,9 +747,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class GetMd5Cmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         public List<GetMd5TO> md5s;
+        @GrayVersion(value = "5.0.0")
         public String sendCommandUrl;
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String stage;
     }
 
@@ -720,14 +769,20 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
 
     public static class CheckMd5sumCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         public List<Md5TO> md5s;
+        @GrayVersion(value = "5.0.0")
         public String sendCommandUrl;
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String stage;
     }
 
     public static class GetBackingFileCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String path;
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
     }
 
@@ -742,8 +797,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
      * This takes into consideration multiple snapshot chains and chain-based image.
      */
     public static class GetVolumeBaseImagePathCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String imageCacheDir;
+        @GrayVersion(value = "5.0.0")
         public String volumeInstallDir;
     }
 
@@ -753,7 +811,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class GetBackingChainCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
     }
 
@@ -763,7 +823,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class GetVolumeSizeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String installPath;
     }
 
@@ -773,6 +835,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class GetBatchVolumeSizeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public Map<String, String> volumeUuidInstallPaths;
     }
 
@@ -781,7 +844,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class GetQCOW2ReferenceCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String path;
+        @GrayVersion(value = "5.0.0")
         public String searchingDir;
     }
 
@@ -790,6 +855,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CheckInitializedFileCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String filePath;
     }
 
@@ -798,22 +864,32 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateInitializedFileCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String filePath;
     }
 
     public static class Qcow2Cmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String preallocation = buildQcow2Options();
     }
 
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String hostname;
+        @GrayVersion(value = "5.0.0")
         public String username;
+        @GrayVersion(value = "5.0.0")
         public String sshKey;
+        @GrayVersion(value = "5.0.0")
         public int sshPort;
         // it's file path on kvm host actually
+        @GrayVersion(value = "5.0.0")
         public String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         public Long bandWidth;
+        @GrayVersion(value = "5.0.0")
         public String identificationCode;
     }
 
@@ -822,10 +898,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CancelDownloadBitsFromKVMHostCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String primaryStorageInstallPath;
     }
 
     public static class GetDownloadBitsFromKVMHostProgressCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<String> volumePaths;
     }
 
@@ -834,8 +912,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class LinkVolumeNewDirCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String volumeUuid;
+        @GrayVersion(value = "5.0.0")
         public String srcDir;
+        @GrayVersion(value = "5.0.0")
         public String dstDir;
     }
 
@@ -843,7 +924,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class GetQcow2HashValueCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String hostUuid;
+        @GrayVersion(value = "5.0.0")
         private String installPath;
 
         public String getHostUuid() {
