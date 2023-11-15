@@ -6410,6 +6410,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }).then(new Flow() {
             String __name__ = "detach-volume-from-vm-on-hypervisor";
+
+            @Override
+            public boolean skip(Map data) {
+                return self.getHostUuid() == null && self.getLastHostUuid() == null;
+            }
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 String hostUuid = self.getHostUuid() == null ? self.getLastHostUuid() : self.getHostUuid();

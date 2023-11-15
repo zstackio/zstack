@@ -17064,8 +17064,8 @@
   },
   {
     "raw": "failed to detach shareable volume from VmInstance:[\\n%s]",
-    "en_US": "failed to detach shareable volume from VmInstance:[\\n{0}]",
-    "zh_CN": "不能卸载云主机[uuid:{0}]上的共享盘",
+    "en_US": "failed to detach shareable volume from VmInstance because:[\\n{0}]",
+    "zh_CN": "不能卸载云主机上的共享盘，原因是{0}",
     "arguments": [
       "StringUtils.join(errors, \"\\n\\n\")"
     ],
