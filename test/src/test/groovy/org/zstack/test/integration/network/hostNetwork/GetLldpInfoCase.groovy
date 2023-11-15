@@ -12,6 +12,7 @@ import org.zstack.network.hostNetwork.lldp.LldpConstant
 import org.zstack.network.hostNetwork.lldp.LldpKvmAgentCommands
 import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO
 import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO_
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefVO
 import org.zstack.sdk.*
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -214,5 +215,9 @@ class GetLldpInfoCase extends SubCase {
                 interfaceUuid = TEST_UUID_2
             }
         }
+
+        SQL.New(HostNetworkInterfaceVO.class).hardDelete()
+        SQL.New(HostNetworkInterfaceLldpVO.class).hardDelete()
+        SQL.New(HostNetworkInterfaceLldpRefVO.class).hardDelete()
     }
 }
