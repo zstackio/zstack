@@ -4047,6 +4047,7 @@ public class KVMAgentCommands {
         public Map<String, List<String>> l2MacMap;
         public Map<String, String> interfaceMap;
         public Map<String, Integer> vlanMap;
+        public List<String> nicList;
     }
 
     public static class SyncIpsetRsp extends AgentResponse {
