@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = HostNetworkInterfaceLldpRefVO.class)
-@ExpandedQueries({
-        @ExpandedQuery(expandedField = "lldp", inventoryClass = HostNetworkInterfaceLldpInventory.class,
-                foreignKey = "interfaceUuid", expandedInventoryKey = "interfaceUuid"),
-})
+//@ExpandedQueries({
+//        @ExpandedQuery(expandedField = "lldp", inventoryClass = HostNetworkInterfaceLldpInventory.class,
+//                foreignKey = "interfaceUuid", expandedInventoryKey = "interfaceUuid"),
+//})
 public class HostNetworkInterfaceLldpRefInventory implements Serializable {
     @APINoSee
     private long id;

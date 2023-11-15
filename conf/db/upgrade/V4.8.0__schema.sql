@@ -103,3 +103,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpRefVO` (
     PRIMARY KEY  (`id`),
     CONSTRAINT `fkHostNetworkInterfaceLldpRefVOHostNetworkInterfaceLldpVO` FOREIGN KEY (`interfaceUuid`) REFERENCES HostNetworkInterfaceLldpVO (`interfaceUuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO HostNetworkInterfaceLldpVO (`uuid`, `interfaceUuid`, `mode`, `createDate`, `lastOpDate`)
+SELECT REPLACE(UUID(),'-',''), t.uuid, 'rx_only', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM HostNetworkInterfaceVO t;

@@ -126,21 +126,21 @@ class GetLldpInfoCase extends SubCase {
 
         env.simulator(LldpConstant.GET_LLDP_INFO_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def reply = new LldpKvmAgentCommands.GetLldpInfoResponse()
-            reply.lldpInventory = new org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefInventory()
-            reply.lldpInventory.interfaceUuid = TEST_UUID
-            reply.lldpInventory.chassisId = "mac 00:1e:08:1d:05:ba"
-            reply.lldpInventory.timeToLive = 120
-            reply.lldpInventory.managementAddress = "172.25.2.4"
-            reply.lldpInventory.systemName = "BM-MN-3"
-            reply.lldpInventory.systemDescription = "CentecOS software, E530, Version 7.4.7 Copyright (C) 2004-2021 Centec Networks Inc.  All Rights Reserved."
-            reply.lldpInventory.systemCapabilities = "Bridge, on  Router, on"
-            reply.lldpInventory.portId = "ifname eth-0-5"
-            reply.lldpInventory.portDescription = "eth-0-4"
-            reply.lldpInventory.vlanId = 3999
-            reply.lldpInventory.aggregationPortId = 4294965248L
-            reply.lldpInventory.mtu = 9600
-            reply.lldpInventory.createDate = new Timestamp(DocUtils.date)
-            reply.lldpInventory.lastOpDate = new Timestamp(DocUtils.date)
+            reply.lldpInfo = new org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefInventory()
+            reply.lldpInfo.interfaceUuid = TEST_UUID
+            reply.lldpInfo.chassisId = "mac 00:1e:08:1d:05:ba"
+            reply.lldpInfo.timeToLive = 120
+            reply.lldpInfo.managementAddress = "172.25.2.4"
+            reply.lldpInfo.systemName = "BM-MN-3"
+            reply.lldpInfo.systemDescription = "CentecOS software, E530, Version 7.4.7 Copyright (C) 2004-2021 Centec Networks Inc.  All Rights Reserved."
+            reply.lldpInfo.systemCapabilities = "Bridge, on  Router, on"
+            reply.lldpInfo.portId = "ifname eth-0-5"
+            reply.lldpInfo.portDescription = "eth-0-4"
+            reply.lldpInfo.vlanId = 3999
+            reply.lldpInfo.aggregationPortId = 4294965248L
+            reply.lldpInfo.mtu = 9600
+            reply.lldpInfo.createDate = new Timestamp(DocUtils.date)
+            reply.lldpInfo.lastOpDate = new Timestamp(DocUtils.date)
             return reply
         }
 
@@ -173,21 +173,21 @@ class GetLldpInfoCase extends SubCase {
 
         env.simulator(LldpConstant.GET_LLDP_INFO_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def reply = new LldpKvmAgentCommands.GetLldpInfoResponse()
-            reply.lldpInventory = new org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefInventory()
-            reply.lldpInventory.interfaceUuid = TEST_UUID_2
-            reply.lldpInventory.chassisId = "mac 00:1e:08:1d:05:ba"
-            reply.lldpInventory.timeToLive = 119
-            reply.lldpInventory.managementAddress = "172.25.2.4"
-            reply.lldpInventory.systemName = "BM-MN-3"
-            reply.lldpInventory.systemDescription = "CentecOS software, E530, Version 7.4.7 Copyright (C) 2004-2021 Centec Networks Inc.  All Rights Reserved."
-            reply.lldpInventory.systemCapabilities = "Bridge, on  Router, on"
-            reply.lldpInventory.portId = "ifname eth-0-5"
-            reply.lldpInventory.portDescription = "eth-0-4"
-            reply.lldpInventory.vlanId = 3999
-            reply.lldpInventory.aggregationPortId = 4294965248L
-            reply.lldpInventory.mtu = 9600
-            reply.lldpInventory.createDate = new Timestamp(DocUtils.date)
-            reply.lldpInventory.lastOpDate = new Timestamp(DocUtils.date)
+            reply.lldpInfo = new org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefInventory()
+            reply.lldpInfo.interfaceUuid = TEST_UUID_2
+            reply.lldpInfo.chassisId = "mac 00:1e:08:1d:05:ba"
+            reply.lldpInfo.timeToLive = 119
+            reply.lldpInfo.managementAddress = "172.25.2.4"
+            reply.lldpInfo.systemName = "BM-MN-3"
+            reply.lldpInfo.systemDescription = "CentecOS software, E530, Version 7.4.7 Copyright (C) 2004-2021 Centec Networks Inc.  All Rights Reserved."
+            reply.lldpInfo.systemCapabilities = "Bridge, on  Router, on"
+            reply.lldpInfo.portId = "ifname eth-0-5"
+            reply.lldpInfo.portDescription = "eth-0-4"
+            reply.lldpInfo.vlanId = 3999
+            reply.lldpInfo.aggregationPortId = 4294965248L
+            reply.lldpInfo.mtu = 9600
+            reply.lldpInfo.createDate = new Timestamp(DocUtils.date)
+            reply.lldpInfo.lastOpDate = new Timestamp(DocUtils.date)
             return reply
         }
 

@@ -1,6 +1,5 @@
 package org.zstack.network.hostNetwork.lldp.entity;
 
-import org.zstack.header.vo.ResourceVO_;
 
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;

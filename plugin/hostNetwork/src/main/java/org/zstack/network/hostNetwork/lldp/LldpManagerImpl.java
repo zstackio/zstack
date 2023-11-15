@@ -1,17 +1,27 @@
 package org.zstack.network.hostNetwork.lldp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.Platform;
+import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.host.HostAfterConnectedExtensionPoint;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.network.hostNetwork.*;
@@ -20,12 +30,13 @@ import org.zstack.network.hostNetwork.lldp.entity.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
-public class LldpManagerImpl extends AbstractService {
+public class LldpManagerImpl extends AbstractService implements HostAfterConnectedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LldpManagerImpl.class);
 
     @Autowired
@@ -95,6 +106,8 @@ public class LldpManagerImpl extends AbstractService {
                             vo = new HostNetworkInterfaceLldpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setInterfaceUuid(interfaceVO.getUuid());
+                            vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
+                            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
                         }
                         vo.setMode(msg.getMode());
                         lldpVOS.add(vo);
@@ -115,7 +128,9 @@ public class LldpManagerImpl extends AbstractService {
         HostNetworkInterfaceLldpRefVO vo = Q.New(HostNetworkInterfaceLldpRefVO.class).eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, interfaceUuid).find();
         if (vo == null) {
             vo = new HostNetworkInterfaceLldpRefVO();
-            vo.setInterfaceUuid(inv.getInterfaceUuid());
+            vo.setInterfaceUuid(interfaceUuid);
+            vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
+            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
         }
         vo.setChassisId(inv.getChassisId());
         vo.setTimeToLive(inv.getTimeToLive());
@@ -154,10 +169,12 @@ public class LldpManagerImpl extends AbstractService {
                 } else {
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     LldpKvmAgentCommands.GetLldpInfoResponse rsp = r.toResponse(LldpKvmAgentCommands.GetLldpInfoResponse.class);
+                    logger.debug(String.format("00000000000000000 reply : %s", r));
+                    logger.debug(String.format("00000000000000000 rsp : %s", rsp.getLldpInfo()));
                     if (!rsp.isSuccess()) {
                         greply.setError(operr("operation error, because %s", rsp.getError()));
                     } else {
-                        syncHostNetworkInterfaceLldpInDb(msg.getInterfaceUuid(), rsp.getLldpInventory());
+                        syncHostNetworkInterfaceLldpInDb(msg.getInterfaceUuid(), rsp.getLldpInfo());
                         HostNetworkInterfaceLldpRefVO lldpRefVO =  Q.New(HostNetworkInterfaceLldpRefVO.class)
                                 .eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, msg.getInterfaceUuid())
                                 .find();
@@ -165,6 +182,97 @@ public class LldpManagerImpl extends AbstractService {
                     }
                 }
                 bus.reply(msg, greply);
+            }
+        });
+    }
+
+    private void applyHostNetworkLldpConfig(List<HostNetworkInterfaceLldpVO> lldpVOS, Completion completion) {
+        ErrorCodeList errorCodes = new ErrorCodeList();
+        List<KVMHostAsyncHttpCallMsg> kmsgs = new ArrayList<>();
+
+        List<HostNetworkInterfaceVO> interfaceVOS = Q.New(HostNetworkInterfaceVO.class)
+                .in(HostNetworkInterfaceVO_.uuid, lldpVOS.stream().map(HostNetworkInterfaceLldpVO::getInterfaceUuid).collect(Collectors.toList()))
+                .list();
+
+        for (LldpConstant.mode mode : LldpConstant.mode.values()) {
+            List<String> interfaceNames = interfaceVOS.stream().map(HostNetworkInterfaceVO::getInterfaceName).collect(Collectors.toList());
+            String hostUuid = interfaceVOS.get(0).getHostUuid();
+
+            LldpKvmAgentCommands.ChangeLldpModeCmd cmd = new LldpKvmAgentCommands.ChangeLldpModeCmd();
+            cmd.setPhysicalInterfaceNames(interfaceNames);
+            cmd.setMode(mode.name());
+
+            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+            kmsg.setPath(LldpConstant.CHANGE_LLDP_MODE_PATH);
+            kmsg.setHostUuid(hostUuid);
+            kmsg.setCommand(cmd);
+
+            kmsgs.add(kmsg);
+        }
+
+        new While<>(kmsgs).all((kmsg, whileCompletion) -> {
+            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, interfaceVOS.get(0).getHostUuid());
+            bus.send(kmsg, new CloudBusCallBack(whileCompletion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                        errorCodes.getCauses().add(reply.getError());
+                    } else {
+                        logger.debug(String.format("apply lldp mode[uuid:%s] success", kmsg.getCommand()));
+                    }
+                    whileCompletion.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodes.getCauses().isEmpty()) {
+                    logger.error(String.format("failed to ldp mode[uuid:%s]: %d", errorCodes.getCauses().size()));
+                    completion.fail(errorCodes.getCauses().get(0));
+                } else {
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void afterHostConnected(HostInventory host) {
+        logger.debug(String.format("00000000000 host connected :%s", host.getUuid()));
+        List <HostNetworkInterfaceLldpVO> interfaceVOS = Q.New(HostNetworkInterfaceLldpVO.class).list();
+        List <String> interfaceUuids = Q.New(HostNetworkInterfaceVO.class)
+                .notIn(HostNetworkInterfaceVO_.uuid, interfaceVOS.stream().map(HostNetworkInterfaceLldpVO::getInterfaceUuid).collect(Collectors.toList()))
+                .listValues();
+        logger.debug(String.format("11111111111111 :%s", interfaceUuids));
+        List<HostNetworkInterfaceLldpVO> lldpVOS = new ArrayList<>();
+        for (String interfaceUuid : interfaceUuids) {
+            HostNetworkInterfaceLldpVO vo = new HostNetworkInterfaceLldpVO();
+            vo.setUuid(Platform.getUuid());
+            vo.setInterfaceUuid(interfaceUuid);
+            vo.setMode(LldpConstant.mode.rx_only.toString());
+            vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
+            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+            lldpVOS.add(vo);
+        }
+        dbf.updateCollection(lldpVOS);
+
+        lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class).list();
+        if (lldpVOS == null || lldpVOS.isEmpty()) {
+            return;
+        }
+
+        logger.debug(String.format("222222222222222 :%s", lldpVOS));
+
+        applyHostNetworkLldpConfig(lldpVOS, new Completion(null) {
+            @Override
+            public void success() {
+                logger.debug("apply the lldp configuration after host reconnected successfully");
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.debug(String.format("fail to apply the lldp configuration after host reconnected:%s", errorCode.toString()));
             }
         });
     }
