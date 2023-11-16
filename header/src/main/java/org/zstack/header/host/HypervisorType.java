@@ -18,7 +18,7 @@ public class HypervisorType {
     }
 
     public static boolean hasType(String type) {
-        return types.keySet().contains(type);
+        return types.containsKey(type);
     }
 
     public static HypervisorType valueOf(String typeName) {
@@ -44,7 +44,7 @@ public class HypervisorType {
 
     @Override
     public boolean equals(Object t) {
-        if (t == null || !(t instanceof HypervisorType)) {
+        if (!(t instanceof HypervisorType)) {
             return false;
         }
 

@@ -10,10 +10,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostAllocatorSpec;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vo.ResourceVO;
@@ -280,9 +277,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
 
     @Override
     public void allocate() {
-        if (amITheFirstFlow()) {
-            throw new CloudRuntimeException("HostPrimaryStorageAllocatorFlow cannot be the first flow in the chain");
-        }
+        throwExceptionIfIAmTheFirstFlow();
 
         candidates = allocateFromCandidates();
 

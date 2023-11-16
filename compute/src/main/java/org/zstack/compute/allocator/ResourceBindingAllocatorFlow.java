@@ -9,19 +9,12 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.Q;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.ResourceBindingCollector;
 import org.zstack.header.allocator.ResourceBindingStrategy;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.resourceconfig.ResourceConfigVO;
-import org.zstack.resourceconfig.ResourceConfigVO_;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -83,9 +76,7 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
 
     @Override
     public void allocate() {
-        if (amITheFirstFlow()) {
-            throw new CloudRuntimeException("ResourceBindingAllocatorFlow cannot be the first flow in the chain");
-        }
+        throwExceptionIfIAmTheFirstFlow();
 
         Boolean resourceConfig = rcf.getResourceConfigValue(VmGlobalConfig.VM_HA_ACROSS_CLUSTERS, spec.getVmInstance().getUuid(), Boolean.class);
         if (!validateAllocationScene() || (!VmSystemTags.VM_RESOURCE_BINGDING.hasTag(spec.getVmInstance().getUuid()) && resourceConfig)) {
