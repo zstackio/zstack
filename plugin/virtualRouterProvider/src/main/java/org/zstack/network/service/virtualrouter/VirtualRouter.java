@@ -693,7 +693,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 refreshVO();
 
                 if(checkVirtualRouterAgentChanges(msg.getCommandClassName())){
-                    throw new OperationFailureException(operr("No operations allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+                    throw new OperationFailureException(operr("This operation is not allowed on virtualRoute[uuid:%s] during grayscale upgrade!", self.getUuid()));
                 }
 
                 final VirtualRouterAsyncHttpCallReply reply = new VirtualRouterAsyncHttpCallReply();
