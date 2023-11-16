@@ -19,7 +19,7 @@ import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.agent.versioncontrol.AgentVersionVO;
+import org.zstack.core.upgrade.AgentVersionVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;

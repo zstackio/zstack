@@ -1,8 +1,6 @@
-package org.zstack.header.agent.versioncontrol;
+package org.zstack.core.upgrade;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;

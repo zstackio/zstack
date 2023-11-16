@@ -1,4 +1,4 @@
-package org.zstack.header.agent.versioncontrol;
+package org.zstack.core.upgrade;
 
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;

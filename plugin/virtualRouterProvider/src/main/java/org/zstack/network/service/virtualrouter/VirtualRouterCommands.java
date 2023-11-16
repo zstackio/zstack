@@ -19,9 +19,7 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class AgentResponse extends GrayUpgradeAgent {
-		@GrayVersion(value = "5.0.0")
 		public boolean success = true;
-		@GrayVersion(value = "5.0.0")
 		public String error;
 		public boolean isSuccess() {
 			return success;

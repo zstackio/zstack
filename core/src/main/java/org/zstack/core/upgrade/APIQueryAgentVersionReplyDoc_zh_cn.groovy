@@ -1,6 +1,7 @@
-package org.zstack.header.agent.versioncontrol
+package org.zstack.core.upgrade
 
-import org.zstack.header.agent.versioncontrol.AgentVersionInventory
+
+import org.zstack.core.upgrade.AgentVersionVO
 import org.zstack.header.errorcode.ErrorCode
 
 doc {
@@ -9,7 +10,7 @@ doc {
 
 	ref {
 		name "inventories"
-		path "org.zstack.header.agent.versioncontrol.APIQueryAgentVersionReply.inventories"
+		path "org.zstack.core.upgrade.APIQueryAgentVersionReply.inventories"
 		desc "null"
 		type "List"
 		since "5.0.0"
@@ -23,7 +24,7 @@ doc {
 	}
 	ref {
 		name "error"
-		path "org.zstack.header.agent.versioncontrol.APIQueryAgentVersionReply.error"
+		path "org.zstack.core.upgrade.APIQueryAgentVersionReply.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "5.0.0"

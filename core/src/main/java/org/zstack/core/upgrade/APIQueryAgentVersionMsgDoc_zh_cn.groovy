@@ -1,6 +1,6 @@
-package org.zstack.header.agent.versioncontrol
+package org.zstack.core.upgrade
 
-import org.zstack.header.agent.versioncontrol.APIQueryAgentVersionReply
+import org.zstack.core.upgrade.APIQueryAgentVersionReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

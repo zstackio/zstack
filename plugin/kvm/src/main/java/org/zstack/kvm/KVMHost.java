@@ -38,7 +38,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
-import org.zstack.header.agent.versioncontrol.AgentVersionVO;
+import org.zstack.core.upgrade.AgentVersionVO;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterInventory;
