@@ -2585,7 +2585,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         if (vr != null) {
             l3NetworkUuids = getAttachableL3UuidsForVirtualRouter(vr, LoadBalancerInventory.valueOf(lbVO));
         } else {
-            VipVO vipVO = dbf.findByUuid(lbVO.getVipUuid(), VipVO.class);
+            VipVO vipVO = dbf.findByUuid(lbVO.getVipUuids().get(0), VipVO.class);
             if (vipVO.isSystem()) {
                 vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), vipVO.getUuid());
             } else {
@@ -2743,5 +2743,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    @Override
+    public boolean canDetachVipFromLb(LoadBalancerStruct struct, VipVO vip) {
+        return true;
     }
 }

@@ -808,6 +808,7 @@ public class LoadBalancerBase {
     }
 
     private void handle(DetachVipFromLoadBalancerMsg msg) {
+        final DetachVipFromLoadBalancerReply reply = new DetachVipFromLoadBalancerReply();
         LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -817,7 +818,6 @@ public class LoadBalancerBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                DetachVipFromLoadBalancerReply reply = new DetachVipFromLoadBalancerReply();
                 LoadBalancerBackend bkd = getBackend();
                 if (bkd == null) {
                     bus.reply(msg, reply);
@@ -826,6 +826,14 @@ public class LoadBalancerBase {
                 }
 
                 VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find();
+                LoadBalancerStruct lbStruct = lbMgr.makeStruct(self);
+
+                if (!bkd.canDetachVipFromLb(lbStruct, vipVO)) {
+                    reply.setError(operr("cloud not delete vip[%s]", vipVO.getUuid()));
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
 
                 if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
                     if (StringUtils.isEmpty(self.getVipUuid())) {
@@ -834,6 +842,8 @@ public class LoadBalancerBase {
                         return;
                     }
                     self.setVipUuid(null);
+                    lbStruct.setVip(null);
+                    lbStruct.getLb().setVipUuid(null);
                 } else {
                     if (StringUtils.isEmpty(self.getIpv6VipUuid())) {
                         bus.reply(msg, reply);
@@ -841,9 +851,9 @@ public class LoadBalancerBase {
                         return;
                     }
                     self.setIpv6VipUuid(null);
-
+                    lbStruct.setIpv6Vip(null);
+                    lbStruct.getLb().setIpv6VipUuid(null);
                 }
-                LoadBalancerStruct lbStruct = lbMgr.makeStruct(self);
 
                 FlowChain flowChain = new SimpleFlowChain();
                 flowChain.setName("detach-vip-from-lb-and-release-vip");
@@ -931,6 +941,11 @@ public class LoadBalancerBase {
                         if (msg.isHardDeleteDb()) {
                             dbf.update(self);
                             //todo:add gc
+
+                            reply.setError(errCode);
+                            bus.reply(msg, reply);
+                            chain.next();
+                            return;
                         }
                         reply.setError(errCode);
                         bus.reply(msg, reply);
@@ -1173,7 +1188,7 @@ public class LoadBalancerBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         data.put("releasedVipUuids", releasedVipUuids);
-                        new While<>(Arrays.asList(self.getVipUuid(), self.getIpv6VipUuid())).step((vipUuid, whileCompletion) -> {
+                        new While<>(self.getVipUuids()).step((vipUuid, whileCompletion) -> {
                             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                             struct.setUseFor(f.getNetworkServiceType());
                             struct.setServiceUuid(self.getUuid());

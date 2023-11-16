@@ -114,7 +114,6 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                     trigger.next();
                     return;
                 }
-
                 releaseOnlyVipOfLb(vipLoadBalancerMap, new Completion(trigger) {
                     @Override
                     public void success() {
@@ -123,7 +122,7 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        trigger.next();
+                        trigger.fail(errorCode);
                     }
                 });
             }
@@ -407,7 +406,6 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
         for (String vipUuid : vipLoadBalancerMap.keySet()) {
             LoadBalancerVO vo = vipLoadBalancerMap.get(vipUuid);
             DetachVipFromLoadBalancerMsg dmsg = new DetachVipFromLoadBalancerMsg();
-            dmsg.setHardDeleteDb(true);
             dmsg.setVipUuid(vipUuid);
             dmsg.setUuid(vo.getUuid());
             bus.makeTargetServiceIdByResourceUuid(dmsg, LoadBalancerConstants.SERVICE_ID, vipUuid);
@@ -420,6 +418,7 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
                         logger.debug(String.format("detach vip[%s] from lb[%s] error, because %s", dmsg.getVipUuid(), dmsg.getUuid(), reply.getError()));
+                        whileCompletion.addError(reply.getError());
                     }
                     whileCompletion.done();
                 }
@@ -428,6 +427,10 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
         }, dMsgs.size()).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
                 completion.success();
             }
         });

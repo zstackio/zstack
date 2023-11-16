@@ -1565,7 +1565,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         List <String> serverIps = new ArrayList<>();
         if(servers != null && !servers.isEmpty()){
             for(Map<String,String> server:servers){
-                if(server.containsKey("ipAddress") && NetworkUtils.isIpv4Address(server.get("ipAddress"))){
+                if(server.containsKey("ipAddress") && NetworkUtils.isIpAddress(server.get("ipAddress"))){
                     if(usedIps.contains(server.get("ipAddress"))){
                         throw new ApiMessageInterceptionException(operr("could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is repeated",msg.getServerGroupUuid(),server.get("ipAddress")));
                     }
