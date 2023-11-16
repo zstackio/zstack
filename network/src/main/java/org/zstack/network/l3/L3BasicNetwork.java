@@ -23,6 +23,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -269,6 +270,11 @@ public class L3BasicNetwork implements L3Network {
             return IpAllocatorType.valueOf(msg.getAllocatorStrategy());
         }
 
+        L3NetworkVO l3vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
+        if (!l3vo.getEnableIPAM()) {
+            return StaticIpAllocatorStrategy.type;
+        }
+
         if (msg.getIpVersion() == IPv6Constants.IPv4) {
             String ias = rcf.getResourceConfigValue(L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY, msg.getL3NetworkUuid(), String.class);
             if (ias != null) {
@@ -367,6 +373,18 @@ public class L3BasicNetwork implements L3Network {
 
     protected CheckIpAvailabilityReply checkIpAvailability(String ip) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
+
+        if (!self.getEnableIPAM()) {
+            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, self.getUuid()).eq(UsedIpVO_.ip, ip).isExists()) {
+                reply.setAvailable(false);
+                reply.setReason(IpNotAvailabilityReason.USED.toString());
+                return reply;
+            } else {
+                reply.setAvailable(true);
+                return reply;
+            }
+        }
+
         int ipversion = IPv6Constants.IPv4;
         if (IPv6NetworkUtils.isIpv6Address(ip)) {
             ipversion = IPv6Constants.IPv6;

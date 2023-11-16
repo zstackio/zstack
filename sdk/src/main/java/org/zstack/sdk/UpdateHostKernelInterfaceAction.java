@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetL3NetworkIpStatisticAction extends AbstractAction {
+public class UpdateHostKernelInterfaceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetL3NetworkIpStatisticAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetL3NetworkIpStatisticResult value;
+        public org.zstack.sdk.UpdateHostKernelInterfaceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,28 +26,22 @@ public class GetL3NetworkIpStatisticAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
+    public java.lang.String uuid;
 
-    @Param(required = false, validValues = {"All","Vip","VM","ZSkernel"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String resourceType = "All";
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ip;
-
-    @Param(required = false, validValues = {"Ip","CreateDate"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sortBy = "Ip";
-
-    @Param(required = false, validValues = {"asc","desc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sortDirection = "asc";
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer start = 0;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer limit = 20;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean replyWithCount = false;
+    public java.lang.String requiredIp;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String netmask;
+
+    @Param(required = false, validValues = {"Management"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List trafficTypes;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -67,6 +61,12 @@ public class GetL3NetworkIpStatisticAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -75,8 +75,8 @@ public class GetL3NetworkIpStatisticAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetL3NetworkIpStatisticResult value = res.getResult(org.zstack.sdk.GetL3NetworkIpStatisticResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetL3NetworkIpStatisticResult() : value; 
+        org.zstack.sdk.UpdateHostKernelInterfaceResult value = res.getResult(org.zstack.sdk.UpdateHostKernelInterfaceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateHostKernelInterfaceResult() : value; 
 
         return ret;
     }
@@ -105,11 +105,11 @@ public class GetL3NetworkIpStatisticAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/l3-networks/{l3NetworkUuid}/ip-statistic";
+        info.httpMethod = "PUT";
+        info.path = "/l2-networks/kernel-interfaces/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "updateHostKernelInterface";
         return info;
     }
 

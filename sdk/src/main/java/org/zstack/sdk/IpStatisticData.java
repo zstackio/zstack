@@ -108,4 +108,20 @@ public class IpStatisticData  {
         return this.ownerName;
     }
 
+    public java.lang.String resourceOwnerUuid;
+    public void setResourceOwnerUuid(java.lang.String resourceOwnerUuid) {
+        this.resourceOwnerUuid = resourceOwnerUuid;
+    }
+    public java.lang.String getResourceOwnerUuid() {
+        return this.resourceOwnerUuid;
+    }
+
+    public java.lang.String usedIpUuid;
+    public void setUsedIpUuid(java.lang.String usedIpUuid) {
+        this.usedIpUuid = usedIpUuid;
+    }
+    public java.lang.String getUsedIpUuid() {
+        return this.usedIpUuid;
+    }
+
 }
