@@ -40,9 +40,7 @@ public class KVMAgentCommands {
     }
 
     public static class AgentResponse extends GrayUpgradeAgent implements ConditionalValidation {
-        @GrayVersion(value = "5.0.0")
         private boolean success = true;
-        @GrayVersion(value = "5.0.0")
         private String error;
 
         public boolean isSuccess() {
@@ -69,7 +67,6 @@ public class KVMAgentCommands {
     }
 
     public static class AgentCommand extends GrayUpgradeAgent {
-        @GrayVersion(value = "5.0.0")
         public LinkedHashMap kvmHostAddons;
     }
 

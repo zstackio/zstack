@@ -1,0 +1,1 @@
+ALTER TABLE `zstack`.`AgentVersionVO` ADD CONSTRAINT fkAgentVersionVOResourceVO FOREIGN KEY (uuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;

@@ -1,4 +1,4 @@
-package org.zstack.header.agent.versioncontrol;
+package org.zstack.core.upgrade;
 
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
