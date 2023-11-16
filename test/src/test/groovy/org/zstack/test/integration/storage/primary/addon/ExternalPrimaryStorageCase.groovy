@@ -19,6 +19,8 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
 import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory
+import org.zstack.storage.backup.BackupStorageSystemTags
+import org.zstack.tag.SystemTagCreator
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -38,6 +40,10 @@ class ExternalPrimaryStorageCase extends SubCase {
     BackupStorageInventory bs
     VmInstanceInventory vm
     VolumeInventory vol, vol2
+    HostInventory host1, host2
+
+    String exponUrl = "https://operator:Admin123@172.25.130.160:443/pool"
+    String exportProtocol = "iscsi://"
 
     @Override
     void clean() {
@@ -68,7 +74,7 @@ class ExternalPrimaryStorageCase extends SubCase {
                 url = "/sftp"
                 username = "root"
                 password = "password"
-                hostname = "127.0.0.1"
+                hostname = "127.0.0.2"
 
                 image {
                     name = "image"
@@ -95,6 +101,13 @@ class ExternalPrimaryStorageCase extends SubCase {
                     kvm {
                         name = "kvm"
                         managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "kvm2"
+                        managementIp = "127.0.0.3"
                         username = "root"
                         password = "password"
                     }
@@ -133,6 +146,8 @@ class ExternalPrimaryStorageCase extends SubCase {
             iso = env.inventoryByName("iso") as ImageInventory
             l3 = env.inventoryByName("l3") as L3NetworkInventory
             bs = env.inventoryByName("sftp") as BackupStorageInventory
+            host1 = env.inventoryByName("kvm") as HostInventory
+            host2 = env.inventoryByName("kvm2") as HostInventory
             simulatorEnv()
             testCreateExponStorage()
             testSessionExpired()
@@ -162,20 +177,26 @@ class ExternalPrimaryStorageCase extends SubCase {
             rsp.virtualDeviceInfoList.addAll(info)
             return rsp
         }
+
+        SystemTagCreator creator = BackupStorageSystemTags.ISCSI_INITIATOR_NAME.newSystemTagCreator(bs.uuid);
+        creator.setTagByTokens(Collections.singletonMap(BackupStorageSystemTags.ISCSI_INITIATOR_NAME_TOKEN, "iqn.1994-05.com.redhat:fc16b4d4fb3f"));
+        creator.inherent = false;
+        creator.recreate = true;
+        creator.create();
     }
 
     void testCreateExponStorage() {
         def zone = env.inventoryByName("zone") as ZoneInventory
 
         discoverExternalPrimaryStorage {
-            url = "https://operator:Admin%40123@172.25.106.110:443/pool"
+            url = exponUrl
             identity = "expon"
         }
 
         ps = addExternalPrimaryStorage {
             name = "test"
             zoneUuid = zone.uuid
-            url = "https://operator:Admin%40123@172.25.106.110:443/pool"
+            url = exponUrl
             identity = "expon"
             config = ""
             defaultOutputProtocol = "VHost"
@@ -211,7 +232,8 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         env.message(ExportImageToRemoteTargetMsg.class){ ExportImageToRemoteTargetMsg msg, CloudBus bus ->
             ExportImageToRemoteTargetReply r = new  ExportImageToRemoteTargetReply()
-            assert msg.getRemoteTargetUrl().startsWith("iscsi://")
+            assert msg.getRemoteTargetUrl().startsWith(exportProtocol)
+            assert msg.getFormat() == "raw"
             bus.reply(msg, r)
         }
 
@@ -220,15 +242,45 @@ class ExternalPrimaryStorageCase extends SubCase {
             assert cmd.rootVolume.deviceType == VolumeTO.VHOST
             assert cmd.rootVolume.installPath.startsWith("/var/run")
             assert cmd.rootVolume.format == "raw"
+            if (cmd.cdRoms != null) {
+                cmd.cdRoms.forEach {
+                    if (!it.isEmpty()) {
+                        assert it.getPath().startsWith(exportProtocol)
+                    }
+                }
+            }
             return rsp
         }
 
+        // create vm concurrently
+        boolean success = false
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            void run() {
+                def otherVm = createVmInstance {
+                    name = "vm"
+                    instanceOfferingUuid = instanceOffering.uuid
+                    imageUuid = image.uuid
+                    l3NetworkUuids = [l3.uuid]
+                    hostUuid = host1.uuid
+                } as VmInstanceInventory
+
+                deleteVm(otherVm.uuid)
+                success = true
+            }
+        })
+
+        thread.run()
         vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
+            hostUuid = host1.uuid
         } as VmInstanceInventory
+
+        thread.join()
+        assert success
 
         stopVmInstance {
             uuid = vm.uuid
@@ -236,14 +288,32 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         startVmInstance {
             uuid = vm.uuid
+            hostUuid = host1.uuid
         }
 
         rebootVmInstance {
             uuid = vm.uuid
         }
+
+        def vm2 = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            hostUuid = host1.uuid
+        } as VmInstanceInventory
+
+        deleteVm(vm2.uuid)
     }
 
     void testAttachIso() {
+        env.afterSimulator(KVMConstant.KVM_ATTACH_ISO_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachIsoCmd.class)
+            assert cmd.iso.getPath().startsWith(exportProtocol)
+            return rsp
+        }
+
         attachIsoToVmInstance {
             vmInstanceUuid = vm.uuid
             isoUuid = iso.uuid
@@ -258,8 +328,13 @@ class ExternalPrimaryStorageCase extends SubCase {
             bootOrder = asList(VmBootDevice.CdRom.toString(), VmBootDevice.HardDisk.toString(), VmBootDevice.Network.toString())
         }
 
-        rebootVmInstance {
+        stopVmInstance {
             uuid = vm.uuid
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+            hostUuid = host2.uuid
         }
 
         setVmBootOrder {
@@ -267,8 +342,13 @@ class ExternalPrimaryStorageCase extends SubCase {
             bootOrder = asList(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString(), VmBootDevice.Network.toString())
         }
 
-        rebootVmInstance {
+        stopVmInstance {
             uuid = vm.uuid
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+            hostUuid = host1.uuid
         }
 
         detachIsoFromVmInstance {
@@ -354,7 +434,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     void testCreateTemplate() {
         env.message(DownloadImageFromRemoteTargetMsg.class){ DownloadImageFromRemoteTargetMsg msg, CloudBus bus ->
             DownloadImageFromRemoteTargetReply r = new  DownloadImageFromRemoteTargetReply()
-            assert msg.getRemoteTargetUrl().startsWith("iscsi://")
+            assert msg.getRemoteTargetUrl().startsWith(exportProtocol)
             r.setInstallPath("zstore://test/image")
             r.setSize(100L)
             bus.reply(msg, r)
@@ -380,13 +460,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     }
 
     void testClean() {
-        destroyVmInstance {
-            uuid = vm.uuid
-        }
-
-        expungeVmInstance {
-            uuid = vm.uuid
-        }
+        deleteVm(vm.uuid)
 
         deleteDataVolume {
             uuid = vol.uuid
@@ -394,6 +468,16 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         expungeDataVolume {
             uuid = vol.uuid
+        }
+    }
+
+    void deleteVm(String vmUuid) {
+        destroyVmInstance {
+            uuid = vmUuid
+        }
+
+        expungeVmInstance {
+            uuid = vmUuid
         }
     }
 }

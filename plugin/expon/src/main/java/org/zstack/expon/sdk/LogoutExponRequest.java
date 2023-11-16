@@ -16,7 +16,7 @@ public class LogoutExponRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 }

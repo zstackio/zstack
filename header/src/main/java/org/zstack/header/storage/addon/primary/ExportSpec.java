@@ -6,9 +6,8 @@ public class ExportSpec {
     private String installPath;
     private Class<? extends RemoteTarget> targetType;
 
-    private String clientIp;
-
-    private String clientName;
+    private String clientMnIp;
+    private String clientQualifiedName;
 
     private String format;
 
@@ -28,20 +27,12 @@ public class ExportSpec {
         this.installPath = installPath;
     }
 
-    public String getClientIp() {
-        return clientIp;
+    public void setClientQualifiedName(String clientQualifiedName) {
+        this.clientQualifiedName = clientQualifiedName;
     }
 
-    public void setClientIp(String clientIp) {
-        this.clientIp = clientIp;
-    }
-
-    public String getClientName() {
-        return clientName;
-    }
-
-    public void setClientName(String clientName) {
-        this.clientName = clientName;
+    public String getClientQualifiedName() {
+        return clientQualifiedName;
     }
 
     public String getFormat() {
@@ -50,5 +41,13 @@ public class ExportSpec {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public String getClientMnIp() {
+        return clientMnIp;
+    }
+
+    public void setClientMnIp(String clientMnIp) {
+        this.clientMnIp = clientMnIp;
     }
 }

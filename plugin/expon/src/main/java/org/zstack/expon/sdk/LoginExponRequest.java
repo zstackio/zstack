@@ -38,7 +38,8 @@ public class LoginExponRequest extends ExponRequest {
     }
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
+        parameterMap.remove("sessionId");
         return parameterMap;
     }
 }

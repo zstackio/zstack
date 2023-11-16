@@ -505,6 +505,7 @@ public class KVMAgentCommands {
         private List<String> libvirtCapabilities;
         @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO virtualizerInfo;
+        private String iscsiInitiatorName;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -741,6 +742,14 @@ public class KVMAgentCommands {
 
         public void setMemorySlotsMaximum(String memorySlotsMaximum) {
             this.memorySlotsMaximum = memorySlotsMaximum;
+        }
+
+        public String getIscsiInitiatorName() {
+            return iscsiInitiatorName;
+        }
+
+        public void setIscsiInitiatorName(String iscsiInitiatorName) {
+            this.iscsiInitiatorName = iscsiInitiatorName;
         }
     }
 

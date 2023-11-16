@@ -58,7 +58,7 @@ public class RemoveVHostControllerFromUssRequest extends ExponRequest {
     }
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 }

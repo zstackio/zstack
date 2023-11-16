@@ -24,6 +24,7 @@ class StorageTest extends Test {
         portForwarding()
         include("expon.xml")
         include("vhost.xml")
+        include("iscsi.xml")
     }
 
     @Override

@@ -1,20 +1,26 @@
 package org.zstack.expon.sdk.volume;
 
+import org.zstack.expon.sdk.ExponParam;
 import org.zstack.expon.sdk.Param;
 import org.zstack.header.volume.VolumeQos;
 
-public class ExponVolumeQos {
-    @Param(numberRange = {10485760, 107374182400L})
+import java.util.HashMap;
+import java.util.Map;
+
+public class ExponVolumeQos implements ExponParam {
+    private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
+
+    @Param(required = false, numberRange = {10485760, 107374182400L})
     private Long bpsLimit;
-    @Param(numberRange = {10485760, 107374182400L})
+    @Param(required = false, numberRange = {10485760, 107374182400L})
     private Long readBpsLimit;
-    @Param(numberRange = {10485760, 107374182400L})
+    @Param(required = false, numberRange = {10485760, 107374182400L})
     private Long writeBpsLimit;
-    @Param(numberRange = {1000, 10000000})
+    @Param(required = false, numberRange = {1000, 10000000})
     private Long iopsLimit;
-    @Param(numberRange = {1000, 10000000})
+    @Param(required = false, numberRange = {1000, 10000000})
     private Long readIopsLimit;
-    @Param(numberRange = {1000, 10000000})
+    @Param(required = false, numberRange = {1000, 10000000})
     private Long writeIopsLimit;
 
     public static ExponVolumeQos valueOf(VolumeQos qos) {
@@ -86,5 +92,10 @@ public class ExponVolumeQos {
 
     public void setWriteIopsLimit(Long writeIopsLimit) {
         this.writeIopsLimit = writeIopsLimit;
+    }
+
+    @Override
+    public Map<String, Parameter> getParameterMap() {
+        return parameterMap;
     }
 }

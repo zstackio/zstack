@@ -162,6 +162,7 @@ public class ExponClient {
         ApiResult doCall() {
 
             Request.Builder reqBuilder = new Request.Builder();
+            action.checkParameters();
 
             try {
                 if (action instanceof ExponQueryRequest) {
@@ -251,7 +252,6 @@ public class ExponClient {
 
             List<String> varNames = getVarNamesFromUrl(restInfo.path());
             String path = restInfo.path();
-            action.initializeParametersIfNot();
             if (!varNames.isEmpty()) {
                 Map<String, Object> vars = new HashMap<>();
                 for (String vname : varNames) {
@@ -287,6 +287,7 @@ public class ExponClient {
             if (restInfo.method().equals(HttpMethod.GET)) {
                 reqBuilder.url(builder.build()).get();
             } else if (restInfo.method().equals(HttpMethod.DELETE)) {
+                params.forEach((k, v) -> builder.addQueryParameter(k, v.toString()));
                 reqBuilder.url(builder.build()).delete();
             } else {
                 reqBuilder.url(builder.build()).method(restInfo.method().toString(), RequestBody.create(Constants.JSON, gson.toJson(params)));

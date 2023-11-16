@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.expon.sdk.ExponClient;
 import org.zstack.expon.sdk.ExponConfig;
 import org.zstack.expon.sdk.cluster.TianshuClusterModule;
 import org.zstack.expon.sdk.iscsi.IscsiClientGroupModule;
 import org.zstack.expon.sdk.iscsi.IscsiModule;
+import org.zstack.expon.sdk.iscsi.IscsiSeverNode;
 import org.zstack.expon.sdk.iscsi.IscsiUssResource;
 import org.zstack.expon.sdk.nvmf.NvmfBoundUssGatewayRefModule;
 import org.zstack.expon.sdk.nvmf.NvmfClientGroupModule;
@@ -30,6 +32,8 @@ import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.*;
+import org.zstack.iscsi.IscsiUtils;
+import org.zstack.iscsi.kvm.IscsiVolumeTO;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.vhost.kvm.VHostVolumeTO;
 
@@ -39,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.expon.ExponIscsiHelper.*;
 import static org.zstack.expon.ExponNameHelper.*;
 import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.buildImageName;
 import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.buildVolumeName;
@@ -61,6 +66,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
     private static long MIN_SIZE = 1024 * 1024 * 1024L;
+
+    private static long MAX_ISCSI_TARGET_LUN_COUNT = 64;
 
     {
         VolumeSnapshotCapability scap = new VolumeSnapshotCapability();
@@ -150,7 +157,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             comp.success(to);
             return;
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
-            to = activeIscsiVolume(h, v);
+            to = activeIscsiVolume(h, v, shareable);
             comp.success(to);
             return;
         }
@@ -175,13 +182,168 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         return to;
     }
 
-    private ActiveVolumeTO activeIscsiVolume(HostInventory h, BaseVolumeInfo vol) {
-        // TODO
-        return null;
+    private List<IscsiSeverNode> getIscsiServers(String tianshuId) {
+        List<IscsiSeverNode> nodes = apiHelper.getIscsiTargetServer(tianshuId);
+        nodes.removeIf(it -> !it.getUssName().startsWith("iscsi_zstack"));
+        if (nodes.isEmpty()) {
+            throw new RuntimeException("no zstack iscsi uss server found");
+        }
+
+        List<UssGatewayModule> uss = apiHelper.listUssGateway();
+        Set<String> ussIds = uss.stream()
+                .filter(it -> !it.getStatus().equals(HealthStatus.error.name()))
+                .map(UssGatewayModule::getId)
+                .collect(Collectors.toSet());
+        nodes.removeIf(it -> !ussIds.contains(it.getUssGwId()));
+        if (nodes.isEmpty()) {
+            throw new RuntimeException("no healthy uss server found");
+        }
+        return nodes;
+    }
+
+    private synchronized ActiveVolumeTO activeIscsiVolume(HostInventory h, BaseVolumeInfo vol, boolean shareable) {
+        String lunId, lunType;
+        String source = vol.getInstallPath();
+        if (source.contains("@")) {
+            lunId = getSnapIdFromPath(source);
+            lunType = "snapshot";
+        } else {
+            lunId = getVolIdFromPath(source);
+            lunType = "volume";
+        }
+
+        String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (clientIqn == null) {
+            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
+        }
+
+        String tianshuId = addonInfo.getClusters().get(0).getId();
+        List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
+
+        IscsiModule iscsi = allocateIscsiTarget(nodes);
+
+        String iscsiClientName = buildIscsiClientName(vol);
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+        if (client == null) {
+            client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(clientIqn));
+            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
+            sleep();
+            if (lunType.equals("volume")) {
+                apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), shareable);
+            } else {
+                apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
+            }
+            sleep();
+        } else if (!client.getHosts().contains(clientIqn)) {
+            apiHelper.addHostToIscsiClient(clientIqn, client.getId());
+            sleep();
+        }
+
+        IscsiVolumeTO to = new IscsiVolumeTO();
+        IscsiRemoteTarget target = new IscsiRemoteTarget();
+        target.setPort(3260);
+        target.setTransport("tcp");
+        target.setIqn(iscsi.getIqn());
+        target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
+        target.setDiskId(getDiskId(lunId, lunType));
+        target.setClientIp(h.getManagementIp());
+        to.setInstallPath(target.getResourceURI());
+        return to;
+    }
+
+    private String getDiskId(String lunId, String lunType) {
+        String wwn = null;
+        if (lunType.equals("volume")) {
+            VolumeModule vol = apiHelper.getVolume(lunId);
+            wwn = vol.getWwn();
+        }
+
+        if (wwn == null) {
+            wwn = lunId.replace("-", "").substring(16, 32);
+        }
+
+        return wwn;
+    }
+
+    private synchronized IscsiModule allocateIscsiTarget(List<IscsiSeverNode> nodes) {
+        IscsiModule iscsi;
+        String tianshuId = addonInfo.getClusters().get(0).getId();
+        if (addonInfo.getCurrentIscsiTargetId() == null) {
+            return createIscsiTarget(1, tianshuId, nodes);
+        }
+
+        iscsi = apiHelper.getIscsiController(addonInfo.getCurrentIscsiTargetId());
+        if (iscsi == null) {
+            int currentIscsiTargetIndex = Integer.parseInt(addonInfo.getCurrentIscsiTargetIndex());
+            return createIscsiTarget(currentIscsiTargetIndex + 1, tianshuId, nodes);
+        }
+
+        if (iscsi.getClientCount() < MAX_ISCSI_TARGET_LUN_COUNT) {
+            return iscsi;
+        }
+
+        int index = Integer.parseInt(iscsi.getName().substring(iscsi.getName().lastIndexOf("_") + 1));
+        return createIscsiTarget(index, tianshuId, nodes);
+    }
+
+
+    private IscsiModule createIscsiTarget(int index, String tianshuId, List<IscsiSeverNode> nodes) {
+        IscsiModule iscsi = apiHelper.createIscsiController(buildVolumeIscsiTargetName(index),
+                tianshuId, 3260, IscsiUssResource.valueOf(nodes));
+        addonInfo.setCurrentIscsiTargetId(iscsi.getId());
+        addonInfo.setCurrentIscsiTargetIndex(String.valueOf(index));
+        SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
+                .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo)).update();
+        return iscsi;
+    }
+
+    synchronized IscsiRemoteTarget exportIscsi(ExportSpec espec) {
+        String lunId, lunType;
+        String source = espec.getInstallPath();
+        if (source.contains("@")) {
+            lunId = getSnapIdFromPath(source);
+            lunType = "snapshot";
+        } else {
+            lunId = getVolIdFromPath(source);
+            lunType = "volume";
+        }
+
+        String tianshuId = addonInfo.getClusters().get(0).getId();
+        List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
+
+        IscsiModule iscsi = apiHelper.queryIscsiController(iscsiExportTargetName);
+        if (iscsi == null) {
+            iscsi = apiHelper.createIscsiController(iscsiExportTargetName, tianshuId, 3260, IscsiUssResource.valueOf(nodes));
+        }
+
+        String iscsiClientName = buildIscsiClientName(espec.getClientMnIp());
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+        if (client == null) {
+            client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(espec.getClientQualifiedName()));
+            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
+            sleep();
+        }
+
+        if (lunType.equals("volume")) {
+            apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), false);
+        } else {
+            apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
+        }
+
+        sleep();
+
+        IscsiRemoteTarget target = new IscsiRemoteTarget();
+        target.setPort(3260);
+        target.setTransport("tcp");
+        target.setIqn(iscsi.getIqn());
+        target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
+        target.setDiskId(getDiskId(lunId, lunType));
+        target.setClientIp(espec.getClientMnIp());
+        return target;
     }
 
     @Override
-    public ActiveVolumeTO getActiveResult(BaseVolumeInfo v, boolean shareable) {
+    public ActiveVolumeTO getActiveResult(BaseVolumeInfo v, HostInventory h, boolean shareable) {
         if (VolumeProtocol.VHost.toString().equals(v.getProtocol())) {
             String vhostName = buildVhostControllerName(v.getUuid());
             VHostControllerModule vhost = getOrCreateVhostController(vhostName);
@@ -189,7 +351,30 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             to.setInstallPath(vhost.getPath());
             return to;
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
-            // TODO
+            String lunId, lunType;
+            if (v.getInstallPath().contains("@")) {
+                lunId = getSnapIdFromPath(v.getInstallPath());
+                lunType = "snapshot";
+            } else {
+                lunId = getVolIdFromPath(v.getInstallPath());
+                lunType = "volume";
+            }
+
+            String iscsiClientName = buildIscsiClientName(v);
+            IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+            IscsiModule iscsi = apiHelper.getIscsiClientAttachedTargets(client.getId()).get(0);
+            List<IscsiSeverNode> nodes = getIscsiServers(addonInfo.getClusters().get(0).getId());
+
+            IscsiVolumeTO to = new IscsiVolumeTO();
+            IscsiRemoteTarget target = new IscsiRemoteTarget();
+            target.setPort(3260);
+            target.setTransport("tcp");
+            target.setIqn(iscsi.getIqn());
+            target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
+            target.setDiskId((getDiskId(lunId, lunType)));
+            target.setClientIp(h.getManagementIp());
+            to.setInstallPath(target.getResourceURI());
+            return to;
         }
 
         throw new OperationFailureException(operr("not supported protocol[%s]", v.getProtocol()));
@@ -198,11 +383,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void deactivate(BaseVolumeInfo vol, HostInventory h, Completion comp) {
         if (VolumeProtocol.VHost.toString().equals(vol.getProtocol())) {
-            deactiveVhost(vol, h);
+            deactivateVhost(vol, h);
             comp.success();
             return;
         } else if (VolumeProtocol.iSCSI.toString().equals(vol.getProtocol())) {
-            deactiveIscsi(vol, h);
+            deactivateIscsi(vol, h);
             comp.success();
             return;
         }
@@ -210,7 +395,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         comp.fail(operr("not supported protocol[%s]", vol.getProtocol()));
     }
 
-    private void deactiveVhost(BaseVolumeInfo vol, HostInventory h) {
+    private void deactivateVhost(BaseVolumeInfo vol, HostInventory h) {
         String vhostName = buildVhostControllerName(vol.getUuid());
 
         UssGatewayModule uss = getUssGateway(VolumeProtocol.VHost, h.getManagementIp());
@@ -223,12 +408,63 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         apiHelper.removeVhostVolumeFromUss(exponVol.getId(), vhost.getId(), uss.getId());
     }
 
-    private void deactiveIscsi(BaseVolumeInfo vol, HostInventory h) {
+    private void deactivateIscsi(BaseVolumeInfo vol, HostInventory h) {
+        String iscsiClientName = buildIscsiClientName(vol);
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+        if (client == null) {
+            return;
+        }
 
+        String iqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (iqn == null) {
+            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
+        }
+
+        if (client.getHosts().contains(iqn)) {
+            apiHelper.removeHostFromIscsiClient(iqn, client.getId());
+            sleep();
+        }
     }
 
+    private synchronized void unexportIscsi(String source, IscsiRemoteTarget target) {
+        String lunId, lunType;
+        if (source.contains("@")) {
+            lunId = getSnapIdFromPath(source);
+            lunType = "snapshot";
+        } else {
+            lunId = getVolIdFromPath(source);
+            lunType = "volume";
+        }
+
+
+        String iscsiClientName = buildIscsiClientName(target.getClientIp());
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+        if (client == null) {
+            return;
+        }
+
+        if (lunType.equals("volume")) {
+            apiHelper.removeVolumeFromIscsiClientGroup(lunId, client.getId());
+        } else {
+            apiHelper.removeSnapshotFromIscsiClientGroup(lunId, client.getId());
+        }
+
+        sleep();
+
+        /*
+        apiHelper.removeIscsiClientFromIscsiTarget(client.getId(), iscsi.getId());
+        apiHelper.unbindIscsiTargetToUss(iscsi.getId(), uss.getId());
+        apiHelper.deleteIscsiController(iscsi.getId());
+        apiHelper.deleteIscsiClient(client.getId());
+         */
+    }
 
     private VolumeModule getVolumeModule(BaseVolumeInfo vol) {
+        if (vol.getInstallPath() != null) {
+            String volId = getVolIdFromPath(vol.getInstallPath());
+            return apiHelper.getVolume(volId);
+        }
+
         if ("image".equals(vol.getType())) {
             return apiHelper.queryVolume(buildImageName(vol.getUuid()));
         } else {
@@ -251,6 +487,15 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         info.setPools(pools.stream().map(ExponAddonInfo.Pool::valueOf).collect(Collectors.toList()));
         List<TianshuClusterModule> clusters = apiHelper.queryClusters();
         info.setClusters(clusters.stream().map(ExponAddonInfo.TianshuCluster::valueOf).collect(Collectors.toList()));
+
+        List<IscsiModule> iscsiTargets = apiHelper.listIscsiController();
+        iscsiTargets.removeIf(it -> !it.getName().startsWith("iscsi_zstack_active"));
+        if (!iscsiTargets.isEmpty()) {
+            iscsiTargets.stream().max(Comparator.comparingInt(o -> Integer.parseInt(o.getName().substring(o.getName().lastIndexOf("_"))))).ifPresent(i -> {
+                info.setCurrentIscsiTargetId(i.getId());
+                info.setCurrentIscsiTargetIndex(i.getName().substring(i.getName().lastIndexOf("_") + 1));
+            });
+        }
         addonInfo = info;
         comp.success(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
     }
@@ -373,7 +618,14 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void deleteVolume(String installPath, Completion comp) {
         String volId = getVolIdFromPath(installPath);
-        apiHelper.deleteVolume(volId);
+        apiHelper.deleteVolume(volId, true);
+        comp.success();
+    }
+
+    @Override
+    public void trashVolume(String installPath, Completion comp) {
+        String volId = getVolIdFromPath(installPath);
+        apiHelper.deleteVolume(volId, false);
         comp.success();
     }
 
@@ -491,59 +743,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         return target;
     }
 
-    synchronized IscsiRemoteTarget exportIscsi(ExportSpec espec) {
-        String lunId, lunType;
-        String source = espec.getInstallPath();
-        if (source.contains("@")) {
-            lunId = getSnapIdFromPath(source);
-            lunType = "snapshot";
-        } else {
-            lunId = getVolIdFromPath(source);
-            lunType = "volume";
-        }
-
-        String tianshuId = addonInfo.getClusters().get(0).getId();
-        UssGatewayModule uss = getUssGateway(VolumeProtocol.iSCSI, "zstack");
-
-        String iscsiControllerName = "iscsi_zstack";
-        IscsiModule iscsi = apiHelper.queryIscsiController(iscsiControllerName);
-        if (iscsi == null) {
-            IscsiUssResource ussRes = new IscsiUssResource();
-            ussRes.setServerId(uss.getServerId());
-            ussRes.setGatewayIp(uss.getBusinessNetwork().split("/")[0]);
-            iscsi = apiHelper.createIscsiController(iscsiControllerName, tianshuId, 3260, ussRes);
-        }
-
-        String iscsiClientName = getIscsiClientName(espec.getClientIp());
-        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
-        if (client == null) {
-            client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(espec.getClientIp()));
-            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
-            sleep();
-        }
-
-        if (lunType.equals("volume")) {
-            apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
-        } else {
-            apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
-        }
-
-        sleep();
-
-        IscsiRemoteTarget target = new IscsiRemoteTarget();
-        target.setPort(3260);
-        target.setTransport("tcp");
-        target.setIqn(iscsi.getIqn());
-        target.setIp(uss.getBusinessNetwork().split("/")[0]);
-        target.setDiskId(lunId.replace("-", "").substring(16, 32));
-        target.setClientIp(espec.getClientIp());
-        return target;
-    }
-
-    private String getIscsiClientName(String clientIp) {
-        return "iscsi_" + clientIp.replace(".", "_");
-    }
-
     @Override
     public void unexport(String installPath, RemoteTarget target, Completion comp) {
         if (target instanceof NvmeRemoteTarget) {
@@ -590,43 +789,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         apiHelper.unbindNvmfTargetToUss(nvmf.getId(), uss.getId());
         apiHelper.deleteNvmfController(nvmf.getId());
         apiHelper.deleteNvmfClient(client.getId());
-         */
-    }
-
-    private synchronized void unexportIscsi(String source, IscsiRemoteTarget target) {
-        String lunId, lunType;
-        if (source.contains("@")) {
-            lunId = getSnapIdFromPath(source);
-            lunType = "snapshot";
-        } else {
-            lunId = getVolIdFromPath(source);
-            lunType = "volume";
-        }
-
-        // UssGatewayModule uss = getUssGateway(VolumeProtocol.iSCSI, "zstack");
-
-        String iscsiControllerName = "iscsi_zstack";
-        IscsiModule iscsi = apiHelper.queryIscsiController(iscsiControllerName);
-
-        String iscsiClientName = getIscsiClientName(target.getClientIp());
-        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
-        if (iscsi == null || client == null) {
-            return;
-        }
-
-        if (lunType.equals("volume")) {
-            apiHelper.removeVolumeFromIscsiClientGroup(lunId, client.getId());
-        } else {
-            apiHelper.removeSnapshotFromIscsiClientGroup(lunId, client.getId());
-        }
-
-        sleep();
-
-        /*
-        apiHelper.removeIscsiClientFromIscsiTarget(client.getId(), iscsi.getId());
-        apiHelper.unbindIscsiTargetToUss(iscsi.getId(), uss.getId());
-        apiHelper.deleteIscsiController(iscsi.getId());
-        apiHelper.deleteIscsiClient(client.getId());
          */
     }
 

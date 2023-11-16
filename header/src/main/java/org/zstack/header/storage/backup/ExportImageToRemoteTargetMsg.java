@@ -1,9 +1,10 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 
 public class ExportImageToRemoteTargetMsg extends NeedReplyMessage implements BackupStorageMessage {
-    private String installPath;
+    private ImageInventory image;
     private String backupStorageUuid;
     private String remoteTargetUrl;
     private String format;
@@ -16,13 +17,14 @@ public class ExportImageToRemoteTargetMsg extends NeedReplyMessage implements Ba
         this.backupStorageUuid = backupStorageUuid;
     }
 
-    public String getInstallPath() {
-        return installPath;
+    public void setImage(ImageInventory image) {
+        this.image = image;
     }
 
-    public void setInstallPath(String installPath) {
-        this.installPath = installPath;
+    public ImageInventory getImage() {
+        return image;
     }
+
     public String getFormat() {
         return format;
     }

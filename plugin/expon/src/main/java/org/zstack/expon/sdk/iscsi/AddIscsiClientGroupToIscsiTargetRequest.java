@@ -51,7 +51,7 @@ public class AddIscsiClientGroupToIscsiTargetRequest extends ExponRequest {
     }
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 }

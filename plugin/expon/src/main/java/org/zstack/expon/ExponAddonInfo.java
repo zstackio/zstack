@@ -11,6 +11,8 @@ public class ExponAddonInfo {
 
     private List<Pool> pools;
 
+    private String currentIscsiTargetId;
+    private String currentIscsiTargetIndex;
 
     public List<Pool> getPools() {
         return pools;
@@ -26,6 +28,22 @@ public class ExponAddonInfo {
 
     public List<TianshuCluster> getClusters() {
         return clusters;
+    }
+
+    public String getCurrentIscsiTargetId() {
+        return currentIscsiTargetId;
+    }
+
+    public void setCurrentIscsiTargetId(String currentIscsiTargetId) {
+        this.currentIscsiTargetId = currentIscsiTargetId;
+    }
+
+    public String getCurrentIscsiTargetIndex() {
+        return currentIscsiTargetIndex;
+    }
+
+    public void setCurrentIscsiTargetIndex(String currentIscsiTargetIndex) {
+        this.currentIscsiTargetIndex = currentIscsiTargetIndex;
     }
 
     public static class Pool {

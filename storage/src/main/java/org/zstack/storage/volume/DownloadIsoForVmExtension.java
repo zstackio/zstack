@@ -140,6 +140,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                         if (optional.isPresent()) {
                             CdRomSpec cdRomSpec = optional.get();
                             cdRomSpec.setInstallPath(re.getInstallPath());
+                            cdRomSpec.setProtocol(re.getProtocol());
                             cdRomSpec.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
 
                             SQL.New(VmCdRomVO.class)
