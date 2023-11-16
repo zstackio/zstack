@@ -10,6 +10,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l2.*;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class L2NetworkHostHelper {
 
     private static final CLogger logger = Utils.getLogger(L2NetworkHostHelper.class);
 
-    public boolean initL2NetworkHostRef(String l2NetworkUuid, List<String> hostUuids, String l2ProviderType) {
+    public void initL2NetworkHostRef(String l2NetworkUuid, List<String> hostUuids, String l2ProviderType) {
         List<L2NetworkHostRefVO> vos = new ArrayList<>();
         hostUuids.forEach(uuid -> {
             if (Q.New(L2NetworkHostRefVO.class)
@@ -45,9 +46,38 @@ public class L2NetworkHostHelper {
 
         if (!vos.isEmpty()) {
             dbf.persistCollection(vos);
-            return true;
-        } else {
-            return false;
+        }
+    }
+
+    public void initL2NetworkHostRefOrSetFailed(List<String> l2NetworkUuids, List<String> hostUuids, String l2ProviderType) {
+        List<L2NetworkHostRefVO> newVos = new ArrayList<>();
+        List<L2NetworkHostRefVO> oldVos = new ArrayList<>();
+        for (String l2Uuid : l2NetworkUuids) {
+            for (String hostUuid : hostUuids) {
+                L2NetworkHostRefVO ref = Q.New(L2NetworkHostRefVO.class)
+                        .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2Uuid)
+                        .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).find();
+                if (ref != null) {
+                    ref.setAttachStatus(L2NetworkAttachStatus.AttachFailed);
+                    oldVos.add(ref);
+                } else {
+                    L2NetworkHostRefVO vo = new L2NetworkHostRefVO();
+                    vo.setHostUuid(hostUuid);
+                    vo.setL2NetworkUuid(l2Uuid);
+                    vo.setL2ProviderType(l2ProviderType);
+                    vo.setAttachStatus(L2NetworkAttachStatus.AttachFailed);
+                    newVos.add(vo);
+                }
+            }
+        }
+
+        if (!newVos.isEmpty()) {
+            logger.debug(String.format("add L2NetworkHostRefVO, %s", JSONObjectUtil.toJsonString(newVos)));
+            dbf.persistCollection(newVos);
+        }
+        if (!oldVos.isEmpty()) {
+            logger.debug(String.format("update L2NetworkHostRefVO, %s", JSONObjectUtil.toJsonString(oldVos)));
+            dbf.updateCollection(oldVos);
         }
     }
 
