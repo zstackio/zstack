@@ -19,7 +19,7 @@ public class CreateNvmfClientGroupRequest extends ExponRequest {
 
     @Param
     private String name;
-    @Param
+    @Param(required = false)
     private String description;
     @Param
     private String tianshuId;
@@ -60,7 +60,7 @@ public class CreateNvmfClientGroupRequest extends ExponRequest {
     }
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 }

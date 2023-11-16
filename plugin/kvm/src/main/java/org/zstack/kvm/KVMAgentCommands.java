@@ -451,7 +451,6 @@ public class KVMAgentCommands {
         private List<String> ipAddresses;
         private List<String> libvirtCapabilities;
         private VirtualizerInfoTO virtualizerInfo;
-
         private String iscsiInitiatorName;
 
         public String getOsDistribution() {

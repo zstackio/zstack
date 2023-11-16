@@ -14,6 +14,8 @@ public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements P
     private String format;
     private boolean folder;
 
+    private boolean recycle = true;
+
     @Override
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
@@ -53,5 +55,13 @@ public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements P
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public boolean isRecycle() {
+        return recycle;
+    }
+
+    public void setRecycle(boolean recycle) {
+        this.recycle = recycle;
     }
 }

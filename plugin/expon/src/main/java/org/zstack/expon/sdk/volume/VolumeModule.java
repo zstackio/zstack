@@ -13,6 +13,7 @@ package org.zstack.expon.sdk.volume;
  * "qos_status": false,
  * "volume_name": "volume-ae747374-6c5f-46e2-b9c4-6a033a0bdcdd",
  * "volume_size": 1073741824,
+ * "wwn": "600140501e000000b9c46a033a0bdcdd"
  * }
  */
 public class VolumeModule {
@@ -21,6 +22,7 @@ public class VolumeModule {
     private String poolId;
     private String poolName;
     private String volumeName;
+    private String wwn;
     private long volumeSize;
     private long dataSize;
     private boolean isDelete;
@@ -65,6 +67,14 @@ public class VolumeModule {
 
     public void setVolumeName(String volumeName) {
         this.volumeName = volumeName;
+    }
+
+    public String getWwn() {
+        return wwn;
+    }
+
+    public void setWwn(String wwn) {
+        this.wwn = wwn;
     }
 
     public long getVolumeSize() {

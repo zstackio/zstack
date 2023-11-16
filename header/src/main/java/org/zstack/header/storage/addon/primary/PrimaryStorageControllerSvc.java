@@ -30,6 +30,7 @@ public interface PrimaryStorageControllerSvc {
 
     void createVolume(CreateVolumeSpec v, ReturnValueCompletion<VolumeStats>comp);
     void deleteVolume(String installPath, Completion comp);
+    void trashVolume(String installPath, Completion comp);
     void cloneVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats>comp);
     void copyVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats>comp);
     void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats>comp);

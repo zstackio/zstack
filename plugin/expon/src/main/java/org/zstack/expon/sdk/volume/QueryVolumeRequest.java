@@ -19,7 +19,7 @@ public class QueryVolumeRequest extends ExponQueryRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 }

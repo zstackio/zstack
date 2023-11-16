@@ -26,7 +26,7 @@ public class ChangeVolumeInIscsiClientGroupRequest extends ExponRequest {
     private String action;
     @Param
     private List<LunResource> luns;
-    @Param
+    @Param(required = false)
     private List<String> gateways;
 
     public String getId() {
@@ -62,7 +62,7 @@ public class ChangeVolumeInIscsiClientGroupRequest extends ExponRequest {
     }
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 }

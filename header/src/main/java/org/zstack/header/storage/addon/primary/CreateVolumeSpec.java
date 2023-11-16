@@ -5,7 +5,6 @@ import org.zstack.header.volume.VolumeQos;
 public class CreateVolumeSpec {
     private String name;
     private String uuid;
-    private String volumeType;
     private long size;
     private VolumeQos qos;
 
@@ -50,14 +49,6 @@ public class CreateVolumeSpec {
 
     public void setDryRun(boolean dryRun) {
         this.dryRun = dryRun;
-    }
-
-    public String getVolumeType() {
-        return volumeType;
-    }
-
-    public void setVolumeType(String volumeType) {
-        this.volumeType = volumeType;
     }
 
     public String getName() {
