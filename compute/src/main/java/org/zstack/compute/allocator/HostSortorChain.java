@@ -3,7 +3,6 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -25,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.zstack.core.Platform.operr;
 
@@ -46,6 +46,7 @@ public class HostSortorChain implements HostSortorStrategy {
     private List<AbstractHostSortorFlow> flows;
 
     private boolean isDryRun = false;
+    private boolean skipReserveCapacity = false;
     private ReturnValueCompletion<HostInventory> completion;
     private ReturnValueCompletion<List<HostInventory>> dryRunCompletion;
 
@@ -55,6 +56,10 @@ public class HostSortorChain implements HostSortorStrategy {
 
     public void setFlows(List<AbstractHostSortorFlow> flows) {
         this.flows = flows;
+    }
+
+    public void setSkipReserveCapacity(boolean skipReserveCapacity) {
+        this.skipReserveCapacity = skipReserveCapacity;
     }
 
     @Override
@@ -166,40 +171,36 @@ public class HostSortorChain implements HostSortorStrategy {
     private void done(List<HostInventory> hosts) {
         if (isDryRun) {
             dryRunCompletion.success(hosts);
-        } else {
-            try {
-                List<HostInventory> selectedHosts = new ArrayList<>();
-                List<ErrorCode> errs = new ArrayList<>();
-                new While<>(hosts).each((h, wcmpl) -> {
-                    reserveHost(h, new Completion(wcmpl) {
-                        @Override
-                        public void success() {
-                            selectedHosts.add(h);
-                            /* alldone() will break the new While loop */
-                            wcmpl.allDone();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            errs.add(errorCode);
-                            wcmpl.done();
-                        }
-                    });
-                }).run(new WhileDoneCompletion(completion) {
-                    @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        if (!selectedHosts.isEmpty()) {
-                            completion.success(selectedHosts.get(0));
-                        } else {
-                            /* return the error of last host */
-                            completion.fail(errs.get(errs.size() - 1));
-                        }
-                    }
-                });
-            } catch (Throwable t) {
-                completion.fail(Platform.inerr(t.getMessage()));
-            }
+            return;
         }
+        if (skipReserveCapacity) {
+            completion.success(hosts.iterator().next());
+            return;
+        }
+
+        AtomicReference<HostInventory> selectedHost = new AtomicReference<>();
+        new While<>(hosts).each((host, whileCompletion) -> reserveHost(host, new Completion(whileCompletion) {
+            @Override
+            public void success() {
+                selectedHost.set(host);
+                whileCompletion.allDone(); // break the new While loop: we only need one host
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                whileCompletion.addError(errorCode);
+                whileCompletion.done();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (selectedHost.get() == null) {
+                    completion.fail(errorCodeList);
+                    return;
+                }
+                completion.success(selectedHost.get());
+            }
+        });
     }
 
     private void reserveCapacity(final HostInventory host) {
