@@ -42,14 +42,10 @@ public class L2NetworkHostRefVO {
     private String l2NetworkUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = L2NetworkClusterRefVO.class, onDeleteAction = ReferenceOption.CASCADE)
-    private long l2NetworkClusterRefId;
-
-    @Column
     private String l2ProviderType;
 
     @Column
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     private L2NetworkAttachStatus attachStatus;
 
     @Column
@@ -85,14 +81,6 @@ public class L2NetworkHostRefVO {
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
-    }
-
-    public long getL2NetworkClusterRefId() {
-        return l2NetworkClusterRefId;
-    }
-
-    public void setL2NetworkClusterRefId(long l2NetworkClusterRefId) {
-        this.l2NetworkClusterRefId = l2NetworkClusterRefId;
     }
 
     public L2NetworkAttachStatus getAttachStatus() {

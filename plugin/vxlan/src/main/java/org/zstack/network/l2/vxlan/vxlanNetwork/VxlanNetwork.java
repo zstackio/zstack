@@ -71,7 +71,8 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     @Override
     public void deleteHook(Completion completion) {
         if (L2NetworkGlobalConfig.DeleteL2BridgePhysically.value(Boolean.class)) {
-            deleteL2Bridge(completion);
+            L2NetworkInventory l2Inv = getSelfInventory();
+            deleteL2Bridge(l2Inv.getAttachedClusterUuids(), completion);
         } else {
             completion.success();
         }
