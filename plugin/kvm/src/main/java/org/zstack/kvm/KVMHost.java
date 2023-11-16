@@ -465,7 +465,7 @@ public class KVMHost extends HostBase implements Host {
 
         void call(String resourceUuid, ReturnValueCompletion<T> completion) {
             if(checkHostKvmAgentChanges(commandName)){
-                completion.fail(operr("No operations allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+                completion.fail(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
                 return;
             }
             
@@ -2140,7 +2140,7 @@ public class KVMHost extends HostBase implements Host {
         }
         
         if(checkHostKvmAgentChanges(msg.getCommandClassName())){
-            throw new OperationFailureException(operr("No operations allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+            throw new OperationFailureException(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
         }
         
         String url = buildUrl(msg.getPath());
