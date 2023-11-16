@@ -4,16 +4,14 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.vm.MigrateVmMessage;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.ForEachFunction;
 
 import java.util.Map;
 
@@ -23,31 +21,26 @@ import java.util.Map;
 public class VmMigrateCallExtensionFlow implements Flow {
     @Autowired
     protected PluginRegistry pluginRgty;
+    @Autowired
+    private VmInstanceExtensionPointEmitter extEmitter;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        boolean migrateFromDest = false;
-        if (spec.getMessage() instanceof MigrateVmMessage) {
-            migrateFromDest = ((MigrateVmMessage)spec.getMessage()).isMigrateFromDestination();
-        }
-
-        final boolean fromDest = migrateFromDest;
-
         final HostInventory destHost = spec.getDestHost();
-        for (VmInstanceMigrateExtensionPoint ext : pluginRgty.getExtensionList(VmInstanceMigrateExtensionPoint.class)) {
-            ext.preMigrateVm(spec.getVmInventory(), destHost.getUuid());
-        }
-
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmInstanceMigrateExtensionPoint.class), new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
+        extEmitter.preMigrateVm(spec.getVmInventory(), destHost.getUuid(), new Completion(trigger) {
             @Override
-            public void run(VmInstanceMigrateExtensionPoint ext) {
-                ext.beforeMigrateVm(spec.getVmInventory(), destHost.getUuid());
+            public void success() {
+                extEmitter.beforeMigrateVm(spec.getVmInventory(), destHost.getUuid());
+                trigger.next();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                trigger.fail(errorCode);
             }
         });
-
-        trigger.next();
     }
 
     @Override

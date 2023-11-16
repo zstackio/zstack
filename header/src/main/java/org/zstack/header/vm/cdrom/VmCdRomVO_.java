@@ -1,6 +1,5 @@
 package org.zstack.header.vm.cdrom;
 
-import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vo.ResourceVO_;
 
 import javax.persistence.metamodel.SingularAttribute;
@@ -16,8 +15,9 @@ public class VmCdRomVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VmCdRomVO, String> name;
     public static volatile SingularAttribute<VmCdRomVO, String> isoUuid;
     public static volatile SingularAttribute<VmCdRomVO, String> isoInstallPath;
-    public static volatile SingularAttribute<VmNicVO, String> description;
-    public static volatile SingularAttribute<VmNicVO, Integer> deviceId;
+    public static volatile SingularAttribute<VmCdRomVO, String> description;
+    public static volatile SingularAttribute<VmCdRomVO, Integer> deviceId;
+    public static volatile SingularAttribute<VmCdRomVO, String> protocol;
     public static volatile SingularAttribute<VmCdRomVO, Timestamp> createDate;
     public static volatile SingularAttribute<VmCdRomVO, Timestamp> lastOpDate;
 }

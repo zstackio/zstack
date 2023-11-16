@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
@@ -23,10 +24,13 @@ import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
+import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.addon.backup.ExternalBackupStorageFactory;
 import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -34,13 +38,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
 public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Component, PSCapacityExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes,
-        CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension {
+        CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension, VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
 
@@ -53,7 +58,6 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
-
 
     @Override
     public boolean start() {
@@ -199,31 +203,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             return;
         }
 
-        new While<>(vols).each((vol, compl) -> {
-            PrimaryStorageNodeSvc svc = getNodeSvc(vol.getPrimaryStorageUuid());
-            svc.activate(vol, spec.getDestHost(), vol.isShareable(), new ReturnValueCompletion<ActiveVolumeTO>(compl) {
-                @Override
-                public void success(ActiveVolumeTO v) {
-                    compl.done();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    compl.addError(errorCode);
-                    compl.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(completion) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success();
-                } else {
-                    // todo rollback
-                    completion.fail(errorCodeList.getCauses().get(0));
-                }
-            }
-        });
+        activateVolumes(vols, spec.getDestHost(), false, completion);
     }
 
     @Override
@@ -233,15 +213,25 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             return;
         }
 
-        List<BaseVolumeInfo> vols = getManagerVolume(spec);
+        List<BaseVolumeInfo> vols = getManagerVolume(spec).stream().filter(vol -> !vol.isShareable()).collect(Collectors.toList());
         if (vols.isEmpty()) {
             completion.success();
             return;
         }
 
+        deactivateVolumes(vols, spec.getDestHost(), completion);
+    }
+
+    @Override
+    public void releaseVmResource(VmInstanceSpec spec, Completion completion) {
+        preReleaseVmResource(spec, completion);
+    }
+
+    private void deactivateVolumes(List<BaseVolumeInfo> vols, HostInventory host, Completion completion) {
+
         new While<>(vols).each((vol, compl) -> {
             PrimaryStorageNodeSvc svc = getNodeSvc(vol.getPrimaryStorageUuid());
-            svc.deactivate(vol, spec.getDestHost(), new Completion(compl) {
+            svc.deactivate(vol, host, new Completion(compl) {
                 @Override
                 public void success() {
                     compl.done();
@@ -266,11 +256,32 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         });
     }
 
-    @Override
-    public void releaseVmResource(VmInstanceSpec spec, Completion completion) {
-        preReleaseVmResource(spec, completion);
-    }
+    private void activateVolumes(List<BaseVolumeInfo> vols, HostInventory host, boolean shareable, Completion completion) {
+        new While<>(vols).each((vol, compl) -> {
+            PrimaryStorageNodeSvc svc = getNodeSvc(vol.getPrimaryStorageUuid());
+            svc.activate(vol, host, shareable | vol.isShareable(), new ReturnValueCompletion<ActiveVolumeTO>(compl) {
+                @Override
+                public void success(ActiveVolumeTO v) {
+                    compl.done();
+                }
 
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
+    }
 
     private List<BaseVolumeInfo> getManagerVolume(VmInstanceSpec spec) {
         List<BaseVolumeInfo> vols = new ArrayList<>();
@@ -279,12 +290,36 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
         spec.getCdRomSpecs().forEach(cdRomSpec -> {
             if (cdRomSpec.getInstallPath() != null && cdRomSpec.getProtocol() != null) {
-                BaseVolumeInfo info = new BaseVolumeInfo();
-                info.setInstallPath(cdRomSpec.getInstallPath());
-                info.setProtocol(cdRomSpec.getProtocol());
-                vols.add(info);
+                vols.add(BaseVolumeInfo.valueOf(cdRomSpec));
             }
         });
+
+        vols.removeIf(info -> {
+            if (info.getInstallPath() == null) {
+                return true;
+            }
+            String identity = info.getInstallPath().split("://")[0];
+            return !support(identity);
+        });
+
+        return vols;
+    }
+
+    private List<BaseVolumeInfo> getManagerVolume(VmInstanceInventory vm) {
+        List<BaseVolumeInfo> vols = new ArrayList<>();
+
+        vm.getAllDiskVolumes().forEach(vol -> vols.add(BaseVolumeInfo.valueOf(vol)));
+
+        if (getNodeSvc(vm.getRootVolume().getPrimaryStorageUuid()) != null) {
+            List<VmCdRomVO> cdRomVOS = Q.New(VmCdRomVO.class).eq(VmCdRomVO_.vmInstanceUuid, vm.getUuid()).list();
+            cdRomVOS.forEach(cdRomVO -> {
+                if (cdRomVO.getIsoUuid() != null) {
+                    BaseVolumeInfo info = BaseVolumeInfo.valueOf(cdRomVO);
+                    info.setPrimaryStorageUuid(vm.getRootVolume().getPrimaryStorageUuid());
+                    vols.add(info);
+                }
+            });
+        }
 
         vols.removeIf(info -> {
             if (info.getInstallPath() == null) {
@@ -558,5 +593,232 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     @Override
     public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
         return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE;
+    }
+
+    @Override
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
+        List<BaseVolumeInfo> vols = getManagerVolume(inv);
+        if (CollectionUtils.isEmpty(vols)) {
+            completion.success();
+            return;
+        }
+
+        List<BaseVolumeInfo> exclusiveVolumes = vols.stream().filter(vol -> !vol.isShareable()).collect(Collectors.toList());
+        HostInventory srcHost = HostInventory.valueOf(dbf.findByUuid(inv.getHostUuid(), HostVO.class));
+        HostInventory dstHost = HostInventory.valueOf(dbf.findByUuid(destHostUuid, HostVO.class));
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("active-external-ps-disk-for-migrate-vm-%s", inv.getUuid()));
+        chain.then(new Flow() {
+            String __name__ = "share-active-exclusive-disk-on-source-host";
+
+            @Override
+            public boolean skip(Map data) {
+                return exclusiveVolumes.isEmpty();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                activateVolumes(exclusiveVolumes, srcHost, true, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                activateVolumes(exclusiveVolumes, srcHost, false, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.rollback();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.rollback();
+                    }
+                });
+            }
+        }).then(new Flow() {
+            String __name__ = "share-active-exclusive-disk-on-dest-host";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                activateVolumes(vols, dstHost, true, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                deactivateVolumes(exclusiveVolumes, dstHost, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.rollback();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.rollback();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {}
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid, NoErrorCompletion completion) {
+        List<BaseVolumeInfo> vols = getManagerVolume(inv).stream().filter(vol -> !vol.isShareable()).collect(Collectors.toList());
+        if (vols.isEmpty()) {
+            completion.done();
+            return;
+        }
+        HostInventory srcHost = HostInventory.valueOf(dbf.findByUuid(srcHostUuid, HostVO.class));
+        HostInventory dstHost = HostInventory.valueOf(dbf.findByUuid(inv.getUuid(), HostVO.class));
+
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("active-external-ps-disk-for-migrate-vm-%s", inv.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "deactivate-disk-on-source-host";
+
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                deactivateVolumes(vols, srcHost, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "active-exclusive-disk-on-dest-host";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                activateVolumes(vols, dstHost, false, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.done();
+            }
+        }).start();
+    }
+
+    @Override
+    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason, NoErrorCompletion completion) {
+        if (destHostUuid == null) {
+            completion.done();
+            return;
+        }
+
+        List<BaseVolumeInfo> vols = getManagerVolume(inv).stream().filter(vol -> !vol.isShareable()).collect(Collectors.toList());
+        if (vols.isEmpty()) {
+            completion.done();
+            return;
+        }
+        HostInventory srcHost = HostInventory.valueOf(dbf.findByUuid(inv.getUuid(), HostVO.class));
+        HostInventory dstHost = HostInventory.valueOf(dbf.findByUuid(destHostUuid, HostVO.class));
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("active-external-ps-disk-for-migrate-vm-%s", inv.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "deactivate-disk-on-source-host";
+
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                activateVolumes(vols, srcHost, false, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "active-exclusive-disk-on-dest-host";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                deactivateVolumes(vols, dstHost, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.done();
+            }
+        }).start();
     }
 }

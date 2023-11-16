@@ -16,13 +16,14 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.addon.NvmeRemoteTarget;
 import org.zstack.header.storage.addon.RemoteTarget;
 import org.zstack.header.storage.addon.StorageCapacity;
 import org.zstack.header.storage.addon.StorageHealthy;
@@ -33,6 +34,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -66,7 +68,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected AccountManager acntMgr;
+    @Autowired
+    protected ResourceConfigFacade rcf;
 
+    private VolumeProtocol isoProtocol = VolumeProtocol.iSCSI;
 
     public ExternalPrimaryStorage(PrimaryStorageVO self, PrimaryStorageControllerSvc controller, PrimaryStorageNodeSvc node) {
         super(self);
@@ -679,10 +684,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         espec.setInstallPath(snapshotPath);
                         espec.setClientIp(getClientIp(msg.getBackupStorageUuid()));
                         espec.setClientName(msg.getBackupStorageUuid());
-
-                        controller.export(espec, NvmeRemoteTarget.class, new ReturnValueCompletion<NvmeRemoteTarget>(trigger) {
+                        String exportProtocol = rcf.getResourceConfigValue(
+                                ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+                        controller.export(espec, VolumeProtocol.valueOf(exportProtocol), new ReturnValueCompletion<RemoteTarget>(trigger) {
                             @Override
-                            public void success(NvmeRemoteTarget returnValue) {
+                            public void success(RemoteTarget returnValue) {
                                 remoteTarget = returnValue;
                                 trigger.next();
                             }
@@ -923,9 +929,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         espec.setInstallPath(volume.getInstallPath());
                         espec.setClientIp(getClientIp(bsUuid));
                         espec.setClientName(bsUuid);
-                        controller.export(espec, NvmeRemoteTarget.class, new ReturnValueCompletion<NvmeRemoteTarget>(trigger) {
+
+                        String exportProtocol = rcf.getResourceConfigValue(
+                                ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+                        controller.export(espec, VolumeProtocol.valueOf(exportProtocol), new ReturnValueCompletion<RemoteTarget>(trigger) {
                             @Override
-                            public void success(NvmeRemoteTarget returnValue) {
+                            public void success(RemoteTarget returnValue) {
                                 remoteTarget = returnValue;
                                 trigger.next();
                             }
@@ -1100,14 +1109,25 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(DownloadIsoToPrimaryStorageMsg msg) {
-        // TODO
         DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
-
         downloadImageCache(msg.getIsoSpec().getInventory(), new ReturnValueCompletion<ImageCacheInventory>(msg) {
             @Override
-            public void success(ImageCacheInventory returnValue) {
-                reply.setInstallPath(returnValue.getInstallUrl());
-                bus.reply(msg, reply);
+            public void success(ImageCacheInventory cache) {
+                HostInventory host = HostInventory.valueOf(dbf.findByUuid(msg.getDestHostUuid(), HostVO.class));
+                node.activate(BaseVolumeInfo.valueOf(cache, isoProtocol.name()), host, true, new ReturnValueCompletion<ActiveVolumeTO>(msg) {
+                    @Override
+                    public void success(ActiveVolumeTO returnValue) {
+                        reply.setInstallPath(cache.getInstallUrl());
+                        reply.setProtocol(isoProtocol.name());
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
 
             @Override
@@ -1232,7 +1252,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(DeleteSnapshotOnPrimaryStorageMsg msg) {
-        MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
+        DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         controller.deleteSnapshot(msg.getSnapshot().getPrimaryStorageInstallPath(), new Completion(msg) {
             @Override
             public void success() {

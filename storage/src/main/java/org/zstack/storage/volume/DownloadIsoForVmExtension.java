@@ -27,6 +27,7 @@ import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -107,7 +108,8 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     }));
 
                     if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
-                        VolumeSpec vspec = spec.getVolumeSpecs().get(0);
+                        VolumeSpec vspec = spec.getVolumeSpecs().stream().filter(it -> VolumeType.Root.toString().equals(it.getType()))
+                                .findFirst().orElse(spec.getVolumeSpecs().get(0));;
                         PrimaryStorageInventory pinv = vspec.getPrimaryStorageInventory();
                         psUuid = pinv.getUuid();
                     } else {
@@ -143,6 +145,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                             SQL.New(VmCdRomVO.class)
                                     .eq(VmCdRomVO_.uuid, cdRomSpec.getUuid())
                                     .set(VmCdRomVO_.isoInstallPath, re.getInstallPath())
+                                    .set(VmCdRomVO_.protocol, re.getProtocol())
                                     .update();
                         }
                     } else {

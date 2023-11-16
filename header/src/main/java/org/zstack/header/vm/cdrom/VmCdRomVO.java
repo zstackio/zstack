@@ -45,11 +45,8 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String description;
 
-    /*
     @Column
     private String protocol;
-
-     */
 
     @Column
     private Timestamp createDate;
@@ -121,6 +118,9 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
 
     public void setIsoInstallPath(String isoInstallPath) {
         this.isoInstallPath = isoInstallPath;
+        if (isoInstallPath == null) {
+            this.protocol = null;
+        }
     }
 
     public String getName() {
@@ -139,8 +139,6 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
         this.description = description;
     }
 
-    /*
-
     public String getProtocol() {
         return protocol;
     }
@@ -148,6 +146,4 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
-
-     */
 }

@@ -65,7 +65,7 @@ public class TestCreateVmOnKvmIso {
         Assert.assertNotNull(scmd);
 
         Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev().get(0));
-        Assert.assertEquals(isoCache.getInstallUrl(), scmd.getBootIso().get(0).getPath());
+        Assert.assertEquals(isoCache.getInstallUrl(), scmd.getCdRoms().get(0).getPath());
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         Assert.assertEquals("qcow2", vm.getRootVolume().getFormat());

@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.Map;
 
 public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint,
-        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
+        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
+        KVMPreAttachIsoExtensionPoint {
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
@@ -49,14 +50,12 @@ public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint,
 
         cmd.setDataVolumes(dtos);
 
-        /* todo CD ROM
         for (KVMAgentCommands.CdRomTO cdRomTO : cmd.getCdRoms()) {
             if (cdRomTO.isEmpty()) {
                 continue;
             }
-            cdRomTO.setPath(convertVolumeIfNeeded(cdRomTO.getPath()));
+            convertIsoIfNeeded(cdRomTO);
         }
-        */
 
         cmd.setUseHugePage(true);
         cmd.setMemAccess("shared");
@@ -91,6 +90,23 @@ public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint,
         ActiveVolumeTO vol = nodeSvc.getActiveResult(BaseVolumeInfo.valueOf(volumeInventory), false);
         volumeTO.setInstallPath(vol.getInstallPath());
         return volumeTO;
+    }
+
+    private KVMAgentCommands.IsoTO convertIsoIfNeeded(KVMAgentCommands.IsoTO isoTO) {
+        PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(isoTO.getPrimaryStorageUuid());
+        if (nodeSvc == null) {
+            return isoTO;
+        }
+
+        BaseVolumeInfo iso = new BaseVolumeInfo();
+        iso.setInstallPath(isoTO.getPath());
+        iso.setUuid(isoTO.getImageUuid());
+        iso.setProtocol(isoTO.getProtocol());
+        iso.setShareable(true);
+
+        ActiveVolumeTO vol = nodeSvc.getActiveResult(iso, false);
+        isoTO.setPath(vol.getInstallPath());
+        return isoTO;
     }
 
 
@@ -129,4 +145,9 @@ public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint,
     public void afterAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd) {}
     @Override
     public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd, ErrorCode err, Map data) {}
+
+    @Override
+    public void preAttachIsoExtensionPoint(KVMHostInventory host, KVMAgentCommands.AttachIsoCmd cmd) {
+        cmd.iso = convertIsoIfNeeded(cmd.iso);
+    }
 }

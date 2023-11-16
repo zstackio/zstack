@@ -1,13 +1,17 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
@@ -319,28 +323,58 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
-    public void preMigrateVm(final VmInstanceInventory inv, final String dstHostUuid) {
-        CollectionUtils.safeForEach(migrateVmExtensions, arg -> arg.preMigrateVm(inv, dstHostUuid));
+    public void preMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, Completion completion) {
+        new While<>(migrateVmExtensions).each((ext, comp) -> ext.preMigrateVm(inv, dstHostUuid, new Completion(comp) {
+            @Override
+            public void success() {
+                comp.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.addError(errorCode);
+                comp.allDone();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().size() > 0) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                } else {
+                    completion.success();
+                }
+            }
+        });
     }
 
     public void beforeMigrateVm(final VmInstanceInventory inv, final String dstHostUuid) {
         CollectionUtils.safeForEach(migrateVmExtensions, arg -> arg.beforeMigrateVm(inv, dstHostUuid));
     }
 
-    public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid) {
-        CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
+    public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid, NoErrorCompletion completion) {
+        new While<>(migrateVmExtensions).each((ext, comp) -> ext.afterMigrateVm(inv, srcHostUuid, new NoErrorCompletion(comp) {
             @Override
-            public void run(VmInstanceMigrateExtensionPoint arg) {
-                arg.afterMigrateVm(inv, srcHostUuid);
+            public void done() {
+                comp.done();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
             }
         });
     }
 
-    public void failedToMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, final ErrorCode reason) {
-        CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
+    public void failedToMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, final ErrorCode reason, NoErrorCompletion completion) {
+        new While<>(migrateVmExtensions).each((ext, comp) -> ext.failedToMigrateVm(inv, dstHostUuid, reason, new NoErrorCompletion(comp) {
             @Override
-            public void run(final VmInstanceMigrateExtensionPoint arg) {
-                arg.failedToMigrateVm(inv, dstHostUuid, reason);
+            public void done() {
+                comp.done();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
             }
         });
     }
