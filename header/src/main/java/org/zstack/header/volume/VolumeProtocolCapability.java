@@ -13,6 +13,8 @@ public class VolumeProtocolCapability {
 
     private boolean supportResizeOnHypervisor;
 
+    private boolean supportReadonly;
+
     public VolumeProtocolCapability(String protocol, String hypervisor) {
         this.protocol = protocol;
         this.hypervisor = hypervisor;
@@ -54,5 +56,13 @@ public class VolumeProtocolCapability {
 
     public void setSupportResizeOnHypervisor(boolean supportResizeOnHypervisor) {
         this.supportResizeOnHypervisor = supportResizeOnHypervisor;
+    }
+
+    public boolean isSupportReadonly() {
+        return supportReadonly;
+    }
+
+    public void setSupportReadonly(boolean supportReadonly) {
+        this.supportReadonly = supportReadonly;
     }
 }

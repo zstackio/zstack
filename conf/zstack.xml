@@ -43,6 +43,7 @@
     <import resource="springConfigXml/CascadeFacade.xml"/>
     <import resource="springConfigXml/ceph.xml"/>
     <import resource="springConfigXml/vhost.xml"/>
+    <import resource="springConfigXml/iscsi.xml"/>
     <import resource="springConfigXml/expon.xml"/>
     <import resource="springConfigXml/ExternalPrimaryStorage.xml"/>
     <import resource="springConfigXml/ExternalBackupStorage.xml"/>

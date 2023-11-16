@@ -12,14 +12,15 @@
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="KvmVHostNodeServer"
-          class="org.zstack.vhost.kvm.KvmVHostNodeServer">
+    <bean id="KvmIscsiNodeServer"
+          class="org.zstack.iscsi.kvm.KvmIscsiNodeServer">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMDetachVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMAttachVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMConvertVolumeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KVMPreAttachIsoExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

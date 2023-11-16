@@ -10,7 +10,7 @@ public class LunResource {
     private String lunType;
 
     @Param(required = false)
-    private String isReadonly;
+    private boolean isReadonly;
 
     public String getLunId() {
         return lunId;
@@ -28,11 +28,11 @@ public class LunResource {
         this.lunType = lunType;
     }
 
-    public void setIsReadonly(String isReadonly) {
+    public void setIsReadonly(boolean isReadonly) {
         this.isReadonly = isReadonly;
     }
 
-    public String getIsReadonly() {
+    public boolean getIsReadonly() {
         return isReadonly;
     }
 
@@ -42,5 +42,11 @@ public class LunResource {
     public LunResource(String lunId, String lunType) {
         this.lunId = lunId;
         this.lunType = lunType;
+    }
+
+    public LunResource(String lunId, String lunType, boolean isReadonly) {
+        this.lunId = lunId;
+        this.lunType = lunType;
+        this.isReadonly = isReadonly;
     }
 }

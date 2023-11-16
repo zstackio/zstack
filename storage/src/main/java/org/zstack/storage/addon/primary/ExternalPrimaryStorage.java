@@ -35,6 +35,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.storage.backup.BackupStorageSystemTags;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -70,8 +71,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     protected AccountManager acntMgr;
     @Autowired
     protected ResourceConfigFacade rcf;
-
-    private VolumeProtocol isoProtocol = VolumeProtocol.iSCSI;
 
     public ExternalPrimaryStorage(PrimaryStorageVO self, PrimaryStorageControllerSvc controller, PrimaryStorageNodeSvc node) {
         super(self);
@@ -682,10 +681,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     public void run(FlowTrigger trigger, Map data) {
                         ExportSpec espec = new ExportSpec();
                         espec.setInstallPath(snapshotPath);
-                        espec.setClientIp(getClientIp(msg.getBackupStorageUuid()));
-                        espec.setClientName(msg.getBackupStorageUuid());
+                        espec.setClientMnIp(getBsMnIp(msg.getBackupStorageUuid()));
+
                         String exportProtocol = rcf.getResourceConfigValue(
                                 ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+                        espec.setClientQualifiedName(getClientQualifiedName(msg.getBackupStorageUuid(), exportProtocol));
                         controller.export(espec, VolumeProtocol.valueOf(exportProtocol), new ReturnValueCompletion<RemoteTarget>(trigger) {
                             @Override
                             public void success(RemoteTarget returnValue) {
@@ -789,7 +789,16 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }).start();
     }
 
-    private String getClientIp(String bsUuid) {
+    // TODO, hardcode
+    private String getClientQualifiedName(String bsUuid, String protocol) {
+        if (VolumeProtocol.iSCSI.name().equals(protocol)) {
+            return BackupStorageSystemTags.ISCSI_INITIATOR_NAME.getTokenByResourceUuid(bsUuid, BackupStorageVO.class, BackupStorageSystemTags.ISCSI_INITIATOR_NAME_TOKEN);
+        }
+
+        return null;
+    }
+
+    private String getBsMnIp(String bsUuid) {
         GetBackupStorageManagerHostnameMsg msg = new GetBackupStorageManagerHostnameMsg();
         msg.setUuid(bsUuid);
         bus.makeLocalServiceId(msg, BackupStorageConstant.SERVICE_ID);
@@ -927,11 +936,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     public void run(FlowTrigger trigger, Map data) {
                         ExportSpec espec = new ExportSpec();
                         espec.setInstallPath(volume.getInstallPath());
-                        espec.setClientIp(getClientIp(bsUuid));
-                        espec.setClientName(bsUuid);
+                        espec.setClientMnIp(getBsMnIp(bsUuid));
 
                         String exportProtocol = rcf.getResourceConfigValue(
                                 ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+                        espec.setClientQualifiedName(getClientQualifiedName(bsUuid, exportProtocol));
                         controller.export(espec, VolumeProtocol.valueOf(exportProtocol), new ReturnValueCompletion<RemoteTarget>(trigger) {
                             @Override
                             public void success(RemoteTarget returnValue) {
@@ -1113,12 +1122,14 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         downloadImageCache(msg.getIsoSpec().getInventory(), new ReturnValueCompletion<ImageCacheInventory>(msg) {
             @Override
             public void success(ImageCacheInventory cache) {
+                String isoProtocol = ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL.value(String.class);
+
                 HostInventory host = HostInventory.valueOf(dbf.findByUuid(msg.getDestHostUuid(), HostVO.class));
-                node.activate(BaseVolumeInfo.valueOf(cache, isoProtocol.name()), host, true, new ReturnValueCompletion<ActiveVolumeTO>(msg) {
+                node.activate(BaseVolumeInfo.valueOf(cache, isoProtocol), host, true, new ReturnValueCompletion<ActiveVolumeTO>(msg) {
                     @Override
                     public void success(ActiveVolumeTO returnValue) {
                         reply.setInstallPath(cache.getInstallUrl());
-                        reply.setProtocol(isoProtocol.name());
+                        reply.setProtocol(isoProtocol);
                         bus.reply(msg, reply);
                     }
 

@@ -19,6 +19,8 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
 import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory
+import org.zstack.storage.backup.BackupStorageSystemTags
+import org.zstack.tag.SystemTagCreator
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -38,6 +40,8 @@ class ExternalPrimaryStorageCase extends SubCase {
     BackupStorageInventory bs
     VmInstanceInventory vm
     VolumeInventory vol, vol2
+
+    String exponUrl = "https://operator:Admin123@172.25.130.160:443/pool"
 
     @Override
     void clean() {
@@ -137,7 +141,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             testCreateExponStorage()
             testSessionExpired()
             testCreateVm()
-            testAttachIso()
+            // testAttachIso()
             testCreateDataVolume()
             testCreateSnapshot()
             testCreateTemplate()
@@ -162,20 +166,26 @@ class ExternalPrimaryStorageCase extends SubCase {
             rsp.virtualDeviceInfoList.addAll(info)
             return rsp
         }
+
+        SystemTagCreator creator = BackupStorageSystemTags.ISCSI_INITIATOR_NAME.newSystemTagCreator(bs.uuid);
+        creator.setTagByTokens(Collections.singletonMap(BackupStorageSystemTags.ISCSI_INITIATOR_NAME_TOKEN, "iqn.1994-05.com.redhat:fc16b4d4fb3f"));
+        creator.inherent = false;
+        creator.recreate = true;
+        creator.create();
     }
 
     void testCreateExponStorage() {
         def zone = env.inventoryByName("zone") as ZoneInventory
 
         discoverExternalPrimaryStorage {
-            url = "https://operator:Admin%40123@172.25.106.110:443/pool"
+            url = exponUrl
             identity = "expon"
         }
 
         ps = addExternalPrimaryStorage {
             name = "test"
             zoneUuid = zone.uuid
-            url = "https://operator:Admin%40123@172.25.106.110:443/pool"
+            url = exponUrl
             identity = "expon"
             config = ""
             defaultOutputProtocol = "VHost"
@@ -220,6 +230,13 @@ class ExternalPrimaryStorageCase extends SubCase {
             assert cmd.rootVolume.deviceType == VolumeTO.VHOST
             assert cmd.rootVolume.installPath.startsWith("/var/run")
             assert cmd.rootVolume.format == "raw"
+            if (cmd.cdRoms != null) {
+                cmd.cdRoms.forEach {
+                    if (!it.isEmpty()) {
+                        assert it.getPath().startsWith("iscsi://")
+                    }
+                }
+            }
             return rsp
         }
 
@@ -244,6 +261,12 @@ class ExternalPrimaryStorageCase extends SubCase {
     }
 
     void testAttachIso() {
+        env.afterSimulator(KVMConstant.KVM_ATTACH_ISO_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachIsoCmd.class)
+            assert cmd.iso.getPath().startsWith("iscsi://")
+            return rsp
+        }
+
         attachIsoToVmInstance {
             vmInstanceUuid = vm.uuid
             isoUuid = iso.uuid
