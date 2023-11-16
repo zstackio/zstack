@@ -46,6 +46,7 @@ public class HostSortorChain implements HostSortorStrategy {
     private List<AbstractHostSortorFlow> flows;
 
     private boolean isDryRun = false;
+    private boolean skipReserveCapacity = false;
     private ReturnValueCompletion<HostInventory> completion;
     private ReturnValueCompletion<List<HostInventory>> dryRunCompletion;
 
@@ -55,6 +56,10 @@ public class HostSortorChain implements HostSortorStrategy {
 
     public void setFlows(List<AbstractHostSortorFlow> flows) {
         this.flows = flows;
+    }
+
+    public void setSkipReserveCapacity(boolean skipReserveCapacity) {
+        this.skipReserveCapacity = skipReserveCapacity;
     }
 
     @Override
@@ -166,6 +171,10 @@ public class HostSortorChain implements HostSortorStrategy {
     private void done(List<HostInventory> hosts) {
         if (isDryRun) {
             dryRunCompletion.success(hosts);
+            return;
+        }
+        if (skipReserveCapacity) {
+            completion.success(hosts.iterator().next());
             return;
         }
 
