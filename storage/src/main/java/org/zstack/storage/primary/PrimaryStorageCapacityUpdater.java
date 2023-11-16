@@ -267,6 +267,7 @@ public class PrimaryStorageCapacityUpdater {
         return ret;
     }
 
+    @Deprecated
     public boolean reserve(long size) {
         return reserve(size, true);
     }
