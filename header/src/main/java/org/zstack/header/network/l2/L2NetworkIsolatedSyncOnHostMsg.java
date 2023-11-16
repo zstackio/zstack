@@ -12,8 +12,6 @@ import java.util.Map;
 public class L2NetworkIsolatedSyncOnHostMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
 
-    private String migrateHostUuid;
-
     private Map<String, List<String>> isolatedL2NetworkMacMap;
 
     @Override
@@ -25,18 +23,9 @@ public class L2NetworkIsolatedSyncOnHostMsg extends NeedReplyMessage implements 
         this.hostUuid = hostUuid;
     }
 
-    public String getMigrateHostUuid() {
-        return migrateHostUuid;
-    }
-
-    public void setMigrateHostUuid(String migrateHostUuid) {
-        this.migrateHostUuid = migrateHostUuid;
-    }
-
     public Map<String, List<String>> getIsolatedL2NetworkMacMap() {
         return isolatedL2NetworkMacMap;
     }
-
 
     public void setIsolatedL2NetworkMacMap(Map<String, List<String>> isolatedL2NetworkMacMap) {
         this.isolatedL2NetworkMacMap = isolatedL2NetworkMacMap;
