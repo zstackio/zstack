@@ -7629,7 +7629,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 provisionAfterRebootVm(spec, new NoErrorCompletion(completion) {
                     @Override
                     public void done() {
-                        self = changeVmStateInDb(VmInstanceStateEvent.running);
+                        self = changeVmStateInDb(VmInstanceStateEvent.running,
+                                () -> self.setHostUuid(originalCopy.getHostUuid()));
                         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                         extEmitter.afterRebootVm(inv);
                         new StaticIpOperator().deleteIpChange(self.getUuid());
