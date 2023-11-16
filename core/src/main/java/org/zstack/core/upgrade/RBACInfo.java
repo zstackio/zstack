@@ -1,4 +1,4 @@
-package org.zstack.header.agent.versioncontrol;
+package org.zstack.core.upgrade;
 
 import org.zstack.header.identity.rbac.RBACDescription;
 
@@ -6,7 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .adminOnlyAPIs("org.zstack.header.agent.**")
+                .adminOnlyAPIs("org.zstack.core.upgrade.**")
                 .build();
     }
 
