@@ -879,28 +879,35 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "save-volume-snapshot-integrity";
+                    String __name__ = "after-volume-snapshot-created";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<AfterCreateVolumeSnapshotExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterCreateVolumeSnapshotExtensionPoint.class);
+                        List<VolumeSnapshotCreationExtensionPoint> extensionList = pluginRgty.getExtensionList(VolumeSnapshotCreationExtensionPoint.class);
+                        new While<>(extensionList).each((ext, wc) -> {
+                            ext.afterVolumeSnapshotCreated(snapshot, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    wc.done();
+                                }
 
-                        if (extensionList.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        extensionList.forEach(exp -> exp.afterCreateVolumeSnapshot(snapshot, new Completion(trigger) {
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    wc.addError(errorCode);
+                                    wc.allDone();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void success() {
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                    return;
+                                }
+
                                 trigger.next();
                             }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        }));
+                        });
                     }
                 });
 

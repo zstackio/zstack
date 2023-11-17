@@ -3053,17 +3053,12 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 });
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "archive-vm-devices-info-for-memory-snapshot-group";
-
-            @Override
-            public boolean skip(Map data) {
-                return msg.getConsistentType() != ConsistentType.Application;
-            }
+            String __name__ = "after-volume-snapshot-group-created";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                new While<>(pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class)).each((ext, compl) -> {
-                    ext.afterCreateMemorySnapshotGroup(((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)), new Completion(compl) {
+                new While<>(pluginRgty.getExtensionList(VolumeSnapshotCreationExtensionPoint.class)).each((ext, compl) -> {
+                    ext.afterVolumeSnapshotGroupCreated(((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)), msg.getConsistentType(), new Completion(compl) {
                         @Override
                         public void success() {
                             compl.done();
@@ -3079,7 +3074,6 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (errorCodeList.getCauses().isEmpty()) {
-                            vidm.archiveCurrentDeviceAddress(msg.getVmInstance().getUuid(), ((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)).getUuid());
                             trigger.next();
                             return;
                         }

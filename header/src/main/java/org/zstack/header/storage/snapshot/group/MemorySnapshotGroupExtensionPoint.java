@@ -8,6 +8,7 @@ import java.util.List;
  * Created by LiangHanYu on 2022/6/1 14:02
  */
 public interface MemorySnapshotGroupExtensionPoint {
+    // TODO: remove this interface
     void afterCreateMemorySnapshotGroup(VolumeSnapshotGroupInventory snapshotGroup, Completion completion);
 
     void beforeRevertMemorySnapshotGroup(VolumeSnapshotGroupInventory snapshotGroup, List<Object> bundles, Completion completion);
