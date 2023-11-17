@@ -1,6 +1,8 @@
 package org.zstack.network.hostNetwork.lldp;
 
 import org.zstack.core.validation.ConditionalValidation;
+import org.zstack.network.hostNetwork.HostNetworkInterfaceInventory;
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpInventory;
 import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefInventory;
 
 import java.util.List;
@@ -83,5 +85,20 @@ public class LldpKvmAgentCommands {
         public void setLldpInfo(HostNetworkInterfaceLldpRefInventory lldpInfo) {
             this.lldpInfo = lldpInfo;
         }
+    }
+
+    public static class ApplyLldpConfigCmd extends AgentCommand {
+        private List<HostNetworkInterfaceLldpInventory> lldpConfig;
+
+        public List<HostNetworkInterfaceLldpInventory> getLldpConfig() {
+            return lldpConfig;
+        }
+
+        public void setLldpConfig(List<HostNetworkInterfaceLldpInventory> lldpConfig) {
+            this.lldpConfig = lldpConfig;
+        }
+    }
+
+    public static class ApplyLldpConfigResponse extends AgentResponse {
     }
 }

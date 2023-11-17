@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpRefVO` (
     `systemDescription` varchar(255) NOT NULL,
     `systemCapabilities` varchar(32) NOT NULL,
     `portId` varchar(32) NOT NULL,
-    `portDescription` varchar(32) NOT NULL,
+    `portDescription` varchar(255) NOT NULL,
     `vlanId` int(32) DEFAULT NULL,
     `aggregationPortId` bigint unsigned DEFAULT NULL,
     `mtu` varchar(128) DEFAULT NULL,

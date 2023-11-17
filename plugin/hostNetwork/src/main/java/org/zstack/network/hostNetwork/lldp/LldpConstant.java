@@ -16,4 +16,5 @@ public interface LldpConstant {
 
     String CHANGE_LLDP_MODE_PATH = "/network/lldp/changemode";
     String GET_LLDP_INFO_PATH = "/network/lldp/get";
+    String APPLY_LLDP_CONFIG_PATH = "/network/lldp/apply";
 }

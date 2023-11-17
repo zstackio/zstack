@@ -17,6 +17,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostAfterConnectedExtensionPoint;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -108,6 +109,7 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                             vo.setInterfaceUuid(interfaceVO.getUuid());
                             vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
                             vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+                            vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                         }
                         vo.setMode(msg.getMode());
                         lldpVOS.add(vo);
@@ -187,51 +189,24 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
     }
 
     private void applyHostNetworkLldpConfig(List<HostNetworkInterfaceLldpVO> lldpVOS, Completion completion) {
-        ErrorCodeList errorCodes = new ErrorCodeList();
-        List<KVMHostAsyncHttpCallMsg> kmsgs = new ArrayList<>();
-
         List<HostNetworkInterfaceVO> interfaceVOS = Q.New(HostNetworkInterfaceVO.class)
                 .in(HostNetworkInterfaceVO_.uuid, lldpVOS.stream().map(HostNetworkInterfaceLldpVO::getInterfaceUuid).collect(Collectors.toList()))
                 .list();
+        LldpKvmAgentCommands.ApplyLldpConfigCmd cmd = new LldpKvmAgentCommands.ApplyLldpConfigCmd();
+        cmd.setLldpConfig(HostNetworkInterfaceLldpInventory.valueOf(lldpVOS));
 
-        for (LldpConstant.mode mode : LldpConstant.mode.values()) {
-            List<String> interfaceNames = interfaceVOS.stream().map(HostNetworkInterfaceVO::getInterfaceName).collect(Collectors.toList());
-            String hostUuid = interfaceVOS.get(0).getHostUuid();
-
-            LldpKvmAgentCommands.ChangeLldpModeCmd cmd = new LldpKvmAgentCommands.ChangeLldpModeCmd();
-            cmd.setPhysicalInterfaceNames(interfaceNames);
-            cmd.setMode(mode.name());
-
-            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-            kmsg.setPath(LldpConstant.CHANGE_LLDP_MODE_PATH);
-            kmsg.setHostUuid(hostUuid);
-            kmsg.setCommand(cmd);
-
-            kmsgs.add(kmsg);
-        }
-
-        new While<>(kmsgs).all((kmsg, whileCompletion) -> {
-            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, interfaceVOS.get(0).getHostUuid());
-            bus.send(kmsg, new CloudBusCallBack(whileCompletion) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(reply.getError().toString());
-                        errorCodes.getCauses().add(reply.getError());
-                    } else {
-                        logger.debug(String.format("apply lldp mode[uuid:%s] success", kmsg.getCommand()));
-                    }
-                    whileCompletion.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(completion) {
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setPath(LldpConstant.APPLY_LLDP_CONFIG_PATH);
+        kmsg.setHostUuid(interfaceVOS.get(0).getHostUuid());
+        kmsg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, interfaceVOS.get(0).getHostUuid());
+        bus.send(kmsg, new CloudBusCallBack(completion) {
             @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (!errorCodes.getCauses().isEmpty()) {
-                    logger.error(String.format("failed to ldp mode[uuid:%s]: %d", errorCodes.getCauses().size()));
-                    completion.fail(errorCodes.getCauses().get(0));
-                } else {
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
                     completion.success();
+                } else {
+                    completion.fail(reply.getError());
                 }
             }
         });
@@ -240,10 +215,23 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
     @Override
     public void afterHostConnected(HostInventory host) {
         logger.debug(String.format("00000000000 host connected :%s", host.getUuid()));
-        List <HostNetworkInterfaceLldpVO> interfaceVOS = Q.New(HostNetworkInterfaceLldpVO.class).list();
-        List <String> interfaceUuids = Q.New(HostNetworkInterfaceVO.class)
-                .notIn(HostNetworkInterfaceVO_.uuid, interfaceVOS.stream().map(HostNetworkInterfaceLldpVO::getInterfaceUuid).collect(Collectors.toList()))
+        List<String> interfaceUuids = Q.New(HostNetworkInterfaceLldpVO.class)
+                .select(HostNetworkInterfaceLldpVO_.interfaceUuid)
                 .listValues();
+
+        if (interfaceUuids != null && !interfaceUuids.isEmpty()) {
+            interfaceUuids = Q.New(HostNetworkInterfaceVO.class)
+                    .select(HostNetworkInterfaceVO_.uuid)
+                    .eq(HostNetworkInterfaceVO_.hostUuid, host.getUuid())
+                    .notIn(HostNetworkInterfaceVO_.uuid, interfaceUuids)
+                    .listValues();
+        } else {
+            interfaceUuids = Q.New(HostNetworkInterfaceVO.class)
+                    .select(HostNetworkInterfaceVO_.uuid)
+                    .eq(HostNetworkInterfaceVO_.hostUuid, host.getUuid())
+                    .listValues();
+        }
+
         logger.debug(String.format("11111111111111 :%s", interfaceUuids));
         List<HostNetworkInterfaceLldpVO> lldpVOS = new ArrayList<>();
         for (String interfaceUuid : interfaceUuids) {
@@ -253,6 +241,7 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
             vo.setMode(LldpConstant.mode.rx_only.toString());
             vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
             vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+            vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
             lldpVOS.add(vo);
         }
         dbf.updateCollection(lldpVOS);
@@ -261,7 +250,6 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
         if (lldpVOS == null || lldpVOS.isEmpty()) {
             return;
         }
-
         logger.debug(String.format("222222222222222 :%s", lldpVOS));
 
         applyHostNetworkLldpConfig(lldpVOS, new Completion(null) {

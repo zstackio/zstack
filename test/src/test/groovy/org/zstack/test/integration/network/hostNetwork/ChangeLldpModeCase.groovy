@@ -5,17 +5,19 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.Platform
 import org.zstack.core.db.SQL
-import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.SharedResourceVO
-import org.zstack.header.managementnode.ManagementNodeVO
 import org.zstack.network.hostNetwork.HostNetworkInterfaceVO
 import org.zstack.network.hostNetwork.HostNetworkInterfaceVO_
 import org.zstack.network.hostNetwork.lldp.LldpConstant
 import org.zstack.network.hostNetwork.lldp.LldpKvmAgentCommands
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO
+import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO_
 import org.zstack.sdk.*
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+
+import java.util.concurrent.atomic.AtomicInteger
 
 class ChangeLldpModeCase extends SubCase {
     EnvSpec env
@@ -81,12 +83,14 @@ class ChangeLldpModeCase extends SubCase {
         env.create {
             dbf = bean(DatabaseFacade.class)
             testChangeLldpMode()
+            testReconnectHost()
         }
     }
 
     @Override
     void clean() {
         SQL.New(HostNetworkInterfaceVO.class).hardDelete()
+        SQL.New(HostNetworkInterfaceLldpVO.class).hardDelete()
         SQL.New(AccountResourceRefVO.class).hardDelete()
         SQL.New(SharedResourceVO.class).hardDelete()
         env.delete()
@@ -147,5 +151,48 @@ class ChangeLldpModeCase extends SubCase {
                 mode = "rx_only"
             }
         }
+
+        dbf.remove(vo)
+        dbf.remove(vo1)
+        SQL.New(HostNetworkInterfaceLldpVO.class).hardDelete()
+    }
+
+    void testReconnectHost() {
+        def host = env.inventoryByName("host1") as org.zstack.sdk.HostInventory
+
+        HostNetworkInterfaceVO vo = new HostNetworkInterfaceVO();
+        vo.setUuid(Platform.getUuid())
+        vo.setHostUuid(host.getUuid())
+        vo.setInterfaceName("enp101s0f2")
+        vo.setSpeed(10000L)
+        vo.setCarrierActive(true)
+        vo.setMac("ac:1f:6b:93:6c:8e")
+        vo.setPciDeviceAddress("0e:00.2")
+        vo.setInterfaceType("noMaster")
+        vo.setAccountUuid("36c27e8ff05c4780bf6d2fa65700f22e")
+        vo.setResourceName("test")
+        dbf.persist(vo)
+
+        AtomicInteger count = new AtomicInteger(0)
+        env.simulator(LldpConstant.APPLY_LLDP_CONFIG_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            LldpKvmAgentCommands.ApplyLldpConfigResponse rsp = new LldpKvmAgentCommands.ApplyLldpConfigResponse()
+            count.addAndGet(1)
+            rsp.setSuccess(true)
+            return rsp
+        }
+
+        reconnectHost {
+            uuid = host.uuid
+        }
+
+        List<HostNetworkInterfaceLldpVO> lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class)
+                .eq(HostNetworkInterfaceLldpVO_.interfaceUuid, vo.getUuid())
+                .list()
+        assert lldpVOS.size() == 1
+
+        assert count.get() == 1
+
+        dbf.remove(vo)
+        SQL.New(HostNetworkInterfaceLldpVO.class).hardDelete()
     }
 }
