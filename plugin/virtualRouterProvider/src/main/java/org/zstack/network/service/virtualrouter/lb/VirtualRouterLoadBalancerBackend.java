@@ -1275,7 +1275,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     .map(VmNicInventory::getL3NetworkUuid)
                     .collect(Collectors.toSet());
 
-            vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
+            if (!guestL3NetworkUuids.isEmpty()) {
+                vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
+            }
             vipStruct.setServiceProvider(getLoadLancerServiceProvider(vipStruct.getPeerL3NetworkUuids()));
             Vip v = new Vip(vipUuid);
             v.setStruct(vipStruct);
