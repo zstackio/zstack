@@ -189,17 +189,26 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
     }
 
     private void applyHostNetworkLldpConfig(List<HostNetworkInterfaceLldpVO> lldpVOS, Completion completion) {
-        List<HostNetworkInterfaceVO> interfaceVOS = Q.New(HostNetworkInterfaceVO.class)
-                .in(HostNetworkInterfaceVO_.uuid, lldpVOS.stream().map(HostNetworkInterfaceLldpVO::getInterfaceUuid).collect(Collectors.toList()))
-                .list();
         LldpKvmAgentCommands.ApplyLldpConfigCmd cmd = new LldpKvmAgentCommands.ApplyLldpConfigCmd();
-        cmd.setLldpConfig(HostNetworkInterfaceLldpInventory.valueOf(lldpVOS));
+        List<LldpConfigSyncStruct.LLdpModeConfig> configs = new ArrayList<>();
+        for (HostNetworkInterfaceLldpVO lldpVO : lldpVOS) {
+            LldpConfigSyncStruct.LLdpModeConfig config = new LldpConfigSyncStruct.LLdpModeConfig();
+            HostNetworkInterfaceVO interfaceVO = dbf.findByUuid(lldpVO.getInterfaceUuid(), HostNetworkInterfaceVO.class);
+            config.setPhysicalInterfaceName(interfaceVO.getInterfaceName());
+            config.setMode(lldpVO.getMode());
+            configs.add(config);
+        }
+        cmd.setLldpConfig(configs);
 
         KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
         kmsg.setPath(LldpConstant.APPLY_LLDP_CONFIG_PATH);
-        kmsg.setHostUuid(interfaceVOS.get(0).getHostUuid());
+        String hostUuid = Q.New(HostNetworkInterfaceVO.class)
+                .select(HostNetworkInterfaceVO_.hostUuid)
+                .eq(HostNetworkInterfaceVO_.uuid, lldpVOS.get(0).getInterfaceUuid())
+                .findValue();
+        kmsg.setHostUuid(hostUuid);
         kmsg.setCommand(cmd);
-        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, interfaceVOS.get(0).getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(kmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {

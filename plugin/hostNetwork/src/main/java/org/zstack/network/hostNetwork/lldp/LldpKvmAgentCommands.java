@@ -88,15 +88,16 @@ public class LldpKvmAgentCommands {
     }
 
     public static class ApplyLldpConfigCmd extends AgentCommand {
-        private List<HostNetworkInterfaceLldpInventory> lldpConfig;
-
-        public List<HostNetworkInterfaceLldpInventory> getLldpConfig() {
+        public List<LldpConfigSyncStruct.LLdpModeConfig> getLldpConfig() {
             return lldpConfig;
         }
 
-        public void setLldpConfig(List<HostNetworkInterfaceLldpInventory> lldpConfig) {
+        public void setLldpConfig(List<LldpConfigSyncStruct.LLdpModeConfig> lldpConfig) {
             this.lldpConfig = lldpConfig;
         }
+
+        private List<LldpConfigSyncStruct.LLdpModeConfig> lldpConfig;
+
     }
 
     public static class ApplyLldpConfigResponse extends AgentResponse {
