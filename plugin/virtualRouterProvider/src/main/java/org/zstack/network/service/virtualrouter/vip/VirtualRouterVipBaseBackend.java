@@ -272,7 +272,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
                 DebugUtils.Assert(self.getPeerL3NetworkUuids() != null, "peerL3NetworkUuid cannot be null");
-                
+
                 if (!StringUtils.isEmpty(specificVrUuid)) {
                     VirtualRouterVmVO virtualRouterVmVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, specificVrUuid).find();
                     data.put(VirtualRouterConstant.Param.VR.toString(), VirtualRouterVmInventory.valueOf(virtualRouterVmVO));
