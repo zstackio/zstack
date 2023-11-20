@@ -134,6 +134,8 @@ public interface KVMConstant {
     int IPMI_DEFAULT_PORT = 623;
     int KVM_HOST_POWER_OPERATION_TIMEOUT_SECONDS = 300;
 
+    String KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS = "kvm.host.skip.ping.no.failure.extensions";
+
 
     public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
 
