@@ -422,6 +422,8 @@ public class SourceClassMap {
 			put("org.zstack.nas.NasProtocolType", "org.zstack.sdk.NasProtocolType");
 			put("org.zstack.network.hostNetwork.HostNetworkBondingInventory", "org.zstack.sdk.HostNetworkBondingInventory");
 			put("org.zstack.network.hostNetwork.HostNetworkInterfaceInventory", "org.zstack.sdk.HostNetworkInterfaceInventory");
+			put("org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceInventory", "org.zstack.sdk.HostKernelInterfaceInventory");
+			put("org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceUsedIpInventory", "org.zstack.sdk.HostKernelInterfaceUsedIpInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory", "org.zstack.sdk.L2PortGroupNetworkInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupVlanMode", "org.zstack.sdk.L2PortGroupVlanMode");
 			put("org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory", "org.zstack.sdk.L2VirtualSwitchNetworkInventory");
@@ -869,6 +871,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
 			put("org.zstack.sdk.HostIommuStatusType", "org.zstack.pciDevice.HostIommuStatusType");
 			put("org.zstack.sdk.HostIpmiInventory", "org.zstack.header.host.HostIpmiInventory");
+			put("org.zstack.sdk.HostKernelInterfaceInventory", "org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceInventory");
+			put("org.zstack.sdk.HostKernelInterfaceUsedIpInventory", "org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceUsedIpInventory");
 			put("org.zstack.sdk.HostLoad", "org.zstack.drs.api.HostLoad");
 			put("org.zstack.sdk.HostNUMANode", "org.zstack.header.host.HostNUMANode");
 			put("org.zstack.sdk.HostNetworkBondingInventory", "org.zstack.network.hostNetwork.HostNetworkBondingInventory");
