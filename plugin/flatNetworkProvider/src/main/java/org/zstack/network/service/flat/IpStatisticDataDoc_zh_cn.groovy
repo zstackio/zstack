@@ -84,4 +84,16 @@ doc {
         type "String"
         since "3.7.0"
     }
+    field {
+        name "resourceOwnerUuid"
+        desc "资源所有者的UUID"
+        type "String"
+        since "4.1.0"
+    }
+    field {
+        name "usedIpUuid"
+        desc "IP的UUID"
+        type "String"
+        since "4.1.0"
+    }
 }

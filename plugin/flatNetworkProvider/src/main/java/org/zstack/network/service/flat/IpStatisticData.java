@@ -20,6 +20,8 @@ public class IpStatisticData {
     private String useFor;
     private Timestamp createDate;
     private String ownerName;
+    private String resourceOwnerUuid;
+    private String usedIpUuid;
 
     public String getIp() {
         return ip;
@@ -123,5 +125,21 @@ public class IpStatisticData {
 
     public void setApplianceVmOwnerUuid(String vmInstanceParentUuid) {
         this.applianceVmOwnerUuid = vmInstanceParentUuid;
+    }
+
+    public String getResourceOwnerUuid() {
+        return resourceOwnerUuid;
+    }
+
+    public void setResourceOwnerUuid(String resourceOwnerUuid) {
+        this.resourceOwnerUuid = resourceOwnerUuid;
+    }
+
+    public String getUsedIpUuid() {
+        return usedIpUuid;
+    }
+
+    public void setUsedIpUuid(String usedIpUuid) {
+        this.usedIpUuid = usedIpUuid;
     }
 }

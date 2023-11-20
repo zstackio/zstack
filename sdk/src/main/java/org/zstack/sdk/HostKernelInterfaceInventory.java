@@ -52,19 +52,19 @@ public class HostKernelInterfaceInventory  {
         return this.l3NetworkUuid;
     }
 
-    public java.util.Set usedIpUuids;
-    public void setUsedIpUuids(java.util.Set usedIpUuids) {
-        this.usedIpUuids = usedIpUuids;
+    public java.util.List usedIps;
+    public void setUsedIps(java.util.List usedIps) {
+        this.usedIps = usedIps;
     }
-    public java.util.Set getUsedIpUuids() {
-        return this.usedIpUuids;
+    public java.util.List getUsedIps() {
+        return this.usedIps;
     }
 
-    public java.util.Set trafficTypes;
-    public void setTrafficTypes(java.util.Set trafficTypes) {
+    public java.util.List trafficTypes;
+    public void setTrafficTypes(java.util.List trafficTypes) {
         this.trafficTypes = trafficTypes;
     }
-    public java.util.Set getTrafficTypes() {
+    public java.util.List getTrafficTypes() {
         return this.trafficTypes;
     }
 
