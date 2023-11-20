@@ -122,6 +122,7 @@ public abstract class APICreateL2NetworkMsg extends APICreateMessage implements 
         this.vSwitchType = vSwitchType;
     }
 
+    @Override
     public Result audit(APIMessage msg, APIEvent rsp) {
         return new Result(rsp.isSuccess() ? ((APICreateL2NetworkEvent)rsp).getInventory().getUuid() : "", L2NetworkVO.class);
     }

@@ -26,7 +26,7 @@ import org.zstack.header.rest.RestResponse;
  * @since 0.1.0
  */
 @RestResponse(allTo = "inventory")
-public class APICreateL2VlanNetworkEvent extends APICreateL2NetworkEvent {
+public class APICreateL2VlanNetworkEvent extends APIEvent {
     /**
      * @desc see :ref:`L2VlanNetworkInventory`
      */

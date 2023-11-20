@@ -40,6 +40,16 @@ doc {
 					since "0.6"
 				}
 				column {
+					name "l2ProviderType"
+					enclosedIn ""
+					desc "二层网络实现类型"
+					location "body"
+					type "String"
+					optional true
+					since "4.7.21"
+					values ("LinuxBridge")
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
@@ -56,16 +66,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-				}
-				column {
-					name "l2ProviderType"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "String"
-					optional true
-					since "4.7.21"
-					values ("LinuxBridge")
 				}
 			}
         }
