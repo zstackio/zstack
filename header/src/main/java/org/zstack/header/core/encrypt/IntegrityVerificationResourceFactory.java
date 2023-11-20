@@ -26,4 +26,7 @@ public interface IntegrityVerificationResourceFactory {
 
     default void doIntegrityAfterUpdateDbRecord(Object entity) {
     }
+
+    default void doIntegrityAfterRemoveDbRecord(Object entity) {
+    }
 }
