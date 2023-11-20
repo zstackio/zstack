@@ -4972,6 +4972,7 @@ public class KVMHost extends HostBase implements Host {
                                 createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
                                 createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
                                 createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
+                                createTagWithoutNonValue(HostSystemTags.ISCSI_INITIATOR_NAME, HostSystemTags.ISCSI_INITIATOR_NAME_TOKEN, ret.getIscsiInitiatorName(), true);
 
                                 if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                     recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);

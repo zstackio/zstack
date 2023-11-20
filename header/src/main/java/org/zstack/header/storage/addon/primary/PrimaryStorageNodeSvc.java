@@ -11,7 +11,7 @@ public interface PrimaryStorageNodeSvc {
 
     void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp);
 
-    ActiveVolumeTO getActiveResult(BaseVolumeInfo v, boolean shareable);
+    ActiveVolumeTO getActiveResult(BaseVolumeInfo v, HostInventory h, boolean shareable);
 
     void deactivate(BaseVolumeInfo v, HostInventory h, Completion comp);
 

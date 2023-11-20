@@ -470,6 +470,13 @@ public class ExponApiHelper {
         return rsp.getResult().stream().filter(it -> it.getUssGwId().equals(ussGwId)).findFirst().orElse(null);
     }
 
+    public List<IscsiSeverNode> getIscsiTargetServer(String tianshuId) {
+        GetIscsiTargetServerRequest req = new GetIscsiTargetServerRequest();
+        req.setTianshuId(tianshuId);
+        GetIscsiTargetServerResponse rsp = callErrorOut(req, GetIscsiTargetServerResponse.class);
+        return rsp.getNodes();
+    }
+
     public IscsiModule createIscsiController(String name, String tianshuId, int port, IscsiUssResource uss) {
         CreateIscsiTargetRequest req = new CreateIscsiTargetRequest();
         req.setName(name);
@@ -510,16 +517,16 @@ public class ExponApiHelper {
         return rsp.getClients().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
     }
 
-    public IscsiClientGroupModule createIscsiClient(String name, String tianshuId, List<String> ips) {
+    public IscsiClientGroupModule createIscsiClient(String name, String tianshuId, List<String> clients) {
         CreateIscsiClientGroupRequest req = new CreateIscsiClientGroupRequest();
         req.setName(name);
         req.setTianshuId(tianshuId);
         List<IscsiClient> hosts = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(ips)) {
-            for (String ip : ips) {
+        if (!CollectionUtils.isEmpty(clients)) {
+            for (String client : clients) {
                 IscsiClient host = new IscsiClient();
-                host.setHostType("ip");
-                host.setHost(ip);
+                host.setHostType(client.contains("iqn") ? "iqn" : "ip");
+                host.setHost(client);
                 hosts.add(host);
             }
             req.setHosts(hosts);
@@ -550,11 +557,11 @@ public class ExponApiHelper {
         callErrorOut(req, RemoveIscsiClientGroupFromIscsiTargetResponse.class);
     }
 
-    public void addVolumeToIscsiClientGroup(String volId, String clientId, String targetId) {
+    public void addVolumeToIscsiClientGroup(String volId, String clientId, String targetId, boolean shareable) {
         ChangeVolumeInIscsiClientGroupRequest req = new ChangeVolumeInIscsiClientGroupRequest();
         req.setId(clientId);
         req.setAction(ExponAction.add.name());
-        req.setLuns(Collections.singletonList(new LunResource(volId, "volume")));
+        req.setLuns(Collections.singletonList(new LunResource(volId, "volume", shareable)));
         req.setGateways(Collections.singletonList(targetId));
         callErrorOut(req, ChangeVolumeInIscsiClientGroupResponse.class);
     }
@@ -563,7 +570,7 @@ public class ExponApiHelper {
         ChangeSnapshotInIscsiClientGroupRequest req = new ChangeSnapshotInIscsiClientGroupRequest();
         req.setId(clientId);
         req.setAction(ExponAction.add.name());
-        req.setLuns(Collections.singletonList(new LunResource(snapId, "snapshot")));
+        req.setLuns(Collections.singletonList(new LunResource(snapId, "snapshot", true)));
         req.setGateways(Collections.singletonList(targetId));
         callErrorOut(req, ChangeSnapshotInIscsiClientGroupResponse.class);
     }

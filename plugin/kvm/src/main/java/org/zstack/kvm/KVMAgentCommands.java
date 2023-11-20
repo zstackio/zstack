@@ -442,6 +442,7 @@ public class KVMAgentCommands {
         private List<String> ipAddresses;
         private List<String> libvirtCapabilities;
         private VirtualizerInfoTO virtualizerInfo;
+        private String iscsiInitiatorName;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -678,6 +679,14 @@ public class KVMAgentCommands {
 
         public void setMemorySlotsMaximum(String memorySlotsMaximum) {
             this.memorySlotsMaximum = memorySlotsMaximum;
+        }
+
+        public String getIscsiInitiatorName() {
+            return iscsiInitiatorName;
+        }
+
+        public void setIscsiInitiatorName(String iscsiInitiatorName) {
+            this.iscsiInitiatorName = iscsiInitiatorName;
         }
     }
 
