@@ -9,12 +9,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExponRestRequest(
-        path = "/block/iscsi/gateways/{id}/nodes",
+        path = "/block/iscsi/clients/{id}/gateways",
         method = HttpMethod.GET,
-        responseClass = GetIscsiTargetBoundUssResponse.class,
+        responseClass = GetIscsiClientGroupAttachedTargetResponse.class,
         sync = false
 )
-public class GetIscsiTargetBoundUssRequest extends ExponRequest {
+public class GetIscsiClientGroupAttachedTargetRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     @Param

@@ -156,6 +156,7 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.KVM_HOST_FACT_PATH) { HttpEntity<String> e ->
+            def hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
             def rsp = new HostFactResponse()
 
             rsp.osDistribution = "zstack"
@@ -174,7 +175,7 @@ class KVMSimulator implements Simulator {
             rsp.powerSupplyManufacturer = ""
             rsp.hvmCpuFlag = ""
             rsp.cpuCache = "64.0,4096.0,16384.0"
-            rsp.iscsiInitiatorName = "iqn.1994-05.com.redhat:b31a3f136997"
+            rsp.iscsiInitiatorName = "iqn.1994-05.com.redhat:" + hostUuid.substring(0, 12)
 
             rsp.virtualizerInfo = new VirtualizerInfoTO()
             rsp.virtualizerInfo.version = "4.2.0-627.g36ee592.el7"

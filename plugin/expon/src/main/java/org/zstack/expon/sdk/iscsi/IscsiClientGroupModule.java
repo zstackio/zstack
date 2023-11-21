@@ -5,30 +5,33 @@ import java.util.List;
 /**
  * @example
  * {
- * "audit_result": "consistent",
- * "audit_result_reason": "",
- * "client_node_count": 2,
- * "create_from": "csm",
- * "create_time": 1692330357308,
- * "description": "",
- * "hg_id": 2,
- * "hosts": [
- * "nqn.2021-05.com.domain:796b81929e1",
- * "nqn.2021-05.com.domain:796b81929e4"
- * ],
- * "id": "a484930c-d8f7-4a70-80cc-bec0bf6a90b0",
- * "name": "ttt",
- * "iscsi_gw_count": 1,
- * "run_status": "normal",
- * "snap_num": 0,
- * "tianshu_id": "2f2efcde-87bb-42fc-a558-6cec67432965",
- * "tianshu_name": "ts",
- * "update_time": 1692928700632,
- * "vol_num": 0
+ * 	"audit_result": "consistent",
+ * 	"audit_result_reason": "",
+ * 	"chap_password": "",
+ * 	"chap_username": "",
+ * 	"client_name": "iscsi_172_25_16_110",
+ * 	"client_node_count": 1,
+ * 	"create_from": "csm",
+ * 	"create_time": 1700498026144,
+ * 	"description": "",
+ * 	"hosts": ["iqn.1994-05.com.redhat:b31a3f136997"],
+ * 	"id": "90b745ad-7e2a-410d-9146-1ca15dd095b6",
+ * 	"ig_id": 7,
+ * 	"iqn_prefix": null,
+ * 	"is_chap": false,
+ * 	"iscsi_gw_count": 1,
+ * 	"lun_count": 0,
+ * 	"name": "iscsi_172_25_16_110",
+ * 	"run_status": "normal",
+ * 	"snap_num": 0,
+ * 	"tianshu_id": "5e59b7ef-e599-4847-8ab5-f1eb727f2e90",
+ * 	"tianshu_name": "qRJbA",
+ * 	"update_time": 1700498031024,
+ * 	"vol_num": 0
  * }
  */
 
-public class IscsiClientGroupModule {
+public class  IscsiClientGroupModule {
     private String id;
     private String name;
     private String description;
@@ -41,7 +44,6 @@ public class IscsiClientGroupModule {
     private int iscsiGwCount;
     private int clientNodeCount;
     private String createFrom;
-    private String hgId;
     private String tianshuId;
     private String tianshuName;
     private long createTime;
@@ -141,14 +143,6 @@ public class IscsiClientGroupModule {
 
     public void setCreateFrom(String createFrom) {
         this.createFrom = createFrom;
-    }
-
-    public String getHgId() {
-        return hgId;
-    }
-
-    public void setHgId(String hgId) {
-        this.hgId = hgId;
     }
 
     public String getTianshuId() {

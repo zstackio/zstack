@@ -26,7 +26,7 @@ public class ExponResponse {
     }
 
     public boolean isSuccess() {
-        return "0".equals(retCode);
+        return "0".equals(retCode) || retCode == null;
     }
 
     public ErrorCode getError() {
