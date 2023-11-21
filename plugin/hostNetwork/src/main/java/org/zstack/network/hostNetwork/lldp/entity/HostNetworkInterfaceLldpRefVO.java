@@ -14,11 +14,11 @@ import java.sql.Timestamp;
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = HostNetworkInterfaceVO.class, joinColumn = "interfaceUuid")
 })
-//@EntityGraph(
-//        parents = {
-//                @EntityGraph.Neighbour(type = HostNetworkInterfaceLldpVO.class, myField = "interfaceUuid", targetField = "interfaceUuid")
-//        }
-//)
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = HostNetworkInterfaceLldpVO.class, myField = "interfaceUuid", targetField = "interfaceUuid")
+        }
+)
 public class HostNetworkInterfaceLldpRefVO implements ToInventory {
     @Id
     @Column

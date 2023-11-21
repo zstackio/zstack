@@ -25,8 +25,8 @@ public class HostNetworkInterfaceLldpInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-//    @Queryable(mappingClass = HostNetworkInterfaceLldpRefInventory.class, joinColumn = @JoinColumn(name = "interfaceUuid"))
-//    private HostNetworkInterfaceLldpRefInventory lldp;
+    @Queryable(mappingClass = HostNetworkInterfaceLldpRefInventory.class, joinColumn = @JoinColumn(name = "interfaceUuid"))
+    private HostNetworkInterfaceLldpRefInventory lldp;
 
     public String getUuid() {
         return uuid;

@@ -38,10 +38,10 @@ public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventor
     @Transient
     private String accountUuid;
 
-//    @OneToOne(fetch = FetchType.EAGER)
-//    @JoinColumn(name="interfaceUuid", insertable=false, updatable=false)
-//    @NoView
-//    private HostNetworkInterfaceLldpRefVO lldpRefVO;
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name="interfaceUuid", insertable=false, updatable=false)
+    @NoView
+    private HostNetworkInterfaceLldpRefVO lldpRefVO;
 
     public String getInterfaceUuid() {
         return interfaceUuid;
@@ -85,13 +85,13 @@ public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventor
         this.accountUuid = accountUuid;
     }
 
-//    public HostNetworkInterfaceLldpRefVO getLldpRefVO() {
-//        return lldpRefVO;
-//    }
-//
-//    public void setLldpRefVO(HostNetworkInterfaceLldpRefVO lldpRefVO) {
-//        this.lldpRefVO = lldpRefVO;
-//    }
+    public HostNetworkInterfaceLldpRefVO getLldpRefVO() {
+        return lldpRefVO;
+    }
+
+    public void setLldpRefVO(HostNetworkInterfaceLldpRefVO lldpRefVO) {
+        this.lldpRefVO = lldpRefVO;
+    }
 
     @PreUpdate
     private void preUpdate() {
