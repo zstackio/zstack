@@ -113,7 +113,7 @@ class GetLldpInfoCase extends SubCase {
         vo.setMac("ac:1f:6b:93:6c:8e")
         vo.setPciDeviceAddress("0e:00.2")
         vo.setInterfaceType("noMaster")
-        vo.setAccountUuid("36c27e8ff05c4780bf6d2fa65700f22e")
+        vo.setAccountUuid(currentEnvSpec.session.getAccountUuid())
         vo.setResourceName("test")
         dbf.persist(vo)
 
@@ -121,7 +121,7 @@ class GetLldpInfoCase extends SubCase {
         lldpVO.setUuid(Platform.uuid)
         lldpVO.setInterfaceUuid(TEST_UUID)
         lldpVO.setMode("rx_only")
-        lldpVO.setAccountUuid("36c27e8ff05c4780bf6d2fa65700f22e")
+        lldpVO.setAccountUuid(currentEnvSpec.session.getAccountUuid())
         lldpVO.setResourceName("test")
         dbf.persist(lldpVO)
 
@@ -160,7 +160,7 @@ class GetLldpInfoCase extends SubCase {
         vo1.setMac("ac:1f:6b:93:6c:8e")
         vo1.setPciDeviceAddress("0e:00.2")
         vo1.setInterfaceType("noMaster")
-        vo1.setAccountUuid("36c27e8ff05c4780bf6d2fa65700f22e")
+        vo1.setAccountUuid(currentEnvSpec.session.getAccountUuid())
         vo1.setResourceName("test")
         dbf.persist(vo1)
 
@@ -168,7 +168,7 @@ class GetLldpInfoCase extends SubCase {
         lldpVO1.setUuid(Platform.uuid)
         lldpVO1.setInterfaceUuid(TEST_UUID_2)
         lldpVO1.setMode("rx_only")
-        lldpVO1.setAccountUuid("36c27e8ff05c4780bf6d2fa65700f22e")
+        lldpVO1.setAccountUuid(currentEnvSpec.session.getAccountUuid())
         lldpVO1.setResourceName("test")
         dbf.persist(lldpVO1)
 

@@ -270,7 +270,7 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
             vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
             lldpVOS.add(vo);
         }
-        dbf.persistCollection(lldpVOS);
+        //dbf.persistCollection(lldpVOS);
 
         lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class)
                 .in(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuidsOnHost)
