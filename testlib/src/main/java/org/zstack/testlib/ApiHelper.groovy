@@ -6551,26 +6551,26 @@ abstract class ApiHelper {
     }
 
 
-    def cleanUpStorageTrashOnPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CleanUpStorageTrashOnPrimaryStorageAction.class) Closure c) {
-        def a = new org.zstack.sdk.CleanUpStorageTrashOnPrimaryStorageAction()
+    def cleanUpImageCacheOnPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
@@ -6578,8 +6578,8 @@ abstract class ApiHelper {
     }
 
 
-    def cleanUpImageCacheOnPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageAction.class) Closure c) {
-        def a = new org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageAction()
+    def cleanUpStorageTrashOnPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CleanUpStorageTrashOnPrimaryStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.CleanUpStorageTrashOnPrimaryStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -27662,6 +27662,35 @@ abstract class ApiHelper {
 
     def queryHostNetworkInterfaceLldp(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryHostNetworkInterfaceLldpAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryHostNetworkInterfaceLldpAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryHostNetworkInterfaceLldpRef(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryHostNetworkInterfaceLldpRefAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryHostNetworkInterfaceLldpRefAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
