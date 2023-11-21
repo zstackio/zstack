@@ -3,14 +3,13 @@ package org.zstack.header.volume;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
+import org.zstack.header.message.*;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @api create a new data volume
@@ -48,6 +47,7 @@ import org.zstack.header.tag.TagResourceType;
         parameterName = "params",
         responseClass = APICreateDataVolumeEvent.class
 )
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APICreateDataVolumeMsg extends APICreateMessage implements APIAuditor, VolumeCreateMessage {
     /**
      * @desc max length of 255 characters
