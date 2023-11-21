@@ -759,11 +759,6 @@ public class LoadBalancerBase {
             @Override
             public void run(SyncTaskChain chain) {
                 AttachVipToLoadBalancerReply reply = new AttachVipToLoadBalancerReply();
-                LoadBalancerBackend bkd = getBackend();
-                if (bkd == null) {
-                    chain.next();
-                    return;
-                }
 
                 VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find();
                 if (StringUtils.isEmpty(vipVO.getIp())) {
@@ -781,6 +776,34 @@ public class LoadBalancerBase {
                     }
                     self.setIpv6VipUuid(vipVO.getUuid());
                 }
+                LoadBalancerBackend bkd = getBackend();
+                if (bkd == null) {
+                    ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                    LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
+                    vipStruct.setUseFor(f.getNetworkServiceType());
+                    vipStruct.setServiceUuid(self.getUuid());
+
+                    Vip v = new Vip(msg.getVipUuid());
+                    v.setStruct(vipStruct);
+
+                    v.acquire(new Completion(msg) {
+                        @Override
+                        public void success() {
+                            dbf.update(self);
+                            bus.reply(msg, reply);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                            chain.next();
+                        }
+                    });
+                    return;
+                }
+
                 LoadBalancerStruct lbStruct = lbMgr.makeStruct(self);
 
                 bkd.attachVipToLoadBalancer(lbStruct, vipVO, new Completion(chain) {
@@ -818,21 +841,19 @@ public class LoadBalancerBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                LoadBalancerBackend bkd = getBackend();
-                if (bkd == null) {
-                    bus.reply(msg, reply);
-                    chain.next();
-                    return;
-                }
-
                 VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find();
+
                 LoadBalancerStruct lbStruct = lbMgr.makeStruct(self);
 
-                if (!bkd.canDetachVipFromLb(lbStruct, vipVO)) {
-                    reply.setError(operr("cloud not delete vip[%s]", vipVO.getUuid()));
-                    bus.reply(msg, reply);
-                    chain.next();
-                    return;
+                LoadBalancerBackend bkd = getBackend();
+
+                if (bkd != null) {
+                    if (!bkd.canDetachVipFromLb(lbStruct, vipVO)) {
+                        reply.setError(operr("cloud not delete vip[%s]", vipVO.getUuid()));
+                        bus.reply(msg, reply);
+                        chain.next();
+                        return;
+                    }
                 }
 
                 if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
@@ -853,6 +874,31 @@ public class LoadBalancerBase {
                     self.setIpv6VipUuid(null);
                     lbStruct.setIpv6Vip(null);
                     lbStruct.getLb().setIpv6VipUuid(null);
+                }
+
+                if (bkd == null) {
+                    ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                    struct.setUseFor(f.getNetworkServiceType());
+                    struct.setServiceUuid(self.getUuid());
+
+                    Vip v = new Vip(msg.getVipUuid());
+                    v.setStruct(struct);
+                    v.release(new Completion(msg) {
+                        @Override
+                        public void success() {
+                            dbf.update(self);
+                            bus.reply(msg, reply);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                            chain.next();
+                        }
+                    });
+                    return;
                 }
 
                 FlowChain flowChain = new SimpleFlowChain();

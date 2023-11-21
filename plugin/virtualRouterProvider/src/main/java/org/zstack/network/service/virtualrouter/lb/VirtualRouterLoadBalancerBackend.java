@@ -2731,6 +2731,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     @Override
                     public void fail(ErrorCode errorCode) {
                         logger.debug(String.format("refresh lb failed when attach vip, because %s", errorCode.getCause()));
+                        trigger.fail(errorCode);
                     }
                 });
             }
