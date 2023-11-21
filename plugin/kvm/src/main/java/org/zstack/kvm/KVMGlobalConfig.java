@@ -44,7 +44,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"none", "writethrough", "writeback"})
     @BindResourceConfig({VolumeVO.class, VmInstanceVO.class})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.cacheMode");
-    @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough", "Hygon_Customized",
+    @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough",
             "Dhyana", "EPYC", "EPYC-IBPB", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX",
             "SandyBridge", "IvyBridge", "Conroe", "Penryn", "Nehalem", "Westmere", "Opteron_G1",
             "Opteron_G2", "Opteron_G3", "Opteron_G4", "pentium", "pentium2", "pentium3",
