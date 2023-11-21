@@ -243,7 +243,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     private List<IpStatisticData> ipStatisticAll(APIGetL3NetworkIpStatisticMsg msg, String sortBy) {
         /*
-        select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmInstanceUuid, it.name as vmInstanceName, it.type, uip.createDate
+        select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmInstanceUuid, it.name as vmInstanceName, it.type, uip.createDate, uip.uuid
         from (select uuid, ip, IpInLong, createDate, vmNicUuid
             from UsedIpVO
             where l3NetworkUuid = '{uuid}' [and ip like '{ip}']
@@ -258,7 +258,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
         Set<String> dhcp = dhcpMap.keySet();
         StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmUuid, it.name as vmName, it.type, uip.createDate ")
+        sqlBuilder.append("select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmUuid, it.name as vmName, it.type, uip.createDate, uip.uuid ")
                 .append("from (select uuid, ip, ipInLong, createDate, vmNicUuid from UsedIpVO where l3NetworkUuid = '")
                 .append(msg.getL3NetworkUuid()).append('\'');
 
@@ -297,6 +297,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             IpStatisticData element = new IpStatisticData();
             ipStatistics.add(element);
             element.setIp((String) result[0]);
+            element.setUsedIpUuid((String) result[7]);
             if(result[1] != null) {
                ipToVip.put((String) result[0], (String) result[1]);
             }
@@ -360,6 +361,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(element.getVmInstanceType());
             if (exp != null) {
                 element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid(), ipToVip.get(element.getIp())));
+            }
+
+            if (resourceTypes.contains(ResourceType.OTHER)) {
+                L3NetworkGetIpStatisticExtensionPoint ext = getExtensionPointFactory(ResourceType.ZS_KERNEL);
+                if (ext != null && element.getUsedIpUuid() != null) {
+                    String hostKernelInterfaceUuid = ext.getResourceOwnerUuid(element.getUsedIpUuid());
+                    if (hostKernelInterfaceUuid != null) {
+                        element.setResourceTypes(Collections.singletonList(ResourceType.ZS_KERNEL));
+                        element.setResourceOwnerUuid(hostKernelInterfaceUuid);
+                    }
+                }
             }
         }
 
@@ -828,7 +840,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     @Override
     public boolean start() {
         for (L3NetworkGetIpStatisticExtensionPoint ext : pluginRgty.getExtensionList(L3NetworkGetIpStatisticExtensionPoint.class)) {
-            getIpStatisticExts.put(ext.getApplianceVmInstanceType(), ext);
+            getIpStatisticExts.put(ext.getType(), ext);
         }
         return true;
     }
