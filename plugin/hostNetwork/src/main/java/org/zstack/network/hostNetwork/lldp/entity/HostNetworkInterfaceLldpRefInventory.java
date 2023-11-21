@@ -171,6 +171,7 @@ public class HostNetworkInterfaceLldpRefInventory implements Serializable {
         this.portId = vo.getPortId();
         this.portDescription = vo.getPortDescription();
         this.vlanId = vo.getVlanId();
+        this.aggregationPortId = vo.getAggregationPortId();
         this.mtu = vo.getMtu();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
