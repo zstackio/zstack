@@ -9,4 +9,5 @@ import org.zstack.header.vo.ResourceVO;
 public interface EncryptAfterSaveDbRecordExtensionPoint {
     void encryptAfterSaveDbRecord(ResourceVO resourceVO);
     void encryptAfterUpdateDbRecord(ResourceVO resourceVO);
+    void deleteEncryptDataAfterRemoveRecord(ResourceVO resourceVO);
 }

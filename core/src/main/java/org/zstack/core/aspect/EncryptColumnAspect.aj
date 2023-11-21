@@ -62,4 +62,24 @@ public aspect EncryptColumnAspect {
         }
     }
 
+    after(EntityManager mgr, Object entity) : call(* EntityManager+.remove(Object))
+            && target(mgr)
+            && args(entity) {
+        Field[] fields = entity.getClass().getDeclaredFields();
+        for (IntegrityVerificationResourceFactory f : pluginRegistry.getExtensionList(IntegrityVerificationResourceFactory.class)) {
+            if (entity.getClass().getSimpleName().equals(f.getResourceType())) {
+                f.doIntegrityAfterRemoveDbRecord(entity);
+                break;
+            }
+        }
+        if (entity instanceof ResourceVO) {
+            for (Field field : fields) {
+                if (field.getAnnotation(EncryptColumn.class) != null) {
+                    ResourceVO resourceVO = (ResourceVO) entity;
+                    pluginRegistry.getExtensionList(EncryptAfterSaveDbRecordExtensionPoint.class).forEach(point -> point.deleteEncryptDataAfterRemoveRecord(resourceVO));
+                    break;
+                }
+            }
+        }
+     }
 }
