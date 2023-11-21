@@ -22,7 +22,7 @@ public class TfL2NetworkFactory implements L2NetworkFactory {
     }
 
     @Override
-    public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
+    public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
         TfL2Network tfL2Network = new TfL2Network(vo);
         tfL2Network.createTfL2NetworkOnSdnController(vo, msg, new Completion(msg) {
             @Override

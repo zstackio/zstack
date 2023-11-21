@@ -5,7 +5,7 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "VXLAN网路清单"
 
 	field {
 		name "success"

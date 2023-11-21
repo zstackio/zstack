@@ -3,11 +3,11 @@ package org.zstack.sugonSdnController.header
 import org.zstack.header.network.l2.APICreateL2NetworkEvent
 
 doc {
-    title "CreateL2TfNetwork"
+    title "创建tungsten fabric二层网络(CreateL2TfNetwork)"
 
     category "network.l2"
 
-    desc """在这里填写API描述"""
+    desc """创建tungsten fabric二层网络"""
 
     rest {
         request {
@@ -24,7 +24,7 @@ doc {
 				column {
 					name "ipPrefix"
 					enclosedIn "params"
-					desc ""
+					desc "IP地址前缀"
 					location "body"
 					type "String"
 					optional true
@@ -33,7 +33,7 @@ doc {
 				column {
 					name "ipPrefixLength"
 					enclosedIn "params"
-					desc ""
+					desc "IP地址前缀长度"
 					location "body"
 					type "Integer"
 					optional true
@@ -69,7 +69,7 @@ doc {
 				column {
 					name "physicalInterface"
 					enclosedIn "params"
-					desc ""
+					desc "物理网卡"
 					location "body"
 					type "String"
 					optional false
@@ -78,7 +78,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "二层网络类型"
 					location "body"
 					type "String"
 					optional true
@@ -87,7 +87,7 @@ doc {
 				column {
 					name "vSwitchType"
 					enclosedIn "params"
-					desc ""
+					desc "虚拟交换机类型"
 					location "body"
 					type "String"
 					optional true

@@ -1,6 +1,8 @@
 package org.zstack.header.network.l2;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
@@ -80,4 +82,8 @@ public class APICreateL2VlanNetworkMsg extends APICreateL2NetworkMsg {
         return msg;
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateL2VlanNetworkEvent)rsp).getInventory().getUuid() : "", L2NetworkVO.class);
+    }
 }

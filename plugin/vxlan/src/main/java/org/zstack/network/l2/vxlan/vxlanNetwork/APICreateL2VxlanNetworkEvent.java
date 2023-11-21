@@ -1,10 +1,10 @@
 package org.zstack.network.l2.vxlan.vxlanNetwork;
 
-import org.zstack.header.network.l2.APICreateL2NetworkEvent;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
 @RestResponse(allTo = "inventory")
-public class APICreateL2VxlanNetworkEvent extends APICreateL2NetworkEvent {
+public class APICreateL2VxlanNetworkEvent extends APIEvent {
     /**
      * @desc see :ref:`L2VlanNetworkInventory`
      */

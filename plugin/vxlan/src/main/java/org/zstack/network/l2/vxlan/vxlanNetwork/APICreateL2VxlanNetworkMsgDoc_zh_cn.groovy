@@ -3,11 +3,11 @@ package org.zstack.network.l2.vxlan.vxlanNetwork
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkEvent
 
 doc {
-    title "CreateL2VxlanNetwork"
+    title "创建VXLAN网络(CreateL2VxlanNetwork)"
 
     category "network.l2"
 
-    desc """在这里填写API描述"""
+    desc """创建VXLAN网络"""
 
     rest {
         request {
@@ -114,7 +114,7 @@ doc {
 				column {
 					name "vSwitchType"
 					enclosedIn "params"
-					desc ""
+					desc "虚拟交换机类型"
 					location "body"
 					type "String"
 					optional true
