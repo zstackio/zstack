@@ -92,4 +92,12 @@ public class L2NetworkInventory  {
         return this.attachedClusterUuids;
     }
 
+    public java.util.List attachedHostRefs;
+    public void setAttachedHostRefs(java.util.List attachedHostRefs) {
+        this.attachedHostRefs = attachedHostRefs;
+    }
+    public java.util.List getAttachedHostRefs() {
+        return this.attachedHostRefs;
+    }
+
 }

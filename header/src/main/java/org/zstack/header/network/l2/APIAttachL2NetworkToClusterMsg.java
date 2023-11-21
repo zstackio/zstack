@@ -53,7 +53,7 @@ public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2Netw
     @APIParam(resourceType = ClusterVO.class)
     private String clusterUuid;
 
-    @APIParam(required = false, validValues = {"LinuxBridge"})
+    @APIParam(required = false, validValues = {L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE})
     private String l2ProviderType;
 
     @Override

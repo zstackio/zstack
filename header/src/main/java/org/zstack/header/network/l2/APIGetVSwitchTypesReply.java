@@ -13,7 +13,7 @@ import java.util.List;
  * "org.zstack.header.network.l2.APIGetVSwitchTypesReply": {
  * "vSwitchTypes": [
  * "LinuxBridge",
- * "OVSDPDK"
+ * "OvsDpdk"
  * ],
  * "success": true
  * }
@@ -38,7 +38,7 @@ public class APIGetVSwitchTypesReply extends APIReply {
 
     public static APIGetVSwitchTypesReply __example__() {
         APIGetVSwitchTypesReply reply = new APIGetVSwitchTypesReply();
-        reply.setVSwitchTypes(Arrays.asList("LinuxBridge", "OVSDPDK"));
+        reply.setVSwitchTypes(Arrays.asList(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE, L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK));
         return reply;
     }
 }

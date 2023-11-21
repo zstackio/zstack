@@ -148,8 +148,8 @@ public class L2NoVlanNetwork implements L2Network {
         L2NetworkDetachFromHostReply reply = new L2NetworkDetachFromHostReply();
 
         String issuer = L2NetworkVO.class.getSimpleName();
-        List<L2NetworkDetachFromHostStruct> ctx = new ArrayList<L2NetworkDetachFromHostStruct>();
-        L2NetworkDetachFromHostStruct struct = new L2NetworkDetachFromHostStruct();
+        List<L2NetworkDetachStruct> ctx = new ArrayList<L2NetworkDetachStruct>();
+        L2NetworkDetachStruct struct = new L2NetworkDetachStruct();
         struct.setHostUuid(msg.getHostUuid());
         struct.setL2NetworkUuid(msg.getL2NetworkUuid());
         ctx.add(struct);
@@ -291,7 +291,7 @@ public class L2NoVlanNetwork implements L2Network {
         DetachL2NetworkFromHostReply reply = new DetachL2NetworkFromHostReply();
 
         if (!L2NetworkGlobalConfig.DeleteL2BridgePhysically.value(Boolean.class)) {
-            l2NetworkHostHelper.changeL2NetworkToHostRefFailed(msg.getL2NetworkUuid(), msg.getHostUuid());
+            l2NetworkHostHelper.changeL2NetworkToHostRefDetached(msg.getL2NetworkUuid(), msg.getHostUuid());
             bus.reply(msg, reply);
         } else {
             HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
@@ -448,8 +448,8 @@ public class L2NoVlanNetwork implements L2Network {
         final APIDetachL2NetworkFromHostEvent evt = new APIDetachL2NetworkFromHostEvent(msg.getId());
 
         String issuer = L2NetworkVO.class.getSimpleName();
-        List<L2NetworkDetachFromHostStruct> ctx = new ArrayList<L2NetworkDetachFromHostStruct>();
-        L2NetworkDetachFromHostStruct struct = new L2NetworkDetachFromHostStruct();
+        List<L2NetworkDetachStruct> ctx = new ArrayList<L2NetworkDetachStruct>();
+        L2NetworkDetachStruct struct = new L2NetworkDetachStruct();
         struct.setHostUuid(msg.getHostUuid());
         struct.setL2NetworkUuid(msg.getL2NetworkUuid());
         ctx.add(struct);
@@ -784,8 +784,6 @@ public class L2NoVlanNetwork implements L2Network {
         List<HostVO> hosts = Q.New(HostVO.class).eq(HostVO_.clusterUuid, clusterUuid)
                 .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
                 .eq(HostVO_.status, HostStatus.Connected).list();
-        logger.debug(String.format("l2novlan get attached hosts[%s]",
-                hosts.stream().map(HostVO::getName).collect(Collectors.toList())));
         return HostInventory.valueOf(hosts);
     }
 
@@ -853,8 +851,10 @@ public class L2NoVlanNetwork implements L2Network {
 
         }.execute();
 
-
         List<HostInventory> invs = getAttachableHostsInCluster(msg.getClusterUuid());
+        logger.debug(String.format("%s[uuid:%s, name:%s] get attached hosts[%s]",
+                self.getType(), self.getUuid(), self.getName(),
+                invs.stream().map(HostInventory::getName).collect(Collectors.toList())));
 
         beforeAttachL2NetworkToCluster(msg);
         prepareL2NetworkOnHosts(invs, msg.getL2ProviderType(), new Completion(msg, completion) {

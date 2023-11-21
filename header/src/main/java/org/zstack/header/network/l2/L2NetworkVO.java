@@ -18,7 +18,8 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid")
         },
         friends = {
-                @EntityGraph.Neighbour(type = L2NetworkClusterRefVO.class, myField = "uuid", targetField = "l2NetworkUuid")
+                @EntityGraph.Neighbour(type = L2NetworkClusterRefVO.class, myField = "uuid", targetField = "l2NetworkUuid"),
+                @EntityGraph.Neighbour(type = L2NetworkHostRefVO.class, myField = "uuid", targetField = "l2NetworkUuid")
         }
 )
 public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAccount {
@@ -26,6 +27,11 @@ public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAcco
     @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<L2NetworkClusterRefVO> attachedClusterRefs = new HashSet<L2NetworkClusterRefVO>();
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<L2NetworkHostRefVO> attachedHostRefs = new HashSet<L2NetworkHostRefVO>();
 
     @Transient
     private String accountUuid;
@@ -38,6 +44,7 @@ public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAcco
     public L2NetworkVO(L2NetworkVO vo) {
         this.setUuid(vo.getUuid());
         this.setAttachedClusterRefs(vo.getAttachedClusterRefs());
+        this.setAttachedHostRefs(vo.getAttachedHostRefs());
         this.setCreateDate(vo.getCreateDate());
         this.setDescription(vo.getDescription());
         this.setLastOpDate(vo.getLastOpDate());
@@ -56,6 +63,14 @@ public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAcco
 
     public void setAttachedClusterRefs(Set<L2NetworkClusterRefVO> attachedClusterRefs) {
         this.attachedClusterRefs = attachedClusterRefs;
+    }
+
+    public Set<L2NetworkHostRefVO> getAttachedHostRefs() {
+        return attachedHostRefs;
+    }
+
+    public void setAttachedHostRefs(Set<L2NetworkHostRefVO> attachedHostRefs) {
+        this.attachedHostRefs = attachedHostRefs;
     }
 
     @Override
