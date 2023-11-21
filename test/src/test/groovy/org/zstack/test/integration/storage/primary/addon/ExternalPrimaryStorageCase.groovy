@@ -40,6 +40,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     BackupStorageInventory bs
     VmInstanceInventory vm
     VolumeInventory vol, vol2
+    HostInventory host1, host2
 
     String exponUrl = "https://operator:Admin123@172.25.130.160:443/pool"
 
@@ -72,7 +73,7 @@ class ExternalPrimaryStorageCase extends SubCase {
                 url = "/sftp"
                 username = "root"
                 password = "password"
-                hostname = "127.0.0.1"
+                hostname = "127.0.0.2"
 
                 image {
                     name = "image"
@@ -99,6 +100,13 @@ class ExternalPrimaryStorageCase extends SubCase {
                     kvm {
                         name = "kvm"
                         managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "kvm2"
+                        managementIp = "127.0.0.3"
                         username = "root"
                         password = "password"
                     }
@@ -137,11 +145,13 @@ class ExternalPrimaryStorageCase extends SubCase {
             iso = env.inventoryByName("iso") as ImageInventory
             l3 = env.inventoryByName("l3") as L3NetworkInventory
             bs = env.inventoryByName("sftp") as BackupStorageInventory
+            host1 = env.inventoryByName("kvm") as HostInventory
+            host2 = env.inventoryByName("kvm2") as HostInventory
             simulatorEnv()
             testCreateExponStorage()
             testSessionExpired()
             testCreateVm()
-            // testAttachIso()
+            testAttachIso()
             testCreateDataVolume()
             testCreateSnapshot()
             testCreateTemplate()
@@ -245,6 +255,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
+            hostUuid = host1.uuid
         } as VmInstanceInventory
 
         stopVmInstance {
@@ -253,6 +264,7 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         startVmInstance {
             uuid = vm.uuid
+            hostUuid = host1.uuid
         }
 
         rebootVmInstance {
@@ -281,8 +293,13 @@ class ExternalPrimaryStorageCase extends SubCase {
             bootOrder = asList(VmBootDevice.CdRom.toString(), VmBootDevice.HardDisk.toString(), VmBootDevice.Network.toString())
         }
 
-        rebootVmInstance {
+        stopVmInstance {
             uuid = vm.uuid
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+            hostUuid = host2.uuid
         }
 
         setVmBootOrder {
@@ -290,8 +307,13 @@ class ExternalPrimaryStorageCase extends SubCase {
             bootOrder = asList(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString(), VmBootDevice.Network.toString())
         }
 
-        rebootVmInstance {
+        stopVmInstance {
             uuid = vm.uuid
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+            hostUuid = host1.uuid
         }
 
         detachIsoFromVmInstance {

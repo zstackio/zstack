@@ -14,6 +14,7 @@ import org.zstack.expon.sdk.vhost.*;
 import org.zstack.expon.sdk.volume.*;
 import org.zstack.header.expon.ExponError;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -477,12 +478,13 @@ public class ExponApiHelper {
         return rsp.getNodes();
     }
 
-    public IscsiModule createIscsiController(String name, String tianshuId, int port, IscsiUssResource uss) {
+
+    public IscsiModule createIscsiController(String name, String tianshuId, int port, List<IscsiUssResource> uss) {
         CreateIscsiTargetRequest req = new CreateIscsiTargetRequest();
         req.setName(name);
         req.setTianshuId(tianshuId);
         req.setPort(port);
-        req.setNodes(Collections.singletonList(uss));
+        req.setNodes(uss);
         CreateIscsiTargetResponse rsp = callErrorOut(req, CreateIscsiTargetResponse.class);
 
         sleep();
@@ -498,6 +500,24 @@ public class ExponApiHelper {
         }
 
         return rsp.getGateways().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    public List<IscsiModule> listIscsiController() {
+        QueryIscsiTargetRequest req = new QueryIscsiTargetRequest();
+        QueryIscsiTargetResponse rsp = queryErrorOut(req, QueryIscsiTargetResponse.class);
+        if (rsp.getTotal() == 0) {
+            return Collections.emptyList();
+        }
+
+        return rsp.getGateways();
+    }
+
+    public IscsiModule getIscsiController(String id) {
+        GetIscsiTargetRequest req = new GetIscsiTargetRequest();
+        req.setId(id);
+
+        GetIscsiTargetResponse rsp = callErrorOut(req, GetIscsiTargetResponse.class);
+        return JSONObjectUtil.rehashObject(rsp, IscsiModule.class);
     }
 
     public void deleteIscsiController(String id) {
@@ -555,6 +575,35 @@ public class ExponApiHelper {
         req.setClients(Collections.singletonList(clientId));
         req.setId(targetId);
         callErrorOut(req, RemoveIscsiClientGroupFromIscsiTargetResponse.class);
+    }
+
+    public void addHostToIscsiClient(String host, String clientId) {
+        ChangeIscsiClientGroupRequest req = new ChangeIscsiClientGroupRequest();
+        req.setId(clientId);
+        req.setAction(ExponAction.add.name());
+        IscsiClient iscsiClient = new IscsiClient();
+        iscsiClient.setHostType(host.contains("iqn") ? "iqn" : "ip");
+        iscsiClient.setHost(host);
+        req.setHosts(Collections.singletonList(iscsiClient));
+        callErrorOut(req, ChangeIscsiClientGroupResponse.class);
+    }
+
+    public void removeHostFromIscsiClient(String host, String clientId) {
+        ChangeIscsiClientGroupRequest req = new ChangeIscsiClientGroupRequest();
+        req.setId(clientId);
+        req.setAction(ExponAction.remove.name());
+        IscsiClient iscsiClient = new IscsiClient();
+        iscsiClient.setHostType(host.contains("iqn") ? "iqn" : "ip");
+        iscsiClient.setHost(host);
+        req.setHosts(Collections.singletonList(iscsiClient));
+        callErrorOut(req, ChangeIscsiClientGroupResponse.class);
+    }
+
+    public List<IscsiModule> getIscsiClientAttachedTargets(String clientId) {
+        GetIscsiClientGroupAttachedTargetRequest req = new GetIscsiClientGroupAttachedTargetRequest();
+        req.setId(clientId);
+        GetIscsiClientGroupAttachedTargetResponse rsp = callErrorOut(req, GetIscsiClientGroupAttachedTargetResponse.class);
+        return rsp.getGateways();
     }
 
     public void addVolumeToIscsiClientGroup(String volId, String clientId, String targetId, boolean shareable) {
