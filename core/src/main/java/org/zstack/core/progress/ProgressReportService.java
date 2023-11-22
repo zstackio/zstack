@@ -136,7 +136,7 @@ public class ProgressReportService extends AbstractService implements Management
                 Runnable cleanup = ThreadContextUtils.saveThreadContext();
                 Defer.defer(cleanup);
                 setThreadContext(cmd);
-                taskProgress(TaskType.Progress, cmd.getProgress(), cmd.getDetail());
+                taskProgressWithOpaque(TaskType.Progress, cmd.getDetail(), cmd.getProgress());
                 return null;
             }
         });
@@ -414,6 +414,10 @@ public class ProgressReportService extends AbstractService implements Management
     }
 
     private static void taskProgress(TaskType type, String fmt, Object... args) {
+        taskProgressWithOpaque(type, null, fmt, args);
+    }
+
+    private static void taskProgressWithOpaque(TaskType type, Object Opaque, String fmt, Object... args) {
         if (!ProgressGlobalConfig.PROGRESS_ON.value(Boolean.class)) {
             return;
         }
@@ -447,6 +451,9 @@ public class ProgressReportService extends AbstractService implements Management
         vo.setParentUuid(getParentUuid());
         if (args != null) {
             vo.setArguments(JSONObjectUtil.toJsonString(args));
+        }
+        if (Opaque != null) {
+            vo.setOpaque(JSONObjectUtil.toJsonString(Opaque));
         }
         vo.setType(type);
         vo.setTime(System.currentTimeMillis());
