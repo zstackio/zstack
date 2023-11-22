@@ -21,6 +21,7 @@
             <zstack:extension interface="org.zstack.kvm.KVMAttachVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMConvertVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMPreAttachIsoExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KvmSetupSelfFencerExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
