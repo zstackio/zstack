@@ -15,5 +15,9 @@ public interface PrimaryStorageNodeSvc {
 
     void deactivate(BaseVolumeInfo v, HostInventory h, Completion comp);
 
+    void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp);
+
+    void deactivateHeartbeatVolume(HostInventory h, Completion comp);
+
     String getIdentity();
 }
