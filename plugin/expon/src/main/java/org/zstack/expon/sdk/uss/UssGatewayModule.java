@@ -45,7 +45,7 @@ public class UssGatewayModule {
     private int businessPort;
     private String tianshuId;
     private String tianshuName;
-    private String ussId;
+    private int ussId;
     private String userType;
     private long createTime;
     private long updateTime;
@@ -194,11 +194,11 @@ public class UssGatewayModule {
         this.tianshuName = tianshuName;
     }
 
-    public String getUssId() {
+    public int getUssId() {
         return ussId;
     }
 
-    public void setUssId(String ussId) {
+    public void setUssId(int ussId) {
         this.ussId = ussId;
     }
 

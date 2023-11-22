@@ -19,8 +19,8 @@ import org.zstack.expon.sdk.nvmf.NvmfModule;
 import org.zstack.expon.sdk.pool.FailureDomainModule;
 import org.zstack.expon.sdk.uss.UssGatewayModule;
 import org.zstack.expon.sdk.vhost.VHostControllerModule;
-import org.zstack.expon.sdk.volume.VolumeModule;
 import org.zstack.expon.sdk.volume.ExponVolumeQos;
+import org.zstack.expon.sdk.volume.VolumeModule;
 import org.zstack.expon.sdk.volume.VolumeSnapshotModule;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -33,7 +33,9 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.*;
 import org.zstack.iscsi.IscsiUtils;
+import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.vhost.kvm.VHostVolumeTO;
 
@@ -62,6 +64,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     // TODO static nqn
     private static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
+    private static String vhostSocketDir = "/var/run/wds/";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -363,6 +366,96 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         comp.fail(operr("not supported protocol[%s]", vol.getProtocol()));
+    }
+
+    @Override
+    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp) {
+        String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (clientIqn == null) {
+            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
+        }
+
+        String tianshuId = addonInfo.getClusters().get(0).getId();
+        List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
+
+        IscsiModule iscsi = apiHelper.queryIscsiController(iscsiHeartbeatTargetName);
+        if (iscsi == null) {
+            iscsi = apiHelper.createIscsiController(iscsiHeartbeatTargetName, tianshuId, 3260, IscsiUssResource.valueOf(nodes));
+        }
+
+        VolumeModule heartbeatVol = apiHelper.queryVolume(iscsiHeartbeatVolumeName);
+        if (heartbeatVol == null) {
+            long size = SizeUnit.GIGABYTE.toByte(2);
+            heartbeatVol = apiHelper.createVolume(iscsiHeartbeatVolumeName, allocateFreePool(size).getId(), size);
+        }
+
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiHeartbeatClientName);
+        if (client == null) {
+            client = apiHelper.createIscsiClient(iscsiHeartbeatClientName, tianshuId, Collections.singletonList(clientIqn));
+            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
+            sleep();
+            apiHelper.addVolumeToIscsiClientGroup(heartbeatVol.getId(), client.getId(), iscsi.getId(), false);
+            sleep();
+        } else if (!client.getHosts().contains(clientIqn)) {
+            apiHelper.addHostToIscsiClient(clientIqn, client.getId());
+            sleep();
+        }
+
+        IscsiHeartbeatVolumeTO to = new IscsiHeartbeatVolumeTO();
+        IscsiRemoteTarget target = new IscsiRemoteTarget();
+        target.setPort(3260);
+        target.setTransport("tcp");
+        target.setIqn(iscsi.getIqn());
+        target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
+        target.setDiskId(heartbeatVol.getId().replace("-", "").substring(16, 32));
+        target.setClientIp(h.getManagementIp());
+        to.setInstallPath(target.getResourceURI());
+        to.setHostId(getHostId(h));
+        to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
+        to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
+        comp.success(to);
+    }
+
+    // hardcode
+    private int getHostId(HostInventory host) {
+        UssGatewayModule uss = getUssGateway(VolumeProtocol.VHost, host.getManagementIp());
+        return uss.getServerNo();
+    }
+
+    @Override
+    public void deactivateHeartbeatVolume(HostInventory h, Completion comp) {
+        String tianshuId = addonInfo.getClusters().get(0).getId();
+        List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
+
+        VolumeModule heartbeatVol = apiHelper.queryVolume(iscsiHeartbeatVolumeName);
+        if (heartbeatVol == null) {
+            comp.success();
+            return;
+        }
+
+        IscsiModule iscsi = apiHelper.queryIscsiController(iscsiHeartbeatTargetName);
+        if (iscsi == null) {
+            comp.success();
+            return;
+        }
+
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiHeartbeatClientName);
+        if (client == null) {
+            comp.success();
+            return;
+        }
+
+        String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (clientIqn == null) {
+            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
+        }
+
+        if (client.getHosts().contains(clientIqn)) {
+            apiHelper.removeHostFromIscsiClient(clientIqn, client.getId());
+            sleep();
+        }
+
+        comp.success();
     }
 
     private void deactiveVhost(BaseVolumeInfo vol, HostInventory h) {
