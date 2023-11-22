@@ -15,4 +15,9 @@
         <name>org.zstack.network.hostNetwork.lldp.api.APIQueryHostNetworkInterfaceLldpMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.network.hostNetwork.lldp.api.APIQueryHostNetworkInterfaceLldpRefMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

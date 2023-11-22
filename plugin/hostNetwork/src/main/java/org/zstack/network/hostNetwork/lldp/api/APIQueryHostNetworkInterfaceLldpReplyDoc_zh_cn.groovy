@@ -5,12 +5,12 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "查询物理网口lldp信息"
+	title "查询物理网口lldp配置"
 
 	ref {
 		name "inventories"
 		path "org.zstack.network.hostNetwork.lldp.api.APIQueryHostNetworkInterfaceLldpReply.inventories"
-		desc "物理网卡lldp信息清单"
+		desc "物理网卡lldp配置清单"
 		type "List"
 		since "5.0.0"
 		clz HostNetworkInterfaceLldpInventory.class

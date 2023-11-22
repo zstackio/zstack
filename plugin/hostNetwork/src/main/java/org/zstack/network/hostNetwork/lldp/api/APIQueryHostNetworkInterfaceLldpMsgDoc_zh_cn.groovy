@@ -8,7 +8,7 @@ doc {
 
     category "hostNetwork.lldp"
 
-    desc """查询物理网口lldp信息"""
+    desc """查询物理网口lldp配置"""
 
     rest {
         request {

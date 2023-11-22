@@ -100,40 +100,40 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                     bus.publish(event);
                     return;
                 } else {
-                    List<HostNetworkInterfaceLldpVO> lldpVOS = new ArrayList<>();
+                    List<HostNetworkInterfaceLldpVO> toCreate = new ArrayList<>();
+                    List<HostNetworkInterfaceLldpVO> toUpdate = new ArrayList<>();
+
                     for (HostNetworkInterfaceVO interfaceVO : interfaceVOS) {
                         HostNetworkInterfaceLldpVO vo = Q.New(HostNetworkInterfaceLldpVO.class).eq(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceVO.getUuid()).find();
                         if (vo == null) {
                             vo = new HostNetworkInterfaceLldpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setInterfaceUuid(interfaceVO.getUuid());
-                            vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
-                            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+                            vo.setMode(msg.getMode());
                             vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+                            toCreate.add(vo);
+                        } else {
+                            vo.setMode(msg.getMode());
+                            toUpdate.add(vo);
                         }
-                        vo.setMode(msg.getMode());
-                        lldpVOS.add(vo);
                     }
-                    dbf.updateCollection(lldpVOS);
-                    event.setInventories(HostNetworkInterfaceLldpInventory.valueOf(lldpVOS));
+
+                    if (!toCreate.isEmpty()) {
+                        dbf.persistCollection(toCreate);
+                    }
+                    if (!toUpdate.isEmpty()) {
+                        dbf.updateCollection(toUpdate);
+                    }
+                    List<HostNetworkInterfaceLldpVO> combinedList = new ArrayList<>(toCreate);
+                    combinedList.addAll(toUpdate);
+                    event.setInventories(HostNetworkInterfaceLldpInventory.valueOf(combinedList));
                 }
                 bus.publish(event);
             }
         });
     }
 
-    private synchronized void syncHostNetworkInterfaceLldpInDb(String interfaceUuid, HostNetworkInterfaceLldpRefInventory inv) {
-        if (inv == null) {
-            return;
-        }
-
-        HostNetworkInterfaceLldpRefVO vo = Q.New(HostNetworkInterfaceLldpRefVO.class).eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, interfaceUuid).find();
-        if (vo == null) {
-            vo = new HostNetworkInterfaceLldpRefVO();
-            vo.setInterfaceUuid(interfaceUuid);
-            vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
-            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
-        }
+    private void copyInventoryToVO(HostNetworkInterfaceLldpRefVO vo, HostNetworkInterfaceLldpRefInventory inv) {
         vo.setChassisId(inv.getChassisId());
         vo.setTimeToLive(inv.getTimeToLive());
         vo.setManagementAddress(inv.getManagementAddress());
@@ -145,8 +145,25 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
         vo.setVlanId(inv.getVlanId());
         vo.setAggregationPortId(inv.getAggregationPortId());
         vo.setMtu(inv.getMtu());
+    }
 
-        dbf.updateAndRefresh(vo);
+    private synchronized void syncHostNetworkInterfaceLldpInDb(String interfaceUuid, HostNetworkInterfaceLldpRefInventory inv) {
+        if (inv == null) {
+            return;
+        }
+
+        HostNetworkInterfaceLldpRefVO vo = Q.New(HostNetworkInterfaceLldpRefVO.class).eq(HostNetworkInterfaceLldpRefVO_.interfaceUuid, interfaceUuid).find();
+        if (vo == null) {
+            vo = new HostNetworkInterfaceLldpRefVO();
+            vo.setInterfaceUuid(interfaceUuid);
+            copyInventoryToVO(vo, inv);
+            dbf.persistAndRefresh(vo);
+        } else {
+            copyInventoryToVO(vo, inv);
+            // explicitly update the data to indicate the last refresh time
+            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+            dbf.updateAndRefresh(vo);
+        }
     }
 
     private void handle(APIGetHostNetworkInterfaceLldpMsg msg) {
@@ -206,6 +223,7 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                 .select(HostNetworkInterfaceVO_.hostUuid)
                 .eq(HostNetworkInterfaceVO_.uuid, lldpVOS.get(0).getInterfaceUuid())
                 .findValue();
+        logger.debug(String.format("xxxxxxxxxxxxx host connected :%s", hostUuid));
         kmsg.setHostUuid(hostUuid);
         kmsg.setCommand(cmd);
         bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
@@ -223,9 +241,13 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
 
     @Override
     public void afterHostConnected(HostInventory host) {
-        logger.debug(String.format("00000000000 host connected :%s", host.getUuid()));
+        logger.debug(String.format("xxxxxxxxxxxxx host connected :%s", host.getUuid()));
         List<String> interfaceUuids = Q.New(HostNetworkInterfaceLldpVO.class)
                 .select(HostNetworkInterfaceLldpVO_.interfaceUuid)
+                .listValues();
+        List<String> interfaceUuidsOnHost = Q.New(HostNetworkInterfaceVO.class)
+                .select(HostNetworkInterfaceVO_.uuid)
+                .eq(HostNetworkInterfaceVO_.hostUuid, host.getUuid())
                 .listValues();
 
         if (interfaceUuids != null && !interfaceUuids.isEmpty()) {
@@ -235,10 +257,7 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                     .notIn(HostNetworkInterfaceVO_.uuid, interfaceUuids)
                     .listValues();
         } else {
-            interfaceUuids = Q.New(HostNetworkInterfaceVO.class)
-                    .select(HostNetworkInterfaceVO_.uuid)
-                    .eq(HostNetworkInterfaceVO_.hostUuid, host.getUuid())
-                    .listValues();
+            interfaceUuids = interfaceUuidsOnHost;
         }
 
         logger.debug(String.format("11111111111111 :%s", interfaceUuids));
@@ -248,14 +267,14 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
             vo.setUuid(Platform.getUuid());
             vo.setInterfaceUuid(interfaceUuid);
             vo.setMode(LldpConstant.mode.rx_only.toString());
-            vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
-            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
             vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
             lldpVOS.add(vo);
         }
-        dbf.updateCollection(lldpVOS);
+        //dbf.persistCollection(lldpVOS);
 
-        lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class).list();
+        lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class)
+                .in(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuidsOnHost)
+                .list();
         if (lldpVOS == null || lldpVOS.isEmpty()) {
             return;
         }
