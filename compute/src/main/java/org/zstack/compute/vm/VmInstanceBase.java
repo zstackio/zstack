@@ -44,6 +44,9 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkIsolatedAttachOnHostMsg;
+import org.zstack.header.network.l2.L2NetworkIsolatedDetachOnHostMsg;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
@@ -5991,6 +5994,46 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.getData().put(VmInstanceConstant.Params.L3NetworkInventory.toString(), destL3);
 
+                if (!l3VO.getL2NetworkUuid().equals(destL3.getL2NetworkUuid()) && destL3.getIsolated()) {
+                    flowChain.then(new Flow() {
+                        String __name__ = "update-destination-l2-network-isolated";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            L2NetworkIsolatedAttachOnHostMsg amsg = new L2NetworkIsolatedAttachOnHostMsg();
+                            amsg.setHostUuid(spec.getDestHost().getUuid());
+                            amsg.setIsolatedL2NetworkMacMap(map(e(destL3.getL2NetworkUuid(), Collections.singletonList(nic.getMac()))));
+                            bus.makeTargetServiceIdByResourceUuid(amsg, L2NetworkConstant.L2_PRIVATE_VLAN_SERVICE_ID, spec.getDestHost().getUuid());
+                            bus.send(amsg, new CloudBusCallBack(null) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(reply.getError().toString());
+                                    }
+                                }
+                            });
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            L2NetworkIsolatedDetachOnHostMsg dmsg = new L2NetworkIsolatedDetachOnHostMsg();
+                            dmsg.setHostUuid(spec.getDestHost().getUuid());
+                            dmsg.setIsolatedL2NetworkMacMap(map(e(destL3.getL2NetworkUuid(), Collections.singletonList(nic.getMac()))));
+                            bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.L2_PRIVATE_VLAN_SERVICE_ID, spec.getDestHost().getUuid());
+                            bus.send(dmsg, new CloudBusCallBack(null) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(reply.getError().toString());
+                                    }
+                                }
+                            });
+                            trigger.rollback();
+                        }
+                    });
+                }
+
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "allocate-ip-for-change-nic-network";
 
@@ -6227,6 +6270,46 @@ public class VmInstanceBase extends AbstractVmInstance {
                         });
                     }
                 });
+
+                if (!l3VO.getL2NetworkUuid().equals(destL3.getL2NetworkUuid()) && l3VO.getIsolated()) {
+                    flowChain.then(new Flow() {
+                        String __name__ = "update-source-l2-network-isolated";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            L2NetworkIsolatedDetachOnHostMsg dmsg = new L2NetworkIsolatedDetachOnHostMsg();
+                            dmsg.setHostUuid(spec.getDestHost().getUuid());
+                            dmsg.setIsolatedL2NetworkMacMap(map(e(l3VO.getL2NetworkUuid(), Collections.singletonList(nic.getMac()))));
+                            bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.L2_PRIVATE_VLAN_SERVICE_ID, spec.getDestHost().getUuid());
+                            bus.send(dmsg, new CloudBusCallBack(null) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(reply.getError().toString());
+                                    }
+                                }
+                            });
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            L2NetworkIsolatedAttachOnHostMsg amsg = new L2NetworkIsolatedAttachOnHostMsg();
+                            amsg.setHostUuid(spec.getDestHost().getUuid());
+                            amsg.setIsolatedL2NetworkMacMap(map(e(l3VO.getL2NetworkUuid(), Collections.singletonList(nic.getMac()))));
+                            bus.makeTargetServiceIdByResourceUuid(amsg, L2NetworkConstant.L2_PRIVATE_VLAN_SERVICE_ID, spec.getDestHost().getUuid());
+                            bus.send(amsg, new CloudBusCallBack(null) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(reply.getError().toString());
+                                    }
+                                }
+                            });
+                            trigger.rollback();
+                        }
+                    });
+                }
 
                 flowChain.done(new FlowDoneHandler(chain) {
                     @Override
