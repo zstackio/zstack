@@ -105,7 +105,7 @@ public class UpgradeChecker implements ManagementNodeReadyExtensionPoint {
             return;
         }
 
-        if (!agentVersionVO.getCurrentVersion().equals(currentVersion)) {
+        if (!Objects.equals(agentVersionVO.getCurrentVersion(), currentVersion)) {
             agentVersionVO.setCurrentVersion(currentVersion);
             dbf.update(agentVersionVO);
         }
