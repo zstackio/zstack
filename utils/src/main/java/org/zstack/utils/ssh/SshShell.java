@@ -66,7 +66,8 @@ public class SshShell {
             sret.setStdout(ret.getStdout());
             if (sret.getReturnCode() == 255 && privateKey != null) {
                 sret.setSshFailure(true);
-            } else if (sret.getReturnCode() == 5 && privateKey == null) {
+            } else if ((sret.getReturnCode() == 5 || sret.getReturnCode() == 255)
+                    && privateKey == null) {
                 sret.setSshFailure(true);
             }
             return sret;
