@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
@@ -616,7 +617,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 .filter(vo -> l3UuidListOfCurrentAccount.contains(vo.getUuid()))
                 .collect(Collectors.toList()));
     }
-    
+
     private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
         DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
 
@@ -1243,16 +1244,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         if (msg.getRootDiskOfferingUuid() != null) {
                             smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
                         } else if (msg.getRootDiskSize() > 0) {
-                            DiskOfferingVO dvo = new DiskOfferingVO();
-                            dvo.setUuid(Platform.getUuid());
-                            dvo.setAccountUuid(msg.getAccountUuid());
-                            dvo.setDiskSize(msg.getRootDiskSize());
-                            dvo.setName("for-create-vm-" + finalVo.getUuid());
-                            dvo.setType("TemporaryDiskOfferingType");
-                            dvo.setState(DiskOfferingState.Enabled);
-                            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+                            DiskOfferingVO dvo = getDiskOfferingVO();
                             dbf.persist(dvo);
                             smsg.setRootDiskOfferingUuid(dvo.getUuid());
+                            temporaryDiskOfferingUuids.add(dvo.getUuid());
                         }
 
                         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
@@ -1273,10 +1268,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         bus.send(smsg, new CloudBusCallBack(smsg) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (msg.getRootDiskOfferingUuid() == null && smsg.getRootDiskOfferingUuid() != null) {
-                                    dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
-                                }
-
                                 if (!temporaryDiskOfferingUuids.isEmpty()) {
                                     dbf.removeByPrimaryKeys(temporaryDiskOfferingUuids, DiskOfferingVO.class);
                                 }
@@ -1291,6 +1282,19 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                 trigger.fail(reply.getError());
                             }
                         });
+                    }
+
+                    @NotNull
+                    private DiskOfferingVO getDiskOfferingVO() {
+                        DiskOfferingVO dvo = new DiskOfferingVO();
+                        dvo.setUuid(Platform.getUuid());
+                        dvo.setAccountUuid(msg.getAccountUuid());
+                        dvo.setDiskSize(msg.getRootDiskSize());
+                        dvo.setName("for-create-vm-" + finalVo.getUuid());
+                        dvo.setType("TemporaryDiskOfferingType");
+                        dvo.setState(DiskOfferingState.Enabled);
+                        dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+                        return dvo;
                     }
 
                     @Override
