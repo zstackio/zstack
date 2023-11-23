@@ -1155,27 +1155,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     attachOtherDisk = !otherDisks.isEmpty();
                 }
 
-                if (VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class)) {
-                    flow(new Flow() {
-                        String __name__ = String.format("check-unique-name-for-vm-%s", finalVo.getUuid());
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, finalVo.getName()).notEq(VmInstanceVO_.uuid, finalVo.getUuid()).isExists();
-                            if (exists) {
-                                trigger.fail(operr("could not create vm, a vm with the name [%s] already exists", msg.getName()));
-                                return;
-                            }
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void rollback(FlowRollback trigger, Map data) {
-                            trigger.rollback();
-                        }
-                    });
-                }
-
                 flow(new Flow() {
                     List<ErrorCode> errorCodes = Collections.emptyList();
                     String __name__ = String.format("instantiate-systemTag-for-vm-%s", finalVo.getUuid());
