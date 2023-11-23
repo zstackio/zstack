@@ -64,9 +64,11 @@ public class TfPortService {
         String vmName = vm.getName();
 
         try {
-            boolean availability = tfPortClient.checkTfIpAvailability(customIp, l3.getUuid());
-            if (availability){
-                customIp = null;
+            if (customIp != null && !customIp.isEmpty()) {
+                boolean availability = tfPortClient.checkTfIpAvailability(customIp, l3.getUuid());
+                if (availability){
+                    throw new RuntimeException(String.format("Can not allocate IP[%s] from tf.", customIp));
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -89,9 +91,11 @@ public class TfPortService {
         String tfPortUuid = StringDSL.transToTfUuid(portUuid);
 
         try {
-            boolean availability = tfPortClient.checkTfIpAvailability(ip, l3.getUuid());
-            if (availability){
-                ip = null;
+            if (ip != null && !ip.isEmpty()) {
+                boolean availability = tfPortClient.checkTfIpAvailability(ip, l3.getUuid());
+                if (availability){
+                    throw new RuntimeException(String.format("Can not allocate IP[%s] from tf.", ip));
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

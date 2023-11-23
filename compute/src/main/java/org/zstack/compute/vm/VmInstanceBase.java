@@ -2161,9 +2161,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
             final L3NetworkInventory l3 = L3NetworkInventory.valueOf(l3vo);
             l3s.add(l3);
-            for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
-                ext.vmPreAttachL3Network(vm, l3);
-            }
         }
 
         spec.setDisableL3Networks(new ArrayList<>());
