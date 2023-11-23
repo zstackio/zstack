@@ -5,15 +5,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.Timer;
 import org.zstack.header.console.*;
 import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyCmd;
 import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyRsp;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -22,6 +21,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.net.URI;
+import java.sql.Timestamp;
 
 import static org.zstack.core.Platform.operr;
 
@@ -42,6 +42,8 @@ public class ConsoleProxyBase implements ConsoleProxy {
     private ConsoleManager consoleMgr;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private Timer timer;
 
     private final int agentPort;
 
@@ -68,7 +70,8 @@ public class ConsoleProxyBase implements ConsoleProxy {
         }
 
         int idleTimeout = ConsoleGlobalConfig.PROXY_IDLE_TIMEOUT.value(Integer.class);
-        int tokenTimeout = ConsoleGlobalConfig.VNC_TOKEN_TIMEOUT.value(Integer.class);
+        long tokenTimeout = ConsoleGlobalConfig.VNC_TOKEN_TIMEOUT.value(Long.class);
+        long expiredDate = timer.getCurrentTimeMillis() + tokenTimeout * 1000;
 
         ConsoleProxyCommands.EstablishProxyCmd cmd = new ConsoleProxyCommands.EstablishProxyCmd();
         cmd.setVmUuid(self.getVmInstanceUuid());
@@ -76,7 +79,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setTargetHostname(targetHostname);
         cmd.setTargetPort(targetPort);
         cmd.setProxyHostname("0.0.0.0");
-        if (targetSchema.equals(ConsoleConstants.HTTP_SCHEMA)) {
+        if (ConsoleConstants.HTTP_SCHEMA.equals(self.getTargetSchema())) {
             cmd.setProxyPort(CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
         } else {
             cmd.setProxyPort(CoreGlobalProperty.CONSOLE_PROXY_PORT);
@@ -85,7 +88,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setScheme(self.getScheme());
         cmd.setToken(self.getToken());
         cmd.setIdleTimeout(idleTimeout);
-        cmd.setVncTokenTimeout(tokenTimeout);
+        cmd.setExpiredDate(expiredDate);
 
         ConsoleProxyTlsVersion tlsVersion = ConsoleProxyTlsVersion.valueOf(ConsoleGlobalConfig.PROXY_TLS_VERSION.value());
         if (tlsVersion != ConsoleProxyTlsVersion.NONE) {
@@ -106,8 +109,8 @@ public class ConsoleProxyBase implements ConsoleProxy {
                     self.setTargetHostname(targetHostname);
                     self.setTargetPort(targetPort);
                     self.setProxyPort(ret.getProxyPort());
-                    self.setToken(ret.getToken());
                     self.setVersion(consoleUrl.getVersion());
+                    self.setExpiredDate(new Timestamp(expiredDate));
                     completion.success(self);
                 } else {
                     completion.fail(operr("operation error, because:%s", ret.getError()));
