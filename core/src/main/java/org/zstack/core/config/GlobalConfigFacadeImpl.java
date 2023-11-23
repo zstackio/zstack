@@ -16,7 +16,6 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.Pair;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -25,10 +24,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -71,7 +67,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     private void handle(APIResetGlobalConfigMsg msg) {
         APIResetGlobalConfigEvent evt = new APIResetGlobalConfigEvent(msg.getId());
 
-        for(GlobalConfig globalConfig: allConfig.values()) {
+        for (GlobalConfig globalConfig : allConfig.values()) {
             try {
                 for (GlobalConfigBeforeResetExtensionPoint ext : globalConfig.getBeforeResetExtensions()) {
                     ext.beforeResetExtensionPoint(msg.getSession());
@@ -107,7 +103,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             evt.setError(argerr(e.getMessage()));
             logger.warn(e.getMessage(), e);
         }
-        
+
         bus.publish(evt);
     }
 
@@ -141,6 +137,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         class GlobalConfigInitializer {
             Map<String, GlobalConfig> configsFromXml = new HashMap<String, GlobalConfig>();
             Map<String, GlobalConfig> configsFromDatabase = new HashMap<String, GlobalConfig>();
+            Map<String, String[]> configExtensionValidValues = new HashMap<String, String[]>();
             List<Field> globalConfigFields = new ArrayList<Field>();
             Map<String, String> propertiesMap = new HashMap<>();
 
@@ -153,6 +150,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     loadConfigFromXml();
                     loadConfigFromJava();
                     loadConfigFromAutoGeneration();
+                    loadConfigFromExtensionValidValues();
                     loadConfigFromDatabase();
                     createValidatorForBothXmlAndDatabase();
                     validateConfigFromXml();
@@ -175,7 +173,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
             private void loadSystemProperties() {
                 boolean noTrim = System.getProperty("DoNotTrimPropertyFile") != null;
-                for (final String name: System.getProperties().stringPropertyNames()) {
+                for (final String name : System.getProperties().stringPropertyNames()) {
                     String value = System.getProperty(name);
                     if (!noTrim) {
                         value = value.trim();
@@ -383,6 +381,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 }
             }
 
+            private void loadConfigFromExtensionValidValues() {
+                for (GlobalConfigExtensionValidValuesPoint ext : pluginRgty.getExtensionList(GlobalConfigExtensionValidValuesPoint.class)) {
+                    Map<String, String[]> tmp = ext.GlobalConfigExtensionValidValues();
+                    configExtensionValidValues.putAll(tmp);
+                }
+            }
+
             private void loadConfigFromDatabase() {
                 List<GlobalConfigVO> vos = dbf.listAll(GlobalConfigVO.class);
                 for (GlobalConfigVO vo : vos) {
@@ -446,7 +451,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             if (newValue == null ||
                                     (!newValue.equalsIgnoreCase("true") &&
                                             !newValue.equalsIgnoreCase("false"))
-                                    ) {
+                            ) {
                                 String err = String.format("GlobalConfig[category:%s, name:%s]'s value[%s] is not a valid boolean string[true, false].",
                                         g.getCategory(), g.getName(), newValue);
                                 throw new GlobalConfigException(err);
@@ -455,7 +460,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             if (g.getDefaultValue() == null ||
                                     (!g.getDefaultValue().equalsIgnoreCase("true") &&
                                             !g.getDefaultValue().equalsIgnoreCase("false"))
-                                    ) {
+                            ) {
                                 String err = String.format("GlobalConfig[category:%s, name:%s]'s default value[%s] is not a valid boolean string[true, false].",
                                         g.getCategory(), g.getName(), g.getDefaultValue());
                                 throw new GlobalConfigException(err);
@@ -533,7 +538,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         GlobalConfig config = (GlobalConfig) field.get(null);
                         if (config == null) {
                             throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] defines a null GlobalConfig[%s]." +
-                                    "You must assign a value to it using new GlobalConfig(category, name)",
+                                            "You must assign a value to it using new GlobalConfig(category, name)",
                                     field.getDeclaringClass().getName(), field.getName()));
                         }
 
@@ -647,6 +652,27 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         });
                     }
 
+                    if (configExtensionValidValues.containsKey(config.getIdentity())) {
+                        InvocationHandler h = Proxy.getInvocationHandler(at);
+                        Field hField = null;
+                        try {
+                            hField = h.getClass().getDeclaredField("memberValues");
+                        } catch (NoSuchFieldException e) {
+                            throw new CloudRuntimeException(e);
+                        }
+
+                        if (hField != null) {
+                            hField.setAccessible(true);
+                            Map<String, Object> memberValues = (Map<String, Object>) hField.get(h);
+
+                            Set<String> mergedSet = new HashSet<>(Arrays.asList(at.validValues()));
+                            mergedSet.addAll(new HashSet<>(Arrays.asList(configExtensionValidValues.getOrDefault(config.getIdentity(), new String[0]))));
+
+                            String[] newValues = mergedSet.toArray(new String[0]);
+                            memberValues.put("validValues", newValues);
+                        }
+                    }
+
                     if (at.validValues().length > 0) {
                         final List<String> validValues = new ArrayList<String>();
                         Collections.addAll(validValues, at.validValues());
@@ -668,7 +694,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
                         if (at.validValues().length > 0) {
                             options.setValidValue(Arrays.asList(at.validValues()));
-                        } else if (at.inNumberRange().length == 2){
+                        } else if (at.inNumberRange().length == 2) {
                             options.setNumberLessThan(at.inNumberRange()[1] + 1);
                             options.setNumberGreaterThan(at.inNumberRange()[0] - 1);
                         } else if (at.numberLessThan() != Long.MAX_VALUE || at.numberGreaterThan() != Long.MIN_VALUE) {
@@ -714,7 +740,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     @Override
     public <T> T getConfigValue(String category, String name, Class<T> clz) {
         GlobalConfig c = allConfig.get(GlobalConfig.produceIdentity(category, name));
-        DebugUtils.Assert(c!=null, String.format("cannot find GlobalConfig[category:%s, name:%s]", category, name));
+        DebugUtils.Assert(c != null, String.format("cannot find GlobalConfig[category:%s, name:%s]", category, name));
         return c.value(clz);
     }
 
@@ -744,7 +770,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     @Override
     @Deprecated
     public String updateConfig(String category, String name, String value) {
-        GlobalConfig c = allConfig.get(GlobalConfig.produceIdentity(category,name));
+        GlobalConfig c = allConfig.get(GlobalConfig.produceIdentity(category, name));
         DebugUtils.Assert(c != null, String.format("cannot find GlobalConfig[category:%s, name:%s]", category, name));
         c.updateValue(value);
         return c.value();
