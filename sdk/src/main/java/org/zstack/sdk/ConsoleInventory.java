@@ -52,4 +52,12 @@ public class ConsoleInventory  {
         return this.version;
     }
 
+    public java.sql.Timestamp expiredDate;
+    public void setExpiredDate(java.sql.Timestamp expiredDate) {
+        this.expiredDate = expiredDate;
+    }
+    public java.sql.Timestamp getExpiredDate() {
+        return this.expiredDate;
+    }
+
 }
