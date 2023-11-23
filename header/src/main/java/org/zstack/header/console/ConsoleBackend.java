@@ -29,4 +29,6 @@ public interface ConsoleBackend {
     void handleMessage(Message msg);
 
     void deactivateConsoleProxy(VmInstanceInventory vmInventory, Completion completion);
+
+    void updateConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO consoleProxy, ReturnValueCompletion<ConsoleInventory> consoleInventoryReturnValueCompletion);
 }
