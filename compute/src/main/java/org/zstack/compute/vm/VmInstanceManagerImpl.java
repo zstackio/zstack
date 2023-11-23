@@ -1206,30 +1206,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "instantiate-just-create-vmInstance";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return VmCreationStrategy.JustCreate != VmCreationStrategy.valueOf(msg.getStrategy());
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        VmInstanceInventory inv = VmInstanceInventory.valueOf(finalVo);
-                        createVmButNotStart(msg, inv);
-                        instantiateVm = inv;
-                        trigger.next();
-                    }
-                });
-
                 flow(new Flow() {
                     String __name__ = "instantiate-new-created-vmInstance";
 
-                    @Override
-                    public boolean skip(Map data) {
-                        return VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy());
-                    }
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
@@ -1397,11 +1376,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         msg.getDataDiskSizes().forEach(size -> diskOfferingUuids.add(sizeDiskOfferingMap.get(size)));
         dbf.persistCollection(diskOfferingVos);
         return diskOfferingUuids;
-    }
-
-    private void createVmButNotStart(CreateVmInstanceMsg msg, VmInstanceInventory inv) {
-        InstantiateVmFromNewCreatedStruct struct = InstantiateVmFromNewCreatedStruct.fromMessage(msg);
-        new JsonLabel().create(InstantiateVmFromNewCreatedStruct.makeLabelKey(inv.getUuid()), struct, inv.getUuid());
     }
 
     private void handle(final CreateVmInstanceMsg msg) {

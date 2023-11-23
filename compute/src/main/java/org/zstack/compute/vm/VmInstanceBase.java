@@ -3030,6 +3030,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
     }
 
+    private void createVmButNotStart(InstantiateNewCreatedVmInstanceMsg msg, VmInstanceInventory inv) {
+        InstantiateVmFromNewCreatedStruct struct = InstantiateVmFromNewCreatedStruct.fromMessage(msg);
+        new JsonLabel().create(InstantiateVmFromNewCreatedStruct.makeLabelKey(inv.getUuid()), struct, inv.getUuid());
+    }
+
     protected void instantiateVmFromNewCreate(final InstantiateNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
         refreshVO();
         ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
@@ -3037,12 +3042,20 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new OperationFailureException(error);
         }
 
+        InstantiateNewCreatedVmInstanceReply reply = new InstantiateNewCreatedVmInstanceReply();
+        if (VmCreationStrategy.JustCreate.toString().equals(msg.getStrategy())) {
+            createVmButNotStart(msg, msg.getVmInstanceInventory());
+            reply.setVmInventory(msg.getVmInstanceInventory());
+            bus.reply(msg, reply);
+            taskChain.next();
+            return;
+        }
+
         error = extEmitter.preStartNewCreatedVm(msg.getVmInstanceInventory());
         if (error != null) {
             throw new OperationFailureException(error);
         }
 
-        InstantiateNewCreatedVmInstanceReply reply = new InstantiateNewCreatedVmInstanceReply();
         instantiateVmFromNewCreate(InstantiateVmFromNewCreatedStruct.fromMessage(msg), new Completion(msg, taskChain) {
             @Override
             public void success() {
