@@ -8,9 +8,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.Timer;
 import org.zstack.header.AbstractService;
 import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
@@ -18,7 +20,6 @@ import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.SessionInventory;
@@ -28,15 +29,12 @@ import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -45,7 +43,7 @@ import static org.zstack.core.Platform.operr;
  * To change this template use File | Settings | File Templates.
  */
 public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint, ManagementNodeChangeListener,
-        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint {
+        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint, PostVmInstantiateResourceExtensionPoint {
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
     @Autowired
@@ -56,6 +54,8 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     private PluginRegistry pluginRgty;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private Timer timer;
 
     private Map<String, ConsoleBackend> consoleBackends = new HashMap<String, ConsoleBackend>();
     private Map<String, ConsoleHypervisorBackend> consoleHypervisorBackends = new HashMap<String, ConsoleHypervisorBackend>();
@@ -312,5 +312,54 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
 
     @Override
     public void iJoin(ManagementNodeInventory inv) {
+    }
+
+    @Override
+    public void postBeforeInstantiateVmResource(VmInstanceSpec spec) {
+
+    }
+
+    @Override
+    public void postInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
+        if (spec.getCurrentVmOperation() != VmInstanceConstant.VmOperation.Reboot) {
+            completion.success();
+            return;
+        }
+
+        VmInstanceInventory vm = spec.getVmInventory();
+        ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class)
+                .eq(ConsoleProxyVO_.vmInstanceUuid, vm.getUuid())
+                .find();
+        if (vo == null) {
+            completion.success();
+            return;
+        }
+
+        if (timer.getCurrentTimestamp().after(vo.getExpiredDate())) {
+            // token is stale
+            dbf.remove(vo);
+            completion.success();
+            return;
+        }
+
+        ConsoleBackend bkd = getBackend();
+        bkd.updateConsoleProxy(vm, vo, new ReturnValueCompletion<ConsoleInventory>(completion) {
+            @Override
+            public void success(ConsoleInventory inv) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                dbf.remove(vo);
+                logger.warn(String.format("fail to update console proxy, because: ", errorCode.toString()));
+                completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void postReleaseVmResource(VmInstanceSpec spec, Completion completion) {
+        completion.success();
     }
 }
