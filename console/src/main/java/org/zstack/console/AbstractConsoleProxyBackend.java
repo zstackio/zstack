@@ -353,6 +353,28 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         });
     }
 
+    @Override
+    public void updateConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo, ReturnValueCompletion<ConsoleInventory> completion) {
+        ConsoleProxy proxy = getConsoleProxy(vm, vo);
+        proxy.establishProxy(vm, new ReturnValueCompletion<ConsoleProxyInventory>(completion) {
+            @Override
+            public void success(ConsoleProxyInventory ret) {
+                vo.setTargetHostname(ret.getTargetHostname());
+                vo.setTargetPort(ret.getTargetPort());
+                vo.setStatus(ConsoleProxyStatus.Active);
+                vo.setExpiredDate(ret.getExpiredDate());
+                dbf.updateAndRefresh(vo);
+
+                completion.success(ConsoleInventory.valueOf(vo));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
     private void deploySaltState() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;
