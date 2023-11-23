@@ -432,7 +432,7 @@ public class TfPortClient {
                     if (CollectionUtils.isNotEmpty(floatingIps)) {
                         for (ObjectReference<ApiPropertyBase> fip : floatingIps) {
                             FloatingIp fipObj = (FloatingIp) client.findById(FloatingIp.class, fip.getUuid());
-                            if (fipObj.getAddress().equals(ipAddr)) {
+                            if (fipObj.getAddress() != null && fipObj.getAddress().equals(ipAddr)) {
                                 return true;
                             }
                         }

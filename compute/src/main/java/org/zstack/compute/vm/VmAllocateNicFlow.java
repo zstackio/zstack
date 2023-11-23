@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
@@ -59,6 +60,8 @@ public class VmAllocateNicFlow implements Flow {
     private VmNicManager nicManager;
     @Autowired
     protected VmInstanceManager vmMgr;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
     @Autowired
     protected ResourceConfigFacade rcf;
@@ -68,6 +71,14 @@ public class VmAllocateNicFlow implements Flow {
         taskProgress("create nics");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        List<VmNicSpec> l3Networks = spec.getL3Networks();
+        for (VmNicSpec l3Network : l3Networks) {
+            for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
+                for (L3NetworkInventory l3Inv : l3Network.getL3Invs()) {
+                    ext.vmPreAttachL3Network(spec.getVmInventory(), l3Inv);
+                }
+            }
+        }
         final Map<String, NicIpAddressInfo> nicNetworkInfoMap =
                 Optional.ofNullable(data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString()))
                 .map(obj -> (Map<String, NicIpAddressInfo>) obj)
@@ -259,6 +270,11 @@ public class VmAllocateNicFlow implements Flow {
             return;
         }
         logger.debug(String.format("%s nic need for delete", destNics.size()));
+        for (VmNicInventory vmNic : destNics) {
+            for (VmDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class)) {
+                ext.afterDetachNic(vmNic);
+            }
+        }
         dbf.removeByPrimaryKeys(destNics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList()), VmNicVO.class);
         chain.rollback();
         return;
