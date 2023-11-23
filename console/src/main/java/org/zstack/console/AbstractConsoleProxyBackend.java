@@ -98,8 +98,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                 vo.setUuid(Platform.getUuid());
                 vo.setAgentType(ret.getAgentType());
                 vo.setStatus(ConsoleProxyStatus.Active);
-                vo.setToken(ret.getToken());
                 vo.setVersion(ret.getVersion());
+                vo.setExpiredDate(ret.getExpiredDate());
                 vo = dbf.persistAndRefresh(vo);
 
                 complete.success(ConsoleInventory.valueOf(vo));
