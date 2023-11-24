@@ -155,7 +155,7 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
         } else {
             copyInventoryToVO(refVO, lldpInfo);
             // explicitly update the data to indicate the last refresh time
-            vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+            refVO.setLastOpDate(new Timestamp(System.currentTimeMillis()));
             dbf.updateAndRefresh(refVO);
         }
     }
@@ -182,8 +182,6 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                 } else {
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     LldpKvmAgentCommands.GetLldpInfoResponse rsp = r.toResponse(LldpKvmAgentCommands.GetLldpInfoResponse.class);
-                    logger.debug(String.format("00000000000000000 reply : %s", r));
-                    logger.debug(String.format("00000000000000000 rsp : %s", rsp.getLldpInfo()));
                     if (!rsp.isSuccess()) {
                         greply.setError(operr("operation error, because %s", rsp.getError()));
                     } else {
@@ -219,7 +217,6 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                 .select(HostNetworkInterfaceVO_.hostUuid)
                 .eq(HostNetworkInterfaceVO_.uuid, lldpVOS.get(0).getInterfaceUuid())
                 .findValue();
-        logger.debug(String.format("xxxxxxxxxxxxx host connected :%s", hostUuid));
         kmsg.setHostUuid(hostUuid);
         kmsg.setCommand(cmd);
         bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
@@ -237,7 +234,6 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
 
     @Override
     public void afterHostConnected(HostInventory host) {
-        logger.debug(String.format("xxxxxxxxxxxxx host connected :%s", host.getUuid()));
         List<String> interfaceUuids = Q.New(HostNetworkInterfaceLldpVO.class)
                 .select(HostNetworkInterfaceLldpVO_.interfaceUuid)
                 .listValues();
@@ -256,7 +252,6 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
             interfaceUuids = interfaceUuidsOnHost;
         }
 
-        logger.debug(String.format("11111111111111 :%s", interfaceUuids));
         List<HostNetworkInterfaceLldpVO> lldpVOS = new ArrayList<>();
         for (String interfaceUuid : interfaceUuids) {
             HostNetworkInterfaceLldpVO vo = new HostNetworkInterfaceLldpVO();
@@ -274,7 +269,6 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
         if (lldpVOS == null || lldpVOS.isEmpty()) {
             return;
         }
-        logger.debug(String.format("222222222222222 :%s", lldpVOS));
 
         applyHostNetworkLldpConfig(lldpVOS, new Completion(null) {
             @Override
