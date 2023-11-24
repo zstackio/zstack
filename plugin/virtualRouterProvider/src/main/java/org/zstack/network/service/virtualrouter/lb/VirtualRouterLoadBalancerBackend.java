@@ -222,10 +222,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     @Transactional(readOnly = true)
     private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid, List<String> vmNics) {
-        if (vmNics.isEmpty()) {
-            return null;
-        }
-
         List<VirtualRouterVmVO> vrs = getAllVirtualRouters(lbUuid);
 
         if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(lbUuid)) {
