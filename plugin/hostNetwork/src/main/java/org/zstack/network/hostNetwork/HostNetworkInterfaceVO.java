@@ -91,11 +91,6 @@ public class HostNetworkInterfaceVO extends ResourceVO implements ToInventory, O
     @Transient
     private String accountUuid;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="uuid", referencedColumnName = "interfaceUuid", insertable = false, updatable = false)
-    @NoView
-    private HostNetworkInterfaceLldpVO lldpVO;
-
     public String getHostUuid() {
         return hostUuid;
     }
@@ -277,14 +272,6 @@ public class HostNetworkInterfaceVO extends ResourceVO implements ToInventory, O
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
-    }
-
-    public HostNetworkInterfaceLldpVO getLldpVO() {
-        return lldpVO;
-    }
-
-    public void setLldpVO(HostNetworkInterfaceLldpVO lldpVO) {
-        this.lldpVO = lldpVO;
     }
 
 }

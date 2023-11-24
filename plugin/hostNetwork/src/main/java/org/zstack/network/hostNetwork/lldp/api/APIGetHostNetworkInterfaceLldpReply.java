@@ -20,7 +20,7 @@ public class APIGetHostNetworkInterfaceLldpReply extends APIReply {
         APIGetHostNetworkInterfaceLldpReply reply = new APIGetHostNetworkInterfaceLldpReply();
         HostNetworkInterfaceLldpRefInventory inv = new HostNetworkInterfaceLldpRefInventory();
 
-        inv.setInterfaceUuid(uuid());
+        inv.setLldpUuid(uuid());
         inv.setChassisId("mac 00:1e:08:1d:05:ba");
         inv.setTimeToLive(120);
         inv.setManagementAddress("172.25.2.4");

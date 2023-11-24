@@ -15,11 +15,6 @@ import java.sql.Timestamp;
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = HostNetworkInterfaceVO.class, joinColumn = "interfaceUuid")
 })
-@EntityGraph(
-        parents = {
-                @EntityGraph.Neighbour(type = HostNetworkInterfaceVO.class, myField = "interfaceUuid", targetField = "uuid")
-        }
-)
 public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventory, OwnedByAccount {
     @Column
     @Index
@@ -39,9 +34,9 @@ public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventor
     private String accountUuid;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="interfaceUuid", insertable=false, updatable=false)
+    @JoinColumn(name="uuid",  referencedColumnName = "lldpUuid", insertable=false, updatable=false)
     @NoView
-    private HostNetworkInterfaceLldpRefVO lldpRefVO;
+    private HostNetworkInterfaceLldpRefVO neighborDevice;
 
     public String getInterfaceUuid() {
         return interfaceUuid;
@@ -85,12 +80,12 @@ public class HostNetworkInterfaceLldpVO extends ResourceVO implements ToInventor
         this.accountUuid = accountUuid;
     }
 
-    public HostNetworkInterfaceLldpRefVO getLldpRefVO() {
-        return lldpRefVO;
+    public HostNetworkInterfaceLldpRefVO getNeighborDevice() {
+        return neighborDevice;
     }
 
-    public void setLldpRefVO(HostNetworkInterfaceLldpRefVO lldpRefVO) {
-        this.lldpRefVO = lldpRefVO;
+    public void setNeighborDevice(HostNetworkInterfaceLldpRefVO neighborDevice) {
+        this.neighborDevice = neighborDevice;
     }
 
     @PreUpdate

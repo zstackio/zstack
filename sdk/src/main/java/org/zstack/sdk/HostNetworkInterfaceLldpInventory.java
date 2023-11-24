@@ -44,12 +44,12 @@ public class HostNetworkInterfaceLldpInventory  {
         return this.lastOpDate;
     }
 
-    public HostNetworkInterfaceLldpRefInventory lldp;
-    public void setLldp(HostNetworkInterfaceLldpRefInventory lldp) {
-        this.lldp = lldp;
+    public HostNetworkInterfaceLldpRefInventory neighborDevice;
+    public void setNeighborDevice(HostNetworkInterfaceLldpRefInventory neighborDevice) {
+        this.neighborDevice = neighborDevice;
     }
-    public HostNetworkInterfaceLldpRefInventory getLldp() {
-        return this.lldp;
+    public HostNetworkInterfaceLldpRefInventory getNeighborDevice() {
+        return this.neighborDevice;
     }
 
 }

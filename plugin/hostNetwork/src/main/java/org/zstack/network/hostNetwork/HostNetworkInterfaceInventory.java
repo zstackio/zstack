@@ -48,9 +48,6 @@ public class HostNetworkInterfaceInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    @Queryable(mappingClass = HostNetworkInterfaceLldpInventory.class, joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "interfaceUuid"))
-    private HostNetworkInterfaceLldpInventory lldpMode;
-
     public String getUuid() {
         return uuid;
     }
@@ -227,14 +224,6 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.lastOpDate = lastOpDate;
     }
 
-    public HostNetworkInterfaceLldpInventory getLldpMode() {
-        return lldpMode;
-    }
-
-    public void setLldpMode(HostNetworkInterfaceLldpInventory lldpMode) {
-        this.lldpMode = lldpMode;
-    }
-
     public HostNetworkInterfaceInventory() {
 
     }
@@ -259,7 +248,6 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.description = vo.getDescription();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
-        this.lldpMode = vo.getLldpVO() != null ? HostNetworkInterfaceLldpInventory.valueOf(vo.getLldpVO()) : null;
     }
 
     public static HostNetworkInterfaceInventory valueOf(HostNetworkInterfaceVO vo) {

@@ -188,9 +188,9 @@ class ChangeLldpModeCase extends SubCase {
         List<HostNetworkInterfaceLldpVO> lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class)
                 .eq(HostNetworkInterfaceLldpVO_.interfaceUuid, vo.getUuid())
                 .list()
-        //assert lldpVOS.size() == 1
+        assert lldpVOS.size() == 1
 
-        //assert count.get() == 1
+        assert count.get() == 1
 
         dbf.remove(vo)
         SQL.New(HostNetworkInterfaceLldpVO.class).hardDelete()

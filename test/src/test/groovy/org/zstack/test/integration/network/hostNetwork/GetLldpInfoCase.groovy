@@ -9,6 +9,7 @@ import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.message.DocUtils
 import org.zstack.network.hostNetwork.HostNetworkInterfaceVO
 import org.zstack.network.hostNetwork.lldp.LldpConstant
+import org.zstack.network.hostNetwork.lldp.LldpInfoStruct
 import org.zstack.network.hostNetwork.lldp.LldpKvmAgentCommands
 import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO
 import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO_
@@ -117,18 +118,30 @@ class GetLldpInfoCase extends SubCase {
         vo.setResourceName("test")
         dbf.persist(vo)
 
-        HostNetworkInterfaceLldpVO lldpVO = new HostNetworkInterfaceLldpVO();
-        lldpVO.setUuid(Platform.uuid)
-        lldpVO.setInterfaceUuid(TEST_UUID)
-        lldpVO.setMode("rx_only")
-        lldpVO.setAccountUuid(currentEnvSpec.session.getAccountUuid())
-        lldpVO.setResourceName("test")
-        dbf.persist(lldpVO)
+        env.simulator(LldpConstant.CHANGE_LLDP_MODE_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            LldpKvmAgentCommands.ChangeLldpModeResponse rsp = new LldpKvmAgentCommands.ChangeLldpModeResponse()
+            rsp.setSuccess(true)
+            return rsp
+        }
+
+        def lldpMode = changeHostNetworkInterfaceLldpMode {
+            interfaceUuids = [vo.getUuid()]
+            mode = "rx_only"
+        } as List<HostNetworkInterfaceLldpInventory>
+
+        assert lldpMode.get(0).mode == "rx_only"
+
+//        HostNetworkInterfaceLldpVO lldpVO = new HostNetworkInterfaceLldpVO();
+//        lldpVO.setUuid(Platform.uuid)
+//        lldpVO.setInterfaceUuid(TEST_UUID)
+//        lldpVO.setMode("rx_only")
+//        lldpVO.setAccountUuid(currentEnvSpec.session.getAccountUuid())
+//        lldpVO.setResourceName("test")
+//        dbf.persist(lldpVO)
 
         env.simulator(LldpConstant.GET_LLDP_INFO_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def reply = new LldpKvmAgentCommands.GetLldpInfoResponse()
-            reply.lldpInfo = new org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefInventory()
-            reply.lldpInfo.interfaceUuid = TEST_UUID
+            reply.lldpInfo = new LldpInfoStruct()
             reply.lldpInfo.chassisId = "mac 00:1e:08:1d:05:ba"
             reply.lldpInfo.timeToLive = 120
             reply.lldpInfo.managementAddress = "172.25.2.4"
@@ -140,8 +153,6 @@ class GetLldpInfoCase extends SubCase {
             reply.lldpInfo.vlanId = 3999
             reply.lldpInfo.aggregationPortId = 4294965248L
             reply.lldpInfo.mtu = 9600
-            reply.lldpInfo.createDate = new Timestamp(DocUtils.date)
-            reply.lldpInfo.lastOpDate = new Timestamp(DocUtils.date)
             return reply
         }
 
@@ -149,7 +160,7 @@ class GetLldpInfoCase extends SubCase {
             interfaceUuid = TEST_UUID
         } as GetHostNetworkInterfaceLldpResult
 
-        assert ms.lldp.interfaceUuid == TEST_UUID
+        assert ms.lldp.portId == "ifname eth-0-5"
 
         HostNetworkInterfaceVO vo1 = new HostNetworkInterfaceVO();
         vo1.setUuid(TEST_UUID_2)
@@ -174,8 +185,7 @@ class GetLldpInfoCase extends SubCase {
 
         env.simulator(LldpConstant.GET_LLDP_INFO_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def reply = new LldpKvmAgentCommands.GetLldpInfoResponse()
-            reply.lldpInfo = new org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefInventory()
-            reply.lldpInfo.interfaceUuid = TEST_UUID_2
+            reply.lldpInfo = new LldpInfoStruct()
             reply.lldpInfo.chassisId = "mac 00:1e:08:1d:05:ba"
             reply.lldpInfo.timeToLive = 119
             reply.lldpInfo.managementAddress = "172.25.2.4"
@@ -187,8 +197,6 @@ class GetLldpInfoCase extends SubCase {
             reply.lldpInfo.vlanId = 3999
             reply.lldpInfo.aggregationPortId = 4294965248L
             reply.lldpInfo.mtu = 9600
-            reply.lldpInfo.createDate = new Timestamp(DocUtils.date)
-            reply.lldpInfo.lastOpDate = new Timestamp(DocUtils.date)
             return reply
         }
 
@@ -202,7 +210,7 @@ class GetLldpInfoCase extends SubCase {
 
         assert ms2.lldp.managementAddress == "172.25.2.4"
         assert ms.lldp.timeToLive != ms2.lldp.timeToLive
-        assert ms2.lldp.interfaceUuid == ms3.lldp.interfaceUuid
+        assert ms2.lldp.chassisId == ms3.lldp.chassisId
 
         SQL.New(HostNetworkInterfaceLldpVO.class)
                 .eq(HostNetworkInterfaceLldpVO_.interfaceUuid, TEST_UUID_2)

@@ -9,8 +9,8 @@ doc {
 	title "物理网卡lldp信息清单"
 
 	field {
-		name "interfaceUuid"
-		desc "物理网口Uuid"
+		name "lldpUuid"
+		desc "Lldp UUID"
 		type "String"
 		since "5.0.0"
 	}

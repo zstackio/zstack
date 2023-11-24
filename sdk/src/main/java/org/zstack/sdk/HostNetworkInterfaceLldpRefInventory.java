@@ -4,12 +4,12 @@ package org.zstack.sdk;
 
 public class HostNetworkInterfaceLldpRefInventory  {
 
-    public java.lang.String interfaceUuid;
-    public void setInterfaceUuid(java.lang.String interfaceUuid) {
-        this.interfaceUuid = interfaceUuid;
+    public java.lang.String lldpUuid;
+    public void setLldpUuid(java.lang.String lldpUuid) {
+        this.lldpUuid = lldpUuid;
     }
-    public java.lang.String getInterfaceUuid() {
-        return this.interfaceUuid;
+    public java.lang.String getLldpUuid() {
+        return this.lldpUuid;
     }
 
     public java.lang.String chassisId;
