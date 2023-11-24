@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostKernelInterfaceVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkHostKernelInterfaceVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fkHostKernelInterfaceVOL2NetworkVO` FOREIGN KEY (`l2NetworkUuid`) REFERENCES L2NetworkEO (`uuid`) ON DELETE CASCADE
+    CONSTRAINT `fkHostKernelInterfaceVOL2NetworkVO` FOREIGN KEY (`l2NetworkUuid`) REFERENCES L2NetworkEO (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkHostKernelInterfaceVOL3NetworkVO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES L3NetworkEO (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`HostKernelInterfaceUsedIpVO` (
