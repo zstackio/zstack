@@ -1537,7 +1537,7 @@
   {
     "raw": "Disk and ecs instances must be in the same zone",
     "en_US": "Disk and ecs instances must be in the same zone",
-    "zh_CN": "云盘和云主机必须在相同的数据中心下",
+    "zh_CN": "云盘和云主机必须在相同的区域下",
     "arguments": [],
     "line": 126,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
@@ -1688,7 +1688,7 @@
   {
     "raw": "build system[uuid: %s] has been attached to zone[uuid: %s]",
     "en_US": "build system[uuid: {0}] has been attached to zone[uuid: {1}]",
-    "zh_CN": "生成系统[uuid：{0}]已附加到数据中心[uuid：{1}]",
+    "zh_CN": "生成系统[uuid：{0}]已附加到区域[uuid：{1}]",
     "arguments": [
       "msg.getBuildSystemUuid()",
       "msg.getZoneUuid()"
@@ -1699,7 +1699,7 @@
   {
     "raw": "build system[uuid: %s] has not been attached to zone[uuid: %s]",
     "en_US": "build system[uuid: {0}] has not been attached to zone[uuid: {1}]",
-    "zh_CN": "生成系统[uuid：{0}]尚未附加到数据中心[uuid：{1}]",
+    "zh_CN": "生成系统[uuid：{0}]尚未附加到区域[uuid：{1}]",
     "arguments": [
       "msg.getBuildSystemUuid()",
       "msg.getZoneUuid()"
@@ -2827,7 +2827,7 @@
   {
     "raw": "cluster[uuid:%s] and pxeserver[uuid:%s] don\u0027t belong to one zone",
     "en_US": "cluster[uuid:{0}] and pxeserver[uuid:{1}] don\u0027t belong to one zone",
-    "zh_CN": "裸金属集群[uuid:{0}]和部署服务器[uuid:{1}]不属于同一个数据中心",
+    "zh_CN": "裸金属集群[uuid:{0}]和部署服务器[uuid:{1}]不属于同一个区域",
     "arguments": [
       "msg.getClusterUuid()",
       "msg.getPxeServerUuid()"
@@ -3899,7 +3899,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] is not in the same zone as cluster[uuid:%s]",
     "en_US": "baremetal2 gateway[uuid:{0}] is not in the same zone as cluster[uuid:{1}]",
-    "zh_CN": "Baremetal2网关[uuid：{0}]与群集[uuid：{1}]不在同一个数据中心中",
+    "zh_CN": "Baremetal2网关[uuid：{0}]与群集[uuid：{1}]不在同一个区域中",
     "arguments": [
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
@@ -4429,7 +4429,7 @@
   {
     "raw": "zone[uuid:%s] is specified but it\u0027s not Enabled, can not create baremetal2 instance from it",
     "en_US": "zone[uuid:{0}] is specified but it\u0027s not Enabled, can not create baremetal2 instance from it",
-    "zh_CN": "数据中心[uuid：{0}]已指定但未启用，无法从中创建BareMetal2实例",
+    "zh_CN": "区域[uuid：{0}]已指定但未启用，无法从中创建BareMetal2实例",
     "arguments": [
       "msg.getZoneUuid()"
     ],
@@ -4627,7 +4627,7 @@
   {
     "raw": "cannot decide which zone the baremetal2 instance should be created in",
     "en_US": "cannot decide which zone the baremetal2 instance should be created in",
-    "zh_CN": "无法确定应在哪个数据中心中创建BareMetal2实例",
+    "zh_CN": "无法确定应在哪个区域中创建BareMetal2实例",
     "arguments": [],
     "line": 890,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
@@ -4751,7 +4751,7 @@
   {
     "raw": "cannot attach baremetal2 provision network[uuid:%s] to cluster[uuid:%s] because they are not in the same zone",
     "en_US": "cannot attach baremetal2 provision network[uuid:{0}] to cluster[uuid:{1}] because they are not in the same zone",
-    "zh_CN": "无法将BareMetal2配置网络[uuid：{0}]附加到群集[uuid：{1}]，因为它们不在同一数据中心中",
+    "zh_CN": "无法将BareMetal2配置网络[uuid：{0}]附加到群集[uuid：{1}]，因为它们不在同一区域中",
     "arguments": [
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
@@ -5907,7 +5907,7 @@
   {
     "raw": "zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true",
     "en_US": "zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true",
-    "zh_CN": "数据中心uuid，集群uuid,物理机uuid必须有一个不为空，或者全部都填写",
+    "zh_CN": "区域uuid，集群uuid,物理机uuid必须有一个不为空，或者全部都填写",
     "arguments": [],
     "line": 75,
     "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorApiInterceptor.java"
@@ -6032,7 +6032,7 @@
   {
     "raw": "no host found in zones[uuids:%s] that attaches to backup storage where image[%s] is on",
     "en_US": "no host found in zones[uuids:{0}] that attaches to backup storage where image[{1}] is on",
-    "zh_CN": "在数据中心[uuid：{0}]中找不到连接到镜像[{1}]所在的备份存储的物理机",
+    "zh_CN": "在区域[uuid：{0}]中找不到连接到镜像[{1}]所在的备份存储的物理机",
     "arguments": [
       "zoneUuids",
       "spec.getImage().getUuid()"
@@ -7429,7 +7429,7 @@
   {
     "raw": "cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the iso[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is running\\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经挂载到数据中心中的任何运行状态的云主机[name: {2}, uuid:{3}]上；\\n2. 如果镜像服务器不是处于连接状态，请尝试重连",
+    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经挂载到区域中的任何运行状态的云主机[name: {2}, uuid:{3}]上；\\n2. 如果镜像服务器不是处于连接状态，请尝试重连",
     "arguments": [
       "iso.getUuid()",
       "host.getZoneUuid()",
@@ -8455,7 +8455,7 @@
   {
     "raw": "the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
     "en_US": "the image[uuid:{0}] is not on any backup storage that has been attached to the zone[uuid:{1}]",
-    "zh_CN": "镜像[uuid:{0}]不在任何加载到数据中心[uuid:{1}]的镜像服务器上",
+    "zh_CN": "镜像[uuid:{0}]不在任何加载到区域[uuid:{1}]的镜像服务器上",
     "arguments": [
       "msg.getImageUuid()",
       "msg.getZoneUuid()"
@@ -8477,7 +8477,7 @@
   {
     "raw": "the primary storages[uuids:%s] has not attached any cluster on the zone[uuid:%s]",
     "en_US": "the primary storages[uuids:{0}] has not attached any cluster on the zone[uuid:{1}]",
-    "zh_CN": "主存储[uuids:{0}]尚未加载数据中心[uuid:{1}]上的任何集群",
+    "zh_CN": "主存储[uuids:{0}]尚未加载区域[uuid:{1}]上的任何集群",
     "arguments": [
       "psUuids",
       "zoneUuid"
@@ -9143,7 +9143,7 @@
   {
     "raw": "unmatched zone detected, host[uuid: %s, zone uuid: %s]\u0027s zone is different from host sheduling rule group[uuid: %s, zone uuid: %s]",
     "en_US": "unmatched zone detected, host[uuid: {0}, zone uuid: {1}]\u0027s zone is different from host sheduling rule group[uuid: {2}, zone uuid: {3}]",
-    "zh_CN": "检测到不匹配的数据中心，物理机[uuid：{0}，数据中心uuid：{1}]的数据中心不同于物理机计划规则组[UUId：{2}，数据中心UUId：{3}]",
+    "zh_CN": "检测到不匹配的区域，物理机[uuid：{0}，区域uuid：{1}]的区域不同于物理机计划规则组[UUId：{2}，区域UUId：{3}]",
     "arguments": [
       "hostVO.getUuid()",
       "hostVO.getZoneUuid()",
@@ -9167,7 +9167,7 @@
   {
     "raw": "unmatched zone detected, vm[uuid: %s, zone uuid: %s]\u0027s zone is different from vm sheduling rule group[uuid: %s, zone uuid: %s]",
     "en_US": "unmatched zone detected, vm[uuid: {0}, zone uuid: {1}]\u0027s zone is different from vm sheduling rule group[uuid: {2}, zone uuid: {3}]",
-    "zh_CN": "检测到不匹配的数据中心，VM[uuid：{0}，数据中心uuid：{1}]的数据中心不同于VM调度规则组[UUId：{2}，数据中心UUId：{3}]",
+    "zh_CN": "检测到不匹配的区域，VM[uuid：{0}，区域uuid：{1}]的区域不同于VM调度规则组[UUId：{2}，区域UUId：{3}]",
     "arguments": [
       "vm.getUuid()",
       "vm.getZoneUuid()",
@@ -11487,7 +11487,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {1}, uuid:{2}] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经过载到数据中心中的云主机[name: {1}, uuid:{2}]中；\\n2. 如果镜像服务器不是处于连接状态，请尝试重连",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经过载到区域中的云主机[name: {1}, uuid:{2}]中；\\n2. 如果镜像服务器不是处于连接状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getName()",
@@ -11499,7 +11499,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经过载到数据中心中的云主机[name: {2}, uuid:{3}]中；\\n2. 如果镜像服务器不是处于Connected状态，请尝试重连",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经过载到区域中的云主机[name: {2}, uuid:{3}]中；\\n2. 如果镜像服务器不是处于Connected状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getZoneUuid()",
@@ -11512,7 +11512,7 @@
   {
     "raw": "no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",
     "en_US": "no backup storage attached to the zone[uuid:{0}] contains the ISO[uuid:{1}]",
-    "zh_CN": "没有包含着ISO[uuid:{1}]的镜像服务器添加到数据中心[uuid:{0}]",
+    "zh_CN": "没有包含着ISO[uuid:{1}]的镜像服务器添加到区域[uuid:{0}]",
     "arguments": [
       "zoneUuid",
       "isoImageUuid"
@@ -12196,7 +12196,7 @@
   {
     "raw": "regionId [%s] already created by ak [%s]",
     "en_US": "regionId [{0}] already created by ak [{1}]",
-    "zh_CN": "数据中心ID[{0}]已经被AccessKey[{1}]创建",
+    "zh_CN": "区域ID[{0}]已经被AccessKey[{1}]创建",
     "arguments": [
       "msg.getRegionId()",
       "ak"
@@ -12217,7 +12217,7 @@
   {
     "raw": "DataCenter [%s] is still in sync progress, please wait.",
     "en_US": "DataCenter [{0}] is still in sync progress, please wait.",
-    "zh_CN": "数据中心[{0}]仍在同步进程中，请稍后",
+    "zh_CN": "区域[{0}]仍在同步进程中，请稍后",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -12238,7 +12238,7 @@
   {
     "raw": "type [%s] is not matched datacenter type [%s]",
     "en_US": "type [{0}] is not matched datacenter type [{1}]",
-    "zh_CN": "类型[{0}]与数据中心类型[{1}]不匹配",
+    "zh_CN": "类型[{0}]与区域类型[{1}]不匹配",
     "arguments": [
       "type",
       "dvo.getDcType().toString()"
@@ -12275,7 +12275,7 @@
   {
     "raw": "router interface must be in the same datacenter, but ri[%s] is in dc[%s] and ri[%s] is in dc[%s]",
     "en_US": "router interface must be in the same datacenter, but ri[{0}] is in dc[{1}] and ri[{2}] is in dc[{3}]",
-    "zh_CN": "路由接口必须在相同的数据中心，但是接口[{0}]在数据中心[{1}]而接口[{2}]在数据中心[{3}]",
+    "zh_CN": "路由接口必须在相同的区域，但是接口[{0}]在区域[{1}]而接口[{2}]在区域[{3}]",
     "arguments": [
       "vbri.getUuid()",
       "vbri.getDataCenterUuid()",
@@ -12535,7 +12535,7 @@
   {
     "raw": "eip[%s] and ecs[%s] should be in the same dataCenter ",
     "en_US": "eip[{0}] and ecs[{1}] should be in the same dataCenter ",
-    "zh_CN": "弹性IP[{0}]和ECS云主机[{1}]应该在同一个数据中心",
+    "zh_CN": "弹性IP[{0}]和ECS云主机[{1}]应该在同一个区域",
     "arguments": [
       "msg.getEipUuid()",
       "msg.getEcsUuid()"
@@ -13354,7 +13354,7 @@
   {
     "raw": "cannot find zone[uuid:%s]",
     "en_US": "cannot find zone[uuid:{0}]",
-    "zh_CN": "找不到数据中心[uuid:{0}]",
+    "zh_CN": "找不到区域[uuid:{0}]",
     "arguments": [
       "inv.getValue()"
     ],
@@ -14420,7 +14420,7 @@
   {
     "raw": "Backup storage[uuids:%s] is not attached to any Zone",
     "en_US": "Backup storage[uuids:{0}] is not attached to any Zone",
-    "zh_CN": "备份存储[uuid：{0}]未连接到任何数据中心",
+    "zh_CN": "备份存储[uuid：{0}]未连接到任何区域",
     "arguments": [
       "bsUuid"
     ],
@@ -22763,7 +22763,7 @@
   {
     "raw": "management network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
     "en_US": "management network[uuid:{0}] is not in the same zone[uuid:{1}] this offering is going to create",
-    "zh_CN": "管理网络[uuid:{0}]和将要创建的规格不处于同一个数据中心（zone）[uuid:{1}]中",
+    "zh_CN": "管理网络[uuid:{0}]和将要创建的规格不处于同一个区域（zone）[uuid:{1}]中",
     "arguments": [
       "msg.getManagementNetworkUuid()",
       "msg.getZoneUuid()"
@@ -22782,7 +22782,7 @@
   {
     "raw": "public network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
     "en_US": "public network[uuid:{0}] is not in the same zone[uuid:{1}] this offering is going to create",
-    "zh_CN": "公共网络[uuid:{0}]和将要创建的规格不处于同一个数据中心（zone）[uuid:{1}]中",
+    "zh_CN": "公共网络[uuid:{0}]和将要创建的规格不处于同一个区域（zone）[uuid:{1}]中",
     "arguments": [
       "msg.getManagementNetworkUuid()",
       "msg.getZoneUuid()"
@@ -23049,7 +23049,7 @@
   {
     "raw": "found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network\u0027s public network[uuid:%s] is not the same to EIP[uuid:%s]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
     "en_US": "found a virtual router offering[uuid:{0}] for L3Network[uuid:{1}] in zone[uuid:{2}]; however, the network\u0027s public network[uuid:{3}] is not the same to EIP[uuid:{4}]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
-    "zh_CN": "在数据中心（zone）[uuid:{2}]上为三层网络[uuid:{1}]找到了云路由规格[uuid:{0}]；但是，其公共网络[uuid:{3}]和EIP[uuid:{4}]的公共网络不是同一个三层网络。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该三层网络指定一个特定的云路有规格",
+    "zh_CN": "在区域（zone）[uuid:{2}]上为三层网络[uuid:{1}]找到了云路由规格[uuid:{0}]；但是，其公共网络[uuid:{3}]和EIP[uuid:{4}]的公共网络不是同一个三层网络。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该三层网络指定一个特定的云路有规格",
     "arguments": [
       "offering.getUuid()",
       "l3inv.getUuid()",
@@ -23193,7 +23193,7 @@
   {
     "raw": "found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network\u0027s public network[uuid:%s] is not the same to PortForwarding rule[uuid:%s]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
     "en_US": "found a virtual router offering[uuid:{0}] for L3Network[uuid:{1}] in zone[uuid:{2}]; however, the network\u0027s public network[uuid:{3}] is not the same to PortForwarding rule[uuid:{4}]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
-    "zh_CN": "在数据中心（zone）[uuid:{2}]内为三层网络[uuid:{1}]找到了一个云路由规格[uuid:{0}]；然而，其网络的公共网络[uuid:{3}]和端口转发规则[uuid:{4}]的公共网络不一致。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该三层网络指定一个特定的云路有规格",
+    "zh_CN": "在区域（zone）[uuid:{2}]内为三层网络[uuid:{1}]找到了一个云路由规格[uuid:{0}]；然而，其网络的公共网络[uuid:{3}]和端口转发规则[uuid:{4}]的公共网络不一致。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该三层网络指定一个特定的云路有规格",
     "arguments": [
       "offering.getUuid()",
       "struct.getGuestL3Network().getUuid()",
@@ -23302,7 +23302,7 @@
   {
     "raw": "found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network\u0027s public network[uuid:%s] is not the same to VIP[uuid:%s]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
     "en_US": "found a virtual router offering[uuid:{0}] for L3Network[uuid:{1}] in zone[uuid:{2}]; however, the network\u0027s public network[uuid:{3}] is not the same to VIP[uuid:{4}]\u0027s; you may need to use system tag guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
-    "zh_CN": "在数据中心（zone）[uuid:{2}]内为三层网络[uuid:{1}]找到了一个云路由规格[uuid:{0}]；然而，其网络的公共网络[uuid:{3}]和VIP[uuid:{4}]的公共网络不一致。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该三层网络指定一个特定的云路有规格",
+    "zh_CN": "在区域（zone）[uuid:{2}]内为三层网络[uuid:{1}]找到了一个云路由规格[uuid:{0}]；然而，其网络的公共网络[uuid:{3}]和VIP[uuid:{4}]的公共网络不一致。你可能需要使用系统标签[guestL3Network::l3NetworkUuid]为该三层网络指定一个特定的云路有规格",
     "arguments": [
       "offering.getUuid()",
       "s.getL3Network().getUuid()",
@@ -25220,7 +25220,7 @@
   {
     "raw": "The network[%s] have been added into the virtual routerArea[%s]",
     "en_US": "The network[{0}] have been added into the virtual routerArea[{1}]",
-    "zh_CN": "网络[{0}]已添加到虚拟路由器数据中心[{1}]",
+    "zh_CN": "网络[{0}]已添加到虚拟路由器区域[{1}]",
     "arguments": [
       "vo.getL3NetworkUuid()",
       "vo.getRouterAreaUuid()"
@@ -29460,7 +29460,7 @@
   {
     "raw": "primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone",
     "en_US": "primary storage[uuid:{0}] and cluster[uuid:{1}] are not in the same zone",
-    "zh_CN": "主存储[uuid:{0}]和集群[uuid:{1}]不在同一个数据中心内",
+    "zh_CN": "主存储[uuid:{0}]和集群[uuid:{1}]不在同一个区域内",
     "arguments": [
       "msg.getPrimaryStorageUuid()",
       "msg.getClusterUuid()"
@@ -29511,7 +29511,7 @@
   {
     "raw": "backup storage[uuid:%s] is not attached to zone[uuid:%s] the primary storage[uuid:%s] belongs to",
     "en_US": "backup storage[uuid:{0}] is not attached to zone[uuid:{1}] the primary storage[uuid:{2}] belongs to",
-    "zh_CN": "镜像服务器[uuid:{0}]没有加载到主存储[uuid:{2}]所在的数据中心[uuid:{1}]",
+    "zh_CN": "镜像服务器[uuid:{0}]没有加载到主存储[uuid:{2}]所在的区域[uuid:{1}]",
     "arguments": [
       "bsUuid",
       "self.getZoneUuid()",
@@ -29857,7 +29857,7 @@
   {
     "raw": "fail to get access zone\u0027s subnet because %s",
     "en_US": "fail to get access zone\u0027s subnet because {0}",
-    "zh_CN": "无法获取访问数据中心的子网，因为{0}",
+    "zh_CN": "无法获取访问区域的子网，因为{0}",
     "arguments": [
       "queryAccessZoneSubnetRsp.getDetail_err_msg()"
     ],
@@ -30975,7 +30975,7 @@
   {
     "raw": "no local primary storage in zone[uuid:%s] can satisfy conditions[state: %s, status: %s] or contain hosts satisfying conditions[state: %s, status: %s, size \u003e %s bytes]",
     "en_US": "no local primary storage in zone[uuid:{0}] can satisfy conditions[state: {1}, status: {2}] or contain hosts satisfying conditions[state: {3}, status: {4}, size \u003e {5} bytes]",
-    "zh_CN": "数据中心[uuid：{0}]中的本地主存储不能满足条件[状态：{1}，状态：{2}]，也不包含满足条件[状态：{3}，状态：[4}，大小\u003e{5}字节]的物理机",
+    "zh_CN": "区域[uuid：{0}]中的本地主存储不能满足条件[状态：{1}，状态：{2}]，也不包含满足条件[状态：{3}，状态：[4}，大小\u003e{5}字节]的物理机",
     "arguments": [
       "spec.getRequiredZoneUuid()",
       "PrimaryStorageState.Enabled",
@@ -31361,7 +31361,7 @@
   {
     "raw": "there has been a nfs primary storage having url as %s in zone[uuid:%s]",
     "en_US": "there has been a nfs primary storage having url as {0} in zone[uuid:{1}]",
-    "zh_CN": "数据中心[uuid:{1}]内已经存在 url 为 {0} 的 NFS 主存储",
+    "zh_CN": "区域[uuid:{1}]内已经存在 url 为 {0} 的 NFS 主存储",
     "arguments": [
       "url",
       "zoneUuid"
@@ -32006,7 +32006,7 @@
   {
     "raw": "the image[uuid:%s, name: %s] is not available to download on any backup storage:\\n1. check if image is in status of Deleted\\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
     "en_US": "the image[uuid:{0}, name: {1}] is not available to download on any backup storage:\\n1. check if image is in status of Deleted\\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:{2}]",
-    "zh_CN": "不能从镜像服务器中下载镜像[uuid:%s, name: %s]\\n1.检查镜像是否处于被删除状态\\n2.检查镜像处于就绪状态的镜像服务器是否挂载到数据中心[uuid:{2}]",
+    "zh_CN": "不能从镜像服务器中下载镜像[uuid:%s, name: %s]\\n1.检查镜像是否处于被删除状态\\n2.检查镜像处于就绪状态的镜像服务器是否挂载到区域[uuid:{2}]",
     "arguments": [
       "img.getUuid()",
       "img.getName()",
@@ -32287,7 +32287,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. whether the backup storage is attached to the zone[uuid:%s]\\n2. whether the backup storage is in connected status; try to reconnect it if not",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. whether the backup storage is attached to the zone[uuid:{2}]\\n2. whether the backup storage is in connected status; try to reconnect it if not",
-    "zh_CN": "在所有的已连接数据中心[uuid:{1}]的镜像服务器未找到镜像[uuid:{0}]。建议进行如下检查: \\n1.镜像服务器是否连接到数据中心[uuid:{2}]\\n2.镜像服务器是否是已连接状态，如果不是尝试重新连接",
+    "zh_CN": "在所有的已连接区域[uuid:{1}]的镜像服务器未找到镜像[uuid:{0}]。建议进行如下检查: \\n1.镜像服务器是否连接到区域[uuid:{2}]\\n2.镜像服务器是否是已连接状态，如果不是尝试重新连接",
     "arguments": [
       "imageUuid",
       "zoneUuid",
@@ -33182,7 +33182,7 @@
   {
     "raw": "cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
     "en_US": "cannot find a backup storage on which the image[uuid:{0}] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:{1}] is",
-    "zh_CN": "无法找到一个镜像[uuid:{0}]所在的镜像服务器符合全部的下列条件: 状态启动[state:Enabled]，已连接[status:Connected]，被挂载到主存储[uuid:{1}]所在的数据中心中",
+    "zh_CN": "无法找到一个镜像[uuid:{0}]所在的镜像服务器符合全部的下列条件: 状态启动[state:Enabled]，已连接[status:Connected]，被挂载到主存储[uuid:{1}]所在的区域中",
     "arguments": [
       "template.getUuid()",
       "msg.getPrimaryStorageUuid()"
@@ -34371,7 +34371,7 @@
   {
     "raw": "zone[uuid:%s] is specified but it\u0027s Disabled, can not create vm from it",
     "en_US": "zone[uuid:{0}] is specified but it\u0027s Disabled, can not create vm from it",
-    "zh_CN": "数据中心[uuid:{0}]虽然被指定了但是处于未启用状态，不能从这上面创建云主机",
+    "zh_CN": "区域[uuid:{0}]虽然被指定了但是处于未启用状态，不能从这上面创建云主机",
     "arguments": [
       "msg.getZoneUuid()"
     ],
@@ -35488,7 +35488,7 @@
   {
     "raw": "no dataCenter found for datastore",
     "en_US": "no dataCenter found for datastore",
-    "zh_CN": "找不到主存储的数据中心",
+    "zh_CN": "找不到主存储的区域",
     "arguments": [
       "ds.getName()"
     ],

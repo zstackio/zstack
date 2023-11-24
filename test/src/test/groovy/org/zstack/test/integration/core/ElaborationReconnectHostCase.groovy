@@ -34,7 +34,7 @@ class ElaborationReconnectHostCase extends SubCase {
     void testElaboration() {
         def err = Platform.operr("Unable to reconnect host") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 无法重连主机。"
+        assert err.elaboration.trim() == "错误信息: 无法重连物理机。"
 
         def err1 = Platform.operr("failed to create bridge") as ErrorCode
         assert err1.elaboration == null
@@ -47,7 +47,7 @@ class ElaborationReconnectHostCase extends SubCase {
 
         def err4 = Platform.err(SysErrors.OPERATION_ERROR, err, "failed to create bridge") as ErrorCode
         assert err4.getElaboration() != null
-        assert err4.elaboration.trim() == "错误信息: 无法重连主机。"
+        assert err4.elaboration.trim() == "错误信息: 无法重连物理机。"
     }
 
 }

@@ -14,6 +14,7 @@ public interface RestConstants {
     String HEADER_REQUEST_IP = "X-Request-Ip";
     String HEADER_API_TIMEOUT = "X-API-Timeout";
     String HEADER_JOB_SUCCESS = "X-Job-Success";
+    String HEADER_JOB_BATCH = "X-Job-Batch";
     String HEADER_OAUTH = "OAuth";
     String HEADER_ACCESSKEY = "ZStack";
     String HEADER_DATE = "Date";

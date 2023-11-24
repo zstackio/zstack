@@ -63,21 +63,21 @@ class RegexElaborationCase extends SubCase {
         def err = Platform.operr("no host having cpu[%s], memory[%s bytes] found", 4, 8589934592) as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "找不到合适的主机来启动虚拟机，因为可以用于分配虚拟机的主机都没有足够的资源：CPU [4]，内存 [8589934592 字节]。"
+        assert err.messages.message_cn == "找不到合适的物理机来启动云主机，因为可以用于分配云主机的物理机都没有足够的资源：CPU [4]，内存 [8589934592 字节]。"
     }
 
     void testElaboration4() {
         def err = Platform.operr("no Connected hosts found in the [%s] candidate hosts having the hypervisor type [%s]", 4, "KVM") as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "找不到合适的主机来启动虚拟机，因为满足分配条件的 4 个主机都不是 KVM 的虚拟化类型。"
+        assert err.messages.message_cn == "找不到合适的物理机来启动云主机，因为满足分配条件的 4 个物理机都不是 KVM 的虚拟化类型。"
     }
 
     void testElaboration5() {
         def err = Platform.operr("no Connected hosts found in the [%s] candidate hosts", 2) as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "找不到合适的主机来启动虚拟机，因为满足分配条件的 2 个主机都不处于 Connected 状态。"
+        assert err.messages.message_cn == "找不到合适的物理机来启动云主机，因为满足分配条件的 2 个物理机都不处于 Connected 状态。"
     }
 
     void testElaboration6() {
@@ -101,7 +101,7 @@ class RegexElaborationCase extends SubCase {
         ErrorCode result = err(PrimaryStorageErrors.ATTACH_ERROR, errorCodes, errorCodes.getDetails())
 
         assert result.elaboration.trim().equals("错误信息: .*can not find vg .* and create vg with forceWipw=.*")
-        assert result.messages.message_cn.trim().equals("无法将主机上的共享块数据存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
+        assert result.messages.message_cn.trim().equals("无法将物理机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
         assert result.messages.message_en.trim().equals("Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again.")
 
         errCode1 = Platform.operr("operation error, because:.*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
@@ -113,8 +113,8 @@ class RegexElaborationCase extends SubCase {
         errorCodes.setCauses(causes)
 
         result = err(PrimaryStorageErrors.ATTACH_ERROR, errorCodes, errorCodes.getDetails())
-        assert result.elaboration.trim().equals("错误信息: 无法将主机上的共享块数据存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
-        assert result.messages.message_cn.trim().equals("无法将主机上的共享块数据存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
+        assert result.elaboration.trim().equals("错误信息: 无法将物理机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
+        assert result.messages.message_cn.trim().equals("无法将物理机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
         assert result.messages.message_en.trim().equals("Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again.")
 
     }
