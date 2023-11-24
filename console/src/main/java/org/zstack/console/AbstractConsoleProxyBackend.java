@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -326,6 +327,31 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         }
     }
 
+    @Override
+    public void deactivateConsoleProxy(final VmInstanceInventory vm, final Completion completion) {
+        final ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class).eq(ConsoleProxyVO_.vmInstanceUuid, vm.getUuid())
+                .eq(ConsoleProxyVO_.status, ConsoleProxyStatus.Active).find();
+        ConsoleProxy proxy = getConsoleProxy(vm, vo);
+        proxy.deleteProxy(vm, new Completion(completion) {
+            @Override
+            public void success() {
+                vo.setStatus(ConsoleProxyStatus.Inactive);
+                dbf.updateAndRefresh(vo);
+                logger.debug(String.format("deactivate a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s",
+                        vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort()));
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DeleteConsoleProxyGcJob gc = new DeleteConsoleProxyGcJob();
+                gc.NAME = String.format("deactivate-console-proxy-%s", vo.getUuid());
+                gc.consoleProxy = ConsoleProxyInventory.valueOf(vo);
+                gc.submit(ConsoleGlobalConfig.DELETE_CONSOLE_PROXY_RETRY_DELAY.value(Long.class), TimeUnit.SECONDS);
+                completion.fail(errorCode);
+            }
+        });
+    }
 
     private void deploySaltState() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
