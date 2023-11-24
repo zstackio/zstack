@@ -27,4 +27,6 @@ public interface ConsoleBackend {
     String returnServiceIdForConsoleAgentMsg(ConsoleProxyAgentMessage msg, String agentUuid);
 
     void handleMessage(Message msg);
+
+    void deactivateConsoleProxy(VmInstanceInventory vmInventory, Completion completion);
 }
