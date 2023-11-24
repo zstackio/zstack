@@ -327,7 +327,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             to.setInstallPath(vhost.getPath());
             return to;
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
-            String lunId = getVolIdFromPath(v.getInstallPath());
+            String lunId = v.getInstallPath().contains("@") ? getSnapIdFromPath(v.getInstallPath())
+                    : getVolIdFromPath(v.getInstallPath());
 
             String iscsiClientName = buildIscsiClientName(v);
             IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
