@@ -94,10 +94,6 @@ class GetLldpInfoCase extends SubCase {
 
     @Override
     void clean() {
-        SQL.New(HostNetworkInterfaceVO.class).hardDelete()
-        SQL.New(HostNetworkInterfaceLldpVO.class).hardDelete()
-        SQL.New(AccountResourceRefVO.class).hardDelete()
-        SQL.New(SharedResourceVO.class).hardDelete()
         env.delete()
     }
 
@@ -130,15 +126,7 @@ class GetLldpInfoCase extends SubCase {
         } as List<HostNetworkInterfaceLldpInventory>
 
         assert lldpMode.get(0).mode == "rx_only"
-
-//        HostNetworkInterfaceLldpVO lldpVO = new HostNetworkInterfaceLldpVO();
-//        lldpVO.setUuid(Platform.uuid)
-//        lldpVO.setInterfaceUuid(TEST_UUID)
-//        lldpVO.setMode("rx_only")
-//        lldpVO.setAccountUuid(currentEnvSpec.session.getAccountUuid())
-//        lldpVO.setResourceName("test")
-//        dbf.persist(lldpVO)
-
+        
         env.simulator(LldpConstant.GET_LLDP_INFO_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def reply = new LldpKvmAgentCommands.GetLldpInfoResponse()
             reply.lldpInfo = new LldpInfoStruct()

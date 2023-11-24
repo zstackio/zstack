@@ -89,10 +89,6 @@ class ChangeLldpModeCase extends SubCase {
 
     @Override
     void clean() {
-        SQL.New(HostNetworkInterfaceVO.class).hardDelete()
-        SQL.New(HostNetworkInterfaceLldpVO.class).hardDelete()
-        SQL.New(AccountResourceRefVO.class).hardDelete()
-        SQL.New(SharedResourceVO.class).hardDelete()
         env.delete()
     }
 

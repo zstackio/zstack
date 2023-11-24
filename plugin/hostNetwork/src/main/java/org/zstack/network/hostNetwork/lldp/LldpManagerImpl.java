@@ -7,12 +7,11 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.Platform;
+import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.HostAfterConnectedExtensionPoint;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.*;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
-public class LldpManagerImpl extends AbstractService implements HostAfterConnectedExtensionPoint {
+public class LldpManagerImpl extends AbstractService implements HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LldpManagerImpl.class);
 
     @Autowired
@@ -288,6 +287,31 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                 logger.debug(String.format("fail to apply the lldp configuration after host reconnected:%s", errorCode.toString()));
             }
         });
+    }
+
+    @Override
+    public void preDeleteHost(HostInventory inventory) throws HostException {
+
+    }
+
+    @Override
+    public void beforeDeleteHost(HostInventory inventory) {
+        List<String> interfaceUuidsOnHost = Q.New(HostNetworkInterfaceVO.class)
+                .select(HostNetworkInterfaceVO_.uuid)
+                .eq(HostNetworkInterfaceVO_.hostUuid, inventory.getUuid())
+                .listValues();
+        List<String> lldpUuidsOnHost = Q.New(HostNetworkInterfaceLldpVO.class)
+                .select(HostNetworkInterfaceLldpVO_.uuid)
+                .in(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuidsOnHost)
+                .listValues();
+        SQL.New(HostNetworkInterfaceLldpVO.class)
+                .in(HostNetworkInterfaceLldpVO_.uuid, lldpUuidsOnHost)
+                .hardDelete();
+    }
+
+    @Override
+    public void afterDeleteHost(HostInventory inventory) {
+
     }
 
     @Override

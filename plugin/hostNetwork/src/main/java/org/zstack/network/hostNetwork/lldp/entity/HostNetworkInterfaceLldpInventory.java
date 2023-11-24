@@ -3,7 +3,6 @@ package org.zstack.network.hostNetwork.lldp.entity;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
-import org.zstack.network.hostNetwork.HostNetworkInterfaceInventory;
 
 import javax.persistence.JoinColumn;
 import java.io.Serializable;

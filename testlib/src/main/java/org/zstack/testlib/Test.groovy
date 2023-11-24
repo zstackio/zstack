@@ -150,6 +150,7 @@ abstract class Test extends ApiHelper implements Retry {
             include("sdnController.xml")
             include("sugonSdnController.xml")
             include("TfPortAllocator.xml")
+            include("HostNetworkManager.xml")
         }
     }
 
