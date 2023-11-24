@@ -2496,7 +2496,7 @@ public class LoadBalancerBase {
                                 if(server.containsKey("weight")){
                                     struct.getServerIpWeight().put(server.get("ipAddress"), Long.valueOf(server.get("weight")));
                                 }else{
-                                    struct.getVmNicWeight().put(server.get("ipAddress"), LoadBalancerConstants.BALANCER_WEIGHT_default);
+                                    struct.getServerIpWeight().put(server.get("ipAddress"), LoadBalancerConstants.BALANCER_WEIGHT_default);
                                 }
                             }
                         }
