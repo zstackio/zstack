@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.timeout.Timer;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
@@ -67,6 +68,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     protected AnsibleFacade asf;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected Timer timer;
 
     protected static final String ANSIBLE_PLAYBOOK_NAME = "consoleproxy.py";
 
@@ -133,6 +136,12 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
             return;
         }
 
+        if (timer.getCurrentTimestamp().after(vo.getExpiredDate())) {
+            dbf.remove(vo);
+            ConsoleProxy proxy = getConsoleProxy(session, vm);
+            establishNewProxy(proxy, vm, complete);
+            return;
+        }
 
         String hostIp = getHostIp(vm);
         if (hostIp == null) {
