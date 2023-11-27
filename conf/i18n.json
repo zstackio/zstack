@@ -8168,6 +8168,26 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
+    "raw": "Cannot set the following properties at the same time: %s",
+    "en_US": "Cannot set the following properties at the same time: {0}",
+    "zh_CN": "不能同时设置以下属性：{0}",
+    "arguments": [
+      "errorMsg"
+    ],
+    "line": 1349,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
+    "raw": "Need to set one of the following properties, and can only be one of them: %s",
+    "en_US": "Need to set one of the following properties, and can only be one of them: {0}",
+    "zh_CN": "需要设置以下属性之一，且只能是其中一个：{0}",
+    "arguments": [
+      "properties"
+    ],
+    "line": 1357,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
     "raw": "cannot create vm instance from a shareable volume.",
     "en_US": "cannot create vm instance from a shareable volume.",
     "zh_CN": "无法从可共享云盘创建VM实例。",
@@ -36639,7 +36659,9 @@
     "raw": "destination[%s] can not has blackHole route and static route at same time",
     "en_US": "destination[{0}] can not has blackHole route and static route at same time",
     "zh_CN": "目标[{0}]不能同时具有黑洞路由和静态路由",
-    "arguments": [],
+    "arguments": [
+      "msg.getDestination()"
+    ],
     "line": 115,
     "fileName": "src/main/java/org/zstack/vrouterRoute/VRouterRouteApiInterceptor.java"
   },

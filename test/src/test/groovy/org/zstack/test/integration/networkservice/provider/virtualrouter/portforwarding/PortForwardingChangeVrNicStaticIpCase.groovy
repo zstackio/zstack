@@ -11,6 +11,7 @@ import org.zstack.network.service.portforwarding.PortForwardingRuleVO_
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.sdk.FreeIpInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PortForwardingRuleInventory
 import org.zstack.sdk.VipInventory
@@ -184,10 +185,14 @@ class PortForwardingChangeVrNicStaticIpCase extends SubCase {
             uuid = vm.uuid
         }
 
+        def freeIps = getFreeIpOfL3Network {
+            l3NetworkUuid = l3.uuid
+        } as List<FreeIpInventory>
+
         setVmStaticIp {
             vmInstanceUuid = vm.uuid
             l3NetworkUuid = l3.uuid
-            ip = "192.168.100.15"
+            ip = freeIps.get(0).ip
         }
 
         vm = queryVmInstance {
