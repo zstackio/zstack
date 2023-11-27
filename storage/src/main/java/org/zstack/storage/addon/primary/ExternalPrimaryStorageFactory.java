@@ -59,6 +59,10 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     @Autowired
     protected CloudBus bus;
 
+    static {
+        type.setSupportHeartbeatFile(true);
+    }
+
     @Override
     public boolean start() {
         pluginRgty.saveExtensionAsMap(ExternalPrimaryStorageSvcBuilder.class, ExternalPrimaryStorageSvcBuilder::getIdentity);

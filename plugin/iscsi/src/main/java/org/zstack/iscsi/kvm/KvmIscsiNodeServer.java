@@ -1,32 +1,56 @@
 package org.zstack.iscsi.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.ActiveVolumeTO;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
+import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeProtocolCapability;
+import org.zstack.iscsi.kvm.KvmIscsiCommands.*;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
+import org.zstack.utils.DebugUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
+
 public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint,
         KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
-        KVMPreAttachIsoExtensionPoint {
+        KVMPreAttachIsoExtensionPoint, KvmSetupSelfFencerExtensionPoint {
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
+    @Autowired
     private PluginRegistry pluginRgty;
+
+    @Autowired
+    private CloudBus bus;
+
+    @Autowired
+    private DatabaseFacade dbf;
 
     private static VolumeProtocolCapability capability = VolumeProtocolCapability
             .register(VolumeProtocol.iSCSI.name(), KVMConstant.KVM_HYPERVISOR_TYPE);
@@ -161,4 +185,184 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint,
     public void preAttachIsoExtensionPoint(KVMHostInventory host, KVMAgentCommands.AttachIsoCmd cmd) {
         cmd.iso = convertIsoIfNeeded(cmd.iso, host);
     }
+
+    // TODO hardcode, move it
+    @Override
+    public String kvmSetupSelfFencerStorageType() {
+        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE;
+    }
+
+    @Override
+    public void kvmSetupSelfFencer(KvmSetupSelfFencerParam param, Completion completion) {
+        PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(param.getPrimaryStorage().getUuid());
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("setup-self-fencer-for-external-primary-storage-%s", param.getPrimaryStorage().getUuid()));
+        chain.then(new ShareFlow() {
+            HostInventory host = HostInventory.valueOf(dbf.findByUuid(param.getHostUuid(), HostVO.class));
+            HeartbeatVolumeTO heartbeatVol;
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(trigger) {
+                            @Override
+                            public void success(HeartbeatVolumeTO vol) {
+                                heartbeatVol = vol;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
+                        cmd.interval = param.getInterval();
+                        cmd.maxAttempts = param.getMaxAttempts();
+                        cmd.coveringPaths = heartbeatVol.getCoveringPaths();
+                        cmd.heartbeatUrl = heartbeatVol.getInstallPath();
+                        cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
+                        cmd.hostId = heartbeatVol.getHostId();
+                        cmd.heartbeatRequiredSpace = heartbeatVol.getHeartbeatRequiredSpace();
+                        cmd.hostUuid = param.getHostUuid();
+                        cmd.strategy = param.getStrategy();
+                        cmd.uuid = param.getPrimaryStorage().getUuid();
+                        cmd.fencers = param.getFencers();
+
+                        httpCall(KvmIscsiCommands.ISCSI_SELF_FENCER_PATH, param.getHostUuid(), cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
+                            @Override
+                            public void success(AgentRsp rsp) {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    @Override
+    public void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion) {
+        PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(param.getPrimaryStorage().getUuid());
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("setup-self-fencer-for-external-primary-storage-%s", param.getPrimaryStorage().getUuid()));
+        chain.then(new ShareFlow() {
+            HostInventory host = HostInventory.valueOf(dbf.findByUuid(param.getHostUuid(), HostVO.class));
+            HeartbeatVolumeTO heartbeatVol;
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(trigger) {
+                            @Override
+                            public void success(HeartbeatVolumeTO vol) {
+                                heartbeatVol = vol;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        KvmCancelSelfFencerCmd cmd = new KvmCancelSelfFencerCmd();
+                        cmd.installPath = heartbeatVol.getInstallPath();
+                        cmd.hostId = heartbeatVol.getHostId();
+                        cmd.hostUuid = param.getHostUuid();
+                        cmd.uuid = param.getPrimaryStorage().getUuid();
+
+                        httpCall(KvmIscsiCommands.CANCEL_ISCSI_SELF_FENCER_PATH, param.getHostUuid(), cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
+                            @Override
+                            public void success(AgentRsp rsp) {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    protected <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, final Class<T> respType, final ReturnValueCompletion<T> completion) {
+        httpCall(path, hostUuid, cmd, false, respType, completion);
+    }
+
+    protected <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, boolean noCheckStatus, final Class<T> respType, final ReturnValueCompletion<T> completion) {
+        DebugUtils.Assert(hostUuid != null, "Host must be set here");
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setPath(path);
+        msg.setNoStatusCheck(noCheckStatus);
+        msg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+                KVMHostAsyncHttpCallReply rep = reply.castReply();
+                final T rsp = rep.toResponse(respType);
+                if (!rsp.success) {
+                    completion.fail(operr("operation error, because:%s", rsp.error));
+                    return;
+                }
+                completion.success(rsp);
+            }
+        });
+    }
+
 }

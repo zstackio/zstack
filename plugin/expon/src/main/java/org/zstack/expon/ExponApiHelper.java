@@ -606,11 +606,11 @@ public class ExponApiHelper {
         return rsp.getGateways();
     }
 
-    public void addVolumeToIscsiClientGroup(String volId, String clientId, String targetId, boolean shareable) {
+    public void addVolumeToIscsiClientGroup(String volId, String clientId, String targetId, boolean readonly) {
         ChangeVolumeInIscsiClientGroupRequest req = new ChangeVolumeInIscsiClientGroupRequest();
         req.setId(clientId);
         req.setAction(ExponAction.add.name());
-        req.setLuns(Collections.singletonList(new LunResource(volId, "volume", shareable)));
+        req.setLuns(Collections.singletonList(new LunResource(volId, "volume", readonly)));
         req.setGateways(Collections.singletonList(targetId));
         callErrorOut(req, ChangeVolumeInIscsiClientGroupResponse.class);
     }
