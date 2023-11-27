@@ -83,8 +83,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
     protected abstract boolean isAgentConnected();
 
-    private void establishNewProxy(ConsoleProxy proxy, SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
-        proxy.establishProxy(session, vm, new ReturnValueCompletion<ConsoleProxyInventory>(complete) {
+    private void establishNewProxy(ConsoleProxy proxy, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
+        proxy.establishProxy(vm, new ReturnValueCompletion<ConsoleProxyInventory>(complete) {
             @Override
             public void success(ConsoleProxyInventory ret) {
                 ConsoleProxyVO vo = new ConsoleProxyVO();
@@ -132,7 +132,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         if (vo == null) {
             // new console proxy
             ConsoleProxy proxy = getConsoleProxy(session, vm);
-            establishNewProxy(proxy, session, vm, complete);
+            establishNewProxy(proxy, vm, complete);
             return;
         }
 
@@ -152,7 +152,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
             // vm is on the same host
             final ConsoleProxy proxy = getConsoleProxy(vm, vo);
             dbf.remove(vo);
-            establishNewProxy(proxy, session, vm, complete);
+            establishNewProxy(proxy, vm, complete);
         } else {
             // vm is on another host
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -187,7 +187,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             ConsoleProxy proxy = getConsoleProxy(session, vm);
-                            establishNewProxy(proxy, session, vm, new ReturnValueCompletion<ConsoleInventory>(trigger) {
+                            establishNewProxy(proxy, vm, new ReturnValueCompletion<ConsoleInventory>(trigger) {
                                 @Override
                                 public void success(ConsoleInventory returnValue) {
                                     ret = returnValue;
