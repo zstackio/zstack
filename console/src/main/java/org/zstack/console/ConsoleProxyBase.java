@@ -158,7 +158,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
     }
 
     @Override
-    public void establishProxy(final SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
+    public void establishProxy(final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
         ConsoleHypervisorBackend bkd = consoleMgr.getHypervisorConsoleBackend(HypervisorType.valueOf(vm.getHypervisorType()));
         bkd.generateConsoleUrl(vm, new ReturnValueCompletion<ConsoleUrl>(completion) {
 
