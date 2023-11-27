@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostKernelInterfaceUsedIpVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `hostKernelInterfaceUuid` varchar(32) NOT NULL,
     PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkHostKernelInterfaceUsedIpVOUsedIpVO` FOREIGN KEY (`uuid`) REFERENCES UsedIpVO (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkHostKernelInterfaceUsedIpVOHostKernelInterfaceVO` FOREIGN KEY (`hostKernelInterfaceUuid`) REFERENCES HostKernelInterfaceVO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
