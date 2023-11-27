@@ -4364,9 +4364,7 @@ public class KVMHost extends HostBase implements Host {
                                                 return;
                                             }
 
-                                            if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-                                                changeConnectionState(HostStatusEvent.connected);
-                                            } else {
+                                            if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
                                                 changeConnectionState(HostStatusEvent.disconnected);
                                                 new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
                                             }

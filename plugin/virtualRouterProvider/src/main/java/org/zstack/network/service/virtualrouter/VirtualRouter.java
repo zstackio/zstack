@@ -216,10 +216,6 @@ public class VirtualRouter extends ApplianceVmBase {
                 } else {
                     // update vyos agent version when open grayScaleUpgrade
                     upgradeChecker.updateAgentVersion(self.getUuid(), VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, new VirtualRouterMetadataOperator().getManagementVersion(), ret.getVersion());
-
-                    if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class) && !new VirtualRouterMetadataOperator().getManagementVersion().equals(ret.getVersion())) {
-                        changeApplianceVmStatus(ApplianceVmStatus.Connected);
-                    }
                     
                     boolean connected = self.getUuid().equals(ret.getUuid());
                     if (!connected) {
