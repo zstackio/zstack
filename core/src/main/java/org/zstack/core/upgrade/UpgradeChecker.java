@@ -88,8 +88,8 @@ public class UpgradeChecker implements ManagementNodeReadyExtensionPoint {
 
         return false;
     }
-    
-    public void updateAgentVersion(String agentUuid, String agentType,String expectVersion, String currentVersion){
+
+    public void updateAgentVersion(String agentUuid, String agentType, String expectVersion, String currentVersion) {
         if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
             return;
         }
@@ -102,6 +102,10 @@ public class UpgradeChecker implements ManagementNodeReadyExtensionPoint {
             agentVersionVO.setCurrentVersion(currentVersion);
             agentVersionVO.setExpectVersion(expectVersion);
             dbf.persist(agentVersionVO);
+            return;
+        }
+        
+        if (Objects.equals(agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion())) {
             return;
         }
 
