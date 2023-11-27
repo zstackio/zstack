@@ -139,7 +139,7 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
-            <artifactId>hostNetwork</artifactId>
+            <artifactId>hostNetworkInterface</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

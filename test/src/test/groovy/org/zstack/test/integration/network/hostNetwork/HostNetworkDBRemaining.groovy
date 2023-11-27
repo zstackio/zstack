@@ -1,7 +1,7 @@
 package org.zstack.test.integration.network.hostNetwork
 
 import org.zstack.header.identity.AccountResourceRefVO
-import org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO
+import org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpVO
 import org.zstack.testlib.AllowedDBRemaining
 
 class HostNetworkDBRemaining extends AllowedDBRemaining {

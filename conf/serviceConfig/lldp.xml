@@ -4,15 +4,15 @@
     <interceptor>LldpApiInterceptor</interceptor>
 
     <message>
-        <name>org.zstack.network.hostNetwork.lldp.api.APIChangeHostNetworkInterfaceLldpModeMsg</name>
+        <name>org.zstack.network.hostNetworkInterface.lldp.api.APIChangeHostNetworkInterfaceLldpModeMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.network.hostNetwork.lldp.api.APIGetHostNetworkInterfaceLldpMsg</name>
+        <name>org.zstack.network.hostNetworkInterface.lldp.api.APIGetHostNetworkInterfaceLldpMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.network.hostNetwork.lldp.api.APIQueryHostNetworkInterfaceLldpMsg</name>
+        <name>org.zstack.network.hostNetworkInterface.lldp.api.APIQueryHostNetworkInterfaceLldpMsg</name>
         <serviceId>query</serviceId>
     </message>
 </service>
