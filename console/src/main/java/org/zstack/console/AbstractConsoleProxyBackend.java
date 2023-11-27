@@ -151,9 +151,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
         if (vo.getTargetHostname().equals(hostIp)) {
             // vm is on the same host
-            final ConsoleProxy proxy = getConsoleProxy(vm, vo);
-            dbf.remove(vo);
-            establishNewProxy(proxy, vm, complete);
+            updateConsoleProxy(vm, vo, complete);
         } else {
             // vm is on another host
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
