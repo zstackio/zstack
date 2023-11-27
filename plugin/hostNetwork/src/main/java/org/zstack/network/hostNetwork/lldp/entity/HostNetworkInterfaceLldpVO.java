@@ -1,7 +1,6 @@
 package org.zstack.network.hostNetwork.lldp.entity;
 
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.Index;
