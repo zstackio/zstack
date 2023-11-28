@@ -21,7 +21,7 @@ public class DeleteNvmfTargetRequest extends ExponRequest {
     private String nvmfId;
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 

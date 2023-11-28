@@ -11,8 +11,7 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/volumes/{volId}/qos",
         method = HttpMethod.PUT,
-        responseClass = SetVolumeQosResponse.class,
-        sync = false
+        responseClass = SetVolumeQosResponse.class
 )
 public class SetVolumeQosRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
@@ -24,7 +23,7 @@ public class SetVolumeQosRequest extends ExponRequest {
 
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
