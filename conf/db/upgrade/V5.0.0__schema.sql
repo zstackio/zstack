@@ -1,0 +1,1 @@
+ALTER TABLE ConsoleProxyVO ADD COLUMN `expiredDate` timestamp NOT NULL;
