@@ -65,7 +65,7 @@ public class QueryHostNetworkInterfaceLldpAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/lldp/all";
+        info.path = "/hostNetworkInterface/lldp/all";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

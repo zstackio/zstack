@@ -85,7 +85,7 @@ public class GetHostNetworkInterfaceLldpAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/lldp/{interfaceUuid}/info";
+        info.path = "/hostNetworkInterface/lldp/{interfaceUuid}/info";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

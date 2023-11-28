@@ -94,7 +94,7 @@ public class ChangeHostNetworkInterfaceLldpModeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/lldp/actions";
+        info.path = "/hostNetworkInterface/lldp/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "changeHostNetworkInterfaceLldpMode";

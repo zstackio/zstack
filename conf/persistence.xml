@@ -61,8 +61,8 @@
         <class>org.zstack.header.network.l3.UsedIpVO</class>
         <class>org.zstack.header.network.l3.AddressPoolVO</class>
         <class>org.zstack.header.network.l3.NormalIpRangeVO</class>
-        <class>org.zstack.network.hostNetwork.HostNetworkBondingVO</class>
-        <class>org.zstack.network.hostNetwork.HostNetworkInterfaceVO</class>
+        <class>org.zstack.network.hostNetworkInterface.HostNetworkBondingVO</class>
+        <class>org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO</class>
         <class>org.zstack.network.service.vip.VipVO</class>
         <class>org.zstack.network.service.vip.VipNetworkServicesRefVO</class>
         <class>org.zstack.network.service.vip.VipPeerL3NetworkRefVO</class>
@@ -199,7 +199,7 @@
         <class>org.zstack.header.storage.primary.PrimaryStorageHistoricalUsageVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupHistoricalUsageVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostHistoricalUsageVO</class>
-        <class>org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpVO </class>
-        <class>org.zstack.network.hostNetwork.lldp.entity.HostNetworkInterfaceLldpRefVO</class>
+        <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpVO </class>
+        <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefVO</class>
     </persistence-unit>
 </persistence>
