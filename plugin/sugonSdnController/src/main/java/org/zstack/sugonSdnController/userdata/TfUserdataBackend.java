@@ -11,6 +11,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -372,12 +373,16 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
     }
 
     public static class BatchApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<UserdataTO> userdata;
+        @GrayVersion(value = "5.0.0")
         public boolean rebuild;
     }
 
     public static class ApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String hostUuid;
+        @GrayVersion(value = "5.0.0")
         public UserdataTO userdata;
     }
 
@@ -386,8 +391,11 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
     }
 
     public static class ReleaseUserdataCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String hostUuid;
+        @GrayVersion(value = "5.0.0")
         public String vmIp;
+        @GrayVersion(value = "5.0.0")
         public String vmUuid;
     }
 

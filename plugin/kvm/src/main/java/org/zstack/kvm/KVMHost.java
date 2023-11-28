@@ -31,10 +31,14 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.timeout.TimeHelper;
+import org.zstack.core.upgrade.UpgradeChecker;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.core.upgrade.AgentVersionVO;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterInventory;
@@ -158,6 +162,8 @@ public class KVMHost extends HostBase implements Host {
     private TimeHelper timeHelper;
     @Autowired
     private AccountManager accountMgr;
+    @Autowired
+    private UpgradeChecker upgradeChecker;
 
     private KVMHostContext context;
 
@@ -456,10 +462,12 @@ public class KVMHost extends HostBase implements Host {
         AgentCommand cmd;
         Class<T> responseClass;
         String commandStr;
+        String commandName;
 
-        public Http(String path, String cmd, Class<T> rspClz) {
+        public Http(String path, String cmd, String commandName, Class<T> rspClz) {
             this.path = path;
             this.commandStr = cmd;
+            this.commandName = commandName;
             this.responseClass = rspClz;
         }
 
@@ -467,6 +475,7 @@ public class KVMHost extends HostBase implements Host {
             this.path = path;
             this.cmd = cmd;
             this.responseClass = rspClz;
+            this.commandName = cmd.getClass().getName();
         }
 
         void call(ReturnValueCompletion<T> completion) {
@@ -474,6 +483,11 @@ public class KVMHost extends HostBase implements Host {
         }
 
         void call(String resourceUuid, ReturnValueCompletion<T> completion) {
+            if(checkHostKvmAgentChanges(commandName)){
+                completion.fail(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+                return;
+            }
+            
             Map<String, String> header = new HashMap<>();
             header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, resourceUuid == null ? self.getUuid() : resourceUuid);
             runBeforeAsyncJsonPostExts(header);
@@ -554,6 +568,22 @@ public class KVMHost extends HostBase implements Host {
         }
     }
 
+    private boolean checkHostKvmAgentChanges(String commandName){
+        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            return false;
+        }
+
+        AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
+        if (agentVersionVO == null) {
+            return true;
+        }
+        if(agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())){
+            return false;
+        }
+
+        return upgradeChecker.checkAgentHttpParamChanges(commandName);
+    }
+    
     @Override
     protected void handleApiMessage(APIMessage msg) {
         super.handleApiMessage(msg);
@@ -2344,6 +2374,11 @@ public class KVMHost extends HostBase implements Host {
         if (!msg.isNoStatusCheck()) {
             checkStatus();
         }
+        
+        if(checkHostKvmAgentChanges(msg.getCommandClassName())){
+            throw new OperationFailureException(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+        }
+        
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
         Map<String, String> headers = new HashMap<>();
@@ -2391,7 +2426,7 @@ public class KVMHost extends HostBase implements Host {
 
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
-        new Http<>(url, msg.getCommand(), LinkedHashMap.class)
+        new Http<>(url, msg.getCommand(), msg.getCommandClassName(), LinkedHashMap.class)
                 .call(new ReturnValueCompletion<LinkedHashMap>(msg, completion) {
             @Override
             public void success(LinkedHashMap ret) {
@@ -4497,9 +4532,10 @@ public class KVMHost extends HostBase implements Host {
             logger.debug("host status is %s, ignore version or host uuid changed issue");
             return;
         }
-
-        changeConnectionState(HostStatusEvent.disconnected);
-        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            changeConnectionState(HostStatusEvent.disconnected);
+            new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+        }
 
         ReconnectHostMsg rmsg = new ReconnectHostMsg();
         rmsg.setHostUuid(self.getUuid());
@@ -4617,6 +4653,9 @@ public class KVMHost extends HostBase implements Host {
                                     trigger.fail(operr("%s", ret.getError()));
                                     return;
                                 }
+
+                                // update host agent version when open grayScaleUpgrade
+                                upgradeChecker.updateAgentVersion(self.getUuid(), AnsibleConstant.KVM_AGENT_NAME, dbf.getDbVersion(), ret.getVersion());
 
                                 if (needReconnectHost(ret)) {
                                     // reconnect host require many steps which may influence the results
@@ -5388,6 +5427,10 @@ public class KVMHost extends HostBase implements Host {
                             public void success(Boolean run) {
                                 if (run != null) {
                                     deployed = run;
+                                }
+                                if (deployed) {
+                                    // update host agent version when open grayScaleUpgrade
+                                    upgradeChecker.updateAgentVersion(self.getUuid(), AnsibleConstant.KVM_AGENT_NAME, dbf.getDbVersion(), dbf.getDbVersion());
                                 }
                                 trigger.next();
                             }

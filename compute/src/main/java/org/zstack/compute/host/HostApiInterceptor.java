@@ -2,14 +2,12 @@ package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -17,9 +15,6 @@ import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
-import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -58,8 +53,6 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteHostMsg) msg);
         } else if (msg instanceof APIChangeHostStateMsg){
             validate((APIChangeHostStateMsg) msg);
-        } else if (msg instanceof APIReconnectHostMsg){
-            validate((APIReconnectHostMsg) msg);
         } else if (msg instanceof APIGetHostWebSshUrlMsg) {
             validate((APIGetHostWebSshUrlMsg) msg);
         }
@@ -113,19 +106,6 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
                 .findValue();
         if (hostStatus != HostStatus.Connected && msg.getStateEvent().equals(HostStateEvent.maintain.toString())){
             throw new ApiMessageInterceptionException(operr("can not maintain host[uuid:%s, status:%s]which is not Connected", msg.getHostUuid(), hostStatus));
-        }
-    }
-
-    private void validate(APIReconnectHostMsg msg) {
-        String hostUuid = msg.getHostUuid();
-        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            AgentVersionVO agentVersionVO = dbf.findByUuid(msg.getUuid(), AgentVersionVO.class);
-            if (agentVersionVO == null) {
-                agentVersionVO = new AgentVersionVO();
-                agentVersionVO.setUuid(hostUuid);
-                agentVersionVO.setAgentType("kvm-agent");
-                dbf.persist(agentVersionVO);
-            }
         }
     }
 }

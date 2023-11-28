@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -43,11 +44,17 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     public static final String DOWNLOAD_BIT_PATH = "/localstorage/sftp/download";
 
     public static class SftpDownloadBitsCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.0.0")
         private String sshKey;
+        @GrayVersion(value = "5.0.0")
         private String username;
+        @GrayVersion(value = "5.0.0")
         private String hostname;
+        @GrayVersion(value = "5.0.0")
         private int sshPort;
+        @GrayVersion(value = "5.0.0")
         private String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String primaryStorageInstallPath;
         public String getUsername() {
             return username;
@@ -99,12 +106,19 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     }
 
     public static class SftpUploadBitsCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext{
+        @GrayVersion(value = "5.0.0")
         private String primaryStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String backupStorageInstallPath;
+        @GrayVersion(value = "5.0.0")
         private String hostname;
+        @GrayVersion(value = "5.0.0")
         private String sshKey;
+        @GrayVersion(value = "5.0.0")
         private String username;
+        @GrayVersion(value = "5.0.0")
         private String imageName;
+        @GrayVersion(value = "5.0.0")
         private int sshPort;
         public String getUsername() {
             return username;
