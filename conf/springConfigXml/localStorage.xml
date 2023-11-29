@@ -86,6 +86,7 @@
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.host.FailToAddHostExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KVMTakeSnapshotExtensionPoint" />
         </zstack:plugin>
     </bean>
 
