@@ -7,15 +7,18 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.volume.VolumeInfo;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -31,7 +34,7 @@ import static org.zstack.core.Platform.operr;
  * Created by frank on 6/30/2015.
  */
 public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KVMHostConnectExtensionPoint,
-        FailToAddHostExtensionPoint, KVMStartVmExtensionPoint {
+        FailToAddHostExtensionPoint, KVMStartVmExtensionPoint, KVMTakeSnapshotExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LocalStorageKvmFactory.class);
 
     @Autowired
@@ -159,5 +162,112 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
     @Override
     public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
 
+    }
+
+    private static boolean isLocalPrimaryStorage(String psUuid) {
+        return psUuid != null & Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, psUuid)
+                .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                .isExists();
+    }
+
+    @Override
+    public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
+        if (!isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+            completion.success();
+            return;
+        }
+
+        VolumeInventory inv = msg.getVolume();
+        inv.setInstallPath(msg.getInstallPath());
+        PrimaryStorageVO primaryStorageVO = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                .eq(PrimaryStorageVO_.uuid, msg.getVolume().getPrimaryStorageUuid())
+                .find();
+
+        LocalStorageHypervisorBackend bkd = getHypervisorBackend(primaryStorageVO);
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("prepare-local-storage-block-volume-%s-for-snapshot-%s", msg.getVolume().getUuid(), msg.getSnapshotName()));
+        chain.then(new Flow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                bkd.createEmptyVolume(inv, msg.getHostUuid(), new ReturnValueCompletion<VolumeInfo>(msg) {
+                    @Override
+                    public void success(VolumeInfo returnValue) {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        ErrorCode err = operr("unable to create empty snapshot volume[name:%s, installpath: %s] on kvm host[uuid:%s, ip:%s], because %s",
+                                msg.getSnapshotName(), msg.getInstallPath(), host.getUuid(), host.getManagementIp(), errorCode);
+                        trigger.fail(err);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                bkd.deleteBits(msg.getInstallPath(), host.getUuid(), new Completion(msg) {
+                    @Override
+                    public void success() {
+                        trigger.rollback();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.rollback();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    @Override
+    public void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp) {
+        if (!isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+            return;
+        }
+    }
+
+    @Override
+    public void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp, ErrorCode err) {
+        if (!isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+            return;
+        }
+
+        VolumeInventory inv = msg.getVolume();
+        inv.setInstallPath(msg.getInstallPath());
+        PrimaryStorageVO primaryStorageVO = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                .eq(PrimaryStorageVO_.uuid, msg.getVolume().getPrimaryStorageUuid())
+                .find();
+
+        LocalStorageHypervisorBackend bkd = getHypervisorBackend(primaryStorageVO);
+
+        bkd.deleteBits(msg.getInstallPath(), host.getUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                logger.debug(String.format("successfully cleaned garbage snapshot volume[name: %s, installpath:%s] for take snapshot on volume[%s]",
+                        msg.getSnapshotName(), cmd.getInstallPath(), msg.getVolume().getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.debug(String.format("failed to clean garbage snapshot volume[name: %s, installpath:%s] for failed taking snapshot on volume[%s], "+
+                        "create gc job to clean garbage late", msg.getSnapshotName(), cmd.getInstallPath(), msg.getVolume().getUuid()));
+            }
+        });
     }
 }

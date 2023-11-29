@@ -10,6 +10,7 @@ import org.zstack.header.storage.primary.UndoSnapshotCreationOnPrimaryStorageMsg
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageMsg;
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply;
+import org.zstack.header.volume.VolumeInfo;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
@@ -109,6 +110,7 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void deleteBits(String path, String hostUuid, Completion completion);
 
+    abstract void createEmptyVolume(VolumeInventory volume, String hostUuid, ReturnValueCompletion<VolumeInfo> completion);
 
     abstract void checkHostAttachedPSMountPath(String hostUuid, Completion completion);
 

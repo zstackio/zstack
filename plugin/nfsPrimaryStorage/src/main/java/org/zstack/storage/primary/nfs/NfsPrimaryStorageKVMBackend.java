@@ -20,10 +20,9 @@ import org.zstack.core.step.StepRun;
 import org.zstack.core.step.StepRunCondition;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -64,6 +63,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.min;
@@ -72,7 +72,7 @@ import static org.zstack.core.Platform.touterr;
 
 public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint,
-        KVMStartVmExtensionPoint {
+        KVMStartVmExtensionPoint, KVMTakeSnapshotExtensionPoint {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorageKVMBackend.class);
 
     @Autowired
@@ -1892,5 +1892,135 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
 
+    }
+
+    private static boolean isNfsPrimaryStorage(String psUuid) {
+        return psUuid != null && Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, psUuid)
+                .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                .isExists();
+    }
+
+    @Override
+    public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
+        if (!isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+            completion.success();
+            return;
+        }
+
+        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(msg.getVolume().getUuid());
+
+        final CreateEmptyVolumeCmd scmd = new CreateEmptyVolumeCmd();
+        scmd.setUuid(msg.getVolume().getPrimaryStorageUuid());
+        scmd.setAccountUuid(accountUuid);
+        scmd.setHypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
+        scmd.setName(msg.getSnapshotName());
+        scmd.setSize(msg.getVolume().getSize());
+        scmd.setVolumeUuid(cmd.getVolumeUuid());
+        scmd.setInstallUrl(cmd.getInstallPath());
+
+        KVMHostAsyncHttpCallMsg smsg = new KVMHostAsyncHttpCallMsg();
+        smsg.setCommand(scmd);
+        smsg.setPath(CREATE_EMPTY_VOLUME_PATH);
+        smsg.setHostUuid(host.getUuid());
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("prepare-nfs-block-volume-%s-for-snapshot-%s", msg.getVolume().getUuid(), msg.getSnapshotName()));
+        chain.then(new Flow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, host.getUuid());
+                bus.send(smsg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        CreateEmptyVolumeResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CreateEmptyVolumeResponse.class);
+                        if (!rsp.isSuccess()) {
+                            ErrorCode err = operr("unable to create empty snapshot volume[name:%s, installpath: %s] on kvm host[uuid:%s, ip:%s], because %s",
+                                    scmd.getName(), scmd.getInstallUrl(), host.getUuid(), host.getManagementIp(), rsp.getError());
+                            trigger.fail(err);
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                PrimaryStorageVO primaryStorageVO = Q.New(PrimaryStorageVO.class)
+                        .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                        .eq(PrimaryStorageVO_.uuid, msg.getVolume().getPrimaryStorageUuid())
+                        .find();
+                PrimaryStorageInventory pinv = PrimaryStorageInventory.valueOf(primaryStorageVO);
+                delete(pinv, cmd.getInstallPath(), false, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        trigger.rollback();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.rollback();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    @Override
+    public void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp) {
+        if (!isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+            return;
+        }
+    }
+
+    @Override
+    public void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp, ErrorCode err) {
+        if (!isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+            return;
+        }
+
+        PrimaryStorageVO primaryStorageVO = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                .eq(PrimaryStorageVO_.uuid, msg.getVolume().getPrimaryStorageUuid())
+                .find();
+        PrimaryStorageInventory pinv = PrimaryStorageInventory.valueOf(primaryStorageVO);
+        delete(pinv, cmd.getInstallPath(), false, new Completion(msg) {
+            @Override
+            public void success() {
+                logger.debug(String.format("successfully cleaned garbage snapshot volume[name: %s, installpath:%s] for take snapshot on volume[%s]",
+                        msg.getSnapshotName(), cmd.getInstallPath(), msg.getVolume().getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.debug(String.format("failed to clean garbage snapshot volume[name: %s, installpath:%s] for failed taking snapshot on volume[%s], "+
+                        "create gc job to clean garbage late", msg.getSnapshotName(), cmd.getInstallPath(), msg.getVolume().getUuid()));
+                NfsDeleteVolumeSnapshotGC gc = new NfsDeleteVolumeSnapshotGC();
+                gc.NAME = String.format("gc-nfs-%s-snapshot-%s", pinv.getUuid(), cmd.getInstallPath());
+                gc.primaryStorageUuid = pinv.getUuid();
+                gc.hypervisorType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getVolume().getFormat()).toString();
+                VolumeSnapshotInventory inv = new VolumeSnapshotInventory();
+                inv.setPrimaryStorageInstallPath(cmd.getInstallPath());
+                gc.snapshot = inv;
+                gc.submit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+            }
+        });
     }
 }
