@@ -1245,7 +1245,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
-    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<VolumeInfo> completion) {
+    public void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<VolumeInfo> completion) {
         createEmptyVolume(volume, hostUuid, null, completion);
     }
 
