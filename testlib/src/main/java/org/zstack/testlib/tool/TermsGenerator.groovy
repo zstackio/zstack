@@ -14,12 +14,12 @@ class TermsGenerator {
     static String translationFileFormat = "translation_from_%s_to_%s.properties"
 
     static List<TermTranslatePropertyLine> generateTermsOfZStackVersion(String version) {
-        String outputDir = System.getProperty("user.home")
+        String outputDir = System.getProperty("user.dir")
 
         Set<Class> resourceVOs = Platform.reflections.getSubTypesOf(ResourceVO.class)
         resourceVOs = resourceVOs.findAll { return it.isAnnotationPresent(Entity.class) && !it.isAnnotationPresent(EO.class) }
 
-        List<TermTranslatePropertyLine> linesFromProperties = loadFileFromResource(PathUtil.join(outputDir, String.format(termFileFormat, version)))
+        List<TermTranslatePropertyLine> linesFromProperties = loadFileFromResource(PathUtil.join(outputDir, '../../conf', String.format(termFileFormat, version)))
 
         List<String> termKeysFromResourceConfig = resourceVOs.collect {
             // VmInstanceVO -> VmInstance
@@ -36,7 +36,7 @@ class TermsGenerator {
 
         String content = linesToWrite.collect { it.toString() }.join("\n")
 
-        new File(PathUtil.join(outputDir, String.format(termFileFormat, version))).write(content)
+        new File(PathUtil.join(outputDir, "../../conf", String.format(termFileFormat, version))).write(content)
         return linesToWrite
     }
 
@@ -71,13 +71,13 @@ class TermsGenerator {
             }
         }
 
-        String outputDir = System.getProperty("user.home")
+        String outputDir = System.getProperty("user.dir")
         String content = replaceMap
                 .values()
                 .findAll { Strings.isNotBlank(it.translation) && Strings.isNotBlank(it.replaceTo) }
                 .collect { it.toTranslationString() }
                 .join("\n")
-        new File(PathUtil.join(outputDir, String.format(translationFileFormat, replaceTo, replaceTo == "cloud" ? "zsv" : "cloud"))).write(content)
+        new File(PathUtil.join(outputDir, '../../conf', String.format(translationFileFormat, replaceTo, replaceTo == "cloud" ? "zsv" : "cloud"))).write(content)
     }
 
     static List<TermTranslatePropertyLine> loadFileFromResource(String fileName) {
