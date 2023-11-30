@@ -238,7 +238,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 return true;
             }
 
-            ssh.command(String.format("sudo -S md5sum %s 2>/dev/null", REMOTE_ZVRBOOT_BIN_PATH));
+            ssh.command(String.format("sudo -S md5sum %s", REMOTE_ZVRBOOT_BIN_PATH));
             ret = ssh.run();
             if (ret.getReturnCode() == 0) {
                 remoteZvrbootMd5 =  ret.getStdout().split(" ")[0];

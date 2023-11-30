@@ -306,10 +306,6 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private void printDebugLog(String msg) {
         if (enableDebugLog) {
             logger.debug(msg);
-        } else {
-            if (logger.isTraceEnabled()) {
-                logger.trace(msg);
-            }
         }
     }
 
@@ -433,7 +429,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 CollectionUtils.safeForEach(errors, new ForEachFunction<Runnable>() {
                     @Override
                     public void run(Runnable arg) {
-                        if (logger.isTraceEnabled()) {
+                        if (logger.isTraceEnabled() && enableDebugLog) {
                             logger.trace(String.format("call after error handler %s", arg.getClass()));
                         }
                         arg.run();
@@ -549,7 +545,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 CollectionUtils.safeForEach(finals, new ForEachFunction<Runnable>() {
                     @Override
                     public void run(Runnable arg) {
-                        if (logger.isTraceEnabled()) {
+                        if (logger.isTraceEnabled() && enableDebugLog) {
                             logger.trace(String.format("call after final handler %s", arg.getClass()));
                         }
 
@@ -582,7 +578,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 CollectionUtils.safeForEach(dones, new ForEachFunction<Runnable>() {
                     @Override
                     public void run(Runnable arg) {
-                        if (logger.isTraceEnabled()) {
+                        if (logger.isTraceEnabled() && enableDebugLog) {
                             logger.trace(String.format("call after done handler %s", arg.getClass()));
                         }
                         arg.run();
@@ -676,7 +672,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
         printDebugLog(String.format("[FlowChain(%s): %s] starts", id, name));
 
-        if (logger.isTraceEnabled()) {
+        if (logger.isTraceEnabled() && enableDebugLog) {
             List<String> names = CollectionUtils.transformToList(flows, new Function<String, Flow>() {
                 @Override
                 public String call(Flow arg) {
