@@ -6,12 +6,16 @@ package org.zstack.header.storage.snapshot.group;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
+import org.zstack.header.other.APIAuditor;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.vm.VmInstanceVO;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,9 +28,12 @@ import java.util.concurrent.TimeUnit;
 )
 
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
-public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements VolumeSnapshotGroupMessage {
+public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements VolumeSnapshotGroupMessage, APIAuditor {
     @APIParam(resourceType = VolumeSnapshotGroupVO.class)
     private String uuid;
+
+    @APINoSee
+    private String vmInstanceUuid;
 
     @Override
     public String getGroupUuid() {
@@ -46,9 +53,35 @@ public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements Volum
         this.uuid = uuid;
     }
 
+    public String getVmInstanceUuid() {
+        return vmInstanceUuid;
+    }
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
+
     public static APIRevertVmFromSnapshotGroupMsg __example__() {
         APIRevertVmFromSnapshotGroupMsg result = new APIRevertVmFromSnapshotGroupMsg();
         result.uuid = uuid();
         return result;
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        if (!rsp.isSuccess()) {
+            return null;
+        }
+
+        APIRevertVmFromSnapshotGroupEvent evt = (APIRevertVmFromSnapshotGroupEvent) rsp;
+        if (!evt.getResults().stream().allMatch(RevertSnapshotGroupResult::isSuccess)) {
+            return null;
+        }
+
+        if (((APIRevertVmFromSnapshotGroupMsg) msg).getVmInstanceUuid() == null) {
+            return null;
+        }
+
+        return new Result(((APIRevertVmFromSnapshotGroupMsg) msg).getVmInstanceUuid(), VmInstanceVO.class);
     }
 }
