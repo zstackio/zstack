@@ -930,8 +930,19 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                doDownloadImageCache(image, completion);
-                chain.next();
+                doDownloadImageCache(image, new ReturnValueCompletion<ImageCacheInventory>(chain) {
+                    @Override
+                    public void success(ImageCacheInventory returnValue) {
+                        completion.success(returnValue);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
             }
 
             @Override
