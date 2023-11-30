@@ -4,9 +4,10 @@ import org.zstack.header.message.MessageReply;
 
 /**
  */
-public class CreateDataVolumeTemplateFromVolumeReply extends MessageReply {
+public class CreateDataVolumeTemplateFromVolumeReply extends MessageReply implements ImageReply {
     private ImageInventory inventory;
 
+    @Override
     public ImageInventory getInventory() {
         return inventory;
     }

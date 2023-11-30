@@ -15,7 +15,7 @@ import java.util.Map;
         sync = false
 )
 public class GetIscsiTargetServerRequest extends ExponRequest {
-    private static final HashMap<String, ExponRequest.Parameter> parameterMap = new HashMap<>();
+    private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     @Param
     private String tianshuId;
@@ -29,7 +29,7 @@ public class GetIscsiTargetServerRequest extends ExponRequest {
     }
 
     @Override
-    protected Map<String, ExponRequest.Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 }

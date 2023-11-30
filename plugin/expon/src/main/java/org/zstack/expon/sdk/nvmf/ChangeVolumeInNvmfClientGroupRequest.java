@@ -26,7 +26,7 @@ public class ChangeVolumeInNvmfClientGroupRequest extends ExponRequest {
     private String action;
     @Param
     private List<LunResource> luns;
-    @Param
+    @Param(required = false)
     private List<String> gateways;
 
 
@@ -63,7 +63,7 @@ public class ChangeVolumeInNvmfClientGroupRequest extends ExponRequest {
     }
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 }

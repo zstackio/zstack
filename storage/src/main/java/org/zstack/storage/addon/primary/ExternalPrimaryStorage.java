@@ -9,6 +9,8 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -36,10 +38,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.backup.BackupStorageSystemTags;
-import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
-import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
-import org.zstack.storage.primary.PrimaryStorageBase;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -92,6 +91,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((SetVolumeQosOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ResizeVolumeOnPrimaryStorageMsg) {
             handle((ResizeVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -151,6 +152,34 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             spec.setName(buildVolumeName(volume.getUuid()));
             createEmptyVolume(msg, spec);
         }
+    }
+
+
+    // TODO full clone
+    protected void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+        String snapPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+
+        CreateVolumeSpec spec = new CreateVolumeSpec();
+        spec.setUuid(msg.getVolumeUuid());
+        spec.setSize(msg.getSnapshot().getSize());
+        spec.setName(buildVolumeName(msg.getVolumeUuid()));
+        controller.cloneVolume(snapPath, spec, new ReturnValueCompletion<VolumeStats>(msg) {
+            @Override
+            public void success(VolumeStats stats) {
+                reply.setActualSize(stats.getActualSize());
+                reply.setSize(stats.getSize());
+                reply.setInstallPath(stats.getInstallPath());
+                // reply.setIncremental(true);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
@@ -275,7 +304,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(DeleteVolumeOnPrimaryStorageMsg msg) {
         DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
-        controller.deleteVolume(msg.getVolume().getInstallPath(), new Completion(msg) {
+        deleteBits(msg.getVolume().getInstallPath(), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -399,6 +428,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     // TODO
     protected void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    private void createImageCacheFromVolume(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-image-cache-from-volume-%s-on-primary-storage-%s", msg.getVolumeInventory().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
@@ -478,7 +511,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             trigger.rollback();
                             return;
                         }
-                        controller.deleteVolume(imageCachePath, new Completion(trigger) {
+                        directDeleteBits(imageCachePath, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -516,12 +549,48 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         });
                     }
                 });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        CreateImageCacheFromVolumeOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeOnPrimaryStorageReply();
+                        // TODO
+                        reply.setActualSize(msg.getVolumeInventory().getSize());
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        CreateImageCacheFromVolumeOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeOnPrimaryStorageReply();
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
         }).start();
     }
 
+    // TODO
     @Override
     protected void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+
+        boolean incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+        if (incremental && PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE) {
+            ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
+            dbf.persist(cache);
+            reply.setInventory(cache.toInventory());
+            reply.setIncremental(true);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    private void createImageCacheFromSnapshot(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-image-cache-from-volume-snapshot-%s-on-primary-storage-%s", msg.getVolumeSnapshot().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
@@ -557,7 +626,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             trigger.rollback();
                             return;
                         }
-                        controller.deleteVolume(imageCachePath, new Completion(trigger) {
+                        directDeleteBits(imageCachePath, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -593,6 +662,25 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                                 trigger.fail(errorCode);
                             }
                         });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+                        // TODO
+                        reply.setIncremental(false);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
                     }
                 });
             }
@@ -834,6 +922,26 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     }
 
     private void downloadImageCache(ImageInventory image, ReturnValueCompletion<ImageCacheInventory> completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("download-image-cache-%s-to-%s", image.getUuid(), self.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doDownloadImageCache(image, completion);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    private void doDownloadImageCache(ImageInventory image, ReturnValueCompletion<ImageCacheInventory> completion) {
         CreateVolumeSpec spec = new CreateVolumeSpec();
         spec.setUuid(image.getUuid());
         spec.setName(buildImageName(image.getUuid()));
@@ -881,11 +989,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             RemoteTarget remoteTarget;
             VolumeStats volume;
 
-            String bsUuid = image.getBackupStorageRefs().get(0).getBackupStorageUuid();
-            String bsInstallPath = image.getBackupStorageRefs().get(0).getInstallPath();
-
-            // TODO: hardcode
-            VolumeProtocol protocol = VolumeProtocol.NVMEoF;
+            final String bsUuid = image.getBackupStorageRefs().get(0).getBackupStorageUuid();
+            final String bsInstallPath = image.getBackupStorageRefs().get(0).getInstallPath();
 
             @Override
             public void setup() {
@@ -915,8 +1020,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             trigger.rollback();
                             return;
                         }
-
-                        controller.deleteVolume(volume.getInstallPath(), new Completion(trigger) {
+                        directDeleteBits(volume.getInstallPath(), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -1113,6 +1217,23 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
+        });
+    }
+
+    protected void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
+        DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();
+        directDeleteBits(msg.getInstallPath(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+
         });
     }
 
@@ -1473,27 +1594,19 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
     @Override
     protected void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
-    private void deleteBits(String installPath, Completion completion) {
-        controller.deleteVolume(installPath, new Completion(completion) {
-            @Override
-            public void success() {
-                completion.success();
-            }
+    private void directDeleteBits(String installPath, Completion completion) {
+        controller.deleteVolume(installPath, completion);
+    }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
+    private void deleteBits(String installPath, Completion completion) {
+        controller.trashVolume(installPath, completion);
     }
 }

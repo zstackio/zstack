@@ -24,11 +24,11 @@ public class CreateVolumeSnapshotRequest extends ExponRequest {
     @Param
     private String volumeId;
 
-    @Param
+    @Param(required = false)
     private String description;
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 

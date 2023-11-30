@@ -20,7 +20,7 @@ public class DeleteNvmfClientGroupRequest extends ExponRequest {
     private String clientId;
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 

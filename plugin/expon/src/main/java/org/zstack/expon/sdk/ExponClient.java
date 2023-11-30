@@ -162,6 +162,7 @@ public class ExponClient {
         ApiResult doCall() {
 
             Request.Builder reqBuilder = new Request.Builder();
+            action.checkParameters();
 
             try {
                 if (action instanceof ExponQueryRequest) {
@@ -251,7 +252,6 @@ public class ExponClient {
 
             List<String> varNames = getVarNamesFromUrl(restInfo.path());
             String path = restInfo.path();
-            action.initializeParametersIfNot();
             if (!varNames.isEmpty()) {
                 Map<String, Object> vars = new HashMap<>();
                 for (String vname : varNames) {

@@ -250,6 +250,25 @@ class ExternalPrimaryStorageCase extends SubCase {
             return rsp
         }
 
+        // create vm concurrently
+        boolean success = false
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            void run() {
+                def otherVm = createVmInstance {
+                    name = "vm"
+                    instanceOfferingUuid = instanceOffering.uuid
+                    imageUuid = image.uuid
+                    l3NetworkUuids = [l3.uuid]
+                    hostUuid = host1.uuid
+                } as VmInstanceInventory
+
+                deleteVm(otherVm.uuid)
+                success = true
+            }
+        })
+
+        thread.run()
         vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
@@ -257,6 +276,9 @@ class ExternalPrimaryStorageCase extends SubCase {
             l3NetworkUuids = [l3.uuid]
             hostUuid = host1.uuid
         } as VmInstanceInventory
+
+        thread.join()
+        assert success
 
         stopVmInstance {
             uuid = vm.uuid
@@ -270,6 +292,17 @@ class ExternalPrimaryStorageCase extends SubCase {
         rebootVmInstance {
             uuid = vm.uuid
         }
+
+        def vm2 = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            hostUuid = host1.uuid
+        } as VmInstanceInventory
+
+        deleteVm(vm2.uuid)
     }
 
     void testAttachIso() {
@@ -425,13 +458,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     }
 
     void testClean() {
-        destroyVmInstance {
-            uuid = vm.uuid
-        }
-
-        expungeVmInstance {
-            uuid = vm.uuid
-        }
+        deleteVm(vm.uuid)
 
         deleteDataVolume {
             uuid = vol.uuid
@@ -439,6 +466,16 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         expungeDataVolume {
             uuid = vol.uuid
+        }
+    }
+
+    void deleteVm(String vmUuid) {
+        destroyVmInstance {
+            uuid = vmUuid
+        }
+
+        expungeVmInstance {
+            uuid = vmUuid
         }
     }
 }

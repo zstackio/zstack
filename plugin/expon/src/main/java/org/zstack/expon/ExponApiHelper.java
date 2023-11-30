@@ -199,9 +199,10 @@ public class ExponApiHelper {
         return getVolume(rsp.getId());
     }
 
-    public void deleteVolume(String volId) {
+    public void deleteVolume(String volId, boolean force) {
         DeleteVolumeRequest req = new DeleteVolumeRequest();
         req.setVolId(volId);
+        req.setForce(force);
         callErrorOut(req, DeleteVolumeResponse.class);
     }
     
@@ -238,12 +239,6 @@ public class ExponApiHelper {
         req.setQos(qos);
         req.setVolId(volId);
         SetVolumeQosResponse rsp = callErrorOut(req, SetVolumeQosResponse.class);
-
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         return getVolume(volId);
     }
 

@@ -22,7 +22,7 @@ public class DeleteIscsiTargetRequest extends ExponRequest {
     private String id;
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 

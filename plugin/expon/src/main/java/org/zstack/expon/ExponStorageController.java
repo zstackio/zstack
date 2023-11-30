@@ -356,11 +356,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void deactivate(BaseVolumeInfo vol, HostInventory h, Completion comp) {
         if (VolumeProtocol.VHost.toString().equals(vol.getProtocol())) {
-            deactiveVhost(vol, h);
+            deactivateVhost(vol, h);
             comp.success();
             return;
         } else if (VolumeProtocol.iSCSI.toString().equals(vol.getProtocol())) {
-            deactiveIscsi(vol, h);
+            deactivateIscsi(vol, h);
             comp.success();
             return;
         }
@@ -458,7 +458,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         comp.success();
     }
 
-    private void deactiveVhost(BaseVolumeInfo vol, HostInventory h) {
+    private void deactivateVhost(BaseVolumeInfo vol, HostInventory h) {
         String vhostName = buildVhostControllerName(vol.getUuid());
 
         UssGatewayModule uss = getUssGateway(VolumeProtocol.VHost, h.getManagementIp());
@@ -471,7 +471,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         apiHelper.removeVhostVolumeFromUss(exponVol.getId(), vhost.getId(), uss.getId());
     }
 
-    private void deactiveIscsi(BaseVolumeInfo vol, HostInventory h) {
+    private void deactivateIscsi(BaseVolumeInfo vol, HostInventory h) {
         String iscsiClientName = buildIscsiClientName(vol);
         IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
         if (client == null) {
@@ -681,7 +681,14 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void deleteVolume(String installPath, Completion comp) {
         String volId = getVolIdFromPath(installPath);
-        apiHelper.deleteVolume(volId);
+        apiHelper.deleteVolume(volId, true);
+        comp.success();
+    }
+
+    @Override
+    public void trashVolume(String installPath, Completion comp) {
+        String volId = getVolIdFromPath(installPath);
+        apiHelper.deleteVolume(volId, false);
         comp.success();
     }
 

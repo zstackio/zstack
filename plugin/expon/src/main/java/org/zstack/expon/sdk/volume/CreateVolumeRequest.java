@@ -27,7 +27,7 @@ public class CreateVolumeRequest extends ExponRequest {
     private ExponVolumeQos qos = new ExponVolumeQos();
 
     @Override
-    protected Map<String, Parameter> getParameterMap() {
+    public Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
