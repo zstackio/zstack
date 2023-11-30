@@ -220,6 +220,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             case ResourceType.VM:
                 res = ipStatisticVm(msg, orderExpr);
                 break;
+            case ResourceType.ZSKERNEL:
+                res = ipStatisticZSkernel(msg, orderExpr);
+                break;
         }
 
         return res != null ? res : new ArrayList<>();
@@ -236,6 +239,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 break;
             case ResourceType.VM:
                 res = countVMNicIp(msg);
+                break;
+            case ResourceType.ZSKERNEL:
+                res = countZSKernel(msg);
                 break;
         }
         return res;
@@ -364,11 +370,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             }
 
             if (resourceTypes.contains(ResourceType.OTHER)) {
-                L3NetworkGetIpStatisticExtensionPoint ext = getExtensionPointFactory(ResourceType.ZS_KERNEL);
+                L3NetworkGetIpStatisticExtensionPoint ext = getExtensionPointFactory(ResourceType.ZSKERNEL);
                 if (ext != null && element.getUsedIpUuid() != null) {
                     String hostKernelInterfaceUuid = ext.getResourceOwnerUuid(element.getUsedIpUuid());
                     if (hostKernelInterfaceUuid != null) {
-                        element.setResourceTypes(Collections.singletonList(ResourceType.ZS_KERNEL));
+                        element.setResourceTypes(Collections.singletonList(ResourceType.ZSKERNEL));
                         element.setResourceOwnerUuid(hostKernelInterfaceUuid);
                     }
                 }
@@ -376,6 +382,27 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         return ipStatistics;
+    }
+
+    private Long countZSKernel(APIGetL3NetworkIpStatisticMsg msg) {
+        L3NetworkGetIpStatisticExtensionPoint ext = getExtensionPointFactory(ResourceType.ZSKERNEL);
+        if (ext == null) {
+            return 0L;
+        }
+
+        return ext.countUsedIp(msg.getL3NetworkUuid(), msg.getIp());
+    }
+
+    private List<IpStatisticData> ipStatisticZSkernel(APIGetL3NetworkIpStatisticMsg msg, String sortBy) {
+        List<IpStatisticData> ipStatistics = ipStatisticAll(msg, sortBy);
+        List<IpStatisticData> res = new ArrayList<>();
+        for (IpStatisticData ipStatistic : ipStatistics) {
+            if (ipStatistic.getResourceTypes().contains(ResourceType.ZSKERNEL)) {
+                res.add(ipStatistic);
+            }
+        }
+
+        return res;
     }
 
     private Long countUsedIp(APIGetL3NetworkIpStatisticMsg msg) {
