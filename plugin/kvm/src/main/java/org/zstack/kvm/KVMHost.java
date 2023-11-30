@@ -3635,8 +3635,14 @@ public class KVMHost extends HostBase implements Host {
     @SuppressWarnings("rawtypes")
     private void handle(UpdateVmOnHypervisorMsg msg) {
         UpdateVmOnHypervisorReply reply = new UpdateVmOnHypervisorReply();
-
         final UpdateVmInstanceSpec spec = msg.getSpec();
+
+        if (!spec.isCpuChanged() && !spec.isMemoryChanged() && !spec.isReservedMemoryChanged()) {
+            logger.debug("Neither CPU and memory is changed, skip updating VM on hypervisor.");
+            bus.reply(msg, reply);
+            return;
+        }
+
         final VmInstanceVO vm = dbf.findByUuid(spec.getVmInstanceUuid(), VmInstanceVO.class);
 
         final boolean cpuNeedChange = spec.isCpuChanged();
