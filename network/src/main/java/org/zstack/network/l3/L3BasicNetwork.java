@@ -347,6 +347,18 @@ public class L3BasicNetwork implements L3Network {
 
     protected CheckIpAvailabilityReply checkIpAvailability(String ip) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
+
+        if (!self.getEnableIPAM()) {
+            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, self.getUuid()).eq(UsedIpVO_.ip, ip).isExists()) {
+                reply.setAvailable(false);
+                reply.setReason(IpNotAvailabilityReason.USED.toString());
+                return reply;
+            } else {
+                reply.setAvailable(true);
+                return reply;
+            }
+        }
+
         int ipversion = IPv6Constants.IPv4;
         if (IPv6NetworkUtils.isIpv6Address(ip)) {
             ipversion = IPv6Constants.IPv6;
