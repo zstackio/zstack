@@ -238,10 +238,24 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setTransport("tcp");
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
-        target.setDiskId(lunId.replace("-", "").substring(16, 32));
+        target.setDiskId(getDiskId(lunId, lunType));
         target.setClientIp(h.getManagementIp());
         to.setInstallPath(target.getResourceURI());
         return to;
+    }
+
+    private String getDiskId(String lunId, String lunType) {
+        String wwn = null;
+        if (lunType.equals("volume")) {
+            VolumeModule vol = apiHelper.getVolume(lunId);
+            wwn = vol.getWwn();
+        }
+
+        if (wwn == null) {
+            wwn = lunId.replace("-", "").substring(16, 32);
+        }
+
+        return wwn;
     }
 
     private synchronized IscsiModule allocateIscsiTarget(List<IscsiSeverNode> nodes) {
@@ -316,7 +330,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setTransport("tcp");
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
-        target.setDiskId(lunId.replace("-", "").substring(16, 32));
+        target.setDiskId(getDiskId(lunId, lunType));
         target.setClientIp(espec.getClientMnIp());
         return target;
     }
@@ -330,8 +344,14 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             to.setInstallPath(vhost.getPath());
             return to;
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
-            String lunId = v.getInstallPath().contains("@") ? getSnapIdFromPath(v.getInstallPath())
-                    : getVolIdFromPath(v.getInstallPath());
+            String lunId, lunType;
+            if (v.getInstallPath().contains("@")) {
+                lunId = getSnapIdFromPath(v.getInstallPath());
+                lunType = "snapshot";
+            } else {
+                lunId = getVolIdFromPath(v.getInstallPath());
+                lunType = "volume";
+            }
 
             String iscsiClientName = buildIscsiClientName(v);
             IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
@@ -344,7 +364,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             target.setTransport("tcp");
             target.setIqn(iscsi.getIqn());
             target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
-            target.setDiskId(lunId.replace("-", "").substring(16, 32));
+            target.setDiskId((getDiskId(lunId, lunType)));
             target.setClientIp(h.getManagementIp());
             to.setInstallPath(target.getResourceURI());
             return to;
@@ -407,7 +427,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setTransport("tcp");
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
-        target.setDiskId(heartbeatVol.getId().replace("-", "").substring(16, 32));
+        target.setDiskId(heartbeatVol.getWwn());
         target.setClientIp(h.getManagementIp());
         to.setInstallPath(target.getResourceURI());
         to.setHostId(getHostId(h));
@@ -581,7 +601,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private StorageHealthy getHealthy(List<FailureDomainModule> pools) {
         if (pools.stream().allMatch(it -> it.getHealthStatus().equals(HealthStatus.health.name()))) {
             return StorageHealthy.Ok;
-        } else if (pools.stream().noneMatch(it -> it.getHealthStatus().equals(HealthStatus.health.name()))) {
+        } else if (pools.stream().allMatch(it -> it.getHealthStatus().equals(HealthStatus.error.name()))) {
             return StorageHealthy.Failed;
         } else {
             return StorageHealthy.Warn;

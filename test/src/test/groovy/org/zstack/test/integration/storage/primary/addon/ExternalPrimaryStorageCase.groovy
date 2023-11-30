@@ -43,6 +43,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     HostInventory host1, host2
 
     String exponUrl = "https://operator:Admin123@172.25.130.160:443/pool"
+    String exportProtocol = "iscsi://"
 
     @Override
     void clean() {
@@ -231,7 +232,8 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         env.message(ExportImageToRemoteTargetMsg.class){ ExportImageToRemoteTargetMsg msg, CloudBus bus ->
             ExportImageToRemoteTargetReply r = new  ExportImageToRemoteTargetReply()
-            assert msg.getRemoteTargetUrl().startsWith("iscsi://")
+            assert msg.getRemoteTargetUrl().startsWith(exportProtocol)
+            assert msg.getFormat() == "raw"
             bus.reply(msg, r)
         }
 
@@ -243,7 +245,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             if (cmd.cdRoms != null) {
                 cmd.cdRoms.forEach {
                     if (!it.isEmpty()) {
-                        assert it.getPath().startsWith("iscsi://")
+                        assert it.getPath().startsWith(exportProtocol)
                     }
                 }
             }
@@ -308,7 +310,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     void testAttachIso() {
         env.afterSimulator(KVMConstant.KVM_ATTACH_ISO_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachIsoCmd.class)
-            assert cmd.iso.getPath().startsWith("iscsi://")
+            assert cmd.iso.getPath().startsWith(exportProtocol)
             return rsp
         }
 
@@ -432,7 +434,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     void testCreateTemplate() {
         env.message(DownloadImageFromRemoteTargetMsg.class){ DownloadImageFromRemoteTargetMsg msg, CloudBus bus ->
             DownloadImageFromRemoteTargetReply r = new  DownloadImageFromRemoteTargetReply()
-            assert msg.getRemoteTargetUrl().startsWith("iscsi://")
+            assert msg.getRemoteTargetUrl().startsWith(exportProtocol)
             r.setInstallPath("zstore://test/image")
             r.setSize(100L)
             bus.reply(msg, r)
