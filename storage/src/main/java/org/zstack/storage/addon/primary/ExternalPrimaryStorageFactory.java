@@ -707,7 +707,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             return;
         }
         HostInventory srcHost = HostInventory.valueOf(dbf.findByUuid(srcHostUuid, HostVO.class));
-        HostInventory dstHost = HostInventory.valueOf(dbf.findByUuid(inv.getUuid(), HostVO.class));
+        HostInventory dstHost = HostInventory.valueOf(dbf.findByUuid(inv.getHostUuid(), HostVO.class));
 
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -772,7 +772,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             completion.done();
             return;
         }
-        HostInventory srcHost = HostInventory.valueOf(dbf.findByUuid(inv.getUuid(), HostVO.class));
+        HostInventory srcHost = HostInventory.valueOf(dbf.findByUuid(inv.getHostUuid(), HostVO.class));
         HostInventory dstHost = HostInventory.valueOf(dbf.findByUuid(destHostUuid, HostVO.class));
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
