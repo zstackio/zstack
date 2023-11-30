@@ -38,7 +38,7 @@ doc {
 					type "String"
 					optional true
 					since "3.7.0"
-					values ("All","Vip","VM")
+					values ("All","Vip","VM","ZSkernel")
 				}
 				column {
 					name "ip"
