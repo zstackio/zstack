@@ -226,10 +226,9 @@ class KVMPingCase extends SubCase {
         def kvm1 = env.inventoryByName("kvm1") as HostInventory
         int connectCount  = 0
 
-        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+        env.afterSimulator(KVMConstant.KVM_PING_PATH) { rsp, HttpEntity<String> e->
             KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
 
-            def rsp = new KVMAgentCommands.PingResponse()
             if (cmd.hostUuid == kvm1.uuid && new Random().nextBoolean()) {
                 throw new RuntimeException("failure on purpose")
             } else {
