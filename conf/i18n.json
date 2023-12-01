@@ -30990,7 +30990,7 @@
   {
     "raw": "the required host[uuid:%s] cannot satisfy conditions[state: %s, status: %s, size \u003e %s bytes], or doesn\u0027t belong to a local primary storage satisfying conditions[state: %s, status: %s], or its cluster doesn\u0027t attach to any local primary storage",
     "en_US": "the required host[uuid:{0}] cannot satisfy conditions[state: {1}, status: {2}, size \u003e {3} bytes], or doesn\u0027t belong to a local primary storage satisfying conditions[state: {4}, status: {5}], or its cluster doesn\u0027t attach to any local primary storage",
-    "zh_CN": "所需的物理机[uuid：{0}]无法满足条件[状态：{1}，状态：{2}，大小\u003e{3}字节]，或者不属于满足条件[状态：{4}，状态：[5}]的本地主存储，或者其群集未连接到任何本地主存储",
+    "zh_CN": "所需的物理机[uuid：{0}]无法满足条件[状态：{1}，状态：{2}，大小\u003e{3}字节]，或者不属于满足条件[状态：{4}，状态：{5}]的本地主存储，或者其群集未连接到任何本地主存储",
     "arguments": [
       "spec.getRequiredHostUuid()",
       "HostState.Enabled",
