@@ -192,3 +192,5 @@ DROP PROCEDURE IF EXISTS migrateBlockPrimaryHostRef;
 DROP PROCEDURE IF EXISTS checkAllBlockHostInPrimaryHostRef;
 DROP PROCEDURE IF EXISTS checkHostInitiatorRefVO;
 DROP TABLE IF EXISTS HostInitiatorRefVO;
+
+UPDATE ResourceConfigVO SET createDate = CURRENT_TIMESTAMP where name='iam2.force.enable.securityGroup' and createDate='0000-00-00 00:00:00';
