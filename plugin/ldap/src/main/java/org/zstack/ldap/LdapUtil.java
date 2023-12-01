@@ -281,7 +281,11 @@ public class LdapUtil {
         if(LdapConstant.WindowsAD.TYPE.equals(type)){
             properties.put("java.naming.ldap.attributes.binary","objectGUID");
         }
-
+        // add socket timeout
+        String timeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_CONNECT_TIMEOUT);
+        properties.put("com.sun.jndi.ldap.connect.timeout", timeout);
+        String readTimeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_READ_TIMEOUT );
+        properties.put("com.sun.jndi.ldap.read.timeout", readTimeout);
         return properties;
     }
 

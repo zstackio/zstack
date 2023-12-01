@@ -10,4 +10,7 @@ public class LdapGlobalProperty {
 
     @GlobalProperty(name = "Ldap.addServer.connectTimeout", defaultValue = "5000")
     public static int LDAP_ADD_SERVER_CONNECT_TIMEOUT;
+
+    @GlobalProperty(name = "Ldap.addServer.readTimeout", defaultValue = "5000")
+    public static int LDAP_ADD_SERVER_READ_TIMEOUT;
 }
