@@ -1,6 +1,5 @@
 package org.zstack.kvm;
 
-import org.apache.commons.collections.map.MultiKeyMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -18,12 +17,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.KVMAgentCommands.CheckBridgeResponse;
-import org.zstack.kvm.KVMAgentCommands.CreateBridgeCmd;
-import org.zstack.kvm.KVMAgentCommands.CreateBridgeResponse;
-import org.zstack.kvm.KVMAgentCommands.DeleteBridgeCmd;
-import org.zstack.kvm.KVMAgentCommands.DeleteBridgeResponse;
-import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
@@ -167,14 +161,10 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     }
 
     @Override
-    public VSwitchType getSupportedVSwitchType() {
-        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
-    }
-
-    @Override
     public L2NetworkType getL2NetworkTypeVmNicOn() {
         return L2NetworkType.valueOf(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
     }
+
     @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
@@ -293,10 +283,12 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
                     }
                 }, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
             }
+
             @Override
             public String getSyncSignature() {
-                return String.format("delete-ovsbridge-interface-%s-in-host-%s",l2Network.getPhysicalInterface(),hostUuid);
+                return String.format("delete-ovsbridge-interface-%s-in-host-%s", l2Network.getPhysicalInterface(), hostUuid);
             }
+
             @Override
             public String getName() {
                 return getSyncSignature();

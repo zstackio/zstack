@@ -77,6 +77,11 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
                         otherL2s.get(0), l2.getPhysicalInterface()));
             }
         }
+
+        //TODO: UI for ovs and macVlan has not use l2ProviderType yet, set to value of vSwitchType
+        if (msg.getL2ProviderType() == null && !L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE.equals(l2.getvSwitchType())) {
+            msg.setL2ProviderType(l2.getvSwitchType());
+        }
     }
 
     private void validate(APIDetachL2NetworkFromClusterMsg msg) {

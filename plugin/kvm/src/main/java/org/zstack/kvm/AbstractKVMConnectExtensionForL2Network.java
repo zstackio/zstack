@@ -6,6 +6,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -21,6 +22,7 @@ import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,6 +78,19 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
         }
 
         HostVO hostVO = dbf.findByUuid(hostUuid, HostVO.class);
+        List<Tuple> tuples = Q.New(L2NetworkClusterRefVO.class)
+                .select(L2NetworkClusterRefVO_.l2NetworkUuid, L2NetworkClusterRefVO_.l2ProviderType)
+                .in(L2NetworkClusterRefVO_.l2NetworkUuid, l2Networks.stream().map(L2NetworkInventory::getUuid).collect(Collectors.toList()))
+                .eq(L2NetworkClusterRefVO_.clusterUuid, hostVO.getClusterUuid())
+                .listTuple();
+
+        Map<String, String> l2ProviderMap = new HashMap<>();
+        for (Tuple t : tuples) {
+            String l2Uuid = t.get(0, String.class);
+            String l2ProviderType = t.get(1, String.class);
+
+            l2ProviderMap.put(l2Uuid, l2ProviderType);
+        }
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-for-kvm-%s-connect", hostUuid));
@@ -87,7 +102,7 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
                 List<BatchCheckNetworkPhysicalInterfaceMsg> batchCheckNetworkPhysicalInterfaceMsgs = new ArrayList<>();
                 final List<L2NetworkInventory> l2NetworksCheckList =
                         l2Networks.stream()
-                                .collect(Collectors.collectingAndThen(Collectors.toCollection(()->new TreeSet<>(Comparator.comparing(L2NetworkInventory::getPhysicalInterface))),ArrayList::new));
+                                .collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(L2NetworkInventory::getPhysicalInterface))), ArrayList::new));
                 int step = 100;
                 int size = l2NetworksCheckList.size();
                 int count = size / 100;
@@ -143,7 +158,8 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
             public void run(FlowTrigger trigger, Map data) {
                 List<L2NetworkInventory> novlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
                 new While<>(novlanNetworks).step((l2, c) -> {
-                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), VSwitchType.valueOf(l2.getvSwitchType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
+                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(
+                            L2NetworkType.valueOf(l2.getType()), HypervisorType.valueOf(hostVO.getHypervisorType()), l2ProviderMap.get(l2.getUuid()));
                     ext.realize(l2, hostUuid, true, new Completion(c) {
                         @Override
                         public void success() {
@@ -177,7 +193,8 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
             public void run(FlowTrigger trigger, Map data) {
                 List<L2NetworkInventory> vlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
                 new While<>(vlanNetworks).step((l2, c) -> {
-                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), VSwitchType.valueOf(l2.getvSwitchType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
+                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(
+                            L2NetworkType.valueOf(l2.getType()), HypervisorType.valueOf(hostVO.getHypervisorType()), l2ProviderMap.get(l2.getUuid()));
                     ext.realize(l2, hostUuid, true, new Completion(c) {
                         @Override
                         public void success() {

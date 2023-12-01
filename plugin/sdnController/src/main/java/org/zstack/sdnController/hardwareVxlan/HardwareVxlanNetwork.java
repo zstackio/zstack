@@ -60,9 +60,8 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     private void realizeNetwork(String hostUuid, String htype, L2VxlanNetworkInventory inv , Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE);
-        final VSwitchType vSwitchType = VSwitchType.valueOf(inv.getvSwitchType());
 
-        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
         ext.realize(inv, hostUuid, completion);
     }
 

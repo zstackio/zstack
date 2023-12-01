@@ -14,12 +14,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.KVMAgentCommands.CheckVlanBridgeResponse;
-import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
-import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
-import org.zstack.kvm.KVMAgentCommands.DeleteVlanBridgeCmd;
-import org.zstack.kvm.KVMAgentCommands.DeleteVlanBridgeResponse;
-import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
@@ -140,7 +135,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                 CheckVlanBridgeResponse rsp = hreply.toResponse(CheckVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
                     ErrorCode err = operr("failed to check bridge[%s] for l2VlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
-                                    cmd.getBridgeName(), l2vlan.getUuid(), l2vlan.getName(), hostUuid, rsp.getError());
+                            cmd.getBridgeName(), l2vlan.getUuid(), l2vlan.getName(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
                 }
@@ -177,27 +172,22 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
     }
 
     @Override
-    public VSwitchType getSupportedVSwitchType() {
-        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    public L2NetworkType getL2NetworkTypeVmNicOn() {
+        return getSupportedL2NetworkType();
     }
 
     @Override
-	public L2NetworkType getL2NetworkTypeVmNicOn() {
-		return getSupportedL2NetworkType();
-	}
-
-    @Override
-	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
+    public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         final Integer vlanId = getVlanId(l2Network.getUuid());
-		NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
-		to.setBridgeName(makeBridgeName(l2Network.getUuid(), vlanId));
+        NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
+        to.setBridgeName(makeBridgeName(l2Network.getUuid(), vlanId));
         to.setPhysicalInterface(l2Network.getPhysicalInterface());
-		to.setMetaData(String.valueOf(vlanId));
+        to.setMetaData(String.valueOf(vlanId));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         to.setVlanId(String.valueOf(vlanId));
 
-		return to;
-	}
+        return to;
+    }
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
