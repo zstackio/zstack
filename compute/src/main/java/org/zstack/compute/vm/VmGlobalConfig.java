@@ -85,7 +85,7 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_REBOOT_THRESHOLD_TIMES = new GlobalConfig(CATEGORY, "crash.rebootThreshold.times");
 
     @GlobalConfigValidation(validValues = {"Auto", "All"})
-    @BindResourceConfig({VmInstanceVO.class})
+    @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig RESOURCE_BINDING_SCENE = new GlobalConfig(CATEGORY, "resourceBinding.Scene");
 
     @GlobalConfigValidation(inNumberRange = {1, 256})
