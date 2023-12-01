@@ -2,15 +2,14 @@ package org.zstack.core.aspect;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.core.encrypt.EncryptAfterSaveDbRecordExtensionPoint;
-import org.zstack.header.core.encrypt.EncryptColumn;
 import org.zstack.header.core.encrypt.IntegrityVerificationResourceFactory;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.EntityManager;
-import java.lang.reflect.Field;
 
 /**
  * @Author: DaoDao
@@ -25,7 +24,6 @@ public aspect EncryptColumnAspect {
      after(EntityManager mgr, Object entity) : call(void EntityManager+.persist(Object))
            && target(mgr)
            && args(entity) {
-         Field[] fields = entity.getClass().getDeclaredFields();
          for (IntegrityVerificationResourceFactory f : pluginRegistry.getExtensionList(IntegrityVerificationResourceFactory.class)) {
              if (entity.getClass().getSimpleName().equals(f.getResourceType())) {
                  f.doIntegrityAfterSaveDbRecord(entity);
@@ -33,19 +31,15 @@ public aspect EncryptColumnAspect {
              }
          }
 
-         for (Field field : fields) {
-             if (field.getAnnotation(EncryptColumn.class) != null) {
-                 ResourceVO resourceVO = (ResourceVO) entity;
-                 pluginRegistry.getExtensionList(EncryptAfterSaveDbRecordExtensionPoint.class).forEach(point -> point.encryptAfterSaveDbRecord(resourceVO));
-                 break;
-             }
+         if (EntityMetadata.hasEncryptField(entity.getClass())) {
+             ResourceVO resourceVO = (ResourceVO) entity;
+             pluginRegistry.getExtensionList(EncryptAfterSaveDbRecordExtensionPoint.class).forEach(point -> point.encryptAfterSaveDbRecord(resourceVO));
          }
      }
 
     after(EntityManager mgr, Object entity) : call(* EntityManager+.merge(Object))
             && target(mgr)
             && args(entity) {
-        Field[] fields = entity.getClass().getDeclaredFields();
         for (IntegrityVerificationResourceFactory f : pluginRegistry.getExtensionList(IntegrityVerificationResourceFactory.class)) {
             if (entity.getClass().getSimpleName().equals(f.getResourceType())) {
                 f.doIntegrityAfterUpdateDbRecord(entity);
@@ -53,33 +47,24 @@ public aspect EncryptColumnAspect {
             }
         }
 
-        for (Field field : fields) {
-            if (field.getAnnotation(EncryptColumn.class) != null) {
-                ResourceVO resourceVO = (ResourceVO) entity;
-                pluginRegistry.getExtensionList(EncryptAfterSaveDbRecordExtensionPoint.class).forEach(point -> point.encryptAfterUpdateDbRecord(resourceVO));
-                break;
-            }
+        if (EntityMetadata.hasEncryptField(entity.getClass())) {
+            ResourceVO resourceVO = (ResourceVO) entity;
+            pluginRegistry.getExtensionList(EncryptAfterSaveDbRecordExtensionPoint.class).forEach(point -> point.encryptAfterUpdateDbRecord(resourceVO));
         }
     }
 
     after(EntityManager mgr, Object entity) : call(* EntityManager+.remove(Object))
             && target(mgr)
             && args(entity) {
-        Field[] fields = entity.getClass().getDeclaredFields();
         for (IntegrityVerificationResourceFactory f : pluginRegistry.getExtensionList(IntegrityVerificationResourceFactory.class)) {
             if (entity.getClass().getSimpleName().equals(f.getResourceType())) {
                 f.doIntegrityAfterRemoveDbRecord(entity);
                 break;
             }
         }
-        if (entity instanceof ResourceVO) {
-            for (Field field : fields) {
-                if (field.getAnnotation(EncryptColumn.class) != null) {
-                    ResourceVO resourceVO = (ResourceVO) entity;
-                    pluginRegistry.getExtensionList(EncryptAfterSaveDbRecordExtensionPoint.class).forEach(point -> point.deleteEncryptDataAfterRemoveRecord(resourceVO));
-                    break;
-                }
-            }
+        if (entity instanceof ResourceVO && EntityMetadata.hasEncryptField(entity.getClass())) {
+            ResourceVO resourceVO = (ResourceVO) entity;
+            pluginRegistry.getExtensionList(EncryptAfterSaveDbRecordExtensionPoint.class).forEach(point -> point.deleteEncryptDataAfterRemoveRecord(resourceVO));
         }
      }
 }
