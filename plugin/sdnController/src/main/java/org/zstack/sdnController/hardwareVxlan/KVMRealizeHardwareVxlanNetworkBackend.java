@@ -11,7 +11,9 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
@@ -24,7 +26,8 @@ import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.sdnController.header.*;
+import org.zstack.sdnController.header.HardwareVxlanHelper;
+import org.zstack.sdnController.header.SdnControllerConstant;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -140,7 +143,7 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
                 CheckVlanBridgeResponse rsp = hreply.toResponse(CheckVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
                     ErrorCode err = operr("failed to check bridge[%s] for hardwareVxlan[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
-                                    cmd.getBridgeName(), vxlan.getUuid(), vxlan.getName(), hostUuid, rsp.getError());
+                            cmd.getBridgeName(), vxlan.getUuid(), vxlan.getName(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
                 }
@@ -168,19 +171,13 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
     }
 
-	@Override
-	public L2NetworkType getL2NetworkTypeVmNicOn() {
-		return getSupportedL2NetworkType();
-	}
-
     @Override
-    public VSwitchType getSupportedVSwitchType() {
-        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    public L2NetworkType getL2NetworkTypeVmNicOn() {
+        return getSupportedL2NetworkType();
     }
 
-
     @Override
-	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
+    public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class));
         VmInstanceVO vm = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
 
@@ -190,17 +187,17 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
         Integer vlanId = struct.getVlanId();
 
         NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
-		to.setBridgeName(makeBridgeName(l2Network.getUuid(), vlanId));
-		to.setMetaData(String.valueOf(vlanId));
+        to.setBridgeName(makeBridgeName(l2Network.getUuid(), vlanId));
+        to.setMetaData(String.valueOf(vlanId));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
-		return to;
-	}
+        return to;
+    }
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
         VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
-       /*
-       * to be done */
+        /*
+         * to be done */
 
         return makeBridgeName(l2Network.getUuid(), vo.getVni());
     }

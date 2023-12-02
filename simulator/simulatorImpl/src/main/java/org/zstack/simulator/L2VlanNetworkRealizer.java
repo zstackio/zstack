@@ -14,7 +14,7 @@ public class L2VlanNetworkRealizer implements L2NetworkRealizationExtensionPoint
 
     @Autowired
     private DatabaseFacade dbf;
-    
+
     @Override
     public void realize(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
         L2VlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), L2VlanNetworkVO.class);
@@ -35,11 +35,6 @@ public class L2VlanNetworkRealizer implements L2NetworkRealizationExtensionPoint
     @Override
     public HypervisorType getSupportedHypervisorType() {
         return HypervisorType.valueOf(SimulatorConstant.SIMULATOR_HYPERVISOR_TYPE);
-    }
-
-    @Override
-    public VSwitchType getSupportedVSwitchType() {
-        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
     }
 
     public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
