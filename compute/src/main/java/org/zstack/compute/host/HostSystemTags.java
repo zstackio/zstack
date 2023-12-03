@@ -17,13 +17,19 @@ public class HostSystemTags {
 
     public static SystemTag LIVE_SNAPSHOT = new SystemTag("capability::liveSnapshot", HostVO.class);
 
+    @Deprecated
     public static String OS_DISTRIBUTION_TOKEN = "distribution";
+    @Deprecated
     public static PatternedSystemTag OS_DISTRIBUTION = new PatternedSystemTag(String.format("os::distribution::{%s}", OS_DISTRIBUTION_TOKEN), HostVO.class);
 
+    @Deprecated
     public static String OS_RELEASE_TOKEN = "release";
+    @Deprecated
     public static PatternedSystemTag OS_RELEASE = new PatternedSystemTag(String.format("os::release::{%s}", OS_RELEASE_TOKEN), HostVO.class);
 
+    @Deprecated
     public static String OS_VERSION_TOKEN = "version";
+    @Deprecated
     public static PatternedSystemTag OS_VERSION = new PatternedSystemTag(String.format("os::version::{%s}", OS_VERSION_TOKEN), HostVO.class);
 
     public static String EXTRA_IPS_TOKEN = "extraips";
@@ -56,6 +62,9 @@ public class HostSystemTags {
     public static final String POWER_SUPPLY_MANUFACTURER_TOKEN = "powerSupplyManufacturer";
     public static PatternedSystemTag POWER_SUPPLY_MANUFACTURER = new PatternedSystemTag(String.format("powerSupplyManufacturer::{%s}", POWER_SUPPLY_MANUFACTURER_TOKEN), HostVO.class);
 
+    public static final String IPMI_ADDRESS_TOKEN = "ipmiAddress";
+    public static PatternedSystemTag IPMI_ADDRESS = new PatternedSystemTag(String.format("ipmiAddress::{%s}", IPMI_ADDRESS_TOKEN), HostVO.class);
+
     public static final String PAGE_TABLE_EXTENSION_DISABLED_TOKEN = "pageTableExtensionDisabled";
     public static PatternedSystemTag PAGE_TABLE_EXTENSION_DISABLED = new PatternedSystemTag(PAGE_TABLE_EXTENSION_DISABLED_TOKEN, HostVO.class);
 
@@ -63,7 +72,35 @@ public class HostSystemTags {
     public static PatternedSystemTag HOST_GUEST_TOOLS =
             new PatternedSystemTag(String.format("GuestTools::{%s}", HOST_GUEST_TOOLS_VERSION_TOKEN), HostVO.class);
 
+    public static String HOST_LINUX_GUEST_TOOLS_VERSION_TOKEN = "guestToolsLinuxVersion";
+    public static PatternedSystemTag HOST_LINUX_GUEST_TOOLS =
+            new PatternedSystemTag(String.format("GuestToolsLinux::{%s}", HOST_LINUX_GUEST_TOOLS_VERSION_TOKEN), HostVO.class);
+
     public static String HOST_CONNECTED_TIME_TOKEN = "hostConnectedTime";
     public static PatternedSystemTag HOST_CONNECTED_TIME =
             new PatternedSystemTag(String.format("ConnectedTime::{%s}", HOST_CONNECTED_TIME_TOKEN), HostVO.class);
+
+    public static String SYSTEM_MANUFACTURER_TOKEN = "systemManufacturer";
+    public static PatternedSystemTag SYSTEM_MANUFACTURER = new PatternedSystemTag(String.format("systemManufacturer::{%s}", SYSTEM_MANUFACTURER_TOKEN), HostVO.class);
+
+    public static String SYSTEM_UUID_TOKEN = "systemUUID";
+    public static PatternedSystemTag SYSTEM_UUID = new PatternedSystemTag(String.format("systemUUID::{%s}", SYSTEM_UUID_TOKEN), HostVO.class);
+
+    public static String BIOS_VENDOR_TOKEN = "biosVendor";
+    public static PatternedSystemTag BIOS_VENDOR = new PatternedSystemTag(String.format("biosVendor::{%s}", BIOS_VENDOR_TOKEN), HostVO.class);
+
+    public static String BIOS_VERSION_TOKEN = "biosVersion";
+    public static PatternedSystemTag BIOS_VERSION = new PatternedSystemTag(String.format("biosVersion::{%s}", BIOS_VERSION_TOKEN), HostVO.class);
+
+    public static String BIOS_RELEASE_DATE_TOKEN = "biosReleaseDate";
+    public static PatternedSystemTag BIOS_RELEASE_DATE = new PatternedSystemTag(String.format("biosReleaseDate::{%s}", BIOS_RELEASE_DATE_TOKEN), HostVO.class);
+
+    public static String BMC_VERSION_TOKEN = "bmcVersion";
+    public static PatternedSystemTag BMC_VERSION = new PatternedSystemTag(String.format("bmcVersion::{%s}", BMC_VERSION_TOKEN), HostVO.class);
+
+    public static String UPTIME_TOKEN = "uptime";
+    public static PatternedSystemTag UPTIME = new PatternedSystemTag(String.format("uptime::{%s}", UPTIME_TOKEN), HostVO.class);
+
+    public static String MEMORY_SLOTS_MAXIMUM_TOKEN = "memorySlotsMaximum";
+    public static PatternedSystemTag MEMORY_SLOTS_MAXIMUM = new PatternedSystemTag(String.format("memorySlotsMaximum::{%s}", MEMORY_SLOTS_MAXIMUM_TOKEN), HostVO.class);
 }

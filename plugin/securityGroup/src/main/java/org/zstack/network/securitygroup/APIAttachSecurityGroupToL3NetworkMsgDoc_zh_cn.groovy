@@ -23,23 +23,21 @@ doc {
 
 				column {
 					name "securityGroupUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "安全组UUID"
 					location "url"
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "l3NetworkUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "三层网络UUID"
 					location "url"
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

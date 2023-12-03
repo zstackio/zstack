@@ -176,6 +176,7 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateAliyunProxyVSwitchAction.metaClass, CreateAliyunProxyVSwitchAction.Result.metaClass, DeleteAliyunProxyVSwitchAction.class],
             [CreateMonitorGroupAction.metaClass, CreateMonitorGroupAction.Result.metaClass, DeleteMonitorGroupAction.class],
             [CreateMonitorTemplateAction.metaClass, CreateMonitorTemplateAction.Result.metaClass, DeleteMonitorTemplateAction.class],
+            [CreateDirectoryAction.metaClass, CreateDirectoryAction.Result.metaClass, DeleteDirectoryAction.class]
     ]
 
     static Closure GLOBAL_DELETE_HOOK
@@ -690,10 +691,11 @@ class EnvSpec extends ApiHelper implements Node  {
                               "TaskProgressVO", "TaskStepVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
-                              "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO", 
+                              "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO",
                               "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO", "EventLogVO", "VmSchedHistoryVO",
-                              "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO",
-                              "VmInstanceDeviceAddressGroupVO"]) {
+                              "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO", "FileIntegrityVerificationVO",
+                              "EncryptEntityMetadataVO", "VmInstanceDeviceAddressGroupVO", "HostOsCategoryVO", "KvmHostHypervisorMetadataVO",
+                              "HaStrategyConditionVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }

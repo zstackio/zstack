@@ -28,20 +28,15 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageBackupStorageRefVO;
-import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.CreateImageCacheFromVolumeSnapshotReply;
 import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -51,8 +46,9 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.storage.primary.PrimaryStorageBase;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.primary.*;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
@@ -68,6 +64,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -130,6 +127,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if ((msg instanceof GetDownloadBitsFromKVMHostProgressMsg)) {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
+        } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
+            handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -194,37 +193,43 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg, ReturnValueCompletion<PrimaryStorageVO> completion) {
-        boolean update = false;
-        if (msg.getName() != null) {
-            self.setName(msg.getName());
-            update = true;
-        }
-        if (msg.getDescription() != null) {
-            self.setDescription(msg.getDescription());
-            update = true;
-        }
-
+    protected void updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg, ReturnValueCompletion<PrimaryStorageInventory> completion) {
         if (msg.getUrl() != null && !self.getUrl().equals(msg.getUrl())) {
-            updateMountPoint(msg.getUrl(), new Completion(completion) {
+            thdf.chainSubmit(new ChainTask(msg) {
+
                 @Override
-                public void success() {
-                    self.setUrl(msg.getUrl());
-                    self = dbf.updateAndRefresh(self);
-                    for (UpdatePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(UpdatePrimaryStorageExtensionPoint.class)) {
-                        ext.afterUpdatePrimaryStorage(PrimaryStorageInventory.valueOf(self));
-                    }
-                    completion.success(self);
+                public String getSyncSignature() {
+                    return getSyncId();
                 }
 
                 @Override
-                public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
+                public String getName() {
+                    return String.format("update-primary-storage-%s", self.getUuid());
+                }
+
+                @Override
+                public void run(SyncTaskChain chain) {
+                    updateMountPoint(msg.getUrl(), new Completion(completion) {
+                        @Override
+                        public void success() {
+                            NfsPrimaryStorage.super.updatePrimaryStorage(msg, completion);
+                            for (UpdatePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(UpdatePrimaryStorageExtensionPoint.class)) {
+                                ext.afterUpdatePrimaryStorage(PrimaryStorageInventory.valueOf(self));
+                            }
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    });
                 }
             });
-            return;
+        } else {
+            super.updatePrimaryStorage(msg, completion);
         }
-        completion.success(update ? self : null);
     }
 
     @Override
@@ -375,6 +380,24 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         VolumeInventory volume = msg.getTo();
         final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(snapshot.getFormat(), self.getUuid()));
         backend.mergeSnapshotToVolume(getSelfInventory(), snapshot, volume, msg.isFullRebase(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(FlattenVolumeOnPrimaryStorageMsg msg) {
+        final FlattenVolumeOnPrimaryStorageReply reply = new FlattenVolumeOnPrimaryStorageReply();
+        final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getVolume().getFormat(), self.getUuid()));
+        backend.mergeSnapshotToVolume(getSelfInventory(), null, msg.getVolume(), true, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -665,7 +688,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
 
     @Transactional(readOnly = true)
-    private NfsPrimaryStorageBackend getUsableBackend() {
+    protected NfsPrimaryStorageBackend getUsableBackend() {
         List<String> cuuids = CollectionUtils.transformToList(self.getAttachedClusterRefs(), new Function<String, PrimaryStorageClusterRefVO>() {
             @Override
             public String call(PrimaryStorageClusterRefVO arg) {
@@ -695,6 +718,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         query.select(ClusterVO_.hypervisorType);
         query.add(ClusterVO_.uuid, Op.EQ, clusterUuid);
         String hvType = query.findValue();
+        return getBackend(HypervisorType.valueOf(hvType));
+    }
+
+    private NfsPrimaryStorageBackend getBackendByHostUuid(String hostUuid) {
+        String hvType = Q.New(HostVO.class).select(HostVO_.hypervisorType)
+                .eq(HostVO_.uuid, hostUuid)
+                .findValue();
         return getBackend(HypervisorType.valueOf(hvType));
     }
 
@@ -753,6 +783,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 PrimaryStorageInventory primaryStorage = getSelfInventory();
                 ImageCacheInventory imageCache;
                 String volumeInstallPath;
+                Long actualSize;
 
                 @Override
                 public void setup() {
@@ -784,10 +815,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             NfsPrimaryStorageBackend backend = factory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getFormat(), self.getUuid()));
-                            backend.createVolumeFromImageCache(primaryStorage, image, imageCache, volume, new ReturnValueCompletion<String>(trigger) {
+                            backend.createVolumeFromImageCache(primaryStorage, image, imageCache, volume, new ReturnValueCompletion<VolumeInfo>(trigger) {
                                 @Override
-                                public void success(String returnValue) {
-                                    volumeInstallPath = returnValue;
+                                public void success(VolumeInfo returnValue) {
+                                    volumeInstallPath = returnValue.getInstallPath();
+                                    actualSize = returnValue.getActualSize();
                                     trigger.next();
                                 }
 
@@ -804,6 +836,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         public void handle(Map data) {
                             volume.setInstallPath(volumeInstallPath);
                             volume.setFormat(image.getFormat());
+                            volume.setActualSize(actualSize);
                             reply.setVolume(volume);
                             bus.reply(msg, reply);
                         }
@@ -882,7 +915,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         VolumeInventory vol = msg.getVolume();
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
-        backend.instantiateVolume(PrimaryStorageInventory.valueOf(self), vol, new ReturnValueCompletion<VolumeInventory>(msg) {
+        backend.instantiateVolume(PrimaryStorageInventory.valueOf(self), msg.getDestHost(), vol, new ReturnValueCompletion<VolumeInventory>(msg) {
             @Override
             public void success(VolumeInventory returnValue) {
                 reply.setVolume(returnValue);
@@ -929,6 +962,12 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete volume[uuid:%s] right now, skip this GC job because it's in use", msg.getVolume().getUuid()));
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    return;
+                }
                 NfsDeleteVolumeGC gc = new NfsDeleteVolumeGC();
                 gc.NAME = String.format("gc-nfs-%s-volume-%s", self.getUuid(), vol.getUuid());
                 gc.primaryStorageUuid = self.getUuid();
@@ -980,6 +1019,16 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     protected void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
         CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
 
+        boolean incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+        if (incremental && PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE) {
+            ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
+            dbf.persist(cache);
+            reply.setInventory(cache.toInventory());
+            reply.setIncremental(true);
+            bus.reply(msg, reply);
+            return;
+        }
+
         ImageSpec spec = new ImageSpec();
         spec.setInventory(msg.getImageInventory());
 
@@ -987,6 +1036,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         job.setPrimaryStorage(getSelfInventory());
         job.setImage(spec);
         job.setVolumeResourceInstallPath(msg.getVolumeSnapshot().getPrimaryStorageInstallPath());
+        job.setIncremental(incremental);
 
         jobf.execute(NfsPrimaryStorageKvmHelper.makeDownloadImageJobName(msg.getImageInventory(), job.getPrimaryStorage()),
                 NfsPrimaryStorageKvmHelper.makeJobOwnerName(job.getPrimaryStorage()), job,
@@ -994,7 +1044,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void success(ImageCacheInventory cache) {
-                        reply.setActualSize(cache.getSize());
+                        reply.setIncremental(job.isIncremental());
+                        reply.setInventory(cache);
                         bus.reply(msg, reply);
                     }
 
@@ -1316,6 +1367,47 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    @Override
+    protected void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg) {
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<EstimateVolumeTemplateSizeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(EstimateVolumeTemplateSizeOnPrimaryStorageReply reply) {
+                saveVolumeProvisioningStrategy(msg.getVolumeUuid(), reply.getActualSize() < reply.getSize() ? VolumeProvisioningStrategy.ThinProvisioning : VolumeProvisioningStrategy.ThickProvisioning);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
+        NfsPrimaryStorageBackend backend = getBackendByHostUuid(msg.getHostUuid());
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(BatchSyncVolumeSizeOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+            @Override
+            public void fail(ErrorCode errorCode) {
+                BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     protected void saveVolumeProvisioningStrategy(String volumeUuid, VolumeProvisioningStrategy strategy) {
         if (!VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.hasTag(volumeUuid)) {
             SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volumeUuid);
@@ -1447,6 +1539,27 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 NfsRebaseVolumeBackingFileReply reply = new NfsRebaseVolumeBackingFileReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg) {
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply>(msg) {
+            @Override
+            public void success(GetVolumeBackingChainFromPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -1658,8 +1771,38 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
+    private ErrorCode checkChangeVolumeType(String volumeUuid) {
+        List<VolumeInventory> refVols = VolumeSnapshotReferenceUtils.getReferenceVolume(volumeUuid);
+        if (refVols.isEmpty()) {
+            return null;
+        }
+
+        List<String> infos = refVols.stream().map(v -> String.format("uuid:%s, name:%s", v.getUuid(), v.getName())).collect(Collectors.toList());
+        return operr("volume[uuid:%s] has reference volume[%s], can not change volume type before flatten " +
+                "them and their descendants", volumeUuid, infos.toString());
+    }
+
+    @Override
+    protected void handle(CheckChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        CheckChangeVolumeTypeOnPrimaryStorageReply reply = new CheckChangeVolumeTypeOnPrimaryStorageReply();
+        ErrorCode errorCode = checkChangeVolumeType(msg.getVolume().getUuid());
+        if (errorCode != null) {
+            reply.setError(errorCode);;
+        }
+
+        bus.reply(msg, reply);
+    }
+
     @Override
     protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        ErrorCode errorCode = checkChangeVolumeType(msg.getVolume().getUuid());
+        if (errorCode != null) {
+            ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+            reply.setError(errorCode);
+            bus.reply(msg, reply);
+            return;
+        }
+
         NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
             throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
@@ -1677,6 +1820,28 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 ChangeVolumeTypeOnPrimaryStorageReply r = new ChangeVolumeTypeOnPrimaryStorageReply();
                 r.setError(errorCode);
                 bus.reply(msg, r);
+            }
+        });
+    }
+
+    protected void handle(UnlinkBitsOnPrimaryStorageMsg msg) {
+        UnlinkBitsOnPrimaryStorageReply reply = new UnlinkBitsOnPrimaryStorageReply();
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+
+        backend.unlink(getSelfInventory(), msg.getInstallPath(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }

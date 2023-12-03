@@ -2,7 +2,6 @@ package org.zstack.header.vm
 
 import org.zstack.header.vm.APIQueryVmInstanceReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询云主机(QueryVmInstance)"

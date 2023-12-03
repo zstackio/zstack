@@ -110,7 +110,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
         }
 
-        if (CoreGlobalProperty.UNIT_TEST_ON && !CoreGlobalProperty.SIMULATORS_ON) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && !Platform.isSimulatorOn()) {
             CloudBusGlobalProperty.HTTP_CONTEXT_PATH = "";
             CloudBusGlobalProperty.HTTP_PORT = 8989;
         }
@@ -711,10 +711,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 ThreadContext.putAll(ctx);
             }
 
-            if (!ThreadContext.containsKey(Constants.THREAD_CONTEXT_API)) {
-                if (!ThreadContext.containsKey(Constants.THREAD_CONTEXT_TASK)) {
-                    ThreadContext.put(Constants.THREAD_CONTEXT_TASK, msg.getId());
-                }
+            if (!ThreadContext.containsKey(Constants.THREAD_CONTEXT_API)
+                    && (!ThreadContext.containsKey(Constants.THREAD_CONTEXT_TASK))) {
+                ThreadContext.put(Constants.THREAD_CONTEXT_TASK, msg.getId());
             }
         }
 
@@ -1029,7 +1028,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             int order = 0;
             for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
                 if (i.orderOfBeforeDeliveryMessageInterceptor() <= interceptor.orderOfBeforeDeliveryMessageInterceptor()) {
-                    order = beforeDeliveryMessageInterceptorsForAll.indexOf(i);
+                    // move new interceptor's position
+                    order = beforeDeliveryMessageInterceptorsForAll.indexOf(i) + 1;
+                } else {
                     break;
                 }
             }

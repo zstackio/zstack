@@ -26,6 +26,8 @@ import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
 import org.zstack.sdk.AddSecurityGroupRuleAction
 import org.zstack.sdk.ChangeSecurityGroupStateAction
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.IpRangeInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -75,6 +77,9 @@ class AddRulesRemoteGroupsCase extends SubCase{
                  sg2's vm in host2, ipset in host1, host2, host3
                  sg3's vm in host3, ipset in host2, host3
                  */
+
+            // test create vm with sg1 in host3, ipset will update in host1, host2, host3
+            testCreateVmWithSecurityGroup(sg1.uuid, [host1.uuid, host2.uuid, host3.uuid])
 
             // after action, sg3's ipset is in host2 and host3, should update its ipset member on host2 and host3
             testRemoveVmNicFromSecurityGroup([vm3.vmNics.get(0).uuid], sg3.uuid, [host2.uuid, host3.uuid])
@@ -370,6 +375,46 @@ class AddRulesRemoteGroupsCase extends SubCase{
         addRule(sg1.uuid, 2, [sg2.uuid], 2)
         addRule(sg2.uuid, 3, [sg1.uuid, sg3.uuid], 2)
         addRule(sg3.uuid, 1, [sg2.uuid, sg1.uuid], 2)
+    }
+
+    void testCreateVmWithSecurityGroup(String sgUuid, List<String> expectHostUuids) {
+        def l3 = env.inventoryByName("l3") as org.zstack.sdk.L3NetworkInventory
+        def image = env.inventoryByName("image") as ImageInventory
+        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        List<String> actuallyHostUuids = Collections.synchronizedList(new ArrayList<String>())
+
+        KVMAgentCommands.UpdateGroupMemberCmd ucmd
+        env.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_UPDATE_GROUP_MEMBER ){ HttpEntity<String> e ->
+            String huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            actuallyHostUuids.add(huuid)
+            ucmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.UpdateGroupMemberCmd.class)
+            return new KVMAgentCommands.ApplySecurityGroupRuleResponse()
+        }
+
+        def vm_5 = createVmInstance {
+            name = "vm-5"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            systemTags = ["l3::${l3.uuid}::SecurityGroupUuids::${sgUuid}".toString()]
+        } as VmInstanceInventory
+
+        retryInSecs{
+            assert ucmd != null
+        }
+
+        List<String> actuallyTransportVmIps = ucmd.updateGroupTOs.get(0).securityGroupVmIps
+        assert actuallyHostUuids.containsAll(expectHostUuids)
+        assert ucmd.updateGroupTOs.size() == 1
+        assert ucmd.updateGroupTOs.get(0).securityGroupUuid == sgUuid
+        assert ucmd.updateGroupTOs.get(0).actionCode == SecurityGroupMembersTO.ACTION_CODE_UPDATE_GROUP_MEMBER
+
+        destroyVmInstance {
+            uuid = vm_5.uuid
+        }
+        expungeVmInstance {
+            uuid = vm_5.uuid
+        }
     }
 
     void testRemoveVmNicFromSecurityGroup(List<String> nicUuids, String sgUuid, List<String> expectHostUuids){

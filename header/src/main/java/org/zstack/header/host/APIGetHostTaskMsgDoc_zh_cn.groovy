@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-import org.zstack.header.host.APIGetHostTaskReply
+import org.zstack.header.core.APIGetChainTaskReply
 
 doc {
     title "GetHostTask"
@@ -29,7 +29,6 @@ doc {
 					type "List"
 					optional false
 					since "3.6.0"
-					
 				}
 				column {
 					name "systemTags"
@@ -39,7 +38,6 @@ doc {
 					type "List"
 					optional true
 					since "3.6.0"
-					
 				}
 				column {
 					name "userTags"
@@ -49,13 +47,21 @@ doc {
 					type "List"
 					optional true
 					since "3.6.0"
-					
+				}
+				column {
+					name "syncSignatures"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "List"
+					optional true
+					since "4.6.0"
 				}
 			}
         }
 
         response {
-            clz APIGetHostTaskReply.class
+            clz APIGetChainTaskReply.class
         }
     }
 }

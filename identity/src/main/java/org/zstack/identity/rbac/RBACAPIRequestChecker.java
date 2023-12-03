@@ -37,7 +37,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
 
         if (PolicyUtils.isAdminOnlyAction(entity.getApiName()) && !AccountConstant.isAdminPermission(entity.getApiMessage().getSession())) {
-            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "request api is admin only, can not be executed by current user"));
+            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED,
+                    "request api[name: %s] is admin only, can not be executed by current user",
+                    entity.getApiName()));
         }
 
         check();

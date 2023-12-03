@@ -2,7 +2,6 @@ package org.zstack.header.storage.primary
 
 import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryPrimaryStorage"

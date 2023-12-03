@@ -43,6 +43,7 @@ public class InstantiateVolumeForVmChangeImageExtension extends InstantiateVolum
         rmsg.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rmsg.setPrimaryStorageAllocated(true);
         rmsg.setSkipIfExisting(spec.isInstantiateResourcesSkipExisting());
+        rmsg.setAllocatedInstallUrl(spec.getAllocatedUrlFromVolumeSpecs(spec.getDestRootVolume().getUuid()));
         bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeConstant.SERVICE_ID, spec.getDestRootVolume().getUuid());
 
         doInstantiate(Collections.singletonList((NeedReplyMessage)rmsg).iterator(), spec, completion);

@@ -45,6 +45,7 @@
     <import resource="springConfigXml/CloudBus.xml"/>
     <import resource="springConfigXml/ClusterManager.xml"/>
     <import resource="springConfigXml/ConfigurationManager.xml"/>
+    <import resource="springConfigXml/core.xml"/>
     <import resource="springConfigXml/ConsoleManager.xml"/>
     <import resource="springConfigXml/DatabaseFacade.xml"/>
     <import resource="springConfigXml/debug.xml"/>
@@ -57,6 +58,7 @@
     <import resource="springConfigXml/resourceConfig.xml"/>
     <import resource="springConfigXml/HostAllocatorManager.xml"/>
     <import resource="springConfigXml/HostManager.xml"/>
+    <import resource="springConfigXml/identity.xml"/>
     <import resource="springConfigXml/ImageManager.xml"/>
     <import resource="springConfigXml/jmx.xml"/>
     <import resource="springConfigXml/JobQueueFacade.xml"/>
@@ -101,4 +103,7 @@
     <import resource="springConfigXml/LongJobManager.xml" />
     <import resource="springConfigXml/captcha.xml"/>
     <import resource="springConfigXml/log.xml"/>
+    <import resource="springConfigXml/sdnController.xml"/>
+    <import resource="springConfigXml/cas.xml"/>
+    <import resource="springConfigXml/directoryManager.xml"/>
 </beans>

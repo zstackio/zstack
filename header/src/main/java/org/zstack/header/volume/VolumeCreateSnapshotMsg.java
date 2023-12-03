@@ -1,16 +1,12 @@
 package org.zstack.header.volume;
 
-import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.message.NeedReplyMessage;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by david on 10/7/16.
  */
 
-@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class VolumeCreateSnapshotMsg extends NeedReplyMessage implements VolumeMessage, NeedQuotaCheckMessage {
     private String accountUuid;
     private String resourceUuid;

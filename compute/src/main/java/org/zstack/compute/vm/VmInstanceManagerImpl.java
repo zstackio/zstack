@@ -1,13 +1,12 @@
 package org.zstack.compute.vm;
 
-import org.apache.commons.collections.CollectionUtils;
 import com.google.common.collect.Maps;
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.compute.vm.quota.*;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -24,6 +23,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
+import org.zstack.directory.ResourceDirectoryRefVO;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
@@ -48,8 +49,8 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -75,6 +76,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
@@ -87,14 +89,15 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
+import static java.lang.Integer.parseInt;
+import static java.lang.Integer.valueOf;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
@@ -109,9 +112,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
         ResourceOwnerAfterChangeExtensionPoint,
         GlobalApiMessageInterceptor,
         AfterChangeHostStatusExtensionPoint,
-        VmInstanceMigrateExtensionPoint {
+        VmInstanceMigrateExtensionPoint,
+        VmInstanceBeforeStartExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
-    private final Map<String, VmInstanceFactory> vmInstanceFactories = new ConcurrentHashMap<>();
     private List<String> createVmWorkFlowElements;
     private List<String> stopVmWorkFlowElements;
     private List<String> rebootVmWorkFlowElements;
@@ -138,9 +141,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private FlowChainBuilder resumeVmFlowBuilder;
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private Future<Void> expungeVmTask;
-    private Map<Class, VmInstanceBaseExtensionFactory> vmInstanceBaseExtensionFactories = new HashMap<>();
-    private Map<String, VmInstanceNicFactory> vmInstanceNicFactories = new HashMap<>();
-    private Map<String, VmNicQosConfigBackend> vmNicQosConfigMap = new HashMap<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -174,6 +174,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     protected L3NetworkManager l3nm;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private VmFactoryManager vmFactoryManager;
 
     private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
 
@@ -262,7 +264,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 reply.setInventories(new ArrayList<>());
             } else {
                 reply.setInventories(getInterdependentL3NetworksByBackupStorageUuids(Collections.singletonList(bsvo),
-                        msg.getZoneUuid(), accountUuid));
+                        msg.getZoneUuid(), accountUuid, false));
             }
         } else {
             reply.setInventories(getInterdependentBackupStoragesByL3NetworkUuids(msg.getL3NetworkUuids()));
@@ -494,8 +496,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             msg.getImageUuid(), msg.getZoneUuid()));
         }
 
-        List<L3NetworkInventory> l3s =
-                getInterdependentL3NetworksByBackupStorageUuids(bss, msg.getZoneUuid(), accountUuid);
+        List<L3NetworkInventory> l3s = getInterdependentL3NetworksByBackupStorageUuids(bss, msg.getZoneUuid(), accountUuid, msg.getRaiseException());
 
         List<String> bsUuids = bss.stream().map(BackupStorageVO::getUuid).collect(Collectors.toList());
         for (GetInterdependentL3NetworksExtensionPoint ext : pluginRgty.getExtensionList(GetInterdependentL3NetworksExtensionPoint.class)) {
@@ -507,7 +508,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Transactional(readOnly = true)
-    private List<L3NetworkInventory> getInterdependentL3NetworksByBackupStorageUuids(List<BackupStorageVO> bss, String zoneUuid, String accountUuid) {
+    private List<L3NetworkInventory> getInterdependentL3NetworksByBackupStorageUuids(List<BackupStorageVO> bss, String zoneUuid, String accountUuid, boolean raiseException) {
+        List<String> psUuids = new ArrayList<>();
         List<L3NetworkVO> l3s = new ArrayList<>();
         for (BackupStorageVO bs : bss) {
             BackupStorageType bsType = BackupStorageType.valueOf(bs.getType());
@@ -515,51 +517,111 @@ public class VmInstanceManagerImpl extends AbstractService implements
             if (relatedPrimaryStorageUuids == null) {
                 // the backup storage has no strongly-bound primary storage
                 List<String> psTypes = hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bs.getType());
-                String sql = "select l3" +
-                        " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
-                        " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
-                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
-                        " and l2ref.clusterUuid = psref.clusterUuid" +
-                        " and psref.primaryStorageUuid = ps.uuid" +
-                        " and ps.type in (:psTypes)" +
-                        " and ps.zoneUuid = l3.zoneUuid" +
-                        " and l3.zoneUuid = :zoneUuid" +
-                        " group by l3.uuid";
-                TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
-                l3q.setParameter("psTypes", psTypes);
-                l3q.setParameter("zoneUuid", zoneUuid);
-                l3s.addAll(l3q.getResultList());
+                psUuids.addAll(Q.New(PrimaryStorageVO.class)
+                        .select(PrimaryStorageVO_.uuid)
+                        .in(PrimaryStorageVO_.type, psTypes)
+                        .eq(PrimaryStorageVO_.zoneUuid, zoneUuid)
+                        .listValues());
+                l3s.addAll(SQL.New("select l3" +
+                                " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
+                                " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                                " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
+                                " and l2ref.clusterUuid = psref.clusterUuid" +
+                                " and psref.primaryStorageUuid = ps.uuid" +
+                                " and ps.type in (:psTypes)" +
+                                " and ps.zoneUuid = l3.zoneUuid" +
+                                " and l3.zoneUuid = :zoneUuid" +
+                                " group by l3.uuid")
+                        .param("psTypes", psTypes)
+                        .param("zoneUuid", zoneUuid)
+                        .list());
             } else if (!relatedPrimaryStorageUuids.isEmpty()) {
                 // the backup storage has strongly-bound primary storage, e.g. ceph
-                String sql = "select l3" +
-                        " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
-                        " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
-                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
-                        " and l2ref.clusterUuid = psref.clusterUuid" +
-                        " and psref.primaryStorageUuid = ps.uuid" +
-                        " and ps.uuid in (:psUuids)" +
-                        " and ps.zoneUuid = l3.zoneUuid" +
-                        " and l3.zoneUuid = :zoneUuid" +
-                        " group by l3.uuid";
-                TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
-                l3q.setParameter("psUuids", relatedPrimaryStorageUuids);
-                l3q.setParameter("zoneUuid", zoneUuid);
-                l3s.addAll(l3q.getResultList());
+                psUuids.addAll(Q.New(PrimaryStorageVO.class)
+                        .select(PrimaryStorageVO_.uuid)
+                        .in(PrimaryStorageVO_.uuid, relatedPrimaryStorageUuids)
+                        .eq(PrimaryStorageVO_.zoneUuid, zoneUuid)
+                        .listValues());
+                l3s.addAll(SQL.New("select l3" +
+                                " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
+                                " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                                " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
+                                " and l2ref.clusterUuid = psref.clusterUuid" +
+                                " and psref.primaryStorageUuid = ps.uuid" +
+                                " and ps.uuid in (:psUuids)" +
+                                " and ps.zoneUuid = l3.zoneUuid" +
+                                " and l3.zoneUuid = :zoneUuid" +
+                                " group by l3.uuid")
+                        .param("psUuids", relatedPrimaryStorageUuids)
+                        .param("zoneUuid", zoneUuid)
+                        .list());
             } else {
+                // relatedPrimaryStorageUuids is not null, but size is 0
                 logger.warn(String.format("the backup storage[uuid:%s, type: %s] needs a strongly-bound primary storage," +
                         " but seems the primary storage is not added", bs.getUuid(), bs.getType()));
             }
         }
 
-        List<String> l3sFromAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
-        if (l3sFromAccount == null) {
+        if (l3s.isEmpty()) {
+            if (psUuids.isEmpty()) {
+                if (raiseException) {
+                    throw new OperationFailureException(argerr("no primary storage accessible to the backup storage[uuid:%s, type:%s] is found",
+                            bss.get(0).getUuid(), bss.get(0).getType()));
+                }
+                logger.warn(String.format("no primary storage accessible to the backup storage[uuid:%s, type:%s] is found",
+                        bss.get(0).getUuid(), bss.get(0).getType()));
+                return new ArrayList<>();
+            }
+
+            Long clusterNum = SQL.New("select count(distinct cl)" +
+                            " from ClusterVO cl, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                            " where cl.uuid = psref.clusterUuid" +
+                            " and psref.primaryStorageUuid in (:psUuids)" +
+                            " and ps.zoneUuid = cl.zoneUuid" +
+                            " and cl.zoneUuid = :zoneUuid" +
+                            " group by cl.uuid", Long.class)
+                    .param("psUuids", psUuids)
+                    .param("zoneUuid", zoneUuid)
+                    .find();
+
+            if (clusterNum == null || clusterNum == 0) {
+                if (raiseException) {
+                    throw new OperationFailureException(argerr("the primary storages[uuids:%s] has not attached any cluster on the zone[uuid:%s]",
+                            psUuids, zoneUuid));
+                }
+                logger.warn(String.format("the primary storages[uuids:%s] has not attached any cluster on the zone[uuid:%s]", psUuids, zoneUuid));
+                return new ArrayList<>();
+            }
+
+            Long l2Num = SQL.New("select count(distinct l2)" +
+                            " from L2NetworkVO l2, L2NetworkClusterRefVO l2ref, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                            " where l2.uuid = l2ref.l2NetworkUuid" +
+                            " and psref.primaryStorageUuid in (:psUuids)" +
+                            " and l2ref.clusterUuid = psref.clusterUuid" +
+                            " and ps.zoneUuid = l2.zoneUuid" +
+                            " and l2.zoneUuid = :zoneUuid", Long.class)
+                    .param("psUuids", psUuids)
+                    .param("zoneUuid", zoneUuid)
+                    .find();
+            if (l2Num == null || l2Num == 0) {
+                if (raiseException) {
+                    throw new OperationFailureException(argerr("no l2Networks found in clusters that have attached to primary storages[uuids:%s]",
+                            psUuids));
+                }
+                logger.warn(String.format("no l2Networks found in clusters that have attached to primary storages[uuids:%s]", psUuids));
+                return new ArrayList<>();
+            }
+        }
+
+        List<String> l3UuidListOfCurrentAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
+        if (l3UuidListOfCurrentAccount == null) {
             return L3NetworkInventory.valueOf(l3s);
         }
         return L3NetworkInventory.valueOf(l3s.stream()
-                .filter(vo -> l3sFromAccount.contains(vo.getUuid()))
+                .filter(vo -> l3UuidListOfCurrentAccount.contains(vo.getUuid()))
                 .collect(Collectors.toList()));
     }
-
+    
     private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
         DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
 
@@ -651,12 +713,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     if (!re.getHosts().isEmpty()) {
                         areply.setHosts(re.getHosts());
 
-                        List<String> clusterUuids = re.getHosts().stream().
-                                map(HostInventory::getClusterUuid).collect(Collectors.toList());
-                        areply.setClusters(ClusterInventory.valueOf(dbf.listByPrimaryKeys(clusterUuids, ClusterVO.class)));
+                        Set<String> clusterUuids = re.getHosts().stream().
+                                map(HostInventory::getClusterUuid).collect(Collectors.toSet());
+                        List<ClusterInventory> clusters = ClusterInventory.valueOf(dbf.listByPrimaryKeys(clusterUuids, ClusterVO.class));
+                        areply.setClusters(clusters);
 
-                        List<String> zoneUuids = re.getHosts().stream().
-                                map(HostInventory::getZoneUuid).collect(Collectors.toList());
+                        Set<String> zoneUuids = clusters.stream().
+                                map(ClusterInventory::getZoneUuid).collect(Collectors.toSet());
                         areply.setZones(ZoneInventory.valueOf(dbf.listByPrimaryKeys(zoneUuids, ZoneVO.class)));
                     } else {
                         areply.setHosts(new ArrayList<>());
@@ -821,7 +884,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }.execute();
                         break;
                     } catch (PersistenceException e) {
-                        if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
+                        if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
                             logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
                                     "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
                                     "we will try finding another mac", nicVO.getMac()));
@@ -954,6 +1017,62 @@ public class VmInstanceManagerImpl extends AbstractService implements
         bus.reply(msg, reply);
     }
 
+    private void instantiateTagsForCreateMessage(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, VmInstanceVO finalVo) {
+        if (cmsg != null) {
+            tagMgr.createTagsFromAPICreateMessage(cmsg, finalVo.getUuid(), VmInstanceVO.class.getSimpleName());
+        } else {
+            tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), finalVo.getUuid(), VmInstanceVO.class.getSimpleName());
+        }
+
+        if ((boolean) Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue()) {
+            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
+            creator.recreate = true;
+            creator.inherent = false;
+            creator.tag = VmSystemTags.VIRTIO.getTagFormat();
+            creator.create();
+        }
+
+        if (finalVo.getInstanceOfferingUuid() != null) {
+            tagMgr.copySystemTag(
+                    finalVo.getInstanceOfferingUuid(),
+                    InstanceOfferingVO.class.getSimpleName(),
+                    finalVo.getUuid(),
+                    VmInstanceVO.class.getSimpleName(), false);
+        }
+
+        if (msg.getImageUuid() != null) {
+            tagMgr.copySystemTag(
+                    msg.getImageUuid(),
+                    ImageVO.class.getSimpleName(),
+                    finalVo.getUuid(),
+                    VmInstanceVO.class.getSimpleName(), false);
+
+            if (ImageArchitecture.aarch64.toString().equals(finalVo.getArchitecture())) {
+                SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(finalVo.getUuid());
+                creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));
+                creator.recreate = true;
+                creator.create();
+            }
+        }
+        SystemTagCreator creator = VmSystemTags.SYNC_PORTS.newSystemTagCreator(finalVo.getUuid());
+        creator.recreate = true;
+        creator.setTagByTokens(map(e(VmSystemTags.SYNC_PORTS_TOKEN, finalVo.getUuid())));
+        creator.create();
+    }
+
+    private List<ErrorCode> extEmitterHandleSystemTag(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, VmInstanceVO finalVo) {
+        List<ErrorCode> result = Collections.emptyList();
+        if (msg == null) {
+            result.add(operr("CreateVmInstanceMsg cannot be null"));
+            return result;
+        } else if (cmsg != null && cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
+            return extEmitter.handleSystemTag(finalVo.getUuid(), cmsg.getSystemTags());
+        } else if (cmsg == null && msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            return extEmitter.handleSystemTag(finalVo.getUuid(), msg.getSystemTags());
+        }
+        return result;
+    }
+
     protected void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
         pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(extensionPoint -> {
             extensionPoint.preCreateVmInstance(msg);
@@ -1004,119 +1123,137 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }.execute();
 
-        if (cmsg != null) {
-            tagMgr.createTagsFromAPICreateMessage(cmsg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
-        } else {
-            tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
-        }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("do-create-vmInstance-%s", vo.getUuid()));
+        chain.then(new ShareFlow() {
+            VmInstanceInventory instantiateVm;
 
-        if ((boolean) Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue()) {
-            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(vo.getUuid());
-            creator.recreate = true;
-            creator.inherent = false;
-            creator.tag = VmSystemTags.VIRTIO.getTagFormat();
-            creator.create();
-        }
-
-        if (instanceOfferingUuid != null) {
-            tagMgr.copySystemTag(
-                    instanceOfferingUuid,
-                    InstanceOfferingVO.class.getSimpleName(),
-                    vo.getUuid(),
-                    VmInstanceVO.class.getSimpleName(), false);
-        }
-
-        if (msg.getImageUuid() != null) {
-            tagMgr.copySystemTag(
-                    msg.getImageUuid(),
-                    ImageVO.class.getSimpleName(),
-                    vo.getUuid(),
-                    VmInstanceVO.class.getSimpleName(), false);
-
-            if (ImageArchitecture.aarch64.toString().equals(architecture)) {
-                SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(vo.getUuid());
-                creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));
-                creator.recreate = true;
-                creator.create();
-            }
-        }
-
-        List<ErrorCode> errorCodes = Collections.emptyList();
-        if (cmsg != null && cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
-            errorCodes = extEmitter.handleSystemTag(vo.getUuid(), cmsg.getSystemTags());
-        } else if (cmsg == null && msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            errorCodes = extEmitter.handleSystemTag(vo.getUuid(), msg.getSystemTags());
-        }
-
-        if (!errorCodes.isEmpty()) {
-            completion.fail(operr("handle system tag fail when creating vm because [%s]",
-                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
-                        ", ")));
-        }
-
-        InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
-        if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
-            VmInstanceInventory inv = VmInstanceInventory.valueOf(vo);
-            createVmButNotStart(msg, inv);
-            completion.success(inv);
-            return;
-        }
-
-        smsg.setHostUuid(msg.getHostUuid());
-        List<String> temporaryDiskOfferingUuids = createDiskOfferingUuidsFromDataDiskSizes(msg, finalVo.getUuid());
-        smsg.setDataDiskOfferingUuids(merge(msg.getDataDiskOfferingUuids(), temporaryDiskOfferingUuids));
-        smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
-        smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
-        smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
-
-        if (msg.getRootDiskOfferingUuid() != null) {
-            smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
-        } else if (msg.getRootDiskSize() > 0) {
-            DiskOfferingVO dvo = new DiskOfferingVO();
-            dvo.setUuid(Platform.getUuid());
-            dvo.setAccountUuid(msg.getAccountUuid());
-            dvo.setDiskSize(msg.getRootDiskSize());
-            dvo.setName("for-create-vm-" + vo.getUuid());
-            dvo.setType("TemporaryDiskOfferingType");
-            dvo.setState(DiskOfferingState.Enabled);
-            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
-            dbf.persist(dvo);
-            smsg.setRootDiskOfferingUuid(dvo.getUuid());
-        }
-
-        smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(vo));
-        smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
-        smsg.setStrategy(msg.getStrategy());
-        smsg.setTimeout(msg.getTimeout());
-        smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
-        smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-        smsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
-        bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
-        bus.send(smsg, new CloudBusCallBack(smsg) {
             @Override
-            public void run(MessageReply reply) {
-                try {
-                    if (msg.getRootDiskOfferingUuid() == null && smsg.getRootDiskOfferingUuid() != null) {
-                        dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
+            public void setup() {
+                flow(new Flow() {
+                    List<ErrorCode> errorCodes = Collections.emptyList();
+                    String __name__ = String.format("instantiate-systemTag-for-vm-%s", finalVo.getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        instantiateTagsForCreateMessage(msg, cmsg, finalVo);
+                        errorCodes = extEmitterHandleSystemTag(msg, cmsg, finalVo);
+                        if (!errorCodes.isEmpty()) {
+                            trigger.fail(operr("handle system tag fail when creating vm because [%s]",
+                                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
+                                            ", ")));
+                            return;
+                        }
+                        trigger.next();
                     }
 
-                    if (!temporaryDiskOfferingUuids.isEmpty()) {
-                        dbf.removeByPrimaryKeys(temporaryDiskOfferingUuids, DiskOfferingVO.class);
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, finalVo.getUuid()).isExists()) {
+                            dbf.removeByPrimaryKey(finalVo.getUuid(), VmInstanceVO.class);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "instantiate-just-create-vmInstance";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return VmCreationStrategy.JustCreate != VmCreationStrategy.valueOf(msg.getStrategy());
                     }
 
-                    if (reply.isSuccess()) {
-                        InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
-                        completion.success(r.getVmInventory());
-                    } else {
-                        completion.fail(reply.getError());
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmInstanceInventory inv = VmInstanceInventory.valueOf(finalVo);
+                        createVmButNotStart(msg, inv);
+                        instantiateVm = inv;
+                        trigger.next();
                     }
-                } catch (Exception e) {
-                    bus.logExceptionWithMessageDump(msg, e);
-                    bus.replyErrorByMessageType(msg, e);
-                }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "instantiate-new-created-vmInstance";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy());
+                    }
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
+                        smsg.setDisableL3Networks(msg.getDisableL3Networks());
+                        smsg.setHostUuid(msg.getHostUuid());
+                        List<String> temporaryDiskOfferingUuids = createDiskOfferingUuidsFromDataDiskSizes(msg, finalVo.getUuid());
+                        smsg.setDataDiskOfferingUuids(merge(msg.getDataDiskOfferingUuids(), temporaryDiskOfferingUuids));
+                        smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
+                        smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
+                        smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
+
+                        if (msg.getRootDiskOfferingUuid() != null) {
+                            smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+                        } else if (msg.getRootDiskSize() > 0) {
+                            DiskOfferingVO dvo = new DiskOfferingVO();
+                            dvo.setUuid(Platform.getUuid());
+                            dvo.setAccountUuid(msg.getAccountUuid());
+                            dvo.setDiskSize(msg.getRootDiskSize());
+                            dvo.setName("for-create-vm-" + finalVo.getUuid());
+                            dvo.setType("TemporaryDiskOfferingType");
+                            dvo.setState(DiskOfferingState.Enabled);
+                            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+                            dbf.persist(dvo);
+                            smsg.setRootDiskOfferingUuid(dvo.getUuid());
+                        }
+
+                        smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
+                        smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
+                        smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+                        smsg.setStrategy(msg.getStrategy());
+                        smsg.setTimeout(msg.getTimeout());
+                        smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
+                        smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
+                        smsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
+                        bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
+                        bus.send(smsg, new CloudBusCallBack(smsg) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (msg.getRootDiskOfferingUuid() == null && smsg.getRootDiskOfferingUuid() != null) {
+                                    dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
+                                }
+
+                                if (!temporaryDiskOfferingUuids.isEmpty()) {
+                                    dbf.removeByPrimaryKeys(temporaryDiskOfferingUuids, DiskOfferingVO.class);
+                                }
+
+                                if (reply.isSuccess()) {
+                                    InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
+                                    instantiateVm = r.getVmInventory();
+                                    trigger.next();
+                                    return;
+                                }
+                                trigger.fail(reply.getError());
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success(instantiateVm);
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
-        });
+
+        }).start();
     }
 
     private List<String> createDiskOfferingUuidsFromDataDiskSizes(final CreateVmInstanceMsg msg, String vmUuid) {
@@ -1331,52 +1468,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         resumeVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(resumeVmWorkFlowElements).construct();
     }
 
-    private void populateExtensions() {
-        for (VmInstanceFactory ext : pluginRgty.getExtensionList(VmInstanceFactory.class)) {
-            VmInstanceFactory old = vmInstanceFactories.get(ext.getType().toString());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate VmInstanceFactory[%s, %s] for type[%s]",
-                        old.getClass().getName(), ext.getClass().getName(), ext.getType()));
-            }
-            vmInstanceFactories.put(ext.getType().toString(), ext);
-        }
-
-        for (VmInstanceBaseExtensionFactory ext : pluginRgty.getExtensionList(VmInstanceBaseExtensionFactory.class)) {
-            for (Class clz : ext.getMessageClasses()) {
-                VmInstanceBaseExtensionFactory old = vmInstanceBaseExtensionFactories.get(clz);
-                if (old != null) {
-                    throw new CloudRuntimeException(String.format("duplicate VmInstanceBaseExtensionFactory[%s, %s] for the" +
-                            " message[%s]", old.getClass(), ext.getClass(), clz));
-                }
-
-                vmInstanceBaseExtensionFactories.put(clz, ext);
-            }
-        }
-
-        for (VmInstanceNicFactory ext : pluginRgty.getExtensionList(VmInstanceNicFactory.class)) {
-            VmInstanceNicFactory old = vmInstanceNicFactories.get(ext.getType().toString());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate VmInstanceNicFactory[%s, %s] for type[%s]",
-                        old.getClass().getName(), ext.getClass().getName(), ext.getType()));
-            }
-            vmInstanceNicFactories.put(ext.getType().toString(), ext);
-        }
-
-        for (VmNicQosConfigBackend ext : pluginRgty.getExtensionList(VmNicQosConfigBackend.class)) {
-            VmNicQosConfigBackend old = vmNicQosConfigMap.get(ext.getVmInstanceType());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("can not add VmNicQosConfigBackend, because duplicate VmNicQosConfigBackend [%s, %s] for type[%s]",
-                        old.getClass().getName(), ext.getClass().getName(), ext.getVmInstanceType()));
-            }
-            vmNicQosConfigMap.put(ext.getVmInstanceType(), ext);
-        }
-    }
-
     @Override
     public boolean start() {
         try {
             createVmFlowChainBuilder();
-            populateExtensions();
             installSystemTagValidator();
             installGlobalConfigUpdater();
             vmExtensionManagers.addAll(pluginRgty.getExtensionList(VmInstanceExtensionManager.class));
@@ -1475,7 +1570,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                         validateHostname(sysTag, hostname);
                         List<String> l3NetworkUuids = msg.getL3NetworkUuids();
-                        l3NetworkUuids.forEach(it->validateHostNameOnDefaultL3Network(sysTag, hostname, it));
+                        l3NetworkUuids.forEach(it -> validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
                     } 
@@ -1495,6 +1590,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 if (!NetworkUtils.isIpv4Address(ip) && !IPv6NetworkUtils.isIpv6Address(ip)) {
                     throw new ApiMessageInterceptionException(argerr("%s is not a valid ip address. Please correct your system tag[%s] of static IP",
                             ip, sysTag));
+                }
+
+                if (Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists()) {
+                    if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, ip).eq(UsedIpVO_.l3NetworkUuid, l3Uuid).isExists()) {
+                        throw new ApiMessageInterceptionException(argerr("IP[%s] is already used on the L3 network[uuid:%s]. Please correct your system tag[%s] of static IP",
+                                ip, l3Uuid, sysTag));
+                    }
+                    return;
                 }
 
                 CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
@@ -1572,6 +1675,33 @@ public class VmInstanceManagerImpl extends AbstractService implements
         tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), hostnameValidator);
         VmSystemTags.HOSTNAME.installValidator(hostnameValidator);
 
+        // TODO: system tags should support token format validation
+        VmHardwareSystemTags.CPU_SOCKETS.installValidator((resourceUuid, resourceType, systemTag) -> {
+            String sockets = VmHardwareSystemTags.CPU_SOCKETS.getTokenByTag(systemTag, VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
+            try {
+                Integer.valueOf(sockets);
+            } catch (NumberFormatException e) {
+                throw new ApiMessageInterceptionException(argerr("cpuSockets must be an integer"));
+            }
+        });
+
+        VmHardwareSystemTags.CPU_CORES.installValidator((resourceUuid, resourceType, systemTag) -> {
+            String cores = VmHardwareSystemTags.CPU_CORES.getTokenByTag(systemTag, VmHardwareSystemTags.CPU_CORES_TOKEN);
+            try {
+                Integer.valueOf(cores);
+            } catch (NumberFormatException e) {
+                throw new ApiMessageInterceptionException(argerr("cpuCores must be an integer"));
+            }
+        });
+
+        VmHardwareSystemTags.CPU_THREADS.installValidator((resourceUuid, resourceType, systemTag) -> {
+            String threads = VmHardwareSystemTags.CPU_THREADS.getTokenByTag(systemTag, VmHardwareSystemTags.CPU_THREADS_TOKEN);
+            try {
+                Integer.valueOf(threads);
+            } catch (NumberFormatException e) {
+                throw new ApiMessageInterceptionException(argerr("cpuThreads must be an integer"));
+            }
+        });
     }
 
     private void installUserdataValidator() {
@@ -1782,6 +1912,26 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.installValidator(validator);
     }
 
+    private void installSeDeviceValidator() {
+        VmSystemTags.SECURITY_ELEMENT_ENABLE.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String SecurityElementEnableTokenByTag = null;
+                if (VmSystemTags.SECURITY_ELEMENT_ENABLE.isMatch(systemTag)) {
+                    SecurityElementEnableTokenByTag = VmSystemTags.SECURITY_ELEMENT_ENABLE.getTokenByTag(systemTag, VmSystemTags.SECURITY_ELEMENT_ENABLE_TOKEN);
+                } else {
+                    throw new OperationFailureException(argerr("invalid securityElementEnable[%s], %s is not securityElementEnable tag", systemTag, SecurityElementEnableTokenByTag));
+                }
+                if (!isBoolean(SecurityElementEnableTokenByTag)) {
+                    throw new OperationFailureException(argerr("invalid securityElementEnable[%s], %s is not boolean class", systemTag, SecurityElementEnableTokenByTag));
+                }
+            }
+            private boolean isBoolean(String param) {
+                return "true".equalsIgnoreCase(param) || "false".equalsIgnoreCase(param);
+            }
+        });
+    }
+
     private void installSystemTagValidator() {
         installHostnameValidator();
         installUserdataValidator();
@@ -1790,6 +1940,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installMachineTypeValidator();
         installUsbRedirectValidator();
         installL3NetworkSecurityGroupValidator();
+        installSeDeviceValidator();
     }
 
     private void installUsbRedirectValidator() {
@@ -1819,7 +1970,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public VmInstanceFactory getVmInstanceFactory(VmInstanceType type) {
-        VmInstanceFactory factory = vmInstanceFactories.get(type.toString());
+        VmInstanceFactory factory = vmFactoryManager.getVmInstanceFactory(type.toString());
         if (factory == null) {
             throw new CloudRuntimeException(String.format("No VmInstanceFactory of type[%s] found", type));
         }
@@ -1828,12 +1979,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public VmInstanceBaseExtensionFactory getVmInstanceBaseExtensionFactory(Message msg) {
-        return vmInstanceBaseExtensionFactories.get(msg.getClass());
+        return vmFactoryManager.getVmInstanceBaseExtensionFactory(msg.getClass());
     }
 
     @Override
     public VmInstanceNicFactory getVmInstanceNicFactory(VmNicType type) {
-        VmInstanceNicFactory factory = vmInstanceNicFactories.get(type.toString());
+        VmInstanceNicFactory factory = vmFactoryManager.getVmInstanceNicFactory(type.toString());
         if (factory == null) {
             throw new CloudRuntimeException(String.format("No VmInstanceNicFactory of type[%s] found", type));
         }
@@ -1949,51 +2100,163 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new VmQuotaOperator() ;
-
         Quota quota = new Quota();
-        QuotaPair p;
+        quota.defineQuota(new VmTotalNumQuotaDefinition());
+        quota.defineQuota(new VmRunningNumQuotaDefinition());
+        quota.defineQuota(new VmRunningCpuNumQuotaDefinition());
+        quota.defineQuota(new VmRunningMemoryNumQuotaDefinition());
+        quota.defineQuota(new DataVolumeNumQuotaDefinition());
+        quota.defineQuota(new VolumeSizeQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateVmInstanceMsg.class)
+                .addCounterQuota(VmQuotaConstant.VM_TOTAL_NUM)
+                .addCounterQuota(VmQuotaConstant.VM_RUNNING_NUM)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> {
+                    if (msg.getCpuNum() != null) {
+                        return Integer.toUnsignedLong(msg.getCpuNum());
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VM_TOTAL_NUM);
-        p.setValue(VmQuotaGlobalConfig.VM_TOTAL_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+                    Integer cpuNum = Q.New(InstanceOfferingVO.class)
+                            .select(InstanceOfferingVO_.cpuNum)
+                            .eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid())
+                            .findValue();
+                    return Integer.toUnsignedLong(cpuNum);
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, (msg) -> {
+                    if (msg.getMemorySize() != null) {
+                        return msg.getMemorySize();
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VM_RUNNING_NUM);
-        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+                    return Q.New(InstanceOfferingVO.class)
+                            .select(InstanceOfferingVO_.memorySize)
+                            .eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid())
+                            .findValue();
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.DATA_VOLUME_NUM, (msg) -> {
+                    if (msg.getDataDiskOfferingUuids() == null || msg.getDataDiskOfferingUuids().isEmpty()) {
+                        return 0L;
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VM_RUNNING_CPU_NUM);
-        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_CPU_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+                    return (long) (msg.getDataDiskOfferingUuids().size());
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.VOLUME_SIZE, (msg) ->  {
+                    long allVolumeSizeAsked = 0;
+                    String sql = "select img.size, img.mediaType" +
+                            " from ImageVO img" +
+                            " where img.uuid = :iuuid";
+                    TypedQuery<Tuple> iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                    iq.setParameter("iuuid", msg.getImageUuid());
+                    Tuple it = iq.getSingleResult();
+                    Long imgSize = it.get(0, Long.class);
+                    ImageConstant.ImageMediaType imgType = it.get(1, ImageConstant.ImageMediaType.class);
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE);
-        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_MEMORY_SIZE.defaultValue(Long.class));
-        quota.addPair(p);
+                    List<String> diskOfferingUuids = new ArrayList<>();
+                    if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+                        diskOfferingUuids.addAll(msg.getDataDiskOfferingUuids());
+                    }
+                    if (imgType == ImageConstant.ImageMediaType.RootVolumeTemplate) {
+                        allVolumeSizeAsked += imgSize;
+                    } else if (imgType == ImageConstant.ImageMediaType.ISO) {
+                        if (msg.getRootDiskOfferingUuid() != null) {
+                            diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+                        } else if (msg.getRootDiskSize() != null) {
+                            allVolumeSizeAsked += msg.getRootDiskSize();
+                        } else {
+                            throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
+                        }
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.DATA_VOLUME_NUM);
-        p.setValue(VmQuotaGlobalConfig.DATA_VOLUME_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+                    HashMap<String, Long> diskOfferingCountMap = new HashMap<>();
+                    if (!diskOfferingUuids.isEmpty()) {
+                        for (String diskOfferingUuid : diskOfferingUuids) {
+                            if (diskOfferingCountMap.containsKey(diskOfferingUuid)) {
+                                diskOfferingCountMap.put(diskOfferingUuid, diskOfferingCountMap.get(diskOfferingUuid) + 1);
+                            } else {
+                                diskOfferingCountMap.put(diskOfferingUuid, 1L);
+                            }
+                        }
+                        for (String diskOfferingUuid : diskOfferingCountMap.keySet()) {
+                            sql = "select diskSize from DiskOfferingVO where uuid = :uuid";
+                            TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
+                            dq.setParameter("uuid", diskOfferingUuid);
+                            Long dsize = dq.getSingleResult();
+                            dsize = dsize == null ? 0 : dsize;
+                            allVolumeSizeAsked += dsize * diskOfferingCountMap.get(diskOfferingUuid);
+                        }
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VOLUME_SIZE);
-        p.setValue(VmQuotaGlobalConfig.VOLUME_SIZE.defaultValue(Long.class));
-        quota.addPair(p);
+                    return allVolumeSizeAsked;
+                }).addCheckCondition((msg) -> !msg.getStrategy().equals(VmCreationStrategy.JustCreate.toString())));
 
-        quota.addMessageNeedValidation(APICreateVmInstanceMsg.class);
-        quota.addMessageNeedValidation(APIRecoverVmInstanceMsg.class);
-        quota.addMessageNeedValidation(APICreateDataVolumeMsg.class);
-        quota.addMessageNeedValidation(APIRecoverDataVolumeMsg.class);
-        quota.addMessageNeedValidation(APIStartVmInstanceMsg.class);
-        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
-        quota.addMessageNeedValidation(StartVmInstanceMsg.class);
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIRecoverVmInstanceMsg.class)
+                .addCounterQuota(VmQuotaConstant.VM_TOTAL_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIStartVmInstanceMsg.class)
+                .addCounterQuota(VmQuotaConstant.VM_RUNNING_NUM)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> new VmQuotaUtil().getRequiredCpu(msg.getVmInstanceUuid()))
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, (msg) -> new VmQuotaUtil().getRequiredMemory(msg.getVmInstanceUuid())));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(StartVmInstanceMsg.class)
+                .addCounterQuota(VmQuotaConstant.VM_RUNNING_NUM)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> new VmQuotaUtil().getRequiredCpu(msg.getVmInstanceUuid()))
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, (msg) -> new VmQuotaUtil().getRequiredMemory(msg.getVmInstanceUuid())));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateDataVolumeMsg.class)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VOLUME_SIZE, (msg) -> {
+                    if (msg.getDiskOfferingUuid() == null) {
+                        return msg.getDiskSize();
+                    }
 
-        quota.setOperator(checker);
+                    String sql = "select diskSize from DiskOfferingVO where uuid = :uuid ";
+                    TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
+                    dq.setParameter("uuid", msg.getDiskOfferingUuid());
+                    Long dsize = dq.getSingleResult();
+                    dsize = dsize == null ? 0 : dsize;
+                    return dsize;
+                })
+                .addCounterQuota(VmQuotaConstant.DATA_VOLUME_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIRecoverDataVolumeMsg.class)
+                .addCounterQuota(VmQuotaConstant.DATA_VOLUME_NUM));
 
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
+                        .notEq(VmInstanceVO_.type, "baremetal2")
+                        .isExists())
+                .addCounterQuota(VmQuotaConstant.VM_TOTAL_NUM)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> {
+                    VmInstanceState state = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.state)
+                            .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
+                            .findValue();
+
+                    // vm is running
+                    if (list(VmInstanceState.Stopped, VmInstanceState.Destroying,
+                            VmInstanceState.Destroyed, VmInstanceState.Created).contains(state)) {
+                        return 0L;
+                    }
+
+                    return new VmQuotaUtil().getRequiredCpu(msg.getResourceUuid());
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, (msg) -> {
+                    VmInstanceState state = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.state)
+                            .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
+                            .findValue();
+
+                    // vm is running
+                    if (list(VmInstanceState.Stopped, VmInstanceState.Destroying,
+                            VmInstanceState.Destroyed, VmInstanceState.Created).contains(state)) {
+                        return 0L;
+                    }
+
+                    return new VmQuotaUtil().getRequiredMemory(msg.getResourceUuid());
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_NUM, (msg) -> {
+                    VmInstanceState state = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.state)
+                            .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
+                            .findValue();
+
+                    // vm is running
+                    if (list(VmInstanceState.Stopped, VmInstanceState.Destroying,
+                            VmInstanceState.Destroyed, VmInstanceState.Created).contains(state)) {
+                        return 0L;
+                    }
+
+                    return 1L;
+                }));
         return list(quota);
     }
 
@@ -2305,6 +2568,25 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public VmNicQosConfigBackend getVmNicQosConfigBackend(String type) {
-        return vmNicQosConfigMap.get(type);
+        return vmFactoryManager.getVmNicQosConfigBackend(type);
+    }
+
+    @Override
+    public ErrorCode handleSystemTag(String vmUuid, List<String> tags) {
+        PatternedSystemTag tag = VmSystemTags.DIRECTORY_UUID;
+        String token = VmSystemTags.DIRECTORY_UUID_TOKEN;
+
+        String directoryUuid = SystemTagUtils.findTagValue(tags, tag, token);
+        if (StringUtils.isEmpty(directoryUuid)) {
+            return null;
+        }
+        ResourceDirectoryRefVO refVO = new ResourceDirectoryRefVO();
+        refVO.setResourceUuid(vmUuid);
+        refVO.setDirectoryUuid(directoryUuid);
+        refVO.setResourceType(VmInstanceVO.class.getSimpleName());
+        refVO.setLastOpDate(new Timestamp(new Date().getTime()));
+        refVO.setCreateDate(new Timestamp(new Date().getTime()));
+        dbf.persist(refVO);
+        return null;
     }
 }

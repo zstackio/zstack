@@ -7,12 +7,13 @@ import org.zstack.header.message.NeedReplyMessage;
  * copy by APIMigrateVmMsg for LongJob
  */
 @SkipVmTracer(replyClass = MigrateVmInnerReply.class)
-public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage {
+public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage, CheckAttachedVolumesMessage {
     private String vmInstanceUuid;
     private String hostUuid;
     private String strategy;
     private Boolean migrateFromDestination;
     private boolean allowUnknown;
+    private Integer downTime;
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
@@ -53,6 +54,15 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
     @Override
     public String getStrategy() {
         return strategy;
+    }
+
+    @Override
+    public Integer getDownTime() {
+        return null;
+    }
+
+    public void setDownTime(Integer downTime) {
+        this.downTime = downTime;
     }
 
     public void setStrategy(String strategy) {

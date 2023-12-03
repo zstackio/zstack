@@ -51,7 +51,6 @@ public class TestQueryVm4 {
 
         APIQueryVmInstanceMsg msg = new APIQueryVmInstanceMsg();
         msg.addQueryCondition("host.__userTag__", QueryOp.EQ, "host");
-        msg.addQueryCondition("host.__systemTag__", QueryOp.EQ, "os::release::simulator");
         List<VmInstanceInventory> vms = api.query(msg, APIQueryVmInstanceReply.class).getInventories();
         Assert.assertEquals(1, vms.size());
 

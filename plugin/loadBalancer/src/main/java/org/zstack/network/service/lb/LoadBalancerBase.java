@@ -1196,9 +1196,9 @@ public class LoadBalancerBase {
         }
 
         LoadBalancerBackend bkd = getBackend();
-        if( (vmNicUuids.isEmpty() && serverIps.isEmpty() ) || bkd == null){
+        if ((vmNicUuids != null && vmNicUuids.isEmpty() && serverIps.isEmpty()) || bkd == null) {
             completion.success();
-        }else {
+        } else {
             bkd.removeVmNics(removeNicStruct(serverGroupUuids, listenerUuids, vmNicUuids, serverIps), nics, completion);
         }
     }
@@ -1277,7 +1277,7 @@ public class LoadBalancerBase {
                     groupVO.setAccountUuid(accountUuid);
                     groupVO.setDescription(String.format("default server group for load balancer listener %s", listenerVO.getName()));
                     groupVO.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
-                    groupVO.setName(String.format("default-server-group-%s", listenerVO.getName()));
+                    groupVO.setName(String.format("default-server-group-%s-%s", listenerVO.getName(), listenerVO.getUuid().substring(0, 5)));
                     dbf.persist(groupVO);
 
                     listenerVO.setServerGroupUuid(groupVO.getUuid());
@@ -1926,6 +1926,18 @@ public class LoadBalancerBase {
 
                 if (msg.getBalancerAlgorithm() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.BALANCER_ALGORITHM, msg.getUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm());
+                }
+
+                if (msg.getSessionPersistence() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_PERSISTENCE, msg.getUuid(), LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN, msg.getSessionPersistence());
+                }
+
+                if (msg.getSessionIdleTimeout() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT_TOKEN, msg.getSessionIdleTimeout());
+                }
+
+                if (msg.getCookieName() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.COOKIE_NAME, msg.getUuid(), LoadBalancerSystemTags.COOKIE_NAME_TOKEN, msg.getCookieName());
                 }
 
                 if (msg.getConnectionIdleTimeout() != null) {
@@ -2747,7 +2759,7 @@ public class LoadBalancerBase {
                                 .find();
                         if (vmNic.containsKey("weight")) {
                             Long vmNicWeight = Long.valueOf(vmNic.get("weight"));
-                            if (vmNicWeight != vmNicRefVO.getWeight()) {
+                            if (!vmNicWeight.equals(vmNicRefVO.getWeight())) {
                                 vmNicRefVO.setWeight(vmNicWeight);
                                 dbf.update(vmNicRefVO);
                                 canRefresh = true;
@@ -2765,7 +2777,7 @@ public class LoadBalancerBase {
                                 .find();
                         if (server.containsKey("weight")) {
                             Long serverIpWeight = Long.valueOf(server.get("weight"));
-                            if(serverIpWeight != serverIpVO.getWeight()){
+                            if(!serverIpWeight.equals(serverIpVO.getWeight())){
                                 serverIpVO.setWeight(serverIpWeight);
                                 dbf.update(serverIpVO);
                                 canRefresh = true;

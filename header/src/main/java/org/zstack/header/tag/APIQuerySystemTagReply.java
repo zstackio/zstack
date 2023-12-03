@@ -1,5 +1,6 @@
 package org.zstack.header.tag;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
@@ -12,6 +13,7 @@ import static java.util.Arrays.asList;
  */
 @RestResponse(allTo = "inventories")
 public class APIQuerySystemTagReply extends APIQueryReply {
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     private List<SystemTagInventory> inventories;
 
     public List<SystemTagInventory> getInventories() {

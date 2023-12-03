@@ -2,7 +2,6 @@ package org.zstack.header.longjob
 
 import org.zstack.header.longjob.APIQueryLongJobReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryLongJob"

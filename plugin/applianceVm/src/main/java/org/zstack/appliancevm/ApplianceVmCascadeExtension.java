@@ -43,9 +43,13 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.network.service.vip.VipConstant;
+import org.zstack.network.service.vip.VipDeletionMsg;
+import org.zstack.network.service.vip.VipInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -284,7 +288,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
         if (!applianceVmVOS.isEmpty()) {
             for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                applianceVmVOS = ext.filterApplianceVmCascade(applianceVmVOS, action, action.getParentIssuer(), l3uuids, new ArrayList<>());
+                applianceVmVOS = ext.filterApplianceVmCascade(applianceVmVOS, action, action.getParentIssuer(), l3uuids,
+                        new ArrayList<>(), new ArrayList<>());
             }
         }
 
@@ -374,6 +379,104 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         });
     }
 
+    protected Flow returnUsedIpFlow() {
+        return new NoRollbackFlow() {
+
+            String __name__ = "delete-ip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<UsedIpInventory> toDeleteIps = (List<UsedIpInventory>)
+                        data.get(VmInstanceConstant.Params.UsedIPInventory.toString());
+
+                if (toDeleteIps.isEmpty()) {
+                    logger.debug("no ip need to delete");
+                    trigger.next();
+                    return;
+                }
+
+                List<ReturnIpMsg> dmsgs = new ArrayList<>();
+                for (UsedIpInventory ip : toDeleteIps) {
+                    ReturnIpMsg msg = new ReturnIpMsg();
+                    msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                    msg.setUsedIpUuid(ip.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
+                    dmsgs.add(msg);
+                }
+
+                List<ErrorCode> errorCodes = Collections.synchronizedList(new LinkedList<ErrorCode>());
+                new While<>(dmsgs).step((deleteMsg, whileCompletion) -> {
+                    bus.send(deleteMsg, new CloudBusCallBack(whileCompletion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.debug(String.format("delete ip [uuid:%s] failed %s", deleteMsg.getUsedIpUuid(),
+                                        reply.getError().getDetails()));
+                            }
+                            whileCompletion.done();
+                        }
+                    });
+                }, 10).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        };
+    }
+
+    protected Flow deleteVmNicFlow() {
+        return new NoRollbackFlow() {
+            String __name__ = "delete-vmnic";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<VmNicInventory > toDeleteNics = (List<VmNicInventory>)
+                        data.get(VmInstanceConstant.Params.VmNicInventory.toString());
+
+                if(toDeleteNics.isEmpty()) {
+                    logger.debug(String.format("no nic need for delete"));
+                    trigger.next();
+                    return;
+                }
+
+                List<DetachNicFromVmMsg> dmsgs = new ArrayList<>();
+                for (VmNicInventory nic : toDeleteNics) {
+                    DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+                    msg.setVmNicUuid(nic.getUuid());
+                    msg.setVmInstanceUuid(nic.getVmInstanceUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
+                    dmsgs.add(msg);
+                }
+
+                List<ErrorCode> errorCodes = Collections.synchronizedList(new LinkedList<ErrorCode>());
+                new While<>(dmsgs).step((deleteMsg, whileCompletion) -> {
+                    bus.send(deleteMsg, new CloudBusCallBack(whileCompletion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                errorCodes.add(reply.getError());
+                            }
+                            whileCompletion.done();
+                        }
+                    });
+                }, 10).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodes.isEmpty()) {
+                            logger.debug(String.format("detach nic for " +
+                                    "delete l3 success"));
+                            trigger.next();
+                            return;
+                        }
+                        trigger.fail(errorCodes.get(0));
+                    }
+                });
+            }
+        };
+    }
+
     protected void handleDeletion(final CascadeAction action, final Completion completion) {
         int op = toDeleteOpCode(action);
 
@@ -382,8 +485,11 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
         List<VmNicInventory> toDeleteNics = new ArrayList<>();
-        final List<ApplianceVmInventory> apvms = apvmFromDeleteAction(action, toDeleteNics);
+        List<UsedIpInventory> toDeleteIps = new ArrayList<>();
+
+        final List<ApplianceVmInventory> apvms = apvmFromDeleteAction(action, toDeleteNics, toDeleteIps);
         if (apvms == null) {
+            logger.debug("no apvms to delete");
             completion.success();
             return;
         }
@@ -391,7 +497,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         final List<ApplianceVmInventory> apvmToMigrate = new ArrayList<ApplianceVmInventory>();
         final List<ApplianceVmInventory> apvmToDelete = new ArrayList<ApplianceVmInventory>();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("delete-cascade-for-appliance-vm"));
+        chain.setName("delete-cascade-for-appliance-vm");
+        chain.getData().put(VmInstanceConstant.Params.UsedIPInventory.toString(), toDeleteIps);
+        chain.getData().put(VmInstanceConstant.Params.VmNicInventory.toString(), toDeleteNics);
 
         if (op == OP_MIGRATE) {
             chain.then(new ShareFlow() {
@@ -506,52 +614,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-vmnic";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        if(toDeleteNics.isEmpty()) {
-                            logger.debug(String.format("no nic need for delete"));
-                            trigger.next();
-                            return;
-                        }
-
-                        List<DetachNicFromVmMsg> dmsgs = new ArrayList<>();
-                        for (VmNicInventory nic : toDeleteNics) {
-                            DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                            msg.setVmNicUuid(nic.getUuid());
-                            msg.setVmInstanceUuid(nic.getVmInstanceUuid());
-                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
-                            dmsgs.add(msg);
-                        }
-
-                        List<ErrorCode> errorCodes = Collections.synchronizedList(new LinkedList<ErrorCode>());
-                        new While<>(dmsgs).step((deleteMsg, whileCompletion) -> {
-                            bus.send(deleteMsg, new CloudBusCallBack(whileCompletion) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    if (!reply.isSuccess()) {
-                                        errorCodes.add(reply.getError());
-                                    }
-                                    whileCompletion.done();
-                                }
-                            });
-                        }, 10).run(new WhileDoneCompletion(completion) {
-                            @Override
-                            public void done(ErrorCodeList errorCodeList) {
-                                if (errorCodes.isEmpty()) {
-                                    logger.debug(String.format("detach nic for " +
-                                            "delete l3 success"));
-                                    trigger.next();
-                                    return;
-                                }
-                                trigger.fail(errorCodes.get(0));
-                                return;
-                            }
-                        });
-                    }
-                });
+                flow(returnUsedIpFlow());
+                flow(deleteVmNicFlow());
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-appliancevm";
@@ -627,7 +691,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     @Transactional
-    protected List<ApplianceVmInventory> apvmFromDeleteAction(CascadeAction action, List<VmNicInventory> toDeleteNics) {
+    protected List<ApplianceVmInventory> apvmFromDeleteAction(CascadeAction action, List<VmNicInventory> toDeleteNics,
+                                                              List<UsedIpInventory> toDeleteIps) {
         /*
         * return null or non-empty list
         * */
@@ -724,7 +789,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             List<ApplianceVmVO> apvms = q.getResultList();
             if (!apvms.isEmpty()) {
                 for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                    apvms = ext.filterApplianceVmCascade(apvms, action, action.getParentIssuer(), l3uuids, toDeleteNics);
+                    apvms = ext.filterApplianceVmCascade(apvms, action, action.getParentIssuer(), l3uuids,
+                            toDeleteNics, toDeleteIps);
                 }
                 if (!apvms.isEmpty()) {
                     ret = ApplianceVmInventory.valueOf1(apvms);
@@ -792,7 +858,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             }
             for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                vmvos = ext.filterApplianceVmCascade(vmvos, action, action.getParentIssuer(), ipruuids, toDeleteNics);
+                vmvos = ext.filterApplianceVmCascade(vmvos, action, action.getParentIssuer(), ipruuids,
+                        toDeleteNics, toDeleteIps);
             }
 
             if (!vmvos.isEmpty()) {
@@ -832,7 +899,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
             int op = toDeleteOpCode(action);
             if (op != OP_NOPE) {
-                List<ApplianceVmInventory> apvms = apvmFromDeleteAction(action, new ArrayList<>());
+                List<ApplianceVmInventory> apvms = apvmFromDeleteAction(action, new ArrayList<>(),
+                        new ArrayList<>());
 
                 if (!apvms.isEmpty()) {
                     return action.copy().setParentIssuer(NAME).setParentIssuerContext(apvms);

@@ -31,7 +31,7 @@ public class AttachIsoOnHypervisorFlow extends NoRollbackFlow {
         final VmInstanceSpec.IsoSpec isoSpec = spec.getDestIsoList().stream()
                 .filter(s -> s.getImageUuid().equals(iso.getUuid()))
                 .findAny()
-                .get();
+                .orElse(null);
 
         AttachIsoOnHypervisorMsg msg = new AttachIsoOnHypervisorMsg();
         msg.setHostUuid(spec.getDestHost().getUuid());

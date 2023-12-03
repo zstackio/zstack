@@ -97,6 +97,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                 continue;
             }
 
+            pubNic = vrMgr.getSnatPubicInventory(vr, pubNic.getL3NetworkUuid());
             for (VmNicInventory priNic : vr.getGuestNics()) {
                 if (nwServed.contains(priNic.getL3NetworkUuid()) && !priNic.isIpv6OnlyNic()) {
                     SNATInfo info = new SNATInfo();
@@ -105,6 +106,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                     info.setPublicIp(pubNic.getIp());
                     info.setPublicNicMac(pubNic.getMac());
                     info.setSnatNetmask(priNic.getNetmask());
+                    info.setPrivateGatewayIp(priNic.getGateway());
                     if (snatL3Uuids.contains(pubNic.getL3NetworkUuid())) {
                         info.setState(Boolean.TRUE);
                     } else {

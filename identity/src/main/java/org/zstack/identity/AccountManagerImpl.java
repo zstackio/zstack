@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -18,6 +19,7 @@ import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.APIIsOpensourceVersionMsg;
 import org.zstack.header.APIIsOpensourceVersionReply;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.core.NoErrorCompletion;
@@ -28,10 +30,13 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.quota.QuotaDefinition;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
+import org.zstack.header.identity.login.LogInMsg;
+import org.zstack.header.identity.login.LogInReply;
+import org.zstack.header.identity.login.LoginManager;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
-import org.zstack.header.message.Message;
+import org.zstack.header.message.*;
 import org.zstack.header.rest.RestAuthenticationBackend;
 import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
@@ -77,9 +82,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private final List<Class> resourceTypes = new ArrayList<>();
     private final Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
     private final Map<String, Quota> nameQuotaMap = new HashMap<>();
+
+    private final Map<Class, List<QuotaMessageHandler<? extends Message>>> messageHandlerMap = new HashMap<>();
+
     private final HashSet<Class> accountApiControl = new HashSet<>();
     private final HashSet<Class> accountApiControlInternal = new HashSet<>();
     private final List<Quota> definedQuotas = new ArrayList<>();
+
+    private static final Map<String, QuotaDefinition> quotaDefinitionMap = new HashMap<>();
 
     @Override
     public void prepareDbInitialValue() {
@@ -132,7 +142,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof CreateAccountMsg) {
+            handle((CreateAccountMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+
     }
 
     @Override
@@ -140,9 +155,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return messageQuotaMap;
     }
 
+    public Map<Class, List<QuotaMessageHandler<? extends Message>>> getQuotaMessageHandlerMap() {
+        return messageHandlerMap;
+    }
+
     @Override
-    public List<Quota> getQuotas() {
-        return definedQuotas;
+    public Map<String, QuotaDefinition> getQuotasDefinitions() {
+        return quotaDefinitionMap;
     }
 
     @Override
@@ -315,11 +334,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     return;
                 }
                 // check quota
-                Map<String, QuotaPair> pairs = new QuotaUtil().makeQuotaPairs(resourceTargetOwnerAccountUuid);
-                for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
-                    quota.getOperator().checkQuota(msg, pairs);
-                }
-
+                new QuotaUtil().checkQuota(msg, resourceOriginalOwnerAccountUuid, msg.getAccountUuid());
                 trigger.next();
             }
         }).then(new NoRollbackFlow() {
@@ -506,63 +521,51 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void handle(APILogInByAccountMsg msg) {
         APILogInReply reply = new APILogInReply();
 
-        AccountLoginStruct struct = null;
-
-        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-        q.add(AccountVO_.name, Op.EQ, msg.getAccountName());
-        q.add(AccountVO_.password, Op.EQ, msg.getPassword());
-        AccountVO vo = q.find();
-
-        // if accountName/password not exists or specific type is set
-        // use extension to get login structure
-        if (vo == null || (msg.getAccountType() != null && !msg.getAccountType().equals(AccountConstant.LOGIN_TYPE))) {
-            for (AccountLoginExtensionPoint ext : pluginRgty.getExtensionList(AccountLoginExtensionPoint.class)) {
-                struct = ext.getLoginEntry(msg.getAccountName(), msg.getPassword(), msg.getAccountType());
-
-                if (struct != null) {
-                    break;
+        LogInMsg logInMsg = new LogInMsg();
+        logInMsg.setVerifyCode(msg.getVerifyCode());
+        logInMsg.setCaptchaUuid(msg.getCaptchaUuid());
+        logInMsg.setPassword(msg.getPassword());
+        logInMsg.setUsername(msg.getAccountName());
+        logInMsg.setLoginType(msg.getLoginType());
+        logInMsg.setSystemTags(msg.getSystemTags());
+        logInMsg.setClientInfo(msg.getClientInfo());
+        logInMsg.getProperties().put(AccountConstant.ACCOUNT_TYPE, msg.getAccountType());
+        bus.makeTargetServiceIdByResourceUuid(logInMsg, LoginManager.SERVICE_ID, logInMsg.getUsername());
+        bus.send(logInMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                    bus.reply(msg, reply);
+                    return;
                 }
-            }
-        } else {
-            struct = new AccountLoginStruct();
-            struct.setAccountUuid(vo.getUuid());
-            struct.setUserUuid(vo.getUuid());
-            struct.setResourceType(AccountVO.class.getSimpleName());
-        }
 
-        if (struct == null) {
-            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
-            bus.reply(msg, reply);
-            return;
-        }
+                LogInReply logInReply = r.castReply();
+                IdentityCanonicalEvents.AccountLoginData data = new IdentityCanonicalEvents.AccountLoginData();
+                data.setAccountUuid(logInReply.getSession().getAccountUuid());
+                data.setUserUuid(logInReply.getSession().getUserUuid());
+                evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
 
-        for (AdditionalLoginExtensionPoint exp : pluginRgty.getExtensionList(AdditionalLoginExtensionPoint.class)){
-            ErrorCode errorCode = exp.authenticate(msg, struct.getUserUuid(), struct.getResourceType());
-            if (errorCode != null) {
-                reply.setError(errorCode);
+                reply.setInventory(logInReply.getSession());
                 bus.reply(msg, reply);
-                return;
             }
-        }
+        });
+    }
 
-        SessionInventory session = getSession(struct.getAccountUuid(), struct.getUserUuid());
-        msg.setSession(session);
-        IdentityCanonicalEvents.AccountLoginData data = new IdentityCanonicalEvents.AccountLoginData();
-        data.setAccountUuid(struct.getAccountUuid());
-        data.setUserUuid(struct.getUserUuid());
-        evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
-
-        reply.setInventory(session);
+    private void handle(CreateAccountMsg msg) {
+        AccountInventory inv = createAccount(msg);
+        CreateAccountReply reply = new CreateAccountReply();
+        reply.setInventory(inv);
         bus.reply(msg, reply);
     }
 
-    private void handle(APICreateAccountMsg msg) {
+    public AccountInventory createAccount(CreateAccountMsg msg) {
         final AccountInventory inv = new SQLBatchWithReturn<AccountInventory>() {
             @Override
             protected AccountInventory scripts() {
                 AccountVO vo = new AccountVO();
-                if (msg.getResourceUuid() != null) {
-                    vo.setUuid(msg.getResourceUuid());
+                if (msg.getUuid() != null) {
+                    vo.setUuid(msg.getUuid());
                 } else {
                     vo.setUuid(Platform.getUuid());
                 }
@@ -604,13 +607,38 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }.execute();
 
-
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class),
                 arg -> arg.afterCreateAccount(inv));
 
-        APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
-        evt.setInventory(inv);
-        bus.publish(evt);
+        return inv;
+    }
+
+    private void handle(APICreateAccountMsg msg) {
+        CreateAccountMsg accountMsg = new CreateAccountMsg();
+        if (msg.getResourceUuid() != null) {
+            accountMsg.setUuid(msg.getResourceUuid());
+        } else {
+            accountMsg.setUuid(Platform.getUuid());
+        }
+        accountMsg.setName(msg.getName());
+        accountMsg.setDescription(msg.getDescription());
+        accountMsg.setPassword(msg.getPassword());
+        accountMsg.setType(msg.getType());
+        bus.makeTargetServiceIdByResourceUuid(accountMsg, AccountConstant.SERVICE_ID, accountMsg.getUuid());
+        bus.send(accountMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                } else {
+                    CreateAccountReply reply1 = reply.castReply();
+                    evt.setInventory(reply1.getInventory());
+                }
+                bus.publish(evt);
+            }
+        });
+
     }
 
     @Override
@@ -653,10 +681,43 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 accountApiControlInternal.addAll(apis);
             }
 
+            installNeedQuotaCheckMessageHandlers();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
         return true;
+    }
+
+    private void installNeedQuotaCheckMessageHandlers() {
+        bus.installBeforeDeliveryMessageInterceptor(new BeforeDeliveryMessageInterceptor() {
+            @Override
+            public int orderOfBeforeDeliveryMessageInterceptor() {
+                return -100;
+            }
+
+            @Override
+            public void beforeDeliveryMessage(Message msg) {
+                if (msg.getServiceId().equals(ApiMediatorConstant.SERVICE_ID)) {
+                    // the API message will be routed by ApiMediator,
+                    // filter out this message to avoid reporting the same
+                    // API message twice
+                    return;
+                }
+
+                if (!(msg instanceof NeedQuotaCheckMessage)) {
+                    return;
+                }
+
+                String accountUuid = ((NeedQuotaCheckMessage) msg).getAccountUuid();
+                if (accountUuid == null) {
+                    logger.warn(String.format("missing accountUuid of message[id: %s]," +
+                            " skip quota check to keep compatible", msg.getId()));
+                    return;
+                }
+
+                new QuotaUtil().checkQuota(msg, accountUuid, accountUuid);
+            }
+        }, new ArrayList<>());
     }
 
     private void updateResourceVONameOnEntityUpdate() {
@@ -729,68 +790,65 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void collectDefaultQuota() {
-        Map<String, Long> defaultQuota = new HashMap<>();
-
-        // Add quota and quota checker
+        // Add quota definition and quota message checker
         for (ReportQuotaExtensionPoint ext : pluginRgty.getExtensionList(ReportQuotaExtensionPoint.class)) {
             List<Quota> quotas = ext.reportQuota();
-            DebugUtils.Assert(quotas != null, String.format("%s.getQuotaPairs() returns null", ext.getClass()));
-
+            DebugUtils.Assert(quotas != null, String.format("%s.reportQuota() returns null", ext.getClass()));
             definedQuotas.addAll(quotas);
 
             for (Quota quota : quotas) {
-                DebugUtils.Assert(quota.getQuotaPairs() != null,
-                        String.format("%s reports a quota containing a null quotaPairs", ext.getClass()));
-
-                for (QuotaPair p : quota.getQuotaPairs()) {
-                    if (defaultQuota.containsKey(p.getName())) {
-                        throw new CloudRuntimeException(String.format("duplicate DefaultQuota[resourceType: %s] reported by %s", p.getName(), ext.getClass()));
-                    }
-
-                    defaultQuota.put(p.getName(), p.getValue());
-                    nameQuotaMap.put(p.getName(), quota);
-                }
-
-                for (Class clz : quota.getMessagesNeedValidation()) {
-                    if (messageQuotaMap.containsKey(clz)) {
-                        messageQuotaMap.get(clz).add(quota);
-                    } else {
-                        ArrayList<Quota> quotaArrayList = new ArrayList<>();
-                        quotaArrayList.add(quota);
-                        messageQuotaMap.put(clz, quotaArrayList);
-                    }
-
-                }
+                DebugUtils.Assert(quota.getQuotaDefinitions() != null
+                                || !quota.getQuotaMessageCheckerList().isEmpty(),
+                        String.format("%s reports a quota containing a null quotaDefinitions and message handlers", ext.getClass()));
+                collectQuotaDefinitions(quota, ext);
+                checkDeprecatedQuotaPairs(quota);
+                collectQuotaMessageCheckers(quota);
             }
         }
 
-        // Add additional quota checker to quota
-        for (RegisterQuotaCheckerExtensionPoint ext : pluginRgty.getExtensionList(RegisterQuotaCheckerExtensionPoint.class)) {
-            // Map<quota name,Set<QuotaValidator>>
-            Map<String, Set<Quota.QuotaValidator>> m = ext.registerQuotaValidator();
-            for (Map.Entry<String, Set<Quota.QuotaValidator>> entry : m.entrySet()) {
-                Quota quota = nameQuotaMap.get(entry.getKey());
-                quota.addQuotaValidators(entry.getValue());
-                for (Quota.QuotaValidator q : entry.getValue()) {
-                    for (Class clz : q.getMessagesNeedValidation()) {
-                        if (messageQuotaMap.containsKey(clz)) {
-                            messageQuotaMap.get(clz).add(quota);
-                        } else {
-                            ArrayList<Quota> quotaArrayList = new ArrayList<>();
-                            quotaArrayList.add(quota);
-                            messageQuotaMap.put(clz, quotaArrayList);
-                        }
-                    }
-                }
-            }
-
-        }
-
-        repairAccountQuota(defaultQuota);
+        repairAccountQuota();
     }
 
+    private void collectQuotaMessageCheckers(Quota quota) {
+        for (QuotaMessageHandler<? extends Message> checker : quota.getQuotaMessageCheckerList()) {
+            if (messageHandlerMap.containsKey(checker.messageClass)) {
+                messageHandlerMap.get(checker.messageClass).add(checker);
+            } else {
+                List<QuotaMessageHandler<? extends Message>> checkers = new ArrayList<>();
+                checkers.add(checker);
+                messageHandlerMap.put(checker.messageClass, checkers);
+            }
+        }
+    }
 
-    private void repairAccountQuota(Map<String, Long> defaultQuota) {
+    private void collectQuotaDefinitions(Quota quota, ReportQuotaExtensionPoint ext) {
+        if (quota.getQuotaDefinitions() == null) {
+            return;
+        }
+
+        for (QuotaDefinition d : quota.getQuotaDefinitions()) {
+            if (nameQuotaMap.containsKey(d.getName())) {
+                throw new CloudRuntimeException(String.format("duplicate DefaultQuota[resourceType: %s] reported by %s", d.getName(), ext.getClass()));
+            }
+
+            nameQuotaMap.put(d.getName(), quota);
+            quotaDefinitionMap.put(d.getName(), d);
+        }
+    }
+
+    private void checkDeprecatedQuotaPairs(Quota quota) {
+        if (quota.getQuotaPairs() == null) {
+            return;
+        }
+
+        for (QuotaPair d : quota.getQuotaPairs()) {
+            logger.warn(String.format("Deprecated QuotaPair[name: %s, value: %d] is still used",
+                    d.getName(), d.getValue()));
+        }
+        throw new CloudRuntimeException("QuotaPair is not supported now, use QuotaDefinition instead");
+    }
+
+    private void repairAccountQuota() {
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -804,9 +862,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                             List<QuotaVO> needPersistQuotas = new ArrayList<>();
                             normalAccounts.parallelStream().forEach(nA -> {
                                 List<String> existingQuota = q(QuotaVO.class).select(QuotaVO_.name).eq(QuotaVO_.identityUuid, nA).listValues();
-                                for (Map.Entry<String, Long> e : defaultQuota.entrySet()) {
+                                for (Map.Entry<String, QuotaDefinition> e : quotaDefinitionMap.entrySet()) {
                                     String rtype = e.getKey();
-                                    Long value = e.getValue();
+                                    Long value = e.getValue().getDefaultValue();
                                     if (existingQuota.contains(rtype)) {
                                         continue;
                                     }

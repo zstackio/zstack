@@ -149,7 +149,8 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                     vo.setDeviceId(getNextDeviceId(volumeUuid, imageUuid));
                     vo.setActualSize(vo.getActualSize() == null ? 0L : vo.getActualSize());
                 } else if (spec.getImageSpec().getInventory() != null) {
-                    vo.setActualSize(spec.getImageSpec().getInventory().getActualSize());
+                    vo.setActualSize(vo.getActualSize() == null ?
+                            spec.getImageSpec().getInventory().getActualSize() : vo.getActualSize());
                 }
 
                 vo = dbf.updateAndRefresh(vo);
@@ -243,6 +244,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
         msg.setHostUuid(spec.getDestHost().getUuid());
         msg.setPrimaryStorageAllocated(true);
         msg.setSkipIfExisting(spec.isInstantiateResourcesSkipExisting());
+        msg.setAllocatedInstallUrl(spec.getAllocatedUrlFromVolumeSpecs(volume.getUuid()));
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, volume.getUuid());
         return msg;
     }

@@ -96,8 +96,12 @@ public class VmAllocateVolumeFlow implements Flow {
         for (VolumeSpec vspec : volumeSpecs) {
             CreateVolumeMsg msg = new CreateVolumeMsg();
             Set<String> tags = new HashSet<>();
-            if (vspec != null && vspec.getTags() != null) {
-                tags.addAll(vspec.getTags());
+            if (vspec != null) {
+                if (vspec.getTags() != null) {
+                    tags.addAll(vspec.getTags());
+                }
+            } else {
+                continue;
             }
 
             DebugUtils.Assert(vspec.getType() != null, "VolumeType can not be null!");
@@ -169,6 +173,7 @@ public class VmAllocateVolumeFlow implements Flow {
                             spec.getDestDataVolumes().add(inv);
                         }
 
+                        vspec.setAssociatedVolumeUuid(inv.getUuid());
                         vspec.setIsVolumeCreated(true);
                     } else {
                         err = r.getError();

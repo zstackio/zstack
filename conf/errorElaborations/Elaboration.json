@@ -496,6 +496,14 @@
     "message_en": "Could not perform this operation, because the host is disconnected."
   },
   {
+    "category": "HOST",
+    "code": "1031",
+    "method": "regex",
+    "regex": ".*failed to migrate vm\\[uuid:.*] from kvm host\\[uuid:.*, ip:.*] to dest host\\[ip:.*].*.No enough physical memory for guest.*",
+    "message_cn": "在物理机上迁移云主机失败，因为物理机已经没有足够的物理内存可供虚拟机使用。",
+    "message_en": "Failed to migrate VM on KVM host, because host does not have enough physical memory for VM."
+  },
+  {
     "category": "IAM2",
     "code": "1000",
     "method": "regex",
@@ -692,7 +700,7 @@
     "code": "1008",
     "method": "regex",
     "regex": ".*overlap with ip range\\[uuid:.*, start ip:.*, end ip: .*].*",
-    "message_cn": "与己有的网络段范围 [uuid：%1$s，开始：%2$s，结束：%3$s] 重叠。",
+    "message_cn": "与已有的网络段范围 [uuid：%1$s，开始：%2$s，结束：%3$s] 重叠。",
     "message_en": "Overlapped with the existing IP range [uuid: %1$s, start ip: %2$s, end ip: %3$s]."
   },
   {
@@ -980,9 +988,9 @@
     "category": "QUOTA",
     "code": "1002",
     "method": "regex",
-    "regex": ".*quota exceeding.The resource owner\\(or target resource owner\\) account\\[uuid:.*] exceeds a quota\\[name:.*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
-    "message_cn": "请求资源超出配额。资源所有者或目标资源所有者帐户 [uuid：%1$s] 超出配额 [配额名称：%2$s，配额总量：%3$s]，当前已使用：%4$s，本次请求数量：%5$s。如需继续操作请联系管理员。",
-    "message_en": "Quota [name: %2$s, amount: %3$s] of the resource owner or target resource owner account [uuid: %1$s] exceeds the limit. Current used: %4$s, requests: %5$s. Please contact the administrator."
+    "regex": ".*quota exceeding.The resource owner\\(or target resource owner\\) account\\[uuid:.* name:.*] exceeds a quota\\[name:.*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
+    "message_cn": "请求资源超出配额。资源所有者或目标资源所有者帐户 [uuid：%1$s，帐户名称：%2$s] 超出配额 [配额名称：%3$s，配额总量：%4$s]，当前已使用：%5$s，本次请求数量：%6$s。如需继续操作请联系管理员。",
+    "message_en": "Quota [name: %3$s, amount: %4$s] of the resource owner or target resource owner account [uuid: %1$s, name: %2$s] exceeds the limit. Current used: %5$s, requests: %6$s. Please contact the administrator."
   },
   {
     "category": "QUOTA",
@@ -1189,8 +1197,8 @@
     "code": "1007",
     "method": "regex",
     "regex": "after filtering, .* returns zero candidate host, it means: .*",
-    "message_cn": "创建云主机失败，未找到合适的物理机。",
-    "message_en": "Failed to create VM, because no qualified host found."
+    "message_cn": "创建/启动云主机失败，未找到合适的物理机。",
+    "message_en": "Failed to create/start VM, because no qualified host found."
   },
   {
     "category": "VM",
@@ -1244,9 +1252,9 @@
     "category": "VM",
     "code": "1014",
     "method": "regex",
-    "regex": ".*requested vcpus is greater than max allowable vcpus for the live domain: .* make NUMA take effect.*",
-    "message_cn": "请求的 vCPU 超过允许最大 vCPU 的范围，请尝试重新启动云主机以使 NUMA 生效。",
-    "message_en": "Requested vCPU count exceeds the upper limit. Please reboot the VM to make NUMA take effect."
+    "regex": ".*requested vcpus is greater than max allowable vcpus for the live domain: .* make Instance Offering Online Modification take effect.*",
+    "message_cn": "请求的 vCPU 超过允许最大 vCPU 的范围，请尝试重新启动云主机以使 计算规格在线修改 生效。",
+    "message_en": "Requested vCPU count exceeds the upper limit. Please reboot the VM to make Instance Offering Online Modification take effect."
   },
   {
     "category": "VM",
@@ -1623,5 +1631,93 @@
     "regex": "the SSH port is not open after.*Failed to login the vyos router.*",
     "message_cn": "启动虚拟路由器超时，经过 %1$s 秒等待，虚拟路由器的 SSH 端口仍未开放。",
     "message_en": "Virtual router start timeout. The SSH port of the virtual router is not open after %1$s seconds."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3001",
+    "method": "regex",
+    "regex": "the vm scheduling group.* has already had a vm antiaffinity from each other scheduling rule attached.* attaching another one is not allowed.",
+    "message_cn": "该云主机调度组已绑定互斥云主机调度策略，不可重复绑定。",
+    "message_en": "The VM scheduling group has already had a VM Exclusive from Each Other scheduling policy attached. Attaching another one is not allowed."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3002",
+    "method": "regex",
+    "regex": "the vm scheduling group.* has already had a vm affinitive to each other scheduling rule attached. Attaching a vm antiaffinity from each other scheduling rule is not allowed.",
+    "message_cn": "该云主机调度组已绑定聚集云主机调度策略，不可绑定互斥云主机调度策略。",
+    "message_en": "The VM scheduling group has already had a VM Affinitive to Each Other scheduling policy attached. Attaching a VM Exclusive from Each Other scheduling policy is not allowed."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3003",
+    "method": "regex",
+    "regex": "the vm scheduling group.* has already had a vm affinitive to each other scheduling rule attached.attaching another one is not allowed.",
+    "message_cn": "该云主机调度组已绑定聚集云主机调度策略，不可重复绑定。",
+    "message_en": "The VM scheduling group has already had a VM Affinitive to Each Other scheduling policy attached. Attaching another one is not allowed."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3004",
+    "method": "regex",
+    "regex": "the vm scheduling group.* has already had a vm exclusive from each other scheduling rule attached.* Attaching a vm affinitive to each other scheduling policy is not allowed.",
+    "message_cn": "该云主机调度组已绑定互斥云主机调度策略，不可绑定聚集云主机调度策略。",
+    "message_en": "The VM scheduling group has already had a VM Exclusive from Each Other scheduling policy attached. Attaching a VM Affinitive to Each Other scheduling policy is not allowed."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3005",
+    "method": "regex",
+    "regex": "the vm scheduling group.* has already had a vms affinitive to hosts scheduling rule attached.* you cannot attach another one to the group again.",
+    "message_cn": "该云主机调度组已绑定云主机亲和物理机调度策略，不可重复绑定。",
+    "message_en": "The VM scheduling group has already had a VMs Affinitive to Hosts scheduling policy attached. You cannot attach another one to the group again."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3006",
+    "method": "regex",
+    "regex": "the vm scheduling group.* has already had a vm antiaffinity from host scheduling rule attached.* you cannot attach a vms affinitive to host scheduling rule to the group.",
+    "message_cn": "该云主机调度组已绑定云主机互斥物理机调度策略，不可绑定云主机亲和物理机调度策略。",
+    "message_en": "The VM scheduling group has already had a VMs Exclusive from Hosts scheduling policy attached. You cannot attach a VMs Affinitive to Hosts scheduling policy to the group."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3007",
+    "method": "regex",
+    "regex": "the vm scheduling group.* has already had a vm affinitive to hosts scheduling rule attached.* you cannot attach a vm antiaffinity from hosts scheduling rule to the group.",
+    "message_cn": "该云主机调度组已绑定云主机亲和物理机调度策略，不可绑定云主机互斥物理机调度策略。",
+    "message_en": "The VM scheduling group has already had a VMs Affinitive to Hosts scheduling policy attached. You cannot attach a VMs Exclusive from Hosts scheduling policy to the group."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3008",
+    "method": "regex",
+    "regex": "the vm scheduling group has already had a vm antiaffinity from each other scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vms affinitive to hosts scheduling policy to the group.",
+    "message_cn": "该云主机调度组已绑定互斥云主机调度策略，若再绑定云主机亲和物理机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_en": "The VM scheduling group has already had a VM Exclusive from Each Other scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VMs Affinitive to Hosts scheduling policy to the group."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3009",
+    "method": "regex",
+    "regex": "the vm scheduling group has already had a vms Affinitive to Hosts scheduling policy attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vm antiaffinity from each other scheduling rule to the group again.",
+    "message_cn": "该云主机调度组已绑定云主机亲和物理机调度策略，若再绑定互斥云主机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_en": "The VM scheduling group has already had a VMs Affinitive to Hosts scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VM Exclusive from Each Other scheduling policy to the group again."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3010",
+    "method": "regex",
+    "regex": "the vm scheduling group has already had a vm antiaffinity from each other scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vms antiaffinity from Hosts scheduling policy to the group.",
+    "message_cn": "该云主机调度组已绑定互斥云主机调度策略，若再绑定云主机互斥物理机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_en": "The VM scheduling group has already had a VM Exclusive from Each Other scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VMs Exclusive from Hosts scheduling policy to the group."
+  },
+  {
+    "category": "vmSchedulingRule",
+    "code": "3011",
+    "method": "regex",
+    "regex": "the vm scheduling group has already had a vms antiaffinity from hosts scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vm antiaffinity from Each Other scheduling rule to the group",
+    "message_cn": "该云主机调度组已绑定云主机互斥物理机调度策略，若再绑定互斥云主机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_en": "The VM scheduling group has already had a VMs Exclusive from Hosts scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VM Exclusive from Each Other scheduling policy to the group."
   }
 ]

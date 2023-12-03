@@ -5,5 +5,35 @@
         <id>3001</id>
         <description>No available security machine</description>
     </code>
+
+    <code>
+        <id>3002</id>
+        <description>Failed to connect to client</description>
+    </code>
+
+    <code>
+        <id>3003</id>
+        <description>Client digest service failed</description>
+    </code>
+
+    <code>
+        <id>3004</id>
+        <description>Client sm4 service failed</description>
+    </code>
+
+    <code>
+        <id>3005</id>
+        <description>Client hmac service failed</description>
+    </code>
+
+    <code>
+        <id>3006</id>
+        <description>The crypto service is not enabled</description>
+    </code>
+
+    <code>
+        <id>3007</id>
+        <description>Operation not supported</description>
+    </code>
 </error>
 

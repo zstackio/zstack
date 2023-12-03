@@ -40,6 +40,7 @@ import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
 import org.zstack.network.service.DhcpExtension;
 import org.zstack.network.service.NetworkProviderFinder;
+import org.zstack.network.service.NetworkServiceHelper.HostRouteInfo;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.network.service.flat.IpStatisticConstants.VmType;
@@ -65,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.network.service.NetworkServiceHelper.getL3NetworkHostRoute;
 import static org.zstack.network.service.flat.IpStatisticConstants.ResourceType;
 import static org.zstack.network.service.flat.IpStatisticConstants.SortBy;
 import static org.zstack.utils.CollectionDSL.*;
@@ -74,7 +76,7 @@ import static org.zstack.utils.CollectionDSL.*;
  */
 public class FlatDhcpBackend extends AbstractService implements NetworkServiceDhcpBackend, KVMHostConnectExtensionPoint,
         L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint, VmAbnormalLifeCycleExtensionPoint, IpRangeDeletionExtensionPoint,
-        BeforeStartNewCreatedVmExtensionPoint, GlobalApiMessageInterceptor, AfterAddIpRangeExtensionPoint {
+        BeforeStartNewCreatedVmExtensionPoint, GlobalApiMessageInterceptor, AfterAddIpRangeExtensionPoint, DnsServiceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatDhcpBackend.class);
 
     @Autowired
@@ -122,7 +124,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         List<String> vmUuids = vmVos.stream().map(VmInstanceVO::getUuid).collect(Collectors.toList());
         sql = "select nic.uuid from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
-                " where nic.uuid = ip.vmNicUuid and nic.type <> :nicType and ip.l3NetworkUuid = l3.uuid" +
+                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid in (:vmUuids) group by nic.uuid";
@@ -131,8 +133,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         nq.setParameter("ptype", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         nq.setParameter("dhcpType", NetworkServiceType.DHCP.toString());
         nq.setParameter("vmUuids", vmUuids);
-        // TODO: we will support vDPA dhcp in future
-        nq.setParameter("nicType", "vDPA");
         List<String> nicUuids = nq.getResultList();
         if (nicUuids.isEmpty()) {
             return null;
@@ -292,10 +292,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             ownedVips.addAll(acntMgr.getResourceUuidsCanAccessByAccount(msg.getSession().getAccountUuid(), VipVO.class));
         }
 
+        Map<String, String> ipToVip= new HashMap<>();
         for (Object[] result : results) {
             IpStatisticData element = new IpStatisticData();
             ipStatistics.add(element);
             element.setIp((String) result[0]);
+            if(result[1] != null) {
+               ipToVip.put((String) result[0], (String) result[1]);
+            }
             List<String> resourceTypes = new ArrayList<>();
             element.setResourceTypes(resourceTypes);
             if (dhcp.contains(element.getIp())) {
@@ -355,7 +359,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(element.getVmInstanceType());
             if (exp != null) {
-                element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid()));
+                element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid(), ipToVip.get(element.getIp())));
             }
         }
 
@@ -938,7 +942,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
-                " where nic.uuid = ip.vmNicUuid and nic.type <> :nicType and ip.l3NetworkUuid = l3.uuid" +
+                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid = :vmUuid group by nic.uuid";
@@ -947,8 +951,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         nq.setParameter("dhcpType", NetworkServiceType.DHCP.toString());
         nq.setParameter("ptype", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         nq.setParameter("vmUuid", vm.getUuid());
-        // TODO: we will support vDPA dhcp in future
-        nq.setParameter("nicType", "vDPA");
         List<VmNicVO> nics = nq.getResultList();
 
         if (l3Uuid != null) {
@@ -1295,11 +1297,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
     }
 
-    public static class HostRouteInfo {
-        public String prefix;
-        public String nexthop;
-    }
-
     public static class DhcpInfo {
         public int ipVersion;
         public String raMode;
@@ -1396,44 +1393,25 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE;
     }
 
-    private List<String> getL3NetworkDns(String l3NetworkUuid){
-        List<String> dns = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, l3NetworkUuid)
-                .select(L3NetworkDnsVO_.dns).orderBy(L3NetworkDnsVO_.id, SimpleQuery.Od.ASC).listValues();
-        if (dns == null) {
-            dns = new ArrayList<String>();
-        }
+    @Override
+    public List<String> getDnsAddress(L3NetworkInventory l3Inv) {
+        List<String>  dns = new ArrayList<String>();
 
-        L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
-        if (FlatNetwordProviderGlobalConfig.ALLOW_DEFAULT_DNS.value(Boolean.class) && l3VO.getIpVersions().contains(IPv6Constants.IPv4)) {
-            Map<String, String> dhcpIpMap = getExistingDhcpServerIp(l3NetworkUuid, IPv6Constants.IPv4);
+        String providerUuid = Q.New(NetworkServiceProviderVO.class)
+                .select(NetworkServiceProviderVO_.uuid)
+                .eq(NetworkServiceProviderVO_.type, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)
+                .findValue();
+        if (l3Inv.getNetworkServiceTypesFromProvider(providerUuid).contains(NetworkServiceType.DHCP.toString())
+                && FlatNetwordProviderGlobalConfig.ALLOW_DEFAULT_DNS.value(Boolean.class)
+                && l3Inv.getIpVersions().contains(IPv6Constants.IPv4)){
+            Map<String, String> dhcpIpMap = getExistingDhcpServerIp(l3Inv.getUuid(), IPv6Constants.IPv4);
             if (!dhcpIpMap.isEmpty()) {
                 Map.Entry<String, String> entry = dhcpIpMap.entrySet().iterator().next();
                 dns.add(entry.getKey());
             }
         }
 
-        for (FlatDhcpGetDnsAddressExtensionPoint exp : pluginRgty.getExtensionList(FlatDhcpGetDnsAddressExtensionPoint.class)) {
-            dns.addAll(exp.getDnsAddress(L3NetworkInventory.valueOf(l3VO)));
-        }
-
         return dns;
-    }
-
-    private List<HostRouteInfo> getL3NetworkHostRoute(String l3NetworkUuid){
-        List<L3NetworkHostRouteVO> vos = Q.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, l3NetworkUuid).list();
-        if (vos == null || vos.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<HostRouteInfo> res = new ArrayList<>();
-        for (L3NetworkHostRouteVO vo : vos) {
-            HostRouteInfo info = new HostRouteInfo();
-            info.prefix = vo.getPrefix();
-            info.nexthop = vo.getNexthop();
-            res.add(info);
-        }
-
-        return res;
     }
 
     private List<DhcpInfo> toDhcpInfo(List<DhcpStruct> structs) {
@@ -1489,7 +1467,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 List<String> dns = new ArrayList<>();
                 List<String> dns6 = new ArrayList<>();
-                for (String dnsIp : getL3NetworkDns(arg.getL3Network().getUuid())) {
+                for (String dnsIp : nwServiceMgr.getL3NetworkDns(arg.getL3Network().getUuid())) {
                     if (NetworkUtils.isIpv4Address(dnsIp)) {
                         dns.add(dnsIp);
                     } else {
@@ -1529,10 +1507,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         final Map<String, List<DhcpInfo>> l3DhcpMap = new HashMap<>();
         for (DhcpInfo d : dhcpInfo) {
-            // TODO: vDPA do not support flat dhcp service yet;
-            if (d.nicType.equals("vDPA")) {
-                continue;
-            }
             List<DhcpInfo> lst = l3DhcpMap.get(d.l3NetworkUuid);
             if (lst == null) {
                 lst = new ArrayList<>();
@@ -1629,11 +1603,27 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         VmNicInventory nnic = null;
 
         for (VmNicInventory nic : vm.getVmNics()) {
+            try {
+                NetworkServiceProviderType pType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                        nic.getL3NetworkUuid(), NetworkServiceType.DHCP);
+                if (pType != FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
+                    continue;
+                }
+            } catch (OperationFailureException exception) {
+                logger.debug(String.format("dhcp is not enable on l3 network %s", nic.getL3NetworkUuid()));
+                continue;
+            }
+
             if (VmNicHelper.getL3Uuids(nic).contains(previousL3)) {
                 pnic = nic;
             } else if (VmNicHelper.getL3Uuids(nic).contains(nowL3)) {
                 nnic = nic;
             }
+        }
+
+        if (pnic == null && nnic == null) {
+            completion.success();
+            return;
         }
 
         ResetDefaultGatewayCmd cmd = new ResetDefaultGatewayCmd();

@@ -1,18 +1,18 @@
 package org.zstack.testlib
 
-
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.vm.devices.DeviceAddress
 import org.zstack.header.vm.devices.VirtualDeviceInfo
 import org.zstack.header.volume.VolumeInventory
 import org.zstack.header.volume.VolumeVO
@@ -29,6 +29,8 @@ import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
 import java.util.concurrent.ConcurrentHashMap
+
+import static org.zstack.kvm.KVMAgentCommands.*
 
 /**
  * Created by xing5 on 2017/6/6.
@@ -130,6 +132,52 @@ class KVMSimulator implements Simulator {
                 }
             }
 
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.GET_VIRTUALIZER_INFO_PATH) { HttpEntity<String> e ->
+            def rsp = new GetVirtualizerInfoRsp()
+            rsp.hostInfo = new VirtualizerInfoTO()
+            rsp.hostInfo.version = "4.2.0-627.g36ee592.el7"
+            rsp.hostInfo.virtualizer = "qemu-kvm"
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            rsp.hostInfo.uuid = hostUuid
+
+            def cmd = JSONObjectUtil.toObject(e.body, GetVirtualizerInfoCmd.class)
+            rsp.vmInfoList = cmd.vmUuids.collect { vmUuid ->
+                def to = new VirtualizerInfoTO()
+                to.uuid = vmUuid
+                to.version = "4.2.0-627.g36ee592.el7"
+                to.virtualizer = "qemu-kvm"
+                return to
+            }
+
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_FACT_PATH) { HttpEntity<String> e ->
+            def rsp = new HostFactResponse()
+
+            rsp.osDistribution = "zstack"
+            rsp.osRelease = "kvmSimulator"
+            rsp.osVersion = "0.1"
+            rsp.qemuImgVersion = "2.0.0"
+            rsp.libvirtVersion = "1.2.9"
+            rsp.cpuModelName = "Broadwell"
+            rsp.cpuProcessorNum = "10"
+            rsp.cpuGHz = "2.10"
+            rsp.hostCpuModelName = "Broadwell @ 2.10GHz"
+            rsp.ipmiAddress = "None"
+            rsp.eptFlag = "ept"
+            rsp.libvirtCapabilities = ["incrementaldrivemirror", "blockcopynetworktarget"]
+            rsp.powerSupplyModelName = ""
+            rsp.powerSupplyManufacturer = ""
+            rsp.hvmCpuFlag = ""
+            rsp.cpuCache = "64.0,4096.0,16384.0"
+
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.version = "4.2.0-627.g36ee592.el7"
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
             return rsp
         }
 
@@ -323,6 +371,14 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.MigrateVmResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_GET_CPU_XML_PATH) {
+            return new KVMAgentCommands.VmGetCpuXmlResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_COMPARE_CPU_FUNCTION_PATH) {
+            return new KVMAgentCommands.VmCompareCpuFunctionResponse()
+        }
+
         spec.simulator(KVMConstant.KVM_CHECK_L2NOVLAN_NETWORK_PATH) {
             return new KVMAgentCommands.CheckBridgeResponse()
         }
@@ -362,10 +418,56 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.AgentResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_GENERATE_VHOST_USER_CLIENT_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_DELETE_VHOST_USER_CLIENT_PATH) {
+             return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH) { HttpEntity<String> e ->
+            SyncVmDeviceInfoCmd cmd = JSONObjectUtil.toObject(e.body, SyncVmDeviceInfoCmd.class)
+            def rsp = new SyncVmDeviceInfoResponse()
+
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.uuid = cmd.vmInstanceUuid
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
+            rsp.virtualizerInfo.version = "4.2.0-632.g6a6222b.el7"
+
+            return rsp
+        }
+
         spec.simulator(KVMConstant.KVM_START_VM_PATH) { HttpEntity<String> e ->
-            KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            StartVmCmd cmd = JSONObjectUtil.toObject(e.body, StartVmCmd.class)
             assert new HashSet<>(cmd.dataVolumes.deviceId).size() == cmd.dataVolumes.size()
-            return new KVMAgentCommands.StartVmResponse()
+            StartVmResponse  rsp = new StartVmResponse()
+            rsp.virtualDeviceInfoList = []
+            List<VolumeTO> pciInfo = new ArrayList<VolumeTO>()
+            pciInfo.add(cmd.rootVolume)
+            pciInfo.addAll(cmd.dataVolumes)
+
+            Integer counter = 0
+            pciInfo.each { to ->
+                VirtualDeviceInfo info = new VirtualDeviceInfo()
+                info.resourceUuid = to.volumeUuid
+                info.deviceAddress = new DeviceAddress()
+                info.deviceAddress.domain = "0000"
+                info.deviceAddress.bus = "00"
+                info.deviceAddress.slot = Integer.toHexString(counter)
+                info.deviceAddress.function = "0"
+
+                counter++
+
+                rsp.virtualDeviceInfoList.add(info)
+            }
+
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.uuid = cmd.vmInstanceUuid
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
+            rsp.virtualizerInfo.version = "4.2.0-632.g6a6222b.el7"
+
+            return rsp
         }
 
         spec.simulator(KVMConstant.KVM_STOP_VM_PATH) {
@@ -459,6 +561,17 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_HOST_NUMA_PATH) {
             def rsp = new  KVMAgentCommands.GetHostNUMATopologyResponse()
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_ATTACH_VOLUME_PATH) {
+            def rsp = new KVMAgentCommands.AttachVolumeRsp()
+            rsp.device = "/dev/nbd0"
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_DETACH_VOLUME_PATH) {
+            def rsp = new KVMAgentCommands.DetachVolumeRsp()
             return rsp
         }
     }

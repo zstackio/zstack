@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>login</id>
+
+    <message>
+        <name>org.zstack.header.identity.login.APILogInMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.login.APIGetLoginProceduresMsg</name>
+    </message>
+</service>

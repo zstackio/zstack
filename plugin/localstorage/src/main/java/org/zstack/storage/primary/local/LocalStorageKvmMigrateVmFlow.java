@@ -186,9 +186,46 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-base-image-cache-of-root-volume";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
+                        cmd.volumeInstallDir = backend.makeVolumeInstallDir(rootVolume);
+                        cmd.imageCacheDir = backend.getCachedImageDir();
+                        cmd.volumeUuid = rootVolume.getUuid();
+                        callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_BASE_IMAGE_PATH, cmd, GetVolumeBaseImagePathRsp.class, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(trigger) {
+                            @Override
+                            public void success(GetVolumeBaseImagePathRsp rsp) {
+                                if (rsp.path != null && backend.isCachedImageUrl(rsp.path)) {
+                                    backingImage.path = rsp.path;
+                                    backingImage.size = rsp.size;
+                                }
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.error(String.format("cannot get volume base image %s, skip and continue", errorCode.getDetails()));
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
                 if (downloadImage) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "download-image-to-cache";
+
+                        @Override
+                        public boolean skip(Map data) {
+                            if (backingImage.path == null) {
+                                logger.debug("no base image cache, skip this flow");
+                                return true;
+                            }
+                            return false;
+                        }
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
@@ -215,34 +252,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         }
                     });
                 } else {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "get-base-image-cache-of-root-volume";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
-                            cmd.volumeInstallDir = backend.makeVolumeInstallDir(rootVolume);
-                            cmd.imageCacheDir = backend.getCachedImageDir();
-                            cmd.volumeUuid = rootVolume.getUuid();
-                            callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_BASE_IMAGE_PATH, cmd, GetVolumeBaseImagePathRsp.class, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(trigger) {
-                                @Override
-                                public void success(GetVolumeBaseImagePathRsp rsp) {
-                                    if (rsp.path != null && backend.isCachedImageUrl(rsp.path)) {
-                                        backingImage.path = rsp.path;
-                                        backingImage.size = rsp.size;
-                                    }
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    logger.error(String.format("cannot get volume base image %s, skip and continue", errorCode.getDetails()));
-                                    trigger.next();
-                                }
-                            });
-                        }
-                    });
-
                     flow(new Flow() {
                         String __name__ = "reserve-capacity-for-base-image-cache-on-dst-host";
 
@@ -1329,10 +1338,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     @Transactional(readOnly = true)
     private List<VolumeInventory> getVolumeOnLocalStorage(VmInstanceSpec spec) {
         String sql = "select v from VolumeVO v, PrimaryStorageVO ps where v.primaryStorageUuid = ps.uuid" +
-                " and ps.type = :type and v.vmInstanceUuid = :vmUuid";
+                " and ps.type = :type and v.vmInstanceUuid = :vmUuid and v.type != :memoryType";
         TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
         q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
         q.setParameter("vmUuid", spec.getVmInventory().getUuid());
+        q.setParameter("memoryType", VolumeType.Memory);
         return VolumeInventory.valueOf(q.getResultList());
     }
 }

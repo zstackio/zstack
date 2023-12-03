@@ -2,17 +2,18 @@ package org.zstack.test.integration.storage.primary.smp
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.core.gc.GCStatus
 import org.zstack.header.Constants
 import org.zstack.header.host.HostVO
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.sdk.AttachPrimaryStorageToClusterAction
-import org.zstack.sdk.ClusterInventory
-import org.zstack.sdk.HostInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.ReconnectPrimaryStorageAction
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
+import org.zstack.sdk.*
 import org.zstack.storage.primary.smp.KvmBackend
+import org.zstack.storage.primary.smp.SMPDeleteVolumeGC
+import org.zstack.storage.primary.smp.SMPPrimaryStorageGlobalConfig
 import org.zstack.test.integration.storage.SMPEnv
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -21,9 +22,9 @@ import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-
 /**
  * Created by AlanJager on 2017/3/10.
  */
@@ -32,6 +33,7 @@ class SMPAttachCase extends SubCase{
     PrimaryStorageInventory primaryStorageInventory
     ClusterInventory clusterInventory
     HostInventory host1, host2, host3
+    DiskOfferingInventory diskOffering
     private static final CLogger logger = Utils.getLogger(SMPAttachCase.class);
     @Override
     void setup() {
@@ -51,7 +53,9 @@ class SMPAttachCase extends SubCase{
             host1 = env.inventoryByName("kvm1") as HostInventory
             host2 = env.inventoryByName("kvm2") as HostInventory
             host3 = env.inventoryByName("kvm3") as HostInventory
+            diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
             testAttachingSMPSuccess()
+            testSkipVolumeGCWhenVolumeInUse()
             testAttachingSmpWithoutMountPathOnHost()
             testSameMountPathDifferentStorage()
             testCleanIdFileAfterAttachFailed()
@@ -61,6 +65,60 @@ class SMPAttachCase extends SubCase{
             testReconnectSmpWhenNoHostInCluster()
             testBatchAddHost()
         }
+    }
+
+    void testSkipVolumeGCWhenVolumeInUse() {
+        def call
+        env.afterSimulator(KvmBackend.DELETE_BITS_PATH) { KvmBackend.DeleteRsp rsp ->
+            call = true
+            rsp.error = "volume in use"
+            rsp.success = false
+            rsp.inUse = true
+            return rsp
+        }
+
+        VolumeInventory vol = createDataVolume {
+            name = "test-volume-in-use"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = primaryStorageInventory.uuid
+        } as VolumeInventory
+
+        def volume = org.zstack.header.volume.VolumeInventory.valueOf(dbFindByUuid(vol.uuid, VolumeVO.class))
+
+        deleteDataVolume {
+            uuid = vol.uuid
+        }
+
+        expectError {
+            expungeDataVolume {
+                uuid = vol.uuid
+            }
+        }
+
+        assert call
+        assert Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.uuid).isExists()
+        assert queryGCJob {
+            conditions = ["context~=%${vol.uuid}%"]
+        }[0] == null
+
+        call = false
+        SMPDeleteVolumeGC gc = new SMPDeleteVolumeGC();
+        gc.NAME = String.format("gc-smp-%s-volume-%s", primaryStorageInventory.uuid, vol.uuid)
+        gc.primaryStorageUuid = primaryStorageInventory.uuid
+        gc.hypervisorType = "KVM"
+        gc.volume = volume
+        gc.deduplicateSubmit(SMPPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS)
+
+        triggerGCJob {
+            uuid = gc.uuid
+        }
+        retryInSecs {
+            assert call
+            assert queryGCJob {
+                conditions = ["context~=%${vol.uuid}%"]
+            }[0].status == GCStatus.Done.toString()
+        }
+        env.cleanSimulatorAndMessageHandlers()
     }
 
     void testAttachingSMPSuccess() {

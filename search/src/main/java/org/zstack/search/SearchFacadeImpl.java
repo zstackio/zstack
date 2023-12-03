@@ -135,6 +135,7 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
             logger.info(String.format("refresh search indexes success, cost %d ms", watch.getLapse()));
         } catch (Throwable e) {
             logger.warn("a unhandled exception happened", e);
+            Thread.currentThread().interrupt();
         }
     }
 

@@ -179,29 +179,5 @@ class ChangeImageVirtioCase extends SubCase{
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
             return rsp
         }
-
-        createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
-        }
-        assert !cmd.hygonCpu
-
-        ImageInventory imageInventory = updateImage {
-            uuid = image.uuid
-            guestOsType = "Windows 10"
-            platform = "Windows"
-        }
-
-        createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
-        }
-        assert cmd.hygonCpu
     }
 }

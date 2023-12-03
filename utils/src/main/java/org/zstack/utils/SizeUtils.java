@@ -1,9 +1,11 @@
 package org.zstack.utils;
 
+import org.zstack.utils.data.NumberUtils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.data.UnitNumber;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 
 /**
  */
@@ -23,64 +25,93 @@ public class SizeUtils {
     private static final String B_SUFFIX = "B";
     private static final String b_SUFFIX = "b";
 
-    private static final List<String> validSuffix = Arrays.asList(
-            T_SUFFIX,
-            TB_SUFFIX,
-            t_SUFFIX,
-            G_SUFFIX,
-            GB_SUFFIX,
-            g_SUFFIX,
-            M_SUFFIX,
-            MB_SUFFIX,
-            m_SUFFIX,
-            K_SUFFIX,
-            KB_SUFFIX,
-            k_SUFFIX,
-            B_SUFFIX,
-            b_SUFFIX
-    );
-
-    private static boolean isPositiveNumber(String str) {
-        return str.matches("\\d+");
+    public static boolean isPositive(Number i){
+        return NumberUtils.isPositive(i);
     }
 
+    /**
+     * <p>Check string is a valid size string with 2 characters size units</p>
+     * <p>Valid size units list below:
+     * {@link #TB_SUFFIX}, {@link #GB_SUFFIX}, {@link #MB_SUFFIX}, {@link #KB_SUFFIX}, {@link #B_SUFFIX}</p>
+     * <p>Example:
+     *   <li>1GB -> true
+     *   <li>2MB -> true
+     *   <li>3K -> false
+     *   <li>4T -> false
+     *   <li>5 -> false
+     *   <li>-6GB -> false
+     *   </li>
+     * </p>
+     * 
+     * @param str a string contains integer and size units
+     * @return if str is a valid size string with 2 characters size units.
+     * @see #isSizeString(String) 
+     */
     public static boolean isSizeString2(String str) {
-        String suffix = str.substring(str.length() - 2);
-        if (!validSuffix.contains(suffix)) {
+        final UnitNumber numeric = NumberUtils.ofUnitNumber(str);
+        return numeric == null ? false : isSize2(numeric);
+    }
+
+    /**
+     * <p>Check string is a valid size string with 1 character size units,
+     * or simply the positive value</p>
+     * <p>Valid size units list below:
+     * {@link #T_SUFFIX}, {@link #t_SUFFIX}, {@link #G_SUFFIX}, {@link #g_SUFFIX}, 
+     * {@link #M_SUFFIX}, {@link #m_SUFFIX}, {@link #K_SUFFIX}, {@link #k_SUFFIX},
+     * {@link #B_SUFFIX}, {@link #b_SUFFIX}, ""</p>
+     * <p>Example:
+     *   <li>1GB -> false
+     *   <li>2MB -> false
+     *   <li>3K -> true
+     *   <li>4T -> true
+     *   <li>5 -> true
+     *   <li>-6G -> false
+     *   </li>
+     * </p>
+     * 
+     * @param str a string contains integer and size units
+     * @return if str is a valid size string with 1 character size units, or simply the positive value
+     * @see #isSizeString2(String) 
+     */
+    public static boolean isSizeString(String str) {
+        final UnitNumber numeric = NumberUtils.ofUnitNumber(str);
+        return numeric == null ? false : isSize(numeric);
+    }
+
+    public static boolean isSize2(UnitNumber numeric) {
+        return isSize(numeric, Arrays.asList(TB_SUFFIX, GB_SUFFIX, MB_SUFFIX, KB_SUFFIX, B_SUFFIX));
+    }
+
+    public static boolean isSize(UnitNumber numeric) {
+        return isSize(numeric, Arrays.asList(
+                T_SUFFIX, t_SUFFIX, G_SUFFIX, g_SUFFIX, M_SUFFIX, m_SUFFIX, K_SUFFIX, k_SUFFIX, B_SUFFIX, b_SUFFIX, ""));
+    }
+
+    public static boolean isSize(UnitNumber numeric, Collection<String> matchedUnits) {
+        if (numeric.number < 0) {
             return false;
         }
-
-        String num = str.substring(0, str.length() - 2);
-        return isPositiveNumber(num);
-    }
-
-    public static boolean isSizeString(String str) {
-        String suffix = str.substring(str.length() - 1);
-        if (!validSuffix.contains(suffix)) {
-            return isPositiveNumber(str);
-        } else {
-            String num = str.substring(0, str.length()-1);
-            return isPositiveNumber(num);
-        }
+        return matchedUnits.contains(numeric.units);
     }
 
     public static long sizeStringToBytes(String str) {
-        String numStr = str.substring(0, str.length() - 1);
-        String suffix = str.substring(str.length() - 1);
-        if (!validSuffix.contains(suffix)) {
-            return Long.parseLong(str);
+        final UnitNumber numeric = NumberUtils.ofUnitNumberOrThrow(str);
+        String suffix = numeric.units;
+        long size = numeric.number;
+        if (suffix.length() == 0) {
+            return size;
         }
 
-        long size = Long.parseLong(numStr);
-        if (suffix.equals(T_SUFFIX) || suffix.equals(t_SUFFIX)) {
+        switch (suffix) {
+        case T_SUFFIX: case t_SUFFIX: case TB_SUFFIX:
             return SizeUnit.TERABYTE.toByte(size);
-        } else if (suffix.equals(G_SUFFIX) || suffix.equals(g_SUFFIX)) {
+        case G_SUFFIX: case g_SUFFIX: case GB_SUFFIX:
             return SizeUnit.GIGABYTE.toByte(size);
-        } else if (suffix.equals(M_SUFFIX) || suffix.equals(m_SUFFIX)) {
+        case M_SUFFIX: case m_SUFFIX: case MB_SUFFIX:
             return SizeUnit.MEGABYTE.toByte(size);
-        } else if (suffix.equals(K_SUFFIX) || suffix.equals(k_SUFFIX)) {
+        case K_SUFFIX: case k_SUFFIX: case KB_SUFFIX:
             return SizeUnit.KILOBYTE.toByte(size);
-        } else if (suffix.equals(B_SUFFIX) || suffix.equals(b_SUFFIX)) {
+        case B_SUFFIX: case b_SUFFIX:
             return SizeUnit.BYTE.toByte(size);
         }
 

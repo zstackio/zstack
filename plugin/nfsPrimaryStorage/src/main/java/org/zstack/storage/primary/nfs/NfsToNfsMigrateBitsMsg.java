@@ -12,7 +12,7 @@ public class NfsToNfsMigrateBitsMsg extends NeedReplyMessage implements PrimaryS
     private String dstFolderPath;
     private String srcPrimaryStorageUuid;
     private String primaryStorageUuid;
-
+    private String independentPath;
     public String getHostUuid() {
         return hostUuid;
     }
@@ -52,5 +52,13 @@ public class NfsToNfsMigrateBitsMsg extends NeedReplyMessage implements PrimaryS
 
     public void setSrcPrimaryStorageUuid(String srcPrimaryStorageUuid) {
         this.srcPrimaryStorageUuid = srcPrimaryStorageUuid;
+    }
+
+    public String getIndependentPath() {
+        return independentPath;
+    }
+
+    public void setIndependentPath(String independentPath) {
+        this.independentPath = independentPath;
     }
 }

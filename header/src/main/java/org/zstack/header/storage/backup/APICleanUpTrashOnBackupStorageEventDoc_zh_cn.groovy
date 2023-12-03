@@ -1,5 +1,6 @@
 package org.zstack.header.storage.backup
 
+import org.zstack.header.core.trash.TrashCleanupResult
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.core.trash.CleanTrashResult
 
@@ -28,5 +29,13 @@ doc {
 		type "CleanTrashResult"
 		since "3.3.0"
 		clz CleanTrashResult.class
+	}
+	ref {
+		name "results"
+		path "org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageEvent.results"
+		desc "清理数据的返回信息"
+		type "List"
+		since "4.7.0"
+		clz TrashCleanupResult.class
 	}
 }

@@ -2,7 +2,6 @@ package org.zstack.storage.ceph.primary
 
 import org.zstack.storage.ceph.primary.APIQueryCephPrimaryStoragePoolReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryCephPrimaryStoragePool"

@@ -61,6 +61,7 @@ public class Linux {
             ret.setStdout(IOUtils.toString(pro.getInputStream()));
             return ret;
         } catch (Exception e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }

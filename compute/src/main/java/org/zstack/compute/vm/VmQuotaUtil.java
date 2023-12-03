@@ -5,9 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -108,7 +110,8 @@ public class VmQuotaUtil {
                 " where vm.uuid = ref.resourceUuid" +
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
-                " and not (vm.hostUuid is null and vm.lastHostUuid is null)" +
+                // for vm without host and volume info, treat them as new creating vm
+                " and not (vm.hostUuid is null and vm.lastHostUuid is null and vm.rootVolumeUuid is null)" +
                 " and vm.state not in (:states)" +
                 " and vm.type != :vmtype";
         TypedQuery<Long> q2 = dbf.getEntityManager().createQuery(sql2, Long.class);
@@ -118,7 +121,6 @@ public class VmQuotaUtil {
         q2.setParameter("vmtype", "baremetal2");
         Long totalVmNum = q2.getSingleResult();
         quota.totalVmNum = totalVmNum == null ? 0 : totalVmNum;
-
         return quota;
     }
 
@@ -136,5 +138,23 @@ public class VmQuotaUtil {
         Long rootVolumeSize = sq.findValue();
         rootVolumeSize = rootVolumeSize == null ? 0 : rootVolumeSize;
         return rootVolumeSize;
+    }
+
+    @Transactional(readOnly = true)
+    public Long getRequiredCpu(String vmInstanceUuid) {
+        Integer cpuNum = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.cpuNum)
+                .eq(VmInstanceVO_.uuid, vmInstanceUuid)
+                .findValue();
+
+        return Integer.toUnsignedLong(cpuNum);
+    }
+
+    @Transactional(readOnly = true)
+    public Long getRequiredMemory(String vmInstanceUuid) {
+        return Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.memorySize)
+                .eq(VmInstanceVO_.uuid, vmInstanceUuid)
+                .findValue();
     }
 }

@@ -25,16 +25,25 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_EXPUNGE_INTERVAL = new GlobalConfig(CATEGORY, "expungeInterval");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig VM_CLEAN_TRAFFIC = new GlobalConfig(CATEGORY, "cleanTraffic");
-    @GlobalConfigValidation(validValues = {"cirrus","vga", "qxl"})
+    @GlobalConfigValidation(validValues = {"cirrus","vga", "qxl", "virtio"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_VIDEO_TYPE = new GlobalConfig(CATEGORY, "videoType");
+    @GlobalConfigValidation(validValues = {"ich6","ich9", "ac97"})
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VM_SOUND_TYPE = new GlobalConfig(CATEGORY, "soundType");
     @GlobalConfigValidation(validValues = {"off","all", "filter"})
     public static GlobalConfig VM_SPICE_STREAMING_MODE= new GlobalConfig(CATEGORY, "spiceStreamingMode");
     @GlobalConfigValidation
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
     @GlobalConfigValidation
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VM_MAX_VCPU = new GlobalConfig(CATEGORY, "vm.max.vcpu");
+    @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
+    @GlobalConfigValidation(numberGreaterThan = 3000, numberLessThan = 65535)
+    @BindResourceConfig(value = {VmInstanceVO.class})
+    public static GlobalConfig VM_BOOT_MENU_SPLASH_TIMEOUT = new GlobalConfig(CATEGORY, "bootMenuSplashTimeout");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig KVM_HIDDEN_STATE = new GlobalConfig(CATEGORY, "kvmHiddenState");
@@ -63,7 +72,7 @@ public class VmGlobalConfig {
     public static GlobalConfig RESOURCE_BINDING_STRATEGY = new GlobalConfig(CATEGORY, "resourceBinding.strategy");
 
     @GlobalConfigValidation(validValues = {"None", "Preserve","Reboot","Shutdown"})
-    @BindResourceConfig({VmInstanceVO.class})
+    @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_CRASH_STRATEGY = new GlobalConfig(CATEGORY, "crash.strategy");
 
     @GlobalConfigValidation(numberGreaterThan = 0)

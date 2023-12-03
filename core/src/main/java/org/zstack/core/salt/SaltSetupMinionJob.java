@@ -142,8 +142,8 @@ public class SaltSetupMinionJob implements Job {
             logger.warn(err, ie);
             completion.fail(inerr(ie.getMessage()));
         } finally {
-            if (tmpt != null) {
-                tmpt.delete();
+            if (tmpt != null && !tmpt.delete()) {
+                logger.warn(String.format("failed to delete file[%s]", tmpt));
             }
             if (ssh != null) {
                 ssh.close();

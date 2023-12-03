@@ -75,10 +75,10 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         ShellUtils.run(String.format("yes | cp %s %s", pip.getAbsolutePath(), filesDir));
     }
 
-    private void placeAnsible196() {
-        File ansible = PathUtil.findFileOnClassPath("tools/ansible-1.9.6.tar.gz");
+    private void placeAnsible4100() {
+        File ansible = PathUtil.findFileOnClassPath("tools/ansible-4.10.0-py2.py3-none-any.whl");
         if (ansible == null) {
-            throw new CloudRuntimeException("cannot find tools/ansible-1.9.6.tar.gz on classpath");
+            throw new CloudRuntimeException("cannot find tools/ansible-4.10.0-py2.py3-none-any.whl on classpath");
         }
 
         File root = new File(filesDir);
@@ -102,8 +102,8 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 invDir.mkdirs();
             }
 
-            if (!invFile.exists()) {
-                invFile.createNewFile();
+            if (!invFile.exists() && !invFile.createNewFile()) {
+                throw new OperationFailureException(operr("fail to create new File[%s]", invFile));
             }
             Wini ini = new Wini(invFile);
             Map<String, String> cfgs = Platform.getGlobalPropertiesStartWith("Ansible.cfg.");
@@ -129,7 +129,8 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
 
             placePip703();
-            placeAnsible196();
+            placeAnsible4100();
+
 
             ShellUtils.run(String.format(
                     "NEED_INSTALL=false; " +
@@ -189,6 +190,42 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         });
     }
 
+    private Map<String, Object> collectArguments(RunAnsibleMsg msg) {
+        Map<String, Object> arguments = new HashMap<String, Object>();
+        if (msg.getArguments() != null) {
+            arguments.putAll(msg.getArguments());
+        }
+
+        if (msg.getDeployArguments() != null) {
+            arguments.putAll(msg.getDeployArguments().toArgumentMap());
+        }
+
+        arguments.put("host", msg.getTargetIp());
+        if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
+            arguments.put("host_uuid", msg.getTargetUuid());
+        }
+
+        arguments.put("zstack_root", AnsibleGlobalProperty.ZSTACK_ROOT);
+        arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
+        arguments.putAll(getVariables());
+        String playBookPath = msg.getPlayBookPath();
+        if (!playBookPath.contains("py")) {
+            arguments.put("ansible_ssh_user", arguments.get("remote_user"));
+            arguments.put("ansible_ssh_port", arguments.get("remote_port"));
+            arguments.put("ansible_ssh_pass", arguments.get("remote_pass"));
+            arguments.remove("remote_user");
+            arguments.remove("remote_pass");
+            arguments.remove("remote_port");
+            if (!arguments.get("ansible_ssh_user").equals("root")) {
+                arguments.put("ansible_become", "yes");
+                arguments.put("become_user", "root");
+                arguments.put("ansible_become_pass", arguments.get("ansible_ssh_pass"));
+            }
+        }
+
+        return arguments;
+    }
+
     private void doHandle(final RunAnsibleMsg msg, SyncTaskChain outter) {
         thdf.syncSubmit(new SyncTask<Object>() {
             @Override
@@ -209,36 +246,10 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             private void run(Completion completion) {
                 new PrepareAnsible().setTargetIp(msg.getTargetIp()).prepare();
 
-                logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookPath()));
-                Map<String, Object> arguments = new HashMap<String, Object>();
-                if (msg.getArguments() != null) {
-                    arguments.putAll(msg.getArguments());
-                }
-                if (msg.getRemotePass() != null) {
-                    arguments.put("remote_pass", msg.getRemotePass());
-                }
-                arguments.put("host", msg.getTargetIp());
-                if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
-                    arguments.put("host_uuid", msg.getTargetUuid());
-                }
-
-                arguments.put("zstack_root", AnsibleGlobalProperty.ZSTACK_ROOT);
-                arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
-                arguments.putAll(getVariables());
                 String playBookPath = msg.getPlayBookPath();
-                if (!playBookPath.contains("py")) {
-                    arguments.put("ansible_ssh_user", arguments.get("remote_user"));
-                    arguments.put("ansible_ssh_port", arguments.get("remote_port"));
-                    arguments.put("ansible_ssh_pass", arguments.get("remote_pass"));
-                    arguments.remove("remote_user");
-                    arguments.remove("remote_pass");
-                    arguments.remove("remote_port");
-                    if (!arguments.get("ansible_ssh_user").equals("root")) {
-                        arguments.put("ansible_become", "yes");
-                        arguments.put("become_user", "root");
-                        arguments.put("ansible_become_pass", arguments.get("ansible_ssh_pass"));
-                    }
-                }
+                Map<String, Object> arguments = collectArguments(msg);
+                logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookPath()));
+
                 String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
                 long timeout = TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout());
                 try {
@@ -517,8 +528,8 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 if (f.getName().equals(playBookName)) {
                     String lnPath = PathUtil.join(AnsibleConstant.ROOT_DIR, playBookName);
                     File lnFile = new File(lnPath);
-                    if (lnFile.exists()) {
-                        lnFile.delete();
+                    if (lnFile.exists() && !lnFile.delete()) {
+                        logger.warn(String.format("failed to delete file[%s]", lnFile));
                     }
                     Files.createSymbolicLink(Paths.get(lnPath), Paths.get(f.getAbsolutePath()));
                     isPlaybookLinked = true;

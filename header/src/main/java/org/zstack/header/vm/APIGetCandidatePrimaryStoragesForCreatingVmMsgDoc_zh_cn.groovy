@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "2.1"
-					
 				}
 				column {
 					name "l3NetworkUuids"
@@ -39,7 +38,6 @@ doc {
 					type "List"
 					optional false
 					since "2.1"
-					
 				}
 				column {
 					name "rootDiskOfferingUuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "2.1"
-					
 				}
 				column {
 					name "rootDiskSize"
@@ -59,7 +56,6 @@ doc {
 					type "Long"
 					optional true
 					since "4.1.2"
-
 				}
 				column {
 					name "dataDiskOfferingUuids"
@@ -69,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "2.1"
-					
 				}
 				column {
 					name "dataDiskSizes"
@@ -79,7 +74,6 @@ doc {
 					type "List"
 					optional true
 					since "4.3.9"
-
 				}
 				column {
 					name "zoneUuid"
@@ -89,7 +83,6 @@ doc {
 					type "String"
 					optional true
 					since "2.1"
-					
 				}
 				column {
 					name "clusterUuid"
@@ -99,7 +92,6 @@ doc {
 					type "String"
 					optional true
 					since "2.1"
-					
 				}
 				column {
 					name "defaultL3NetworkUuid"
@@ -109,7 +101,6 @@ doc {
 					type "String"
 					optional true
 					since "2.1"
-					
 				}
 				column {
 					name "systemTags"
@@ -119,7 +110,6 @@ doc {
 					type "List"
 					optional true
 					since "2.1"
-					
 				}
 				column {
 					name "userTags"
@@ -129,7 +119,6 @@ doc {
 					type "List"
 					optional true
 					since "2.1"
-					
 				}
 			}
         }

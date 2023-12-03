@@ -23,23 +23,21 @@ doc {
 
 				column {
 					name "clusterUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "集群UUID"
 					location "url"
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "primaryStorageUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "主存储UUID"
 					location "url"
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

@@ -23,23 +23,21 @@ doc {
 
 				column {
 					name "userUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户UUID"
 					location "url"
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "policyUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "权限策略UUID"
 					location "body"
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

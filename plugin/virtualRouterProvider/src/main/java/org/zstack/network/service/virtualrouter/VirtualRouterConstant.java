@@ -22,6 +22,7 @@ public interface VirtualRouterConstant {
 	public static final String SERVICE_ID = "virtualRouter";
 
 	public static final String VR_ECHO_PATH = "/echo";
+	public static final String VR_GET_TYPE_PATH = "/type";
 	public static final String VR_CONFIGURE_NIC_PATH = "/configurenic";
 	public static final String VR_REMOVE_NIC_PATH = "/removenic";
 	public static final String VR_CONFIGURE_NIC_FIREWALL_DEFAULT_ACTION_PATH = "/configurenicdefaultaction";
@@ -58,6 +59,8 @@ public interface VirtualRouterConstant {
     public static final String ANSIBLE_MODULE_PATH = "ansible/virtualrouter";
     public static final String SNAT_NETWORK_SERVICE_TYPE = "SNAT";
     public static final String IPSEC_NETWORK_SERVICE_TYPE = "IPsec";
+    public static final String IPSEC_NETWORK_SERVICE_LATEST_VERSION = "5.9.4";
+    public static final String IPSEC_NETWORK_SERVICE_OLD_VERSION = "4.5.2";
 
 	public static final String VR_CHANGE_DEFAULT_ROUTE_JOB = "changeDefaultNic";
 	public static final String VR_DEFAULT_ROUTE_NETWORK = "defaultNetwork";
@@ -65,6 +68,9 @@ public interface VirtualRouterConstant {
 	public static final String VR_CONFIGURE_NTP = "/configurentp";
 
 	public static final String TC_FOR_VIPQOS = "ConfigTcForVipQos";
+
+	public static final String VR_KERNEL_VERSION = "5.4.80";
+	public static final String VR_OLD_KERNEL_VERSION = "3.13.11";
 
 	public static enum Param {
         VR,

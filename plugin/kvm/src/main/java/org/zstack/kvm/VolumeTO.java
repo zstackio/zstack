@@ -40,6 +40,10 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private String type;
     private String format;
     private String primaryStorageType;
+    private String multiQueues;
+    private int ioThreadId;
+    private String ioThreadPin;
+    private int controllerIndex;
 
     public VolumeTO() {
     }
@@ -59,6 +63,10 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         this.type = other.type;
         this.format = other.format;
         this.primaryStorageType = other.primaryStorageType;
+        this.multiQueues = other.multiQueues;
+        this.ioThreadId = other.ioThreadId;
+        this.ioThreadPin = other.ioThreadPin;
+        this.controllerIndex = other.controllerIndex;
     }
 
     public static List<VolumeTO> valueOf(List<VolumeInventory> vols, KVMHostInventory host) {
@@ -233,5 +241,37 @@ public class VolumeTO extends BaseVirtualDeviceTO {
 
     public void setPrimaryStorageType(String primaryStorageType) {
         this.primaryStorageType = primaryStorageType;
+    }
+
+    public void setMultiQueues(String multiQueues) {
+        this.multiQueues = multiQueues;
+    }
+
+    public String getMultiQueues() {
+        return multiQueues;
+    }
+
+    public void setIoThreadId(int ioThreadId) {
+        this.ioThreadId = ioThreadId;
+    }
+
+    public int getIoThreadId() {
+        return ioThreadId;
+    }
+
+    public void setIoThreadPin(String ioThreadPin) {
+        this.ioThreadPin = ioThreadPin;
+    }
+
+    public String getIoThreadPin() {
+        return ioThreadPin;
+    }
+
+    public int getControllerIndex() {
+        return controllerIndex;
+    }
+
+    public void setControllerIndex(int controllerIndex) {
+        this.controllerIndex = controllerIndex;
     }
 }

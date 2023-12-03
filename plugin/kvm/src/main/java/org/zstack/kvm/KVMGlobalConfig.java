@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.vm.VmInstanceVO;
@@ -40,7 +41,11 @@ public class KVMGlobalConfig {
     public static GlobalConfig ALLOW_LIVE_SNAPSHOT_ON_REDHAT = new GlobalConfig(CATEGORY, "redhat.liveSnapshotOn");
     @GlobalConfigValidation(validValues = {"none", "writethrough", "writeback"})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.cacheMode");
-    @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX", "SandyBridge", "IvyBridge", "Conroe", "Penryn", "Nehalem", "Westmere", "Opteron_G1", "Opteron_G2", "Opteron_G3", "Opteron_G4"})
+    @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough", "Hygon_Customized",
+            "Dhyana", "EPYC", "EPYC-IBPB", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX",
+            "SandyBridge", "IvyBridge", "Conroe", "Penryn", "Nehalem", "Westmere", "Opteron_G1",
+            "Opteron_G2", "Opteron_G3", "Opteron_G4", "pentium", "pentium2", "pentium3",
+            "Kunpeng-920", "FT-2000+", "Tengyun-S2500"})
     @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig NESTED_VIRTUALIZATION = new GlobalConfig(CATEGORY, "vm.cpuMode");
     @GlobalConfigValidation
@@ -48,6 +53,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig CHECK_HOST_CPU_MODEL_NAME = new GlobalConfig(CATEGORY, "checkHostCpuModelName");
     @GlobalConfigValidation
+    @BindResourceConfig({ClusterVO.class})
     public static GlobalConfig KVM_IGNORE_MSRS = new GlobalConfig(CATEGORY, "ignoreMsrs");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({ClusterVO.class})
@@ -60,6 +66,8 @@ public class KVMGlobalConfig {
     public static GlobalConfig TEST_SSH_PORT_ON_OPEN_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOpenTimeout");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
     public static GlobalConfig TEST_SSH_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOnConnectTimeout");
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
+    public static GlobalConfig TEST_KVMAGENT_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testKvmagentPortOnConnectTimeout");
     @GlobalConfigValidation
     public static GlobalConfig RESTART_AGENT_IF_FAKE_DEAD = new GlobalConfig(CATEGORY, "restartagentwhenfakedead");
 
@@ -72,4 +80,34 @@ public class KVMGlobalConfig {
     public static GlobalConfig HOST_CONNECTION_CHECK_INTERVAL = new GlobalConfig(CATEGORY, "host.connection.check.interval");
     @GlobalConfigValidation
     public static GlobalConfig CONNECTION_SERVER_UPDATE_INTERVAL = new GlobalConfig(CATEGORY, "connection.server.update.interval");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ENABLE_VM_MIGRATION_HOST_CPU_FUNCTION_CHECK = new GlobalConfig(CATEGORY, "enable.vm.migration.host.cpu.function.check");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig REDIRECT_CONSOLE_LOG_TO_FILE = new GlobalConfig(CATEGORY, "redirect.vm.log.to.file");
+
+    // vm cpu features stored in cpuid
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VM_CPU_HYPERVISOR_FEATURE = new GlobalConfig(CATEGORY, "vm.cpu.hypervisor.feature");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_HYPERV_CLOCK_FEATURE = new GlobalConfig(CATEGORY, "vm.hyperv.clock.feature");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig SUSPEND_TO_RAM = new GlobalConfig(CATEGORY, "vm.suspend.to.ram");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig SUSPEND_TO_DISK = new GlobalConfig(CATEGORY, "vm.suspend.to.disk");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig WEBSSH_IDLE_TIMEOUT = new GlobalConfig(CATEGORY, "webssh.idleTimeout");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigDef(defaultValue = "8888", type = Long.class, description = "the default port used by web-based SSH server")
+    public static GlobalConfig HOST_WEBSSH_PORT = new GlobalConfig(CATEGORY, "host.webssh.port");
 }

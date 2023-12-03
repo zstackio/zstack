@@ -45,6 +45,15 @@ public class LoadBalancerSystemTags {
     public static final String BALANCER_ALGORITHM_TOKEN = "balancerAlgorithm";
     public static PatternedSystemTag BALANCER_ALGORITHM = new PatternedSystemTag(String.format("balancerAlgorithm::{%s}", BALANCER_ALGORITHM_TOKEN), LoadBalancerListenerVO.class);
 
+    public static final String SESSION_PERSISTENCE_TOKEN = "sessionPersistence";
+    public static PatternedSystemTag SESSION_PERSISTENCE= new PatternedSystemTag(String.format("sessionPersistence::{%s}", SESSION_PERSISTENCE_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String SESSION_IDLE_TIMEOUT_TOKEN = "sessionIdleTimeout";
+    public static PatternedSystemTag SESSION_IDLE_TIMEOUT= new PatternedSystemTag(String.format("sessionIdleTimeout::{%s}", SESSION_IDLE_TIMEOUT_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String COOKIE_NAME_TOKEN = "cookieName";
+    public static PatternedSystemTag COOKIE_NAME= new PatternedSystemTag(String.format("cookieName::{%s}", COOKIE_NAME_TOKEN), LoadBalancerListenerVO.class);
+
     public static final String BALANCER_WEIGHT_TOKEN = "balancerWeight";
     public static final String BALANCER_NIC_TOKEN = "balancerNic";
     public static PatternedSystemTag BALANCER_WEIGHT = new PatternedSystemTag(String.format("balancerWeight::{%s}::{%s}", BALANCER_NIC_TOKEN, BALANCER_WEIGHT_TOKEN), LoadBalancerListenerVO.class);

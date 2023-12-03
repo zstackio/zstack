@@ -6,6 +6,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagLifeCycleListener;
+import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -46,6 +52,8 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
 import org.zstack.kvm.KVMAgentCommands.TransmitVmOperationToMnCmd;
+import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
+import org.zstack.resourceconfig.ResourceConfigValidatorExtensionPoint;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.SizeUtils;
@@ -56,6 +64,7 @@ import org.zstack.utils.function.ValidateFunction;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import javax.persistence.Tuple;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
@@ -77,8 +86,9 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
-public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
+public class KVMHostFactory extends AbstractHypervisorFactory implements Component,
         ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory {
     private static final CLogger logger = Utils.getLogger(KVMHostFactory.class);
 
@@ -100,6 +110,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         RAW_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
         VMDK_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
         QCOW2_FORMAT.setFirstChoice(hypervisorType);
+        allowedOperations.addState(VmInstanceState.Running, AttachVolumeToVmOnHypervisorMsg.class.getName())
+                .addState(VmInstanceState.Paused, AttachVolumeToVmOnHypervisorMsg.class.getName());
     }
 
     @Autowired
@@ -122,6 +134,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     private Future<Void> checkSocketChannelTimeoutThread;
 
@@ -244,6 +258,65 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         return vo == null ? null : KVMHostInventory.valueOf(vo);
     }
 
+    @Override
+    public HostOperationSystem getHostOS(String uuid) {
+        Tuple tuple = Q.New(KVMHostVO.class)
+                .select(KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion)
+                .eq(KVMHostVO_.uuid, uuid)
+                .findTuple();
+        return HostOperationSystem.of(tuple.get(0, String.class), tuple.get(1, String.class), tuple.get(2, String.class));
+    }
+
+    @Override
+    public Map<String, HostOperationSystem> getHostOsMap(Collection<String> hostUuidList) {
+        if (CollectionUtils.isEmpty(hostUuidList)) {
+            return Collections.emptyMap();
+        }
+
+        List<Tuple> tuples = Q.New(KVMHostVO.class)
+                .select(KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion, KVMHostVO_.uuid)
+                .in(KVMHostVO_.uuid, hostUuidList)
+                .listTuple();
+        return tuples.stream().collect(Collectors.toMap(
+                tuple -> tuple.get(3, String.class),
+                tuple -> HostOperationSystem.of(
+                        tuple.get(0, String.class), tuple.get(1, String.class), tuple.get(2, String.class))));
+    }
+
+    @Override
+    public ErrorCode checkNewAddedHost(HostVO vo) {
+        final HostOperationSystem os = getHostOS(vo.getUuid());
+        if (!os.isValid()) {
+            return operr("the operation system[%s] of host[name:%s, ip:%s] is invalid",
+                    os, vo.getName(), vo.getManagementIp());
+        }
+
+        String otherHostUuid = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, vo.getClusterUuid())
+                .notEq(HostVO_.uuid, vo.getUuid())
+                .notEq(HostVO_.status, HostStatus.Connecting)
+                .limit(1)
+                .findValue();
+        if (otherHostUuid == null) {
+            // this the first host in cluster
+            return null;
+        }
+
+        final HostOperationSystem otherOs = getHostOS(otherHostUuid);
+        if (!otherOs.isValid()) {
+            // this the first host in cluster
+            return null;
+        }
+
+        if (os.equals(otherOs)) {
+            return null;
+        }
+
+        return operr("cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has different host os version[%s]",
+                vo.getClusterUuid(), otherOs, vo.getName(), vo.getManagementIp(), os);
+    }
+
     protected void populateExtensions() {
         connectExtensions = pluginRgty.getExtensionList(KVMHostConnectExtensionPoint.class);
         for (KVMCompleteNicInformationExtensionPoint ext : pluginRgty.getExtensionList(KVMCompleteNicInformationExtensionPoint.class)) {
@@ -317,6 +390,18 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 }
             }
         });
+        ResourceConfig resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE.getIdentity());
+        resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
+            if (Boolean.TRUE.toString().equals(newValue)) {
+                return;
+            }
+
+            ResourceConfig cpuMode = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
+            if (CPU_MODE_NONE.equals(cpuMode.getResourceConfigValue(resourceUuid, String.class))) {
+                throw new GlobalConfigException("Can not disable cpu hypervisor feature with vm.cpuMode none");
+            }
+        });
+
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_RECONNECT_ME, ReconnectMeCmd.class, new SyncHttpCallHandler<ReconnectMeCmd>() {
             @Override
             public String handleSyncHttpCall(ReconnectMeCmd cmd) {
@@ -443,7 +528,45 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         });
 
+        KVMSystemTags.VOLUME_VIRTIO_SCSI.installLifeCycleListener(new SystemTagLifeCycleListener() {
+            @Override
+            public void tagCreated(SystemTagInventory tag) {
+                cleanDeviceAddress(tag);
+            }
+
+            @Override
+            public void tagDeleted(SystemTagInventory tag) {
+                cleanDeviceAddress(tag);
+            }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+
+            }
+        });
+
+        KVMSystemTags.VOLUME_VIRTIO_SCSI.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                VmInstanceVO vm = SQL.New("select vm from VmInstanceVO vm, VolumeVO volume " +
+                        "where vm.uuid = volume.vmInstanceUuid and volume.uuid = :uuid", VmInstanceVO.class)
+                        .param("uuid", resourceUuid)
+                        .find();
+
+                if (vm != null && (vm.getState() == VmInstanceState.Running || vm.getState() == VmInstanceState.Unknown)) {
+                    throw new OperationFailureException(argerr("vm current state[%s], " +
+                            "modify virtioSCSI requires the vm state[%s]", vm.getState(), VmInstanceState.Stopped));
+                }
+
+            }
+        });
+
         return true;
+    }
+
+    private void cleanDeviceAddress(SystemTagInventory tag) {
+        VolumeVO volume = dbf.findByUuid(tag.getResourceUuid(), VolumeVO.class);
+        vidm.deleteVmDeviceAddress(volume.getUuid(), volume.getVmInstanceUuid());
     }
 
     private void configKVMDeviceType() {

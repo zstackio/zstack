@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateL3NetworkMsg.class
 
             desc """"""
@@ -30,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "name"
@@ -40,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -50,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "system"
@@ -60,7 +56,6 @@ doc {
 					type "Boolean"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -70,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -80,7 +74,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "category"
@@ -91,6 +84,15 @@ doc {
 					optional true
 					since "2.2"
 					values ("Public","Private","System")
+				}
+				column {
+					name "dnsDomain"
+					enclosedIn "updateL3Network"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "2.6.0"
 				}
 			}
         }

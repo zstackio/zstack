@@ -9,7 +9,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>4.4.0</version>
+        <version>4.6.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>test</artifactId>
@@ -156,12 +156,12 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>9.4.41.v20210516</version>
+            <version>9.4.49.v20220914</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
-            <version>9.4.34.v20201102</version>
+            <version>9.4.49.v20220914</version>
         </dependency>
 
         <dependency>
@@ -216,6 +216,11 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>sdnController</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>longjob</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -233,6 +238,10 @@
 	        <groupId>com.github.javaparser</groupId>
 	        <artifactId>javaparser-core</artifactId>
 	    </dependency>
+        <dependency>
+            <groupId>org.jasig.cas.client</groupId>
+            <artifactId>cas-client-core</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>

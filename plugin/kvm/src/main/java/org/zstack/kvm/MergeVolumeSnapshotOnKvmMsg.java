@@ -14,7 +14,7 @@ public class MergeVolumeSnapshotOnKvmMsg extends NeedReplyMessage implements Hos
     private boolean fullRebase;
 
     public boolean isFullRebase() {
-        return fullRebase;
+        return fullRebase || from == null;
     }
 
     public void setFullRebase(boolean fullRebase) {

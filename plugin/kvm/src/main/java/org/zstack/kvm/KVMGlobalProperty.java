@@ -9,7 +9,7 @@ import java.util.List;
  */
 @GlobalPropertyDefinition
 public class KVMGlobalProperty {
-    @GlobalProperty(name="KvmAgent.agentPackageName", defaultValue = "kvmagent-4.4.0.tar.gz")
+    @GlobalProperty(name="KvmAgent.agentPackageName", defaultValue = "kvmagent-4.6.0.tar.gz")
     public static String AGENT_PACKAGE_NAME;
     @GlobalProperty(name="KvmAgent.agentUrlRootPath", defaultValue = "")
     public static String AGENT_URL_ROOT_PATH;
@@ -29,7 +29,7 @@ public class KVMGlobalProperty {
     public static String TAKEVOERFLAGPATH;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
-    @GlobalProperty(name = "host.skip.packages", defaultValue = "qemu-kvm-ev, qemu-img-ev")
+    @GlobalProperty(name = "host.skip.packages", defaultValue = "qemu, qemu-kvm, qemu-kvm-ev, qemu-img, qemu-img-ev")
     public static String SKIP_PACKAGES;
 
 }

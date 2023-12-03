@@ -2,7 +2,6 @@ package org.zstack.header.managementnode
 
 import org.zstack.header.managementnode.APIQueryManagementNodeReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryManagementNode"

@@ -62,6 +62,9 @@ public class APICreateZoneMsg extends APICreateMessage implements APIAuditor {
     @APINoSee
     private String type;
 
+    @APIParam(required = false)
+    private Boolean isDefault;
+
     public String getDescription() {
         return description;
     }
@@ -85,11 +88,20 @@ public class APICreateZoneMsg extends APICreateMessage implements APIAuditor {
     public void setDescription(String description) {
         this.description = description;
     }
- 
+
+    public Boolean getDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(Boolean aDefault) {
+        isDefault = aDefault;
+    }
+
     public static APICreateZoneMsg __example__() {
         APICreateZoneMsg msg = new APICreateZoneMsg();
         msg.setName("TestZone");
         msg.setDescription("test zone");
+        msg.setDefault(false);
         return msg;
     }
 

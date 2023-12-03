@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "vipUuid"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "vmUuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "3.8"
-					
 				}
 				column {
 					name "vmName"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "3.8"
-					
 				}
 				column {
 					name "limit"
@@ -69,7 +65,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.8"
-					
 				}
 				column {
 					name "start"
@@ -79,7 +74,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.8"
-					
 				}
 				column {
 					name "systemTags"
@@ -89,7 +83,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -99,7 +92,24 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+				}
+				column {
+					name "networkServiceProvider"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "String"
+					optional true
+					since "3.9.0"
+				}
+				column {
+					name "attachedToVm"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "boolean"
+					optional true
+					since "3.9.0"
 				}
 			}
         }

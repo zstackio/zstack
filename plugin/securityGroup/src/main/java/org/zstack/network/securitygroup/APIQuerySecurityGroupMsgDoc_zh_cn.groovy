@@ -2,7 +2,6 @@ package org.zstack.network.securitygroup
 
 import org.zstack.network.securitygroup.APIQuerySecurityGroupReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QuerySecurityGroup"

@@ -1,10 +1,18 @@
 package org.zstack.compute.vm;
 
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SensitiveTagOutputHandler;
 import org.zstack.tag.SensitiveTag;
 import org.zstack.tag.SystemTag;
+
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  */
@@ -13,9 +21,28 @@ public class VmSystemTags {
     public static String HOSTNAME_TOKEN = "hostname";
     public static PatternedSystemTag HOSTNAME = new PatternedSystemTag(String.format("hostname::{%s}", HOSTNAME_TOKEN), VmInstanceVO.class);
 
+    public static String SYNC_PORTS_TOKEN = "syncPorts";
+    public static PatternedSystemTag SYNC_PORTS = new PatternedSystemTag(String.format("syncPorts::{%s}", SYNC_PORTS_TOKEN), VmInstanceVO.class);
+
     public static String STATIC_IP_L3_UUID_TOKEN = "l3NetworkUuid";
     public static String STATIC_IP_TOKEN = "staticIp";
     public static PatternedSystemTag STATIC_IP = new PatternedSystemTag(String.format("staticIp::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, STATIC_IP_TOKEN), VmInstanceVO.class);
+
+    public static String IPV4_GATEWAY_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String IPV4_GATEWAY_TOKEN = "ipv4Gateway";
+    public static PatternedSystemTag IPV4_GATEWAY = new PatternedSystemTag(String.format("ipv4Gateway::{%s}::{%s}", IPV4_GATEWAY_L3_UUID_TOKEN, IPV4_GATEWAY_TOKEN), VmInstanceVO.class);
+
+    public static String IPV6_GATEWAY_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String IPV6_GATEWAY_TOKEN = "ipv6Gateway";
+    public static PatternedSystemTag IPV6_GATEWAY = new PatternedSystemTag(String.format("ipv6Gateway::{%s}::{%s}", IPV6_GATEWAY_L3_UUID_TOKEN, IPV6_GATEWAY_TOKEN), VmInstanceVO.class);
+
+    public static String IPV4_NETMASK_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String IPV4_NETMASK_TOKEN = "ipv4Netmask";
+    public static PatternedSystemTag IPV4_NETMASK = new PatternedSystemTag(String.format("ipv4Netmask::{%s}::{%s}", IPV4_NETMASK_L3_UUID_TOKEN, IPV4_NETMASK_TOKEN), VmInstanceVO.class);
+
+    public static String IPV6_PREFIX_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String IPV6_PREFIX_TOKEN = "ipv6Prefix";
+    public static PatternedSystemTag IPV6_PREFIX = new PatternedSystemTag(String.format("ipv6Prefix::{%s}::{%s}", IPV6_PREFIX_L3_UUID_TOKEN, IPV6_PREFIX_TOKEN), VmInstanceVO.class);
 
     public static String MAC_TOKEN = "customMac";
     public static PatternedSystemTag CUSTOM_MAC = new PatternedSystemTag(String.format("customMac::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, MAC_TOKEN), VmInstanceVO.class);
@@ -23,6 +50,7 @@ public class VmSystemTags {
     public static PatternedSystemTag WINDOWS_VOLUME_ON_VIRTIO = new PatternedSystemTag("windows::virtioVolume", VmInstanceVO.class);
 
     public static String USERDATA_TOKEN = "userdata";
+    @SensitiveTag(tokens = {"userdata"}, customizeOutput = UserdataTagOutputHandler.class)
     public static PatternedSystemTag USERDATA = new PatternedSystemTag(String.format("userdata::{%s}", USERDATA_TOKEN), VmInstanceVO.class);
 
     public static String SSHKEY_TOKEN = "sshkey";
@@ -55,6 +83,10 @@ public class VmSystemTags {
     // set usbRedirect::true to enable usb redirect
     public static String USB_REDIRECT_TOKEN = "usbRedirect";
     public static PatternedSystemTag USB_REDIRECT = new PatternedSystemTag(String.format("usbRedirect::{%s}",USB_REDIRECT_TOKEN),VmInstanceVO.class);
+
+    // set securityElementEnable::true to enable se redirect
+    public static String SECURITY_ELEMENT_ENABLE_TOKEN = "securityElementEnable";
+    public static PatternedSystemTag SECURITY_ELEMENT_ENABLE = new PatternedSystemTag(String.format("securityElementEnable::{%s}", SECURITY_ELEMENT_ENABLE_TOKEN),VmInstanceVO.class);
 
     // set rdpEnable::true to enable RDP tag
     public static String RDP_ENABLE_TOKEN = "RDPEnable";
@@ -169,4 +201,77 @@ public class VmSystemTags {
     public static PatternedSystemTag L3_NETWORK_SECURITY_GROUP_UUIDS_REF =
             new PatternedSystemTag(String.format("l3::{%s}::SecurityGroupUuids::{%s}", L3_UUID_TOKEN, SECURITY_GROUP_UUIDS_TOKEN),
                     VmInstanceVO.class);
+
+    public static String DIRECTORY_UUID_TOKEN = "directoryUuid";
+    public static PatternedSystemTag DIRECTORY_UUID = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
+
+    public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
+        private final String chpasswd = "chpasswd";
+        private final String list = "list";
+
+        @Override
+        public String desensitizeTag(SystemTag systemTag, String tag) {
+            if (!(systemTag instanceof PatternedSystemTag)) {
+                return tag;
+            }
+            PatternedSystemTag patternedSystemTag = (PatternedSystemTag) systemTag;
+
+            String[] sensitiveTokens = patternedSystemTag.annotation.tokens();
+            if (sensitiveTokens == null || sensitiveTokens.length == 0) {
+                return tag;
+            }
+
+            Map<String, String> tokens = patternedSystemTag.getTokensByTag(tag);
+            if (tokens == null || tokens.isEmpty()) {
+                return tag;
+            }
+
+            for (String t : sensitiveTokens) {
+                String base64Pattern = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$";
+                String userdata = tokens.get(t);
+                if (Pattern.matches(base64Pattern, userdata)) {
+                    userdata = new String(Base64.getDecoder().decode(userdata.getBytes()));
+                }
+
+                Yaml yaml = new Yaml();
+                Object obj = yaml.load(userdata);
+                if (!(obj instanceof LinkedHashMap)) {
+                    return tag;
+                }
+                LinkedHashMap<String, Object> userdataMap = (LinkedHashMap<String, Object>) obj;
+                if (userdataMap.isEmpty()) {
+                    return tag;
+                }
+
+                Object chpasswdValue = userdataMap.get(chpasswd);
+                if (!(chpasswdValue instanceof LinkedHashMap)) {
+                    return tag;
+                }
+                LinkedHashMap<String, Object> chpasswdMap = (LinkedHashMap<String, Object>) chpasswdValue;
+
+                Object listValue = chpasswdMap.get(list);
+                if (!(listValue instanceof String) || listValue.equals("")) {
+                    return tag;
+                }
+                /*
+                 * #cloud-config
+                 * chpasswd:
+                 *   list: |
+                 *     root:password  ——>  *****:*****
+                 *   expire: False
+                 * */
+                chpasswdMap.replace(list, "*****:*****\n");
+
+                DumperOptions options = new DumperOptions();
+                options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+                options.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN);
+
+                yaml = new Yaml(options);
+                String maskedUserdata = yaml.dump(userdataMap);
+                maskedUserdata = "#cloud-config\n" + maskedUserdata;
+                tokens.put(t, new String(Base64.getEncoder().encode(maskedUserdata.getBytes())));
+            }
+            return patternedSystemTag.instantiateTag(tokens);
+        }
+    }
 }

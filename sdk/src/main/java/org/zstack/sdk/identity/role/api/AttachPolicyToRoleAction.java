@@ -97,7 +97,7 @@ public class AttachPolicyToRoleAction extends AbstractAction {
         info.path = "/identities/policies/{policyUuid}/roles/{roleUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

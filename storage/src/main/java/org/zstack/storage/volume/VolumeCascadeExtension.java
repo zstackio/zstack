@@ -2,20 +2,30 @@ package org.zstack.storage.volume;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.DetachDataVolumeFromHostMsg;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageDetachStruct;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.*;
@@ -26,9 +36,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -56,6 +64,8 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
             handleDeletion(action, completion);
         } else if (action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE)) {
             handleDeletionCleanup(action, completion);
+        } else if (action.isActionCode(PrimaryStorageConstant.PRIMARY_STORAGE_DETACH_CODE)) {
+            handlePrimaryStorageDetach(action, completion);
         } else {
             completion.success();
         }
@@ -319,5 +329,60 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         return null;
+    }
+
+    private void handlePrimaryStorageDetach(CascadeAction action, Completion completion) {
+        List<PrimaryStorageDetachStruct> primaryStorageDetachStruct = action.getParentIssuerContext();
+        List<String> primaryStorageUuids = primaryStorageDetachStruct.stream()
+                .map(PrimaryStorageDetachStruct::getPrimaryStorageUuid).collect(Collectors.toList());
+        List<VolumeVO> volumeVOs = Q.New(VolumeVO.class).in(VolumeVO_.primaryStorageUuid, primaryStorageUuids).list();
+        List<DetachDataVolumeFromHostMsg> umsgs =
+                volumeVOs.stream().map(volumeVO -> {
+                    VolumeHostRefVO refVO = Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, volumeVO.getUuid()).find();
+                    if (refVO == null) {
+                        return null;
+                    }
+                    String volumeInstallPath = Q.New(VolumeVO.class).select(VolumeVO_.installPath)
+                            .eq(VolumeVO_.uuid, volumeVO.getUuid()).findValue();
+                    return new VolumeHostRef(refVO, volumeInstallPath);
+                }).filter(Objects::nonNull).map(volumeHostRef -> {
+                    DetachDataVolumeFromHostMsg dmsg = new DetachDataVolumeFromHostMsg();
+                    dmsg.setHostUuid(volumeHostRef.refVO.getHostUuid());
+                    dmsg.setMountPath(volumeHostRef.refVO.getMountPath());
+                    dmsg.setDevice(volumeHostRef.refVO.getDevice());
+                    dmsg.setVolumeUuid(volumeHostRef.refVO.getVolumeUuid());
+                    dmsg.setVolumeInstallPath(volumeHostRef.volumeInstallPath);
+                    bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, volumeHostRef.refVO.getHostUuid());
+                    return dmsg;
+                }).collect(Collectors.toList());
+
+        if (umsgs.isEmpty()) {
+            completion.success();
+            return;
+        }
+        new While<>(umsgs).each((umsg, com) -> bus.send(umsg, new CloudBusCallBack(com) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to umount storage path on host, %s", reply.getError()));
+                }
+                com.done();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
+            }
+        });
+    }
+
+    static class VolumeHostRef {
+        private final VolumeHostRefVO refVO;
+        private final String volumeInstallPath;
+
+        VolumeHostRef(VolumeHostRefVO refVO, String volumeInstallPath) {
+            this.refVO = refVO;
+            this.volumeInstallPath = volumeInstallPath;
+        }
     }
 }

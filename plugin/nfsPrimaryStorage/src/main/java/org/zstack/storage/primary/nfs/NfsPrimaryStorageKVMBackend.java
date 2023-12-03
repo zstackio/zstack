@@ -2,9 +2,9 @@ package org.zstack.storage.primary.nfs;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.asyncbatch.While;
@@ -41,20 +41,15 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
-import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -106,6 +101,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String CREATE_FOLDER_PATH = "/nfsprimarystorage/createfolder";
     public static final String GET_CAPACITY_PATH = "/nfsprimarystorage/getcapacity";
     public static final String DELETE_PATH = "/nfsprimarystorage/delete";
+    public static final String UNLINK_PATH = "/nfsprimarystorage/unlink";
     public static final String CHECK_BITS_PATH = "/nfsprimarystorage/checkbits";
     public static final String MOVE_BITS_PATH = "/nfsprimarystorage/movebits";
     public static final String MERGE_SNAPSHOT_PATH = "/nfsprimarystorage/mergesnapshot";
@@ -113,13 +109,17 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/nfsprimarystorage/revertvolumefromsnapshot";
     public static final String REINIT_IMAGE_PATH = "/nfsprimarystorage/reinitimage";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/nfsprimarystorage/sftp/createtemplatefromvolume";
+    public static final String ESTIMATE_TEMPLATE_SIZE_PATH = "/nfsprimarystorage/estimatetemplatesize";
     public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/nfsprimarystorage/createvolumewithbacking";
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
     public static final String GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/getvolumesize";
+    public static final String BATCH_GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/batchgetvolumesize";
     public static final String HARD_LINK_VOLUME = "/nfsprimarystorage/volume/hardlink";
     public static final String PING_PATH = "/nfsprimarystorage/ping";
     public static final String GET_VOLUME_BASE_IMAGE_PATH = "/nfsprimarystorage/getvolumebaseimage";
+
+    public static final String GET_BACKING_CHAIN_PATH = "/nfsprimarystorage/volume/getbackingchain";
     public static final String UPDATE_MOUNT_POINT_PATH = "/nfsprimarystorage/updatemountpoint";
     public static final String NFS_TO_NFS_MIGRATE_BITS_PATH = "/nfsprimarystorage/migratebits";
     public static final String NFS_REBASE_VOLUME_BACKING_FILE_PATH = "/nfsprimarystorage/rebasevolumebackingfile";
@@ -679,20 +679,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 reply.setActualSize(rsp.getActualSize());
                 reply.setSize(rsp.getSize());
                 reply.setInstallPath(volPath);
-                createProtectTag();
+                reply.setIncremental(true);
                 completion.success(reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
-            }
-
-            private void createProtectTag() {
-                SystemTagCreator creator = VolumeSnapshotSystemTags.BACKING_TO_VOLUME.newSystemTagCreator(sp.getUuid());
-                creator.unique = false;
-                creator.setTagByTokens(Collections.singletonMap(VolumeSnapshotSystemTags.BACKING_VOLUME_TOKEN, volumeUuid));
-                creator.create();
             }
         });
     }
@@ -750,11 +743,57 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
+    public void handle(PrimaryStorageInventory inv, EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<EstimateVolumeTemplateSizeOnPrimaryStorageReply> completion) {
+        EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
+
+        EstimateTemplateSizeCmd cmd = new EstimateTemplateSizeCmd();
+        cmd.setVolumePath(msg.getInstallPath());
+
+        final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+        asyncHttpCall(ESTIMATE_TEMPLATE_SIZE_PATH, host.getUuid(), cmd, EstimateTemplateSizeRsp.class, inv, new ReturnValueCompletion<EstimateTemplateSizeRsp>(completion) {
+            @Override
+            public void success(EstimateTemplateSizeRsp rsp) {
+                reply.setActualSize(rsp.getActualSize());
+                reply.setSize(rsp.getSize());
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, BatchSyncVolumeSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion) {
+        BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+
+        GetBatchVolumeActualSizeCmd cmd = new GetBatchVolumeActualSizeCmd();
+        cmd.volumeUuidInstallPaths = msg.getVolumeUuidInstallPaths();
+        cmd.setUuid(inv.getUuid());
+
+        asyncHttpCall(BATCH_GET_VOLUME_SIZE_PATH, msg.getHostUuid(), cmd, GetBatchVolumeActualSizeRsp.class, inv, new ReturnValueCompletion<GetBatchVolumeActualSizeRsp>(completion) {
+            @Override
+            public void success(GetBatchVolumeActualSizeRsp rsp) {
+                reply.setActualSizes(rsp.actualSizes);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
     public void handle(PrimaryStorageInventory inv, GetVolumeRootImageUuidFromPrimaryStorageMsg msg, final ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion) {
         GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
         cmd.volumeUuid = msg.getVolume().getUuid();
         cmd.volumeInstallDir = NfsPrimaryStorageKvmHelper.makeVolumeInstallDir(inv, msg.getVolume());
         cmd.imageCacheDir = NfsPrimaryStorageKvmHelper.getCachedImageDir(inv);
+        cmd.setUuid(inv.getUuid());
 
         final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
         new KvmCommandSender(host.getUuid()).send(cmd, GET_VOLUME_BASE_IMAGE_PATH, new KvmCommandFailureChecker() {
@@ -785,6 +824,55 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
+    public void handle(PrimaryStorageInventory inv, GetVolumeBackingChainFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply> completion) {
+        GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
+
+        final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+        new While<>(msg.getRootInstallPaths()).each((installPath, compl) -> {
+            GetBackingChainCmd cmd = new GetBackingChainCmd();
+            cmd.volumeUuid = msg.getVolumeUuid();
+            cmd.installPath = installPath;
+            cmd.setUuid(inv.getUuid());
+
+            new KvmCommandSender(host.getUuid()).send(cmd, GET_BACKING_CHAIN_PATH, new KvmCommandFailureChecker() {
+                @Override
+                public ErrorCode getError(KvmResponseWrapper wrapper) {
+                    GetBackingChainRsp rsp = wrapper.getResponse(GetBackingChainRsp.class);
+                    return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                }
+            }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+                @Override
+                public void success(KvmResponseWrapper w) {
+                    GetBackingChainRsp rsp = w.getResponse(GetBackingChainRsp.class);
+                    if (CollectionUtils.isEmpty(rsp.backingChain)) {
+                        reply.putBackingChainInstallPath(installPath, Collections.emptyList());
+                        reply.putBackingChainSize(installPath, 0L);
+                    } else {
+                        reply.putBackingChainInstallPath(installPath, rsp.backingChain);
+                        reply.putBackingChainSize(installPath, rsp.totalSize);
+                    }
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList err) {
+                if (!err.getCauses().isEmpty()) {
+                    completion.fail(err.getCauses().get(0));
+                } else {
+                    completion.success(reply);
+                }
+            }
+        });
+    }
+
+    @Override
     public void handle(PrimaryStorageInventory dstPsInv, NfsToNfsMigrateBitsMsg msg, ReturnValueCompletion<NfsToNfsMigrateBitsReply> completion) {
         HostVO hostVO = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
         if (hostVO == null) {
@@ -808,6 +896,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setUuid(msg.getSrcPrimaryStorageUuid());
         cmd.srcFolderPath = msg.getSrcFolderPath();
         cmd.dstFolderPath = msg.getDstFolderPath();
+        cmd.independentPath = msg.getIndependentPath();
         cmd.filtPaths = trash.findTrashInstallPath(msg.getSrcFolderPath(), msg.getSrcPrimaryStorageUuid());
         cmd.isMounted = mounted;
 
@@ -996,7 +1085,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void instantiateVolume(final PrimaryStorageInventory pinv, final VolumeInventory volume, final ReturnValueCompletion<VolumeInventory> complete) {
+    public void instantiateVolume(final PrimaryStorageInventory pinv, HostInventory hostInventory, final VolumeInventory volume, final ReturnValueCompletion<VolumeInventory> complete) {
         String accounUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
 
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
@@ -1022,7 +1111,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             cmd.setWithoutVolume(true);
         }
 
-        final HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+        final HostInventory host = hostInventory == null ? nfsFactory.getConnectedHostForOperation(pinv).get(0) : hostInventory;
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -1047,6 +1136,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 volume.setInstallPath(cmd.getInstallUrl());
                 volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                volume.setActualSize(rsp.actualSize);
 
                 nfsMgr.reportCapacityIfNeeded(pinv.getUuid(), rsp);
                 complete.success(volume);
@@ -1141,6 +1231,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 DeleteResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(DeleteResponse.class);
                 if (!rsp.isSuccess()) {
+                    if (rsp.inUse) {
+                        completion.fail(Platform.err(VolumeErrors.VOLUME_IN_USE, rsp.getError()));
+                        return;
+                    }
                     logger.warn(String.format("failed to delete bits[%s] on nfs primary storage[uuid:%s], %s, will clean up",
                             installPath, pinv.getUuid(), rsp.getError()));
                     completion.fail(operr("failed to delete bits[%s] on nfs primary storage[uuid:%s], %s, will clean up " +
@@ -1164,6 +1258,24 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void deleteFolder(PrimaryStorageInventory pinv, String installPath, Completion completion) {
         delete(pinv, installPath, true, completion);
+    }
+
+    @Override
+    public void unlink(PrimaryStorageInventory pinv, String installPath, Completion completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+        UnlinkBitsCmd cmd = new UnlinkBitsCmd();
+        cmd.installPath = installPath;
+        asyncHttpCall(UNLINK_PATH, host.getUuid(), cmd, UnlinkBitsRsp.class, pinv, new ReturnValueCompletion<UnlinkBitsRsp>(completion) {
+            @Override
+            public void success(UnlinkBitsRsp rsp) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override
@@ -1236,14 +1348,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     @Override
     public void createVolumeFromImageCache(final PrimaryStorageInventory primaryStorage, final ImageInventory image, final ImageCacheInventory imageCache,
-                                           final VolumeInventory volume, final ReturnValueCompletion<String> completion) {
+                                           final VolumeInventory volume, final ReturnValueCompletion<VolumeInfo> completion) {
         HostInventory host = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
         final String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
                 NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(primaryStorage, volume);
         final String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
         final CreateRootVolumeFromTemplateCmd cmd = new CreateRootVolumeFromTemplateCmd();
-        cmd.setTemplatePathInCache(imageCache.getInstallUrl());
+        cmd.setTemplatePathInCache(ImageCacheUtil.getImageCachePath(imageCache));
         cmd.setInstallUrl(installPath);
         cmd.setAccountUuid(accountUuid);
         cmd.setName(volume.getName());
@@ -1276,30 +1388,37 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
 
                 nfsMgr.reportCapacityIfNeeded(primaryStorage.getUuid(), rsp);
-                completion.success(installPath);
+                completion.success(new VolumeInfo(installPath, rsp.actualSize));
             }
         });
     }
 
     @Override
+    public void createIncrementalImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResource, ImageInventory image, ReturnValueCompletion<BitsInfo> completion) {
+        final String installPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, true, completion);
+    }
+
+    @Override
     public void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResource, ImageInventory image, ReturnValueCompletion<BitsInfo> completion) {
         final String installPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image);
-        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, completion);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, false, completion);
     }
 
     @Override
     public void createTemplateFromVolume(final PrimaryStorageInventory primaryStorage, final VolumeInventory volume, final ImageInventory image, final ReturnValueCompletion<BitsInfo> completion) {
         final String installPath = NfsPrimaryStorageKvmHelper.makeTemplateFromVolumeInWorkspacePath(primaryStorage, image.getUuid());
-        doCreateTemplateFromVolume(installPath, primaryStorage, volume.getInstallPath(), image, completion);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volume.getInstallPath(), image, false, completion);
     }
 
-    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage, final String volumeResourceInstallPath, final ImageInventory image, final ReturnValueCompletion<BitsInfo> completion) {
+    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage, final String volumeResourceInstallPath, final ImageInventory image, boolean incremental, final ReturnValueCompletion<BitsInfo> completion) {
         final HostInventory destHost = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
         cmd.setInstallPath(installPath);
         cmd.setVolumePath(volumeResourceInstallPath);
         cmd.setUuid(primaryStorage.getUuid());
+        cmd.setIncremental(incremental);
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -1363,8 +1482,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
 
             OfflineMergeSnapshotCmd cmd = new OfflineMergeSnapshotCmd();
-            cmd.setFullRebase(fullRebase);
-            cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
+            cmd.setFullRebase(fullRebase || snapshot == null);
+            cmd.setSrcPath(snapshot != null ? snapshot.getPrimaryStorageInstallPath() : null);
             cmd.setDestPath(volume.getInstallPath());
             cmd.setUuid(pinv.getUuid());
 
@@ -1393,7 +1512,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             });
         } else {
             MergeVolumeSnapshotOnKvmMsg msg = new MergeVolumeSnapshotOnKvmMsg();
-            msg.setFullRebase(fullRebase);
+            msg.setFullRebase(fullRebase || snapshot == null);
             msg.setHostUuid(hostUuid);
             msg.setFrom(snapshot);
             msg.setTo(volume);

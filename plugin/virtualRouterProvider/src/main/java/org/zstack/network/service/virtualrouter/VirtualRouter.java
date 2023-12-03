@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
@@ -17,6 +18,7 @@ import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -217,6 +219,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     } else {
                         fireServicehealthyCanonicalEvent();
                     }
+                    reply.setServiceHealthList(ret.getServiceHealthList());
                 }
                 completion.success(reply);
             }
@@ -570,6 +573,17 @@ public class VirtualRouter extends ApplianceVmBase {
         });
     }
 
+    private boolean skipConnectVirtualRouter() {
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
+            if (agentVersionVO == null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void handle(final ReconnectVirtualRouterVmMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -580,6 +594,12 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 final ReconnectVirtualRouterVmReply reply = new ReconnectVirtualRouterVmReply();
+
+                if (skipConnectVirtualRouter()) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
 
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
@@ -754,160 +774,6 @@ public class VirtualRouter extends ApplianceVmBase {
                         vrVO.getDefaultRouteL3NetworkUuid());
                 trigger.rollback();
             }
-        }).then(new Flow() {
-            String __name__ = "release-old-snat-of-vip";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                VmNicVO oldNic = null;
-                for (VmNicVO nic: vrVO.getVmNics()) {
-                    if (nic.getL3NetworkUuid().equals(vrVO.getDefaultRouteL3NetworkUuid())) {
-                        oldNic = nic;
-                        break;
-                    }
-                }
-
-                if (oldNic == null) {
-                    trigger.next();
-                    return;
-                }
-
-                String vipIp = oldNic.getIp();
-                if (vrVO.getDefaultRouteL3NetworkUuid().equals(vrVO.getManagementNetworkUuid())) {
-                    VmNicInventory publicNic = vrMgr.getSnatPubicInventory(VirtualRouterVmInventory.valueOf(vrVO));
-                    vipIp = publicNic.getIp();
-                }
-
-                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.ip, vipIp)
-                        .eq(VipVO_.l3NetworkUuid, oldNic.getL3NetworkUuid()).find();
-                if (vipVO == null) {
-                    trigger.next();
-                    return;
-                }
-
-                data.put("oldVip", vipVO);
-                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                struct.setUseFor(NetworkServiceType.SNAT.toString());
-                struct.setServiceUuid(vrVO.getUuid());
-                Vip vip = new Vip(vipVO.getUuid());
-                vip.setStruct(struct);
-                vip.release(new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                VipVO vipVO = (VipVO) data.get("oldVip");
-                if (vipVO == null) {
-                    trigger.rollback();
-                    return;
-                }
-
-                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                struct.setUseFor(NetworkServiceType.SNAT.toString());
-                struct.setServiceUuid(vrVO.getUuid());
-                Vip vip = new Vip(vipVO.getUuid());
-                vip.setStruct(struct);
-                vip.acquire(new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.rollback();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.rollback();
-                    }
-                });
-            }
-        }).then(new Flow() {
-            String __name__ = "apply-new-snat-of-vip";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                VmNicVO newNic = null;
-                for (VmNicVO nic: vrVO.getVmNics()) {
-                    if (nic.getL3NetworkUuid().equals(msg.getDefaultRouteL3NetworkUuid())) {
-                        newNic = nic;
-                        break;
-                    }
-                }
-
-                if (newNic == null) {
-                    trigger.fail(argerr("virtual router [uuid:%s] does not has nic in l3 network [uuid:s]", vrVO.getUuid(),
-                            msg.getDefaultRouteL3NetworkUuid()));
-                    return;
-                }
-
-                String vipIp = newNic.getIp();
-                if (msg.getDefaultRouteL3NetworkUuid().equals(vrVO.getManagementNetworkUuid())) {
-                    VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
-                    vrInv.setDefaultRouteL3NetworkUuid(msg.getDefaultRouteL3NetworkUuid());
-                    VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vrInv);
-                    vipIp = publicNic.getIp();
-                }
-
-                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.ip, vipIp)
-                        .eq(VipVO_.l3NetworkUuid, newNic.getL3NetworkUuid()).find();
-                if (vipVO == null) {
-                    trigger.fail(argerr("there is no vip [ip:%s] in l3 network [uuid:%s]", vipIp,
-                            msg.getDefaultRouteL3NetworkUuid()));
-                    return;
-                }
-
-                data.put("newVip", vipVO);
-                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                struct.setUseFor(NetworkServiceType.SNAT.toString());
-                struct.setServiceUuid(vrVO.getUuid());
-                Vip vip = new Vip(vipVO.getUuid());
-                vip.setStruct(struct);
-                vip.acquire(new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                VipVO vipVO = (VipVO) data.get("newVip");
-                if (vipVO == null) {
-                    trigger.rollback();
-                    return;
-                }
-
-                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                struct.setUseFor(NetworkServiceType.SNAT.toString());
-                struct.setServiceUuid(vrVO.getUuid());
-                Vip vip = new Vip(vipVO.getUuid());
-                vip.setStruct(struct);
-                vip.release(new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.rollback();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.rollback();
-                    }
-                });
-            }
         }).then(new NoRollbackFlow() {
             String __name__ = "update-virtual-router-backend";
 
@@ -1008,6 +874,8 @@ public class VirtualRouter extends ApplianceVmBase {
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-connecting";
 
+            ApplianceVmStatus originStatus = getSelf().getStatus();
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 changeApplianceVmStatus(ApplianceVmStatus.Connecting);
@@ -1017,8 +885,6 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
-                fireDisconnectedCanonicalEvent(operr("appliance vm %s reconnect failed",
-                        getSelf().getUuid()));
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
@@ -1102,6 +968,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 }
             }
             info.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
+            info.setState(nicInventory.getState());
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();

@@ -2,7 +2,6 @@ package org.zstack.network.service.virtualrouter
 
 import org.zstack.appliancevm.APIQueryApplianceVmReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询虚拟路由器云主机(QueryVirtualRouterVm)"

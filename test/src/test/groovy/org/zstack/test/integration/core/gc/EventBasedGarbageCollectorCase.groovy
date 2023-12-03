@@ -8,6 +8,7 @@ import org.zstack.core.db.SQL
 import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.core.gc.*
 import org.zstack.testlib.SubCase
+import org.zstack.utils.TaskContext
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
@@ -554,6 +555,39 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
+    void testEventBasedGCContext() {
+        int count = 0
+        def gc = new EventBasedGC1()
+        gc.NAME = "testEventBasedGCContext"
+        gc.testLogic = { GCCompletion completion ->
+            if (count == 0) {
+                assert !TaskContext.getTaskContextItem("test")
+                completion.fail(operr("mock failure"))
+                count++
+                return
+            }
+
+            assert !TaskContext.getTaskContextItem("test")
+            completion.success()
+        }
+        gc.submit()
+
+        // trigger the GC
+        TaskContext.putTaskContextItem("test", "trigger it")
+        evtf.fire(EVENT_PATH, "trigger it")
+
+        retryInSecs {
+            assert count == 1
+        }
+
+        TaskContext.putTaskContextItem("test", "trigger it 2")
+        evtf.fire(EVENT_PATH, "trigger it")
+
+        retryInSecs {
+            assert count == 1
+        }
+    }
+
     @Override
     void test() {
         dbf = bean(DatabaseFacade.class)
@@ -573,6 +607,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         testLoadedOrphanJobScan()
         testLoadedOrphanJobTriggerNow()
         testEventBasedGCCancelByApi()
+        testEventBasedGCContext()
     }
 
     @Override

@@ -41,14 +41,11 @@ import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
+import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.Bucket;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
@@ -102,6 +99,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
     private Future reportHostCapacityTask;
+    private Future refreshHostPowerStatusTask;
 
     static {
         allowedMessageAfterSoftDeletion.add(HostDeletionMsg.class);
@@ -112,8 +110,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             handle((APIAddHostMsg) msg);
         } else if (msg instanceof APIGetHypervisorTypesMsg) {
             handle((APIGetHypervisorTypesMsg) msg);
-        } else if (msg instanceof APIGetHostTaskMsg) {
-            handle((APIGetHostTaskMsg) msg);
+        }  else if (msg instanceof APIGetHostWebSshUrlMsg){
+            handle((APIGetHostWebSshUrlMsg) msg);
         } else if (msg instanceof HostMessage) {
             HostMessage hmsg = (HostMessage) msg;
             passThrough(hmsg);
@@ -122,53 +120,31 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
     }
 
-    private void handle(APIGetHypervisorTypesMsg msg) {
-        APIGetHypervisorTypesReply reply = new APIGetHypervisorTypesReply();
-        List<String> res = new ArrayList<>(HypervisorType.getAllTypeNames());
-        reply.setHypervisorTypes(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetHostTaskMsg msg) {
-        APIGetHostTaskReply reply = new APIGetHostTaskReply();
-        Map<String, List<String>> mnIds = msg.getHostUuids().stream().collect(
-                Collectors.groupingBy(huuid -> destMaker.makeDestination(huuid))
-        );
-        
-        new While<>(mnIds.entrySet()).all((e, compl) -> {
-            GetHostLocalTaskMsg gmsg = new GetHostLocalTaskMsg();
-            gmsg.setHostUuids(e.getValue());
-            bus.makeServiceIdByManagementNodeId(gmsg, HostConstant.SERVICE_ID, e.getKey());
-            bus.send(gmsg, new CloudBusCallBack(compl) {
-                @Override
-                public void run(MessageReply r) {
-                    if (r.isSuccess()) {
-                        GetHostLocalTaskReply gr = r.castReply();
-                        reply.getResults().putAll(gr.getResults());
-                    } else {
-                        logger.error("get host task fail, because " + r.getError().getDetails());
-                    }
-
-                    compl.done();
-                }
-            });
-
-        }).run(new WhileDoneCompletion(msg) {
+    private void handle(APIGetHostWebSshUrlMsg msg) {
+        APIGetHostWebSshUrlEvent event = new APIGetHostWebSshUrlEvent(msg.getId());
+        GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
+        getHostWebSshUrlMsg.setUuid(msg.getUuid());
+        bus.makeLocalServiceId(getHostWebSshUrlMsg ,HostConstant.SERVICE_ID);
+        bus.send(getHostWebSshUrlMsg, new CloudBusCallBack(msg) {
             @Override
-            public void done(ErrorCodeList errorCodeList) {
-                bus.reply(msg, reply);
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    event.setError(r.getError());
+                    bus.publish(event);
+                    return;
+                }
+
+                GetHostWebSshUrlReply getUrlReply = r.castReply();
+                event.setUrl(getUrlReply.getUrl());
+                bus.publish(event);
             }
         });
     }
 
-    private void handle(GetHostLocalTaskMsg msg) {
-        GetHostLocalTaskReply reply = new GetHostLocalTaskReply();
-        List<HostVO> vos = Q.New(HostVO.class).in(HostVO_.uuid, msg.getHostUuids()).list();
-        vos.forEach(vo -> {
-            HypervisorFactory factory = this.getHypervisorFactory(HypervisorType.valueOf(vo.getHypervisorType()));
-            Host host = factory.getHost(vo);
-            reply.putResults(vo.getUuid(), thdf.getChainTaskInfo(host.getId()));
-        });
+    private void handle(APIGetHypervisorTypesMsg msg) {
+        APIGetHypervisorTypesReply reply = new APIGetHypervisorTypesReply();
+        List<String> res = new ArrayList<>(HypervisorType.getAllTypeNames());
+        reply.setHypervisorTypes(res);
         bus.reply(msg, reply);
     }
 
@@ -208,8 +184,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             passThrough((HostMessage) msg);
         } else if (msg instanceof AddHostMsg){
             handle((AddHostMsg) msg);
-        } else if (msg instanceof GetHostLocalTaskMsg) {
-            handle((GetHostLocalTaskMsg) msg);
         } else if (msg instanceof CancelHostTasksMsg) {
             handle((CancelHostTasksMsg) msg);
         } else {
@@ -413,47 +387,11 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String distro = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
-                String release = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_RELEASE_TOKEN);
-                String version = HostSystemTags.OS_VERSION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_VERSION_TOKEN);
-
-                if (distro == null || release == null || version == null) {
-                    trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null os version", vo.getName(), vo.getManagementIp()));
+                final ErrorCode errorCode = factory.checkNewAddedHost(vo);
+                if (errorCode != null) {
+                    trigger.fail(errorCode);
                     return;
                 }
-
-                SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
-                q.select(HostVO_.uuid);
-                q.add(HostVO_.clusterUuid, Op.EQ, vo.getClusterUuid());
-                q.add(HostVO_.uuid, Op.NOT_EQ, vo.getUuid());
-                q.add(HostVO_.status, Op.NOT_EQ, HostStatus.Connecting);
-                q.setLimit(1);
-                List<String> huuids = q.listValue();
-                if (huuids.isEmpty()) {
-                    // this the first host in cluster
-                    trigger.next();
-                    return;
-                }
-
-                String otherHostUuid = huuids.get(0);
-                String cdistro = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_DISTRIBUTION_TOKEN);
-                String crelease = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_RELEASE_TOKEN);
-                String cversion = HostSystemTags.OS_VERSION.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_VERSION_TOKEN);
-                if (cdistro == null || crelease == null || cversion == null) {
-                    // this the first host in cluster
-                    trigger.next();
-                    return;
-                }
-
-                String mineVersion = String.format("%s;%s;%s", distro, release, version);
-                String currentVersion = String.format("%s;%s;%s", cdistro, crelease, cversion);
-
-                if (!mineVersion.equals(currentVersion)) {
-                    trigger.fail(operr("cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has host os version[%s]",
-                            vo.getClusterUuid(), currentVersion, vo.getName(), vo.getManagementIp(), mineVersion));
-                    return;
-                }
-
                 trigger.next();
             }
         }).then(new NoRollbackFlow() {
@@ -557,6 +495,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             nmsg.setHostUuids(msg.getHostUuids());
             nmsg.setSearchedMnIds(msg.getSearchedMnIds());
             nmsg.setCancellationApiId(msg.getCancellationApiId());
+            nmsg.setInterval(msg.getInterval());
+            nmsg.setTimes(msg.getTimes());
             bus.makeServiceIdByManagementNodeId(nmsg, HostConstant.SERVICE_ID, restMnIds.get(0));
             bus.send(nmsg, new CloudBusCallBack(msg) {
                 @Override
@@ -581,6 +521,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             CancelHostTaskMsg cmsg = new CancelHostTaskMsg();
             cmsg.setHostUuid(hostUuid);
             cmsg.setCancellationApiId(msg.getCancellationApiId());
+            cmsg.setInterval(msg.getInterval());
+            cmsg.setTimes(msg.getTimes());
             bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
             bus.send(cmsg, new CloudBusCallBack(compl) {
                 @Override
@@ -649,7 +591,63 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private void startPeriodTasks() {
         HostGlobalConfig.REPORT_HOST_CAPACITY_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startReportHostCapacityTask());
+        HostGlobalConfig.HOST_POWER_REFRESH_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startRefreshHostPowerStatusTask());
         startReportHostCapacityTask();
+        startRefreshHostPowerStatusTask();
+    }
+
+    private void startRefreshHostPowerStatusTask() {
+        if (refreshHostPowerStatusTask != null) {
+            refreshHostPowerStatusTask.cancel(true);
+        }
+        refreshHostPowerStatusTask = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return HostGlobalConfig.HOST_POWER_REFRESH_INTERVAL.value(Integer.class).longValue();
+            }
+
+            @Override
+            public String getName() {
+                return "update-host-ipmi-power-status";
+            }
+
+            @Override
+            public void run() {
+                List<HostIpmiVO> ipmis = Q.New(HostIpmiVO.class).list();
+                new While<>(ipmis).step((ipmi, comp) -> {
+                    refreshHostPowerStatus(ipmi);
+                    comp.done();
+                },10).run(new NopeWhileDoneCompletion());
+            }
+
+            @AsyncThread
+            private void refreshHostPowerStatus(HostIpmiVO ipmi) {
+                if (ipmi == null) {
+                    return;
+                }
+
+                HostPowerStatus status = HostIpmiPowerExecutor.getPowerStatus(ipmi);
+                if ( HostPowerStatus.POWER_BOOTING == ipmi.getIpmiPowerStatus()
+                        && HostPowerStatus.POWER_OFF == status) {
+                    return;
+                }
+
+                if ( HostPowerStatus.POWER_SHUTDOWN == ipmi.getIpmiPowerStatus()
+                        && HostPowerStatus.POWER_ON == status) {
+                    return;
+                }
+
+                if (ipmi.getIpmiPowerStatus() != status) {
+                    ipmi.setIpmiPowerStatus(status);
+                    dbf.update(ipmi);
+                }
+            }
+        });
     }
 
     private void startReportHostCapacityTask() {

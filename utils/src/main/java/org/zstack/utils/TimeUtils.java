@@ -1,11 +1,14 @@
 package org.zstack.utils;
 
+import org.zstack.utils.data.NumberUtils;
+import org.zstack.utils.data.UnitNumber;
 import org.zstack.utils.logging.CLogger;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -40,6 +43,7 @@ public class TimeUtils {
                 unit.sleep(interval);
             } catch (Throwable t) {
                 logger.debug(String.format("%s, after %s ms timeout", t.getMessage(), period-count));
+                Thread.currentThread().interrupt();
             }
             count += interval;
         }
@@ -63,49 +67,26 @@ public class TimeUtils {
     }
 
     public static long parseTimeInMillis(String time) {
-        try {
-            return Long.parseLong(time);
-        } catch (NumberFormatException e) {
-            if (time.endsWith("s")) {
-                time = StringDSL.stripEnd(time, "s");
-                return TimeUnit.SECONDS.toMillis(Long.parseLong(time));
-            } else if (time.endsWith("S")) {
-                time = StringDSL.stripEnd(time, "S");
-                return TimeUnit.SECONDS.toMillis(Long.parseLong(time));
-            } else if (time.endsWith("m")) {
-                time = StringDSL.stripEnd(time, "m");
-                return TimeUnit.MINUTES.toMillis(Long.parseLong(time));
-            } else if (time.endsWith("M")) {
-                time = StringDSL.stripEnd(time, "M");
-                return TimeUnit.MINUTES.toMillis(Long.parseLong(time));
-            } else if (time.endsWith("h")) {
-                time = StringDSL.stripEnd(time, "h");
-                return TimeUnit.HOURS.toMillis(Long.parseLong(time));
-            } else if (time.endsWith("H")) {
-                time = StringDSL.stripEnd(time, "H");
-                return TimeUnit.HOURS.toMillis(Long.parseLong(time));
-            } else if (time.endsWith("d")) {
-                time = StringDSL.stripEnd(time, "d");
-                return TimeUnit.DAYS.toMillis(Long.parseLong(time));
-            } else if (time.endsWith("D")) {
-                time = StringDSL.stripEnd(time, "D");
-                return TimeUnit.DAYS.toMillis(Long.parseLong(time));
-            } else if (time.endsWith("w")) {
-                time = StringDSL.stripEnd(time, "w");
-                return TimeUnit.DAYS.toMillis(Long.parseLong(time) * 7);
-            } else if (time.endsWith("W")) {
-                time = StringDSL.stripEnd(time, "W");
-                return TimeUnit.DAYS.toMillis(Long.parseLong(time) * 7);
-            } else if (time.endsWith("y")) {
-                time = StringDSL.stripEnd(time, "y");
-                return TimeUnit.DAYS.toMillis(Long.parseLong(time) * 365);
-            } else if (time.endsWith("Y")) {
-                time = StringDSL.stripEnd(time, "Y");
-                return TimeUnit.DAYS.toMillis(Long.parseLong(time) * 365);
-            } else {
-                throw new NumberFormatException();
-            }
+        UnitNumber numeric = NumberUtils.ofUnitNumberOrThrow(time);
+        if ("".equals(numeric.units)) {
+            return numeric.number;
         }
+
+        switch (numeric.units) {
+        case "s": case "S":
+            return TimeUnit.SECONDS.toMillis(numeric.number);
+        case "m": case "M":
+            return TimeUnit.MINUTES.toMillis(numeric.number);
+        case "h": case "H":
+            return TimeUnit.HOURS.toMillis(numeric.number);
+        case "d": case "D":
+            return TimeUnit.DAYS.toMillis(numeric.number);
+        case "w": case "W":
+            return TimeUnit.DAYS.toMillis(numeric.number * 7);
+        case "y": case "Y":
+            return TimeUnit.DAYS.toMillis(numeric.number * 365);
+        }
+        throw new NumberFormatException("unsupported time format: " + time);
     }
 
     public static long parseTimeToSeconds(String time){
@@ -230,5 +211,16 @@ public class TimeUtils {
 
     public static String instantToString(Instant instant, String format) {
         return DateTimeFormatter.ofPattern(format).withZone(ZoneId.systemDefault()).format(instant);
+    }
+
+    /**
+     * @param timestamp using milliseconds from the epoch of 1970-01-01T00:00:00Z
+     */
+    public static LocalDateTime toLocalDateTime(long timestamp) {
+        return toLocalDateTime(Instant.ofEpochMilli(timestamp));
+    }
+
+    public static LocalDateTime toLocalDateTime(Instant instant) {
+        return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 }

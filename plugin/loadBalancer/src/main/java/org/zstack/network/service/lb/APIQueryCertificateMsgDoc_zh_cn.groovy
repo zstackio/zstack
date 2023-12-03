@@ -2,7 +2,6 @@ package org.zstack.network.service.lb
 
 import org.zstack.network.service.lb.APIQueryCertificateReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryCertificate"

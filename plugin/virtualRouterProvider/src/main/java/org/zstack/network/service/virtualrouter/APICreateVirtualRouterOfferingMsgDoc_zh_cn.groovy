@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "managementNetworkUuid"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "imageUuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "publicNetworkUuid"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "isDefault"
@@ -69,7 +65,6 @@ doc {
 					type "Boolean"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "name"
@@ -79,7 +74,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -89,7 +83,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "cpuNum"
@@ -99,7 +92,6 @@ doc {
 					type "int"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "cpuSpeed"
@@ -109,7 +101,6 @@ doc {
 					type "int"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "memorySize"
@@ -119,7 +110,6 @@ doc {
 					type "long"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "allocatorStrategy"
@@ -129,7 +119,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "sortKey"
@@ -139,7 +128,6 @@ doc {
 					type "int"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "type"
@@ -149,7 +137,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -159,7 +146,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -169,7 +155,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -179,7 +164,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

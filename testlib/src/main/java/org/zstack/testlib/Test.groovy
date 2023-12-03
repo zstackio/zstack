@@ -3,6 +3,7 @@ package org.zstack.testlib
 import okhttp3.OkHttpClient
 import org.apache.commons.lang.StringUtils
 import org.zstack.core.Platform
+import org.zstack.core.StartMode
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusImpl2
 import org.zstack.core.componentloader.ComponentLoader
@@ -38,6 +39,8 @@ import java.util.logging.Logger
  */
 abstract class Test extends ApiHelper implements Retry {
     final CLogger logger = Utils.getLogger(this.getClass())
+    static final String targetSubCaseParamKey = "cases"
+    static final String subCaseExecutionTimesKey = "times"
 
     static Object deployer
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
@@ -114,6 +117,40 @@ abstract class Test extends ApiHelper implements Retry {
         setSpringSpec()
         Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE)
     }
+
+    static SpringSpec makeSpring() {
+        return makeSpring {
+            sftpBackupStorage()
+            localStorage()
+            virtualRouter()
+            securityGroup()
+            kvm()
+            vyos()
+            flatNetwork()
+            ceph()
+            lb()
+            nfsPrimaryStorage()
+            eip()
+            portForwarding()
+            smp()
+            console()
+
+            include("LdapManagerImpl.xml")
+            include("captcha.xml")
+            include("CloudBusAopProxy.xml")
+            include("ZoneManager.xml")
+            include("webhook.xml")
+            include("Progress.xml")
+            include("vip.xml")
+            include("vxlan.xml")
+            include("mediateApiValidator.xml")
+            include("LongJobManager.xml")
+            include("log.xml")
+            include("HostAllocateExtension.xml")
+            include("sdnController.xml")
+        }
+    }
+
 
     static EnvSpec makeEnv(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
         def spec = new EnvSpec()
@@ -365,6 +402,11 @@ abstract class Test extends ApiHelper implements Retry {
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
+            int orderOfBeforeDeliveryMessageInterceptor() {
+                return 999
+            }
+
+            @Override
             void beforeDeliveryMessage(Message msg) {
                 if (currentEnvSpec?.notifiersOfReceivedMessages != null) {
                     currentEnvSpec.notifiersOfReceivedMessages.each { msgClz, cs ->
@@ -381,12 +423,15 @@ abstract class Test extends ApiHelper implements Retry {
         })
     }
 
-    void buildBeanConstructor(boolean useWeb = true) {
-        beanConstructor = useWeb ? new WebBeanConstructor() : new BeanConstructor()
+    void buildBeanConstructor() {
+        beanConstructor = BeanConstructorFactory.getBeanConstructor(this.getCaseMode())
         if (_springSpec.all) {
             beanConstructor.loadAll = true
         } else {
-            _springSpec.xmls.each { beanConstructor.addXml(it) }
+            _springSpec.xmls.each {it ->
+                logger.debug("add xml to bean constructor ${it}")
+                beanConstructor.addXml(it)
+            }
         }
 
         componentLoader = beanConstructor.build()
@@ -410,6 +455,7 @@ abstract class Test extends ApiHelper implements Retry {
                 include("ManagementNodeManager.xml")
                 include("ApiMediator.xml")
                 include("AccountManager.xml")
+                include("identity.xml")
             }
         }
 
@@ -423,7 +469,7 @@ abstract class Test extends ApiHelper implements Retry {
             deployDB()
         }
 
-        buildBeanConstructor(NEED_WEB_SERVER)
+        buildBeanConstructor()
 
         nextPhase()
 
@@ -905,5 +951,19 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         } else if (skipMNExit.equalsIgnoreCase(Boolean.TRUE.toString())) {
             System.setProperty(Platform.SKIP_STOP, Boolean.TRUE.toString())
         }
+    }
+
+    StartMode getStabilityTestStartMode() {
+        String targetCaseList = System.getProperty(targetSubCaseParamKey)
+        List<String> caseClassNameList = targetCaseList.split(",")
+        def count = caseClassNameList.stream().map { it -> Class.forName(it).newInstance().getCaseMode() }.distinct().count()
+        if (count != 1) {
+            throw new Exception("All cases in the case list should use the same mode")
+        }
+        return Class.forName(caseClassNameList[0]).newInstance().getCaseMode()
+    }
+
+    StartMode getCaseMode() {
+        return StartMode.DEFAULT
     }
 }

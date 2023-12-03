@@ -60,6 +60,14 @@ public class L2NetworkInventory  {
         return this.vSwitchType;
     }
 
+    public java.lang.Integer virtualNetworkId;
+    public void setVirtualNetworkId(java.lang.Integer virtualNetworkId) {
+        this.virtualNetworkId = virtualNetworkId;
+    }
+    public java.lang.Integer getVirtualNetworkId() {
+        return this.virtualNetworkId;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

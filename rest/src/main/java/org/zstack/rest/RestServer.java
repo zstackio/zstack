@@ -18,6 +18,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
@@ -876,6 +877,13 @@ public class RestServer implements Component, CloudBusEventListener {
                         " must be a UUID with '-' stripped", RestConstants.HEADER_JOB_UUID));
             }
 
+            if (Arrays.asList(HttpMethod.POST.toString(), HttpMethod.PUT.toString(), HttpMethod.DELETE.toString()).contains(
+                    req.getMethod())) {
+                if (Q.New(AsyncRestVO.class).eq(AsyncRestVO_.uuid, jobUuid).isExists()) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Duplicate job uuid[%s]", jobUuid));
+                }
+            }
+
             msg.setId(jobUuid);
         }
 
@@ -930,7 +938,7 @@ public class RestServer implements Component, CloudBusEventListener {
         try {
             date = ZonedDateTime.parse(dateStr, formatter);
         } catch (RuntimeException e) {
-            throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '");
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss z'");
         }
 
         ZonedDateTime now = ZonedDateTime.now();
@@ -1102,6 +1110,10 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void writeResponse(ApiResponse response, RestResponseWrapper w, Object replyOrEvent) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        if (CoreGlobalProperty.MASK_SENSITIVE_INFO) {
+            replyOrEvent = LogSafeGson.desensitize(replyOrEvent);
+        }
+
         if (!w.annotation.allTo().equals("")) {
             response.put(w.annotation.allTo(),
                     PropertyUtils.getProperty(replyOrEvent, w.annotation.allTo()));

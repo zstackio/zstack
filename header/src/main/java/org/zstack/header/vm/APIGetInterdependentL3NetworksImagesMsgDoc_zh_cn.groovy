@@ -34,7 +34,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "l3NetworkUuids"
@@ -44,7 +43,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "imageUuid"
@@ -54,7 +52,15 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
+				}
+				column {
+					name "raiseException"
+					enclosedIn ""
+					desc "是否引发异常"
+					location "query"
+					type "boolean"
+					optional true
+					since "4.6.11"
 				}
 				column {
 					name "systemTags"
@@ -64,7 +70,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -74,7 +79,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

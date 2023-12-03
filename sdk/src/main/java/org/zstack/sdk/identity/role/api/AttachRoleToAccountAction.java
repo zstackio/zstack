@@ -97,7 +97,7 @@ public class AttachRoleToAccountAction extends AbstractAction {
         info.path = "/identities/accounts/{accountUuid}/roles/{roleUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

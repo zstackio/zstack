@@ -85,6 +85,11 @@ public class ZoneInventory implements Serializable {
     private String type;
 
     /**
+     * @desc true if this zone is the default zone
+     */
+    private boolean isDefault;
+
+    /**
      * @desc the time this resource gets created
      */
     private Timestamp createDate;
@@ -101,6 +106,7 @@ public class ZoneInventory implements Serializable {
         inv.setUuid(vo.getUuid());
         inv.setState(vo.getState().toString());
         inv.setType(vo.getType());
+        inv.setDefault(vo.isDefault());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -168,5 +174,13 @@ public class ZoneInventory implements Serializable {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean aDefault) {
+        isDefault = aDefault;
     }
 }

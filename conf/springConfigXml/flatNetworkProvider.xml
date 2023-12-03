@@ -24,6 +24,7 @@
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.DnsServiceExtensionPoint" order="999"/>
         </zstack:plugin>
     </bean>
 
@@ -61,6 +62,7 @@
             <zstack:extension interface="org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.eip.GetEipAttachableL3UuidsForVmNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.compute.allocator.GetL3NetworkForVmNetworkService"/>
         </zstack:plugin>
     </bean>
 

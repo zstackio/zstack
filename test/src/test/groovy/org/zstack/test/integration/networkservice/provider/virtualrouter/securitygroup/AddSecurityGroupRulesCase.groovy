@@ -1,6 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.securitygroup
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmSystemTags
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
@@ -38,6 +39,27 @@ class AddSecurityGroupRulesCase extends SubCase{
             securityGroupUuid = sg.uuid
             vmNicUuids = [vm1.vmNics[0].uuid, vm2.vmNics[0].uuid, vm3.vmNics[0].uuid, vm4.vmNics[0].uuid]
         }
+    }
+
+    void testAttachVmNicWithSecurityGroup() {
+        vm1 = detachL3NetworkFromVm {
+            vmNicUuid = vm1.vmNics[0].uuid
+        } as VmInstanceInventory
+
+        vm1 = attachL3NetworkToVm {
+            vmInstanceUuid = vm1.uuid
+            l3NetworkUuid = l3Net.uuid
+            systemTags = [String.format("l3::%s::SecurityGroupUuids::%s", l3Net.uuid, sg.uuid)]
+        } as VmInstanceInventory
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg.uuid
+            vmNicUuids = [vm1.vmNics[0].uuid]
+        }
+
+        def tags = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vm1.uuid) as List<String>
+
+        assert tags.isEmpty()
     }
 
     void testAddMultiRulesToSecurityGroup(int num) {
@@ -97,6 +119,7 @@ class AddSecurityGroupRulesCase extends SubCase{
             vm3 = env.inventoryByName("vm3") as VmInstanceInventory // vm3 in host3
             vm4 = env.inventoryByName("vm4") as VmInstanceInventory // vm4 in host3
             testCreateSecurityGroup()
+            testAttachVmNicWithSecurityGroup()
             testAddMultiRulesToSecurityGroup(1000)
         }
     }

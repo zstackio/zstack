@@ -1,5 +1,6 @@
 package org.zstack.appliancevm;
 
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
@@ -7,10 +8,7 @@ import org.zstack.compute.vm.VmInstanceHookManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
@@ -35,6 +33,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.vm.*;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.MtuGetter;
@@ -79,6 +79,10 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private L2NetworkManager l2Mgr;
     @Autowired
     private VmInstanceHookManager vmHookMgr;
+    @Autowired
+    protected EventFacade evtf;
+    @Autowired
+    private RESTFacade restf;
 
     private List<String> createApplianceVmWorkFlow;
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
@@ -236,6 +240,23 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         populateExtensions();
         deployAnsible();
         hookVmEvents();
+
+        restf.registerSyncHttpCallHandler(ApplianceVmConstant.APPLIANCE_VM_ABNORMAL_FILE_REPORT, ApplianceVmCommands.ApplianceVmAbnormalFilesCmd.class, new SyncHttpCallHandler<ApplianceVmCommands.ApplianceVmAbnormalFilesCmd>() {
+            @Override
+            public String handleSyncHttpCall(ApplianceVmCommands.ApplianceVmAbnormalFilesCmd cmd) {
+                if (cmd == null) {
+                    return null;
+                }
+
+                if (!ApplianceVmGlobalConfig.ENABLE_ABNORMAL_FILE_REPORTER.value(Boolean.class)) {
+                    return null;
+                }
+
+                fireApplianceVmAbnormalFilesExistsEvent(cmd);
+                return null;
+            }
+        });
+
         return true;
     }
 
@@ -279,6 +300,22 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         vmHookMgr.hookDestroyEvent(VmDestroyHook::new);
     }
 
+    private void fireApplianceVmAbnormalFilesExistsEvent(ApplianceVmCommands.ApplianceVmAbnormalFilesCmd cmd) {
+        ApplianceVmCanonicalEvents.ApplianceVmAbnormalFilesDate data = new ApplianceVmCanonicalEvents.ApplianceVmAbnormalFilesDate();
+        String applianceVmType = Q.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, cmd.getApplianceVmUuid()).select(ApplianceVmVO_.applianceVmType).findValue();
+        if (applianceVmType == null) {
+            return;
+        }
+        data.setApplianceVmUuid(cmd.getApplianceVmUuid());
+        data.setApplianceVmType(applianceVmType);
+        data.setDiskTotal(cmd.getDiskTotal());
+        data.setDiskUsed(cmd.getDiskUsed());
+        data.setDiskUsedutilization(cmd.getDiskUsedutilization());
+        data.setAbnormalFiles(new Gson().toJson(cmd.getAbnormalFiles()));
+
+        evtf.fire(ApplianceVmCanonicalEvents.APPLIANCEVM_ABNORMAL_FILE_REPORT_PATH, data);
+    }
+
     @Override
     public boolean stop() {
         return true;
@@ -304,7 +341,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     public Map<String, Object> prepareBootstrapInformation(VmInstanceSpec spec) {
         VmNicInventory mgmtNic = null;
         String defaultL3Uuid;
-        int sshPort;
         String applianceVmSubType;
         if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
             ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
@@ -317,7 +353,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for appliance vm[uuid:%s]", aspec.getUuid()));
             defaultL3Uuid = aspec.getDefaultRouteL3Network() != null ? aspec.getDefaultRouteL3Network().getUuid() : mgmtNic.getL3NetworkUuid();
-            sshPort = aspec.getSshPort();
             applianceVmSubType = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSubType.toString(), String.class);
         } else {
             ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
@@ -325,8 +360,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);
             mgmtNic = ainv.getManagementNic();
             defaultL3Uuid = ainv.getDefaultRouteL3NetworkUuid();
-            //TODO: make it configurable
-            sshPort = 22;
         }
 
         Map<String, Object> ret = new HashMap<String, Object>();
@@ -404,7 +437,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
         String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
-        ret.put(BootstrapParams.sshPort.toString(), sshPort);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
         ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
         ret.put(BootstrapParams.managementNodeCidr.toString(), Platform.getManagementServerCidr());

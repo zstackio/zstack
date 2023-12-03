@@ -3,6 +3,7 @@ package org.zstack.test.integration.networkservice.provider.flat.hostRoute
 import org.springframework.http.HttpEntity
 import org.zstack.header.network.service.NetworkServiceConstants
 import org.zstack.network.service.flat.FlatDhcpBackend
+import org.zstack.network.service.NetworkServiceHelper.HostRouteInfo;
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -68,7 +69,7 @@ class FlatAddHostRouteCase extends SubCase {
         for (FlatDhcpBackend.BatchApplyDhcpCmd cmd : cmds) {
             assert cmd.dhcpInfos.get(0).l3NetworkUuid == l3.uuid
             for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcpInfos.get(0).dhcp) {
-                for (FlatDhcpBackend.HostRouteInfo rinfo : dinfo.hostRoutes) {
+                for (HostRouteInfo rinfo : dinfo.hostRoutes) {
                     assert (rinfo.prefix == "10.1.1.1/32" || rinfo.prefix == NetworkServiceConstants.METADATA_HOST_PREFIX)
                     if (rinfo.prefix == "10.1.1.1/32") {
                         assert rinfo.nexthop == "192.168.1.254"
@@ -95,7 +96,7 @@ class FlatAddHostRouteCase extends SubCase {
             assert cmd.dhcpInfos.get(0).dhcp.l3NetworkUuid.get(0) == l3.uuid
             for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcpInfos.get(0).dhcp) {
                 assert dinfo.hostRoutes.size() == 3
-                for (FlatDhcpBackend.HostRouteInfo rinfo : dinfo.hostRoutes) {
+                for (HostRouteInfo rinfo : dinfo.hostRoutes) {
                     assert (rinfo.prefix == "10.1.1.1/32" || rinfo.prefix == "10.0.1.0/24"
                         || rinfo.prefix == NetworkServiceConstants.METADATA_HOST_PREFIX)
                     if (rinfo.prefix == "10.1.1.1/32") {
@@ -130,7 +131,7 @@ class FlatAddHostRouteCase extends SubCase {
         for (FlatDhcpBackend.BatchApplyDhcpCmd cmd : cmds2) {
             assert cmd.dhcpInfos.get(0).dhcp.l3NetworkUuid.get(0) == l3.uuid
             for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcpInfos.get(0).dhcp) {
-                for (FlatDhcpBackend.HostRouteInfo rinfo : dinfo.hostRoutes) {
+                for (HostRouteInfo rinfo : dinfo.hostRoutes) {
                     assert (rinfo.prefix == "10.0.1.0/24" || rinfo.prefix == NetworkServiceConstants.METADATA_HOST_PREFIX)
                     if (rinfo.prefix == "10.0.1.0/24") {
                         assert rinfo.nexthop == "192.168.1.253"

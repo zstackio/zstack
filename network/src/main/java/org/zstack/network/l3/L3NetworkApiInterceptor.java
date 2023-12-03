@@ -5,33 +5,26 @@ import com.googlecode.ipv6.IPv6Address;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.apache.commons.validator.routines.DomainValidator;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
+import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -55,13 +48,13 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private ErrorFacade errf;
+    protected PluginRegistry pluginRgty;
 
     private final static CLogger logger = Utils.getLogger(L3NetworkApiInterceptor.class);
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof IpRangeMessage) {
-            IpRangeMessage dmsg = (IpRangeMessage)msg;
+            IpRangeMessage dmsg = (IpRangeMessage) msg;
             SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
             q.select(IpRangeVO_.l3NetworkUuid);
             q.add(IpRangeVO_.uuid, SimpleQuery.Op.EQ, dmsg.getIpRangeUuid());
@@ -69,7 +62,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             dmsg.setL3NetworkUuid(l3NwUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3NwUuid);
         } else if (msg instanceof L3NetworkMessage) {
-            L3NetworkMessage l3msg = (L3NetworkMessage)msg;
+            L3NetworkMessage l3msg = (L3NetworkMessage) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3msg.getL3NetworkUuid());
         }
     }
@@ -151,7 +144,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             Integer mtu;
             if (novlanL2 == null) {
                 mtu = NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value(Integer.class);
-            }else {
+            } else {
                 mtu = new MtuGetter().getL2Mtu(L2NetworkInventory.valueOf(novlanL2));
             }
 
@@ -190,9 +183,9 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         }
 
         Boolean currentSystem = Q.New(L3NetworkVO.class)
-                    .select(L3NetworkVO_.system)
-                    .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid())
-                    .findValue();
+                .select(L3NetworkVO_.system)
+                .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid())
+                .findValue();
         if (msg.getSystem() != null && msg.getCategory() == null && !msg.getSystem().equals(currentSystem)) {
             throw new ApiMessageInterceptionException(argerr("you must update system and category both"));
         }
@@ -254,7 +247,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getIpRangeUuid() != null && msg.getL3NetworkUuid() == null) {
             IpRangeVO ipRangeVO = Q.New(IpRangeVO.class)
-                    .eq(IpRangeVO_.uuid,msg.getIpRangeUuid())
+                    .eq(IpRangeVO_.uuid, msg.getIpRangeUuid())
                     .find();
             msg.setL3NetworkUuid(ipRangeVO.getL3NetworkUuid());
             msg.setIpVersion(ipRangeVO.getIpVersion());
@@ -267,20 +260,20 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         if (msg.getIpVersion() == null) {
             if (msg.getL3NetworkUuid() != null) {
                 int l3Version = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid())
-                    .select(L3NetworkVO_.ipVersion).findValue();
+                        .select(L3NetworkVO_.ipVersion).findValue();
                 msg.setIpVersion(l3Version);
-            }else {
+            } else {
                 msg.setIpVersion(IPv6Constants.IPv4);
             }
         }
 
-        if(msg.getStart() != null){
-            if(msg.getIpVersion() == IPv6Constants.DUAL_STACK){
-                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because l3Network[uuid:%s] is dual stack",msg.getStart(),msg.getL3NetworkUuid()));
-            } else if(msg.getIpVersion() == IPv6Constants.IPv4 && !NetworkUtils.isIpv4Address(msg.getStart())){
-                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv4 address",msg.getStart(),msg.getStart()));
-            } else if(msg.getIpVersion() == IPv6Constants.IPv6 && !IPv6NetworkUtils.isIpv6Address(msg.getStart())){
-                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv6 address",msg.getStart(),msg.getStart()));
+        if (msg.getStart() != null) {
+            if (msg.getIpVersion() == IPv6Constants.DUAL_STACK) {
+                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because l3Network[uuid:%s] is dual stack", msg.getStart(), msg.getL3NetworkUuid()));
+            } else if (msg.getIpVersion() == IPv6Constants.IPv4 && !NetworkUtils.isIpv4Address(msg.getStart())) {
+                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv4 address", msg.getStart(), msg.getStart()));
+            } else if (msg.getIpVersion() == IPv6Constants.IPv6 && !IPv6NetworkUtils.isIpv6Address(msg.getStart())) {
+                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv6 address", msg.getStart(), msg.getStart()));
             }
         }
     }
@@ -501,27 +494,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new StopRoutingException();
         }
 
-        List<VmInstanceDeviceAddressArchiveVO> archiveNicInfoList = Q.New(VmInstanceDeviceAddressArchiveVO.class)
-                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, ArchiveVmNicType.class.getCanonicalName()).list();
-
-        List<String> QuotedArchiveGroupList = new ArrayList<>();
-
-        QuotedArchiveGroupList = archiveNicInfoList.stream()
-                .filter(vmInstanceDeviceAddressArchiveVO -> JSONObjectUtil.toObject(vmInstanceDeviceAddressArchiveVO.getMetadata(), ArchiveVmNicType.class)
-                        .getVmNicInventory().getL3NetworkUuid().equals(msg.getL3NetworkUuid()))
-                .map(VmInstanceDeviceAddressArchiveVO::getAddressGroupUuid)
-                .collect(Collectors.toList());
-
-        if (QuotedArchiveGroupList.isEmpty()){
-            return;
-        }
-
-        List<String> memorySnapshotGroupUuidList = Q.New(VmInstanceDeviceAddressGroupVO.class)
-                .select(VmInstanceDeviceAddressGroupVO_.resourceUuid)
-                .in(VmInstanceDeviceAddressGroupVO_.uuid, QuotedArchiveGroupList).listValues();
-        if (!memorySnapshotGroupUuidList.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("nic with l3 network[uuid: %s] is referenced by VolumeSnapshotGroup[uuid: %s], delete this VolumeSnapshotGroup before deleting this l3 network.",
-                    msg.getL3NetworkUuid(), String.join("','", memorySnapshotGroupUuidList)));
+        for (MemorySnapshotValidatorExtensionPoint ext : pluginRgty.getExtensionList(MemorySnapshotValidatorExtensionPoint.class)) {
+            ErrorCode errorCode = ext.checkL3IfReferencedByMemorySnapshot(msg.getL3NetworkUuid());
+            if (errorCode != null) {
+                throw new ApiMessageInterceptionException(errorCode);
+            }
         }
     }
 
@@ -560,16 +537,14 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         SubnetUtils sub = new SubnetUtils(ipr.getStartIp(), ipr.getNetmask());
         SubnetInfo info = sub.getInfo();
-        if (ipr.getIpRangeType() == IpRangeType.Normal) {
-            if (!info.isInRange(ipr.getGateway())) {
-                throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
-            }
+        if (!info.isInRange(ipr.getGateway())) {
+            throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
+        }
 
-            if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())) {
-                throw new ApiMessageInterceptionException(argerr(
-                        "ip allocation can not contain network address or broadcast address")
-                );
-            }
+        if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "ip allocation can not contain network address or broadcast address")
+            );
         }
 
         if (!NetworkUtils.isIpv4Address(ipr.getStartIp())) {
@@ -643,7 +618,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
                 }
             }
-        } else if (ipr.getIpRangeType() == IpRangeType.AddressPool){
+        } else if (ipr.getIpRangeType() == IpRangeType.AddressPool) {
             validateAddressPool(ipr);
         }
     }
@@ -664,31 +639,31 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             msg.setGateway(msg.getStartIp());
         }
 
-        IpRangeInventory ipr =IpRangeInventory.fromMessage(msg);
+        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
         validate(ipr);
     }
 
     private void validate(APIAddDnsToL3NetworkMsg msg) {
-        if ( !NetworkUtils.isIpAddress(msg.getDns()) ) {
+        if (!NetworkUtils.isIpAddress(msg.getDns())) {
             throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", msg.getDns()));
         }
 
         List<L3NetworkDnsVO> l3NetworkDnsVOS = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
-        if ( l3NetworkDnsVOS.isEmpty() ) {
+        if (l3NetworkDnsVOS.isEmpty()) {
             return;
         }
 
-        if ( NetworkUtils.isIpv4Address(msg.getDns()) ) {
+        if (NetworkUtils.isIpv4Address(msg.getDns())) {
             boolean exist = l3NetworkDnsVOS.stream().anyMatch(l3NetworkDnsVO -> msg.getDns().equals(l3NetworkDnsVO.getDns()));
-            if ( exist ) {
+            if (exist) {
                 throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
             }
         } else {
-            for ( L3NetworkDnsVO l3NetworkDnsVO : l3NetworkDnsVOS ) {
-                if ( !IPv6NetworkUtils.isIpv6Address(l3NetworkDnsVO.getDns()) ) {
+            for (L3NetworkDnsVO l3NetworkDnsVO : l3NetworkDnsVOS) {
+                if (!IPv6NetworkUtils.isIpv6Address(l3NetworkDnsVO.getDns())) {
                     continue;
                 }
-                if ( IPv6Address.fromString(msg.getDns()).toBigInteger().equals(IPv6Address.fromString(l3NetworkDnsVO.getDns()).toBigInteger()) ) {
+                if (IPv6Address.fromString(msg.getDns()).toBigInteger().equals(IPv6Address.fromString(l3NetworkDnsVO.getDns()).toBigInteger())) {
                     throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
                 }
             }

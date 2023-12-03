@@ -24,6 +24,8 @@
             <zstack:extension interface="org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.volume.OverwriteVolumeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.volume.FlattenVolumeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.storage.backup.CleanUpVmBackupExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

@@ -1,6 +1,7 @@
 package org.zstack.compute.cluster;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -17,9 +18,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;

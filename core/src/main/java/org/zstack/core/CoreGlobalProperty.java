@@ -48,6 +48,15 @@ public class CoreGlobalProperty {
     public static int REST_FACADE_MAX_PER_ROUTE;
     @GlobalProperty(name = "RESTFacade.maxTotal", defaultValue = "128")
     public static int REST_FACADE_MAX_TOTAL;
+    /**
+     * When set RestServer.maskSensitiveInfo to true, sensitive info will be
+     * masked see @NoLogging.
+     *
+     * Set default value as false to keep back-compatible to avoid breaking users who
+     * depend on plaintext API result
+     */
+    @GlobalProperty(name="Rest.maskSensitiveInfo", defaultValue = "false")
+    public static boolean MASK_SENSITIVE_INFO;
     @GlobalProperty(name = "upgradeStartOn", defaultValue = "false")
     public static boolean IS_UPGRADE_START;
     @GlobalProperty(name = "shadowEntityOn", defaultValue = "false")
@@ -70,6 +79,8 @@ public class CoreGlobalProperty {
     public static String MN_VIP;
     @GlobalProperty(name = "simulatorsOn", defaultValue = "false")
     public static boolean SIMULATORS_ON;
+    @GlobalProperty(name = "startMode", defaultValue = "")
+    public static String START_MODE;
     @GlobalProperty(name = "updatePkgWhenConnect", defaultValue = "true")
     public static boolean UPDATE_PKG_WHEN_CONNECT;
     @GlobalProperty(name = "syncNodeTime", defaultValue = "true")
@@ -82,4 +93,6 @@ public class CoreGlobalProperty {
     public static boolean CHAIN_TASK_QOS;
     @GlobalProperty(name = "rest.api.result.max.length", defaultValue = "64000")
     public static int REST_API_RESULT_MAX_LENGTH;
+    @GlobalProperty(name = "pending.queue.minimum.threshold", defaultValue = "50")
+    public static int PENDING_QUEUE_MINIMUM_THRESHOLD;
 }

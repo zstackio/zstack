@@ -2,7 +2,6 @@ package org.zstack.header.zone
 
 import org.zstack.header.zone.APIQueryZoneReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询区域(QueryZone)"

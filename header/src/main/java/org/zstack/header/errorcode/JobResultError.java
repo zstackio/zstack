@@ -1,6 +1,10 @@
 package org.zstack.header.errorcode;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.zstack.utils.string.ErrorCodeElaboration;
+
+import java.util.stream.Collectors;
 
 /**
  * Created by mingjian.deng on 2020/3/25.
@@ -18,8 +22,29 @@ public class JobResultError {
     }
 
     public static JobResultError valueOf(ErrorCode error) {
+        if (error instanceof ErrorCodeList && !CollectionUtils.isEmpty(((ErrorCodeList) error).getCauses())) {
+            return valueOf((ErrorCodeList) error);
+        }
+        return parseErrorCode(error);
+    }
+
+    private static JobResultError parseErrorCode(ErrorCode error) {
         JobResultError result = new JobResultError(error.getMessages(), error.getDetails());
         result.setCause(error.getRootCauseDetails());
+        return result;
+    }
+
+    public static JobResultError valueOf(ErrorCodeList error) {
+        if (error.getMessages() != null || error.getDetails() != null || CollectionUtils.isEmpty(error.getCauses())) {
+            return parseErrorCode(error);
+        }
+        if (error.getCauses().size() == 1) {
+            return JobResultError.valueOf(error.getCauses().get(0));
+        }
+
+        JobResultError result = new JobResultError(error.getMessages(), error.getDetails());
+        result.setCause(StringUtils.join(
+                error.getCauses().stream().map(JobResultError::valueOf).collect(Collectors.toList()), "; "));
         return result;
     }
 

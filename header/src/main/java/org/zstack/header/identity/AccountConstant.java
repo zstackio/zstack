@@ -28,8 +28,14 @@ public interface AccountConstant {
     String PRINCIPAL_ACCOUNT = "account";
 
     String LOGIN_TYPE = "account";
+    String LOGIN_TYPE_AUTHENTICATIONS_KEY = "authentications";
+
+    String NO_EXIST_ACCOUNT ="no-exist-account:::%s";
 
     IdentityType identityType = new IdentityType("IAM");
+
+    // login property accountType
+    String ACCOUNT_TYPE = "accountType";
 
     static boolean isAdminPermission(SessionInventory session) {
         return isAdminPermission(session.getAccountUuid());

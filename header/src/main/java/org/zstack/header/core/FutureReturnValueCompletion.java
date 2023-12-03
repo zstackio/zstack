@@ -50,10 +50,11 @@ public class FutureReturnValueCompletion extends ReturnValueCompletion {
         return errorCode;
     }
 
-    private void dumpSlowFuture() {
+    private synchronized void dumpSlowFuture() {
         try {
             wait(SLOW_FUTURE_TIMEOUT);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CloudRuntimeException(e);
         }
 
@@ -75,6 +76,7 @@ public class FutureReturnValueCompletion extends ReturnValueCompletion {
             }
         } catch (Exception e) {
             logger.warn(String.format("dumpSlowFuture get exception %s %s", e.getMessage(), e.toString()));
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -95,6 +97,7 @@ public class FutureReturnValueCompletion extends ReturnValueCompletion {
         try {
             wait(timeout);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CloudRuntimeException(e);
         }
 
@@ -115,6 +118,7 @@ public class FutureReturnValueCompletion extends ReturnValueCompletion {
         try {
             wait();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CloudRuntimeException(e);
         }
     }

@@ -23,23 +23,21 @@ doc {
 
 				column {
 					name "ldapUid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "LDAP UID"
 					location "body"
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "accountUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "账户UUID"
 					location "body"
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

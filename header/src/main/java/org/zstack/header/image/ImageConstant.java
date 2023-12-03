@@ -24,4 +24,8 @@ public interface ImageConstant {
 
     // image less than 1MB is useless
     long MINI_IMAGE_SIZE_IN_BYTE = 1048576L;
+    String EXPORTED_IMAGE_PREFIX = "image-";
+    String EXPORTED_PACKAGE_PREFIX = "package-";
+
+    String SNAPSHOT_REUSE_IMAGE_SCHEMA = "volumeSnapshotReuse://";
 }

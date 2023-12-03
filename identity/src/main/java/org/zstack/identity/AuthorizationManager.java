@@ -11,10 +11,8 @@ import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.identity.IdentityByPassCheck;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.identity.SuppressCredentialCheck;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.extension.AuthorizationBackend;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.zql.ZQLQueryExtensionPoint;
@@ -40,6 +38,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     private DefaultAuthorizationBackend defaultAuthorizationBackend;
 
     private List<AuthorizationBackend> authorizationBackends;
+    private List<RenewSessionPreAuthExtensionPoint> renewSessionPreAuthExtensionPoints;
 
     private Cache<String, AuthorizationBackend> authorizationBackendsCache = CacheBuilder.newBuilder()
             .maximumSize(IdentityGlobalProperty.AUTHORIZATION_SESSION_CACHE_SIZE)
@@ -70,6 +69,13 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
         if (msg.getSession().getUuid() == null) {
             throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
                     "session uuid is null"));
+        }
+
+        for (RenewSessionPreAuthExtensionPoint ext : renewSessionPreAuthExtensionPoints) {
+            ErrorCode errorCode= ext.checkAuth(msg.getSession());
+            if (errorCode != null) {
+                throw new OperationFailureException(errorCode);
+            }
         }
 
         msg.setSession(Session.renewSession(msg.getSession().getUuid(), null));
@@ -109,6 +115,10 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
             session = evaluateSession(msg);
         }
 
+        logger.trace(String.format("authorizing message[%s] with user[accountUuid:%s, uuid:%s] session",
+                msg.getMessageName(),
+                session.getAccountUuid(),
+                session.getUserUuid()));
         return findAuthorizationBackend(session).authorize(msg);
     }
 
@@ -116,6 +126,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     public boolean start() {
         authorizationBackends = pluginRegistry.getExtensionList(AuthorizationBackend.class);
         authorizationBackends.remove(defaultAuthorizationBackend);
+        renewSessionPreAuthExtensionPoints = pluginRegistry.getExtensionList(RenewSessionPreAuthExtensionPoint.class);
         return true;
     }
 
@@ -138,12 +149,12 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
         findAuthorizationBackend(session).validatePermission(targetApis, session);
     }
 
-    public static ErrorCode createAdditionAuthErrorCode(String credentials, String... authentications) {
+    public static ErrorCode createAdditionAuthErrorCode(Map<String, String> properties, String... authentications) {
         JsonObject o = new JsonObject();
         JsonArray authArray = new JsonArray(authentications.length);
         Arrays.asList(authentications).forEach(authArray::add);
         o.add("authentications", authArray);
-        o.addProperty("credentials", credentials);
+        properties.forEach(o::addProperty);
         return err(IdentityErrors.NEED_ADDITION_AUTHENTICATION, "%s", o.toString());
     }
 }

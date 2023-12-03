@@ -84,12 +84,4 @@ public class ImageStoreImageStruct  {
         return this.name;
     }
 
-    public java.text.SimpleDateFormat df;
-    public void setDf(java.text.SimpleDateFormat df) {
-        this.df = df;
-    }
-    public java.text.SimpleDateFormat getDf() {
-        return this.df;
-    }
-
 }

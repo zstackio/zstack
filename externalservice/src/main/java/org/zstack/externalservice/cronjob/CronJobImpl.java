@@ -4,6 +4,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.externalservice.AbstractLocalExternalService;
+import org.zstack.header.core.external.service.ExternalServiceCapabilities;
+import org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Bash;
@@ -17,6 +19,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class CronJobImpl extends AbstractLocalExternalService implements CronJob {
+    ExternalServiceCapabilities capabilities = ExternalServiceCapabilitiesBuilder
+            .build()
+            .reloadConfig(true);
+
     @Override
     protected String[] getCommandLineKeywords() {
         return new String[] {"crond", "-n"};
@@ -46,6 +52,27 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
     @Override
     public boolean isAlive() {
         return getPID() != null;
+    }
+
+    @Override
+    public ExternalServiceCapabilities getExternalServiceCapabilities() {
+        return capabilities;
+    }
+
+    @Override
+    public void reload() {
+        if (!isAlive()) {
+            throw new OperationFailureException(operr("crond is not running"));
+        }
+
+        new Bash() {
+            @Override
+            protected void scripts() {
+                setE();
+
+                run("service crond reload");
+            }
+        }.execute();
     }
 
     @Override

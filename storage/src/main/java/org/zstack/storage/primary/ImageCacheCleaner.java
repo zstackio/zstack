@@ -26,6 +26,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -104,7 +105,7 @@ public abstract class ImageCacheCleaner {
         });
     }
 
-    private void cleanUpVolumeCache(String psUuid, boolean needDestinationCheck, NoErrorCompletion completion) {
+    protected void cleanUpVolumeCache(String psUuid, boolean needDestinationCheck, NoErrorCompletion completion) {
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             completion.done();
@@ -298,7 +299,7 @@ public abstract class ImageCacheCleaner {
             return null;
         }
 
-        return deleted;
+        return VolumeSnapshotReferenceUtils.filterStaleImageCache(deleted);
     }
 
     @Transactional
@@ -347,7 +348,7 @@ public abstract class ImageCacheCleaner {
             return null;
         }
 
-        return deleted;
+        return VolumeSnapshotReferenceUtils.filterStaleImageCache(deleted);
     }
 
     @Transactional

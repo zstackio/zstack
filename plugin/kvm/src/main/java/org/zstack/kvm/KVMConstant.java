@@ -32,8 +32,11 @@ public interface KVMConstant {
     String KVM_DELETE_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/deletebridge";
     String KVM_GENERATE_VDPA_PATH = "/network/ovsdpdk/generatevdpa";
     String KVM_DELETE_VDPA_PATH = "/network/ovsdpdk/deletevdpa";
+    String KVM_GENERATE_VHOST_USER_CLIENT_PATH = "/network/ovsdpdk/addvhostuserclient";
+    String KVM_DELETE_VHOST_USER_CLIENT_PATH = "/network/ovsdpdk/deletevhostuserclient";
     String KVM_ATTACH_ISO_PATH = "/vm/iso/attach";
     String KVM_DETACH_ISO_PATH = "/vm/iso/detach";
+    String KVM_SYNC_VM_DEVICEINFO_PATH = "/sync/vm/deviceinfo";
     String KVM_START_VM_PATH = "/vm/start";
     String KVM_STOP_VM_PATH = "/vm/stop";
     String KVM_PAUSE_VM_PATH = "/vm/pause";
@@ -41,6 +44,8 @@ public interface KVMConstant {
     String KVM_REBOOT_VM_PATH = "/vm/reboot";
     String KVM_DESTROY_VM_PATH = "/vm/destroy";
     String KVM_MIGRATE_VM_PATH = "/vm/migrate";
+    String KVM_GET_CPU_XML_PATH = "/vm/get/cpu/xml";
+    String KVM_COMPARE_CPU_FUNCTION_PATH = "/vm/compare/cpu/function";
     String KVM_GET_VNC_PORT_PATH = "/vm/getvncport";
     String KVM_VM_ONLINE_INCREASE_CPU = "/vm/increase/cpu";
     String KVM_VM_ONLINE_INCREASE_MEMORY = "/vm/increase/mem";
@@ -49,6 +54,7 @@ public interface KVMConstant {
     String KVM_DETACH_VOLUME = "/vm/detachdatavolume";
     String KVM_ATTACH_NIC_PATH = "/vm/attachnic";
     String KVM_DETACH_NIC_PATH = "/vm/detachnic";
+    String KVM_CHANGE_NIC_STATE_PATH = "/vm/changenicstate";
     String KVM_UPDATE_NIC_PATH = "/vm/updatenic";
     String KVM_VM_CHECK_STATE = "/vm/checkstate";
     String KVM_VM_UPDATE_PRIORITY_PATH = "/vm/priority";
@@ -62,9 +68,11 @@ public interface KVMConstant {
     String KVM_UPDATE_HOST_OS_PATH = "/host/updateos";
     String KVM_HOST_UPDATE_DEPENDENCY_PATH = "/host/updatedependency";
     String HOST_SHUTDOWN = "/host/shutdown";
+    String HOST_REBOOT = "/host/reboot";
     String HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH = "/host/updateSpiceChannelConfig";
     String KVM_GET_VM_FIRST_BOOT_DEVICE_PATH = "/vm/getfirstbootdevice";
     String GET_VM_DEVICE_ADDRESS_PATH = "/vm/getdeviceaddress";
+    String GET_VIRTUALIZER_INFO_PATH = "/vm/getvirtualizerinfo";
     String KVM_SCAN_VM_PORT_STATUS = "/host/vm/scanport";
     String GET_DEV_CAPACITY = "/host/dev/capacity";
     String KVM_CONFIG_PRIMARY_VM_PATH = "/primary/vm/config";
@@ -93,6 +101,8 @@ public interface KVMConstant {
 
     String KVM_TRANSMIT_VM_OPERATION_TO_MN = "/host/transmitvmoperation";
     String KVM_HOST_PHYSICAL_NIC_ALARM_EVENT = "/host/physicalNic/alarm";
+    String KVM_HOST_ATTACH_VOLUME_PATH = "/host/volume/attach";
+    String KVM_HOST_DETACH_VOLUME_PATH = "/host/volume/detach";
 
     String KVM_AGENT_OWNER = "kvm";
 
@@ -111,6 +121,11 @@ public interface KVMConstant {
     Integer DEFAULT_MAX_NIC_QUEUE_NUMBER = 12;
 
     String CONNECT_HOST_PRIMARYSTORAGE_ERROR = "psError";
+
+    String VIRTUALIZER_QEMU_KVM = "qemu-kvm";
+    String VIRTUALIZER_QEMU = "qemu";
+
+    int IPMI_DEFAULT_PORT = 623;
 
     enum KvmVmState {
         NoState,

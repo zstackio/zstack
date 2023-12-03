@@ -29,7 +29,6 @@ doc {
 					type "Boolean"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "imageUuid"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "uuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "name"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -69,7 +65,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -79,7 +74,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -89,7 +83,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "allocatorStrategy"
@@ -99,7 +92,6 @@ doc {
 					type "String"
 					optional true
 					since "2.3.1"
-					
 				}
 			}
         }

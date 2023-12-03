@@ -23,6 +23,7 @@
         <class>org.zstack.header.cluster.ClusterEO</class>
         <class>org.zstack.header.host.HostVO</class>
         <class>org.zstack.header.host.HostEO</class>
+        <class>org.zstack.header.host.CpuFeaturesHistoryVO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageVO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageEO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageClusterRefVO</class>
@@ -92,6 +93,9 @@
         <class>org.zstack.header.search.InsertVO</class>
         <class>org.zstack.header.search.UpdateVO</class>
         <class>org.zstack.kvm.KVMHostVO</class>
+        <class>org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoVO</class>
+        <class>org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO</class>
+        <class>org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataVO</class>
         <class>org.zstack.storage.backup.sftp.SftpBackupStorageVO</class>
         <class>org.zstack.storage.backup.imagestore.ImageStoreBackupStorageVO</class>
         <class>org.zstack.header.simulator.SimulatorHostVO</class>
@@ -111,6 +115,8 @@
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotTreeEO</class>
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotEO</class>
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotVO</class>
+        <class>org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO</class>
+        <class>org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceTreeVO</class>
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefVO</class>
         <class>org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO</class>
         <class>org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO</class>
@@ -173,5 +179,16 @@
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
+        <class>org.zstack.header.core.encrypt.EncryptEntityMetadataVO</class>
+        <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
+        <class>org.zstack.sdnController.header.SdnControllerVO</class>
+        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
+        <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
+        <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
+        <class>org.zstack.header.volume.VolumeHostRefVO</class>
+        <class>org.zstack.directory.DirectoryVO</class>
+        <class>org.zstack.directory.ResourceDirectoryRefVO</class>
+        <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
+        <class>org.zstack.header.host.HostIpmiVO</class>
     </persistence-unit>
 </persistence>

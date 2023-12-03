@@ -30,12 +30,15 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
@@ -60,6 +63,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     public VolumeSnapshotGroupBase(VolumeSnapshotGroupVO self) {
         this.self = self;
@@ -269,7 +274,14 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class)).each((ext, compl) -> {
-                    ext.beforeRevertMemorySnapshotGroup(getSelfInventory(), new Completion(compl) {
+                    List<VmInstanceDeviceAddressArchiveVO> archiveVmInfos = vidm.getAddressArchiveInfoFromArchiveForResourceUuid(getSelfInventory().getVmInstanceUuid(), getSelfInventory().getUuid(), ext.getArchiveBundleCanonicalName());
+                    List<Object> bundles = archiveVmInfos.stream().map(archiveVmInfo -> (Object) JSONObjectUtil.toObject(archiveVmInfo.getMetadata(), ext.getArchiveBundleClass())).collect(Collectors.toList());
+                    if (bundles.isEmpty()) {
+                        compl.addError(operr("no bundle found for type:%s", ext.getArchiveBundleCanonicalName()));
+                        compl.allDone();
+                        return;
+                    }
+                    ext.beforeRevertMemorySnapshotGroup(getSelfInventory(), bundles, new Completion(compl) {
                         @Override
                         public void success() {
                             compl.done();

@@ -29,7 +29,9 @@ class VFS {
     }
 
     VFS() {
-        fileSystem = Jimfs.newFileSystem(Configuration.unix())
+        fileSystem = Jimfs.newFileSystem(Configuration.unix().toBuilder()
+                .setAttributeViews("basic", "owner", "posix", "unix")
+                .build())
     }
 
     static void vfsHook(String path, EnvSpec env, Closure func) {
@@ -95,6 +97,55 @@ class VFS {
     boolean move(Path from, Path to, CopyOption... options) {
         logger.debug("[VFS(id: ${id}) MOVE FILE]: FROM ${from.toAbsolutePath().toString()} TO ${to.toAbsolutePath().toString()}")
         return Files.move(from, to, options)
+    }
+
+    List<Path> link(String linkPath, String existingPath) {
+        return link(getPath(linkPath), getPath(existingPath))
+    }
+
+    List<Path> link(Path link, Path existing) {
+        if (!isDir(existing)) {
+            logger.debug("[VFS(id: ${id}) LINK FILE]: EXISTING ${existing.toAbsolutePath().toString()} LINK ${link.toAbsolutePath().toString()}")
+            return [Files.createLink(link, existing)]
+        }
+
+        List<Path> links = []
+        Files.walk(existing).forEach {existingPath ->
+            String newPath = existingPath.toString().replace(existing.toString(), link.toString())
+            if (isDir(existingPath)) {
+                Files.createDirectories(getPath(newPath))
+                return
+            }
+
+            if (Files.isSameFile(getPath(newPath), existingPath)) {
+                return
+            }
+
+            logger.debug("[VFS(id: ${id}) LINK FILE]: EXISTING ${existing.toAbsolutePath().toString()} LINK ${link.toAbsolutePath().toString()}")
+            links.add(Files.createLink(getPath(newPath), existingPath))
+        }
+        return links
+    }
+
+    void unlink(String linkStr, boolean onlyLinkedPath) {
+        def f = getPath(linkStr)
+        if (!Files.isDirectory(f)) {
+            if (!onlyLinkedPath || Files.getAttribute(f, "unix:nlink") > 1) {
+                logger.debug("[VFS(id: ${id}) DELETE]: ${f.toAbsolutePath().toString()}")
+                Files.delete(f)
+            }
+            return
+        }
+        Files.walk(f).forEach { path ->
+            if (Files.isDirectory(path)) {
+                return
+            }
+
+            if (!onlyLinkedPath || Files.getAttribute(f, "unix:nlink") > 1) {
+                logger.debug("[VFS(id: ${id}) DELETE]: ${path.toAbsolutePath().toString()}")
+                Files.delete(path)
+            }
+        }
     }
 
     boolean exists(String path) {
@@ -170,13 +221,16 @@ class VFS {
     }
 
     static <T> T getFile(String pathStr, VFS vfs) {
-        Path path = vfs.getPath(pathStr)
+        return getFile(vfs.getPath(pathStr), vfs)
+    }
+
+    static <T> T getFile(Path path, VFS vfs) {
         if (!Files.exists(path)) {
             return null
         }
 
         if (!Files.isRegularFile(path)) {
-            throw new FileNotFoundException("${pathStr} is not a file")
+            throw new FileNotFoundException("${path.toString()} is not a file")
         }
 
         String json = Files.readAllLines(path).join("\n")
@@ -187,6 +241,15 @@ class VFS {
         T f = getFile(pathStr, this)
         if (f == null && errorOnMissing) {
             throw new FileNotFoundException("file[${pathStr}] not found on VFS[id: ${id}]")
+        }
+
+        return f
+    }
+
+    def <T> T getFile(Path path, boolean errorOnMissing=false) {
+        T f = getFile(path, this)
+        if (f == null && errorOnMissing) {
+            throw new FileNotFoundException("file[${path.toString()}] not found on VFS[id: ${id}]")
         }
 
         return f

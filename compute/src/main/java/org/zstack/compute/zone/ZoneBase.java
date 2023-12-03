@@ -7,8 +7,13 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -47,6 +52,8 @@ public class ZoneBase extends AbstractZone {
     protected CascadeFacade casf;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected ThreadFacade thdf;
 
 	ZoneBase(ZoneVO self) {
 		this.self = self;
@@ -87,23 +94,82 @@ public class ZoneBase extends AbstractZone {
 	    }
 	}
 
-    private void handle(APIUpdateZoneMsg msg) {
-        boolean update = false;
-        if (msg.getName() != null) {
-            self.setName(msg.getName());
-            update = true;
-        }
-        if (msg.getDescription() != null) {
-            self.setDescription(msg.getDescription());
-            update = true;
-        }
-        if (update) {
-            self = dbf.updateAndRefresh(self);
+    private void doUpdateZone(APIUpdateZoneMsg msg) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                boolean update = false;
+
+                if (msg.getName() != null) {
+                    self.setName(msg.getName());
+                    update = true;
+                }
+                if (msg.getDescription() != null) {
+                    self.setDescription(msg.getDescription());
+                    update = true;
+                }
+                if (msg.getDefault() != null) {
+                    if (msg.getDefault()) {
+                        sql(ZoneVO.class)
+                                .notEq(ZoneVO_.uuid, self.getUuid())
+                                .set(ZoneVO_.isDefault, false)
+                                .update();
+                    }
+
+                    self.setDefault(msg.getDefault());
+                    update = true;
+                }
+
+                if (update) {
+                    reload(merge(self));
+                }
+            }
+        }.execute();
+    }
+
+    private void updateZone(APIUpdateZoneMsg msg, Completion completion) {
+        if (msg.getDefault() == null || !msg.getDefault()) {
+            doUpdateZone(msg);
+            completion.success();
+            return;
         }
 
+        // queue default zone operation
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return "default-zone-operation-queue";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doUpdateZone(msg);
+                completion.success();
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-zone-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void handle(APIUpdateZoneMsg msg) {
         APIUpdateZoneEvent evt = new APIUpdateZoneEvent(msg.getId());
-        evt.setInventory(ZoneInventory.valueOf(self));
-        bus.publish(evt);
+        updateZone(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                evt.setInventory(ZoneInventory.valueOf(self));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     protected void handle(APIDeleteZoneMsg msg) {

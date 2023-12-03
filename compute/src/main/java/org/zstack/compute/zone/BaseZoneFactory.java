@@ -21,7 +21,6 @@ public class BaseZoneFactory implements ZoneFactory {
     @Override
     public ZoneVO createZone(ZoneVO vo, APICreateZoneMsg msg) {
         vo.setType(type.toString());
-        vo = dbf.persistAndRefresh(vo);
         return vo;
     }
 

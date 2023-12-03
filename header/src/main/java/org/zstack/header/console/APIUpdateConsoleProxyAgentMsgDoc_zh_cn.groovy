@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "2.3"
-					
 				}
 				column {
 					name "consoleProxyOverriddenIp"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional false
 					since "2.3"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "2.3"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,15 @@ doc {
 					type "List"
 					optional true
 					since "2.3"
-					
+				}
+				column {
+					name "consoleProxyPort"
+					enclosedIn "updateConsoleProxyAgent"
+					desc ""
+					location "body"
+					type "int"
+					optional true
+					since "4.1.0"
 				}
 			}
         }

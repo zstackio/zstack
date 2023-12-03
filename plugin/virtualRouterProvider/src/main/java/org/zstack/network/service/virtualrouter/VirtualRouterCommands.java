@@ -8,6 +8,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,8 +17,8 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class AgentResponse {
-		private boolean success = true;
-		private String error;
+		public boolean success = true;
+		public String error;
 		public boolean isSuccess() {
 			return success;
 		}
@@ -29,6 +30,30 @@ public class VirtualRouterCommands {
 		}
 		public void setError(String error) {
 			this.error = error;
+		}
+	}
+
+	public static class GetTypeCommand extends AgentCommand{
+		private String uuid;
+
+		public String getUuid() {
+			return uuid;
+		}
+
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+	}
+
+	public static class GetTypeRsp extends AgentResponse {
+		private boolean isVyos;
+
+		public boolean isVyos() {
+			return isVyos;
+		}
+
+		public void setVyos(boolean vyos) {
+			isVyos = vyos;
 		}
 	}
 
@@ -154,6 +179,7 @@ public class VirtualRouterCommands {
 		private Integer prefixLength;
 		private String gateway6;
 		private String addressMode;
+		private String state;
 		
 		public String getIp() {
 			return ip;
@@ -264,6 +290,14 @@ public class VirtualRouterCommands {
 
 		public void setAddressMode(String addressMode) {
 			this.addressMode = addressMode;
+		}
+
+		public String getState() {
+			return state;
+		}
+
+		public void setState(String state) {
+			this.state = state;
 		}
 	}
 	
@@ -530,6 +564,7 @@ public class VirtualRouterCommands {
 		private String publicIp;
 		private String privateNicMac;
 		private String privateNicIp;
+		private String privateGatewayIp;
 		private String snatNetmask;
 		private Boolean state;
 
@@ -570,6 +605,14 @@ public class VirtualRouterCommands {
 
 		public void setState(Boolean state) {
 			this.state = state;
+		}
+
+		public String getPrivateGatewayIp() {
+			return privateGatewayIp;
+		}
+
+		public void setPrivateGatewayIp(String privateGatewayIp) {
+			this.privateGatewayIp = privateGatewayIp;
 		}
 	}
 
@@ -1035,6 +1078,7 @@ public class VirtualRouterCommands {
 		private String haStatus;
 		private Boolean healthy;
 		private String healthDetail;
+		private HashMap<String, HashMap<String, String>> serviceHealthList;
 
 		public String getUuid() {
 			return uuid;
@@ -1074,6 +1118,14 @@ public class VirtualRouterCommands {
 
 		public void setHealthDetail(String healthDetail) {
 			this.healthDetail = healthDetail;
+		}
+
+		public HashMap<String, HashMap<String, String>> getServiceHealthList() {
+			return serviceHealthList;
+		}
+
+		public void setServiceHealthList(HashMap<String, HashMap<String, String>> serviceHealthList) {
+			this.serviceHealthList = serviceHealthList;
 		}
 	}
 

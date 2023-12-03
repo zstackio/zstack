@@ -119,9 +119,13 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             to.setVipPortStart(ruleVO.getVipPortStart());
             to.setVipIp(t.get(2, String.class));
             to.setProtocolType(ruleVO.getProtocolType().toString());
-            to.setPublicMac(vr.getVmNics().stream()
+            Optional<VmNicInventory> pubNic = vr.getVmNics().stream()
                     .filter(n -> n.getL3NetworkUuid().equals(publicL3Uuid))
-                    .findFirst().get().getMac());
+                    .findFirst();
+            if (!pubNic.isPresent()) {
+                continue;
+            }
+            to.setPublicMac(pubNic.get().getMac());
             tos.put(ruleUuid, to);
         }
         

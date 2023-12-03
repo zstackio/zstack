@@ -10,6 +10,8 @@ public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
     private boolean waitTaskCompleted;
     private Long maxWaitTime;
     private boolean returnEarly;
+    private HostPowerManagementMethod method;
+    private boolean force = false;
 
     @Override
     public String getHostUuid() {
@@ -46,5 +48,21 @@ public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
 
     public void setReturnEarly(boolean returnEarly) {
         this.returnEarly = returnEarly;
+    }
+
+    public HostPowerManagementMethod getMethod() {
+        return method;
+    }
+
+    public void setMethod(HostPowerManagementMethod method) {
+        this.method = method;
+    }
+
+    public boolean isForce() {
+        return force;
+    }
+
+    public void setForce(boolean force) {
+        this.force = force;
     }
 }

@@ -14,6 +14,4 @@ public abstract class AbstractChainTask extends AbstractCompletion implements Pa
     public abstract String getSyncSignature();
 
     public abstract String getName();
-
-    public Map<Object, Object> taskContext = null;
 }

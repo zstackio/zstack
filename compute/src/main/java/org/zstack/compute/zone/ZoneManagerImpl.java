@@ -7,8 +7,14 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -42,6 +48,8 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
     private ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ThreadFacade thdf;
 
     private Map<String, ZoneFactory> zoneFactories = Collections.synchronizedMap(new HashMap<String, ZoneFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -110,13 +118,12 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
         zone.handleMessage((Message)msg);
     }
 
-    private void handle(APICreateZoneMsg msg) {
+    private ZoneInventory createZoneFromApiMessage(APICreateZoneMsg msg) {
         String zoneType = msg.getType();
         if (zoneType == null) {
             zoneType = BaseZoneFactory.type.toString();
         }
         ZoneFactory factory = this.getZoneFactory(ZoneType.valueOf(zoneType));
-        APICreateZoneEvent evt = new APICreateZoneEvent(msg.getId());
         ZoneVO vo = new ZoneVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -125,13 +132,77 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
         }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
-        vo = factory.createZone(vo, msg);
 
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ZoneVO.class.getSimpleName());
+        if (msg.getDefault() != null) {
+            vo.setDefault(msg.getDefault());
+        } else {
+            vo.setDefault(false);
+        }
 
-        evt.setInventory(ZoneInventory.valueOf(vo));
-        logger.debug("Created zone: " + vo.getName() + " uuid:" + vo.getUuid());
-        bus.publish(evt);
+        final ZoneVO finalVO = factory.createZone(vo, msg);
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                if (finalVO.isDefault()) {
+                    sql(ZoneVO.class)
+                            .set(ZoneVO_.isDefault, false)
+                            .update();
+                }
+
+                persist(finalVO);
+                reload(finalVO);
+            }
+        }.execute();
+
+        tagMgr.createTagsFromAPICreateMessage(msg, finalVO.getUuid(), ZoneVO.class.getSimpleName());
+
+        return ZoneInventory.valueOf(finalVO);
+    }
+
+    private void createZone(APICreateZoneMsg msg, ReturnValueCompletion<ZoneInventory> completion) {
+        if (msg.getDefault() == null || !msg.getDefault()) {
+            completion.success(createZoneFromApiMessage(msg));
+            return;
+        }
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "default-zone-operation-queue";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                completion.success(createZoneFromApiMessage(msg));
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "create-zone";
+            }
+        });
+    }
+
+    private void handle(APICreateZoneMsg msg) {
+        APICreateZoneEvent evt = new APICreateZoneEvent(msg.getId());
+        createZone(msg, new ReturnValueCompletion<ZoneInventory>(msg) {
+            @Override
+            public void success(ZoneInventory returnValue) {
+                evt.setInventory(returnValue);
+                logger.debug(String.format("Created zone: %s uuid: %s",
+                        evt.getInventory().getName(),
+                        evt.getInventory().getUuid())
+                );
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     @Override

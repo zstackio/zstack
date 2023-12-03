@@ -3,6 +3,10 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.host.HostManager;
+import org.zstack.core.db.Q;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -11,7 +15,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
@@ -19,6 +22,8 @@ import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.err;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAttachVolumeOnHypervisorFlow implements Flow {
@@ -30,6 +35,9 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
     private ErrorFacade errf;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private HostManager hostManager;
+
     
     @Override
     public void run(final FlowTrigger chain, Map ctx) {
@@ -41,14 +49,20 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
         assert attachedDataVolumes != null;
 
         String vmState = spec.getVmInventory().getState();
-        if (VmInstanceState.Stopped.toString().equals(vmState)) {
+        String hostUuid = spec.getVmInventory().getHostUuid();
+        HostVO hostVO = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).find();
+        if (hostVO == null) {
             chain.next();
             return;
         }
+        HypervisorFactory hypervisorFactory = hostManager.getHypervisorFactory(HypervisorType.valueOf(hostVO.getHypervisorType()));
+        if (!hypervisorFactory.isAllowedOperation(AttachVolumeToVmOnHypervisorMsg.class.getName(), vmState)) {
+            chain.fail(err(VmErrors.ATTACH_VOLUME_ERROR,
+                    "In the hypervisorType[%s], attach volume is not allowed in the current vm instance state[%s].",
+                    hostVO.getHypervisorType(), vmState));
+            return;
+        }
 
-        assert VmInstanceState.Running.toString().equals(vmState) || VmInstanceState.Paused.toString().equals(vmState);
-
-        String hostUuid = spec.getVmInventory().getHostUuid();
 
         AttachVolumeToVmOnHypervisorMsg msg = new AttachVolumeToVmOnHypervisorMsg();
         msg.setHostUuid(hostUuid);

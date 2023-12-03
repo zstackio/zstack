@@ -21,6 +21,7 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
+    private List<String> disableL3Networks;
 
     public List<String> getSoftAvoidHostUuids() {
         return softAvoidHostUuids;
@@ -145,5 +146,13 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
         this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
+    }
+
+    public List<String> getDisableL3Networks() {
+        return disableL3Networks;
+    }
+
+    public void setDisableL3Networks(List<String> disableL3Networks) {
+        this.disableL3Networks = disableL3Networks;
     }
 }

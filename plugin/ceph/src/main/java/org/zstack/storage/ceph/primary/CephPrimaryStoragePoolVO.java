@@ -1,13 +1,12 @@
 package org.zstack.storage.ceph.primary;
 
+import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.vo.*;
 import org.zstack.header.vo.ForeignKey;
-import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 /**
@@ -15,6 +14,9 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@SoftDeletionCascades({
+        @SoftDeletionCascade(parent = PrimaryStorageVO.class, joinColumn = "primaryStorageUuid")
+})
 public class CephPrimaryStoragePoolVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
@@ -43,6 +45,18 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
     private Integer replicatedSize;
     @Column
     private Float diskUtilization;
+
+    @ManyToOne
+    @JoinColumn(name = "osdGroupUuid")
+    private CephOsdGroupVO osdGroup;
+
+    public CephOsdGroupVO getOsdGroup() {
+        return osdGroup;
+    }
+
+    public void setOsdGroup(CephOsdGroupVO osdGroup) {
+        this.osdGroup = osdGroup;
+    }
 
     public CephPrimaryStoragePoolVO() {
     }

@@ -1,6 +1,6 @@
 package org.zstack.network.l3;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -11,20 +11,14 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountResourceRefInventory;
-import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.QuotaOperator;
-import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.ReportQuotaExtensionPoint;
-import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
+import org.zstack.header.identity.*;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
@@ -35,9 +29,12 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.ResourceSharingExtensionPoint;
-import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ExceptionDSL;
@@ -77,6 +74,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     private ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private Map<String, IpRangeFactory> ipRangeFactories = Collections.synchronizedMap(new HashMap<String, IpRangeFactory>());
     private Map<String, L3NetworkFactory> l3NetworkFactories = Collections.synchronizedMap(new HashMap<String, L3NetworkFactory>());
@@ -199,23 +198,25 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 for (Tuple tuple : tuples) {
                     String sip = tuple.get(0, String.class);
                     String eip = tuple.get(1, String.class);
-                    int ipVersion = tuple.get(2, Integer.class);
-                    String elementUuid = tuple.get(3, String.class);
+                    int ipVersion = tuple.get(3, Integer.class);
+                    String elementUuid = tuple.get(4, String.class);
 
                     IpCapacity element = elements.getOrDefault(elementUuid, new IpCapacity());
                     elements.put(elementUuid, element);
                     if (ipVersion == IPv6Constants.IPv4) {
-                        int t = NetworkUtils.getTotalIpInRange(sip, eip);
-                        element.total += t;
-                        element.total = Math.min(element.total, Integer.MAX_VALUE);
-                        element.avail = element.total;
-                        element.ipv4TotalCapacity += t;
-                        element.ipv4TotalCapacity = Math.min(element.ipv4TotalCapacity, Integer.MAX_VALUE);
-                        element.ipv4AvailableCapacity = element.ipv4TotalCapacity;
-                        ipv4TotalCapacity += t;
-                        total += t;
-                        ipv4TotalCapacity = Math.min(ipv4TotalCapacity, (long)Integer.MAX_VALUE);
-                        total = Math.min(total, (long)Integer.MAX_VALUE);
+                        if (NetworkUtils.isValidIpRange(sip, eip)) {
+                            int t = NetworkUtils.getTotalIpInRange(sip, eip);
+                            element.total += t;
+                            element.total = Math.min(element.total, Integer.MAX_VALUE);
+                            element.avail = element.total;
+                            element.ipv4TotalCapacity += t;
+                            element.ipv4TotalCapacity = Math.min(element.ipv4TotalCapacity, Integer.MAX_VALUE);
+                            element.ipv4AvailableCapacity = element.ipv4TotalCapacity;
+                            ipv4TotalCapacity += t;
+                            total += t;
+                            ipv4TotalCapacity = Math.min(ipv4TotalCapacity, (long) Integer.MAX_VALUE);
+                            total = Math.min(total, (long) Integer.MAX_VALUE);
+                        }
                     } else {
                         long t = IPv6NetworkUtils.getIpv6RangeSize(sip, eip);
                         element.total += t;
@@ -291,10 +292,11 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
                 if (msg.getIpRangeUuids() != null && !msg.getIpRangeUuids().isEmpty()) {
                     reply.setResourceType(IpRangeVO.class.getSimpleName());
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, ipr.uuid from IpRangeVO ipr where ipr.uuid in (:uuids)";
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.netmask, ipr.ipVersion, ipr.uuid from IpRangeVO ipr where ipr.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getIpRangeUuids());
                     List<Tuple> ts = q.getResultList();
+                    ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
                     sql = "select count(distinct uip.ip), uip.ipRangeUuid, uip.ipVersion from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.ipRangeUuid, uip.ipVersion";
@@ -306,10 +308,11 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return ret;
                 } else if (msg.getL3NetworkUuids() != null && !msg.getL3NetworkUuids().isEmpty()) {
                     reply.setResourceType(L3NetworkVO.class.getSimpleName());
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, l3.uuid from IpRangeVO ipr, L3NetworkVO l3 where ipr.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids)";
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.netmask, ipr.ipVersion, l3.uuid from IpRangeVO ipr, L3NetworkVO l3 where ipr.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getL3NetworkUuids());
                     List<Tuple> ts = q.getResultList();
+                    ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
                     sql = "select count(distinct uip.ip), uip.l3NetworkUuid, uip.ipVersion from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.l3NetworkUuid, uip.ipVersion";
@@ -321,10 +324,11 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return ret;
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
                     reply.setResourceType(ZoneVO.class.getSimpleName());
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, zone.uuid from IpRangeVO ipr, L3NetworkVO l3, ZoneVO zone where ipr.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids)";
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.netmask, ipr.ipVersion, zone.uuid from IpRangeVO ipr, L3NetworkVO l3, ZoneVO zone where ipr.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getZoneUuids());
                     List<Tuple> ts = q.getResultList();
+                    ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
                     sql = "select count(distinct uip.ip), zone.uuid, uip.ipVersion from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid, uip.ipVersion";
@@ -423,6 +427,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         vo.setZoneUuid(zoneUuid);
         vo.setState(L3NetworkState.Enabled);
         vo.setCategory(L3NetworkCategory.valueOf(msg.getCategory()));
+        vo.setEnableIPAM(msg.getEnableIPAM());
         if (msg.getIpVersion() != null) {
             vo.setIpVersion(msg.getIpVersion());
         } else {
@@ -455,6 +460,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Override
     public boolean start() {
         populateExtensions();
+        installResourceConfigExtensions();
         return true;
     }
 
@@ -497,6 +503,26 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                         f.getClass().getName(), old.getClass().getName(), f.getType()));
             }
             ipRangeFactories.put(f.getType().toString(), f);
+        }
+    }
+
+    private void installResourceConfigExtensions() {
+        ResourceConfig resourceConfig = rcf.getResourceConfig(L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.getIdentity());
+        resourceConfig.installUpdateExtension(new ResourceConfigUpdateExtensionPoint() {
+            @Override
+            public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue) {
+                cleanUpIpCursorOfAcsStrategy(resourceUuid, oldValue, newValue);
+            }
+        });
+    }
+
+    private void cleanUpIpCursorOfAcsStrategy(String resourceUuid, String oldValue, String newValue) {
+        if (oldValue.equals(L3NetworkConstant.ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY) &&
+        !newValue.equals(L3NetworkConstant.ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY)) {
+            PatternedSystemTag pst = L3NetworkSystemTags.NETWORK_ASC_DELAY_NORMAL_NEXT_IP;
+            pst.delete(resourceUuid);
+            pst = L3NetworkSystemTags.NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP;
+            pst.delete(resourceUuid);
         }
     }
 
@@ -556,7 +582,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             vo = dbf.persistAndRefresh(vo);
             return UsedIpInventory.valueOf(vo);
         } catch (PersistenceException e) {
-            if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class)) {
+            if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
                 logger.debug(String.format("Concurrent ip allocation. " +
                         "Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. " +
                         "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
@@ -588,7 +614,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             vo = dbf.persistAndRefresh(vo);
             return UsedIpInventory.valueOf(vo);
         } catch (PersistenceException e) {
-            if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class)) {
+            if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
                 logger.debug(String.format("Concurrent ip allocation. " +
                         "Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. " +
                         "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
@@ -619,11 +645,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public boolean isIpRangeFull(IpRangeVO vo) {
-        SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
-        query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
-        query.select(UsedIpVO_.ip);
-        List<Long> used = query.listValue();
-        used = used.stream().distinct().collect(Collectors.toList());
+        List<BigInteger> used = getUsedIpInRange(vo);
 
         if (vo.getIpVersion() == IPv6Constants.IPv4) {
             int total = NetworkUtils.getTotalIpInRange(vo.getStartIp(), vo.getEndIp());
@@ -635,20 +657,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public List<BigInteger> getUsedIpInRange(IpRangeVO vo) {
-        if (vo.getIpVersion() == IPv6Constants.IPv4) {
-            SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
-            query.select(UsedIpVO_.ipInLong);
-            query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
-            List<Long> used = query.listValue();
-            Collections.sort(used);
-            return used.stream().distinct().map(l -> new BigInteger(String.valueOf(l))).collect(Collectors.toList());
-        } else {
-            SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
-            query.select(UsedIpVO_.ip);
-            query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
-            List<String> used = query.listValue();
-            return used.stream().distinct().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
-        }
+        return IpRangeHelper.getUsedIpInRange(vo.getUuid(), vo.getIpVersion());
     }
 
     @Override
@@ -671,60 +680,15 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreateL3NetworkMsg) {
-                        check((APICreateL3NetworkMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(L3NetworkQuotaConstant.L3_NUM);
-                usage.setUsed(getUsedL3(accountUuid));
-                return list(usage);
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedL3(String accountUuid) {
-                String sql = "select count(l3) from L3NetworkVO l3, AccountResourceRefVO ref where l3.uuid = ref.resourceUuid and " +
-                        "ref.accountUuid = :auuid and ref.resourceType = :rtype";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", L3NetworkVO.class.getSimpleName());
-                Long l3n = q.getSingleResult();
-                l3n = l3n == null ? 0 : l3n;
-                return l3n;
-            }
-
-            private void check(APICreateL3NetworkMsg msg, Map<String, QuotaPair> pairs) {
-                long l3Num = pairs.get(L3NetworkQuotaConstant.L3_NUM).getValue();
-                long l3n = getUsedL3(msg.getSession().getAccountUuid());
-
-                if (l3n + 1 > l3Num) {
-                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                            msg.getSession().getAccountUuid(), L3NetworkQuotaConstant.L3_NUM, l3Num));
-                }
-            }
-        };
-
         Quota quota = new Quota();
-        quota.setOperator(checker);
-        quota.addMessageNeedValidation(APICreateL3NetworkMsg.class);
-
-        QuotaPair p = new QuotaPair();
-        p.setName(L3NetworkQuotaConstant.L3_NUM);
-        p.setValue(L3NetworkQuotaGlobalConfig.L3_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+        quota.defineQuota(new L3NumQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateL3NetworkMsg.class)
+                .addCounterQuota(L3NetworkQuotaConstant.L3_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(L3NetworkVO.class)
+                        .eq(L3NetworkVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(L3NetworkQuotaConstant.L3_NUM));
 
         return list(quota);
     }

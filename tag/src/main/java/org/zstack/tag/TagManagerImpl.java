@@ -122,7 +122,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
                 if (f.isAnnotationPresent(SensitiveTag.class) && stag instanceof PatternedSystemTag) {
                     sensitiveTags.add((PatternedSystemTag) stag);
-                    ((PatternedSystemTag) stag).sensitiveTokens = Arrays.asList(f.getAnnotation(SensitiveTag.class).tokens());
+                    ((PatternedSystemTag) stag).annotation = f.getAnnotation(SensitiveTag.class);
                 }
 
                 stag.setTagMgr(this);
@@ -722,6 +722,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         if (!isValidSystemTag(resourceUuid, resourceType, tag)) {
             throw new ApiMessageInterceptionException(
                     argerr("no system tag matches[%s] for resourceType[%s]", tag, resourceType));
+        }
+
+        for (ValidateSystemTagExtensionPoint exp: pluginRgty.getExtensionList(ValidateSystemTagExtensionPoint.class)) {
+            if (!exp.validateSystemTag(resourceUuid, resourceType, tag)) {
+                throw new ApiMessageInterceptionException(
+                        argerr("validate system tag [%s] for resourceType[%s] failed", tag, resourceType));
+            }
         }
     }
 

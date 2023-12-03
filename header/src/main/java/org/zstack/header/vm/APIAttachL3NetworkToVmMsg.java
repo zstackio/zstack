@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.utils.network.NicIpAddressInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,9 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     private Map<String, List<String>> staticIpMap;
 
     @APINoSee
+    private Map<String, NicIpAddressInfo> nicNetworkInfo;
+
+    @APINoSee
     private boolean applyToBackend = true;
 
     public String getStaticIp() {
@@ -139,6 +143,14 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
 
     public void setDriverType(String driverType) {
         this.driverType = driverType;
+    }
+
+    public Map<String, NicIpAddressInfo> getNicNetworkInfo() {
+        return nicNetworkInfo;
+    }
+
+    public void setNicNetworkInfo(Map<String, NicIpAddressInfo> nicNetworkInfo) {
+        this.nicNetworkInfo = nicNetworkInfo;
     }
 
     public static APIAttachL3NetworkToVmMsg __example__() {

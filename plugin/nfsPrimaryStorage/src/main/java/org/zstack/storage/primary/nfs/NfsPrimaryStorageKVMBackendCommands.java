@@ -7,6 +7,7 @@ import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 
 import java.util.List;
+import java.util.Map;
 
 
 public class NfsPrimaryStorageKVMBackendCommands {
@@ -141,6 +142,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class CreateTemplateFromVolumeCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
         private String installPath;
         private String rootVolumePath;
+        private boolean incremental;
 
         public String getInstallPath() {
             return installPath;
@@ -155,8 +157,49 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public void setVolumePath(String rootVolumePath) {
             this.rootVolumePath = rootVolumePath;
         }
+
+        public void setIncremental(boolean incremental) {
+            this.incremental = incremental;
+        }
+
+        public boolean isIncremental() {
+            return incremental;
+        }
     }
     public static class CreateTemplateFromVolumeRsp extends NfsPrimaryStorageAgentResponse {
+        private long size;
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+    }
+
+    public static class EstimateTemplateSizeCmd extends NfsPrimaryStorageAgentCommand {
+        private String volumePath;
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String volumePath) {
+            this.volumePath = volumePath;
+        }
+    }
+
+    public static class EstimateTemplateSizeRsp extends NfsPrimaryStorageAgentResponse {
         private long size;
         private long actualSize;
 
@@ -344,6 +387,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     
     public static class CreateRootVolumeFromTemplateResponse extends NfsPrimaryStorageAgentResponse {
+        public Long actualSize;
     }
 
     public static class CreateVolumeWithBackingCmd extends CreateVolumeCmd {
@@ -395,6 +439,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {
+        public Long actualSize;
     }
 
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
@@ -419,6 +464,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class DeleteResponse extends NfsPrimaryStorageAgentResponse {
+        public boolean inUse;
+    }
+
+    public static class UnlinkBitsCmd extends NfsPrimaryStorageAgentCommand {
+        public String installPath;
+        public boolean onlyLinkedFile = true;
+    }
+
+    public static class UnlinkBitsRsp extends NfsPrimaryStorageAgentResponse {
     }
 
     public static class ListDirectionCmd extends NfsPrimaryStorageAgentCommand {
@@ -740,9 +794,17 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String installPath;
     }
 
+    public static class GetBatchVolumeActualSizeCmd extends NfsPrimaryStorageAgentCommand {
+        public Map<String, String> volumeUuidInstallPaths;
+    }
+
     public static class GetVolumeActualSizeRsp extends NfsPrimaryStorageAgentResponse {
         public long actualSize;
         public long size;
+    }
+
+    public static class GetBatchVolumeActualSizeRsp extends NfsPrimaryStorageAgentResponse {
+        public Map<String, Long> actualSizes;
     }
 
     public static class PingCmd extends NfsPrimaryStorageAgentCommand {
@@ -765,6 +827,16 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String path;
     }
 
+    public static class GetBackingChainCmd extends NfsPrimaryStorageAgentCommand {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetBackingChainRsp extends NfsPrimaryStorageAgentResponse {
+        public List<String> backingChain;
+        public long totalSize;
+    }
+
     public static class UpdateMountPointCmd extends NfsPrimaryStorageAgentCommand {
         public String oldMountPoint;
         public String newMountPoint;
@@ -779,6 +851,8 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String srcFolderPath;
         public String dstFolderPath;
         public List<String> filtPaths;
+
+        public String independentPath;
         public boolean isMounted = false;
         public String url;
         public String options;

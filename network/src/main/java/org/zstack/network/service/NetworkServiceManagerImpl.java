@@ -1,7 +1,6 @@
 package org.zstack.network.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -22,9 +21,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.network.service.NetworkServiceExtensionPoint.NetworkServiceExtensionPosition;
 import org.zstack.header.vm.*;
@@ -459,6 +456,28 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     @Override
     public void applyNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPosition position, Completion completion) {
         applyNetworkServices(spec, position, completion);
+    }
+
+    @Override
+    public List<String> getL3NetworkDns(String l3NetworkUuid){
+        List<String> dns = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, l3NetworkUuid)
+                .select(L3NetworkDnsVO_.dns).orderBy(L3NetworkDnsVO_.id, SimpleQuery.Od.ASC).listValues();
+        if (dns == null) {
+            dns = new ArrayList<String>();
+        }
+
+        L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
+        L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3VO);
+
+        for (DnsServiceExtensionPoint exp : pluginRgty.getExtensionList(DnsServiceExtensionPoint.class)) {
+            List<String> dnsExt = exp.getDnsAddress(l3Inv);
+            if (!dnsExt.isEmpty()) {
+                dns.addAll(dnsExt);
+                break;
+            }
+        }
+
+        return dns;
     }
 
     @Override

@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "4.0"
-					
 				}
 				column {
 					name "deleteMode"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "4.0"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "4.0"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "4.0"
-					
 				}
 			}
         }

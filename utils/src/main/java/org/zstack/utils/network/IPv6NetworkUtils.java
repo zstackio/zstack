@@ -13,6 +13,11 @@ import java.util.Arrays;
 public class IPv6NetworkUtils {
     private final static CLogger logger = Utils.getLogger(IPv6NetworkUtils.class);
 
+    // IPv4 地址正则表达式
+    private static String ipv4Regex = "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+    // MAC 地址正则表达式
+    private static String macRegex = "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$";
+
     private static boolean isConsecutiveRange(BigInteger[] allocatedIps) {
         BigInteger first = allocatedIps[0];
         BigInteger last = allocatedIps[allocatedIps.length - 1];
@@ -54,6 +59,8 @@ public class IPv6NetworkUtils {
 
         if (!isConsecutiveRange(part1)) {
             return findFirstHoleByDichotomy(part1);
+        } else if (part2[0].compareTo(part1[part1.length-1].add(BigInteger.ONE)) > 0) {
+            return part1[part1.length-1].add(BigInteger.ONE);
         } else {
             return findFirstHoleByDichotomy(part2);
         }
@@ -253,10 +260,11 @@ public class IPv6NetworkUtils {
     }
 
     public static boolean isIpv6RangeFull(String startIp, String endIp, long used) {
-        BigInteger start = IPv6Address.fromString(startIp).toBigInteger();
-        BigInteger end = IPv6Address.fromString(endIp).toBigInteger();
-
-        return end.subtract(start).compareTo(new BigInteger(String.valueOf(used))) <= 0;
+        IPv6Address start = IPv6Address.fromString(startIp);
+        IPv6Address end = IPv6Address.fromString(endIp);
+        IPv6AddressRange range = IPv6AddressRange.fromFirstAndLast(start, end);
+        
+        return range.size().compareTo(new BigInteger(String.valueOf(used))) <= 0;
     }
 
     public static BigInteger getBigIntegerFromString(String ip) {
@@ -372,4 +380,19 @@ public class IPv6NetworkUtils {
     public static String ipv6TagValueToAddress(String tag) {
         return tag.replace("--", "::");
     }
+
+    public static boolean isValidIpv4(String ipv4) {
+        if (ipv4.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT).length == 2) {
+            return ipv4.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT)[0].matches(IPv6NetworkUtils.ipv4Regex) &&
+                    Integer.parseInt(ipv4.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT)[1]) >= 1 &&
+                    Integer.parseInt(ipv4.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT)[1]) <= 32;
+        } else {
+            return ipv4.matches(IPv6NetworkUtils.ipv4Regex);
+        }
+    }
+
+    public static boolean isValidMac(String mac) {
+        return mac.matches(IPv6NetworkUtils.macRegex);
+    }
+
 }

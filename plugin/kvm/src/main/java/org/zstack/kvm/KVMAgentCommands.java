@@ -1,7 +1,5 @@
 package org.zstack.kvm;
 
-import org.zstack.header.vm.devices.DeviceAddress;
-import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
@@ -12,6 +10,8 @@ import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmPriorityConfigVO;
+import org.zstack.header.vm.devices.DeviceAddress;
+import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
@@ -80,6 +80,40 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateVmPriorityRsp extends AgentResponse {
+    }
+
+    public static class ChangeVmNicStateCommand extends AgentCommand {
+        private String vmUuid;
+        private String state;
+        private NicTO nic;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public NicTO getNic() {
+            return nic;
+        }
+
+        public void setNic(NicTO nic) {
+            this.nic = nic;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+    }
+
+    public static class ChangeVmNicStateRsp extends AgentResponse {
+
     }
 
     public static class DetachNicCommand extends AgentCommand {
@@ -391,13 +425,23 @@ public class KVMAgentCommands {
         private String cpuProcessorNum;
         private String powerSupplyModelName;
         private String powerSupplyManufacturer;
+        private String ipmiAddress;
         private String powerSupplyMaxPowerCapacity;
         private String hostCpuModelName;
         private String systemProductName;
         private String systemSerialNumber;
+        private String systemManufacturer;
+        private String systemUUID;
+        private String biosVendor;
+        private String biosVersion;
+        private String biosReleaseDate;
+        private String bmcVersion;
+        private String uptime;
+        private String memorySlotsMaximum;
         private String cpuCache;
         private List<String> ipAddresses;
         private List<String> libvirtCapabilities;
+        private VirtualizerInfoTO virtualizerInfo;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -433,6 +477,10 @@ public class KVMAgentCommands {
 
         public String getEptFlag() {
             return eptFlag;
+        }
+
+        public void setEptFlag(String eptFlag) {
+            this.eptFlag = eptFlag;
         }
 
         public String getLibvirtVersion() {
@@ -509,6 +557,12 @@ public class KVMAgentCommands {
             this.powerSupplyManufacturer = powerSupplyManufacturer;
         }
 
+        public String getIpmiAddress() {return ipmiAddress;}
+
+        public void setIpmiAddress(String ipmiAddress) {
+            this.ipmiAddress = ipmiAddress;
+        }
+
         public String getPowerSupplyMaxPowerCapacity() {
             return powerSupplyMaxPowerCapacity;
         }
@@ -551,6 +605,79 @@ public class KVMAgentCommands {
 
         public void setLibvirtCapabilities(List<String> libvirtCapabilities) {
             this.libvirtCapabilities = libvirtCapabilities;
+        }
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
+
+        }
+
+        public String getSystemManufacturer() {
+            return systemManufacturer;
+        }
+
+        public void setSystemManufacturer(String systemManufacturer) {
+            this.systemManufacturer = systemManufacturer;
+        }
+
+        public String getSystemUUID() {
+            return systemUUID;
+        }
+
+        public void setSystemUUID(String systemUUID) {
+            this.systemUUID = systemUUID;
+        }
+
+        public String getBiosVendor() {
+            return biosVendor;
+        }
+
+        public void setBiosVendor(String biosVendor) {
+            this.biosVendor = biosVendor;
+        }
+
+        public String getBiosVersion() {
+            return biosVersion;
+        }
+
+        public void setBiosVersion(String biosVersion) {
+            this.biosVersion = biosVersion;
+        }
+
+        public String getBiosReleaseDate() {
+            return biosReleaseDate;
+        }
+
+        public void setBiosReleaseDate(String biosReleaseDate) {
+            this.biosReleaseDate = biosReleaseDate;
+        }
+
+        public String getBmcVersion() {
+            return bmcVersion;
+        }
+
+        public void setBmcVersion(String bmcVersion) {
+            this.bmcVersion = bmcVersion;
+        }
+
+        public String getUptime() {
+            return uptime;
+        }
+
+        public void setUptime(String uptime) {
+            this.uptime = uptime;
+        }
+
+        public String getMemorySlotsMaximum() {
+            return memorySlotsMaximum;
+        }
+
+        public void setMemorySlotsMaximum(String memorySlotsMaximum) {
+            this.memorySlotsMaximum = memorySlotsMaximum;
         }
     }
 
@@ -843,10 +970,14 @@ public class KVMAgentCommands {
         private VHostAddOn vHostAddOn;
         private DeviceAddress pci;
         private String type;
+        private String state;
 
         // only for vf nic
         private String vlanId;
         private String pciDeviceAddress;
+
+        // for vDPA & dpdkvhostuserclient nic
+        private String srcPath;
 
         public List<String> getIps() {
             return ips;
@@ -982,6 +1113,22 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+
+        public String getSrcPath() {
+            return srcPath;
+        }
+
+        public void setSrcPath(String srcPath) {
+            this.srcPath = srcPath;
         }
     }
 
@@ -1268,6 +1415,56 @@ public class KVMAgentCommands {
     }
 
     public static class DeleteVdpaRsp extends AgentResponse {
+    }
+
+    public static class GenerateVHostUserClientCmd extends AgentCommand {
+        public String vmUuid;
+        public List<NicTO> nics;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public List<NicTO> getNics() {
+            return nics;
+        }
+
+        public void setNics(List<NicTO> nics) {
+            this.nics = nics;
+        }
+    }
+
+    public static class GenerateVHostUserClientResponse extends AgentResponse {
+
+    }
+
+    public static class DeleteVHostUserClientCmd extends AgentCommand {
+        public String vmUuid;
+        public String nicInternalName;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getNicInternalName() {
+            return nicInternalName;
+        }
+
+        public void setNicInternalName(String nicInternalName) {
+            this.nicInternalName = nicInternalName;
+        }
+    }
+
+    public static class DeleteVHostUserClientRsp extends AgentResponse {
+
     }
 
     public static class HardenVmConsoleCmd extends AgentCommand {
@@ -1628,9 +1825,14 @@ public class KVMAgentCommands {
         private long memory;
         private long maxMemory;
         private int cpuNum;
+        private int maxVcpuNum;
         private long cpuSpeed;
-        private int socketNum;
-        private int cpuOnSocket;
+        // cpu topology
+        private Integer socketNum;
+        private Integer cpuOnSocket;
+        // set thread per core default 1 to keep backward compatibility
+        private Integer threadsPerCore = 1;
+
         private List<String> bootDev;
         private VolumeTO rootVolume;
         private VirtualDeviceInfo memBalloon;
@@ -1650,13 +1852,23 @@ public class KVMAgentCommands {
         private boolean useNuma;
         private String MemAccess;
         private boolean usbRedirect;
+        private boolean enableSecurityElement;
         private boolean useBootMenu;
+        private Integer bootMenuSplashTimeout;
         private boolean createPaused;
         private boolean kvmHiddenState;
         private boolean vmPortOff;
         private String vmCpuModel;
         private boolean emulateHyperV;
+
+        // hyperv features
+        private boolean hypervClock;
         private String vendorId;
+
+        // suspend features
+        private boolean suspendToRam;
+        private boolean suspendToDisk;
+
         private boolean additionalQmp;
         private boolean isApplianceVm;
         private String systemSerialNumber;
@@ -1675,10 +1887,32 @@ public class KVMAgentCommands {
         private boolean coloSecondary;
         private boolean consoleLogToFile;
         private boolean acpi;
-        private boolean hygonCpu;
+        private boolean x2apic = true;
+        // cpuid hypervisor feature
+        private boolean cpuHypervisorFeature = true;
 
         // TODO: only for test
         private boolean useColoBinary;
+
+        public void setSocketNum(Integer socketNum) {
+            this.socketNum = socketNum;
+        }
+
+        public void setCpuOnSocket(Integer cpuOnSocket) {
+            this.cpuOnSocket = cpuOnSocket;
+        }
+
+        public void setThreadsPerCore(Integer threadsPerCore) {
+            this.threadsPerCore = threadsPerCore;
+        }
+
+        public int getMaxVcpuNum() {
+            return maxVcpuNum;
+        }
+
+        public void setMaxVcpuNum(int maxVcpuNum) {
+            this.maxVcpuNum = maxVcpuNum;
+        }
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
@@ -1808,6 +2042,14 @@ public class KVMAgentCommands {
             return useBootMenu;
         }
 
+        public Integer getBootMenuSplashTimeout() {
+            return bootMenuSplashTimeout;
+        }
+
+        public void setBootMenuSplashTimeout(Integer bootMenuSplashTimeout) {
+            this.bootMenuSplashTimeout = bootMenuSplashTimeout;
+        }
+
         public void setCreatePaused(boolean createPaused) {
             this.createPaused = createPaused;
         }
@@ -1824,6 +2066,13 @@ public class KVMAgentCommands {
             this.usbRedirect = usbRedirect;
         }
 
+        public boolean isEnableSecurityElement() {
+            return enableSecurityElement;
+        }
+
+        public void setEnableSecurityElement(boolean enableSecurityElement) {
+            this.enableSecurityElement = enableSecurityElement;
+        }
         public boolean isUseNuma() {
             return useNuma;
         }
@@ -1864,7 +2113,7 @@ public class KVMAgentCommands {
             this.clockTrack = clockTrack;
         }
 
-        public int getSocketNum() {
+        public Integer getSocketNum() {
             return socketNum;
         }
 
@@ -1872,12 +2121,20 @@ public class KVMAgentCommands {
             this.socketNum = socketNum;
         }
 
-        public int getCpuOnSocket() {
+        public Integer getCpuOnSocket() {
             return cpuOnSocket;
         }
 
         public void setCpuOnSocket(int cpuOnSocket) {
             this.cpuOnSocket = cpuOnSocket;
+        }
+
+        public Integer getThreadsPerCore() {
+            return threadsPerCore;
+        }
+
+        public void setThreadsPerCore(int threadsPerCore) {
+            this.threadsPerCore = threadsPerCore;
         }
 
         public String getVmName() {
@@ -2091,14 +2348,6 @@ public class KVMAgentCommands {
             this.consoleLogToFile = consoleLogToFile;
         }
 
-        public boolean getHygonCpu() {
-            return hygonCpu;
-        }
-
-        public void setHygonCpu(boolean hygonCpu) {
-            this.hygonCpu = hygonCpu;
-        }
-
         public boolean getAcpi() {
             return acpi;
         }
@@ -2107,12 +2356,52 @@ public class KVMAgentCommands {
             this.acpi = acpi;
         }
 
+        public boolean getX2apic() {
+            return x2apic;
+        }
+
+        public void setX2apic(boolean x2apic) {
+            this.x2apic = x2apic;
+        }
+
+        public boolean isCpuHypervisorFeature() {
+            return cpuHypervisorFeature;
+        }
+
+        public void setCpuHypervisorFeature(boolean cpuHypervisorFeature) {
+            this.cpuHypervisorFeature = cpuHypervisorFeature;
+        }
+
+        public boolean isHypervClock() {
+            return hypervClock;
+        }
+
+        public void setHypervClock(boolean hypervClock) {
+            this.hypervClock = hypervClock;
+        }
+
         public String getVendorId() {
             return vendorId;
         }
 
         public void setVendorId(String vendorId) {
             this.vendorId = vendorId;
+        }
+
+        public boolean isSuspendToRam() {
+            return suspendToRam;
+        }
+
+        public void setSuspendToRam(boolean suspendToRam) {
+            this.suspendToRam = suspendToRam;
+        }
+
+        public boolean isSuspendToDisk() {
+            return suspendToDisk;
+        }
+
+        public void setSuspendToDisk(boolean suspendToDisk) {
+            this.suspendToDisk = suspendToDisk;
         }
 
         @Override
@@ -2128,10 +2417,14 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class StartVmResponse extends AgentResponse {
+    public static class StartVmResponse extends VmDevicesInfoResponse {
+    }
+
+    public static class VmDevicesInfoResponse extends AgentResponse {
         private List<VmNicInfo> nicInfos;
         private List<VirtualDeviceInfo> virtualDeviceInfoList;
         private VirtualDeviceInfo memBalloonInfo;
+        private VirtualizerInfoTO virtualizerInfo;
 
         public VirtualDeviceInfo getMemBalloonInfo() {
             return memBalloonInfo;
@@ -2156,6 +2449,29 @@ public class KVMAgentCommands {
         public void setVirtualDeviceInfoList(List<VirtualDeviceInfo> virtualDeviceInfoList) {
             this.virtualDeviceInfoList = virtualDeviceInfoList;
         }
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
+        }
+    }
+
+    public static class SyncVmDeviceInfoCmd extends AgentCommand {
+        private String vmInstanceUuid;
+
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+    }
+
+    public static class SyncVmDeviceInfoResponse extends VmDevicesInfoResponse {
     }
 
     public static class VmNicInfo {
@@ -2512,6 +2828,15 @@ public class KVMAgentCommands {
     }
 
     public static class RebootVmResponse extends AgentResponse {
+        private VirtualizerInfoTO virtualizerInfo;
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
+        }
     }
 
     public static class DestroyVmCmd extends AgentCommand {
@@ -2591,6 +2916,69 @@ public class KVMAgentCommands {
 
         public void setAddresses(Map<String, List<VmDeviceAddressTO>> addresses) {
             this.addresses = addresses;
+        }
+    }
+
+    public static class GetVirtualizerInfoCmd extends AgentCommand {
+        private List<String> vmUuids;
+
+        public List<String> getVmUuids() {
+            return vmUuids;
+        }
+
+        public void setVmUuids(List<String> vmUuids) {
+            this.vmUuids = vmUuids;
+        }
+    }
+
+    public static class GetVirtualizerInfoRsp extends AgentResponse {
+        private VirtualizerInfoTO hostInfo;
+        private List<VirtualizerInfoTO> vmInfoList;
+
+        public VirtualizerInfoTO getHostInfo() {
+            return hostInfo;
+        }
+
+        public void setHostInfo(VirtualizerInfoTO hostInfo) {
+            this.hostInfo = hostInfo;
+        }
+
+        public List<VirtualizerInfoTO> getVmInfoList() {
+            return vmInfoList;
+        }
+
+        public void setVmInfoList(List<VirtualizerInfoTO> vmInfoList) {
+            this.vmInfoList = vmInfoList;
+        }
+    }
+
+    public static class VirtualizerInfoTO {
+        private String uuid;
+        private String virtualizer;
+        private String version;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public void setVirtualizer(String virtualizer) {
+            this.virtualizer = virtualizer;
+        }
+
+        public String getVirtualizer() {
+            return virtualizer;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public String getVersion() {
+            return version;
         }
     }
 
@@ -2740,14 +3128,34 @@ public class KVMAgentCommands {
     public static class MigrateVmCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private String destHostIp;
+        private String destHostManagementIp;
         private String storageMigrationPolicy;
         private String srcHostIp;
         private boolean useNuma;
         private boolean migrateFromDestination;
         private boolean autoConverge;
+        private Integer downTime;
         private boolean xbzrle;
         private List<String> vdpaPaths;
         private Long timeout; // in seconds
+        private Map<String, VolumeTO> disks;  // A map from old install path to new volume
+        private boolean reload;
+
+        public Integer getDownTime() {
+            return downTime;
+        }
+
+        public void setDownTime(Integer downTime) {
+            this.downTime = downTime;
+        }
+
+        public boolean isReload() {
+            return reload;
+        }
+
+        public void setReload(boolean reload) {
+            this.reload = reload;
+        }
 
         public boolean isUseNuma() {
             return useNuma;
@@ -2828,22 +3236,75 @@ public class KVMAgentCommands {
         public void setTimeout(Long timeout) {
             this.timeout = timeout;
         }
+
+        public Map<String, VolumeTO> getDisks() {
+            return disks;
+        }
+
+        public void setDisks(Map<String, VolumeTO> disks) {
+            this.disks = disks;
+        }
+
+        public String getDestHostManagementIp() {
+            return destHostManagementIp;
+        }
+
+        public void setDestHostManagementIp(String destHostManagementIp) {
+            this.destHostManagementIp = destHostManagementIp;
+        }
     }
 
     public static class MigrateVmResponse extends AgentResponse {
     }
 
+    public static class VmGetCpuXmlCmd extends AgentCommand{
+    }
+
+    public static class VmGetCpuXmlResponse extends AgentResponse {
+        private String cpuXml;
+        private String cpuModelName;
+
+        public String getCpuModelName() {
+            return cpuModelName;
+        }
+
+        public void setCpuModelName(String cpuModelName) {
+            this.cpuModelName = cpuModelName;
+        }
+
+        public String getCpuXml() {
+            return cpuXml;
+        }
+
+        public void setCpuXml(String cpuXml) {
+            this.cpuXml = cpuXml;
+        }
+    }
+
+    public static class VmCompareCpuFunctionCmd extends AgentCommand{
+        private String cpuXml;
+
+        public String getCpuXml() {
+            return cpuXml;
+        }
+
+        public void setCpuXml(String cpuXml) {
+            this.cpuXml = cpuXml;
+        }
+    }
+
+    public static class VmCompareCpuFunctionResponse extends AgentResponse {
+    }
+
     public static class MergeSnapshotRsp extends AgentResponse {
     }
 
-    public static class MergeSnapshotCmd extends AgentCommand {
+    public static class MergeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private VolumeTO volume;
         private String srcPath;
         private String destPath;
         private boolean fullRebase;
-        // timeout seconds
-        private long timeout;
 
         public boolean isFullRebase() {
             return fullRebase;
@@ -2883,14 +3344,6 @@ public class KVMAgentCommands {
 
         public void setVolume(VolumeTO volume) {
             this.volume = volume;
-        }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
         }
     }
 
@@ -2951,11 +3404,20 @@ public class KVMAgentCommands {
         private String volumeInstallPath;
         private String newVolumeUuid;
         private String newVolumeInstallPath;
+        private boolean online;
 
         // for baremetal2 instance
         private boolean isBaremetal2InstanceOnlineSnapshot;
 
         private long timeout;
+
+        public boolean isOnline() {
+            return online;
+        }
+
+        public void setOnline(boolean online) {
+            this.online = online;
+        }
 
         public String getVolumeUuid() {
             return volumeUuid;
@@ -3256,7 +3718,13 @@ public class KVMAgentCommands {
     public static class ShutdownHostCmd extends AgentCommand {
     }
 
+    public static class RebootHostCmd extends AgentCommand {
+    }
+
     public static class ShutdownHostResponse extends AgentResponse {
+    }
+
+    public static class RebootHostResponse extends AgentResponse {
     }
 
     public static class UpdateSpiceChannelConfigCmd extends AgentCommand {
@@ -3272,6 +3740,24 @@ public class KVMAgentCommands {
 
     public static class CancelCmd extends AgentCommand implements CancelCommand {
         private String cancellationApiId;
+        private Integer times;
+        private Integer interval;
+
+        public Integer getTimes() {
+            return times;
+        }
+
+        public void setTimes(Integer times) {
+            this.times = times;
+        }
+
+        public Integer getInterval() {
+            return interval;
+        }
+
+        public void setInterval(Integer interval) {
+            this.interval = interval;
+        }
 
         @Override
         public void setCancellationApiId(String cancellationApiId) {
@@ -3377,5 +3863,25 @@ public class KVMAgentCommands {
         public void setStatus(String status) {
             this.status = status;
         }
+    }
+
+    public static class AttachVolumeCmd extends AgentCommand {
+        public String volumePrimaryStorageUuid;
+        public String volumeInstallPath;
+        public String mountPath;
+        public String device;
+    }
+
+    public static class AttachVolumeRsp extends AgentResponse {
+        public String device;
+    }
+
+    public static class DetachVolumeCmd extends AgentCommand {
+        public String volumeInstallPath;
+        public String mountPath;
+        public String device;
+    }
+
+    public static class DetachVolumeRsp extends AgentResponse {
     }
 }

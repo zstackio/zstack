@@ -12,7 +12,7 @@ public class GetHostTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetHostTaskResult value;
+        public org.zstack.sdk.GetChainTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,6 +27,9 @@ public class GetHostTaskAction extends AbstractAction {
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List hostUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List syncSignatures;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +57,8 @@ public class GetHostTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetHostTaskResult value = res.getResult(org.zstack.sdk.GetHostTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetHostTaskResult() : value; 
+        org.zstack.sdk.GetChainTaskResult value = res.getResult(org.zstack.sdk.GetChainTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetChainTaskResult() : value; 
 
         return ret;
     }

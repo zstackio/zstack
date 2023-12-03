@@ -1,6 +1,5 @@
 package org.zstack.network.service.virtualrouter;
 
-import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -61,7 +60,6 @@ import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.image.ImageSystemTags;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
@@ -1681,10 +1679,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private String getVipPeerL3NetworkAttachedVirtualRouter(VipInventory vip) {
-	    for (String l3Uuid : vip.getPeerL3NetworkUuids()) {
-	        List<String> vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.l3NetworkUuid, l3Uuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).listValues();
-	        if (vrUuids == null || vrUuids.isEmpty()) {
-	            return null;
+        String vrUuid = null;
+        for (String l3Uuid : vip.getPeerL3NetworkUuids()) {
+            List<String> vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.l3NetworkUuid, l3Uuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).listValues();
+            if (vrUuids == null || vrUuids.isEmpty()) {
+                return null;
             }
 
             vrUuids = Q.New(ApplianceVmVO.class).select(ApplianceVmVO_.uuid).in(ApplianceVmVO_.uuid, vrUuids)
@@ -1693,10 +1692,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 return null;
             }
 
-            return vrUuids.get(0);
+            vrUuid = vrUuids.get(0);
         }
 
-        return null;
+        return vrUuid;
     }
 
     private String getDedicatedRoleVrUuidFromVrUuids(List<String> uuids, String loadBalancerUuid) {
@@ -2167,7 +2166,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     @Override
-    public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, CascadeAction action, String parentIssuer, List<String> parentIssuerUuids, List<VmNicInventory> toDeleteNics) {
+    public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, CascadeAction action,
+                                                        String parentIssuer,
+                                                        List<String> parentIssuerUuids,
+                                                        List<VmNicInventory> toDeleteNics,
+                                                        List<UsedIpInventory> toDeleteIps) {
         logger.debug(String.format("filter appliance vm type with parentIssuer [type: %s, uuids: %s]", parentIssuer, parentIssuerUuids));
         if (parentIssuer.equals(L3NetworkVO.class.getSimpleName())) {
             List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, parentIssuerUuids);
@@ -2361,6 +2364,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 info.setPublicIp(publicNic.getIp());
                 info.setPublicNicMac(publicNic.getMac());
                 info.setSnatNetmask(vnic.getNetmask());
+                info.setPrivateGatewayIp(vnic.getGateway());
                 snatInfo.add(info);
             }
         }
@@ -2368,20 +2372,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return snatInfo;
     }
 
-    private void changeVirtualRouterSnatData(String vrUuid, String newL3Uuid, String oldL3Uuid){
-        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find();
-        if (vrVO == null) {
-            return ;
-        }
-        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
-        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
-        app.detachNetworkService(vrUuid, NetworkServiceType.SNAT.toString(), oldL3Uuid);
-        app.attachNetworkService(vrUuid, NetworkServiceType.SNAT.toString(), newL3Uuid);
-        String msg = String.format(
-                "virtual router[uuid:%s] successfully change snat for old default public l3[uuid:%s] to new default public l3[uuid:%s]",
-                vrUuid, oldL3Uuid, newL3Uuid);
-        logger.warn(msg);
-    }
 
     @Transactional
     protected void changeVirtualRouterNicMetaData(String vrUuid, String newL3Uuid, String oldL3Uuid) {
@@ -2416,6 +2406,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         VirtualRouterCommands.NicInfo newNicInfo  = new VirtualRouterCommands.NicInfo();
         newNicInfo.setMac(newNic.getMac());
+        newNicInfo.setState(newNic.getState().toString());
         for (UsedIpVO ip : newNic.getUsedIps()) {
             if (ip.getIpVersion() == IPv6Constants.IPv4) {
                 newNicInfo.setGateway(ip.getGateway());
@@ -2455,7 +2446,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                             vrUuid, ret.getError());
                     completion.fail(err);
                 } else {
-                    changeVirtualRouterSnatData(vrUuid, newL3Uuid, oldL3Uuid);
                     changeVirtualRouterNicMetaData(vrUuid, newL3Uuid, oldL3Uuid);
                     completion.success();
                 }

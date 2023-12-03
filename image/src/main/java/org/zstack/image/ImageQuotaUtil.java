@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -84,20 +85,14 @@ public class ImageQuotaUtil {
         return imageSize;
     }
 
-    @BypassWhenUnitTest
-    public void checkImageSizeQuotaUseHttpHead(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
-        long imageSizeQuota = pairs.get(ImageQuotaConstant.IMAGE_SIZE).getValue();
-        long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(msg.getSession().getAccountUuid());
-        long imageSizeAsked = getLocalImageSizeOnBackupStorage(msg);
-        if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
-            throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                            msg.getSession().getAccountUuid(), ImageQuotaConstant.IMAGE_SIZE, imageSizeQuota));
-        }
-    }
-
 
     public long getLocalImageSizeOnBackupStorage(APIAddImageMsg msg) {
         long imageSizeAsked = 0;
+
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return imageSizeAsked;
+        }
+
         final String url = msg.getUrl().trim();
         if (url.startsWith("file:///")) {
             GetLocalFileSizeOnBackupStorageMsg gmsg = new GetLocalFileSizeOnBackupStorageMsg();

@@ -60,6 +60,14 @@ public class AffinityGroupInventory  {
         return this.appliance;
     }
 
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;

@@ -5,6 +5,7 @@ import org.zstack.header.message.MessageReply;
 public class EstimateVolumeTemplateSizeReply extends MessageReply {
     private long actualSize;
     private long size;
+    private boolean withInternalSnapshot;
 
     public long getSize() {
         return size;
@@ -20,5 +21,13 @@ public class EstimateVolumeTemplateSizeReply extends MessageReply {
 
     public void setActualSize(long actualSize) {
         this.actualSize = actualSize;
+    }
+
+    public void setWithInternalSnapshot(boolean withInternalSnapshot) {
+        this.withInternalSnapshot = withInternalSnapshot;
+    }
+
+    public boolean isWithInternalSnapshot() {
+        return withInternalSnapshot;
     }
 }

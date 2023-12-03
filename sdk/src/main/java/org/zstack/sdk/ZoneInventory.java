@@ -44,6 +44,14 @@ public class ZoneInventory  {
         return this.type;
     }
 
+    public boolean isDefault;
+    public void setIsDefault(boolean isDefault) {
+        this.isDefault = isDefault;
+    }
+    public boolean getIsDefault() {
+        return this.isDefault;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

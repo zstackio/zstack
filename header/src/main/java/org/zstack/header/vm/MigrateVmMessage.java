@@ -5,6 +5,7 @@ import org.zstack.header.allocator.AllocationScene;
 public interface MigrateVmMessage {
     String getHostUuid();
     String getStrategy();
+    Integer getDownTime();
     boolean isMigrateFromDestination();
     boolean isAllowUnknown();
 

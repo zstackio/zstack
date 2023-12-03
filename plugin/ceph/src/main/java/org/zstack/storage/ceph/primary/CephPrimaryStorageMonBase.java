@@ -204,14 +204,9 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             runner.setTargetUuid(getSelf().getUuid());
                             runner.setAgentPort(CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(CephGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
-                            runner.putArgument("pkg_cephpagent", CephGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME);
-                            if (CoreGlobalProperty.SYNC_NODE_TIME) {
-                                if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
-                                    trigger.fail(operr("chrony server not configured!"));
-                                    return;
-                                }
-                                runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
-                            }
+
+                            CephPrimaryStorageDeployArguments deployArguments = new CephPrimaryStorageDeployArguments();
+                            runner.setDeployArguments(deployArguments);
                             runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                                 @Override
                                 public void success(Boolean deployed) {
@@ -498,6 +493,15 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         // if agent met unexpected error, no failure will be set
                         res.failure = Objects.toString(rsp.failure, null);
                         completion.success(res);
+
+                        if (rsp.isSuccess() && rsp.availableCapacity != null && rsp.totalCapacity != null) {
+                            String fsid = Q.New(CephPrimaryStorageVO.class)
+                                    .select(CephPrimaryStorageVO_.fsid)
+                                    .eq(CephPrimaryStorageVO_.uuid, primaryStorageUuid)
+                                    .findValue();
+                            CephCapacity cephCapacity = new CephCapacity(fsid, rsp);
+                            new CephCapacityUpdater().update(cephCapacity);
+                        }
                     }
 
                     @Override

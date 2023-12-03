@@ -36,6 +36,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -964,7 +965,10 @@ public class VipBase {
     private void addServicesRef(String uuid, String type) {
         VipNetworkServicesRefVO vipRef = new VipNetworkServicesRefVO();
 
-        if (dbf.isExist(uuid, VipNetworkServicesRefVO.class)) {
+        if (Q.New(VipNetworkServicesRefVO.class)
+                .eq(VipNetworkServicesRefVO_.uuid, uuid)
+                .eq(VipNetworkServicesRefVO_.vipUuid, self.getUuid())
+                .eq(VipNetworkServicesRefVO_.serviceType, type).isExists()) {
             logger.debug(String.format("repeat to add the servicesRef [type:%s:uuid:%s] with vip[uuid:%s]",
                     type, uuid, self.getUuid()));
             return;
@@ -989,8 +993,11 @@ public class VipBase {
 
     private void delServicesRef(String uuid, String type) {
         DebugUtils.Assert((uuid != null) && (type != null), "the parameter can't be null");
-        VipNetworkServicesRefVO vipRef = dbf.findByUuid(uuid, VipNetworkServicesRefVO.class);
-        if ( vipRef == null) {
+        VipNetworkServicesRefVO vipRef = Q.New(VipNetworkServicesRefVO.class)
+                .eq(VipNetworkServicesRefVO_.uuid, uuid)
+                .eq(VipNetworkServicesRefVO_.serviceType, type)
+                .eq(VipNetworkServicesRefVO_.vipUuid, self.getUuid()).find();
+        if ( vipRef == null ) {
             logger.error(String.format("the servicesRef [type:%s:uuid:%s] with vip[uuid:%s] doesn't exist",
                     type, uuid, self.getUuid()));
             return;
@@ -1011,4 +1018,15 @@ public class VipBase {
                 type, uuid, self.getUuid()));
     }
 
+    public void delSystemServiceRef() {
+        self.setSystem(false);
+        dbf.update(self);
+        if (self.getServicesTypes().contains(NetworkServiceType.SNAT.toString())) {
+            VipNetworkServicesRefVO vipRef = Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, self.getUuid())
+                    .eq(VipNetworkServicesRefVO_.serviceType, NetworkServiceType.SNAT.toString()).find();
+            if(vipRef != null) {
+                delServicesRef(vipRef.getUuid(), vipRef.getServiceType());
+            }
+        }
+    }
 }

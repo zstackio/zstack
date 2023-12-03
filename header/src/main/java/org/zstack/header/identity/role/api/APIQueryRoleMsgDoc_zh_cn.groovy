@@ -2,7 +2,6 @@ package org.zstack.header.identity.role.api
 
 import org.zstack.header.identity.role.api.APIQueryRoleReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryRole"

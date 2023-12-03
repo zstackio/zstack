@@ -28,11 +28,20 @@ public class KVMHostInventory extends HostInventory {
 
     private Integer sshPort;
 
+    private String osDistribution;
+
+    private String osRelease;
+
+    private String osVersion;
+
     protected KVMHostInventory(KVMHostVO vo) {
         super(vo);
         this.setUsername(vo.getUsername());
         this.setPassword(vo.getPassword());
         this.setSshPort(vo.getPort());
+        this.setOsDistribution(vo.getOsDistribution());
+        this.setOsRelease(vo.getOsRelease());
+        this.setOsVersion(vo.getOsVersion());
     }
 
     public KVMHostInventory() {
@@ -71,6 +80,30 @@ public class KVMHostInventory extends HostInventory {
 
     public void setSshPort(Integer sshPort) {
         this.sshPort = sshPort;
+    }
+
+    public String getOsDistribution() {
+        return osDistribution;
+    }
+
+    public void setOsDistribution(String osDistribution) {
+        this.osDistribution = osDistribution;
+    }
+
+    public String getOsRelease() {
+        return osRelease;
+    }
+
+    public void setOsRelease(String osRelease) {
+        this.osRelease = osRelease;
+    }
+
+    public String getOsVersion() {
+        return osVersion;
+    }
+
+    public void setOsVersion(String osVersion) {
+        this.osVersion = osVersion;
     }
 
 }

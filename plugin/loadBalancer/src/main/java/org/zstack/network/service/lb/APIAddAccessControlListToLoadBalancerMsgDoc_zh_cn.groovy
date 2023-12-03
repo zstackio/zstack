@@ -29,7 +29,6 @@ doc {
 					type "List"
 					optional false
 					since "3.9"
-					
 				}
 				column {
 					name "aclType"
@@ -49,7 +48,6 @@ doc {
 					type "String"
 					optional false
 					since "3.9"
-					
 				}
 				column {
 					name "systemTags"
@@ -59,7 +57,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "userTags"
@@ -69,7 +66,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "serverGroupUuids"
@@ -79,7 +75,6 @@ doc {
 					type "List"
 					optional true
 					since "4.1.3"
-					
 				}
 			}
         }

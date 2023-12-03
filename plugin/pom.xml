@@ -4,7 +4,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>4.4.0</version>
+        <version>4.6.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>plugin</artifactId>
@@ -28,6 +28,8 @@
         <module>ldap</module>
         <module>vxlan</module>
         <module>acl</module>
+        <module>sdnController</module>
+        <module>directory</module>
     </modules>
     <dependencies>
         <dependency>

@@ -27,21 +27,17 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HypervisorFactory;
 import org.zstack.header.identity.*;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.*;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.storage.backup.CleanUpVmBackupExtensionPoint;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessage;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -50,13 +46,14 @@ import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceTreeBase;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
 
@@ -70,7 +67,6 @@ import java.util.stream.Stream;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
-import static org.zstack.storage.snapshot.VolumeSnapshotTagHelper.getBackingVolumeTag;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -84,7 +80,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         AfterReimageVmInstanceExtensionPoint,
         VmJustBeforeDeleteFromDbExtensionPoint,
         VolumeJustBeforeDeleteFromDbExtensionPoint,
-        OverwriteVolumeExtensionPoint {
+        OverwriteVolumeExtensionPoint, FlattenVolumeExtensionPoint,
+        CleanUpVmBackupExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
     private String syncSignature;
     @Autowired
@@ -105,6 +102,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private EventFacade evtf;
     @Autowired
     private CascadeFacade casf;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     private Map<String, MemorySnapshotGroupReferenceFactory> referenceFactories = Collections.synchronizedMap(new HashMap<>());
 
@@ -148,6 +147,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             passThrough((VolumeSnapshotMessage) msg);
         } else if (msg instanceof VolumeSnapshotGroupMessage) {
             handleSnapshotGroup((VolumeSnapshotGroupMessage) msg);
+        } else if (msg instanceof VolumeSnapshotReferenceMessage) {
+            handleSnapshotReference((VolumeSnapshotReferenceMessage) msg);
         } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
@@ -183,12 +184,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         bus.send(encryptedMsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                GetVolumeSnapshotEncryptedOnPrimaryStorageReply encryptedReply = reply.castReply();
                 if (!reply.isSuccess()) {
                     snapshotEncryptedReply.setError(reply.getError());
                     bus.reply(msg, snapshotEncryptedReply);
                     return;
                 }
+
+                GetVolumeSnapshotEncryptedOnPrimaryStorageReply encryptedReply = reply.castReply();
 
                 snapshotEncryptedReply.setEncrypt(encryptedReply.getEncrypt());
                 snapshotEncryptedReply.setSnapshotUuid(encryptedReply.getSnapshotUuid());
@@ -250,6 +252,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 bus.publish(event);
             }
         });
+    }
+
+    private void handleSnapshotReference(VolumeSnapshotReferenceMessage msg) {
+        VolumeSnapshotReferenceTreeBase tree = new VolumeSnapshotReferenceTreeBase(msg.getTree());
+        tree.handleMessage((Message) msg);
     }
 
     @Transactional(readOnly = true)
@@ -382,6 +389,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 bus.publish(event);
             }
         }).start();
+    }
+
+    @Override
+    public void afterCleanUpVmBackup(String groupUuid) {
+        vidm.deleteArchiveVmInstanceDeviceAddressGroup(groupUuid);
     }
 
     private class SnapshotAncestorStruct {
@@ -552,6 +564,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
         struct.setCurrent(VolumeSnapshotInventory.valueOf(vo));
         struct.setFullSnapshot(fullsnapshot);
+        struct.setNewChain(true);
 
         return struct;
     }
@@ -691,7 +704,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         AskVolumeSnapshotCapabilityMsg askMsg = new AskVolumeSnapshotCapabilityMsg();
         askMsg.setPrimaryStorageUuid(primaryStorageUuid);
         askMsg.setVolume(VolumeInventory.valueOf(vol));
-        bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+        bus.makeLocalServiceId(askMsg, PrimaryStorageConstant.SERVICE_ID);
         MessageReply reply = bus.call(askMsg);
         if (!reply.isSuccess()) {
             throw new OperationFailureException(operr("cannot ask primary storage[uuid:%s] for volume snapshot capability, see detail [%s]", vol.getUuid(),reply.getError()));
@@ -945,6 +958,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             svo.setFormat(snapshot.getFormat());
                         }
                         svo = dbf.updateAndRefresh(svo);
+
+                        if (struct.isNewChain()) {
+                            VolumeSnapshotReferenceUtils.updateReferenceAfterFirstSnapshot(svo);
+                        }
+
                         new FireSnapShotCanonicalEvent().
                                 fireSnapShotStatusChangedEvent(
                                         VolumeSnapshotStatus.valueOf(snapshot.getStatus()),
@@ -1194,7 +1212,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 }
             }
         }, VolumeCreateSnapshotMsg.class, CreateVolumeSnapshotMsg.class);
-        handleVolumeDeletionEvent();
         return true;
     }
 
@@ -1241,68 +1258,20 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public void volumePreExpunge(VolumeInventory volume) {
-        List<String> snapUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
-                .eq(VolumeSnapshotVO_.volumeUuid, volume.getUuid())
-                .listValues();
+    public void volumePreExpunge(VolumeInventory volume) {}
 
-        if (snapUuids.isEmpty()) {
-            return;
-        }
-
-        String tagFmt = getBackingVolumeTag("%");
-        List<String> protectedSnapUuids = Q.New(SystemTagVO.class).select(SystemTagVO_.resourceUuid)
-                .eq(SystemTagVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
-                .in(SystemTagVO_.resourceUuid, snapUuids)
-                .like(SystemTagVO_.tag, tagFmt)
-                .listValues();
-        if (!protectedSnapUuids.isEmpty()) {
-            throw new OperationFailureException(operr("volume snapshot[uuids:%s] is protected, " +
-                    "do not allow to delete volume.", new HashSet<>(protectedSnapUuids).toString()));
-        }
+    @Override
+    public boolean skipExpungeVolume(VolumeInventory volume) {
+        return VolumeSnapshotReferenceUtils.isVolumeDirectlyReferenceByOthers(volume);
     }
 
     @Override
     public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
-        List<VolumeSnapshotDeletionMsg> msgs = new ArrayList<>();
-        SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
-        cq.select(VolumeSnapshotTreeVO_.uuid);
-        cq.add(VolumeSnapshotTreeVO_.volumeUuid, Op.EQ, volume.getUuid());
-        List<String> cuuids = cq.listValue();
-
-        for (String cuuid : cuuids) {
-            // deleting full snapshot of chain will cause whole chain to be deleted
-            SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-            q.select(VolumeSnapshotVO_.uuid);
-            q.add(VolumeSnapshotVO_.treeUuid, Op.EQ, cuuid);
-            q.add(VolumeSnapshotVO_.parentUuid, Op.NULL);
-            String suuid = q.findValue();
-
-            if (suuid == null) {
-                // this is a storage snapshot, don't delete it on primary storage
-                continue;
-            }
-
-            SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-            sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
-            sq.add(VolumeSnapshotVO_.uuid, Op.EQ, suuid);
-            Tuple t = sq.findTuple();
-            String volumeUuid = t.get(0, String.class);
-            String treeUuid = t.get(1, String.class);
-
-            VolumeSnapshotDeletionMsg msg = new VolumeSnapshotDeletionMsg();
-            msg.setSnapshotUuid(suuid);
-            msg.setTreeUuid(treeUuid);
-            msg.setVolumeUuid(volumeUuid);
-            msg.setVolumeDeletion(true);
-            String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
-            bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
-
-            msgs.add(msg);
-        }
+        List<VolumeSnapshotDeletionMsg> msgs = VolumeSnapshotCascadeExtension.handleVolumeExpunge(volume.getUuid());
 
         new While<>(msgs).all((msg, c) -> {
+            String resourceUuid = msg.getVolumeUuid() != null ? msg.getVolumeUuid() : msg.getTreeUuid();
+            bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
             bus.send(msg, new CloudBusCallBack(c) {
                 @Override
                 public void run(MessageReply reply) {
@@ -1322,22 +1291,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 }
 
                 completion.success();
-            }
-        });
-    }
-
-    private void handleVolumeDeletionEvent() {
-        evtf.onLocal(VolumeCanonicalEvents.VOLUME_STATUS_CHANGED_PATH, new EventCallback() {
-            @Override
-            protected void run(Map tokens, Object data) {
-                VolumeCanonicalEvents.VolumeStatusChangedData d = (VolumeCanonicalEvents.VolumeStatusChangedData) data;
-                if (Q.New(VolumeVO.class).eq(VolumeVO_.uuid, d.getVolumeUuid()).isExists()) {
-                    return;
-                }
-
-                String toDeleteTag = getBackingVolumeTag(d.getVolumeUuid());
-                SQL.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
-                        .eq(SystemTagVO_.tag, toDeleteTag).delete();
             }
         });
     }
@@ -1365,164 +1318,32 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public List<Quota> reportQuota() {
-        Quota.QuotaOperator checker = new Quota.QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreateVolumeSnapshotMsg) {
-                        check((APICreateVolumeSnapshotMsg) msg, pairs);
-                    } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
-                        check((APICreateVolumeSnapshotGroupMsg) msg, pairs);
-                    } else if (msg instanceof APIChangeResourceOwnerMsg) {
-                        check((APIChangeResourceOwnerMsg) msg, pairs);
-                    } else if (msg instanceof APIRecoverDataVolumeMsg) {
-                        check((APIRecoverDataVolumeMsg) msg, pairs);
-                    }
-                } else {
-                    if (msg instanceof APIChangeResourceOwnerMsg) {
-                        check((APIChangeResourceOwnerMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getAccountUuid())) {
-                    if (msg instanceof VolumeCreateSnapshotMsg) {
-                        check((VolumeCreateSnapshotMsg) msg, pairs);
-                    } else if (msg instanceof CreateVolumeSnapshotMsg) {
-                        check((CreateVolumeSnapshotMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                List<Quota.QuotaUsage> usages = new ArrayList<>();
-
-                Quota.QuotaUsage usage;
-
-                usage = new Quota.QuotaUsage();
-                usage.setName(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM);
-                usage.setUsed(getUsedVolumeSnapshotNum(accountUuid));
-                usages.add(usage);
-
-                return usages;
-            }
-
-            private long getUsedVolumeSnapshotNum(String accountUuid) {
-                SimpleQuery<AccountResourceRefVO> queryVolumeSnapshotNum = dbf.createQuery(AccountResourceRefVO.class);
-                queryVolumeSnapshotNum.add(AccountResourceRefVO_.accountUuid, Op.EQ, accountUuid);
-                queryVolumeSnapshotNum.add(AccountResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
-                return queryVolumeSnapshotNum.count();
-            }
-
-            @Transactional(readOnly = true)
-            private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-                if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
-                    return;
-                }
-
-                String resourceType = new QuotaUtil().getResourceType(msg.getResourceUuid());
-                long volumeSnapshotNumAsked;
-                if (resourceType.equals(VmInstanceVO.class.getSimpleName())) {
-                    String sql = "select count(s)" +
-                            " from VolumeVO v, VolumeSnapshotVO s" +
-                            " where s.volumeUuid = v.uuid" +
-                            " and v.vmInstanceUuid = :vmInstanceUuid";
-                    TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                    q.setParameter("vmInstanceUuid", msg.getResourceUuid());
-                    volumeSnapshotNumAsked = q.getSingleResult();
-                } else if (resourceType.equals(VolumeVO.class.getSimpleName())) {
-                    String sql = "select count(s)" +
-                            " from VolumeSnapshotVO s" +
-                            " where s.volumeUuid = :volumeUuid";
-                    TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                    q.setParameter("volumeUuid", msg.getResourceUuid());
-                    volumeSnapshotNumAsked = q.getSingleResult();
-                } else if (resourceType.equals(VolumeSnapshotVO.class.getSimpleName())) {
-                    volumeSnapshotNumAsked = 1;
-                } else {
-                    return;
-                }
-                checkVolumeSnapshotNumQuota(currentAccountUuid,
-                        resourceTargetOwnerAccountUuid,
-                        volumeSnapshotNumAsked,
-                        pairs);
-            }
-
-            private void check(VolumeCreateSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), 1, pairs);
-            }
-
-            private void check(CreateVolumeSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), 1, pairs);
-            }
-
-            private void check(CreateVolumesSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), msg.getVolumeSnapshotJobs().size(), pairs);
-            }
-
-            private void check(APICreateVolumeSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, 1, pairs);
-            }
-
-            private void check(APICreateVolumeSnapshotGroupMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-                long snapCount = SQL.New("select count(vol) from VolumeVO vol" +
-                        " where vol.vmInstanceUuid =" +
-                        " (select v.vmInstanceUuid from VolumeVO v where v.uuid = :uuid)", Long.class)
-                        .param("uuid", msg.getRootVolumeUuid())
-                        .find();
-                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, snapCount, pairs);
-            }
-
-            private void check(APIRecoverDataVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-                long cnt = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, msg.getVolumeUuid()).count();
-                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, cnt, pairs);
-            }
-
-            private void checkVolumeSnapshotNumQuota(String currentAccountUuid,
-                                                     String resourceTargetOwnerAccountUuid,
-                                                     long volumeSnapshotNumAsked,
-                                                     Map<String, Quota.QuotaPair> pairs) {
-                long volumeSnapshotNumQuota = pairs.get(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM).getValue();
-                long volumeSnapshotNumUsed = getUsedVolumeSnapshotNum(resourceTargetOwnerAccountUuid);
-                {
-                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM;
-                    quotaCompareInfo.quotaValue = volumeSnapshotNumQuota;
-                    quotaCompareInfo.currentUsed = volumeSnapshotNumUsed;
-                    quotaCompareInfo.request = volumeSnapshotNumAsked;
-                    new QuotaUtil().CheckQuota(quotaCompareInfo);
-                }
-            }
-        };
-
-
         Quota quota = new Quota();
-        Quota.QuotaPair p;
-
-        p = new Quota.QuotaPair();
-        p.setName(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM);
-        p.setValue(VolumeSnapshotQuotaGlobalConfig.VOLUME_SNAPSHOT_NUM.defaultValue(Long.class));
-        quota.addPair(p);
-
-        quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);
-        quota.addMessageNeedValidation(APICreateVolumeSnapshotGroupMsg.class);
-        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
-        quota.addMessageNeedValidation(APIRecoverDataVolumeMsg.class);
-        quota.addMessageNeedValidation(VolumeCreateSnapshotMsg.class);
-        quota.addMessageNeedValidation(CreateVolumeSnapshotMsg.class);
-        quota.addMessageNeedValidation(CreateVolumesSnapshotMsg.class);
-        quota.setOperator(checker);
+        quota.defineQuota(new VolumeSnapshotNumQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateVolumeSnapshotMsg.class)
+                .addCounterQuota(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateVolumeSnapshotGroupMsg.class)
+                .addMessageRequiredQuotaHandler(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM, (msg) -> SQL.New("select count(vol) from VolumeVO vol" +
+                                " where vol.vmInstanceUuid =" +
+                                " (select v.vmInstanceUuid from VolumeVO v where v.uuid = :uuid)", Long.class)
+                        .param("uuid", msg.getRootVolumeUuid())
+                        .find()));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIRecoverDataVolumeMsg.class)
+                .addMessageRequiredQuotaHandler(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM, (msg) -> Q.New(VolumeSnapshotVO.class)
+                        .eq(VolumeSnapshotVO_.volumeUuid, msg.getVolumeUuid())
+                        .count()));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(VolumeCreateSnapshotMsg.class)
+                .addCounterQuota(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(CreateVolumeSnapshotMsg.class)
+                .addCounterQuota(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(CreateVolumesSnapshotMsg.class)
+                .addMessageRequiredQuotaHandler(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM, (msg)
+                        -> (long) msg.getVolumeSnapshotJobs().size()));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(VolumeSnapshotVO.class)
+                        .eq(VolumeSnapshotVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM));
 
         return list(quota);
     }
@@ -1534,6 +1355,22 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public void afterOverwriteVolume(VolumeInventory volume, VolumeInventory transientVolume) {
+        removeVolumeFromOldSnapshotTreeInDb(volume.getUuid());
+    }
+
+    @Override
+    @Transactional
+    public void afterFlattenVolume(VolumeInventory volume) {
+        String currentSnapshotType = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.type)
+                .eq(VolumeSnapshotVO_.volumeUuid, volume.getUuid())
+                .limit(1).findValue();
+
+        if (currentSnapshotType == null || currentSnapshotType.equals(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString())) {
+            VolumeSnapshotReferenceUtils.handleStorageVolumeSnapshotReferenceAfterFlatten(volume);
+        } else {
+            VolumeSnapshotReferenceUtils.handleChainVolumeSnapshotReferenceAfterFlatten(volume);
+        }
+
         removeVolumeFromOldSnapshotTreeInDb(volume.getUuid());
     }
 
@@ -1558,6 +1395,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public void vmJustBeforeDeleteFromDb(VmInstanceInventory inv) {
+        VolumeSnapshotReferenceUtils.handleVolumeDeletion(inv.getRootVolume());
         deleteStaleSnapshotRecords(inv.getRootVolumeUuid(), VolumeType.Root, inv.getUuid());
     }
 
@@ -1588,6 +1426,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public void volumeJustBeforeDeleteFromDb(VolumeInventory inv) {
+        VolumeSnapshotReferenceUtils.handleVolumeDeletion(inv);
         deleteStaleSnapshotRecords(inv.getUuid(), VolumeType.valueOf(inv.getType()), inv.getVmInstanceUuid());
     }
 }

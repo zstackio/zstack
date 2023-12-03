@@ -2,7 +2,6 @@ package org.zstack.core.gc
 
 import org.zstack.core.gc.APIQueryGCJobReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryGCJob"

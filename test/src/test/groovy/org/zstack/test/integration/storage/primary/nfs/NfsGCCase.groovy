@@ -1,28 +1,18 @@
 package org.zstack.test.integration.storage.primary.nfs
 
+import org.zstack.core.db.Q
 import org.zstack.core.gc.GCStatus
 import org.zstack.header.volume.VolumeDeletionPolicyManager
-import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.GarbageCollectorInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.VolumeInventory
-import org.zstack.sdk.VolumeSnapshotInventory
-import org.zstack.storage.primary.nfs.NfsDeleteVolumeGC
-import org.zstack.storage.primary.nfs.NfsDeleteVolumeSnapshotGC
-import org.zstack.storage.primary.nfs.NfsPrimaryStorageGlobalConfig
-import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
+import org.zstack.sdk.*
+import org.zstack.storage.primary.nfs.*
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.ClusterSpec
-import org.zstack.testlib.DiskOfferingSpec
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HttpError
-import org.zstack.testlib.PrimaryStorageSpec
-import org.zstack.testlib.SubCase
+import org.zstack.testlib.*
 
 import java.util.concurrent.TimeUnit
-
 /**
  * Created by xing5 on 2017/3/5.
  */
@@ -215,12 +205,67 @@ class NfsGCCase extends SubCase {
         }
     }
 
+    void testSkipVolumeGCWhenVolumeInUse() {
+        def call
+        env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) { NfsPrimaryStorageKVMBackendCommands.DeleteResponse rsp ->
+            call = true
+            rsp.setError("volume in use")
+            rsp.inUse = true
+            return rsp
+        }
+
+        VolumeInventory vol = createDataVolume {
+            name = "test-volume-in-use"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = nfs.uuid
+        } as VolumeInventory
+
+        def volume = org.zstack.header.volume.VolumeInventory.valueOf(dbFindByUuid(vol.uuid, VolumeVO.class))
+
+        deleteDataVolume {
+            uuid = vol.uuid
+        }
+
+        expectError {
+            expungeDataVolume {
+                uuid = vol.uuid
+            }
+        }
+
+        assert call
+        assert Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.uuid).isExists()
+        assert queryGCJob {
+            conditions = ["context~=%${vol.uuid}%"]
+        }[0] == null
+
+        call = false
+        NfsDeleteVolumeGC gc = new NfsDeleteVolumeGC();
+        gc.NAME = String.format("gc-nfs-%s-volume-%s", nfs.uuid, vol.getUuid());
+        gc.primaryStorageUuid = nfs.uuid
+        gc.hypervisorType ="KVM"
+        gc.volume = volume
+        gc.submit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+
+        triggerGCJob {
+            uuid = gc.uuid
+        }
+        retryInSecs {
+            assert call
+            assert queryGCJob {
+                conditions = ["context~=%${vol.uuid}%"]
+            }[0].status == GCStatus.Done.toString()
+        }
+        env.cleanSimulatorAndMessageHandlers()
+    }
+
     @Override
     void test() {
         env.create {
             nfs = (env.specByName("nfs") as PrimaryStorageSpec).inventory
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
 
+            NfsPrimaryStorageGlobalConfig.GC_INTERVAL.updateValue(1)
+            testSkipVolumeGCWhenVolumeInUse()
             // set a very long time so the GC won't run, we use API to trigger it
             NfsPrimaryStorageGlobalConfig.GC_INTERVAL.updateValue(TimeUnit.DAYS.toSeconds(1))
             VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())

@@ -212,7 +212,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     public SimpleFlowChain ctxHandler(FlowContextHandler handler) {
-        DebugUtils.Assert(errorHandler==null, "there has been an FlowContextHandler installed");
+        DebugUtils.Assert(contextHandler==null, "there has been an FlowContextHandler installed");
         contextHandler = handler;
         return this;
     }
@@ -349,7 +349,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 this.next();
             } else {
                 if (contextHandler != null) {
-                    contextHandler.saveContext();
+                    contextHandler.saveContext(toRun);
                     if (contextHandler.cancelled()) {
                         this.fail(contextHandler.getCancelError());
                         return;
@@ -586,6 +586,9 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private boolean isSkipFlow(Flow flow) {
         boolean skip = flow.skip(data);
+        if (!skip && contextHandler != null) {
+            skip = contextHandler.skipFlow(flow);
+        }
         if (skip) {
             logger.debug(String.format("[FlowChain: %s] skip flow[%s] because it's skip() returns true", name, getFlowName(flow)));
         }

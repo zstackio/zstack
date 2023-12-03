@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "instanceOfferingUuid"
@@ -37,9 +36,8 @@ doc {
 					desc "计算规格UUID。指定云主机的CPU、内存等参数。"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "imageUuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "l3NetworkUuids"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "type"
@@ -79,7 +75,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "dataDiskSizes"
@@ -89,7 +84,6 @@ doc {
 					type "List"
 					optional true
 					since "4.4.6"
-
 				}
 				column {
 					name "dataDiskOfferingUuids"
@@ -99,7 +93,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "zoneUuid"
@@ -109,7 +102,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "clusterUuid"
@@ -119,7 +111,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "hostUuid"
@@ -129,7 +120,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "primaryStorageUuidForRootVolume"
@@ -139,7 +129,6 @@ doc {
 					type "String"
 					optional true
 					since "1.8"
-					
 				}
 				column {
 					name "description"
@@ -149,7 +138,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "defaultL3NetworkUuid"
@@ -159,7 +147,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -169,7 +156,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "tagUuids"
@@ -179,7 +165,6 @@ doc {
 					type "List"
 					optional true
 					since "3.4"
-
 				}
 				column {
 					name "systemTags"
@@ -189,7 +174,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -199,7 +183,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "strategy"
@@ -219,7 +202,6 @@ doc {
 					type "List"
 					optional true
 					since "3.0"
-					
 				}
 				column {
 					name "dataVolumeSystemTags"
@@ -229,7 +211,42 @@ doc {
 					type "List"
 					optional true
 					since "3.0"
-					
+				}
+				column {
+					name "cpuNum"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Integer"
+					optional true
+					since "3.4.0"
+				}
+				column {
+					name "memorySize"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Long"
+					optional true
+					since "3.4.0"
+				}
+				column {
+					name "rootDiskSize"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Long"
+					optional true
+					since "3.4.0"
+				}
+				column {
+					name "dataVolumeSystemTagsOnIndex"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Map"
+					optional true
+					since "4.4.24"
 				}
 			}
         }

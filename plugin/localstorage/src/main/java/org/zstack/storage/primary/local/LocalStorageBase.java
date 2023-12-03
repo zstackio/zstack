@@ -11,7 +11,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.MergeQueue;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -40,11 +39,10 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
-import org.zstack.storage.primary.PrimaryStorageBase;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
-import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionDSL;
@@ -60,7 +58,6 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -839,6 +836,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if ((msg instanceof LocalStorageRecalculateCapacityMsg)) {
             handle((LocalStorageRecalculateCapacityMsg) msg);
+        } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
+            handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -934,6 +933,24 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply>(msg) {
+            @Override
+            public void success(GetVolumeBackingChainFromPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -1216,15 +1233,36 @@ public class LocalStorageBase extends PrimaryStorageBase {
         final String hostUuid = getHostUuidByResourceUuid(msg.getTo().getUuid());
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, hostUuid, new ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply>(msg) {
+        MergeVolumeSnapshotOnPrimaryStorageReply r = new MergeVolumeSnapshotOnPrimaryStorageReply();
+        bkd.stream(msg.getFrom(), msg.getTo(), msg.isFullRebase(), hostUuid, new Completion(msg) {
             @Override
-            public void success(MergeVolumeSnapshotOnPrimaryStorageReply returnValue) {
-                bus.reply(msg, returnValue);
+            public void success() {
+                bus.reply(msg, r);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                MergeVolumeSnapshotOnPrimaryStorageReply r = new MergeVolumeSnapshotOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(FlattenVolumeOnPrimaryStorageMsg msg) {
+        final String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+
+        FlattenVolumeOnPrimaryStorageReply r = new FlattenVolumeOnPrimaryStorageReply();
+        bkd.stream(null, msg.getVolume(), true, hostUuid, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
                 r.setError(errorCode);
                 bus.reply(msg, r);
             }
@@ -2576,6 +2614,44 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
+    @Override
+    protected void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolumeUuid(), VolumeVO.class.getSimpleName());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        String huuid = getHostUuidByResourceUuid(msg.getVolumeUuid());
+        bkd.handle(msg, huuid, new ReturnValueCompletion<EstimateVolumeTemplateSizeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(EstimateVolumeTemplateSizeOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, msg.getHostUuid(), new ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(BatchSyncVolumeSizeOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+            @Override
+            public void fail(ErrorCode errorCode) {
+                BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     protected void saveVolumeProvisioningStrategy(String volumeUuid, VolumeProvisioningStrategy strategy) {
         if (!VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.hasTag(volumeUuid)) {
             SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volumeUuid);
@@ -3049,8 +3125,38 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bus.reply(msg, r);
     }
 
+    private ErrorCode checkChangeVolumeType(String volumeUuid) {
+        List<VolumeInventory> refVols = VolumeSnapshotReferenceUtils.getReferenceVolume(volumeUuid);
+        if (refVols.isEmpty()) {
+            return null;
+        }
+
+        List<String> infos = refVols.stream().map(v -> String.format("uuid:%s, name:%s", v.getUuid(), v.getName())).collect(Collectors.toList());
+        return operr("volume[uuid:%s] has reference volume[%s], can not change volume type before flatten " +
+                "them and their descendants", volumeUuid, infos.toString());
+    }
+
+    @Override
+    protected void handle(CheckChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        CheckChangeVolumeTypeOnPrimaryStorageReply reply = new CheckChangeVolumeTypeOnPrimaryStorageReply();
+        ErrorCode errorCode = checkChangeVolumeType(msg.getVolume().getUuid());
+        if (errorCode != null) {
+            reply.setError(errorCode);;
+        }
+
+        bus.reply(msg, reply);
+    }
+
     @Override
     protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        ErrorCode errorCode = checkChangeVolumeType(msg.getVolume().getUuid());
+        if (errorCode != null) {
+            ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+            reply.setError(errorCode);
+            bus.reply(msg, reply);
+            return;
+        }
+
         LocalStorageHypervisorFactory factory = getHypervisorBackendFactoryByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
         factory.getHypervisorBackend(self).handle(msg, new ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply>(msg) {
             @Override
@@ -3061,6 +3167,23 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 ChangeVolumeTypeOnPrimaryStorageReply r = new ChangeVolumeTypeOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
+    }
+    @Override
+    protected void handle(UnlinkBitsOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory factory = getHypervisorBackendFactoryByResourceUuid(msg.getResourceUuid(), msg.getResourceType());
+        factory.getHypervisorBackend(self).handle(msg, new ReturnValueCompletion<UnlinkBitsOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(UnlinkBitsOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                UnlinkBitsOnPrimaryStorageReply r = new UnlinkBitsOnPrimaryStorageReply();
                 r.setError(errorCode);
                 bus.reply(msg, r);
             }

@@ -7,6 +7,9 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
+import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.identity.IdentityErrors;
@@ -21,12 +24,11 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceMessage;
-import org.zstack.header.vm.VmNicHelper;
-import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.*;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -43,6 +45,8 @@ import static org.zstack.utils.CollectionDSL.list;
 public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
 
@@ -74,6 +78,8 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVirtualRouterOfferingMsg) msg);
         } else if (msg instanceof APIUpdateVirtualRouterMsg) {
             validate((APIUpdateVirtualRouterMsg) msg);
+        } else if (msg instanceof APIReconnectVirtualRouterMsg) {
+            validate((APIReconnectVirtualRouterMsg) msg);
         }
 
         setServiceId(msg);
@@ -107,10 +113,6 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             } else {
                 throw new ApiMessageInterceptionException(argerr("could not set the default network, because l3 uuid[:%s] is not public network", msg.getDefaultRouteL3NetworkUuid()));
             }
-        }
-
-        if (VirtualRouterGlobalProperty.ENABLE_MULTI_SNAT) {
-            throw new ApiMessageInterceptionException(operr("Could not update virtualRouter default public network, due to multi snat feature is enabled"));
         }
     }
 
@@ -190,7 +192,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
                             msg.getManagementNetworkUuid(), msg.getZoneUuid()));
         }
         /* mgt network does not support ipv6 yet, TODO, will be implemented soon */
-        if (mgtL3.getIpVersions().contains(IPv6Constants.IPv6)) {
+        if (mgtL3.getIpVersions().contains(IPv6Constants.IPv6) && !mgtL3.getIpVersions().contains(IPv6Constants.IPv4)) {
             throw new ApiMessageInterceptionException(argerr("can not create virtual router offering, because management network doesn't support ipv6 yet"));
         }
 
@@ -262,6 +264,11 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             if (NetworkUtils.isReachable(gateway, 2000)) {
                 return;
             }
+
+            ShellResult ret = ShellUtils.runAndReturn(String.format("ping -c 1 -W 2 %s", gateway));
+            if (ret.isReturnCode(0)) {
+                return;
+            }
         }
 
         throw new ApiMessageInterceptionException(argerr("the management network[uuid:%s, gateway:%s] is not reachable", managementNetworkUuid, gateway));
@@ -280,6 +287,19 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
 
         if (!found) {
             msg.addQueryCondition("type", QueryOp.EQ, VirtualRouterConstant.VIRTUAL_ROUTER_OFFERING_TYPE);
+        }
+    }
+
+    private void validate(APIReconnectVirtualRouterMsg msg) {
+        String vmInstanceUuid = msg.getVmInstanceUuid();
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            AgentVersionVO agentVersionVO = dbf.findByUuid(msg.getVmInstanceUuid(), AgentVersionVO.class);
+            if (agentVersionVO == null) {
+                agentVersionVO = new AgentVersionVO();
+                agentVersionVO.setUuid(vmInstanceUuid);
+                agentVersionVO.setAgentType("zvr-agent");
+                dbf.persist(agentVersionVO);
+            }
         }
     }
 }

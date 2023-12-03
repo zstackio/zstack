@@ -247,14 +247,11 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     }
 
     @Transactional
-    private String getBackupStorageTypeFromImageInventory(ImageInventory img) {
+    protected  String getBackupStorageTypeFromImageInventory(ImageInventory img) {
         String sql = "select bs.type from BackupStorageVO bs, ImageBackupStorageRefVO refVo where  " +
                 "bs.uuid = refVo.backupStorageUuid and refVo.imageUuid = :uuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuid", img.getUuid());
-        String type = q.getSingleResult();
-        DebugUtils.Assert(type != null, String.format("cannot find backupStorage type for image [uuid:%s]", img.getUuid()));
-        return type;
+
+        return SQL.New(sql, String.class).param("uuid", img.getUuid()).find();
     }
 
     private String getBackupStorageUuidFromImageInventory(ImageInventory img) {
@@ -443,7 +440,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     @Override
     public void afterAddImage(ImageInventory img) {
-        if (!getBackupStorageTypeFromImageInventory(img).equals(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE)) {
+        if (!SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE.equals(getBackupStorageTypeFromImageInventory(img))) {
             return;
         }
 
@@ -635,7 +632,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     @Override
     public void afterCreateTemplate(ImageInventory inv) {
-        if (!getBackupStorageTypeFromImageInventory(inv).equals(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE)) {
+        if (!SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE.equals(getBackupStorageTypeFromImageInventory(inv))) {
             return;
         }
 

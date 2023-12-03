@@ -35,6 +35,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -131,17 +132,19 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                 public void run(MessageReply reply) {
                     if (reply.isSuccess()) {
                         DownloadIsoToPrimaryStorageReply re = reply.castReply();
-                        VmInstanceSpec.CdRomSpec cdRomSpec = spec.getCdRomSpecs().stream()
+                        Optional<CdRomSpec> optional = spec.getCdRomSpecs().stream()
                                 .filter(s -> s.getImageUuid() != null && s.getImageUuid().equals(msg.getIsoSpec().getInventory().getUuid()))
-                                .findAny()
-                                .get();
-                        cdRomSpec.setInstallPath(re.getInstallPath());
-                        cdRomSpec.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                                .findAny();
+                        if (optional.isPresent()) {
+                            CdRomSpec cdRomSpec = optional.get();
+                            cdRomSpec.setInstallPath(re.getInstallPath());
+                            cdRomSpec.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
 
-                        SQL.New(VmCdRomVO.class)
-                                .eq(VmCdRomVO_.uuid, cdRomSpec.getUuid())
-                                .set(VmCdRomVO_.isoInstallPath, re.getInstallPath())
-                                .update();
+                            SQL.New(VmCdRomVO.class)
+                                    .eq(VmCdRomVO_.uuid, cdRomSpec.getUuid())
+                                    .set(VmCdRomVO_.isoInstallPath, re.getInstallPath())
+                                    .update();
+                        }
                     } else {
                         errorCodes.add(reply.getError());
                     }

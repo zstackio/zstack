@@ -18,7 +18,7 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
     private TimerTask currentTimer;
 
     public TimeBasedGarbageCollector() {
-        canceller = () -> {};
+        canceller = this::destroy;
     }
 
     protected void setupTimer() {
@@ -52,6 +52,7 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
 
     public void load(GarbageCollectorVO vo) {
         loadFromVO(vo);
+        prepare();
         setupTimer();
     }
 
@@ -59,8 +60,8 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
         NEXT_TIME_UNIT = unit;
         NEXT_TIME = next;
 
-        cleanThreadContext();
         saveToDb();
+        prepare();
         setupTimer();
 
         gcMgr.registerGC(this);
@@ -72,4 +73,7 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
         }
         submit(next, unit);
     }
+
+    protected void prepare() {}
+    protected void destroy() {}
 }

@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 )
 @SkipVmTracer(replyClass = APIMigrateVmEvent.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 1)
-public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage {
+public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage, CheckAttachedVolumesMessage {
     /**
      * @desc vm uuid
      */
@@ -71,6 +71,9 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
 
     @APIParam(required = false, validValues = {"auto-converge"})
     private String strategy;
+
+    @APIParam(required = false)
+    private Integer downTime;
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
@@ -122,12 +125,21 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
     public String getVmInstanceUuid() {
         return getVmUuid();
     }
- 
+
+    public Integer getDownTime() {
+        return downTime;
+    }
+
+    public void setDownTime(Integer downTime) {
+        this.downTime = downTime;
+    }
+
     public static APIMigrateVmMsg __example__() {
         APIMigrateVmMsg msg = new APIMigrateVmMsg();
         msg.vmInstanceUuid = uuid();
         msg.hostUuid = uuid();
         msg.setMigrateFromDestination(false);
+        msg.setDownTime(300);
         return msg;
     }
 

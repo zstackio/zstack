@@ -7,7 +7,12 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
-@RestRequest(path = "/identities/accounts/{accountUuid}/roles/{roleUuid}", method = HttpMethod.POST, responseClass = APIAttachRoleToAccountEvent.class)
+@RestRequest(
+        path = "/identities/accounts/{accountUuid}/roles/{roleUuid}",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APIAttachRoleToAccountEvent.class
+)
 public class APIAttachRoleToAccountMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)
     private String roleUuid;

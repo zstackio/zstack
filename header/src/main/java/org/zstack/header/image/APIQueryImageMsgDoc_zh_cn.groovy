@@ -2,7 +2,6 @@ package org.zstack.header.image
 
 import org.zstack.header.image.APIQueryImageReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryImage"

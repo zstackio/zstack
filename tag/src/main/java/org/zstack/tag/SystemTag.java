@@ -1,6 +1,6 @@
 package org.zstack.tag;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.hibernate.TransactionException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
@@ -30,8 +30,6 @@ import java.util.*;
 
 import static java.util.Arrays.asList;
 
-/**
- */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SystemTag {
     private static final CLogger logger = Utils.getLogger(SystemTag.class);
@@ -354,7 +352,7 @@ public class SystemTag {
                     dbf.getEntityManager().flush();
                     dbf.getEntityManager().refresh(vo);
                 } catch (PersistenceException e) {
-                    if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
+                    if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
                         // tag exists
                         if (!ignoreIfExisting) {
                             throw new CloudRuntimeException(String.format("duplicate system tag[resourceUuid: %s," +

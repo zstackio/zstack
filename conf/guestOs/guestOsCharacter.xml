@@ -26,186 +26,166 @@
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>CentOS 5</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>CentOS 6</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>CentOS 7</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>CentOS 8</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>RHEL 5</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>RHEL 6</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>RHEL 7</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>RHEL 8</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Ubuntu 16</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Ubuntu 18</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Ubuntu 20</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Debian 7</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Debian 8</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Debian 9</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Debian 10</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Fedora</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Kylin 4</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Kylin 7</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Kylin 10</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>UOS 20</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>openEuler 20.03</osRelease>
-        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Oracle Linux 7</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Linux</osRelease>
-        <hygonCpu>true</hygonCpu>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
         <osRelease>WindowsServer 2008</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
         <osRelease>WindowsServer 2012</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
         <osRelease>WindowsServer 2016</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>false</hygonCpu>
         <osRelease>WindowsServer 2019</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
         <osRelease>Windows 7</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
         <osRelease>Windows 8</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>false</hygonCpu>
         <osRelease>Windows 10</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
         <osRelease>Windows xp</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
         <osRelease>Windows</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Other</platform>
+        <osRelease>Solaris 10</osRelease>
+        <x2apic>false</x2apic>
     </osInfo>
 </character>

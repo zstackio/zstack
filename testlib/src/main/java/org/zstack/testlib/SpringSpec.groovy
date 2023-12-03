@@ -17,9 +17,11 @@ class SpringSpec {
             "NetworkManager.xml",
             "VmInstanceManager.xml",
             "AccountManager.xml",
+            "identity.xml",
             "NetworkService.xml",
             "volumeSnapshot.xml",
             "tag.xml",
+            "core.xml",
     ]
 
     Set<String> xmls = []

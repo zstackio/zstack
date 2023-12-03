@@ -2,17 +2,9 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.db.Q;
-import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.image.ExpungeImageExtensionPoint;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
-import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.backup.BackupStorageVO_;
-import org.zstack.header.storage.primary.CleanUpImageCacheOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.ImageCacheShadowVO;
 import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.storage.ceph.CephConstants;
 import org.zstack.storage.ceph.CephGlobalConfig;
 import org.zstack.storage.primary.ImageCacheCleaner;
@@ -25,7 +17,7 @@ import java.util.List;
 /**
  * Created by xing5 on 2016/7/23.
  */
-public class CephImageCacheCleaner extends ImageCacheCleaner implements ExpungeImageExtensionPoint, ManagementNodeReadyExtensionPoint {
+public class CephImageCacheCleaner extends ImageCacheCleaner implements ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephImageCacheCleaner.class);
 
     @Override
@@ -79,44 +71,5 @@ public class CephImageCacheCleaner extends ImageCacheCleaner implements ExpungeI
     @Override
     public void managementNodeReady() {
         startGC();
-    }
-
-    @Override
-    public void preExpungeImage(ImageInventory img) {
-    }
-
-    @Override
-    public void beforeExpungeImage(ImageInventory img) {
-    }
-
-    private List<String> getPsToCleanImageCache(String imgUuid) {
-        String sql = "select c.primaryStorageUuid from ImageCacheVO c, PrimaryStorageVO p, VolumeVO v where c.imageUuid = :imgUuid " +
-                "and c.primaryStorageUuid = p.uuid " +
-                "and p.type = :type " +
-                "and c.imageUuid != v.rootImageUuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("imgUuid" , imgUuid);
-        q.setParameter("type", getPrimaryStorageType());
-        return q.getResultList();
-    }
-
-    @Override
-    public void afterExpungeImage(ImageInventory img, String imageBackupStorageUuid) {
-        String bsType = Q.New(BackupStorageVO.class).select(BackupStorageVO_.type).eq(BackupStorageVO_.uuid, imageBackupStorageUuid).findValue();
-        if (!CephConstants.CEPH_BACKUP_STORAGE_TYPE.equals(bsType)) {
-            return;
-        }
-
-        List<String> psUuids = getPsToCleanImageCache(img.getUuid());
-        for (String psUuid : psUuids) {
-            CleanUpImageCacheOnPrimaryStorageMsg msg = new CleanUpImageCacheOnPrimaryStorageMsg();
-            msg.setUuid(psUuid);
-            bus.makeLocalServiceId(msg, PrimaryStorageConstant.SERVICE_ID);
-            bus.send(msg);
-        }
-    }
-
-    @Override
-    public void failedToExpungeImage(ImageInventory img, ErrorCode err) {
     }
 }

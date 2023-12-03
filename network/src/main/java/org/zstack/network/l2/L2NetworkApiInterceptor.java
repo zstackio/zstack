@@ -12,8 +12,8 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
-import org.zstack.resourceconfig.ResourceConfig;
-import org.zstack.resourceconfig.ResourceConfigFacade;
+
+import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -62,6 +62,21 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has attached to cluster[uuid:%s], can't attach again", msg.getL2NetworkUuid(), msg.getClusterUuid()));
         }
+
+        /* current ovs only support vlan, vxlan*/
+        L2NetworkVO l2 = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
+        /* find l2 network with same physical interface, but different vswitch Type */
+        List<String> otherL2s = Q.New(L2NetworkVO.class).select(L2NetworkVO_.uuid)
+                .eq(L2NetworkVO_.physicalInterface, l2.getPhysicalInterface())
+                .notEq(L2NetworkVO_.vSwitchType, l2.getvSwitchType()).listValues();
+        if (!otherL2s.isEmpty()) {
+            if (Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                    .in(L2NetworkClusterRefVO_.l2NetworkUuid, otherL2s).isExists()) {
+                throw new ApiMessageInterceptionException(argerr("could not attach l2 network, because there "+
+                                "is another network [uuid:%] on physical interface [%s] with different vswitch type",
+                        otherL2s.get(0), l2.getPhysicalInterface()));
+            }
+        }
     }
 
     private void validate(APIDetachL2NetworkFromClusterMsg msg) {
@@ -85,14 +100,9 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (!L2NetworkType.hasType(msg.getType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported l2Network type[%s]", msg.getType()));
         }
-        // once we already created a linux bridge with a physical interface,
-        // we can not use it to create a OvsDpdk bridge
-        boolean isConflict = Q.New(L2NetworkVO.class)
-                .eq(L2NetworkVO_.physicalInterface, msg.getPhysicalInterface())
-                .notEq(L2NetworkVO_.vSwitchType, msg.getvSwitchType())
-                .isExists();
-        if (isConflict) {
-            throw new ApiMessageInterceptionException(argerr("can not create %s L2Network with physicalInterface:[%s] which was already been used by another vSwitchType.", msg.getvSwitchType(), msg.getPhysicalInterface()));
+
+        if (!VSwitchType.hasType(msg.getvSwitchType())) {
+            throw new ApiMessageInterceptionException(argerr("unsupported vSwitch type[%s]", msg.getvSwitchType()));
         }
     }
 }

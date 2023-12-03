@@ -65,9 +65,17 @@
 
 	<config>
 		<name>videoType</name>
-		<description>video type for VM. "cirrus" supply basic video type, the  resolution is not high. "vga" supply more high resolution for VM. "qxl" supply high performance when use SPICE protocal.  Options:[vga, cirrus, qxl]</description>
+		<description>video type for VM. "virtio" supply basic video type. "vga" supply more high resolution for VM. "qxl" supply high performance when use SPICE protocal. "cirrus" mark as deprecated, reserved for compatibility.  Options:[vga, cirrus, qxl, virtio]</description>
 		<category>vm</category>
-		<defaultValue>cirrus</defaultValue>
+		<defaultValue>virtio</defaultValue>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
+		<name>soundType</name>
+		<description>sound type for VM. "ich6" supply basic sound typen for VM.  Options:[ich6, ich9, ac97]</description>
+		<category>vm</category>
+		<defaultValue>ich6</defaultValue>
 		<type>java.lang.String</type>
 	</config>
 
@@ -80,11 +88,27 @@
 	</config>
 
 	<config>
+		<category>vm</category>
+		<name>vm.max.vcpu</name>
+		<description>vm's maximum vcpu number</description>
+		<type>java.lang.Integer</type>
+		<defaultValue>128</defaultValue>
+	</config>
+
+	<config>
 		<name>bootMenu</name>
 		<description>whether to enable boot menu</description>
 		<category>vm</category>
 		<defaultValue>true</defaultValue>
 		<type>java.lang.Boolean</type>
+	</config>
+
+	<config>
+		<name>bootMenuSplashTimeout</name>
+		<description>splash timeout of boot menu in milliseconds</description>
+		<category>vm</category>
+		<defaultValue>3000</defaultValue>
+		<type>java.lang.Integer</type>
 	</config>
 
 	<config>

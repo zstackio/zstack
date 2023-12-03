@@ -17,6 +17,8 @@ public interface VmInstanceConstant {
 
     String VIRTUAL_NIC_TYPE = "VNIC";
 
+    String VM_SYNC_SIGNATURE_PREFIX = "Vm-";
+
     enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,
@@ -32,11 +34,16 @@ public interface VmInstanceConstant {
         L3NetworkInventory,
         UsedIPInventory,
         vmInventory,
+        vmInstanceUuid,
         VmAllocateNicFlow_ips,
         VmAllocateNicFlow_nics,
         VmAllocateNicFlow_allowDuplicatedAddress,
+        VmAllocateNicFlow_nicNetworkInfo,
         ApplianceVmSyncHaConfig_applianceVm,
         ApplianceVmSyncHaConfig_haUuid,
+        AllocatedUrlForAttachingVolume,
+
+        VmInstanceUuid,
     }
 
     enum VmOperation {
@@ -53,6 +60,7 @@ public interface VmInstanceConstant {
         ChangeNicNetwork,
         ChangeNicIp,
         DetachNic,
+        ChangeNicState,
         AttachIso,
         DetachIso,
         Expunge,

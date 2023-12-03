@@ -4,7 +4,9 @@ import org.zstack.header.message.Message;
 
 /**
  * Created by AlanJager on 2017/3/28.
+ *  * <p> Use {@link AllocatePrimaryStorageSpaceMsg} instead.
  */
+@Deprecated
 public class DecreasePrimaryStorageCapacityMsg extends Message {
     private String primaryStorageUuid;
     private long diskSize;

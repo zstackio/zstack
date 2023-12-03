@@ -50,6 +50,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APIAttachSecurityGroupToL3NetworkEvent.class
 )
 public class APIAttachSecurityGroupToL3NetworkMsg extends APIMessage {

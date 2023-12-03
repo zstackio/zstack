@@ -5,7 +5,7 @@ import org.zstack.header.storage.snapshot.group.APIUpdateVolumeSnapshotGroupEven
 doc {
     title "UpdateVolumeSnapshotGroup"
 
-	category "snapshot.volume"
+    category "snapshot.volume"
 
     desc """更新云盘快照组信息"""
 
@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional true
 					since "3.6.0"
-					
 				}
 				column {
 					name "description"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "3.6.0"
-					
 				}
 				column {
 					name "uuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional false
 					since "3.6.0"
-					
 				}
 				column {
 					name "systemTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "3.6.0"
-					
 				}
 				column {
 					name "userTags"
@@ -69,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "3.6.0"
-					
 				}
 			}
         }

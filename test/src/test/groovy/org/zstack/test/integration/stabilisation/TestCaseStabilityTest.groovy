@@ -3,7 +3,9 @@ package org.zstack.test.integration.stabilisation
 import org.junit.ClassRule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
+import org.zstack.core.StartMode
 import org.zstack.test.integration.ZStackTest
+
 import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.Test
 
@@ -38,5 +40,11 @@ class TestCaseStabilityTest extends Test {
     @Override
     void test() {
         runSubCases()
+    }
+
+
+    @Override
+    StartMode getCaseMode() {
+        return getStabilityTestStartMode()
     }
 }

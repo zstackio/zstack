@@ -97,7 +97,7 @@ public class AttachPolicyToUserAction extends AbstractAction {
         info.path = "/accounts/users/{userUuid}/policies";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

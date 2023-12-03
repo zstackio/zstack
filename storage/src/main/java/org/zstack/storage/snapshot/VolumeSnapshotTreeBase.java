@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -52,6 +52,7 @@ import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtens
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree.SnapshotLeaf;
 import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -59,8 +60,9 @@ import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
-import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
@@ -396,11 +398,35 @@ public class VolumeSnapshotTreeBase {
                 .eq(PrimaryStorageVO_.uuid, getSelfInventory().getPrimaryStorageUuid()).findValue();
 
         chain.then(new NoRollbackFlow() {
-            String __name__ = String.format("run snapshot protector");
+            String __name__ = "check-snapshot-reference";
+
+            @Override
+            public boolean skip(Map data) {
+                return msg.isDbOnly();
+            }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (CoreGlobalProperty.SIMULATORS_ON) {
+                List<String> refVolUuids = VolumeSnapshotReferenceUtils.getAllReferenceVolumeUuids(currentLeaf);
+                if (refVolUuids.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                trigger.fail(operr("snapshot or its desendant has reference volume[uuids:%s]", refVolUuids));
+            }
+        });
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "run snapshot protector";
+
+            @Override
+            public boolean skip(Map data) {
+                return msg.isDbOnly();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (Platform.isSimulatorOn()) {
                     trigger.next();
                     return;
                 }
@@ -601,6 +627,11 @@ public class VolumeSnapshotTreeBase {
             String __name__ = "delete-volume-snapshots-from-primary-storage";
 
             @Override
+            public boolean skip(Map data) {
+                return msg.isDbOnly();
+            }
+
+            @Override
             public void run(final FlowTrigger trigger, Map data) {
                 final List<VolumeSnapshotPrimaryStorageDeletionMsg> pmsgs = CollectionUtils.transformToList(currentLeaf.getDescendants(), new Function<VolumeSnapshotPrimaryStorageDeletionMsg, VolumeSnapshotInventory>() {
                     @Override
@@ -689,6 +720,18 @@ public class VolumeSnapshotTreeBase {
                         }
                     });
                 } else {
+                    if (msg.isVolumeDeletion()) {
+                        List<String> aliveAncestors = currentLeaf.getAncestors().stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList());
+                        if (!aliveAncestors.isEmpty()) {
+                            SQL.New(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.uuid, currentRoot.getTreeUuid())
+                                    .set(VolumeSnapshotTreeVO_.volumeUuid, currentRoot.getVolumeUuid())
+                                    .update();
+                            SQL.New(VolumeSnapshotVO.class).in(VolumeSnapshotVO_.uuid, aliveAncestors)
+                                    .set(VolumeSnapshotVO_.volumeUuid, currentRoot.getVolumeUuid())
+                                    .update();
+                        }
+                    }
+
                     bus.reply(msg, reply);
                     completion.done();
                 }
@@ -751,6 +794,8 @@ public class VolumeSnapshotTreeBase {
                 flow(new Flow() {
                     String __name__ = "create-data-volume-on-primary-storage";
 
+                    boolean incremental;
+
                     public void run(final FlowTrigger trigger, Map data) {
                         CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg cmsg = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg();
                         cmsg.setSnapshot(currentLeaf.getInventory());
@@ -761,15 +806,25 @@ public class VolumeSnapshotTreeBase {
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
-                                    CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply cr = reply.castReply();
-                                    installPath = cr.getInstallPath();
-                                    actualSize = cr.getActualSize();
-                                    size = cr.getSize();
-                                    trigger.next();
-                                } else {
+                                if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
+                                    return;
                                 }
+
+                                CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply cr = reply.castReply();
+                                installPath = cr.getInstallPath();
+                                actualSize = cr.getActualSize();
+                                size = cr.getSize();
+                                if (cr.isIncremental()) {
+                                    incremental = true;
+                                    msg.getVolume().setInstallPath(installPath);
+                                    VolumeSnapshotReferenceUtils.buildSnapshotReferenceForNewVolume(msg.getVolume(), currentRoot, null);
+                                }
+
+                                //update volume install path for ps allocate
+                                //TODO: remove this
+                                SQL.New(VolumeVO.class).set(VolumeVO_.installPath, installPath).eq(VolumeVO_.uuid, msg.getVolume().getUuid()).update();
+                                trigger.next();
                             }
                         });
                     }
@@ -787,10 +842,10 @@ public class VolumeSnapshotTreeBase {
                             bus.send(dmsg);
                         }
 
-                        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE::isMatch)) {
-                            String toDeleteTag = VolumeSnapshotTagHelper.getBackingVolumeTag(msg.getVolume().getUuid());
-                            tagMgr.deleteSystemTag(toDeleteTag, msg.getSnapshotUuid(), VolumeSnapshotVO.class.getSimpleName(), null);
+                        if (incremental) {
+                            VolumeSnapshotReferenceUtils.rollbackSnapshotReferenceForNewVolume(msg.getVolume().getUuid());
                         }
+
                         trigger.rollback();
                     }
                 });
@@ -1094,17 +1149,42 @@ public class VolumeSnapshotTreeBase {
         CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg cmsg = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg();
         cmsg.setImageInventory(image);
         cmsg.setVolumeSnapshot(VolumeSnapshotInventory.valueOf(currentRoot));
+        cmsg.setSystemTags(msg.getSystemTags());
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, cmsg.getPrimaryStorageUuid());
-        bus.send(cmsg, new CloudBusCallBack(completion) {
+        bus.send(cmsg, new CloudBusCallBack(msg, completion) {
             @Override
             public void run(MessageReply r) {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
-                } else {
-                    CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply cr = r.castReply();
-                    reply.setLocationHostUuid(cr.getLocateHostUuid());
-                    reply.setActualSize(cr.getActualSize());
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
                 }
+
+                CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply cr = r.castReply();
+                reply.setLocationHostUuid(cr.getLocateHostUuid());
+                reply.setActualSize(cr.getActualSize());
+
+                if (cr.isIncremental()) {
+                    VolumeSnapshotReferenceVO ref = new VolumeSnapshotReferenceVO();
+                    ref.setReferenceUuid(msg.getImageUuid());
+                    ref.setReferenceType(ImageCacheVO.class.getSimpleName());
+                    ref.setReferenceInstallUrl(cr.getInventory().getInstallUrl());
+                    ref.setVolumeSnapshotInstallUrl(currentRoot.getPrimaryStorageInstallPath());
+                    ref.setDirectSnapshotInstallUrl(currentRoot.getPrimaryStorageInstallPath());
+                    ref.setDirectSnapshotUuid(currentRoot.getUuid());
+                    ref.setVolumeSnapshotUuid(currentRoot.getUuid());
+                    ref.setVolumeUuid(currentRoot.getVolumeUuid());
+                    dbf.persist(ref);
+
+                    logger.debug(String.format("refer image cache[uuid:%s] from volume snapshot[uuid:%s, volumeUuid:%s]" +
+                            " because of incremental image cache creation", msg.getImageUuid(), currentRoot.getUuid(), currentRoot.getVolumeUuid()));
+
+                    if (PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE) {
+                        reply.setImageUrl(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA + currentRoot.getUuid());
+                    }
+                }
+
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -1238,6 +1318,13 @@ public class VolumeSnapshotTreeBase {
                 }
 
                 GetVolumeSnapshotSizeOnPrimaryStorageReply reply = (GetVolumeSnapshotSizeOnPrimaryStorageReply) rly;
+
+                if (reply.getActualSize() != null && reply.getActualSize() > 0) {
+                    SQL.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, msg.getUuid())
+                            .set(VolumeSnapshotVO_.size, reply.getActualSize())
+                            .update();
+                }
+
                 event.setActualSize(reply.getActualSize());
                 event.setSize(reply.getSize());
                 bus.publish(event);
@@ -1276,6 +1363,8 @@ public class VolumeSnapshotTreeBase {
                     logger.debug(String.format("volume snapshot tree[uuid:%s] has no leaf, delete it", currentRoot.getTreeUuid()));
                     sql(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.uuid, currentRoot.getTreeUuid()).hardDelete();
                 }
+
+                VolumeSnapshotReferenceUtils.handleSnapshotDeletion(currentRoot);
 
                 ret.value = true;
             }

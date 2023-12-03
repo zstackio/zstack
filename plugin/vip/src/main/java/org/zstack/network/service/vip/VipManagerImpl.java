@@ -1,7 +1,6 @@
 package org.zstack.network.service.vip;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -17,9 +16,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -28,19 +24,15 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.APIChangeResourceOwnerMsg;
 import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.QuotaOperator;
-import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -49,9 +41,10 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.TypedQuery;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.list;
@@ -247,18 +240,11 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         }
 
                         String strategyType = msg.getAllocatorStrategy();
-                        if (strategyType == null) {
-                            if (msg.getIpVersion() == IPv6Constants.IPv4) {
-                                strategyType = L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY;
-                            } else {
-                                strategyType = L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY;
-                            }
-                        }
                         AllocateIpMsg amsg = new AllocateIpMsg();
                         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
                         amsg.setAllocateStrategy(strategyType);
+                        amsg.setIpVersion(msg.getIpVersion());
                         amsg.setRequiredIp(msg.getRequiredIp());
-                        amsg.setUseAddressPoolIfNotRequiredIpRange(true);
                         if (msg.getIpRangeUuid() != null) {
                             amsg.setIpRangeUuid(msg.getIpRangeUuid());
                         }
@@ -417,76 +403,15 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreateVipMsg) {
-                        check((APICreateVipMsg) msg, pairs);
-                    }
-                }
-
-                if (msg instanceof APIChangeResourceOwnerMsg) {
-                    check((APIChangeResourceOwnerMsg) msg, pairs);
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setUsed(getUsedVip(accountUuid));
-                usage.setName(VipQuotaConstant.VIP_NUM);
-                return list(usage);
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedVip(String accountUuid) {
-                String sql = "select count(vip) from VipVO vip, AccountResourceRefVO ref where ref.resourceUuid = vip.uuid" +
-                        " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", VipVO.class.getSimpleName());
-                Long vn = q.getSingleResult();
-                vn = vn == null ? 0 : vn;
-                return vn;
-            }
-
-            private void check(APIChangeResourceOwnerMsg msg, Map<String, QuotaPair> pairs) {
-                long vipNum = pairs.get(VipQuotaConstant.VIP_NUM).getValue();
-                long vn = getUsedVip(msg.getAccountUuid());
-
-                if (vn + 1 > vipNum) {
-                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                            msg.getAccountUuid(), VipQuotaConstant.VIP_NUM, vipNum));
-                }
-            }
-
-            private void check(APICreateVipMsg msg, Map<String, QuotaPair> pairs) {
-                long vipNum = pairs.get(VipQuotaConstant.VIP_NUM).getValue();
-                long vn = getUsedVip(msg.getSession().getAccountUuid());
-
-                if (vn + 1 > vipNum) {
-                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    msg.getSession().getAccountUuid(), VipQuotaConstant.VIP_NUM, vipNum));
-                }
-            }
-        };
-
         Quota quota = new Quota();
-        quota.addMessageNeedValidation(APICreateVipMsg.class);
-        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
-        quota.setOperator(checker);
-
-        QuotaPair p = new QuotaPair();
-        p.setName(VipQuotaConstant.VIP_NUM);
-        p.setValue(VipQuotaGlobalConfig.VIP_NUM.defaultValue(Long.class));
-        quota.addPair(p);
-
+        quota.defineQuota(new VipNumQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateVipMsg.class)
+                .addCounterQuota(VipQuotaConstant.VIP_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(VipVO.class)
+                        .eq(VipVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(VipQuotaConstant.VIP_NUM));
         return list(quota);
     }
 

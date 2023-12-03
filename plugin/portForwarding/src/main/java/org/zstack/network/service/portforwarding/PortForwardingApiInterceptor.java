@@ -19,6 +19,7 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.*;
 import org.zstack.utils.VipUseForList;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -87,7 +88,9 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(final APIAttachPortForwardingRuleMsg msg) {
         SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
-        q.select(PortForwardingRuleVO_.vmNicUuid, PortForwardingRuleVO_.state, PortForwardingRuleVO_.allowedCidr);
+        q.select(PortForwardingRuleVO_.vmNicUuid, PortForwardingRuleVO_.state, PortForwardingRuleVO_.allowedCidr,
+                PortForwardingRuleVO_.privatePortStart, PortForwardingRuleVO_.privatePortEnd,
+                PortForwardingRuleVO_.protocolType);
         q.add(PortForwardingRuleVO_.uuid, Op.EQ, msg.getRuleUuid());
         Tuple t = q.findTuple();
 
@@ -122,6 +125,8 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         }
 
         checkIfAnotherVip(vip.getUuid(), msg.getVmNicUuid());
+        checkForConflictsWithOtherRules(msg.getVmNicUuid(), t.get(3, Integer.class), t.get(4, Integer.class),
+                t.get(2, String.class), t.get(5, PortForwardingProtocolType.class));
 
         if(t.get(2, String.class) != null) {
             checkNicRule(msg.getVmNicUuid());
@@ -148,11 +153,19 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (msg.getVipPortEnd() == null) {
             msg.setVipPortEnd(msg.getVipPortStart());
         }
-        if (msg.getPrivatePortStart() == null) {
+        if (msg.getPrivatePortStart() == null && msg.getPrivatePortEnd() == null) {
             msg.setPrivatePortStart(msg.getVipPortStart());
-        }
-        if (msg.getPrivatePortEnd() == null) {
             msg.setPrivatePortEnd(msg.getVipPortEnd());
+        }
+        if (msg.getPrivatePortStart() == null && msg.getPrivatePortEnd() != null) {
+            msg.setPrivatePortStart(msg.getPrivatePortEnd());
+        }
+        if (msg.getPrivatePortEnd() == null && msg.getPrivatePortStart() != null) {
+            msg.setPrivatePortEnd(msg.getPrivatePortStart());
+        }
+        if (msg.getVipPortEnd()-msg.getVipPortStart() != msg.getPrivatePortEnd()-msg.getPrivatePortStart()) {
+            throw new ApiMessageInterceptionException(argerr("could not create port forwarding rule, because vip port range[vipStartPort:%s, vipEndPort:%s] is incompatible with private port range[privateStartPort:%s, privateEndPort:%s]",
+                    msg.getVipPortStart(), msg.getVipPortEnd(), msg.getPrivatePortStart(), msg.getPrivatePortEnd()));
         }
 
         int vipStart = Math.min(msg.getVipPortStart(), msg.getVipPortEnd());
@@ -176,6 +189,8 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (msg.getAllowedCidr() != null) {
             if (!NetworkUtils.isCidr(msg.getAllowedCidr())) {
                 throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]", msg.getAllowedCidr()));
+            } else if (!NetworkUtils.isCidr(msg.getAllowedCidr(), IPv6Constants.IPv4)) {
+                throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s], only ipv4 is supported", msg.getAllowedCidr()));
             }
         }
 
@@ -222,12 +237,13 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             }
 
             checkIfAnotherVip(msg.getVipUuid(), msg.getVmNicUuid());
+            checkForConflictsWithOtherRules(msg.getVmNicUuid(), msg.getPrivatePortStart(), msg.getPrivatePortEnd(),
+                    msg.getAllowedCidr(), PortForwardingProtocolType.valueOf(msg.getProtocolType()));
         }
 
         if(msg.getAllowedCidr() != null){
             checkNicRule(msg.getVmNicUuid());
         }
-
     }
 
     @Transactional(readOnly = true)
@@ -267,6 +283,45 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                     "vmNic uuid[%s] is not allowed add portForwarding with allowedCidr rule, because vmNic exist eip",
                     vmNicUuid));
         }
+    }
+
+    private void checkForConflictsWithOtherRules(String vmNicUuid, Integer privatePortStart, Integer privatePortEnd,
+                                                 String allowedCidr, PortForwardingProtocolType protocolType) {
+        Q q;
+        if(privatePortStart.equals(privatePortEnd)) {
+            q = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vmNicUuid, vmNicUuid)
+                    .eq(PortForwardingRuleVO_.protocolType, protocolType)
+                    .lte(PortForwardingRuleVO_.privatePortStart, privatePortStart)
+                    .gte(PortForwardingRuleVO_.privatePortEnd, privatePortEnd);
+        }
+
+        else {
+            q = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vmNicUuid, vmNicUuid)
+                    .eq(PortForwardingRuleVO_.protocolType, protocolType)
+                    .lte(PortForwardingRuleVO_.privatePortEnd, privatePortEnd)
+                    .gte(PortForwardingRuleVO_.privatePortStart, privatePortStart);
+        }
+        if (allowedCidr != null){
+            if (q.isExists()) {
+                throw new ApiMessageInterceptionException(operr(
+                        "could not attach port forwarding rule with allowedCidr, because vmNic[uuid:%s] " +
+                                "already has rules that overlap the target private port ranges[%s, %s] " +
+                                "and have the same protocol type[%s]",
+                        vmNicUuid, privatePortStart, privatePortEnd, protocolType));
+            }
+        }
+        else{
+            q = q.notNull(PortForwardingRuleVO_.allowedCidr);
+            if (q.isExists()) {
+                throw new ApiMessageInterceptionException(operr(
+                        "could not attach port forwarding rule, because vmNic[uuid:%s] already has a rule " +
+                                "that overlaps the target private port ranges[%s, %s], " +
+                                "has the same protocol type[%s] and has AllowedCidr",
+                        vmNicUuid, privatePortStart, privatePortEnd, protocolType));
+            }
+        }
+
+
     }
 
     private void validate(APIDeletePortForwardingRuleMsg msg) {

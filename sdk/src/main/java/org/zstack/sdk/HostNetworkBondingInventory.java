@@ -28,6 +28,22 @@ public class HostNetworkBondingInventory  {
         return this.bondingName;
     }
 
+    public java.lang.String bondingType;
+    public void setBondingType(java.lang.String bondingType) {
+        this.bondingType = bondingType;
+    }
+    public java.lang.String getBondingType() {
+        return this.bondingType;
+    }
+
+    public java.lang.Long speed;
+    public void setSpeed(java.lang.Long speed) {
+        this.speed = speed;
+    }
+    public java.lang.Long getSpeed() {
+        return this.speed;
+    }
+
     public java.lang.String mode;
     public void setMode(java.lang.String mode) {
         this.mode = mode;
@@ -68,6 +84,22 @@ public class HostNetworkBondingInventory  {
         return this.ipAddresses;
     }
 
+    public java.lang.String gateway;
+    public void setGateway(java.lang.String gateway) {
+        this.gateway = gateway;
+    }
+    public java.lang.String getGateway() {
+        return this.gateway;
+    }
+
+    public java.lang.String callBackIp;
+    public void setCallBackIp(java.lang.String callBackIp) {
+        this.callBackIp = callBackIp;
+    }
+    public java.lang.String getCallBackIp() {
+        return this.callBackIp;
+    }
+
     public java.lang.Long miimon;
     public void setMiimon(java.lang.Long miimon) {
         this.miimon = miimon;
@@ -76,12 +108,28 @@ public class HostNetworkBondingInventory  {
         return this.miimon;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public java.lang.Boolean allSlavesActive;
     public void setAllSlavesActive(java.lang.Boolean allSlavesActive) {
         this.allSlavesActive = allSlavesActive;
     }
     public java.lang.Boolean getAllSlavesActive() {
         return this.allSlavesActive;
+    }
+
+    public java.lang.String description;
+    public void setDescription(java.lang.String description) {
+        this.description = description;
+    }
+    public java.lang.String getDescription() {
+        return this.description;
     }
 
     public java.sql.Timestamp createDate;

@@ -64,6 +64,17 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
         return str.startsWith("/") ? str : "/" + str
     }
 
+
+    static List<VFSFile> getSnapshotPaths(VFS VFS, String volumePath) {
+        List<VFSFile> ret = new ArrayList<>()
+        VFS.walkFileSystem({ vfile ->
+            if (vfile.pathString().contains(volumePath) && vfile.pathString() != volumePath) {
+                ret.add(vfile)
+            }
+        })
+        return ret
+    }
+
     class CephPrimaryStorageStruct {
         String rootVolumePoolName
         String dataVolumePoolName
@@ -125,7 +136,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 totalCapacity: rootSize,
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
-                                diskUtilization: 0.33
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.1'
                         ),
                         new CephPoolCapacity(
                                 name: cspec.dataVolumePoolName,
@@ -134,7 +146,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 totalCapacity: dataSize,
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
-                                diskUtilization: 0.33
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.2'
                         ),
                         new CephPoolCapacity(
                                 name: cspec.imageCachePoolName,
@@ -143,7 +156,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 totalCapacity: cacheSize,
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
-                                diskUtilization: 0.33
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.3'
                         ),
                 ]
                 rsp.poolCapacities = poolCapacities
@@ -361,9 +375,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.CLONE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CloneCmd.class)
                 def rsp = new CephPrimaryStorageBase.CloneRsp()
                 rsp.size = 0
                 rsp.actualSize = 0
+                rsp.installPath = cmd.dstPath
                 return rsp
             }
 
@@ -412,6 +428,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(CephPrimaryStorageBase.BATCH_GET_VOLUME_SIZE_PATH) {
+                return new CephPrimaryStorageBase.GetBatchVolumeSizeRsp()
+            }
+
             VFS.vfsHook(CephPrimaryStorageBase.CP_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CpCmd.class)
                 VFS vfs = vfs(cmd, spec)
@@ -427,7 +447,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 vfs.Assert(vfs.isFile(cephPathToVFSPath(cmd.installPath)), "cannot find the volume[${cmd.installPath}]")
                 CephRaw f = vfs.getFile(cephPathToVFSPath(cmd.installPath))
                 rsp.size = f.getVirtualSize()
-                rsp.actualSize = f.getActualSize()
+                if (rsp.type == CephConstants.CEPH_MANUFACTURER_OPENSOURCE) {
+                    rsp.actualSize = null
+                } else {
+                    rsp.actualSize = f.getActualSize()
+                }
                 return rsp
             }
 
@@ -463,13 +487,49 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new CephPrimaryStorageBase.AgentResponse()
             }
 
-            simulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> entity ->
+            simulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> entity, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(entity.body, CephPrimaryStorageBase.AddPoolCmd.class)
 
+                CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
                 CephPrimaryStorageBase.AddPoolRsp rsp = new CephPrimaryStorageBase.AddPoolRsp()
+                rsp.totalCapacity = cspec.totalCapacity
+                rsp.availableCapacity = cspec.availableCapacity
+                long rootSize = cspec.availableCapacity / 3
+                long dataSize = cspec.availableCapacity / 3
+                long cacheSize = cspec.totalCapacity - rootSize - dataSize
                 rsp.setAvailableCapacity(SizeUnit.GIGABYTE.toByte(100))
                 rsp.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100))
                 List<CephPoolCapacity> poolCapacities = [
+                        new CephPoolCapacity(
+                                name: cspec.rootVolumePoolName,
+                                availableCapacity: rootSize,
+                                usedCapacity: cspec.totalCapacity - cspec.availableCapacity,
+                                totalCapacity: rootSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.1'
+                        ),
+                        new CephPoolCapacity(
+                                name: cspec.dataVolumePoolName,
+                                availableCapacity: dataSize,
+                                usedCapacity: 0,
+                                totalCapacity: dataSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.2'
+                        ),
+                        new CephPoolCapacity(
+                                name: cspec.imageCachePoolName,
+                                availableCapacity: cacheSize,
+                                usedCapacity: 0,
+                                totalCapacity: cacheSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.3'
+                        ),
                         new CephPoolCapacity(
                                 name: cmd.poolName,
                                 availableCapacity: SizeUnit.GIGABYTE.toByte(100),
@@ -477,7 +537,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 totalCapacity: SizeUnit.GIGABYTE.toByte(100),
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
-                                diskUtilization: 0.33
+                                diskUtilization: 0.33,
+                                relatedOsds: "osd.4"
                         )
                 ]
                 rsp.setPoolCapacities(poolCapacities)
@@ -627,12 +688,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 VFS vfs = vfs(cmd, spec)
                 String vfsPath = cephPathToVFSPath(cmd.volumePath)
                 vfs.Assert(vfs.exists(vfsPath), "cannot find the volume[${cmd.volumePath}]")
-                List<VFSFile> files = []
-                vfs.walkFileSystem({ vfile ->
-                    if (vfile.pathString().contains(vfsPath) && vfile.pathString() != vfsPath) {
-                        files.add(vfile)
-                    }
-                })
+                List<VFSFile> files = getSnapshotPaths(vfs, vfsPath)
 
                 rsp.setSnapInfos(new ArrayList<CephPrimaryStorageBase.SnapInfo>())
                 files.each { file ->
@@ -648,6 +704,53 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                     rsp.getSnapInfos().add(snapInfo)
                 }
 
+                return rsp
+            }
+
+            simulator(CephPrimaryStorageBase.GET_BACKING_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new CephPrimaryStorageBase.GetBackingChainRsp()
+            }
+
+            VFS.vfsHook(CephPrimaryStorageBase.GET_BACKING_CHAIN_PATH, espec) { CephPrimaryStorageBase.GetBackingChainRsp rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.GetBackingChainCmd.class)
+                VFS vfs = vfs(cmd, spec)
+                String vfsPath = cephPathToVFSPath(cmd.volumePath)
+                vfs.Assert(vfs.exists(vfsPath), "cannot find the volume[${cmd.volumePath}]")
+
+                CephRaw file = vfs.getFile(vfsPath)
+
+                while (file.parent != null) {
+                    rsp.backingChain.add("ceph:/" + file.pathString())
+                    String parentPath = file.parent.pathString().split("@")[0]
+                    vfs.Assert(vfs.exists(parentPath), "cannot find the parent[${file}]")
+                    file = vfs.getFile(parentPath)
+                }
+
+                return rsp
+            }
+
+            simulator(CephPrimaryStorageBase.DELETE_VOLUME_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new CephPrimaryStorageBase.GetBackingChainRsp()
+            }
+
+            VFS.vfsHook(CephPrimaryStorageBase.DELETE_VOLUME_CHAIN_PATH, espec) { CephPrimaryStorageBase.AgentResponse rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.DeleteVolumeChainCmd.class)
+                VFS vfs = vfs(cmd, spec)
+
+                for (String path : cmd.installPaths) {
+                    String vfsPath = cephPathToVFSPath(path)
+                    vfs.Assert(vfs.exists(vfsPath), "cannot find the volume[${vfsPath}]")
+
+                    if (vfsPath.contains("@")) {
+                        vfs.delete(vfsPath)
+                        String volPath = vfsPath.split("@")[0]
+                        assert getSnapshotPaths(vfs, volPath).isEmpty() : "the volume[%s] has snapshots, cannot delete it".format(volPath)
+                        vfs.delete(volPath)
+                    } else {
+                        assert getSnapshotPaths(vfs, vfsPath).isEmpty() : "the volume[%s] has snapshots, cannot delete it".format(vfsPath)
+                        vfs.delete(vfsPath)
+                    }
+                }
                 return rsp
             }
         }

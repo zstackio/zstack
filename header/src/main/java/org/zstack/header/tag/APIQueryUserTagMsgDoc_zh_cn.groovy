@@ -2,7 +2,6 @@ package org.zstack.header.tag
 
 import org.zstack.header.tag.APIQueryUserTagReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryUserTag"

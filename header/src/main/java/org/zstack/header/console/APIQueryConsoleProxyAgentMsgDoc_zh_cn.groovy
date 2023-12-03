@@ -2,7 +2,6 @@ package org.zstack.header.console
 
 import org.zstack.header.console.APIQueryConsoleProxyAgentReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryConsoleProxyAgent"

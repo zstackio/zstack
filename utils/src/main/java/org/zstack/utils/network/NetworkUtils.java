@@ -27,6 +27,7 @@ public class NetworkUtils {
 
     private static final Map<String, Integer> validNetmasks = new HashMap<String, Integer>();
 
+    private static final Random random = new Random();
 
     static {
         validNetmasks.put("255.255.255.255", 32);
@@ -65,7 +66,7 @@ public class NetworkUtils {
     }
 
     public static boolean isHostname(String hostname) {
-        String PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
+        String PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
         Pattern pattern = Pattern.compile(PATTERN);
         Matcher matcher = pattern.matcher(hostname);
         return matcher.matches();
@@ -188,6 +189,14 @@ public class NetworkUtils {
         }
     }
 
+    public static boolean isValidIpRange(String startIp, String endIp) {
+        validateIp(startIp);
+        validateIp(endIp);
+        long s = ipv4StringToLong(startIp);
+        long e = ipv4StringToLong(endIp);
+        return e >= s;
+    }
+
     public static boolean isIpv4RangeOverlap(String startIp1, String endIp1, String startIp2, String endIp2) {
         validateIpRange(startIp1, endIp1);
         validateIpRange(startIp2, endIp2);
@@ -252,6 +261,8 @@ public class NetworkUtils {
 
         if (!isConsecutiveRange(part1)) {
             return findFirstHoleByDichotomy(part1);
+        } else if (part2[0] - part1[part1.length-1] > 1) {
+            return part1[part1.length-1] + 1;
         } else {
             return findFirstHoleByDichotomy(part2);
         }
@@ -317,7 +328,6 @@ public class NetworkUtils {
             full.set((int) (alloc-startIp));
         }
 
-        Random random = new Random();
         int next = random.nextInt(total);
         int a = full.nextClearBit(next);
 
@@ -361,7 +371,7 @@ public class NetworkUtils {
     }
 
     public static String generateMacWithDeviceId(short deviceId) {
-        int seed = new Random().nextInt();
+        int seed = random.nextInt();
         String seedStr = Integer.toHexString(seed);
         if (seedStr.length() < 8) {
             String compensate = StringUtils.repeat("0", 8 - seedStr.length());
@@ -637,7 +647,7 @@ public class NetworkUtils {
 
                 maxsize--;
             }
-            double x = Math.log(end - start + 1) / Math.log(2);
+            double x = Math.log((double) end - start + 1) / Math.log(2);
             byte maxdiff = (byte) (32 - Math.floor(x));
             if (maxsize < maxdiff) {
                 maxsize = maxdiff;
@@ -768,6 +778,22 @@ public class NetworkUtils {
         }
     }
 
+    public static String convertNetmask(Integer prefix) {
+        int value = 0xffffffff << (32 - prefix);
+        byte[] bytes = new byte[]{
+                (byte) (value >>> 24),
+                (byte) (value >> 16 & 0xff),
+                (byte) (value >> 8 & 0xff),
+                (byte) (value & 0xff)
+        };
+        try {
+            return InetAddress.getByAddress(bytes).getHostAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static boolean isValidMacAddress(String macAddress) {
         final String MAC_REGEX = "^([A-Fa-f0-9]{2}[-,:]){5}[A-Fa-f0-9]{2}$";
         return macAddress != null && !macAddress.isEmpty() && (macAddress.matches(MAC_REGEX));
@@ -864,7 +890,7 @@ public class NetworkUtils {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(address, port), timeout);
             return true;
-        } catch (IOException ignored) {
+        } catch (IOException exception) {
             return false;
         }
     }
@@ -886,5 +912,26 @@ public class NetworkUtils {
 
         return startIpv6Addresses.toBigInteger().compareTo(iPv6Addresses.toBigInteger()) <= 0 && endIpv6Addresses.toBigInteger().compareTo(iPv6Addresses.toBigInteger()) >= 0;
     }
+
+    public static final String NETWORK_CFG_EMPTY = "none";
+
+    public static final String DEFAULT_IPV4_PREFIX = "32";
+    public static final String DEFAULT_IPV4_PREFIX_SPLIT = "/";
+
+    public static String ipv4PrefixToNetmask(String prefix) {
+        int prefixLength = Integer.parseInt(prefix);
+        if (prefixLength < 1 || prefixLength > 32) {
+            return String.format("255.255.255.255");
+        }
+
+        int mask = 0xFFFFFFFF << (32 - prefixLength);
+        int netmask1 = (mask >> 24) & 0xFF;
+        int netmask2 = (mask >> 16) & 0xFF;
+        int netmask3 = (mask >> 8) & 0xFF;
+        int netmask4 = mask & 0xFF;
+
+        return String.format("%d.%d.%d.%d", netmask1, netmask2, netmask3, netmask4);
+    }
+
 }
 

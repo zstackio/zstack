@@ -4,7 +4,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>4.4.0</version>
+        <version>4.6.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>build</artifactId>
@@ -21,7 +21,7 @@
                         <version>2.3</version>
                         <configuration>
                             <packagingExcludes>
-                                WEB-INF/lib/maven*.jar,
+                                %regex[WEB-INF/lib/maven(?!-artifact).*.jar],
                                 WEB-INF/lib/plexus*.jar,
                                 WEB-INF/lib/cvsclient*.jar,
                                 WEB-INF/lib/classworlds*.jar,
@@ -32,8 +32,9 @@
                                 WEB-INF/lib/c3p0-0.9.1.1.jar,
                                 WEB-INF/lib/reflections-0.9.8.jar,
                                 WEB-INF/lib/groovy-2.4.7.jar,
-                                WEB-INF/lib/okhttp-2.7.5.jar,
+                                WEB-INF/lib/okhttp-*.jar,
                                 WEB-INF/lib/sisu-guava-0.9.9.jar,
+                                WEB-INF/lib/groovy-sandbox-1.19.jar,
                             </packagingExcludes>
                             <webResources>
                                 <resource>
@@ -77,43 +78,8 @@
                                         <include>context.xml</include>
                                     </includes>
                                 </resource>
-                                <resource>
-                                    <directory>../premium/plugin-premium/externalapiadapter/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>../premium/plugin-premium/cas-plugin/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>../premium/crypto/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>../search/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-                                </resource>
-                                <!--<resource>
-                                    <directory>../premium/mevoco/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-
-                                </resource>-->
                             </webResources>
+                            <webXml>../premium/conf/cas-web.xml</webXml>
                         </configuration>
                     </plugin>
 
@@ -181,7 +147,7 @@
                     <artifactId>search</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-               
+
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>applianceVm</artifactId>
@@ -384,6 +350,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>block-primary-storage</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>sdk</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -444,7 +415,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>ceph-ha-plugin</artifactId>
+                    <artifactId>storage-ha-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -563,6 +534,16 @@
                     <artifactId>ovf</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>sso-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>cube</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
     </profiles>
@@ -585,7 +566,7 @@
                 <version>2.3</version>
                 <configuration>
                     <packagingExcludes>
-                        WEB-INF/lib/maven*.jar,
+                        %regex[WEB-INF/lib/maven(?!-artifact).*.jar],
                         WEB-INF/lib/plexus*.jar,
                         WEB-INF/lib/cvsclient*.jar,
                         WEB-INF/lib/classworlds*.jar,
@@ -596,7 +577,7 @@
                         WEB-INF/lib/c3p0-0.9.1.1.jar,
                         WEB-INF/lib/reflections-0.9.8.jar,
                         WEB-INF/lib/groovy-2.4.7.jar,
-                        WEB-INF/lib/okhttp-2.7.5.jar,
+                        WEB-INF/lib/okhttp-*.jar,
                     </packagingExcludes>
                     <webResources>
                         <resource>
@@ -786,6 +767,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>acl</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>directory</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

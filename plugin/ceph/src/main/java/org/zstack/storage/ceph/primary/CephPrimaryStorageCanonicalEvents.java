@@ -12,6 +12,14 @@ public class CephPrimaryStorageCanonicalEvents {
         public VolumeSnapshotInventory snapshot;
         public String primaryStorageUuid;
 
+        public void setSnapshot(VolumeSnapshotInventory snapshot) {
+            this.snapshot = snapshot;
+        }
+
+        public VolumeSnapshotInventory getSnapshot() {
+            return this.snapshot;
+        }
+
         public void fire() {
             EventFacade evtf = Platform.getComponentLoader().getComponent(EventFacade.class);
             evtf.fire(IMAGE_INNER_SNAPSHOT_CREATED, this);

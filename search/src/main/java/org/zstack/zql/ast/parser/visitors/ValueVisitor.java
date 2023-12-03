@@ -199,9 +199,9 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
         try {
             Field f = o.getClass().getDeclaredField(key);
             f.setAccessible(true);
-            if (f.getType().getSimpleName().equals("Integer") && value instanceof Long) {
+            if (Integer.class.isAssignableFrom(f.getType()) && value instanceof Long) {
                 f.set(o, ((Long)value).intValue());
-            } else if (f.getType().getSimpleName().equals("Long") && value instanceof Integer) {
+            } else if (Long.class.isAssignableFrom(f.getType()) && value instanceof Integer) {
                 f.set(o, ((Integer)value).longValue());
             } else {
                 f.set(o, value);

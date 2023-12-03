@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import okhttp3.Response;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.core.timeout.TimeHelper;
+import org.zstack.header.core.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -21,6 +25,8 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
@@ -32,10 +38,6 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -62,13 +64,13 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
+import org.zstack.kvm.hypervisor.KvmHypervisorInfoHelper;
+import org.zstack.kvm.hypervisor.KvmHypervisorInfoManager;
 import org.zstack.network.l3.NetworkGlobalProperty;
-import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
+import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTag;
@@ -86,6 +88,11 @@ import org.zstack.utils.ssh.SshShell;
 import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -95,6 +102,7 @@ import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
@@ -127,6 +135,12 @@ public class KVMHost extends HostBase implements Host {
     private ClusterResourceConfigInitializer crci;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private KvmHypervisorInfoManager hypervisorManager;
+    @Autowired
+    private KvmHostIpmiPowerExecutor kvmHostIpmiPowerExecutor;
+    @Autowired
+    private TimeHelper timeHelper;
 
     private KVMHostContext context;
 
@@ -147,7 +161,10 @@ public class KVMHost extends HostBase implements Host {
     private String echoPath;
     private String attachNicPath;
     private String detachNicPath;
+    private String changeNicStatePath;
     private String migrateVmPath;
+    private String getCpuXmlPath;
+    private String compareCpuFunctionPath;
     private String snapshotPath;
     private String checkSnapshotPath;
     private String mergeSnapshotPath;
@@ -164,11 +181,13 @@ public class KVMHost extends HostBase implements Host {
     private String updateHostOSPath;
     private String updateDependencyPath;
     private String shutdownHost;
+    private String rebootHost;
     private String updateVmPriorityPath;
     private String updateSpiceChannelConfigPath;
     private String cancelJob;
     private String getVmFirstBootDevicePath;
     private String getVmDeviceAddressPath;
+    private String getVirtualizerInfo;
     private String scanVmPortPath;
     private String getDevCapacityPath;
     private String configPrimaryVmPath;
@@ -176,6 +195,9 @@ public class KVMHost extends HostBase implements Host {
     private String startColoSyncPath;
     private String registerPrimaryVmHeartbeatPath;
     private String getHostNumaPath;
+    private String syncVmDeviceInfo;
+    private String attachVolumePath;
+    private String detachVolumePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
@@ -247,8 +269,20 @@ public class KVMHost extends HostBase implements Host {
         detachNicPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_CHANGE_NIC_STATE_PATH);
+        changeNicStatePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
         migrateVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_CPU_XML_PATH);
+        getCpuXmlPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_COMPARE_CPU_FUNCTION_PATH);
+        compareCpuFunctionPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH);
@@ -315,6 +349,10 @@ public class KVMHost extends HostBase implements Host {
         shutdownHost = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.HOST_REBOOT);
+        rebootHost = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH);
         updateVmPriorityPath = ub.build().toString();
 
@@ -333,6 +371,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.GET_VM_DEVICE_ADDRESS_PATH);
         getVmDeviceAddressPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.GET_VIRTUALIZER_INFO_PATH);
+        getVirtualizerInfo = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_SCAN_VM_PORT_STATUS);
@@ -362,6 +404,17 @@ public class KVMHost extends HostBase implements Host {
         ub.path(KVMConstant.KVM_HOST_NUMA_PATH);
         getHostNumaPath = ub.build().toString();
 
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH);
+        syncVmDeviceInfo = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_ATTACH_VOLUME_PATH);
+        attachVolumePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_DETACH_VOLUME_PATH);
+        detachVolumePath = ub.build().toString();
     }
 
     class Http<T> {
@@ -500,6 +553,10 @@ public class KVMHost extends HostBase implements Host {
             handle((VmUpdateNicOnHypervisorMsg) msg);
         } else if (msg instanceof MigrateVmOnHypervisorMsg) {
             handle((MigrateVmOnHypervisorMsg) msg);
+        } else if (msg instanceof GetCpuFunctionXmlOnHostMsg) {
+            handle((GetCpuFunctionXmlOnHostMsg) msg);
+        } else if (msg instanceof CompareCpuFunctionOnHostMsg) {
+            handle((CompareCpuFunctionOnHostMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
             handle((TakeSnapshotOnHypervisorMsg) msg);
         } else if (msg instanceof CheckSnapshotOnHypervisorMsg) {
@@ -512,6 +569,8 @@ public class KVMHost extends HostBase implements Host {
             handle((KVMHostSyncHttpCallMsg) msg);
         } else if (msg instanceof DetachNicFromVmOnHypervisorMsg) {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
+        } else if (msg instanceof ChangeVmNicStateOnHypervisorMsg) {
+            handle((ChangeVmNicStateOnHypervisorMsg) msg);
         } else if (msg instanceof AttachIsoOnHypervisorMsg) {
             handle((AttachIsoOnHypervisorMsg) msg);
         } else if (msg instanceof DetachIsoOnHypervisorMsg) {
@@ -538,12 +597,18 @@ public class KVMHost extends HostBase implements Host {
             handle((GetKVMHostDownloadCredentialMsg) msg);
         } else if (msg instanceof ShutdownHostMsg) {
             handle((ShutdownHostMsg) msg);
-        } else if (msg instanceof CancelHostTaskMsg) {
+        } else if (msg instanceof RebootHostMsg) {
+            handle((RebootHostMsg) msg);
+        } else if (msg instanceof PowerOnHostMsg) {
+            handle((PowerOnHostMsg) msg);
+        }else if (msg instanceof CancelHostTaskMsg) {
             handle((CancelHostTaskMsg) msg);
         } else if (msg instanceof GetVmFirstBootDeviceOnHypervisorMsg) {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
         } else if (msg instanceof GetVmDeviceAddressMsg) {
             handle((GetVmDeviceAddressMsg) msg);
+        } else if (msg instanceof GetVirtualizerInfoMsg) {
+            handle((GetVirtualizerInfoMsg) msg);
         } else if (msg instanceof CheckHostCapacityMsg) {
             handle((CheckHostCapacityMsg) msg);
         } else if (msg instanceof ConfigPrimaryVmMsg) {
@@ -560,9 +625,362 @@ public class KVMHost extends HostBase implements Host {
             handle((CheckFileOnHostMsg) msg);
         } else if (msg instanceof GetHostNumaTopologyMsg) {
             handle((GetHostNumaTopologyMsg) msg);
+        } else if (msg instanceof SyncVmDeviceInfoMsg) {
+            handle((SyncVmDeviceInfoMsg) msg);
+        } else if (msg instanceof AttachDataVolumeToHostMsg) {
+            handle((AttachDataVolumeToHostMsg) msg);
+        } else if (msg instanceof DetachDataVolumeFromHostMsg) {
+            handle((DetachDataVolumeFromHostMsg) msg);
+        } else if (msg instanceof GetHostWebSshUrlMsg) {
+            handle((GetHostWebSshUrlMsg) msg);
+        } else if (msg instanceof GetHostPowerStatusMsg) {
+            handle((GetHostPowerStatusMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetHostPowerStatusMsg msg) {
+        handleGetPowerStatusByIpmi(msg);
+    }
+
+    private void handleGetPowerStatusByIpmi(GetHostPowerStatusMsg msg) {
+        GetHostPowerStatusReply reply = new GetHostPowerStatusReply();
+        HostVO host = dbf.findByUuid(msg.getUuid(), HostVO.class);
+        HostIpmiVO ipmi = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host);
+        reply.setInventory(HostIpmiInventory.valueOf(ipmi));
+        bus.reply(msg, reply);
+    }
+
+    class WebSshResponseStruct {
+        String id;
+        String status;
+        String encoding;
+    }
+
+    private void handle(GetHostWebSshUrlMsg msg) {
+        GetHostWebSshUrlReply reply = new GetHostWebSshUrlReply();
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
+            reply.setUrl(String.format("ws://{{ip}}:%s/ws?id=%s", port, "mockId"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        KVMHostVO host = dbf.findByUuid(msg.getHostUuid(), KVMHostVO.class);
+        File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
+
+        String privKeyContent;
+        try {
+            privKeyContent = FileUtils.readFileToString(privKeyFile, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new CloudRuntimeException(
+                    String.format("read host[%s] private key failed. because %s", host.getUuid(), e.getMessage())
+            );
+        }
+
+        HTTP.Builder hb = HTTP.post();
+        hb.body("");
+        try {
+            hb.url(String.format("http://localhost:%s?username=%s&&hostname=%s&&port=%s&&privatekey=%s",
+                    KVMGlobalConfig.HOST_WEBSSH_PORT.value(),
+                    "root",
+                    host.getManagementIp(),
+                    host.getPort().toString(),
+                    URLEncoder.encode(privKeyContent, "UTF-8")));
+
+            Response r = hb.callWithException();
+            // 1. webssh maybe is not running
+            if (!r.isSuccessful()) {
+                reply.setError(inerr("webssh server is unreachable for %s", r.message()));
+                reply.setSuccess(false);
+                bus.reply(msg, reply);
+                return;
+            }
+
+            WebSshResponseStruct webSsh = JSONObjectUtil.toObject(Objects.requireNonNull(r.body()).string(), WebSshResponseStruct.class);
+            // 2. return id is null, because authentication fail or connections is full
+            if (null == webSsh.id) {
+                reply.setError(operr("create connection to host[%s] failed, because %s", host.getUuid(), webSsh.status));
+                reply.setSuccess(false);
+                bus.reply(msg, reply);
+                return;
+            }
+
+            String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
+            reply.setUrl(String.format("ws://{{ip}}:%s/ws?id=%s", port, webSsh.id));
+            bus.reply(msg, reply);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException(
+                    String.format("urlencode host[%s] private key failed. because %s", host.getUuid(), e.getMessage())
+            );
+        } catch (IOException | NullPointerException e) {
+            throw new CloudRuntimeException(
+                    String.format("get host[%s] webssh url failed. because %s", host.getUuid(), e.getMessage())
+            );
+        }
+    }
+
+    private void handleRebootHostByIpmi(RebootHostMsg msg, NoErrorCompletion completion) {
+        RebootHostReply reply = new RebootHostReply();
+        kvmHostIpmiPowerExecutor.powerReset(self, new Completion(msg, completion) {
+            @Override
+            public void success() {
+                changeConnectionState(HostStatusEvent.disconnected);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                if (msg.isReturnEarly()) {
+                    return;
+                }
+                reply.setSuccess(false);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        }, msg.isReturnEarly());
+    }
+
+    private void handle(PowerOnHostMsg msg) {
+        inQueue().name(String.format("power-on-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> handlePowerOnHost(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void handlePowerOnHost(PowerOnHostMsg msg, NoErrorCompletion completion) {
+        PowerOnHostReply reply = new PowerOnHostReply();
+        Completion c = new Completion(msg, completion) {
+            @Override
+            public void success() {
+                if (msg.isReturnEarly()) {
+                    bus.reply(msg, reply);
+                } else {
+                    submitTaskWaitHostPowerOnByIpmi();
+                }
+                completion.done();
+            }
+
+            private void submitTaskWaitHostPowerOnByIpmi() {
+                HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
+                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
+                Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
+                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+                    @Override
+                    public boolean run() {
+                        if (timeHelper.getCurrentTimeMillis() > deadline) {
+                            reply.setError(operr(String.format("Host[%s] has not been power on within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
+                            reply.setSuccess(false);
+                            bus.reply(msg, reply);
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_OFF);
+                            return true;
+                        }
+                        HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
+                        if (HostPowerStatus.POWER_ON.equals(status)) {
+                            bus.reply(msg, reply);
+                            return true;
+                        }
+                        if (HostPowerStatus.POWER_OFF.equals(status)) {
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi,
+                                    HostPowerStatus.POWER_OFF.nextStatus(HostPowerStatusEvent.on));
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public TimeUnit getTimeUnit() {
+                        return TimeUnit.SECONDS;
+                    }
+
+                    @Override
+                    public long getInterval() {
+                        return 2;
+                    }
+
+                    @Override
+                    public String getName() {
+                        return String.format("wait-host[%s]-power-on", msg.getHostUuid());
+                    }
+                });
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setSuccess(false);
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        };
+
+        kvmHostIpmiPowerExecutor.powerOn(self, c);
+    }
+
+    private void handleShutdownHostByIpmi(ShutdownHostMsg msg, NoErrorCompletion completion) {
+        ShutdownHostReply reply = new ShutdownHostReply();
+        Completion c = new Completion(msg, completion) {
+            @Override
+            public void success() {
+                changeConnectionState(HostStatusEvent.disconnected);
+                if (msg.isReturnEarly()) {
+                    bus.reply(msg, reply);
+                } else {
+                    submitTaskWaitHostShutdownByIpmi();
+                }
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                if (msg.isReturnEarly()) {
+                    return;
+                }
+                reply.setSuccess(false);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            private void submitTaskWaitHostShutdownByIpmi() {
+                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
+                Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
+                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+                    @Override
+                    public boolean run() {
+                        HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
+
+                        if (timeHelper.getCurrentTimeMillis() > deadline) {
+                            reply.setError(operr(String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
+                            reply.setSuccess(false);
+                            bus.reply(msg, reply);
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_ON);
+                            return true;
+                        }
+                        HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
+                        if (HostPowerStatus.POWER_OFF.equals(status)) {
+                            bus.reply(msg, reply);
+                            return true;
+                        }
+                        if (HostPowerStatus.POWER_ON.equals(status)) {
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi,
+                                    HostPowerStatus.POWER_ON.nextStatus(HostPowerStatusEvent.off));
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public TimeUnit getTimeUnit() {
+                        return TimeUnit.SECONDS;
+                    }
+
+                    @Override
+                    public long getInterval() {
+                        return 2;
+                    }
+
+                    @Override
+                    public String getName() {
+                        return String.format("wait-host[%s]-power-off", msg.getHostUuid());
+                    }
+                });
+            }
+        };
+        kvmHostIpmiPowerExecutor.powerOff(self, msg.isForce(), c, msg.isReturnEarly());
+    }
+
+    private void handle(RebootHostMsg msg) {
+        inQueue().name(String.format("reboot-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> handleRebootMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void handleRebootMsg(RebootHostMsg msg, NoErrorCompletion completion) {
+        switch (msg.getMethod()) {
+            case AGENT:
+                handleRebootHostByAgent(msg, completion);
+                break;
+            case IPMI:
+                handleRebootHostByIpmi(msg, completion);
+                break;
+            default:
+                HostIpmiVO ipmi = dbf.findByUuid(msg.getHostUuid(), HostIpmiVO.class);
+                if (null != ipmi && null != ipmi.getIpmiAddress() && null != ipmi.getIpmiUsername() && null != ipmi.getIpmiPassword()) {
+                    handleRebootHostByIpmi(msg, completion);
+                } else {
+                    handleRebootHostByAgent(msg, completion);
+                }
+        }
+    }
+
+    private void handleRebootHostByAgent(RebootHostMsg msg, NoErrorCompletion completion) {
+        RebootHostReply reply = new RebootHostReply();
+        KVMAgentCommands.RebootHostCmd cmd = new KVMAgentCommands.RebootHostCmd();
+        new Http<>(rebootHost, cmd, RebootHostResponse.class).call(new ReturnValueCompletion<RebootHostResponse>(msg, completion) {
+            @Override
+            public void success(RebootHostResponse returnValue) {
+                if (!returnValue.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", returnValue.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+                changeConnectionState(HostStatusEvent.disconnected);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(SyncVmDeviceInfoMsg msg) {
+        SyncVmDeviceInfoReply reply = new SyncVmDeviceInfoReply();
+
+        SyncVmDeviceInfoCmd cmd = new SyncVmDeviceInfoCmd();
+        cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
+        new Http<>(syncVmDeviceInfo, cmd, SyncVmDeviceInfoResponse.class)
+                .call(msg.getHostUuid(), new ReturnValueCompletion<SyncVmDeviceInfoResponse>(msg) {
+            @Override
+            public void success(SyncVmDeviceInfoResponse ret) {
+                if (!ret.isSuccess()) {
+                    ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, ret.getError());
+                    reply.setError(err);
+                }
+
+                extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(VmInstanceInventory.valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class)), ret, null);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+
     }
 
     private void handle(GetHostNumaTopologyMsg msg) {
@@ -590,6 +1008,107 @@ public class KVMHost extends HostBase implements Host {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(CompareCpuFunctionOnHostMsg msg) {
+        CompareCpuFunctionOnHostReply reply = new CompareCpuFunctionOnHostReply();
+
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("compare-host-%s-cpu-function-xml-on-host-%s", msg.getSrcHostUuid(), msg.getDstHostUuid()))
+                .run((com) -> compareCpuFunctionOnHost(msg, new ReturnValueCompletion<CompareCpuFunctionOnHostReply>(com) {
+                    @Override
+                    public void success(CompareCpuFunctionOnHostReply returnValue) {
+                        com.success(returnValue);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        com.fail(errorCode);
+                    }
+                }))
+                .done(((result) -> {
+                    if (!result.isSuccess()) {
+                        reply.setError(result.getErrorCode());
+                    }
+                    bus.reply(msg, reply);
+                })));
+    }
+
+    private void compareCpuFunctionOnHost(final CompareCpuFunctionOnHostMsg msg, ReturnValueCompletion<CompareCpuFunctionOnHostReply> completion) {
+        VmCompareCpuFunctionCmd cmd = new VmCompareCpuFunctionCmd();
+        cmd.setCpuXml(msg.getCpuXml());
+        restf.asyncJsonPost(compareCpuFunctionPath, cmd, new JsonAsyncRESTCallback<VmCompareCpuFunctionResponse>(completion) {
+            @Override
+            public void success(VmCompareCpuFunctionResponse ret) {
+                if (!ret.isSuccess()) {
+                    completion.fail(operr(ret.getError()));
+                    return;
+                }
+                completion.success(new CompareCpuFunctionOnHostReply());
+            }
+
+            @Override
+            public Class<VmCompareCpuFunctionResponse> getReturnClass() {
+                return VmCompareCpuFunctionResponse.class;
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void getCpuFunctionXml(final GetCpuFunctionXmlOnHostMsg msg, ReturnValueCompletion<GetCpuFunctionXmlOnHostReply> completion) {
+        GetCpuFunctionXmlOnHostReply reply = new GetCpuFunctionXmlOnHostReply();
+        restf.asyncJsonPost(getCpuXmlPath, new VmGetCpuXmlCmd(), new JsonAsyncRESTCallback<VmGetCpuXmlResponse>(completion) {
+            @Override
+            public void success(VmGetCpuXmlResponse ret) {
+                if (!ret.isSuccess()) {
+                    completion.fail(operr(ret.getError()));
+                    return;
+                }
+                reply.setCpuXml(ret.getCpuXml());
+                reply.setCpuModelName(ret.getCpuModelName());
+                completion.success(reply);
+            }
+
+            @Override
+            public Class<VmGetCpuXmlResponse> getReturnClass() {
+                return VmGetCpuXmlResponse.class;
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void handle(GetCpuFunctionXmlOnHostMsg msg) {
+        GetCpuFunctionXmlOnHostReply reply = new GetCpuFunctionXmlOnHostReply();
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("get-cpu-function-xml-on-host-%s", self.getUuid()))
+                .run((com) -> getCpuFunctionXml(msg, new ReturnValueCompletion<GetCpuFunctionXmlOnHostReply>(msg) {
+                    @Override
+                    public void success(GetCpuFunctionXmlOnHostReply returnValue) {
+                        reply.setCpuModelName(returnValue.getCpuModelName());
+                        reply.setCpuXml(returnValue.getCpuXml());
+                        com.success(returnValue);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        com.fail(errorCode);
+                    }
+                }))
+                .done(((result) -> {
+                    if (!result.isSuccess()) {
+                        reply.setError(result.getErrorCode());
+                    }
+
+                    bus.reply(msg, reply);
+                })));
     }
 
     private void handle(AllocateHostPortMsg msg) {
@@ -930,6 +1449,13 @@ public class KVMHost extends HostBase implements Host {
         new Http<>(getVmDeviceAddressPath, cmd, GetVmDeviceAddressRsp.class).call(new ReturnValueCompletion<GetVmDeviceAddressRsp>(msg, completion) {
             @Override
             public void success(GetVmDeviceAddressRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to get vm[uuid:%s] device address, because:%s", msg.getVmInstanceUuid(), rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
                 for (String resourceType : msg.getInventories().keySet()) {
                     reply.putAddresses(resourceType, rsp.getAddresses(resourceType).stream().map(it -> {
                         VmDeviceAddress address = new VmDeviceAddress();
@@ -941,6 +1467,63 @@ public class KVMHost extends HostBase implements Host {
                         return address;
                     }).collect(Collectors.toList()));
                 }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(GetVirtualizerInfoMsg msg) {
+        inQueue().name(String.format("get-virtualizer-info-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> getVirtualizerInfo(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    /**
+     * This command will send when host is connecting.
+     *
+     * DO NOT need to checkStatus()
+     */
+    private void getVirtualizerInfo(final GetVirtualizerInfoMsg msg, final NoErrorCompletion completion) {
+        GetVirtualizerInfoReply reply = new GetVirtualizerInfoReply();
+        GetVirtualizerInfoCmd cmd = new GetVirtualizerInfoCmd();
+        cmd.setVmUuids(msg.getVmInstanceUuids());
+        new Http<>(getVirtualizerInfo, cmd, GetVirtualizerInfoRsp.class).call(new ReturnValueCompletion<GetVirtualizerInfoRsp>(msg, completion) {
+            @Override
+            public void success(GetVirtualizerInfoRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to get host[uuid:%s] virtualizer info, because:%s", msg.getHostUuid(), rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
+                hypervisorManager.save(rsp);
+
+                reply.setHostVirtualizer(rsp.getHostInfo().getVirtualizer());
+                reply.setHostInstalledQemuVersion(rsp.getHostInfo().getVersion());
+                reply.setVmInfoList(rsp.getVmInfoList().stream()
+                        .map(info -> {
+                            VmVirtualizerInfo to = new VmVirtualizerInfo();
+                            to.setVmInstanceUuid(info.getUuid());
+                            if (KvmHypervisorInfoHelper.isQemuBased(info.getVirtualizer())) {
+                                to.setCurrentQemuVersion(info.getVersion());
+                            }
+                            return to;
+                        }).collect(Collectors.toList()));
 
                 bus.reply(msg, reply);
                 completion.done();
@@ -1320,6 +1903,42 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
+    private void handle(final ChangeVmNicStateOnHypervisorMsg msg) {
+        inQueue().name("set-nic-state-on-kvm-host-" + self.getUuid())
+                .asyncBackup(msg)
+                .run(chain -> changeVmNicState(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+    protected void changeVmNicState(final ChangeVmNicStateOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        final ChangeVmNicStateOnHypervisorReply reply = new ChangeVmNicStateOnHypervisorReply();
+        NicTO to = completeNicInfo(msg.getNic());
+        ChangeVmNicStateCommand cmd = new ChangeVmNicStateCommand();
+        cmd.setVmUuid(msg.getVmInstanceUuid());
+        cmd.setNic(to);
+        cmd.setState(msg.getState());
+        new Http<>(changeNicStatePath, cmd, ChangeVmNicStateRsp.class).call(new ReturnValueCompletion<ChangeVmNicStateRsp>(msg, completion) {
+            @Override
+            public void success(ChangeVmNicStateRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                }
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
     private void handle(final DetachNicFromVmOnHypervisorMsg msg) {
         inQueue().name("detach-nic-on-kvm-host-" + self.getUuid())
                 .asyncBackup(msg)
@@ -1500,14 +2119,12 @@ public class KVMHost extends HostBase implements Host {
             }
         }
 
-        VolumeSnapshotInventory snapshot = msg.getFrom();
         MergeSnapshotCmd cmd = new MergeSnapshotCmd();
         cmd.setFullRebase(msg.isFullRebase());
         cmd.setDestPath(volume.getInstallPath());
-        cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
+        cmd.setSrcPath(msg.getFrom() != null ? msg.getFrom().getPrimaryStorageInstallPath() : null);
         cmd.setVmUuid(volume.getVmInstanceUuid());
         cmd.setVolume(VolumeTO.valueOf(volume, (KVMHostInventory) getSelfInventory()));
-        cmd.setTimeout(timeoutManager.getTimeoutSeconds());
 
         extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
@@ -1722,6 +2339,7 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
 
+            cmd.setOnline(vmState != VmInstanceState.Stopped);
             cmd.setVmUuid(msg.getVmUuid());
             cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
         }
@@ -1830,60 +2448,11 @@ public class KVMHost extends HostBase implements Host {
         q.add(VmInstanceVO_.uuid, Op.EQ, vmUuid);
         final Long vmInternalId = q.findValue();
 
-        List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, s.vmUuid)
-                .eq(VmNicVO_.type, "vDPA")
-                .list();
-        List<NicTO> nicTos = VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList());
-        List<NicTO> vDPANics = new ArrayList<NicTO>();
-        for (NicTO nicTo : nicTos) {
-            if (nicTo.getType().equals("vDPA")) {
-                vDPANics.add(nicTo);
-            }
-        }
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "generate-vDPA-on-dst-host";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        if (vDPANics.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-                        GenerateVdpaCmd cmd = new GenerateVdpaCmd();
-                        cmd.vmUuid = vmUuid;
-                        cmd.setNics(nicTos);
-
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-                        ub.host(dstHostMnIp);
-                        ub.path(KVMConstant.KVM_GENERATE_VDPA_PATH);
-                        String url = ub.build().toString();
-                        new Http<>(url, cmd, GenerateVdpaResponse.class).call(dstHostUuid, new ReturnValueCompletion<GenerateVdpaResponse>(trigger) {
-                            @Override
-                            public void success(GenerateVdpaResponse ret) {
-                                if (!ret.isSuccess()) {
-                                    logger.warn(String.format("generate vDPA for %s failed, %s", vmUuid, ret.getError()));
-                                }
-
-                                data.put("vDPA_paths", ret.getVdpaPaths());
-
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("generate vDPA for %s failed, %s", vmUuid, errorCode));
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "migrate-vm";
 
@@ -1901,6 +2470,7 @@ public class KVMHost extends HostBase implements Host {
                         MigrateVmCmd cmd = new MigrateVmCmd();
                         cmd.setDestHostIp(dstHostMigrateIp);
                         cmd.setSrcHostIp(srcHostMigrateIp);
+                        cmd.setDestHostManagementIp(dstHostMnIp);
                         cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
@@ -1908,7 +2478,24 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setXbzrle(xbzrle);
                         cmd.setVdpaPaths((List<String>) data.get("vDPA_paths"));
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
+                        cmd.setReload(s.reload);
                         cmd.setTimeout(timeoutManager.getTimeout());
+                        cmd.setDownTime(s.downTime);
+
+                        if (s.diskMigrationMap != null) {
+                            Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
+                            new SQLBatch() {
+                                @Override
+                                protected void scripts() {
+                                    s.diskMigrationMap.forEach((oldVolumeInstallPath, newVolumeUuid) -> {
+                                        VolumeVO vo = findByUuid(newVolumeUuid, VolumeVO.class);
+                                        diskMigrationMap.put(oldVolumeInstallPath,
+                                                VolumeTO.valueOf(VolumeInventory.valueOf(vo), (KVMHostInventory) getSelfInventory()));
+                                    });
+                                }
+                            }.execute();
+                            cmd.setDisks(diskMigrationMap);
+                        }
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
@@ -2013,41 +2600,6 @@ public class KVMHost extends HostBase implements Host {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-vDPA-on-src-host";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        if (vDPANics.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-                        DeleteVdpaCmd cmd = new DeleteVdpaCmd();
-                        cmd.vmUuid = vmUuid;
-
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-                        ub.host(srcHostMnIp);
-                        ub.path(KVMConstant.KVM_DELETE_VDPA_PATH);
-                        String url = ub.build().toString();
-                        new Http<>(url, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
-                            @Override
-                            public void success(AgentResponse ret) {
-                                if (!ret.isSuccess()) {
-                                    logger.warn(String.format("delete vDPA for %s failed, %s", vmUuid, ret.getError()));
-                                }
-
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("delete vDPA for %s failed, %s", vmUuid, errorCode));
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
@@ -2084,6 +2636,7 @@ public class KVMHost extends HostBase implements Host {
         String vmUuid;
         String dstHostMigrateIp;
         String strategy;
+        Integer downTime;
         String dstHostMnIp;
         String dstHostUuid;
         StorageMigrationPolicy storageMigrationPolicy;
@@ -2091,6 +2644,8 @@ public class KVMHost extends HostBase implements Host {
         String srcHostMigrateIp;
         String srcHostMnIp;
         String srcHostUuid;
+        Map<String, String> diskMigrationMap;
+        boolean reload;
     }
 
     private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg){
@@ -2101,6 +2656,9 @@ public class KVMHost extends HostBase implements Host {
         s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
         s.migrateFromDestition = msg.isMigrateFromDestination();
         s.strategy = msg.getStrategy();
+        s.downTime = msg.getDownTime();
+        s.diskMigrationMap = msg.getDiskMigrationMap();
+        s.reload = msg.isReload();
 
         MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
         for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
@@ -2241,7 +2799,7 @@ public class KVMHost extends HostBase implements Host {
                 if (ret.getVirtualDeviceInfoList() != null && !ret.getVirtualDeviceInfoList().isEmpty()) {
                     ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(msg.getNicInventory().getUuid(),
                             info.getDeviceAddress(), msg.getNicInventory().getVmInstanceUuid(),
-                            JSONObjectUtil.toJsonString(msg.getNicInventory()), VmNicInventory.class.getCanonicalName()));
+                            null, null));
                 }
 
                 completion.done();
@@ -2508,7 +3066,7 @@ public class KVMHost extends HostBase implements Host {
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     extEmitter.rebootVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
                 } else {
-                    extEmitter.rebootVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), vminv);
+                    extEmitter.rebootVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), vminv, ret);
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -2689,7 +3247,10 @@ public class KVMHost extends HostBase implements Host {
             to.setIps(getCleanTrafficIp(nic));
         }
 
-        if (!nic.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)) {
+        String nicType = nic.getType();
+        if (!nicType.equals(VmInstanceConstant.VIRTUAL_NIC_TYPE) &&
+            !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VDPA) &&
+            !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE)) {
             return to;
         }
 
@@ -2729,7 +3290,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         to.setResourceUuid(nic.getUuid());
-
+        to.setState(nic.getState());
         return to;
     }
 
@@ -2762,21 +3323,36 @@ public class KVMHost extends HostBase implements Host {
         }
     }
 
-    protected void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
-        checkStateAndStatus();
+    /**
+     * set cpu topology for vm, use the cpu topology from vm spec if it's not null,
+     * otherwise use the cpu topology from image platform
+     * <p>
+     *     TODO: image should support cpu topology to use a more suitable topology for
+     *     applications inside it
+     * </p>
+     *
+     * @param spec vm spec
+     * @param cmd start vm cmd
+     * @param platform image platform
+     */
+    private void setStartVmCpuTopology(final VmInstanceSpec spec, final StartVmCmd cmd, String platform) {
+        int cpuNum = cmd.getCpuNum();
 
-        final StartVmCmd cmd = new StartVmCmd();
+        if (VmHardwareSystemTags.CPU_SOCKETS.hasTag(spec.getVmInventory().getUuid())) {
+            String sockets = VmHardwareSystemTags.CPU_SOCKETS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
+            String cores = VmHardwareSystemTags.CPU_CORES.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_CORES_TOKEN);
+            String threads = VmHardwareSystemTags.CPU_THREADS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_THREADS_TOKEN);
 
-        String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
-                spec.getVmInventory().getPlatform();
-        if(ImagePlatform.Other.toString().equals(platform)){
-            checkPlatformWithOther(spec);
+            cmd.setSocketNum(Integer.parseInt(sockets));
+            cmd.setCpuOnSocket(Integer.parseInt(cores));
+            cmd.setThreadsPerCore(Integer.parseInt(threads));
+            return;
         }
 
-        String architecture = spec.getDestHost().getArchitecture();
-
-        int cpuNum = spec.getVmInventory().getCpuNum();
-        cmd.setCpuNum(cpuNum);
+        if (cmd.isUseNuma()) {
+            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
+            return;
+        }
 
         int socket;
         int cpuOnSocket;
@@ -2796,10 +3372,31 @@ public class KVMHost extends HostBase implements Host {
             socket = 1;
             cpuOnSocket = cpuNum;
         }
-        cmd.setImagePlatform(platform);
-        cmd.setImageArchitecture(architecture);
+
         cmd.setSocketNum(socket);
         cmd.setCpuOnSocket(cpuOnSocket);
+    }
+
+    protected void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
+        checkStateAndStatus();
+
+        final StartVmCmd cmd = new StartVmCmd();
+
+        String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
+                spec.getVmInventory().getPlatform();
+        if(ImagePlatform.Other.toString().equals(platform)){
+            checkPlatformWithOther(spec);
+        }
+
+        String architecture = spec.getDestHost().getArchitecture();
+
+        int cpuNum = spec.getVmInventory().getCpuNum();
+        cmd.setCpuNum(cpuNum);
+        cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
+        setStartVmCpuTopology(spec, cmd, platform);
+
+        cmd.setImagePlatform(platform);
+        cmd.setImageArchitecture(architecture);
         cmd.setVmName(spec.getVmInventory().getName());
         cmd.setVmInstanceUuid(spec.getVmInventory().getUuid());
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
@@ -2812,23 +3409,30 @@ public class KVMHost extends HostBase implements Host {
         }
 
         cmd.setVideoType(rcf.getResourceConfigValue(VmGlobalConfig.VM_VIDEO_TYPE, spec.getVmInventory().getUuid(), String.class));
+        cmd.setSoundType(rcf.getResourceConfigValue(VmGlobalConfig.VM_SOUND_TYPE, spec.getVmInventory().getUuid(), String.class));
         if (VmSystemTags.QXL_MEMORY.hasTag(spec.getVmInventory().getUuid())) {
             Map<String,String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
             cmd.setQxlMemory(qxlMemory);
-        }
-        if (VmSystemTags.SOUND_TYPE.hasTag(spec.getVmInventory().getUuid())) {
-            cmd.setSoundType(VmSystemTags.SOUND_TYPE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.SOUND_TYPE_TOKEN));
         }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
 
         boolean emulateHyperV = false;
-        if (!ImagePlatform.isType(platform, ImagePlatform.Linux) &&
-                ImageArchitecture.x86_64.toString().equals(architecture)) {
+        if (ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio)
+                && ImageArchitecture.x86_64.toString().equals(architecture)) {
             emulateHyperV = rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class);
         }
         cmd.setEmulateHyperV(emulateHyperV);
+
+        boolean enableHypervClock = rcf.getResourceConfigValue(
+                KVMGlobalConfig.VM_HYPERV_CLOCK_FEATURE,
+                spec.getVmInventory().getUuid(), Boolean.class);
+        cmd.setHypervClock(enableHypervClock);
+
+        // suspend features
+        cmd.setSuspendToDisk(rcf.getResourceConfigValue(KVMGlobalConfig.SUSPEND_TO_DISK, spec.getVmInventory().getUuid(), Boolean.class));
+        cmd.setSuspendToRam(rcf.getResourceConfigValue(KVMGlobalConfig.SUSPEND_TO_RAM, spec.getVmInventory().getUuid(), Boolean.class));
 
         cmd.setVendorId(rcf.getResourceConfigValue(VmGlobalConfig.VENDOR_ID, spec.getVmInventory().getUuid(), String.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
@@ -2879,6 +3483,13 @@ public class KVMHost extends HostBase implements Host {
 
         cmd.setRootVolume(rootVolume);
         cmd.setUseBootMenu(VmGlobalConfig.VM_BOOT_MENU.value(Boolean.class));
+
+        if (cmd.isUseBootMenu()) {
+            cmd.setBootMenuSplashTimeout(rcf.getResourceConfigValue(
+                    VmGlobalConfig.VM_BOOT_MENU_SPLASH_TIMEOUT,
+                    spec.getVmInventory().getUuid(),
+                    Integer.class));
+        }
 
         List<VolumeTO> dataVolumes = new ArrayList<>(spec.getDestDataVolumes().size());
         for (VolumeInventory data : spec.getDestDataVolumes()) {
@@ -2933,20 +3544,24 @@ public class KVMHost extends HostBase implements Host {
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
         cmd.setUsbRedirect(spec.isUsbRedirect());
+        cmd.setEnableSecurityElement(spec.isEnableSecurityElement());
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
-        cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
         cmd.setConsoleMode("vnc");
         cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
-        cmd.setConsoleLogToFile(!VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType()));
+        cmd.setConsoleLogToFile(rcf.getResourceConfigValue(KVMGlobalConfig.REDIRECT_CONSOLE_LOG_TO_FILE, spec.getVmInventory().getUuid(), Boolean.class));
         if (spec.isCreatePaused()) {
             cmd.setCreatePaused(true);
         }
         String vmArchPlatformRelease = String.format("%s_%s_%s", spec.getVmInventory().getArchitecture(), spec.getVmInventory().getPlatform(), spec.getVmInventory().getGuestOsType());
         if (allGuestOsCharacter.containsKey(vmArchPlatformRelease)) {
             cmd.setAcpi(allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi());
-            cmd.setHygonCpu(allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu());
+            cmd.setX2apic(allGuestOsCharacter.get(vmArchPlatformRelease).getX2apic() == null || allGuestOsCharacter.get(vmArchPlatformRelease).getX2apic());
         }
+
+        cmd.setCpuHypervisorFeature(rcf.getResourceConfigValue(KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE,
+                spec.getVmInventory().getUuid(),
+                Boolean.class));
 
         VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
         memBalloon.setResourceUuid(vidm.MEM_BALLOON_UUID);
@@ -2964,7 +3579,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(StartVmResponse ret) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
                 if (ret.isSuccess()) {
-                    extEmitter.afterReceiveStartVmResponse(KVMHostInventory.valueOf(getSelf()), spec, ret);
+                    extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(null, ret, spec);
 
                     String info = String.format("successfully start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s]",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
@@ -3486,8 +4101,7 @@ public class KVMHost extends HostBase implements Host {
                 boolean liveSnapshot = libvirtVersion.compare(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0
                         && qemuVersion.compare(KVMConstant.MIN_QEMU_LIVESNAPSHOT_VERSION) >= 0;
 
-                String hostOS = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(self.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
-                //liveSnapshot = liveSnapshot && (!"CentOS".equals(hostOS) || KVMGlobalConfig.ALLOW_LIVE_SNAPSHOT_ON_REDHAT.value(Boolean.class));
+                final HostOperationSystem hostOS = factory.getHostOS(self.getUuid());
 
                 if (liveSnapshot) {
                     logger.debug(String.format("kvm host[OS:%s, uuid:%s, name:%s, ip:%s] supports live snapshot with libvirt[version:%s], qemu[version:%s]",
@@ -3586,7 +4200,14 @@ public class KVMHost extends HostBase implements Host {
         return inaccessiblePsCount == attachedPsCount && attachedPsCount > 0;
     }
 
-    private void createHostVersionSystemTags(String distro, String release, String version) {
+    private void updateHostOsInformation(String distro, String release, String version) {
+        final KVMHostVO kvmHostVO = getSelf();
+        kvmHostVO.setOsDistribution(distro);
+        kvmHostVO.setOsRelease(release);
+        kvmHostVO.setOsVersion(version);
+        self = dbf.updateAndRefresh(kvmHostVO);
+
+        // for compatibility
         createTagWithoutNonValue(HostSystemTags.OS_DISTRIBUTION, HostSystemTags.OS_DISTRIBUTION_TOKEN, distro, true);
         createTagWithoutNonValue(HostSystemTags.OS_RELEASE, HostSystemTags.OS_RELEASE_TOKEN, release, true);
         createTagWithoutNonValue(HostSystemTags.OS_VERSION, HostSystemTags.OS_VERSION_TOKEN, version, true);
@@ -3619,6 +4240,32 @@ public class KVMHost extends HostBase implements Host {
         creator.create();
     }
 
+    public ErrorCode isRemotePortOpen(String ip, int port, int timeout) {
+        Socket socket = new Socket();
+
+        try {
+            socket.setReuseAddress(true);
+            SocketAddress sa = new InetSocketAddress(ip, port);
+            socket.connect(sa, timeout);
+            if (socket.isConnected()) {
+                return null;
+            }
+            return operr("connect remote port[ip:%s, port:%s] is failed", ip, port);
+        } catch (SocketException e) {
+            logger.debug(String.format("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage()));
+            return operr("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage());
+        } catch (IOException e) {
+            logger.debug(String.format("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage()));
+            return operr("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage());
+        } finally {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
+            }
+        }
+    }
+
     @Override
     public void connectHook(final ConnectHostInfo info, final Completion complete) {
         if (!info.isNewAdded()) {
@@ -3627,548 +4274,498 @@ public class KVMHost extends HostBase implements Host {
             info.setSkipPackages(skipPackages);
         }
 
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
-            if (info.isNewAdded()) {
-                createHostVersionSystemTags("zstack", "kvmSimulator", tester.get(ZTester.KVM_HostVersion, "0.1", String.class));
-                if (null == KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN)) {
-                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, tester.get(ZTester.KVM_LibvirtVersion, "1.2.9", String.class), true);
-                }
-                if (null == KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN)) {
-                    createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, tester.get(ZTester.KVM_QemuImageVersion, "2.0.0", String.class), true);
-                }
-                if (null == KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN)) {
-                    createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, tester.get(ZTester.KVM_CpuModelName, "Broadwell", String.class), true);
-                }
-                if (null == HostSystemTags.CPU_PROCESSOR_NUM.getTokenByResourceUuid(self.getUuid(), HostSystemTags.CPU_PROCESSOR_NUM_TOKEN)) {
-                    createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, tester.get(ZTester.KVM_CpuProcessorNum, "10", String.class), true);
-                }
-                if (null == KVMSystemTags.EPT_CPU_FLAG.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.EPT_CPU_FLAG_TOKEN)) {
-                    createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, "ept", false);
-                }
-                if (null == KVMSystemTags.LIBVIRT_CAPABILITIES.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN)) {
-                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, "incrementaldrivemirror,blockcopynetworktarget", true);
-                }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("run-ansible-for-kvm-%s", self.getUuid()));
+        chain.allowWatch();
+        chain.then(new ShareFlow() {
+            boolean deployed = false;
+            @Override
+            public void setup() {
 
-                if (null == self.getArchitecture()) {
-                    ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
-                    HostVO host = dbf.findByUuid(self.getUuid(), HostVO.class);
-                    if (null == cluster.getArchitecture()){
-                        host.setArchitecture(CpuArchitecture.x86_64.toString());
-                    } else {
-                        host.setArchitecture(cluster.getArchitecture());
-                    }
-                    dbf.update(host);
-                }
+                flow(new NoRollbackFlow() {
+                    String __name__ = "test-if-ssh-port-open";
 
-                if (!checkQemuLibvirtVersionOfHost()) {
-                    complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
-                            self.getUuid(), self.getClusterUuid()));
-                    return;
-                }
-
-                if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.hasTag(self.getClusterUuid())) {
-                    if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL
-                            .getTokenByResourceUuid(self.getClusterUuid(), KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN)
-                            .equals("true")
-                            && !checkCpuModelOfHost()) {
-                        complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
-                                self.getUuid(), self.getClusterUuid()));
-                        return;
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
                     }
 
-                    complete.success();
-                    return;
-                }
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        long sshTimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class));
+                        long timeout = System.currentTimeMillis() + sshTimeout;
+                        long ctimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Integer.class).longValue());
 
-
-                if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
-                    complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
-                            self.getUuid(), self.getClusterUuid()));
-                    return;
-                }
-            }
-
-            continueConnect(info, complete);
-        } else {
-            FlowChain chain = FlowChainBuilder.newShareFlowChain();
-            chain.setName(String.format("run-ansible-for-kvm-%s", self.getUuid()));
-            chain.allowWatch();
-            chain.then(new ShareFlow() {
-                boolean deployed = false;
-                @Override
-                public void setup() {
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "test-if-ssh-port-open";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            long sshTimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class));
-                            long timeout = System.currentTimeMillis() + sshTimeout;
-                            long ctimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Integer.class).longValue());
-
-                            thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(trigger) {
-                                @Override
-                                public boolean run() {
-                                    if (testPort()) {
-                                        trigger.next();
-                                        return true;
-                                    }
-
-                                    return ifTimeout();
-                                }
-
-                                private boolean testPort() {
-                                    if (!NetworkUtils.isRemotePortOpen(getSelf().getManagementIp(), getSelf().getPort(), (int) ctimeout)) {
-                                        logger.debug(String.format("host[uuid:%s, name:%s, ip:%s]'s ssh port[%s] is not ready yet", getSelf().getUuid(), getSelf().getName(), getSelf().getManagementIp(), getSelf().getPort()));
-                                        return false;
-                                    } else {
-                                        return true;
-                                    }
-                                }
-
-                                private boolean ifTimeout() {
-                                    if (System.currentTimeMillis() > timeout) {
-                                        trigger.fail(operr("the host[%s] ssh port[%s] not open after %s seconds, connect timeout", getSelf().getManagementIp(), getSelf().getPort(), TimeUnit.MILLISECONDS.toSeconds(sshTimeout)));
-                                        return true;
-                                    } else {
-                                        return false;
-                                    }
-                                }
-
-                                @Override
-                                public TimeUnit getTimeUnit() {
-                                    return TimeUnit.SECONDS;
-                                }
-
-                                @Override
-                                public long getInterval() {
-                                    return 2;
-                                }
-
-                                @Override
-                                public String getName() {
-                                    return "test-ssh-port-open-for-kvm-host";
-                                }
-                            });
-                        }
-                    });
-
-                    if (info.isNewAdded()) {
-
-                        if ((!AnsibleGlobalProperty.ZSTACK_REPO.contains("zstack-mn")) && (!AnsibleGlobalProperty.ZSTACK_REPO.equals("false"))) {
-                            flow(new NoRollbackFlow() {
-                                String __name__ = "ping-DNS-check-list";
-
-                                @Override
-                                public void run(FlowTrigger trigger, Map data) {
-                                    String checkList;
-                                    if (AnsibleGlobalProperty.ZSTACK_REPO.contains(KVMConstant.ALI_REPO)) {
-                                        checkList = KVMGlobalConfig.HOST_DNS_CHECK_ALIYUN.value();
-                                    } else if (AnsibleGlobalProperty.ZSTACK_REPO.contains(KVMConstant.NETEASE_REPO)) {
-                                        checkList = KVMGlobalConfig.HOST_DNS_CHECK_163.value();
-                                    } else {
-                                        checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
-                                    }
-
-                                    checkList = checkList.replaceAll(",", " ");
-
-                                    SshShell sshShell = new SshShell();
-                                    sshShell.setHostname(getSelf().getManagementIp());
-                                    sshShell.setUsername(getSelf().getUsername());
-                                    sshShell.setPassword(getSelf().getPassword());
-                                    sshShell.setPort(getSelf().getPort());
-                                    SshResult ret = sshShell.runScriptWithToken("scripts/check-public-dns-name.sh",
-                                            map(e("dnsCheckList", checkList)));
-
-                                    if (ret.isSshFailure()) {
-                                        trigger.fail(operr("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
-                                    } else if (ret.getReturnCode() != 0) {
-                                        trigger.fail(operr("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet", checkList));
-                                    } else {
-                                        trigger.next();
-                                    }
-                                }
-                            });
-                        }
-                    }
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "check-if-host-can-reach-management-node";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            ShellUtils.run(String.format("arp -d %s || true", getSelf().getManagementIp()));
-                            SshShell sshShell = new SshShell();
-                            sshShell.setHostname(getSelf().getManagementIp());
-                            sshShell.setUsername(getSelf().getUsername());
-                            sshShell.setPassword(getSelf().getPassword());
-                            sshShell.setPort(getSelf().getPort());
-                            sshShell.setWithSudo(false);
-                            final String cmd = String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
-                            SshResult ret = sshShell.runCommand(cmd);
-                            if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
-                                // c.f. https://access.redhat.com/solutions/1120533
-                                try {
-                                    TimeUnit.SECONDS.sleep(3);
-                                } catch (InterruptedException e) {
-                                    throw new RuntimeException(e.getMessage());
-                                }
-                                ret = sshShell.runCommand(cmd);
-                            }
-
-                            if (ret.isSshFailure()) {
-                                throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
-                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
-                            } else if (ret.getReturnCode() != 0) {
-                                throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                                " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), restf.getHostName(),
-                                        ret.getStderr(), ret.getExitErrorMessage()));
-                            }
-
-                            trigger.next();
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "check-Host-is-taken-over";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            if (!info.isNewAdded() || CoreGlobalProperty.UNIT_TEST_ON) {
-                                trigger.next();
-                                return;
-                            }
-                            try {
-                                Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
-                                        .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
-                                        .setHostname(getSelf().getManagementIp());
-                                ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
-                                SshResult hostRet = ssh.run();
-                                if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
-                                    trigger.fail(operr("unable to Check whether the host is taken over,  because %s", hostRet.getExitErrorMessage()));
-                                    return;
-                                }
-                                String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
-                                logger.debug(String.format("Uuid in the host take over flag file is %s ", hostOutput));
-                                if (hostOutput.contains("No such file or directory")) {
+                        thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(trigger) {
+                            @Override
+                            public boolean run() {
+                                if (testPort()) {
                                     trigger.next();
-                                    return;
+                                    return true;
                                 }
 
-                                ssh.command(String.format("date +%%s -r %s", hostTakeOverFlagPath));
-                                SshResult timeRet = ssh.run();
-                                logger.debug(String.format("Timestamp of the flag is %s ", timeRet.getStdout()));
-                                if (timeRet.isSshFailure() || timeRet.getReturnCode() != 0) {
-                                    trigger.fail(operr("Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
-                                    return;
-                                }
-                                String timestampOutput = timeRet.getStdout().replaceAll("\r|\n","");
+                                return ifTimeout();
+                            }
 
-                                long diff = (new Date().getTime() / 1000) - Long.parseLong(timestampOutput);
-                                logger.debug(String.format("hostOutput is %s ,The time difference is %d(s) ", hostOutput, diff));
-
-                                if (diff < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
-                                    trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
-                                            self.getManagementIp(), hostOutput, diff, HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
-                                    return;
-                                }
-
-                                HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, hostOutput).find();
-                                if (lastHostInv == null) {
-                                    trigger.next();
+                            private boolean testPort() {
+                                if (!NetworkUtils.isRemotePortOpen(getSelf().getManagementIp(), getSelf().getPort(), (int) ctimeout)) {
+                                    logger.debug(String.format("host[uuid:%s, name:%s, ip:%s]'s ssh port[%s] is not ready yet", getSelf().getUuid(), getSelf().getName(), getSelf().getManagementIp(), getSelf().getPort()));
+                                    return false;
                                 } else {
-                                    trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
-                                            self.getManagementIp(), lastHostInv.getUuid()));
-                                }
-                            } catch (Exception e) {
-                                logger.warn(e.getMessage(), e);
-                                trigger.next();
-                                return;
-                            }
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "check-host-cpu-arch";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            SshShell sshShell = new SshShell();
-                            sshShell.setHostname(getSelf().getManagementIp());
-                            sshShell.setUsername(getSelf().getUsername());
-                            sshShell.setPassword(getSelf().getPassword());
-                            sshShell.setPort(getSelf().getPort());
-                            SshResult ret = sshShell.runCommand("uname -m");
-
-                            if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                                trigger.fail(operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage()));
-                                return;
-                            }
-
-                            String hostArchitecture = ret.getStdout().trim();
-                            HostVO host = dbf.findByUuid(getSelf().getUuid(), HostVO.class);
-                            host.setArchitecture(hostArchitecture);
-                            dbf.update(host);
-                            self.setArchitecture(hostArchitecture);
-                            ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
-                            if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture()) && !cluster.getHypervisorType().equals("baremetal2")) {
-                                trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
-                                return;
-                            }
-
-                            // for upgrade case, prevent from add host failure.
-                            if (cluster.getArchitecture() == null && !info.isNewAdded()) {
-                                cluster.setArchitecture(hostArchitecture);
-                                dbf.update(cluster);
-                                ClusterInventory clusterInventory = ClusterInventory.valueOf(cluster);
-                                crci.initClusterResourceConfigValue(clusterInventory);
-                            }
-
-                            trigger.next();
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "apply-ansible-playbook";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
-                            String destPath = String.format("/var/lib/zstack/kvm/package/%s", agentPackageName);
-                            SshFileMd5Checker checker = new SshFileMd5Checker();
-                            checker.setUsername(getSelf().getUsername());
-                            checker.setPassword(getSelf().getPassword());
-                            checker.setSshPort(getSelf().getPort());
-                            checker.setTargetIp(getSelf().getManagementIp());
-                            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
-                            checker.addSrcDestPair(srcPath, destPath);
-
-                            SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
-                            chronyChecker.setTargetIp(getSelf().getManagementIp());
-                            chronyChecker.setUsername(getSelf().getUsername());
-                            chronyChecker.setPassword(getSelf().getPassword());
-                            chronyChecker.setSshPort(getSelf().getPort());
-
-                            SshYumRepoChecker repoChecker = new SshYumRepoChecker();
-                            repoChecker.setTargetIp(getSelf().getManagementIp());
-                            repoChecker.setUsername(getSelf().getUsername());
-                            repoChecker.setPassword(getSelf().getPassword());
-                            repoChecker.setSshPort(getSelf().getPort());
-
-                            CallBackNetworkChecker callbackChecker = new CallBackNetworkChecker();
-                            callbackChecker.setTargetIp(getSelf().getManagementIp());
-                            callbackChecker.setUsername(getSelf().getUsername());
-                            callbackChecker.setPassword(getSelf().getPassword());
-                            callbackChecker.setPort(getSelf().getPort());
-                            callbackChecker.setCallbackIp(Platform.getManagementServerIp());
-                            callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
-
-                            AnsibleRunner runner = new AnsibleRunner();
-                            runner.installChecker(checker);
-                            runner.installChecker(chronyChecker);
-                            runner.installChecker(repoChecker);
-                            runner.installChecker(callbackChecker);
-
-                            if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
-                                CallBackNetworkChecker hostTcpConnectionCallbackChecker = new CallBackNetworkChecker();
-                                hostTcpConnectionCallbackChecker.setTargetIp(getSelf().getManagementIp());
-                                hostTcpConnectionCallbackChecker.setUsername(getSelf().getUsername());
-                                hostTcpConnectionCallbackChecker.setPassword(getSelf().getPassword());
-                                hostTcpConnectionCallbackChecker.setPort(getSelf().getPort());
-                                hostTcpConnectionCallbackChecker.setCallbackIp(Platform.getManagementServerIp());
-                                hostTcpConnectionCallbackChecker.setCallBackPort(KVMGlobalProperty.TCP_SERVER_PORT);
-                                runner.installChecker(hostTcpConnectionCallbackChecker);
-                            }
-
-                            for (KVMHostAddSshFileMd5CheckerExtensionPoint exp : pluginRgty.getExtensionList(KVMHostAddSshFileMd5CheckerExtensionPoint.class)) {
-                                SshFileMd5Checker sshFileMd5Checker = exp.getSshFileMd5Checker(getSelf());
-                                if (sshFileMd5Checker != null) {
-                                    runner.installChecker(sshFileMd5Checker);
+                                    return true;
                                 }
                             }
-                            runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
-                            runner.setTargetIp(getSelf().getManagementIp());
-                            runner.setTargetUuid(getSelf().getUuid());
-                            runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);
-                            runner.setUsername(getSelf().getUsername());
-                            runner.setPassword(getSelf().getPassword());
-                            runner.setSshPort(getSelf().getPort());
-                            if (info.isNewAdded()) {
-                                runner.putArgument("init", "true");
-                                runner.setFullDeploy(true);
-                            }
-                            if (NetworkGlobalProperty.SKIP_IPV6) {
-                                runner.putArgument("skipIpv6", "true");
-                            }
-                            for (CheckMiniExtensionPoint ext : pluginRegistry.getExtensionList(CheckMiniExtensionPoint.class)) {
-                                if (ext.isMini()) {
-                                    runner.putArgument("isMini", "true");
+
+                            private boolean ifTimeout() {
+                                if (System.currentTimeMillis() > timeout) {
+                                    trigger.fail(operr("the host[%s] ssh port[%s] not open after %s seconds, connect timeout", getSelf().getManagementIp(), getSelf().getPort(), TimeUnit.MILLISECONDS.toSeconds(sshTimeout)));
+                                    return true;
+                                } else {
+                                    return false;
                                 }
                             }
-                            if ("baremetal2".equals(self.getHypervisorType())) {
-                                runner.putArgument("isBareMetal2Gateway", "true");
+
+                            @Override
+                            public TimeUnit getTimeUnit() {
+                                return TimeUnit.SECONDS;
                             }
-                            if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
-                                runner.putArgument("bridgeDisableIptables", "true");
+
+                            @Override
+                            public long getInterval() {
+                                return 2;
                             }
-                            runner.putArgument("pkg_kvmagent", agentPackageName);
-                            runner.putArgument("hostname", String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
-                            if (CoreGlobalProperty.SYNC_NODE_TIME) {
-                                if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
-                                    trigger.fail(operr("chrony server not configured!"));
-                                    return;
+
+                            @Override
+                            public String getName() {
+                                return "test-ssh-port-open-for-kvm-host";
+                            }
+                        });
+                    }
+                });
+
+                if (info.isNewAdded()) {
+
+                    if ((!AnsibleGlobalProperty.ZSTACK_REPO.contains("zstack-mn")) && (!AnsibleGlobalProperty.ZSTACK_REPO.equals("false"))) {
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "ping-DNS-check-list";
+
+                            @Override
+                            public boolean skip(Map data) {
+                                return CoreGlobalProperty.UNIT_TEST_ON;
+                            }
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                String checkList;
+                                if (AnsibleGlobalProperty.ZSTACK_REPO.contains(KVMConstant.ALI_REPO)) {
+                                    checkList = KVMGlobalConfig.HOST_DNS_CHECK_ALIYUN.value();
+                                } else if (AnsibleGlobalProperty.ZSTACK_REPO.contains(KVMConstant.NETEASE_REPO)) {
+                                    checkList = KVMGlobalConfig.HOST_DNS_CHECK_163.value();
+                                } else {
+                                    checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
                                 }
-                                runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
-                            }
-                            runner.putArgument("skip_packages", info.getSkipPackages());
-                            runner.putArgument("update_packages", String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
 
-                            UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
-                            ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
-                            String postUrl = ub.build().toString();
+                                checkList = checkList.replaceAll(",", " ");
 
-                            runner.putArgument("post_url", postUrl);
-                            runner.run(new ReturnValueCompletion<Boolean>(trigger) {
-                                @Override
-                                public void success(Boolean run) {
-                                    if (run != null) {
-                                        deployed = run;
-                                    }
+                                SshShell sshShell = new SshShell();
+                                sshShell.setHostname(getSelf().getManagementIp());
+                                sshShell.setUsername(getSelf().getUsername());
+                                sshShell.setPassword(getSelf().getPassword());
+                                sshShell.setPort(getSelf().getPort());
+                                SshResult ret = sshShell.runScriptWithToken("scripts/check-public-dns-name.sh",
+                                        map(e("dnsCheckList", checkList)));
+
+                                if (ret.isSshFailure()) {
+                                    trigger.fail(operr("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
+                                } else if (ret.getReturnCode() != 0) {
+                                    trigger.fail(operr("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet", checkList));
+                                } else {
                                     trigger.next();
                                 }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "configure-iptables";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            StringBuilder builder = new StringBuilder();
-                            if (!KVMGlobalProperty.MN_NETWORKS.isEmpty()) {
-                                builder.append(String.format("sudo bash %s -m %s -p %s -c %s",
-                                        "/var/lib/zstack/kvm/kvmagent-iptables",
-                                        KVMConstant.IPTABLES_COMMENTS,
-                                        KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
-                                        String.join(",", KVMGlobalProperty.MN_NETWORKS)));
-                            } else {
-                                builder.append(String.format("sudo bash %s -m %s -p %s",
-                                        "/var/lib/zstack/kvm/kvmagent-iptables",
-                                        KVMConstant.IPTABLES_COMMENTS,
-                                        KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class)));
                             }
+                        });
+                    }
+                }
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-if-host-can-reach-management-node";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ShellUtils.run(String.format("arp -d %s || true", getSelf().getManagementIp()));
+                        SshShell sshShell = new SshShell();
+                        sshShell.setHostname(getSelf().getManagementIp());
+                        sshShell.setUsername(getSelf().getUsername());
+                        sshShell.setPassword(getSelf().getPassword());
+                        sshShell.setPort(getSelf().getPort());
+                        sshShell.setWithSudo(false);
+                        final String cmd = String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
+                        SshResult ret = sshShell.runCommand(cmd);
+                        if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
+                            // c.f. https://access.redhat.com/solutions/1120533
                             try {
-                                new Ssh().shell(builder.toString())
-                                        .setUsername(getSelf().getUsername())
-                                        .setPassword(getSelf().getPassword())
-                                        .setHostname(getSelf().getManagementIp())
-                                        .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
-                            } catch (SshException ex) {
-                                throw new OperationFailureException(operr(ex.toString()));
+                                TimeUnit.SECONDS.sleep(3);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new RuntimeException(e.getMessage());
+                            }
+                            ret = sshShell.runCommand(cmd);
+                        }
+
+                        if (ret.isSshFailure()) {
+                            throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
+                                            "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
+                        } else if (ret.getReturnCode() != 0) {
+                            throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
+                                            " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), restf.getHostName(),
+                                    ret.getStderr(), ret.getExitErrorMessage()));
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-host-is-taken-over";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON || !info.isNewAdded();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        try {
+                            Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
+                                    .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
+                                    .setHostname(getSelf().getManagementIp());
+                            ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
+                            SshResult hostRet = ssh.run();
+                            if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
+                                trigger.fail(operr("unable to Check whether the host is taken over,  because %s", hostRet.getExitErrorMessage()));
+                                return;
+                            }
+                            String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
+                            logger.debug(String.format("Uuid in the host take over flag file is %s ", hostOutput));
+                            if (hostOutput.contains("No such file or directory")) {
+                                trigger.next();
+                                return;
                             }
 
+                            ssh.command(String.format("date +%%s -r %s", hostTakeOverFlagPath));
+                            SshResult timeRet = ssh.run();
+                            logger.debug(String.format("Timestamp of the flag is %s ", timeRet.getStdout()));
+                            if (timeRet.isSshFailure() || timeRet.getReturnCode() != 0) {
+                                trigger.fail(operr("Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
+                                return;
+                            }
+                            String timestampOutput = timeRet.getStdout().replaceAll("\r|\n","");
+
+                            long diff = (new Date().getTime() / 1000) - Long.parseLong(timestampOutput);
+                            logger.debug(String.format("hostOutput is %s ,The time difference is %d(s) ", hostOutput, diff));
+
+                            if (diff < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
+                                trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
+                                        self.getManagementIp(), hostOutput, diff, HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
+                                return;
+                            }
+
+                            HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, hostOutput).find();
+                            if (lastHostInv == null) {
+                                trigger.next();
+                            } else {
+                                trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+                                        self.getManagementIp(), lastHostInv.getUuid()));
+                            }
+                        } catch (Exception e) {
+                            logger.warn(e.getMessage(), e);
                             trigger.next();
+                            return;
                         }
-                    });
+                    }
+                });
 
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "echo-host";
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-host-cpu-arch";
 
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            restf.echo(echoPath, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
+                    private Object getHostCpuArchitectureBySsh() {
+                        SshShell sshShell = new SshShell();
+                        sshShell.setHostname(getSelf().getManagementIp());
+                        sshShell.setUsername(getSelf().getUsername());
+                        sshShell.setPassword(getSelf().getPassword());
+                        sshShell.setPort(getSelf().getPort());
+                        SshResult ret = sshShell.runCommand("uname -m");
 
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    boolean needRestart = KVMGlobalConfig.RESTART_AGENT_IF_FAKE_DEAD.value(Boolean.class);
-                                    if (!deployed && needRestart) {
-                                        // if not deployed and echo failed, we thought it is fake dead, see: ZSTACK-18628
-                                        AnsibleRunner runner = new AnsibleRunner();
-                                        runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
-                                        runner.setTargetIp(getSelf().getManagementIp());
-                                        runner.setTargetUuid(getSelf().getUuid());
-                                        runner.setUsername(getSelf().getUsername());
-                                        runner.setPassword(getSelf().getPassword());
-                                        runner.setSshPort(getSelf().getPort());
-
-                                        runner.restartAgent(AnsibleConstant.KVM_AGENT_NAME, new Completion(trigger) {
-                                            @Override
-                                            public void success() {
-                                                restf.echo(echoPath, new Completion(trigger) {
-                                                    @Override
-                                                    public void success() {
-                                                        trigger.next();
-                                                    }
-
-                                                    @Override
-                                                    public void fail(ErrorCode errorCode) {
-                                                        trigger.fail(errorCode);
-                                                    }
-                                                });
-                                            }
-
-                                            @Override
-                                            public void fail(ErrorCode errorCode) {
-                                                trigger.fail(errorCode);
-                                            }
-                                        });
-                                    } else {
-                                        trigger.fail(errorCode);
-                                    }
-                                }
-                            });
+                        if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                            return operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage());
                         }
-                    });
+                        return ret.getStdout().trim();
+                    }
 
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "update-kvmagent-dependencies";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
+                        String hostArchitecture;
 
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            if (!CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
-                                trigger.next();
+                        if (CoreGlobalProperty.UNIT_TEST_ON) {
+                            hostArchitecture = cluster.getArchitecture() == null ?
+                                    CpuArchitecture.x86_64.name() : cluster.getArchitecture();
+                        } else {
+                            final Object ret = getHostCpuArchitectureBySsh();
+                            if (ret instanceof ErrorCode) {
+                                trigger.fail((ErrorCode) ret);
                                 return;
                             }
+                            hostArchitecture = ret.toString();
+                        }
 
-                            // new added need to update dependency if experimental repo enabled
-                            if (info.isNewAdded() && !rcf.getResourceConfigValue(
-                                    ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, self.getClusterUuid(), Boolean.class)) {
+                        HostVO host = dbf.findByUuid(getSelf().getUuid(), HostVO.class);
+                        host.setArchitecture(hostArchitecture);
+                        dbf.update(host);
+                        self.setArchitecture(hostArchitecture);
+                        if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture()) && !cluster.getHypervisorType().equals("baremetal2")) {
+                            trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
+                            return;
+                        }
+
+                        // for upgrade case, prevent from add host failure.
+                        if (cluster.getArchitecture() == null && !info.isNewAdded()) {
+                            cluster.setArchitecture(hostArchitecture);
+                            dbf.update(cluster);
+                            ClusterInventory clusterInventory = ClusterInventory.valueOf(cluster);
+                            crci.initClusterResourceConfigValue(clusterInventory);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-ansible-playbook";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
+                        String destPath = String.format("/var/lib/zstack/kvm/package/%s", agentPackageName);
+                        SshFileMd5Checker checker = new SshFileMd5Checker();
+                        checker.setUsername(getSelf().getUsername());
+                        checker.setPassword(getSelf().getPassword());
+                        checker.setSshPort(getSelf().getPort());
+                        checker.setTargetIp(getSelf().getManagementIp());
+                        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+                        checker.addSrcDestPair(srcPath, destPath);
+
+                        SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
+                        chronyChecker.setTargetIp(getSelf().getManagementIp());
+                        chronyChecker.setUsername(getSelf().getUsername());
+                        chronyChecker.setPassword(getSelf().getPassword());
+                        chronyChecker.setSshPort(getSelf().getPort());
+
+                        SshYumRepoChecker repoChecker = new SshYumRepoChecker();
+                        repoChecker.setTargetIp(getSelf().getManagementIp());
+                        repoChecker.setUsername(getSelf().getUsername());
+                        repoChecker.setPassword(getSelf().getPassword());
+                        repoChecker.setSshPort(getSelf().getPort());
+
+                        CallBackNetworkChecker callbackChecker = new CallBackNetworkChecker();
+                        callbackChecker.setTargetIp(getSelf().getManagementIp());
+                        callbackChecker.setUsername(getSelf().getUsername());
+                        callbackChecker.setPassword(getSelf().getPassword());
+                        callbackChecker.setPort(getSelf().getPort());
+                        callbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                        callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
+
+                        AnsibleRunner runner = new AnsibleRunner();
+                        runner.installChecker(checker);
+                        runner.installChecker(chronyChecker);
+                        runner.installChecker(repoChecker);
+                        runner.installChecker(callbackChecker);
+
+                        if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
+                            CallBackNetworkChecker hostTcpConnectionCallbackChecker = new CallBackNetworkChecker();
+                            hostTcpConnectionCallbackChecker.setTargetIp(getSelf().getManagementIp());
+                            hostTcpConnectionCallbackChecker.setUsername(getSelf().getUsername());
+                            hostTcpConnectionCallbackChecker.setPassword(getSelf().getPassword());
+                            hostTcpConnectionCallbackChecker.setPort(getSelf().getPort());
+                            hostTcpConnectionCallbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                            hostTcpConnectionCallbackChecker.setCallBackPort(KVMGlobalProperty.TCP_SERVER_PORT);
+                            runner.installChecker(hostTcpConnectionCallbackChecker);
+                        }
+
+                        for (KVMHostAddSshFileMd5CheckerExtensionPoint exp : pluginRgty.getExtensionList(KVMHostAddSshFileMd5CheckerExtensionPoint.class)) {
+                            SshFileMd5Checker sshFileMd5Checker = exp.getSshFileMd5Checker(getSelf());
+                            if (sshFileMd5Checker != null) {
+                                runner.installChecker(sshFileMd5Checker);
+                            }
+                        }
+                        runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
+                        runner.setTargetIp(getSelf().getManagementIp());
+                        runner.setTargetUuid(getSelf().getUuid());
+                        runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);
+                        runner.setUsername(getSelf().getUsername());
+                        runner.setPassword(getSelf().getPassword());
+                        runner.setSshPort(getSelf().getPort());
+
+                        KVMHostDeployArguments deployArguments = new KVMHostDeployArguments();
+                        if (info.isNewAdded()) {
+                            deployArguments.setInit("true");
+                            runner.setFullDeploy(true);
+                        }
+                        if (NetworkGlobalProperty.SKIP_IPV6) {
+                            deployArguments.setSkipIpv6("true");
+                        }
+                        for (CheckMiniExtensionPoint ext : pluginRegistry.getExtensionList(CheckMiniExtensionPoint.class)) {
+                            if (!ext.isMini()) {
+                                continue;
+                            }
+
+                            deployArguments.setIsMini("true");
+                        }
+                        if ("baremetal2".equals(self.getHypervisorType())) {
+                            deployArguments.setIsBareMetal2Gateway("true");
+                        }
+                        if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
+                            deployArguments.setBridgeDisableIptables("true");
+                        }
+
+                        deployArguments.setHostname(String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
+                        deployArguments.setSkipPackages(info.getSkipPackages());
+                        deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
+
+                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
+                        ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
+                        String postUrl = ub.build().toString();
+
+                        deployArguments.setPostUrl(postUrl);
+                        runner.setDeployArguments(deployArguments);
+                        runner.run(new ReturnValueCompletion<Boolean>(trigger) {
+                            @Override
+                            public void success(Boolean run) {
+                                if (run != null) {
+                                    deployed = run;
+                                }
                                 trigger.next();
-                                return;
                             }
 
-                            UpdateDependencyCmd cmd = new UpdateDependencyCmd();
-                            cmd.hostUuid = self.getUuid();
-                            cmd.zstackRepo = AnsibleGlobalProperty.ZSTACK_REPO;
-
-                            if (info.isNewAdded()) {
-                                cmd.enableExpRepo = true;
-                                cmd.updatePackages = rcf.getResourceConfigValue(
-                                        ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_UPDATE_DEPENDENCY, self.getClusterUuid(), String.class);
-                                cmd.excludePackages = rcf.getResourceConfigValue(
-                                        ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_EXCLUDE_DEPENDENCY, self.getClusterUuid(), String.class);
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
                             }
-                            new Http<>(updateDependencyPath, cmd, UpdateDependencyRsp.class)
-                                    .call(new ReturnValueCompletion<UpdateDependencyRsp>(trigger) {
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "configure-iptables";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        StringBuilder builder = new StringBuilder();
+                        if (!KVMGlobalProperty.MN_NETWORKS.isEmpty()) {
+                            builder.append(String.format("sudo bash %s -m %s -p %s -c %s",
+                                    "/var/lib/zstack/kvm/kvmagent-iptables",
+                                    KVMConstant.IPTABLES_COMMENTS,
+                                    KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
+                                    String.join(",", KVMGlobalProperty.MN_NETWORKS)));
+                        } else {
+                            builder.append(String.format("sudo bash %s -m %s -p %s",
+                                    "/var/lib/zstack/kvm/kvmagent-iptables",
+                                    KVMConstant.IPTABLES_COMMENTS,
+                                    KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class)));
+                        }
+
+                        try {
+                            new Ssh().shell(builder.toString())
+                                    .setUsername(getSelf().getUsername())
+                                    .setPassword(getSelf().getPassword())
+                                    .setHostname(getSelf().getManagementIp())
+                                    .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
+                        } catch (SshException ex) {
+                            throw new OperationFailureException(operr(ex.toString()));
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "test-kvmagent-port-open";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        long ctimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_KVMAGENT_PORT_ON_CONNECT_TIMEOUT.value(Integer.class).longValue());
+                        ErrorCode errorCode = isRemotePortOpen(getSelf().getManagementIp(), KVMGlobalProperty.AGENT_PORT, (int) ctimeout);
+                        if (errorCode != null) {
+                            trigger.fail(errorCode);
+                            return;
+                        }
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "echo-host";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        restf.echo(echoPath, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                boolean needRestart = KVMGlobalConfig.RESTART_AGENT_IF_FAKE_DEAD.value(Boolean.class);
+                                if (!deployed && needRestart) {
+                                    // if not deployed and echo failed, we thought it is fake dead, see: ZSTACK-18628
+                                    AnsibleRunner runner = new AnsibleRunner();
+                                    runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
+                                    runner.setTargetIp(getSelf().getManagementIp());
+                                    runner.setTargetUuid(getSelf().getUuid());
+                                    runner.setUsername(getSelf().getUsername());
+                                    runner.setPassword(getSelf().getPassword());
+                                    runner.setSshPort(getSelf().getPort());
+
+                                    runner.restartAgent(AnsibleConstant.KVM_AGENT_NAME, new Completion(trigger) {
                                         @Override
-                                        public void success(UpdateDependencyRsp ret) {
-                                            if (ret.isSuccess()) {
-                                                trigger.next();
-                                            } else {
-                                                trigger.fail(Platform.operr("%s", ret.getError()));
-                                            }
+                                        public void success() {
+                                            restf.echo(echoPath, new Completion(trigger) {
+                                                @Override
+                                                public void success() {
+                                                    trigger.next();
+                                                }
+
+                                                @Override
+                                                public void fail(ErrorCode errorCode) {
+                                                    trigger.fail(errorCode);
+                                                }
+                                            });
                                         }
 
                                         @Override
@@ -4176,146 +4773,220 @@ public class KVMHost extends HostBase implements Host {
                                             trigger.fail(errorCode);
                                         }
                                     });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "collect-kvm-host-facts";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            HostFactCmd cmd = new HostFactCmd();
-                            new Http<>(hostFactPath, cmd, HostFactResponse.class)
-                                    .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
-                                @Override
-                                public void success(HostFactResponse ret) {
-                                    if (!ret.isSuccess()) {
-                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
-                                        return;
-                                    }
-
-                                    if (ret.getHvmCpuFlag() == null) {
-                                        trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
-                                        return;
-                                    }
-
-                                    // create system tags of os::version etc
-                                    createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
-
-                                    createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
-                                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
-                                    createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
-                                    createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
-                                    createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
-                                    createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
-                                    createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
-                                    createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), true);
-                                    createTagWithoutNonValue(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(),  true);
-                                    createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
-                                    createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
-                                    createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
-                                    createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
-                                    createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
-
-                                    if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
-                                        recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
-                                    }
-
-
-
-                                    List<String> ips = ret.getIpAddresses();
-                                    if (ips != null) {
-                                        ips.remove(self.getManagementIp());
-                                        if (CoreGlobalProperty.MN_VIP != null) {
-                                            ips.remove(CoreGlobalProperty.MN_VIP);
-                                        }
-                                        if (!ips.isEmpty()) {
-                                            recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
-                                        } else {
-                                            HostSystemTags.EXTRA_IPS.delete(self.getUuid());
-                                        }
-                                    }
-
-                                    List<String> libvirtCapabilities = ret.getLibvirtCapabilities();
-                                    if (libvirtCapabilities != null) {
-                                        createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
-                                    }
-
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
+                                } else {
                                     trigger.fail(errorCode);
                                 }
-                            });
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-kvmagent-dependencies";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
+                            trigger.next();
+                            return;
                         }
-                    });
 
-                    if (info.isNewAdded()) {
-                        flow(new NoRollbackFlow() {
-                            String __name__ = "check-qemu-libvirt-version";
+                        // new added need to update dependency if experimental repo enabled
+                        if (info.isNewAdded() && !rcf.getResourceConfigValue(
+                                ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, self.getClusterUuid(), Boolean.class)) {
+                            trigger.next();
+                            return;
+                        }
 
-                            @Override
-                            public void run(FlowTrigger trigger, Map data) {
-                                if (!checkQemuLibvirtVersionOfHost()) {
-                                    trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
-                                            self.getUuid(), self.getClusterUuid()));
-                                    return;
-                                }
+                        UpdateDependencyCmd cmd = new UpdateDependencyCmd();
+                        cmd.hostUuid = self.getUuid();
+                        cmd.zstackRepo = AnsibleGlobalProperty.ZSTACK_REPO;
 
-                                if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.hasTag(self.getClusterUuid())) {
-                                    if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL
-                                            .getTokenByResourceUuid(self.getClusterUuid(), KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN)
-                                            .equals("true")
-                                            && !checkCpuModelOfHost()) {
-                                        trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
-                                                self.getUuid(), self.getClusterUuid()));
-                                        return;
+                        if (info.isNewAdded()) {
+                            cmd.enableExpRepo = true;
+                            cmd.updatePackages = rcf.getResourceConfigValue(
+                                    ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_UPDATE_DEPENDENCY, self.getClusterUuid(), String.class);
+                            cmd.excludePackages = rcf.getResourceConfigValue(
+                                    ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_EXCLUDE_DEPENDENCY, self.getClusterUuid(), String.class);
+                        }
+                        new Http<>(updateDependencyPath, cmd, UpdateDependencyRsp.class)
+                                .call(new ReturnValueCompletion<UpdateDependencyRsp>(trigger) {
+                                    @Override
+                                    public void success(UpdateDependencyRsp ret) {
+                                        if (ret.isSuccess()) {
+                                            trigger.next();
+                                        } else {
+                                            trigger.fail(Platform.operr("%s", ret.getError()));
+                                        }
                                     }
 
-                                    trigger.next();
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "collect-kvm-host-facts";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        HostFactCmd cmd = new HostFactCmd();
+                        new Http<>(hostFactPath, cmd, HostFactResponse.class)
+                                .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
+                            @Override
+                            public void success(HostFactResponse ret) {
+                                if (!ret.isSuccess()) {
+                                    trigger.fail(operr("operation error, because:%s", ret.getError()));
                                     return;
                                 }
 
-                                if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
+                                deleteCpuHistoryVOIfCpuModeNameChange(ret.getCpuModelName());
+
+                                if (ret.getHvmCpuFlag() == null) {
+                                    trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
+                                    return;
+                                }
+
+                                updateHostOsInformation(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
+
+                                createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
+                                createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
+                                createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
+                                createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
+                                createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
+                                createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
+                                createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
+                                createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), true);
+                                createTagWithoutNonValue(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(),  true);
+                                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
+                                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
+                                createTagWithoutNonValue(HostSystemTags.IPMI_ADDRESS, HostSystemTags.IPMI_ADDRESS_TOKEN, ret.getIpmiAddress(), true);
+                                createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
+                                createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
+                                createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
+
+                                if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
+                                    recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
+                                }
+
+
+
+                                List<String> ips = ret.getIpAddresses();
+                                if (ips != null) {
+                                    ips.remove(self.getManagementIp());
+                                    if (CoreGlobalProperty.MN_VIP != null) {
+                                        ips.remove(CoreGlobalProperty.MN_VIP);
+                                    }
+                                    if (!ips.isEmpty()) {
+                                        recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
+                                    } else {
+                                        HostSystemTags.EXTRA_IPS.delete(self.getUuid());
+                                    }
+                                }
+
+                                List<String> libvirtCapabilities = ret.getLibvirtCapabilities();
+                                if (libvirtCapabilities != null) {
+                                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
+                                }
+
+                                ret.getVirtualizerInfo().setUuid(self.getUuid());
+                                hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());
+
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                if (info.isNewAdded()) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "check-qemu-libvirt-version";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            if (!checkQemuLibvirtVersionOfHost()) {
+                                trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
+                                        self.getUuid(), self.getClusterUuid()));
+                                return;
+                            }
+
+                            if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.hasTag(self.getClusterUuid())) {
+                                if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL
+                                        .getTokenByResourceUuid(self.getClusterUuid(), KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN)
+                                        .equals("true")
+                                        && !checkCpuModelOfHost()) {
                                     trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
                                             self.getUuid(), self.getClusterUuid()));
                                     return;
                                 }
 
                                 trigger.next();
+                                return;
                             }
-                        });
-                    }
 
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "prepare-host-env";
+                            if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
+                                trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                                        self.getUuid(), self.getClusterUuid()));
+                                return;
+                            }
 
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
-                            runShell(script);
                             trigger.next();
                         }
                     });
-
-                    error(new FlowErrorHandler(complete) {
-                        @Override
-                        public void handle(ErrorCode errCode, Map data) {
-                            complete.fail(errCode);
-                        }
-                    });
-
-                    done(new FlowDoneHandler(complete) {
-                        @Override
-                        public void handle(Map data) {
-                            continueConnect(info, complete);
-                        }
-                    });
                 }
-            }).start();
-        }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "prepare-host-env";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
+                        runShell(script);
+                        trigger.next();
+                    }
+                });
+
+                error(new FlowErrorHandler(complete) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        complete.fail(errCode);
+                    }
+                });
+
+                done(new FlowDoneHandler(complete) {
+                    @Override
+                    public void handle(Map data) {
+                        continueConnect(info, complete);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void deleteCpuHistoryVOIfCpuModeNameChange(String cpuModelName){
+        // delete all records that do not match the cpuModelName of the source physical machine
+        SQL.New(CpuFeaturesHistoryVO.class)
+                .eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid())
+                .notEq(CpuFeaturesHistoryVO_.srcCpuModelName, cpuModelName)
+                .delete();
     }
 
     private void handle(final ShutdownHostMsg msg) {
@@ -4330,6 +5001,24 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handleShutdownHost(final ShutdownHostMsg msg, final NoErrorCompletion completion) {
+        switch (msg.getMethod()) {
+            case AGENT:
+                handleShutdownHostByAgent(msg, completion);
+                break;
+            case IPMI:
+                handleShutdownHostByIpmi(msg, completion);
+                break;
+            default:
+                HostIpmiVO ipmi = dbf.findByUuid(msg.getHostUuid(), HostIpmiVO.class);
+                if (null != ipmi && null != ipmi.getIpmiAddress() && null != ipmi.getIpmiUsername() && null != ipmi.getIpmiPassword()) {
+                    handleShutdownHostByIpmi(msg, completion);
+                } else {
+                    handleShutdownHostByAgent(msg, completion);
+                }
+        }
+    }
+
+    private void handleShutdownHostByAgent(ShutdownHostMsg msg, NoErrorCompletion completion) {
         ShutdownHostReply reply = new ShutdownHostReply();
         KVMAgentCommands.ShutdownHostCmd cmd = new KVMAgentCommands.ShutdownHostCmd();
         new Http<>(shutdownHost, cmd, ShutdownHostResponse.class).call(new ReturnValueCompletion<ShutdownHostResponse>(msg, completion) {
@@ -4374,9 +5063,20 @@ public class KVMHost extends HostBase implements Host {
             }
 
             private void waitForHostShutdown(ShutdownHostReply reply, NoErrorCompletion noErrorCompletion) {
-                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(msg, noErrorCompletion) {
+                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
+                Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
+                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(msg, completion) {
                     @Override
                     public boolean run() {
+                        if (isTimeout()) {
+                            reply.setSuccess(false);
+                            reply.setError(operr("host[%s] not shutdown in %d seconds",msg.getHostUuid(), ctimeout));
+                            bus.reply(msg,reply);
+                            noErrorCompletion.done();
+                            return true;
+                        }
+
                         if (testPort()) {
                             return false;
                         }
@@ -4384,6 +5084,10 @@ public class KVMHost extends HostBase implements Host {
                         bus.reply(msg, reply);
                         noErrorCompletion.done();
                         return true;
+                    }
+
+                    private boolean isTimeout() {
+                        return timeHelper.getCurrentTimeMillis() > deadline;
                     }
 
                     @Override
@@ -4407,7 +5111,7 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(final CancelHostTaskMsg msg) {
         CancelHostTaskReply reply = new CancelHostTaskReply();
-        cancelJob(msg.getCancellationApiId(), new Completion(msg) {
+        cancelJob(msg, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -4421,9 +5125,13 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void cancelJob(String apiId, Completion completion) {
+    private void cancelJob(CancelHostTaskMsg msg, Completion completion) {
         CancelCmd cmd = new CancelCmd();
-        cmd.setCancellationApiId(apiId);
+        cmd.setCancellationApiId(msg.getCancellationApiId());
+        if (msg.getInterval() != null && msg.getTimes() != null) {
+            cmd.setInterval(msg.getInterval());
+            cmd.setTimes(msg.getTimes());
+        }
         new Http<>(cancelJob, cmd, CancelRsp.class).call(new ReturnValueCompletion<CancelRsp>(completion) {
             @Override
             public void success(CancelRsp ret) {
@@ -4785,6 +5493,118 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(AttachDataVolumeToHostMsg msg) {
+        inQueue().name(String.format("attach-volume-to-kvm-host-%s", self.getUuid())).asyncBackup(msg)
+                .run(chain -> doAttachVolume(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void doAttachVolume(AttachDataVolumeToHostMsg msg, NoErrorCompletion completion) {
+        AttachDataVolumeToHostReply reply = new AttachDataVolumeToHostReply();
+        VolumeVO volumeVO = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
+
+        AttachVolumeCmd cmd = new AttachVolumeCmd();
+        cmd.volumeInstallPath = volumeVO.getInstallPath();
+        cmd.volumePrimaryStorageUuid = volumeVO.getPrimaryStorageUuid();
+        cmd.mountPath = msg.getMountPath();
+        cmd.device = msg.getDevice() == null ? null : msg.getDevice();
+        new Http<>(attachVolumePath, cmd, AttachVolumeRsp.class).call(new ReturnValueCompletion<AttachVolumeRsp>(msg) {
+            @Override
+            public void success(AttachVolumeRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to attach volume to host, because:%s", rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
+                VolumeVO vo = dbf.findByUuid(volumeVO.getUuid(), VolumeVO.class);
+                vo.setState(VolumeState.Disabled);
+                vo = dbf.updateAndRefresh(vo);
+
+                VolumeHostRefVO ref = dbf.findByUuid(vo.getUuid(), VolumeHostRefVO.class);
+                if (ref == null) {
+                    ref = new VolumeHostRefVO();
+                    ref.setHostUuid(self.getUuid());
+                    ref.setVolumeUuid(vo.getUuid());
+                    ref.setMountPath(msg.getMountPath());
+                    ref.setDevice(rsp.device);
+                    dbf.persistAndRefresh(ref);
+                } else {
+                    if (!Objects.equals(ref.getDevice(), rsp.device)) {
+                        ref.setDevice(rsp.device);
+                        dbf.update(ref);
+                    }
+                }
+
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(KVMHostAttachVolumeExtensionPoint.class),
+                        p -> p.afterAttachVolume(self.getUuid()));
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(DetachDataVolumeFromHostMsg msg) {
+        inQueue().name(String.format("detach-volume-from-kvm-host-%s", self.getUuid())).asyncBackup(msg)
+                .run(chain -> doDetachVolume(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void doDetachVolume(DetachDataVolumeFromHostMsg msg, NoErrorCompletion completion) {
+        DetachDataVolumeFromHostReply reply = new DetachDataVolumeFromHostReply();
+        DetachVolumeCmd cmd = new DetachVolumeCmd();
+        cmd.volumeInstallPath = msg.getVolumeInstallPath();
+        cmd.mountPath = msg.getMountPath();
+        cmd.device = msg.getDevice();
+        new Http<>(detachVolumePath, cmd, DetachVolumeRsp.class).call(new ReturnValueCompletion<DetachVolumeRsp>(msg) {
+            @Override
+            public void success(DetachVolumeRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to detach volume from host, because:%s", rsp.getError()));
+                } else {
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            sql(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).delete();
+                            sql(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                                    .set(VolumeVO_.state, VolumeState.Enabled).update();
+                        }
+                    }.execute();
+
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(KVMHostDetachVolumeExtensionPoint.class),
+                            p -> p.afterDetachVolume(self.getUuid()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }

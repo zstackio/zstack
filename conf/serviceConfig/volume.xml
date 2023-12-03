@@ -73,4 +73,20 @@
     <message>
         <name>org.zstack.header.volume.APIGetVolumeCapabilitiesMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIAttachDataVolumeToHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIDetachDataVolumeFromHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIBatchSyncVolumeSizeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIFlattenVolumeMsg</name>
+    </message>
 </service>

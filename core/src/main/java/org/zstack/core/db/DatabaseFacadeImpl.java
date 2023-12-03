@@ -1,6 +1,5 @@
 package org.zstack.core.db;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.NestedExceptionUtils;
@@ -26,6 +25,7 @@ import javax.persistence.*;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -240,11 +240,11 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         private void updateEO(Object entity, RuntimeException de) {
             Throwable rootCause = NestedExceptionUtils.getRootCause(de);
             if (rootCause == null
-                    || !MySQLIntegrityConstraintViolationException.class.isAssignableFrom(rootCause.getClass())) {
+                    || !SQLIntegrityConstraintViolationException.class.isAssignableFrom(rootCause.getClass())) {
                 throw de;
             }
 
-            MySQLIntegrityConstraintViolationException me = (MySQLIntegrityConstraintViolationException) rootCause;
+            SQLIntegrityConstraintViolationException me = (SQLIntegrityConstraintViolationException) rootCause;
             if (!(me.getErrorCode() == 1062 && "23000".equals(me.getSQLState()) && me.getMessage().contains("PRIMARY"))) {
                 throw de;
             }

@@ -12,5 +12,10 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="ExternalServiceManager" class="org.zstack.core.externalservice.ExternalServiceManagerImpl" />
+    <bean id="ExternalServiceManager" class="org.zstack.core.externalservice.ExternalServiceManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+        </zstack:plugin>
+    </bean>
 </beans>

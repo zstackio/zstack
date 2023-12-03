@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
@@ -36,6 +37,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.ChangePrimaryStorageStatusMsg;
@@ -45,6 +47,7 @@ import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.NfsPri
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -54,6 +57,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
@@ -296,7 +300,12 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                     operr("cannot find a host which has Connected host-NFS connection to execute command " +
                             "for nfs primary storage[uuid:%s]", pri.getUuid()));
         } else {
-            Collections.shuffle(ret);
+            String apiId = ThreadContext.get(THREAD_CONTEXT_API);
+            if (apiId != null) {
+                CollectionUtils.shuffleByKeySeed(ret, apiId, ResourceVO::getUuid);
+            } else {
+                Collections.shuffle(ret);
+            }
             return HostInventory.valueOf(ret);
         }
     }

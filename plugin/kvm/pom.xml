@@ -4,7 +4,7 @@
     <parent>
         <artifactId>plugin</artifactId>
         <groupId>org.zstack</groupId>
-        <version>4.4.0</version>
+        <version>4.6.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>kvm</artifactId>
@@ -28,6 +28,11 @@
             <groupId>org.zstack</groupId>
             <artifactId>resourceconfig</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact</artifactId>
+            <version>3.0.5</version>
         </dependency>
     </dependencies>
 

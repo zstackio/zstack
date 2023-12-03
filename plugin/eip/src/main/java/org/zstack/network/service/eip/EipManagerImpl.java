@@ -21,12 +21,10 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.Quota.QuotaOperator;
-import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.*;
@@ -36,7 +34,6 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
@@ -55,7 +52,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  */
@@ -1586,125 +1583,15 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreateEipMsg) {
-                        check((APICreateEipMsg) msg, pairs);
-                    } else if (msg instanceof APIChangeResourceOwnerMsg) {
-                        check((APIChangeResourceOwnerMsg) msg, pairs);
-                    }
-                } else {
-                    if (msg instanceof APIChangeResourceOwnerMsg) {
-                        check((APIChangeResourceOwnerMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(EipQuotaConstant.EIP_NUM);
-                usage.setUsed(getUsedEipNum(accountUuid));
-                return list(usage);
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedEipNum(String accountUuid) {
-                String sql = "select count(eip)" +
-                        " from EipVO eip, AccountResourceRefVO ref" +
-                        " where ref.resourceUuid = eip.uuid" +
-                        " and ref.accountUuid = :auuid" +
-                        " and ref.resourceType = :rtype";
-
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", EipVO.class.getSimpleName());
-                Long usedEipNum = q.getSingleResult();
-                usedEipNum = usedEipNum == null ? 0 : usedEipNum;
-                return usedEipNum;
-            }
-
-            @Transactional(readOnly = true)
-            private long getVmEipNum(String vmUuid) {
-                String sql = "select count(eip)" +
-                        " from EipVO eip, VmNicVO vmnic" +
-                        " where vmnic.vmInstanceUuid = :vmuuid" +
-                        " and vmnic.uuid = eip.vmNicUuid";
-
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("vmuuid", vmUuid);
-                Long vmEipNum = q.getSingleResult();
-                vmEipNum = vmEipNum == null ? 0 : vmEipNum;
-                return vmEipNum;
-            }
-
-            @Transactional(readOnly = true)
-            private void check(APICreateEipMsg msg, Map<String, QuotaPair> pairs) {
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
-
-                long eipNumQuota = pairs.get(EipQuotaConstant.EIP_NUM).getValue();
-                long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
-                long askedEipNum = 1;
-
-                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-                quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                quotaCompareInfo.quotaName = EipQuotaConstant.EIP_NUM;
-                quotaCompareInfo.quotaValue = eipNumQuota;
-                quotaCompareInfo.currentUsed = usedEipNum;
-                quotaCompareInfo.request = askedEipNum;
-                new QuotaUtil().CheckQuota(quotaCompareInfo);
-            }
-
-            @Transactional(readOnly = true)
-            private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-                if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
-                    return;
-                }
-
-                SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-                q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
-                AccountResourceRefVO accResRefVO = q.find();
-
-
-                if (accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
-                    long eipNumQuota = pairs.get(EipQuotaConstant.EIP_NUM).getValue();
-                    long usedEipNum = getUsedEipNum(resourceTargetOwnerAccountUuid);
-                    long askedEipNum = getVmEipNum(msg.getResourceUuid());
-
-                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = EipQuotaConstant.EIP_NUM;
-                    quotaCompareInfo.quotaValue = eipNumQuota;
-                    quotaCompareInfo.currentUsed = usedEipNum;
-                    quotaCompareInfo.request = askedEipNum;
-                    new QuotaUtil().CheckQuota(quotaCompareInfo);
-                }
-            }
-        };
-
         Quota quota = new Quota();
-        quota.addMessageNeedValidation(APICreateEipMsg.class);
-        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
-        quota.setOperator(checker);
-
-        QuotaPair p = new QuotaPair();
-        p.setName(EipQuotaConstant.EIP_NUM);
-        p.setValue(EipQuotaGlobalConfig.EIP_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+        quota.defineQuota(new EipNumQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateEipMsg.class).
+                addCounterQuota(EipQuotaConstant.EIP_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(EipVO.class)
+                        .eq(EipVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(EipQuotaConstant.EIP_NUM));
 
         return list(quota);
     }

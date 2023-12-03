@@ -29,7 +29,6 @@ doc {
 					type "List"
 					optional true
 					since "3.6.0"
-					
 				}
 				column {
 					name "userTags"
@@ -39,7 +38,6 @@ doc {
 					type "List"
 					optional true
 					since "3.6.0"
-					
 				}
 			}
         }

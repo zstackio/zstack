@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
     public static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY);
+    private static final Random random = new Random();
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -29,19 +30,7 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             return allocateRequiredIpv6(msg);
         }
 
-        String excludeIp = msg.getExcludedIp();
-        List<IpRangeVO> ranges;
-        /* when allocate ip address from address pool, ipRangeUuid is not null  except for vip */
-        if (msg.getIpRangeUuid() != null) {
-            ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
-        } else {
-            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
-            if (msg.isUseAddressPoolIfNotRequiredIpRange()) /* for vip */ {
-                ranges.addAll(Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                        .eq(AddressPoolVO_.ipVersion, IPv6Constants.IPv6).list());
-            }
-        }
+        List<IpRangeVO> ranges = getReqIpRanges(msg, IPv6Constants.IPv6);
 
         Collections.shuffle(ranges);
 
@@ -50,7 +39,7 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             IpRangeVO tr = null;
 
             for (IpRangeVO r : ranges) {
-                ip = allocateIp(r, excludeIp);
+                ip = allocateIp(r, msg.getExcludedIp());
                 tr = r;
                 if (ip != null) {
                     break;
@@ -96,7 +85,6 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             usedIps.add(exclude);
         }
 
-        Random rnd = new Random();
         /* a stateful dhcp range with 2^24 is big enough */
         int total = end.subtract(start).intValue();
         if ((total > (1 << 23)) || (total < 0)) {
@@ -104,7 +92,7 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
         }
         String address = null;
         do {
-            num = start.add(new BigInteger(String.valueOf(rnd.nextInt(total + 1))));
+            num = start.add(new BigInteger(String.valueOf(random.nextInt(total + 1))));
             if (!usedIps.contains(num)) {
                 address = IPv6NetworkUtils.ipv6AddressToString(num);
                 break;

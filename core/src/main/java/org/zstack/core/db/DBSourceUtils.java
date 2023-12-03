@@ -43,6 +43,8 @@ public class DBSourceUtils {
     private static void sleep(int seconds) {
         try {
             TimeUnit.SECONDS.sleep(seconds);
-        } catch (InterruptedException ignore) {}
+        } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

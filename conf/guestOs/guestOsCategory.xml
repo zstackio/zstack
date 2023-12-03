@@ -128,9 +128,27 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>12</version>
+        <osRelease>SUSE Linux 12</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>15</version>
+        <osRelease>SUSE Linux 15</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Linux</name>
         <version></version>
         <osRelease>Linux</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Oracle</name>
+        <version>7</version>
+        <osRelease>Oracle Linux 7</osRelease>
     </osInfo>
 
     <osInfo>
@@ -193,6 +211,12 @@
         <name>FreeBSD</name>
         <version></version>
         <osRelease>FreeBSD</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Other</platform>
+        <name>Solaris</name>
+        <version>10</version>
+        <osRelease>Solaris 10</osRelease>
     </osInfo>
     <osInfo>
         <platform>Other</platform>

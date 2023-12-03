@@ -1,16 +1,15 @@
 package org.zstack.ldap;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.HardcodedFilter;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -20,18 +19,19 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.captcha.Captcha;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
+import org.zstack.header.identity.login.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.Session;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
@@ -53,10 +53,11 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * Created by miao on 16-9-6.
  */
-public class LdapManagerImpl extends AbstractService implements LdapManager {
+public class LdapManagerImpl extends AbstractService implements LdapManager, LoginBackend {
     private static final CLogger logger = Utils.getLogger(LdapManagerImpl.class);
 
     private static final LdapEffectiveScope scope = new LdapEffectiveScope(AccountConstant.LOGIN_TYPE);
+    private static final LoginType loginType = new LoginType(LdapConstant.LOGIN_TYPE);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -144,43 +145,33 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     private void handle(APILogInByLdapMsg msg) {
-        APILogInByLdapReply reply = new APILogInByLdapReply();
+        LogInMsg logInMsg = new LogInMsg();
+        logInMsg.setClientInfo(msg.getClientInfo());
+        logInMsg.setPassword(msg.getPassword());
+        logInMsg.setUsername(msg.getUsername());
+        logInMsg.setCaptchaUuid(msg.getCaptchaUuid());
+        logInMsg.setVerifyCode(msg.getVerifyCode());
+        logInMsg.setSystemTags(msg.getSystemTags());
+        logInMsg.setLoginType(msg.getLoginType());
+        bus.makeTargetServiceIdByResourceUuid(logInMsg, LoginManager.SERVICE_ID, logInMsg.getUsername());
+        bus.send(logInMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                APILogInByLdapReply apiLogInReply = new APILogInByLdapReply();
+                if (!reply.isSuccess()) {
+                    apiLogInReply.setError(reply.getError());
+                    bus.reply(msg, apiLogInReply);
+                    return;
+                }
 
-        String ldapLoginName = msg.getUid();
-        if (!isValid(ldapLoginName, msg.getPassword())) {
-            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR,
-                    "Login validation failed in LDAP"));
-            bus.reply(msg, reply);
-            return;
-        }
-
-        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
-        String dn = ldapUtil.getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUtil.getLdapUseAsLoginName(), ldapLoginName);
-        LdapAccountRefVO vo = ldapUtil.findLdapAccountRefVO(dn);
-
-        if (vo == null) {
-            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR,
-                    "The ldapUid does not have a binding account."));
-            bus.reply(msg, reply);
-            return;
-        }
-
-        SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
-        sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, vo.getAccountUuid());
-        AccountVO avo = sq.find();
-        if (avo == null) {
-            reply.setError(operr(
-                    "Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
-            bus.reply(msg, reply);
-            return;
-        }
-
-        SessionInventory inv = Session.login(vo.getAccountUuid(), vo.getAccountUuid());
-        msg.setSession(inv);
-        reply.setInventory(inv);
-        reply.setAccountInventory(AccountInventory.valueOf(avo));
-
-        bus.reply(msg, reply);
+                LogInReply logInReply = reply.castReply();
+                apiLogInReply.setInventory(logInReply.getSession());
+                msg.setSession(logInReply.getSession());
+                AccountVO vo = dbf.findByUuid(logInReply.getSession().getAccountUuid(), AccountVO.class);
+                apiLogInReply.setAccountInventory(AccountInventory.valueOf(vo));
+                bus.reply(msg, apiLogInReply);
+            }
+        });
     }
 
     private void handle(APIAddLdapServerMsg msg) {
@@ -212,6 +203,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         evt.setInventory(inv);
 
         this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
+        this.saveLdapAllowListFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapUseAsLoginNameTag(msg.getSystemTags(), ldapServerVO.getUuid());
 
@@ -229,6 +221,25 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         PatternedSystemTag tag =  LdapSystemTags.LDAP_CLEAN_BINDING_FILTER;
         String token = LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN;
+
+        String tagValue = SystemTagUtils.findTagValue(systemTags, tag, token);
+        if(StringUtils.isEmpty(tagValue)){
+            return;
+        }
+
+        SystemTagCreator creator = tag.newSystemTagCreator(uuid);
+        creator.recreate = true;
+        creator.setTagByTokens(map(CollectionDSL.e(token, tagValue)));
+        creator.create();
+    }
+
+    private void saveLdapAllowListFilterTag(List<String> systemTags, String uuid){
+        if(systemTags == null || systemTags.isEmpty()){
+            return;
+        }
+
+        PatternedSystemTag tag = LdapSystemTags.LDAP_ALLOW_LIST_FILTER;
+        String token = LdapSystemTags.LDAP_ALLOW_LIST_FILTER_TOKEN;
 
         String tagValue = SystemTagUtils.findTagValue(systemTags, tag, token);
         if(StringUtils.isEmpty(tagValue)){
@@ -395,7 +406,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             evt.setInventory(bindLdapAccount(msg.getAccountUuid(), fullDn));
             logger.info(String.format("create ldap binding[ldapUid=%s, ldapUseAsLoginName=%s] success", fullDn, ldapUseAsLoginName));
         } catch (PersistenceException e) {
-            if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class)) {
+            if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
                 evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
                         "The ldap uid has been bound to an account. "));
             } else {
@@ -439,14 +450,21 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
             // filter
             String filter = LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.getTokenByResourceUuid(ldapAccRefVO.getLdapServerUuid(), LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN);
-            if(StringUtils.isEmpty(filter)){
-                continue;
+            if(StringUtils.isNotEmpty(filter)){
+                HardcodedFilter hardcodedFilter = new HardcodedFilter(filter);
+                if(ldapUtil.validateDnExist(ldapTemplateContextSource, ldapDn, hardcodedFilter)){
+                    accountUuidList.add(ldapAccRefVO.getAccountUuid());
+                    ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
+                }
             }
-
-            HardcodedFilter hardcodedFilter = new HardcodedFilter(filter);
-            if(ldapUtil.validateDnExist(ldapTemplateContextSource, ldapDn, hardcodedFilter)){
-                accountUuidList.add(ldapAccRefVO.getAccountUuid());
-                ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
+            // allow list filter
+            String allowListFilter = LdapSystemTags.LDAP_ALLOW_LIST_FILTER.getTokenByResourceUuid(ldapAccRefVO.getLdapServerUuid(), LdapSystemTags.LDAP_ALLOW_LIST_FILTER_TOKEN);
+            if(StringUtils.isNotEmpty(allowListFilter)){
+                HardcodedFilter hardcodedAllowListFilter = new HardcodedFilter(allowListFilter);
+                if(!ldapUtil.validateDnExist(ldapTemplateContextSource, ldapDn, hardcodedAllowListFilter)){
+                    accountUuidList.add(ldapAccRefVO.getAccountUuid());
+                    ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
+                }
             }
         }
 
@@ -501,6 +519,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         evt.setInventory(LdapServerInventory.valueOf(ldapServerVO));
 
         this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
+        this.saveLdapAllowListFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapUseAsLoginNameTag(msg.getSystemTags(), ldapServerVO.getUuid());
         for (UpdateLdapServerExtensionPoint ext : pluginRgty.getExtensionList(UpdateLdapServerExtensionPoint.class)) {
@@ -510,4 +529,63 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         bus.publish(evt);
     }
 
+    @Override
+    public LoginType getLoginType() {
+        return loginType;
+    }
+
+    @Override
+    public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
+        String ldapLoginName = loginContext.getUsername();
+        if (!isValid(ldapLoginName, loginContext.getPassword())) {
+            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
+                    "Login validation failed in LDAP"));
+            return;
+        }
+
+        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
+        String dn = ldapUtil.getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUtil.getLdapUseAsLoginName(), ldapLoginName);
+        LdapAccountRefVO vo = ldapUtil.findLdapAccountRefVO(dn);
+
+        if (vo == null) {
+            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
+                    "The ldapUid does not have a binding account."));
+            return;
+        }
+
+        SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
+        sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, vo.getAccountUuid());
+        AccountVO avo = sq.find();
+        if (avo == null) {
+            completion.fail(operr(
+                    "Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
+            return;
+        }
+
+        LoginSessionInfo info = new LoginSessionInfo();
+        info.setUserUuid(vo.getAccountUuid());
+        info.setAccountUuid(vo.getAccountUuid());
+        info.setUserType(AccountVO.class.getSimpleName());
+        completion.success(info);
+    }
+
+    @Override
+    public boolean authenticate(String username, String password) {
+        return ldapUtil.isValid(username, password);
+    }
+
+    @Override
+    public String getUserIdByName(String username) {
+        return ldapUtil.getFullUserDn(username);
+    }
+
+    @Override
+    public void collectUserInfoIntoContext(LoginContext loginContext) {
+        loginContext.setUserUuid(getUserIdByName(loginContext.getUsername()));
+    }
+
+    @Override
+    public List<AdditionalAuthFeature> getRequiredAdditionalAuthFeature() {
+        return Collections.singletonList(LoginAuthConstant.basicLoginControl);
+    }
 }

@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "2.2.4"
-					
 				}
 				column {
 					name "systemTags"
@@ -39,7 +38,6 @@ doc {
 					type "List"
 					optional true
 					since "2.2.4"
-					
 				}
 				column {
 					name "userTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "2.2.4"
-					
 				}
 			}
         }

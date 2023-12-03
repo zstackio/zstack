@@ -30,6 +30,14 @@ public class ApplianceVmCanonicalEvents {
     public static class NewVmCreatedData implements FireEvent {
         public ApplianceVmInventory vm;
 
+        public void setVm(ApplianceVmInventory vm) {
+            this.vm = vm;
+        }
+
+        public ApplianceVmInventory getVm() {
+            return this.vm;
+        }
+
         @Override
         public void fire() {
             fire(NEW_VM_CREATED);

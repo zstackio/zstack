@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "2.3"
-					
 				}
 				column {
 					name "duration"
@@ -39,7 +38,6 @@ doc {
 					type "Long"
 					optional true
 					since "2.3"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "2.3"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "2.3"
-					
 				}
 			}
         }

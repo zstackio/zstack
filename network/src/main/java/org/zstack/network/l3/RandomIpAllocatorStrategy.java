@@ -1,6 +1,5 @@
 package org.zstack.network.l3;
 
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.network.l3.*;
@@ -9,6 +8,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
     private static final CLogger logger = Utils.getLogger(RandomIpAllocatorStrategy.class);
     public static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY);
+    private static final Random random = new Random();
 
     @Override
     public IpAllocatorType getType() {
@@ -29,18 +30,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
             return allocateRequiredIp(msg);
         }
 
-        List<IpRangeVO> ranges;
-        /* when allocate ip address from address pool, ipRangeUuid is not null  except for vip */
-        if (msg.getIpRangeUuid() != null) {
-            ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
-        } else {
-            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
-            if (msg.isUseAddressPoolIfNotRequiredIpRange()) /* for vip */ {
-                ranges.addAll(Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                        .eq(AddressPoolVO_.ipVersion, IPv6Constants.IPv4).list());
-            }
-        }
+        List<IpRangeVO> ranges = getReqIpRanges(msg, IPv6Constants.IPv4);
 
         Collections.shuffle(ranges);
 
@@ -80,11 +70,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
             // have to count the used IP every time allocating a IP, and count operation
             // is a full scan in DB, which is very costly
             if (failureCheckPoint == failureCount++) {
-                SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
-                q.select(UsedIpVO_.ipInLong);
-                q.add(UsedIpVO_.ipRangeUuid, Op.EQ, rangeUuid);
-                List<Long> used = q.listValue();
-                used = used.stream().distinct().collect(Collectors.toList());
+                List<BigInteger> used = IpRangeHelper.getUsedIpInRange(rangeUuid, IPv6Constants.IPv4);
                 long count = used.size();
                 if (count == total) {
                     logger.debug(String.format("ip range[uuid:%s] has no ip available, try next one", rangeUuid));
@@ -122,7 +108,6 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
 
     private String allocateIp(IpRangeAO vo, String excludeIp) {
         int total = vo.size();
-        Random random = new Random();
         long s = random.nextInt(total) + NetworkUtils.ipv4StringToLong(vo.getStartIp());
         long e = NetworkUtils.ipv4StringToLong(vo.getEndIp());
 

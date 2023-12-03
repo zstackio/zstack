@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.zstack</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.4.0</version>
+        <version>4.6.0</version>
     </parent>
     <artifactId>virtualRouterProvider</artifactId>
 

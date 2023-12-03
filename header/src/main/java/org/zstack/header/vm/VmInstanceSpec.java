@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
@@ -16,10 +17,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.JsonWrapper;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class VmInstanceSpec implements Serializable {
@@ -48,6 +46,15 @@ public class VmInstanceSpec implements Serializable {
         private boolean isVolumeCreated;
         private List<String> tags;
         private String allocatedInstallUrl;
+        private String associatedVolumeUuid;
+
+        public String getAssociatedVolumeUuid() {
+            return associatedVolumeUuid;
+        }
+
+        public void setAssociatedVolumeUuid(String associatedVolumeUuid) {
+            this.associatedVolumeUuid = associatedVolumeUuid;
+        }
 
         public String getAllocatedInstallUrl() {
             return allocatedInstallUrl;
@@ -138,6 +145,10 @@ public class VmInstanceSpec implements Serializable {
 
         public void setNeedDownload(boolean needDownload) {
             this.needDownload = needDownload;
+        }
+
+        public boolean relyOnImageCache() {
+            return !needDownload && CollectionUtils.isEmpty(inventory.getBackupStorageRefs());
         }
     }
 
@@ -309,6 +320,7 @@ public class VmInstanceSpec implements Serializable {
     private boolean gcOnStopFailure;
     private boolean ignoreResourceReleaseFailure;
     private boolean usbRedirect = false;
+    private boolean enableSecurityElement = false;
     private String enableRDP = "false";
     private String VDIMonitorNumber = "1";
     @NoLogging
@@ -323,6 +335,8 @@ public class VmInstanceSpec implements Serializable {
     private List<String> dataVolumeSystemTags;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
+
+    private List<String> disableL3Networks;
 
     public boolean isSkipIpAllocation() {
         return skipIpAllocation;
@@ -362,6 +376,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setUsbRedirect(boolean usbRedirect) {
         this.usbRedirect = usbRedirect;
+    }
+    
+    public boolean isEnableSecurityElement() {
+        return enableSecurityElement;
+    }
+    
+    public void setEnableSecurityElement(boolean enableSecurityElement) {
+        this.enableSecurityElement = enableSecurityElement;
     }
 
     public void setCreatePaused(boolean createPaused) {
@@ -473,6 +495,15 @@ public class VmInstanceSpec implements Serializable {
 
     public List<VolumeSpec> getVolumeSpecs() {
         return volumeSpecs;
+    }
+
+    public String getAllocatedUrlFromVolumeSpecs(String associatedVolumeUuid) {
+        VolumeSpec vspec = volumeSpecs.stream()
+                .filter(v -> associatedVolumeUuid.equals(v.getAssociatedVolumeUuid()))
+                .findFirst()
+                .orElse(null);
+
+        return vspec != null ? vspec.getAllocatedInstallUrl() : null;
     }
 
     public void setVolumeSpecs(List<VolumeSpec> volumeSpecs) {
@@ -720,5 +751,13 @@ public class VmInstanceSpec implements Serializable {
             return this.getImageSpec().getInventory().getSize();
         }
         return rootDiskOffering.getDiskSize();
+    }
+
+    public List<String> getDisableL3Networks() {
+        return disableL3Networks;
+    }
+
+    public void setDisableL3Networks(List<String> disableL3Networks) {
+        this.disableL3Networks = disableL3Networks;
     }
 }

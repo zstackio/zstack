@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
-import org.zstack.header.vm.VmCapabilities;
 import org.zstack.compute.vm.VmCapabilitiesExtensionPoint;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
@@ -16,9 +15,15 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
@@ -36,7 +41,10 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostCanonicalEvents;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
@@ -47,18 +55,18 @@ import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.*;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
+import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -81,7 +89,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
         BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint,
         InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension,
-        VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint, PSCapacityExtensionPoint {
+        VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint, PSCapacityExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -359,12 +367,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
 
         SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
-        q.select(CephPrimaryStorageMonVO_.monAddr, CephPrimaryStorageMonVO_.monPort);
+        q.select(CephPrimaryStorageMonVO_.monAddr, CephPrimaryStorageMonVO_.monPort, CephPrimaryStorageMonVO_.status);
         q.add(CephPrimaryStorageMonVO_.primaryStorageUuid, Op.EQ, vol.getPrimaryStorageUuid());
-        q.add(CephPrimaryStorageMonVO_.status, Op.EQ, MonStatus.Connected);
         List<Tuple> ts = q.listTuple();
 
-        if (ts.isEmpty()) {
+        if (ts.isEmpty() || ts.stream().noneMatch(t -> t.get(2, MonStatus.class) == MonStatus.Connected)) {
             throw new OperationFailureException(operr(
                     "cannot find any Connected ceph mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid())
             );
@@ -587,7 +594,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 ask.setImageUuid(paramIn.getImage().getUuid());
                 ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                 ask.setImageMediaType(paramIn.getImage().getMediaType());
-                bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
+                bus.makeLocalServiceId(ask, BackupStorageConstant.SERVICE_ID);
                 MessageReply ar = bus.call(ask);
                 if (!ar.isSuccess()) {
                     trigger.fail(ar.getError());
@@ -1215,17 +1222,167 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
-        return Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.url).eq(PrimaryStorageVO_.uuid, psInv.getUuid()).findValue();
+        if (msg.getRequiredInstallUri() != null) {
+            CephRequiredUrlParser.InstallPath path = CephRequiredUrlParser.getInstallPathFromUri(msg.getRequiredInstallUri());
+            checkCephPoolCapacityForNewVolume(path.poolName, msg.getSize(), psInv.getUuid());
+            return path.fullPath;
+        }
+
+        return getPreAllocatedInstallUrl(msg, psInv.getUuid());
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public long reserveCapacity(AllocatePrimaryStorageSpaceMsg msg, String allocatedInstallUrl, long size, String psUuid) {
-        return size;
+        return new CephOsdGroupCapacityHelper(psUuid).reserveAvailableCapacity(allocatedInstallUrl, size);
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        new CephOsdGroupCapacityHelper(psUuid).releaseAvailableCapacity(allocatedInstallUrl, size);
+    }
+
+    @Override
+    public String getPrimaryStorageTypeForRecalculateCapacityExtensionPoint() {
+        return type.toString();
+    }
+
+    @Override
+    public void afterRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
+        new CephOsdGroupCapacityHelper(struct.getPrimaryStorageUuid()).recalculateAvailableCapacity();
+    }
+
+    @Override
+    public void beforeRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
+
+    }
+
+    private String getPoolName(String customPoolName, String defaultPoolName, long volumeSize, String poolType, String psUuid) {
+        CephOsdGroupCapacityHelper osdHelper = new CephOsdGroupCapacityHelper(psUuid);
+        if (customPoolName != null) {
+            checkCephPoolCapacityForNewVolume(customPoolName, volumeSize, psUuid);
+            return customPoolName;
+        }
+
+        CephPrimaryStoragePoolVO pool = getPoolFromPoolName(defaultPoolName, psUuid, poolType);
+
+        boolean capacityChecked = osdHelper.checkVirtualSizeByRatio(pool.getUuid(), volumeSize);
+
+        if (!capacityChecked) {
+            //try to find other pool
+            List<CephPrimaryStoragePoolVO> pools = Q.New(CephPrimaryStoragePoolVO.class)
+                    .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, psUuid)
+                    .eq(CephPrimaryStoragePoolVO_.type, poolType)
+                    .notEq(CephPrimaryStoragePoolVO_.poolName, defaultPoolName)
+                    .list();
+
+            Optional<String> opt = pools.stream()
+                    .filter(v -> osdHelper.checkVirtualSizeByRatio(v.getUuid(), volumeSize))
+                    .map(CephPrimaryStoragePoolVO::getPoolName)
+                    .findFirst();
+
+            if (opt.isPresent()) {
+                return opt.get();
+            }
+
+            logger.debug(String.format("unable to find a %s pool with the required size %s", poolType, volumeSize));
+            return null;
+        }
+
+        return defaultPoolName;
+    }
+
+    private String getDefaultImageCachePoolName(String psUuid) {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL.getTokenByResourceUuid(psUuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL_TOKEN);
+    }
+
+    private String getDefaultDataVolumePoolName(String psUuid) {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(psUuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN);
+    }
+
+    private String getDefaultRootVolumePoolName(String psUuid) {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL.getTokenByResourceUuid(psUuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN);
+    }
+
+    private CephPrimaryStoragePoolVO getPoolFromPoolName(String poolName, String psUuid, String poolType) {
+        Q q = Q.New(CephPrimaryStoragePoolVO.class)
+                .eq(CephPrimaryStoragePoolVO_.poolName, poolName)
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, psUuid);
+
+        if (poolType != null) {
+            q.eq(CephPrimaryStoragePoolVO_.type, poolType);
+        }
+
+        List<CephPrimaryStoragePoolVO> poolVOS = q.list();
+
+        if (poolVOS.size() == 0) {
+            throw new OperationFailureException(operr("cannot find cephPrimaryStorage pool[poolName=%s]", poolName));
+        }
+
+        return poolVOS.get(0);
+    }
+
+    private void checkCephPoolCapacityForNewVolume(String poolName, long volumeSize, String psUuid) {
+        CephPrimaryStoragePoolVO poolVO = getPoolFromPoolName(poolName, psUuid, null);
+
+        if (!new CephOsdGroupCapacityHelper(psUuid).checkVirtualSizeByRatio(poolVO.getUuid(), volumeSize)) {
+            throw new OperationFailureException(operr("cephPrimaryStorage pool[poolName=%s] available virtual capacity not enough for size %s",
+                    poolName, volumeSize));
+        }
+    }
+
+    private String getPoolNameFromSystemTags(List<String> systemTags, String volumeType) {
+        if (systemTags == null || systemTags.isEmpty()) {
+            return null;
+        }
+
+        if (VolumeType.Root.toString().equals(volumeType)) {
+            return systemTags.stream().filter(tag -> TagUtils.isMatch(CephSystemTags.USE_CEPH_ROOT_POOL.getTagFormat(), tag))
+                    .map(tag -> TagUtils.parse(CephSystemTags.USE_CEPH_ROOT_POOL.getTagFormat(), tag).get(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN))
+                    .findFirst().orElse(null);
+        } else if (VolumeType.Data.toString().equals(volumeType)) {
+            return systemTags.stream().filter(tag -> TagUtils.isMatch(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTagFormat(), tag))
+                    .map(tag -> TagUtils.parse(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTagFormat(), tag).get(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN))
+                    .findFirst().orElse(null);
+        }
+        return null;
+    }
+
+    private String getDataVolumeTargetPoolName(List<String> systemTags, long volumeSize, String psUuid) {
+        String poolName = getPoolNameFromSystemTags(systemTags, VolumeType.Data.toString());
+        return getPoolName(poolName, getDefaultDataVolumePoolName(psUuid), volumeSize, CephPrimaryStoragePoolType.Data.toString(), psUuid);
+    }
+
+    private String getRootVolumeTargetPoolName(List<String> systemTags, long volumeSize, String psUuid) {
+        String poolName = getPoolNameFromSystemTags(systemTags, VolumeType.Root.toString());
+        return getPoolName(poolName, getDefaultRootVolumePoolName(psUuid), volumeSize, CephPrimaryStoragePoolType.Root.toString(), psUuid);
+    }
+
+    private String getImageCachePoolTargetPoolName(String psUuid, long volumeSize) {
+        String imageCachePool = getDefaultImageCachePoolName(psUuid);
+        return getPoolName(null, imageCachePool, volumeSize, CephPrimaryStoragePoolType.ImageCache.toString(), psUuid);
+    }
+
+    private String getPreAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, String psUuid) {
+        final String purpose = msg.getPurpose();
+        if (purpose.equals(PrimaryStorageAllocationPurpose.CreateNewVm.toString())||
+                purpose.equals(PrimaryStorageAllocationPurpose.CreateRootVolume.toString())) {
+            return makePreAllocatedInstallUrl(getRootVolumeTargetPoolName(msg.getSystemTags(), msg.getSize(), psUuid));
+        } else if (purpose.equals(PrimaryStorageAllocationPurpose.CreateDataVolume.toString())) {
+            return makePreAllocatedInstallUrl(getDataVolumeTargetPoolName(msg.getSystemTags(), msg.getSize(), psUuid));
+        } else if (purpose.equals(PrimaryStorageAllocationPurpose.DownloadImage.toString())) {
+            return makePreAllocatedInstallUrl(getImageCachePoolTargetPoolName(psUuid, msg.getSize()));
+        }
+
+        throw new OperationFailureException(operr("cannot allocate pool for primaryStorage[%s], purpose: %s", psUuid, purpose));
+    }
+
+    private String makePreAllocatedInstallUrl(String poolName) {
+        if (poolName == null) {
+            return null;
+        }
+
+        return String.format("ceph://%s/", poolName);
     }
 }

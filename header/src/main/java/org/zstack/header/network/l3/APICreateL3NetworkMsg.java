@@ -82,6 +82,9 @@ public class APICreateL3NetworkMsg extends APICreateMessage implements APIAudito
 
     private String dnsDomain;
 
+    @APIParam(required = false)
+    private Boolean enableIPAM = Boolean.TRUE;
+
     public String getDnsDomain() {
         return dnsDomain;
     }
@@ -144,6 +147,14 @@ public class APICreateL3NetworkMsg extends APICreateMessage implements APIAudito
 
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
+    }
+
+    public Boolean getEnableIPAM() {
+        return enableIPAM;
+    }
+
+    public void setEnableIPAM(Boolean enableIPAM) {
+        this.enableIPAM = enableIPAM;
     }
 
     public static APICreateL3NetworkMsg __example__() {

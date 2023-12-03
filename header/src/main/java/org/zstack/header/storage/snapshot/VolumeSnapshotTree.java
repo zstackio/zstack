@@ -217,13 +217,13 @@ public class VolumeSnapshotTree {
             inventory.setUuid(uuid);
         }
 
-        private void walkDown(SnapshotLeaf me, Consumer<SnapshotLeaf> consumer) {
+        private static void walkDownAll(SnapshotLeaf me, Consumer<SnapshotLeaf> consumer) {
             consumer.accept(me);
-            me.children.forEach(c -> walkDown(c, consumer));
+            me.children.forEach(c -> walkDownAll(c, consumer));
 
         }
-        public void walkDown(Consumer<SnapshotLeaf> consumer) {
-            walkDown(this, consumer);
+        public void walkDownAll(Consumer<SnapshotLeaf> consumer) {
+            walkDownAll(this, consumer);
         }
 
         public VolumeSnapshotTree toSubTree() {

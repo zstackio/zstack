@@ -207,14 +207,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                             runner.setSshPort(getSelf().getSshPort());
                             runner.setAgentPort(CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(CephGlobalProperty.BACKUP_STORAGE_PLAYBOOK_NAME);
-                            runner.putArgument("pkg_cephbagent", CephGlobalProperty.BACKUP_STORAGE_PACKAGE_NAME);
-                            if (CoreGlobalProperty.SYNC_NODE_TIME) {
-                                if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
-                                    trigger.fail(operr("chrony server not configured!"));
-                                    return;
-                                }
-                                runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
-                            }
+                            runner.setDeployArguments(new CephBackupStorageDeployArguments());
                             runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                                 @Override
                                 public void success(Boolean deployed) {
@@ -478,14 +471,14 @@ public class CephBackupStorageMonBase extends CephMonBase {
         cmd.backupStorageUuid = getSelf().getBackupStorageUuid();
 
         restf.asyncJsonPost(CephAgentUrl.backupStorageUrl(self.getHostname(), PING_PATH),
-                cmd, new JsonAsyncRESTCallback<CephPrimaryStorageMonBase.PingRsp>(completion) {
+                cmd, new JsonAsyncRESTCallback<CephBackupStorageMonBase.PingRsp>(completion) {
                     @Override
                     public void fail(ErrorCode err) {
                         completion.fail(err);
                     }
 
                     @Override
-                    public void success(CephPrimaryStorageMonBase.PingRsp rsp) {
+                    public void success(CephBackupStorageMonBase.PingRsp rsp) {
                         PingResult res = new PingResult();
                         res.success = rsp.isSuccess();
                         res.error = rsp.getError();
@@ -495,8 +488,8 @@ public class CephBackupStorageMonBase extends CephMonBase {
                     }
 
                     @Override
-                    public Class<CephPrimaryStorageMonBase.PingRsp> getReturnClass() {
-                        return CephPrimaryStorageMonBase.PingRsp.class;
+                    public Class<CephBackupStorageMonBase.PingRsp> getReturnClass() {
+                        return CephBackupStorageMonBase.PingRsp.class;
                     }
                 }, TimeUnit.SECONDS, 60);
     }

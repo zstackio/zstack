@@ -77,7 +77,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     }
 
     @Override
-    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
         APICreateL2VxlanNetworkMsg amsg = (APICreateL2VxlanNetworkMsg) msg;
 
         AllocateVniMsg vniMsg = new AllocateVniMsg();
@@ -97,6 +97,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
                 String uuid = msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid();
                 vo.setUuid(uuid);
                 vo.setVni(r.getVni());
+                vo.setVirtualNetworkId(vo.getVni());
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
                 vo.setPoolUuid((amsg.getPoolUuid()));
                 if (vo.getPhysicalInterface() == null) {

@@ -25,6 +25,7 @@ import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.*;
+import org.zstack.header.core.trash.TrashCleanupResult;
 import org.zstack.header.core.trash.CleanTrashResult;
 import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.workflow.*;
@@ -49,10 +50,8 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -495,20 +494,19 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         bus.reply(msg, reply);
     }
 
-    private void cleanTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
-        CleanTrashResult result = new CleanTrashResult();
+    private void cleanTrash(Long trashId, final ReturnValueCompletion<TrashCleanupResult> completion) {
         InstallPathRecycleInventory inv = trash.getTrash(trashId);
         if (inv == null) {
-            completion.success(result);
+            completion.success(new TrashCleanupResult(trashId));
             return;
         }
 
         String details = trash.makeSureInstallPathNotUsed(inv);
         if (details != null) {
-            result.getDetails().add(details);
-            completion.success(result);
+            completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(details)));
             return;
         }
+
         DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
         msg.setInstallPath(inv.getInstallPath());
         msg.setBackupStorageUuid(self.getUuid());
@@ -524,9 +522,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                             inv.getInstallPath(), inv.getSize(), self.getUuid()));
 
                     trash.removeFromDb(inv.getTrashId());
-                    result.setSize(inv.getSize());
-                    result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
-                    completion.success(result);
+                    completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), inv.getSize()));
+
                 } else {
                     logger.warn(String.format("Failed to delete image %s in image migration.", inv.getInstallPath()));
                     completion.fail(reply.getError());
@@ -539,24 +536,33 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         result.setSize(result.getSize() + size);
     }
 
-    private void cleanUpTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
+    private void cleanUpTrash(Long trashId, final ReturnValueCompletion<List<TrashCleanupResult>> completion) {
         if (trashId != null) {
-            cleanTrash(trashId, completion);
+            cleanTrash(trashId, new ReturnValueCompletion<TrashCleanupResult>(completion) {
+                @Override
+                public void success(TrashCleanupResult res) {
+                    completion.success(CollectionDSL.list(res));
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
             return;
         }
 
-        CleanTrashResult result = new CleanTrashResult();
+        List<TrashCleanupResult> results = Collections.synchronizedList(new ArrayList<>());
         List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
-            completion.success(result);
+            completion.success(results);
             return;
         }
 
-        List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs).all((inv, coml) -> {
             String details = trash.makeSureInstallPathNotUsed(inv);
             if (details != null) {
-                result.getDetails().add(details);
+                results.add(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(details)));
                 coml.done();
                 return;
             }
@@ -574,12 +580,12 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                         dbf.update(srcBS);
                         logger.info(String.format("Deleted image %s and returned space[size:%s] to BS[uuid:%s] after image migration",
                                 inv.getInstallPath(), inv.getSize(), self.getUuid()));
-                        result.getResourceUuids().add(inv.getResourceUuid());
-                        updateTrashSize(result, inv.getSize());
+
+                        results.add(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), inv.getSize()));
                         trash.removeFromDb(inv.getTrashId());
                     } else {
                         logger.warn(String.format("Failed to delete image %s in image migration.", inv.getInstallPath()));
-                        errs.add(reply.getError());
+                        coml.addError(reply.getError());
                     }
                     coml.done();
                 }
@@ -587,10 +593,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errs.isEmpty()) {
-                    completion.success(result);
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success(results);
                 } else {
-                    completion.fail(errs.get(0));
+                    completion.fail(errorCodeList.getCauses().get(0));
                 }
             }
         });
@@ -608,10 +614,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(chain) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<List<TrashCleanupResult>>(chain) {
                     @Override
-                    public void success(CleanTrashResult result) {
-                        evt.setResult(result);
+                    public void success(List<TrashCleanupResult> results) {
+                        evt.setResult(TrashCleanupResult.buildCleanTrashResult(results));
+                        evt.setResults(results);
                         bus.publish(evt);
                         chain.next();
                     }

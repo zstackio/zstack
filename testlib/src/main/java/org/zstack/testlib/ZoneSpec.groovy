@@ -1,5 +1,9 @@
 package org.zstack.testlib
 
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.zone.ZoneVO
+import org.zstack.header.zone.ZoneVO_
 import org.zstack.sdk.AttachBackupStorageToZoneAction
 import org.zstack.sdk.ZoneInventory
 import org.zstack.utils.gson.JSONObjectUtil
@@ -16,6 +20,7 @@ class ZoneSpec extends Spec {
     List<PrimaryStorageSpec> primaryStorage = []
     List<L2NetworkSpec> l2Networks = []
     List<VirtualRouterOfferingSpec> virtualRouterOfferingSpecs = []
+    List<SdnControllerSpec> sdnControllerSpecs = []
 
     protected List<String> backupStorageToAttach = []
 
@@ -152,12 +157,23 @@ class ZoneSpec extends Spec {
         return spec
     }
 
+    SdnControllerSpec sdnController(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SdnControllerSpec.class) Closure c) {
+        def nspec = new SdnControllerSpec(envSpec)
+        c.delegate = nspec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(nspec)
+        sdnControllerSpecs.add(nspec)
+        return nspec
+    }
+
     SpecID create(String uuid, String sessionId) {
         inventory = createZone {
             delegate.resourceUuid = uuid
             delegate.name = name
             delegate.sessionId = sessionId
             delegate.description = description
+            delegate.isDefault = true
             delegate.userTags = userTags
             delegate.systemTags = systemTags
         } as ZoneInventory
@@ -188,6 +204,12 @@ class ZoneSpec extends Spec {
     @Override
     void delete(String sessionId) {
         if (inventory != null) {
+            List<String> zoneUuidList = Q.New(ZoneVO.class)
+                    .select(ZoneVO_.uuid)
+                    .eq(ZoneVO_.isDefault, true)
+                    .listValues()
+            assert zoneUuidList.size() <= 1 : "duplicate default zone found ${zoneUuidList}"
+
             deleteZone {
                 delegate.uuid = inventory.uuid
                 delegate.sessionId = sessionId

@@ -2,7 +2,6 @@ package org.zstack.network.service.eip
 
 import org.zstack.network.service.eip.APIQueryEipReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询弹性IP(QueryEip)"

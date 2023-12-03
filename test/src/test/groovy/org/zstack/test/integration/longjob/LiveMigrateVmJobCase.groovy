@@ -13,6 +13,7 @@ import org.zstack.header.allocator.HostCapacityVO
 import org.zstack.header.allocator.HostCapacityVO_
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
+import org.zstack.header.longjob.LongJobConstants
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.longjob.LongJobVO_
 import org.zstack.header.network.service.NetworkServiceType
@@ -28,7 +29,6 @@ import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by camile on 18-3-7.
@@ -190,6 +190,7 @@ class LiveMigrateVmJobCase extends SubCase {
             testLiveMigrateVmLongJobCancel()
             testLiveMigrateVmLongJobCancelFail()
             testLiveMigrateVmLongJobCancelBeforeMigrate()
+            testLiveMigrateVmNoJobToCancel()
         }
     }
 
@@ -294,6 +295,68 @@ class LiveMigrateVmJobCase extends SubCase {
         assert canceled
     }
 
+    void testLiveMigrateVmNoJobToCancel() {
+        env.cleanSimulatorHandlers()
+
+        APIMigrateVmMsg msg = new APIMigrateVmMsg()
+        msg.hostUuid = host2.uuid
+        msg.vmInstanceUuid = vm1.uuid
+        def canceled = false
+        def migrating = false
+
+        env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) { HttpEntity<String> e ->
+            migrating = true
+            while (!canceled) {
+                sleep(500)
+            }
+            return new KVMAgentCommands.MigrateVmResponse()
+        }
+        KVMAgentCommands.CancelCmd cmd = null
+        env.simulator(AgentConstant.CANCEL_JOB) { HttpEntity<String> e ->
+            cmd = json(e.body, KVMAgentCommands.CancelCmd.class)
+            canceled = true
+            def rsp = new KVMAgentCommands.CancelRsp()
+            rsp.setError(LongJobConstants.NO_JOB_TO_CANCEL)
+            return rsp
+        }
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+        } as LongJobInventory
+
+        assert jobInv.jobName == msg.getClass().getSimpleName()
+        assert jobInv.state == LongJobState.Running
+
+        while (!migrating) {
+            sleep(500)
+        }
+        expectError {
+            cancelLongJob {
+                uuid = jobInv.uuid
+            }
+        }
+
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state.toString() == LongJobState.Succeeded.toString()
+        }
+        assert host2.uuid == dbf.findByUuid(vm1.uuid, VmInstanceVO.class).hostUuid
+        assert canceled
+        assert cmd.getInterval() == 1
+        assert cmd.getTimes() == 3
+
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.getUuid()).set(LongJobVO_.state, org.zstack.header.longjob.LongJobState.Canceled).update();
+
+        cancelLongJob {
+            uuid = jobInv.uuid
+        }
+
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.getUuid()).set(LongJobVO_.state, org.zstack.header.longjob.LongJobState.Succeeded).update();
+
+        env.cleanSimulatorHandlers()
+    }
+
     void testLiveMigrateVmLongJobCancelFail() {
         APIMigrateVmMsg msg = new APIMigrateVmMsg()
         msg.hostUuid = host1.uuid
@@ -366,7 +429,7 @@ class LiveMigrateVmJobCase extends SubCase {
             return new KVMAgentCommands.MigrateVmResponse()
         }
 
-        env.message(AllocateHostMsg.class){ AllocateHostMsg amsg, CloudBus bus ->
+        env.message(AllocateHostMsg.class) { AllocateHostMsg amsg, CloudBus bus ->
             while (!canceled) {
                 sleep(500)
             }
@@ -376,7 +439,7 @@ class LiveMigrateVmJobCase extends SubCase {
             long afterAllocateMemInByte = mem - instance.memorySize
             long afterAllocateCpuCount = cpu - instance.cpuNum
 
-            SQL.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid,  host2.uuid)
+            SQL.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid, host2.uuid)
                     .set(HostCapacityVO_.availableMemory, afterAllocateMemInByte)
                     .set(HostCapacityVO_.availableCpu, afterAllocateCpuCount)
                     .update()

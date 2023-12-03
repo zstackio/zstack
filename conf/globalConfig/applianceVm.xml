@@ -47,4 +47,28 @@
         <type>java.lang.Boolean</type>
         <defaultValue>true</defaultValue>
     </config>
+
+    <config>
+        <name>auto.rollback</name>
+        <description>auto delete applianceVm when created failed, auto stop applianceVm when start/reboot failed.</description>
+        <defaultValue>true</defaultValue>
+        <category>applianceVm</category>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <name>enableAbnormalFileReporter</name>
+        <description>enable abnormal file reporter to report abnormal files in applianceVm</description>
+        <defaultValue>true</defaultValue>
+        <category>applianceVm</category>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <name>abnormalFileMaxSize</name>
+        <description>the max size of abnormal file that will not report abnormal files in applianceVm</description>
+        <defaultValue>100</defaultValue>
+        <category>applianceVm</category>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>

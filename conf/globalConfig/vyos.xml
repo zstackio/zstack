@@ -28,4 +28,11 @@
         <type>java.lang.Boolean</type>
         <defaultValue>true</defaultValue>
     </config>
+    <config>
+        <category>vyos</category>
+        <name>enable.vyos.cmd</name>
+        <description>enable or disable vyos command</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>true</defaultValue>
+    </config>
 </globalConfig>

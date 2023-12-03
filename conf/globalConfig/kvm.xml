@@ -109,7 +109,7 @@
     <config>
         <category>kvm</category>
         <name>vm.cpuMode</name>
-        <description>the cpu mode option, which could be used to enable nested virtualization, options are [none, host-model, host-passthrough, Haswell, Haswell-noTSX, Broadwell, Broadwell-noTSX, SandyBridge, IvyBridge, Conroe, Penryn, Nehalem, Westmere, Opteron_G1, Opteron_G2, Opteron_G3, Opteron_G4]. none: not use nested virtualization; host-model/host-passthrough will enable nested virtualization. When using host-passthrough, VM will see same CPU model in Host /proc/cpuinfo. When using host-model or host-passthrough, VM migration might be failed, due to mismatched CPU model. To use nested virtualization, user need to do some pre-configuration. Firstly, the /sys/module/kvm_intel/parameters/nested should be set as 'Y'; Secondly, the /usr/libexec/qemu-kvm binary should support nested feature as well. </description>
+        <description>the cpu mode option, which could be used to enable nested virtualization, options are [none, host-model, host-passthrough, Haswell, Haswell-noTSX, Broadwell, Broadwell-noTSX, SandyBridge, IvyBridge, Conroe, Penryn, Nehalem, Westmere, Opteron_G1, Opteron_G2, Opteron_G3, Opteron_G4, pentium, pentium2, pentium3]. none: not use nested virtualization; host-model/host-passthrough will enable nested virtualization. When using host-passthrough, VM will see same CPU model in Host /proc/cpuinfo. When using host-model or host-passthrough, VM migration might be failed, due to mismatched CPU model. To use nested virtualization, user need to do some pre-configuration. Firstly, the /sys/module/kvm_intel/parameters/nested should be set as 'Y'; Secondly, the /usr/libexec/qemu-kvm binary should support nested feature as well. </description>
         <type>java.lang.String</type>
         <defaultValue>none</defaultValue>
     </config>
@@ -150,6 +150,14 @@
         <category>kvm</category>
         <name>testSshPortOnConnectTimeout</name>
         <description>use with testSshPortOpenTimeout, the connect timeout launching a socket connection to hosts' ssh port, in seconds</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>2</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>testKvmagentPortOnConnectTimeout</name>
+        <description>use with testKvmagentPortOnConnectTimeout, the connect timeout launching a socket connection to hosts' kvmagent port, in seconds</description>
         <type>java.lang.Integer</type>
         <defaultValue>2</defaultValue>
     </config>
@@ -200,5 +208,61 @@
         <description>Interval to check if sockets from host are out of date.</description>
         <defaultValue>3</defaultValue>
         <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>enable.vm.migration.host.cpu.function.check</name>
+        <description>Check whether the CPU function of the dstHost is compatible with the CPU function of the srcHost.</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>redirect.vm.log.to.file</name>
+        <description>Redirect vm console log to file</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>vm.cpu.hypervisor.feature</name>
+        <description>enable or disable hypervisor feature in guest cpuid</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>vm.hyperv.clock.feature</name>
+        <description>Enable or disable hypervclock</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>vm.suspend.to.ram</name>
+        <description>Enable vm suspend to ram</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>vm.suspend.to.disk</name>
+        <description>Enable vm suspend to disk</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>webssh.idleTimeout</name>
+        <description>WebSSH timeout in seconds duration starts counting after the user has stopped interacting.</description>
+        <defaultValue>1800</defaultValue>
+        <type>java.lang.Integer</type>
     </config>
 </globalConfig>

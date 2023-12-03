@@ -1,8 +1,10 @@
 package scripts
 
+
 import com.google.common.io.Resources
 import groovy.json.JsonBuilder
 import org.apache.commons.io.Charsets
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -12,12 +14,7 @@ import org.jsoup.select.Elements
 import org.markdown4j.Markdown4jProcessor
 import org.springframework.http.HttpMethod
 import org.zstack.core.Platform
-import org.zstack.core.config.GlobalConfig
-import org.zstack.core.config.GlobalConfigDef
-import org.zstack.core.config.GlobalConfigDefinition
-import org.zstack.core.config.GlobalConfigException
-import org.zstack.core.config.GlobalConfigValidation
-import org.zstack.core.config.GlobalConfigValidatorExtensionPoint
+import org.zstack.core.config.*
 import org.zstack.header.core.NoDoc
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.exception.CloudRuntimeException
@@ -30,9 +27,9 @@ import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.RestResponse
+import org.zstack.resourceconfig.BindResourceConfig
 import org.zstack.rest.RestConstants
 import org.zstack.rest.sdk.DocumentGenerator
-import org.zstack.resourceconfig.BindResourceConfig
 import org.zstack.utils.*
 import org.zstack.utils.data.StringTemplate
 import org.zstack.utils.gson.JSONObjectUtil
@@ -51,6 +48,7 @@ import java.nio.file.Paths
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors
+
 /**
  * Created by xing5 on 2016/12/21.
  */
@@ -435,6 +433,8 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
     String rootPath
 
+    String projectVersion
+
     Map<String, File> sourceFiles = [:]
 
     def MUTUAL_FIELDS = [
@@ -505,19 +505,28 @@ class RestDocumentationGenerator implements DocumentGenerator {
         c(emc)
     }
 
+    void tryInitVersionOfCurrentRepo() {
+        def f = new File("${rootPath}/VERSION")
+        if (!f.exists()) {
+            println("missing version file[path: ${rootPath}/VERSION]")
+            return
+        }
+
+        def versionNumber = []
+        FileUtils.readLines(f).each { String line ->
+            versionNumber.add(line.split("=")[1].trim())
+        }
+
+        projectVersion = versionNumber.join(".")
+    }
+
     @Override
     void generateDocTemplates(String scanPath, DocMode mode) {
         rootPath = scanPath
+        tryInitVersionOfCurrentRepo()
         scanJavaSourceFiles()
 
-        String classes = System.getProperty("classes")
-        def apiClasses
-        if (classes != null) {
-            apiClasses = classes.split(",").collect { Class.forName(it) }
-        } else {
-            apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
-        }
-
+        Set<Class> apiClasses = getRequestRequestApiSet()
         apiClasses.each {
             println("generating doc template for class ${it}")
             def tmp = new ApiRequestDocTemplate(it)
@@ -532,17 +541,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
         generateResponseDocTemplate(apiClasses as List, mode)
     }
 
-    @Override
-    void generateMarkDown(String scanPath, String resultDir) {
-        rootPath = scanPath
-
-        scanJavaSourceFiles()
-
-        File dir = new File(resultDir)
-        if (!dir.exists()) {
-            dir.mkdirs()
-        }
-
+    Set<Class> getRequestRequestApiSet() {
         Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
         Set<String> noDocClasses = Platform.getReflections().getTypesAnnotatedWith(NoDoc.class)
                 .stream().map{ c -> c.getSimpleName() }.collect(Collectors.toSet())
@@ -563,8 +562,22 @@ class RestDocumentationGenerator implements DocumentGenerator {
             }
         }
 
+        return apiClasses
+    }
+
+    @Override
+    void generateMarkDown(String scanPath, String resultDir) {
+        rootPath = scanPath
+
+        scanJavaSourceFiles()
+
+        File dir = new File(resultDir)
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+
         def errInfo = []
-        apiClasses.each {
+        getRequestRequestApiSet().each {
             def docPath = getDocTemplatePathFromClass(it)
             logger.info("processing ${docPath}")
             try {
@@ -1984,7 +1997,7 @@ ${txt}
         Class responseClass
         RestResponse at
 
-        List<String> imports = []
+        Set<String> imports = []
         Map<String, Object> fsToAdd = [:]
         List<String> fieldStrings = []
 
@@ -2084,7 +2097,7 @@ ${txt}
 \t\tname "${n}"
 \t\tdesc "${desc == null ? "" : desc}"
 \t\ttype "${type}"
-\t\tsince "0.6"
+\t\tsince "${projectVersion != null ? projectVersion : "0.6"}"
 \t}"""
         }
 
@@ -2100,7 +2113,7 @@ ${txt}
 \t\tpath "${path}"
 \t\tdesc "${desc}"${overrideDesc != null ? ",${overrideDesc}" : ""}
 \t\ttype "${type}"
-\t\tsince "0.6"
+\t\tsince "${projectVersion != null ? projectVersion : "0.6"}"
 \t\tclz ${clz.simpleName}.class
 \t}"""
         }
@@ -2168,7 +2181,7 @@ ${fieldStr}
         File sourceFile
         RestRequest at
 
-        List<String> imports = []
+        Set<String> imports = []
         static Map<String, String> apiCategories = [:]
         static List<File> xmlConfigFiles = []
 
@@ -2276,9 +2289,13 @@ ${fieldStr}
 \t\t\t\t\tlocation "${location}"
 \t\t\t\t\ttype "${af.type.simpleName}"
 \t\t\t\t\toptional ${ap == null ? true : !ap.required()}
-\t\t\t\t\tsince "0.6"
-\t\t\t\t\t${values == null ? "" : values}
-\t\t\t\t}""")
+\t\t\t\t\tsince "${projectVersion != null ? projectVersion : "0.6"}"
+""")
+                if (values != null) {
+                    cols.add("\t\t\t\t\t${values}")
+                }
+
+                cols.add("\t\t\t\t}")
             }
 
             if (cols.isEmpty()) {
@@ -2318,8 +2335,20 @@ ${cols.join("\n")}
                 paramString = "\t\t\tparams ${doc._rest._request._params.refClass.simpleName}.class"
             } else {
                 List cols = doc._rest._request._params._cloumns.collect {
-                    String values = it._values != null && !it._values.isEmpty() ? "values (${it._values.collect { "\"$it\"" }.join(",")})" : ""
-                    return """\t\t\t\tcolumn {
+                    String values = it._values != null && !it._values.isEmpty() ? "values (${it._values.collect { "\"$it\"" }.join(",")})" : null
+
+                    if (values == null) {
+                        return """\t\t\t\tcolumn {
+\t\t\t\t\tname "${it._name}"
+\t\t\t\t\tenclosedIn "${it._enclosedIn}"
+\t\t\t\t\tdesc "${it._desc}"
+\t\t\t\t\tlocation "${it._location}"
+\t\t\t\t\ttype "${it._type}"
+\t\t\t\t\toptional ${it._optional}
+\t\t\t\t\tsince "${it._since}"
+\t\t\t\t}"""
+                    } else {
+                        return """\t\t\t\tcolumn {
 \t\t\t\t\tname "${it._name}"
 \t\t\t\t\tenclosedIn "${it._enclosedIn}"
 \t\t\t\t\tdesc "${it._desc}"
@@ -2329,6 +2358,7 @@ ${cols.join("\n")}
 \t\t\t\t\tsince "${it._since}"
 \t\t\t\t\t${values}
 \t\t\t\t}"""
+                    }
                 }
 
                 paramString = """\t\t\tparams {
@@ -2411,14 +2441,15 @@ ${paramString}
         }
 
         void repair(String docFilePath) {
+            Doc oldDoc
             if (!new File(docFilePath).exists()) {
-                logger.info("cannot find ${docFilePath}, not way to repair, you need to generate it first")
-                return
+                logger.info("cannot find ${docFilePath}, generate a doc template as repairing result")
+                oldDoc = createDocFromString(generate())
+            } else {
+                oldDoc = createDoc(docFilePath)
+                Doc newDoc = createDocFromString(generate())
+                oldDoc.merge(newDoc)
             }
-
-            Doc oldDoc = createDoc(docFilePath)
-            Doc newDoc = createDocFromString(generate())
-            oldDoc.merge(newDoc)
 
             new File(docFilePath).write generate(oldDoc)
             logger.info("re-written a request doc template ${docFilePath}")

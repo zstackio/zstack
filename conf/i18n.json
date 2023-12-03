@@ -2762,9 +2762,9 @@
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
   },
   {
-    "raw": "price must be 0 and 9999.99",
-    "en_US": "price must be 0 and 9999.99",
-    "zh_CN": "价格必须在0和9999.99之间",
+    "raw": "price must be 0 and 999999999.99",
+    "en_US": "price must be 0 and 999999999.99",
+    "zh_CN": "价格必须在0和999999999.99之间",
     "arguments": [],
     "line": 234,
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
@@ -4420,9 +4420,9 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
-    "raw": "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again",
-    "en_US": "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again",
-    "zh_CN": "云主机无法执行在线升级CPU/内存，因为不是NUMA架构。请关闭该云主机再尝试",
+    "raw": "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again",
+    "en_US": "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again",
+    "zh_CN": "云主机无法执行在线升级CPU/内存，因为未启用计算规格在线修改。请关闭该云主机再尝试",
     "arguments": [],
     "line": 207,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
@@ -5094,6 +5094,38 @@
       "msg.getZoneUuid()"
     ],
     "line": 434,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "no primary storage accessible to the backup storage[uuid:%s, type:%s] is found",
+    "en_US": "no primary storage accessible to the backup storage[uuid:{0}, type:{1}] is found",
+    "zh_CN": "未找到镜像服务器[uuid:{0}, type:{1}]可访问的主存储",
+    "arguments": [
+      "bss.get(0).getUuid()",
+      "bss.get(0).getType()"
+    ],
+    "line": 541,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "the primary storages[uuids:%s] has not attached any cluster on the zone[uuid:%s]",
+    "en_US": "the primary storages[uuids:{0}] has not attached any cluster on the zone[uuid:{1}]",
+    "zh_CN": "主存储[uuids:{0}]尚未加载区域[uuid:{1}]上的任何集群",
+    "arguments": [
+      "psUuids",
+      "zoneUuid"
+    ],
+    "line": 560,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "no l2Networks found in clusters that have attached to primary storages[uuids:%s]",
+    "en_US": "no l2Networks found in clusters that have attached to primary storages[uuids:{0}]",
+    "zh_CN": "在已加载到主存储[uuids:{0}]的集群中未找到二层网络",
+    "arguments": [
+      "psUuids"
+    ],
+    "line": 577,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -9236,9 +9268,9 @@
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
-    "raw": "cannot adapt version for the bellow rpm: livirt / qemu / cpumodel",
-    "en_US": "cannot adapt version for the bellow rpm: livirt / qemu / cpumodel",
-    "zh_CN": "源和目的之间的以下组件版本不兼容：livirt、qemu、cpumodel",
+    "raw": "cannot adapt version for the bellow rpm: libvirt / qemu / cpumodel",
+    "en_US": "cannot adapt version for the bellow rpm: libvirt / qemu / cpumodel",
+    "zh_CN": "源和目的之间的以下组件版本不兼容：libvirt、qemu、cpumodel",
     "arguments": [],
     "line": 63,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostAllocatorFilterExtensionPoint.java"
@@ -11336,6 +11368,56 @@
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanPoolApiInterceptor.java"
   },
   {
+    "raw": "need to input one system tag like : [%s]",
+    "en_US": "need to input one system tag like : [{0}]",
+    "zh_CN": "需要输入一个系统标签，格式为：[{0}]",
+    "arguments": [
+      "VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTagFormat()"
+    ],
+    "line": 36,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "wrong system tag [%s], should be like : [%s]",
+    "en_US": "wrong system tag [{0}], should be like : [{1}]",
+    "zh_CN": "错误的系统标签[{0}]，格式应该为：[{1}]",
+    "arguments": [
+      "tag",
+      "VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTagFormat()"
+    ],
+    "line": 48,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "wrong cidr format in system tag [%s]",
+    "en_US": "wrong cidr format in system tag [{0}]",
+    "zh_CN": "系统标签[{0}]中的cidr格式错误",
+    "arguments": [
+      "tag"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "overlap vni range with %s [%s]",
+    "en_US": "overlap vni range with {0} [{1}]",
+    "zh_CN": "与{0}[{1}]的vni范围重叠",
+    "arguments": [
+      "inv.getType()",
+      "overlappedPool"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "vxlan network pool doesn\u0027t support create l3 network",
+    "en_US": "vxlan network pool doesn\u0027t support create l3 network",
+    "zh_CN": "vxlan network pool不支持创建L3网络",
+    "arguments": [],
+    "line": 97,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
     "raw": "it is used",
     "en_US": "it is used",
     "zh_CN": "被占用",
@@ -13025,7 +13107,17 @@
     "arguments": [
       "msg.getAllowedCidr()"
     ],
-    "line": 173,
+    "line": 191,
+    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
+  },
+  {
+    "raw": "invalid CIDR[%s], only ipv4 is supported",
+    "en_US": "invalid CIDR[{0}], only ipv4 is supported",
+    "zh_CN": "无效的CIDR[{0}]，仅支持ipv4",
+    "arguments": [
+      "msg.getAllowedCidr()"
+    ],
+    "line": 193,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -13052,6 +13144,32 @@
       "vipUuid"
     ],
     "line": 243,
+    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
+  },
+  {
+    "raw": "could not attach port forwarding rule with allowedCidr, because vmNic[uuid:%s] already has rules that overlap the target private port ranges[%s, %s] and have the same protocol type[%s]",
+    "en_US": "could not attach port forwarding rule with allowedCidr, because vmNic[uuid:{0}] already has rules that overlap the target private port range[{1}, {2}] and have the same protocol type[{3}]",
+    "zh_CN": "无法挂载设置有允许CIDR的端口转发规则，因为虚拟机网卡[uuid:{0}]已经有与目标规则的云主机端口范围[{1}, {2}]重叠且协议类型[{3}]相同的规则",
+    "arguments": [
+      "vmNicUuid",
+      "privatePortStart",
+      "privatePortEnd",
+      "protocolType"
+    ],
+    "line": 304,
+    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
+  },
+  {
+    "raw": "could not attach port forwarding rule, because vmNic[uuid:%s] already has a rule that overlaps the target private port ranges[%s, %s], has the same protocol type[%s] and has AllowedCidr",
+    "en_US": "could not attach port forwarding rule, because vmNic[uuid:{0}] already has a rule that overlaps the target private port range[{1}, {2}], has the same protocol type[{3}] and has AllowedCidr",
+    "zh_CN": "无法挂载端口转发规则，因为虚拟机网卡[uuid:{0}]已经有与目标规则的云主机端口范围[{1}, {2}]重叠、协议类型[{3}]相同且设置有允许CIDR的规则",
+    "arguments": [
+      "vmNicUuid",
+      "privatePortStart",
+      "privatePortEnd",
+      "protocolType"
+    ],
+    "line": 314,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -15689,42 +15807,32 @@
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkFactory.java"
   },
   {
-    "raw": "overlap vni range with vxlan network pool [%s]",
-    "en_US": "overlap vni range with vxlan network pool [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "overlappedPool"
-    ],
-    "line": 103,
-    "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
-  },
-  {
-    "raw": "hareware vxlan network pool doesn\u0027t support create l3 network",
-    "en_US": "hareware vxlan network pool doesn\u0027t support create l3 network",
+    "raw": "hardware vxlan network pool doesn\u0027t support create l3 network",
+    "en_US": "hardware vxlan network pool doesn\u0027t support create l3 network",
     "zh_CN": "",
     "arguments": [],
     "line": 110,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
-    "raw": "hareware vxlan network pool must configure the physical interface",
-    "en_US": "hareware vxlan network pool must configure the physical interface",
+    "raw": "hardware vxlan network pool must configure the physical interface",
+    "en_US": "hardware vxlan network pool must configure the physical interface",
     "zh_CN": "",
     "arguments": [],
     "line": 116,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
-    "raw": "ONLY hareware vxlan network can be created in hareware vxlan pool",
-    "en_US": "ONLY hareware vxlan network can be created in hareware vxlan pool",
+    "raw": "ONLY hardware vxlan network can be created in hardware vxlan pool",
+    "en_US": "ONLY hardware vxlan network can be created in hardware vxlan pool",
     "zh_CN": "",
     "arguments": [],
     "line": 124,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
-    "raw": "hareware vxlan network can ONLY be created in hareware vxlan pool",
-    "en_US": "hareware vxlan network can ONLY be created in hareware vxlan pool",
+    "raw": "hardware vxlan network can ONLY be created in hardware vxlan pool",
+    "en_US": "hardware vxlan network can ONLY be created in hardware vxlan pool",
     "zh_CN": "",
     "arguments": [],
     "line": 129,
@@ -15827,14 +15935,6 @@
     "zh_CN": "设置了用户名但未设置密码",
     "arguments": [],
     "line": 99,
-    "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
-  },
-  {
-    "raw": "username is not set while password is set",
-    "en_US": "username is not set while password is set",
-    "zh_CN": "设置了密码但未设置用户名",
-    "arguments": [],
-    "line": 103,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -17397,12 +17497,11 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
-    "raw": "unable to connect to the ceph backup storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
-    "en_US": "unable to connect to the ceph backup storage[uuid:{0}]. Failed to connect all ceph mons. Errors are {1}",
-    "zh_CN": "无法连接到ceph镜像服务器[uuid:{0}]。所有监控节点均无法连接。错误是{1}",
+    "raw": "unable to connect to the ceph backup storage[uuid:%s], failed to connect all ceph monitors.",
+    "en_US": "unable to connect to the ceph backup storage[uuid:{0}], failed to connect all ceph monitors.",
+    "zh_CN": "无法连接到ceph镜像服务器[uuid:{0}]，所有监控节点均无法连接。",
     "arguments": [
-      "self.getUuid()",
-      "JSONObjectUtil.toJsonString(errorCodes)"
+      "self.getUuid()"
     ],
     "line": 1218,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
@@ -17486,20 +17585,9 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
-    "raw": "unable to connect to the ceph primary storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
-    "en_US": "unable to connect to the ceph primary storage[uuid:{0}]. Failed to connect all ceph mons. Errors are {1}",
-    "zh_CN": "无法连接到ceph主存储[uuid:{0}]。所有监控节点均连接失败。错误是{1}",
-    "arguments": [
-      "self.getUuid()",
-      "JSONObjectUtil.toJsonString(errorCodes)"
-    ],
-    "line": 2749,
-    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
-  },
-  {
-    "raw": "unable to connect to the ceph primary storage[uuid:%s]. Failed to connect all ceph mons.",
-    "en_US": "unable to connect to the ceph primary storage[uuid:{0}]. Failed to connect all ceph mons.",
-    "zh_CN": "未能连接ceph主存储[uuid:{0}]，连接所有的ceph mons失败",
+    "raw": "unable to connect to the ceph primary storage[uuid:%s], failed to connect all ceph monitors.",
+    "en_US": "unable to connect to the ceph primary storage[uuid:{0}], failed to connect all ceph monitors.",
+    "zh_CN": "无法连接到ceph主存储[uuid:{0}]，所有监控节点均连接失败",
     "arguments": [
       "self.getUuid()"
     ],
@@ -18439,12 +18527,11 @@
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageTagAllocatorFlow.java"
   },
   {
-    "raw": "all mons failed to execute http call[%s], errors are %s",
-    "en_US": "all mons failed to execute http call[{0}], errors are {1}",
-    "zh_CN": "所有的监控节点都无法执行http call[{0}]，错误是{1}",
+    "raw": "all monitors cannot execute http call[%s]",
+    "en_US": "all monitors cannot execute http call[{0}]",
+    "zh_CN": "所有的监控节点都无法执行http call[{0}]",
     "arguments": [
-      "path",
-      "JSONObjectUtil.toJsonString(errorCodes)"
+      "path"
     ],
     "line": 132,
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/ceph/CephPrimaryToImageStoreBackupStorageMediatorImpl.java"
@@ -20768,6 +20855,56 @@
     ],
     "line": 384,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "can not attach volume[%s] to host[%s], because host[status:%s] is not connected",
+    "en_US": "can not attach volume[{0}] to host[{1}], because host[status:{2}] is not connected",
+    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为物理机[status:{2}]未连接",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "msg.getHostUuid()",
+      "hostStatus"
+    ],
+    "line": 445,
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "can not attach volume[%s] to host[%s], because volume is attaching to host[%s]",
+    "en_US": "can not attach volume[{0}] to host[{1}], because volume is attaching to host[{2}]",
+    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为云盘正在挂载到物理机[{2}]",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "msg.getHostUuid()",
+      "hostUuid"
+    ],
+    "line": 467,
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "can not attach volume[%s] to host[%s], because the volume[%s] occupies the mount path[%s] on host[%s]",
+    "en_US": "can not attach volume[{0}] to host[{1}], because the volume[{2}] occupies the mount path[{3}] on host[{4}]",
+    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为云盘[{2}]在物理机[{4}]上占用了挂载路径[{3}]",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "msg.getHostUuid()",
+      "msg.getVolumeUuid()",
+      "mountPath",
+      "hostUuid"
+    ],
+    "line": 471,
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+  "raw": "can not attach volume[%s] to host[%s], because the another volume occupies the mount path[%s]",
+  "en_US": "can not attach volume[{0}] to host[{1}], because the another volume occupies the mount path[{2}]",
+  "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为另一个云盘占用了挂载路径[{2}]",
+  "arguments": [
+    "msg.getVolumeUuid()",
+    "msg.getHostUuid()",
+    "msg.getMountPath()"
+  ],
+  "line": 481,
+  "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
     "raw": "the volume[uuid:%s, name:%s] is not deleted yet, can\u0027t expunge it",
@@ -24062,6 +24199,17 @@
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
+    "raw": "account[uuid: %s] has no access to the resource[uuid: %s]",
+    "en_US": "account[uuid: {0}] has no access to the resource[uuid: {1}]",
+    "zh_CN": "账号[uuid:{0}]没有访问资源[uuid:{1}]的权限",
+    "arguments": [
+      "msg.getSession().getAccountUuid()",
+      "opt.get().getValue()"
+    ],
+    "line": 60,
+    "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
+  },
+  {
     "raw": "Normal",
     "en_US": "Normal",
     "zh_CN": "提示",
@@ -24337,7 +24485,7 @@
   {
     "raw": "metric[%s] of the namespace[%s] has no label named %s",
     "en_US": "metric[{0}] of the namespace[{1}] has no label named {2}",
-    "zh_CN": "名字空间(namespace)[{1}]的时序数据(metric)[{1}]没有名为{2}的标签",
+    "zh_CN": "名字空间(namespace)[{1}]的时序数据(metric)[{0}]没有名为{2}的标签",
     "arguments": [
       "m.getName()",
       "getName()",

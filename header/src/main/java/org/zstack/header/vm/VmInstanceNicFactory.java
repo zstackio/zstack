@@ -1,12 +1,14 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.UsedIpInventory;
 
 import java.util.List;
 
 public interface VmInstanceNicFactory {
     VmNicType getType();
-    VmNicVO createVmNic(VmNicInventory inv, VmInstanceSpec spec, List<UsedIpInventory> ips);
+    VSwitchType getVSwitchType();
+    VmNicVO createVmNic(VmNicInventory inv, VmInstanceSpec spec);
 
     static VmNicVO createVmNic(VmNicInventory nic) {
         VmNicVO vnic = new VmNicVO();
@@ -24,6 +26,7 @@ public interface VmInstanceNicFactory {
         vnic.setInternalName(nic.getInternalName());
         vnic.setDriverType(nic.getDriverType());
         vnic.setMetaData(nic.getMetaData());
+        vnic.setState(VmNicState.fromState(nic.getState()));
         return vnic;
     }
 

@@ -2,7 +2,6 @@ package org.zstack.header.configuration
 
 import org.zstack.header.configuration.APIQueryInstanceOfferingReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryInstanceOffering"

@@ -18,7 +18,6 @@ import org.zstack.testlib.vfs.Volume
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.nio.file.Path
-
 /**
  * Created by xing5 on 2017/2/20.
  */
@@ -61,7 +60,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(KvmBackend.CREATE_VOLUME_FROM_CACHE_PATH) {
-                return new KvmBackend.AgentRsp()
+                return new KvmBackend.CreateVolumeFromCacheRsp()
             }
 
             VFS.vfsHook(KvmBackend.CREATE_VOLUME_FROM_CACHE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
@@ -77,15 +76,27 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(KvmBackend.DELETE_BITS_PATH) {
-                return new KvmBackend.AgentRsp()
+                return new KvmBackend.DeleteRsp()
             }
 
             VFS.vfsHook(KvmBackend.DELETE_BITS_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.DeleteBitsCmd.class)
-                VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
+                VFS vfs = vfs(cmd, spec)
                 VFSFile file = vfs.getFile(cmd.path)
                 assert file != null : "cannot find file[${cmd.path}]"
                 file.delete()
+                return rsp
+            }
+
+            simulator(KvmBackend.UNLINK_BITS_PATH) {
+                return new KvmBackend.UnlinkBitsRsp()
+            }
+
+            VFS.vfsHook(KvmBackend.UNLINK_BITS_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.UnlinkBitsCmd.class)
+                VFS vfs = vfs(cmd, spec)
+                assert vfs.exists(cmd.installPath)
+                vfs.unlink(cmd.installPath, cmd.onlyLinkedFile)
                 return rsp
             }
 
@@ -103,6 +114,22 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 Qcow2 template = vfs.createQcow2(cmd.installPath, volume.actualSize, volume.virtualSize)
                 rsp.actualSize = template.actualSize
                 rsp.size = template.virtualSize
+                return rsp
+            }
+
+            simulator(KvmBackend.ESTIMATE_TEMPLATE_SIZE_PATH) {
+                def rsp = new KvmBackend.EstimateTemplateSizeRsp()
+                rsp.size = 0
+                rsp.actualSize = 0
+                return rsp
+            }
+
+            VFS.vfsHook(KvmBackend.ESTIMATE_TEMPLATE_SIZE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.EstimateTemplateSizeCmd.class)
+                VFS srcVFS = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
+                Qcow2 qcow2 = srcVFS.getFile(cmd.volumePath)
+                rsp.size = qcow2.virtualSize
+                rsp.actualSize = qcow2.actualSize
                 return rsp
             }
 
@@ -202,7 +229,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(KvmBackend.CREATE_EMPTY_VOLUME_PATH) {
-                return new KvmBackend.AgentRsp()
+                return new KvmBackend.CreateEmptyVolumeRsp()
             }
 
             VFS.vfsHook(KvmBackend.CREATE_EMPTY_VOLUME_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
@@ -243,6 +270,20 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
 
             simulator(KvmBackend.HARD_LINK_VOLUME) {
                 return new KvmBackend.LinkVolumeNewDirRsp()
+            }
+
+            VFS.vfsHook(KvmBackend.HARD_LINK_VOLUME, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.LinkVolumeNewDirCmd.class)
+                VFS vfs = vfs(cmd, spec)
+                def links = vfs.link(cmd.dstDir, cmd.srcDir)
+                for (link in links) {
+                    Qcow2 qf = vfs.getFile(link, true)
+                    if (qf.backingFile != null) {
+                        qf.rebase(qf.backingFile.toString().replace(cmd.srcDir, cmd.dstDir))
+                    }
+                }
+
+                return rsp
             }
 
             simulator(KvmBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {
