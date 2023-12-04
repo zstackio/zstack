@@ -946,7 +946,6 @@ public class L2NoVlanNetwork implements L2Network {
                 }}
         }
 
-        List<ErrorCode> errs = new ArrayList<>();
         new While<>(hostss).step((host,compl) -> {
             HypervisorType hvType = HypervisorType.valueOf(host.getHypervisorType());
             L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
@@ -962,7 +961,7 @@ public class L2NoVlanNetwork implements L2Network {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    errs.add(errorCode);
+                    compl.addError(errorCode);
                     compl.done();
                 }
 
@@ -970,8 +969,8 @@ public class L2NoVlanNetwork implements L2Network {
         },10).run((new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errs.size() > 0) {
-                    logger.debug(String.format("delete bridge fail [error is %s ], but ignore", errs.get(0).toString()));
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    logger.debug(String.format("delete bridge fail [error is %s ], but ignore", errorCodeList.getCauses().get(0).toString()));
                 }
                 completion.success();
 

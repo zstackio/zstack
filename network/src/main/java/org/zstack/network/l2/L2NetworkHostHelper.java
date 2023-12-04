@@ -120,15 +120,10 @@ public class L2NetworkHostHelper {
                 .set(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Attached).update();
     }
 
-
-    public List<String> getL2NetworkUuidsRefToHost(String hostUuid) {
-        return Q.New(L2NetworkHostRefVO.class)
-                .select(L2NetworkHostRefVO_.l2NetworkUuid)
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).listValues();
-    }
-
-    public List<String> getHostUuidsRefToL2NetworkUuid(String l2NetworkUuid) {
+    public List<String> getAttachedHostUuidsRefToL2NetworkUuid(String l2NetworkUuid) {
         return Q.New(L2NetworkHostRefVO.class).select(L2NetworkHostRefVO_.hostUuid)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid).listValues();
+                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
+                .eq(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Attached)
+                .listValues();
     }
 }
