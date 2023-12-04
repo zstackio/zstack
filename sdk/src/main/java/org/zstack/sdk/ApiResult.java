@@ -4,6 +4,8 @@ import org.apache.commons.beanutils.PropertyUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,6 +17,7 @@ import static java.util.Arrays.asList;
 public class ApiResult {
     public ErrorCode error;
     private String resultString;
+    private static final Logger logger = Logger.getLogger(ApiResult.class.getName());
 
     public ErrorCode getError() {
         return error;
@@ -38,12 +41,17 @@ public class ApiResult {
             }
         }
 
-        Object val = PropertyUtils.getProperty(bean, path);
+        try {
+            Object val = PropertyUtils.getProperty(bean, path);
 
-        if (it.hasNext()) {
-            return getProperty(val, it);
-        } else {
-            return val;
+            if (it.hasNext()) {
+                return getProperty(val, it);
+            } else {
+                return val;
+            }
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.WARNING, "Warning: NoSuchMethodException occurred. Details: ", e.getMessage());
+            return null;
         }
     }
 
