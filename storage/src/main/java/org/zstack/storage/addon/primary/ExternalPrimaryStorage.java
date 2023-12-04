@@ -1001,8 +1001,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             VolumeStats volume;
 
             final String bsUuid = image.getBackupStorageRefs().get(0).getBackupStorageUuid();
-            final String bsInstallPath = image.getBackupStorageRefs().get(0).getInstallPath();
-
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -1098,7 +1096,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     public void run(FlowTrigger trigger, Map data) {
                         ExportImageToRemoteTargetMsg dmsg = new ExportImageToRemoteTargetMsg();
                         dmsg.setBackupStorageUuid(bsUuid);
-                        dmsg.setInstallPath(bsInstallPath);
+                        dmsg.setImage(image);
                         dmsg.setRemoteTargetUrl(remoteTarget.getResourceURI());
                         // TODO hardcode
                         dmsg.setFormat(controller.reportCapabilities().getSupportedImageFormats().get(0));
@@ -1557,20 +1555,17 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         controller.reportCapacity(new ReturnValueCompletion<StorageCapacity>(completion) {
             @Override
             public void success(StorageCapacity capacity) {
-                if (capacity.getHealthy() == StorageHealthy.Ok) {
-                    new PrimaryStorageCapacityUpdater(self.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
-                        @Override
-                        public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                            if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
-                                cap.setAvailableCapacity(capacity.getAvailableCapacity());
-                            }
-
-                            cap.setTotalCapacity(capacity.getTotalCapacity());
-                            cap.setTotalPhysicalCapacity(capacity.getTotalCapacity());
-                            cap.setAvailablePhysicalCapacity(capacity.getAvailableCapacity());
-
-                            return cap;
+                if (capacity.getHealthy() == StorageHealthy.Ok || capacity.getHealthy() == StorageHealthy.Warn) {
+                    new PrimaryStorageCapacityUpdater(self.getUuid()).run(cap -> {
+                        if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
+                            cap.setAvailableCapacity(capacity.getAvailableCapacity());
                         }
+
+                        cap.setTotalCapacity(capacity.getTotalCapacity());
+                        cap.setTotalPhysicalCapacity(capacity.getTotalCapacity());
+                        cap.setAvailablePhysicalCapacity(capacity.getAvailableCapacity());
+
+                        return cap;
                     });
                     completion.success();
                 } else {
