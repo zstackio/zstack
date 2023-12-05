@@ -278,7 +278,10 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            chain.fail(errorCode);
+                            chain.fail(operr("Failed to apply network service[%s] to vm[uuid: %s]",
+                                    ns.getNetworkServiceType(),
+                                    spec.getVmInventory().getUuid())
+                                    .causedBy(errorCode));
                         }
                     });
                 }

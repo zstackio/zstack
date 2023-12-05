@@ -1235,7 +1235,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     @Override
                     public void fail(ErrorCode errorCode) {
                         lock.unlock();
-                        completion.fail(errorCode);
+                        completion.fail(operr("Failed to start vr l3[uuid: %s]", struct.getL3Network().getUuid()).causedBy(errorCode));
                         chain.next();
                     }
                 });
