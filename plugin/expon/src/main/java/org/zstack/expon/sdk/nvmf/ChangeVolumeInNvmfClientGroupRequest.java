@@ -13,9 +13,7 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/nvmf_client/{clientId}/luns",
         method = HttpMethod.PUT,
-        responseClass = ChangeVolumeInNvmfClientGroupResponse.class,
-        // TODO change to true
-        sync = false
+        responseClass = ChangeVolumeInNvmfClientGroupResponse.class
 )
 public class ChangeVolumeInNvmfClientGroupRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

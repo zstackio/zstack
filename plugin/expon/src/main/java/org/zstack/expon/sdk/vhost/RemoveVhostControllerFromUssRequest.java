@@ -11,9 +11,9 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/vhost/unbind_uss",
         method = HttpMethod.PUT,
-        responseClass = AddVHostControllerToUssResponse.class
+        responseClass = RemoveVhostControllerFromUssResponse.class
 )
-public class RemoveVHostControllerFromUssRequest extends ExponRequest {
+public class RemoveVhostControllerFromUssRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     @Param

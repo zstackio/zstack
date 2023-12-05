@@ -1,5 +1,7 @@
 package org.zstack.header.storage.addon.primary;
 
+import org.zstack.header.log.MaskSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.utils.data.SizeUnit;
@@ -9,7 +11,9 @@ import java.sql.Timestamp;
 import java.util.LinkedHashMap;
 
 @RestResponse(allTo = "inventory")
+@MaskSensitiveInfo
 public class APIUpdateExternalPrimaryStorageEvent extends APIEvent {
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     private ExternalPrimaryStorageInventory inventory;
 
     public APIUpdateExternalPrimaryStorageEvent(String id) {

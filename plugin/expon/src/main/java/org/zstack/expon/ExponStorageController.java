@@ -18,7 +18,7 @@ import org.zstack.expon.sdk.nvmf.NvmfClientGroupModule;
 import org.zstack.expon.sdk.nvmf.NvmfModule;
 import org.zstack.expon.sdk.pool.FailureDomainModule;
 import org.zstack.expon.sdk.uss.UssGatewayModule;
-import org.zstack.expon.sdk.vhost.VHostControllerModule;
+import org.zstack.expon.sdk.vhost.VhostControllerModule;
 import org.zstack.expon.sdk.volume.ExponVolumeQos;
 import org.zstack.expon.sdk.volume.VolumeModule;
 import org.zstack.expon.sdk.volume.VolumeSnapshotModule;
@@ -37,11 +37,10 @@ import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
-import org.zstack.vhost.kvm.VHostVolumeTO;
+import org.zstack.vhost.kvm.VhostVolumeTO;
 
 import java.net.URI;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -60,19 +59,19 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private ExternalPrimaryStorageVO self;
     private ExponAddonInfo addonInfo;
 
-    private ExponApiHelper apiHelper;
+    private final ExponApiHelper apiHelper;
 
     // TODO static nqn
-    private static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
-    private static String vhostSocketDir = "/var/run/wds/";
+    private final static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
+    private final static String vhostSocketDir = "/var/run/wds/";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
-    private static long MIN_SIZE = 1024 * 1024 * 1024L;
+    private final static long MIN_SIZE = 1024 * 1024 * 1024L;
 
-    private static long MAX_ISCSI_TARGET_LUN_COUNT = 64;
+    private final static long MAX_ISCSI_TARGET_LUN_COUNT = 64;
 
-    {
+    static {
         VolumeSnapshotCapability scap = new VolumeSnapshotCapability();
         scap.setSupport(true);
         scap.setArrangementType(VolumeSnapshotCapability.VolumeSnapshotArrangementType.INDIVIDUAL);
@@ -127,7 +126,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String protocolStr;
         if (protocol == VolumeProtocol.NVMEoF) {
             protocolStr = "nvmf";
-        } else if (protocol == VolumeProtocol.VHost) {
+        } else if (protocol == VolumeProtocol.Vhost) {
             protocolStr = "vhost";
         } else if (protocol == VolumeProtocol.iSCSI) {
             protocolStr = "iscsi";
@@ -143,10 +142,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         return uss;
     }
 
-    private VHostControllerModule getOrCreateVhostController(String name) {
-        VHostControllerModule vhost = apiHelper.getVhostController(name);
+    private VhostControllerModule getOrCreateVhostController(String name) {
+        VhostControllerModule vhost = apiHelper.getVhostController(name);
         if (vhost == null) {
-            vhost = apiHelper.createVHostController(name);
+            vhost = apiHelper.createVhostController(name);
         }
 
         return vhost;
@@ -155,7 +154,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp) {
         ActiveVolumeTO to;
-        if (VolumeProtocol.VHost.toString().equals(v.getProtocol())) {
+        if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
             to = activeVhostVolume(h, v);
             comp.success(to);
             return;
@@ -172,15 +171,15 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private ActiveVolumeTO activeVhostVolume(HostInventory h, BaseVolumeInfo vol) {
         String vhostName = buildVhostControllerName(vol.getUuid());
 
-        UssGatewayModule uss = getUssGateway(VolumeProtocol.VHost, h.getManagementIp());
+        UssGatewayModule uss = getUssGateway(VolumeProtocol.Vhost, h.getManagementIp());
         VolumeModule exponVol = getVolumeModule(vol);
         if (exponVol == null) {
             throw new RuntimeException("volume not found");
         }
 
-        VHostControllerModule vhost = getOrCreateVhostController(vhostName);
+        VhostControllerModule vhost = getOrCreateVhostController(vhostName);
         apiHelper.addVhostVolumeToUss(exponVol.getId(), vhost.getId(), uss.getId());
-        VHostVolumeTO to = new VHostVolumeTO();
+        VhostVolumeTO to = new VhostVolumeTO();
         to.setInstallPath(vhost.getPath());
         return to;
     }
@@ -220,16 +219,13 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         if (client == null) {
             client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(clientIqn));
             apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
-            sleep();
             if (lunType.equals("volume")) {
                 apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), shareable);
             } else {
                 apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
             }
-            sleep();
         } else if (!client.getHosts().contains(clientIqn)) {
             apiHelper.addHostToIscsiClient(clientIqn, client.getId());
-            sleep();
         }
 
         IscsiVolumeTO to = new IscsiVolumeTO();
@@ -314,7 +310,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         if (client == null) {
             client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(espec.getClientQualifiedName()));
             apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
-            sleep();
         }
 
         if (lunType.equals("volume")) {
@@ -322,8 +317,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         } else {
             apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
         }
-
-        sleep();
 
         IscsiRemoteTarget target = new IscsiRemoteTarget();
         target.setPort(3260);
@@ -337,10 +330,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public ActiveVolumeTO getActiveResult(BaseVolumeInfo v, HostInventory h, boolean shareable) {
-        if (VolumeProtocol.VHost.toString().equals(v.getProtocol())) {
+        if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
             String vhostName = buildVhostControllerName(v.getUuid());
-            VHostControllerModule vhost = getOrCreateVhostController(vhostName);
-            VHostVolumeTO to = new VHostVolumeTO();
+            VhostControllerModule vhost = getOrCreateVhostController(vhostName);
+            VhostVolumeTO to = new VhostVolumeTO();
             to.setInstallPath(vhost.getPath());
             return to;
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
@@ -375,7 +368,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void deactivate(BaseVolumeInfo vol, HostInventory h, Completion comp) {
-        if (VolumeProtocol.VHost.toString().equals(vol.getProtocol())) {
+        if (VolumeProtocol.Vhost.toString().equals(vol.getProtocol())) {
             deactivateVhost(vol, h);
             comp.success();
             return;
@@ -413,12 +406,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         if (client == null) {
             client = apiHelper.createIscsiClient(iscsiHeartbeatClientName, tianshuId, Collections.singletonList(clientIqn));
             apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
-            sleep();
             apiHelper.addVolumeToIscsiClientGroup(heartbeatVol.getId(), client.getId(), iscsi.getId(), false);
-            sleep();
         } else if (!client.getHosts().contains(clientIqn)) {
             apiHelper.addHostToIscsiClient(clientIqn, client.getId());
-            sleep();
         }
 
         IscsiHeartbeatVolumeTO to = new IscsiHeartbeatVolumeTO();
@@ -438,15 +428,12 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     // hardcode
     private int getHostId(HostInventory host) {
-        UssGatewayModule uss = getUssGateway(VolumeProtocol.VHost, host.getManagementIp());
+        UssGatewayModule uss = getUssGateway(VolumeProtocol.Vhost, host.getManagementIp());
         return uss.getServerNo();
     }
 
     @Override
     public void deactivateHeartbeatVolume(HostInventory h, Completion comp) {
-        String tianshuId = addonInfo.getClusters().get(0).getId();
-        List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
-
         VolumeModule heartbeatVol = apiHelper.queryVolume(iscsiHeartbeatVolumeName);
         if (heartbeatVol == null) {
             comp.success();
@@ -472,7 +459,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
         if (client.getHosts().contains(clientIqn)) {
             apiHelper.removeHostFromIscsiClient(clientIqn, client.getId());
-            sleep();
         }
 
         comp.success();
@@ -481,8 +467,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private void deactivateVhost(BaseVolumeInfo vol, HostInventory h) {
         String vhostName = buildVhostControllerName(vol.getUuid());
 
-        UssGatewayModule uss = getUssGateway(VolumeProtocol.VHost, h.getManagementIp());
-        VHostControllerModule vhost = apiHelper.getVhostController(vhostName);
+        UssGatewayModule uss = getUssGateway(VolumeProtocol.Vhost, h.getManagementIp());
+        VhostControllerModule vhost = apiHelper.getVhostController(vhostName);
         if (vhost == null) {
             return;
         }
@@ -505,7 +491,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
         if (client.getHosts().contains(iqn)) {
             apiHelper.removeHostFromIscsiClient(iqn, client.getId());
-            sleep();
         }
     }
 
@@ -531,8 +516,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         } else {
             apiHelper.removeSnapshotFromIscsiClientGroup(lunId, client.getId());
         }
-
-        sleep();
 
         /*
         apiHelper.removeIscsiClientFromIscsiTarget(client.getId(), iscsi.getId());
@@ -753,7 +736,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         VolumeModule vol = apiHelper.expandVolume(getVolIdFromPath(installPath), size);
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(installPath);
-        stats.setSize(size);
+        stats.setSize(vol.getVolumeSize());
         comp.success(stats);
     }
 
@@ -814,8 +797,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             apiHelper.addSnapshotToNvmfClientGroup(lunId, client.getId(), nvmf.getId());
         }
 
-        sleep();
-
         NvmeRemoteTarget target = new NvmeRemoteTarget();
         target.setHostNqn(hostNqn);
         target.setPort(4420);
@@ -865,23 +846,12 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             apiHelper.removeSnapshotFromNvmfClientGroup(lunId, client.getId());
         }
 
-        sleep();
-
         /*
         apiHelper.removeNvmfClientFromNvmfTarget(client.getId(), nvmf.getId());
         apiHelper.unbindNvmfTargetToUss(nvmf.getId(), uss.getId());
         apiHelper.deleteNvmfController(nvmf.getId());
         apiHelper.deleteNvmfClient(client.getId());
          */
-    }
-
-    private void sleep() {
-        // TODO remove it
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     @Override

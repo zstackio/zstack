@@ -12,8 +12,7 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/iscsi/gateways/{id}/add_nodes",
         method = HttpMethod.PUT,
-        responseClass = BindIscsiTargetToUssResponse.class,
-        sync = false
+        responseClass = BindIscsiTargetToUssResponse.class
 )
 public class BindIscsiTargetToUssRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

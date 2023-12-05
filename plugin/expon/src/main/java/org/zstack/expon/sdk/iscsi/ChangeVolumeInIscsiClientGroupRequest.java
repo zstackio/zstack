@@ -13,9 +13,7 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/iscsi/clients/{id}/luns",
         method = HttpMethod.PUT,
-        responseClass = ChangeVolumeInIscsiClientGroupResponse.class,
-        // TODO change to true
-        sync = false
+        responseClass = ChangeVolumeInIscsiClientGroupResponse.class
 )
 public class ChangeVolumeInIscsiClientGroupRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

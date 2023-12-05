@@ -16,7 +16,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusEventListener;
+import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.log.LogSafeGson;
@@ -32,6 +34,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
+import org.zstack.header.log.MaskSensitiveInfo;
 import org.zstack.header.message.*;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.APIQueryReply;
@@ -53,7 +56,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -82,6 +84,9 @@ public class RestServer implements Component, CloudBusEventListener {
     private static final OkHttpClient http;
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private static final DateTimeFormatter formatter;
+    private static final Set<String> maskSensitiveInfoClassNames = Platform.getReflections()
+            .getTypesAnnotatedWith(MaskSensitiveInfo.class).stream()
+            .map(Class::getSimpleName).collect(Collectors.toSet());
 
     @Autowired
     private CloudBus bus;
@@ -1137,8 +1142,8 @@ public class RestServer implements Component, CloudBusEventListener {
                api.requestAnnotation.isAction() ? api.actionName : api.requestAnnotation.parameterName(), entity, req, rsp);
     }
 
-    private void writeResponse(ApiResponse response, RestResponseWrapper w, Object replyOrEvent) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        if (CoreGlobalProperty.MASK_SENSITIVE_INFO) {
+    private void writeResponse(ApiResponse response, RestResponseWrapper w, Message replyOrEvent) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        if (CoreGlobalProperty.MASK_SENSITIVE_INFO || maskSensitiveInfoClassNames.contains(replyOrEvent.getClass().getSimpleName())) {
             replyOrEvent = LogSafeGson.desensitize(replyOrEvent);
         }
 
