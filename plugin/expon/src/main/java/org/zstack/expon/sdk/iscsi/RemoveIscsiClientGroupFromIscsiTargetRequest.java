@@ -13,8 +13,7 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/iscsi/gateways/{id}/remove_clients",
         method = HttpMethod.PUT,
-        responseClass = RemoveIscsiClientGroupFromIscsiTargetResponse.class,
-        sync = false
+        responseClass = RemoveIscsiClientGroupFromIscsiTargetResponse.class
 )
 public class RemoveIscsiClientGroupFromIscsiTargetRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

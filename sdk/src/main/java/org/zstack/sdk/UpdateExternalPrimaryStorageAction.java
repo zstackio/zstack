@@ -28,7 +28,7 @@ public class UpdateExternalPrimaryStorageAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String config;
 
-    @Param(required = false, validValues = {"VHost","Scsi","Nvme","Curve","file"}, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"Vhost","Scsi","Nvme","Curve","file"}, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String defaultProtocol;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

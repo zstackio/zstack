@@ -11,9 +11,9 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/vhost/bind_uss",
         method = HttpMethod.PUT,
-        responseClass = AddVHostControllerToUssResponse.class
+        responseClass = AddVhostControllerToUssResponse.class
 )
-public class AddVHostControllerToUssRequest extends ExponRequest {
+public class AddVhostControllerToUssRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     @Param

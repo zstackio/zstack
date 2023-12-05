@@ -42,7 +42,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     VolumeInventory vol, vol2
     HostInventory host1, host2
 
-    String exponUrl = "https://operator:Admin123@172.25.130.160:443/pool"
+    String exponUrl = "https://admin:Admin123@172.25.102.64:443/pool"
     String exportProtocol = "iscsi://"
 
     @Override
@@ -104,13 +104,14 @@ class ExternalPrimaryStorageCase extends SubCase {
                         username = "root"
                         password = "password"
                     }
-
+/*
                     kvm {
                         name = "kvm2"
                         managementIp = "127.0.0.3"
                         username = "root"
                         password = "password"
                     }
+ */
 
                     attachL2Network("l2")
                 }
@@ -147,7 +148,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             l3 = env.inventoryByName("l3") as L3NetworkInventory
             bs = env.inventoryByName("sftp") as BackupStorageInventory
             host1 = env.inventoryByName("kvm") as HostInventory
-            host2 = env.inventoryByName("kvm2") as HostInventory
+            // host2 = env.inventoryByName("kvm2") as HostInventory
             simulatorEnv()
             testCreateExponStorage()
             testSessionExpired()
@@ -199,8 +200,10 @@ class ExternalPrimaryStorageCase extends SubCase {
             url = exponUrl
             identity = "expon"
             config = ""
-            defaultOutputProtocol = "VHost"
+            defaultOutputProtocol = "Vhost"
         } as ExternalPrimaryStorageInventory
+
+        assert !ps.url.contains("Admin123")
 
         updateExternalPrimaryStorage {
             uuid = ps.uuid
@@ -209,6 +212,11 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         ps = queryPrimaryStorage {}[0] as ExternalPrimaryStorageInventory
         assert ps.getAddonInfo() != null
+
+        /*
+        def psRet = zqlQuery("query primarystorage")[0]
+        assert !psRet.url.contains("Admin123")
+         */
 
         attachPrimaryStorageToCluster {
             primaryStorageUuid = ps.uuid
@@ -334,7 +342,7 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         startVmInstance {
             uuid = vm.uuid
-            hostUuid = host2.uuid
+            // hostUuid = host2.uuid
         }
 
         setVmBootOrder {

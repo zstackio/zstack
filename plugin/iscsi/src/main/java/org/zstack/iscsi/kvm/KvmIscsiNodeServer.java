@@ -52,15 +52,14 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint,
     @Autowired
     private DatabaseFacade dbf;
 
-    private static VolumeProtocolCapability capability = VolumeProtocolCapability
+    private static final VolumeProtocolCapability capability = VolumeProtocolCapability
             .register(VolumeProtocol.iSCSI.name(), KVMConstant.KVM_HYPERVISOR_TYPE);
 
-    {
+    static {
         capability.setSupportQosOnHypervisor(true);
         capability.setSupportResizeOnHypervisor(false);
         capability.setSupportReadonly(true);
     }
-
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {

@@ -20,17 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint,
+public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
         KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
     private PluginRegistry pluginRgty;
 
-    private static VolumeProtocolCapability capability = VolumeProtocolCapability
-            .register(VolumeProtocol.VHost.name(), KVMConstant.KVM_HYPERVISOR_TYPE);
+    private static final VolumeProtocolCapability capability = VolumeProtocolCapability
+            .register(VolumeProtocol.Vhost.name(), KVMConstant.KVM_HYPERVISOR_TYPE);
 
-    {
+    static  {
         capability.setSupportQosOnHypervisor(false);
         capability.setSupportResizeOnHypervisor(false);
         capability.setSupportReadonly(false);
@@ -79,7 +79,7 @@ public class KvmVHostNodeServer implements Component, KVMStartVmExtensionPoint,
     }
 
     private VolumeTO convertVolumeIfNeeded(VolumeInventory volumeInventory, HostInventory host, VolumeTO volumeTO) {
-        if (!VolumeProtocol.VHost.name().equals(volumeInventory.getProtocol())) {
+        if (!VolumeProtocol.Vhost.name().equals(volumeInventory.getProtocol())) {
             return volumeTO;
         }
 

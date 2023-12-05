@@ -17,7 +17,7 @@ public class APIAddExternalPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     @APIParam(maxLength = 255, emptyString = false)
     private String identity;
 
-    @APIParam(validValues = {"VHost", "iSCSI", "NVMEoF", "Curve", "file"})
+    @APIParam(validValues = {"Vhost", "iSCSI", "NVMEoF", "Curve", "file"})
     private String defaultOutputProtocol;
 
     @APIParam(required = false)
