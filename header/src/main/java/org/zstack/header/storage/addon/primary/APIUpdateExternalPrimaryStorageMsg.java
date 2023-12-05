@@ -16,7 +16,7 @@ public class APIUpdateExternalPrimaryStorageMsg extends APIUpdatePrimaryStorageM
     @APIParam(required = false)
     private String config;
 
-    @APIParam(required = false, maxLength = 255, validValues = {"VHost", "Scsi", "Nvme", "Curve", "file"})
+    @APIParam(required = false, maxLength = 255, validValues = {"Vhost", "Scsi", "Nvme", "Curve", "file"})
     private String defaultProtocol;
 
     public String getConfig() {
@@ -40,7 +40,7 @@ public class APIUpdateExternalPrimaryStorageMsg extends APIUpdatePrimaryStorageM
         msg.setUuid(uuid());
         msg.setName("My Primary Storage");
         msg.setDescription("New description");
-        msg.setDefaultProtocol("VHost");
+        msg.setDefaultProtocol("Vhost");
         msg.setConfig("{\"pools\":[{\"name\":\"pool1\",\"aliasName\":\"pool-high\"}]}");
         return msg;
     }

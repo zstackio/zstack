@@ -1,6 +1,7 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.TypeField;
@@ -73,6 +74,7 @@ public class PrimaryStorageInventory implements Serializable {
      * @desc depending on primary storage type, url may have various formats. For example,
      * nfs primary storage uses url as *server_ip:/share_path*
      */
+    @NoLogging(type = NoLogging.Type.Uri)
     private String url;
     /**
      * @desc max length of 2048 characters

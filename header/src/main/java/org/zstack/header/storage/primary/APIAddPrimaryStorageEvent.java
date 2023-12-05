@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.log.MaskSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
@@ -30,10 +32,13 @@ import java.util.Collections;
  * @since 0.1.0
  */
 @RestResponse(allTo = "inventory")
+@MaskSensitiveInfo
 public class APIAddPrimaryStorageEvent extends APIEvent {
     /**
      * @desc see :ref:`PrimaryStorageInventory`
      */
+
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     private PrimaryStorageInventory inventory;
 
     public APIAddPrimaryStorageEvent(String apiId) {

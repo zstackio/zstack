@@ -12,8 +12,7 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/iscsi/clients",
         method = HttpMethod.POST,
-        responseClass = CreateIscsiClientGroupResponse.class,
-        sync = false
+        responseClass = CreateIscsiClientGroupResponse.class
 )
 public class CreateIscsiClientGroupRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

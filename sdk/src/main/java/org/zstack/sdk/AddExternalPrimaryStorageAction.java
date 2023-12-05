@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AddExternalPrimaryStorageAction extends AbstractAction {
 
@@ -28,7 +27,7 @@ public class AddExternalPrimaryStorageAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String identity;
 
-    @Param(required = true, validValues = {"VHost","Scsi","Nvme","Curve","file"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"Vhost","Scsi","Nvme","Curve","file"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String defaultOutputProtocol;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

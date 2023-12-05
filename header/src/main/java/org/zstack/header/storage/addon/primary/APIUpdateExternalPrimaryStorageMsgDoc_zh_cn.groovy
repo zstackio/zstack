@@ -38,7 +38,7 @@ doc {
 					optional true
 					since "4.7.11"
 
-					values ("VHost","Scsi","Nvme","Curve","file")
+					values ("Vhost","Scsi","Nvme","Curve","file")
 				}
 				column {
 					name "uuid"
