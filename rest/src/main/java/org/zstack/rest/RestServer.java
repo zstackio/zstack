@@ -39,13 +39,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
-import org.zstack.header.message.APIBatchRequest;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APISyncCallMessage;
-import org.zstack.header.message.Event;
-import org.zstack.header.message.JsonSchemaBuilder;
-import org.zstack.header.message.MessageReply;
+import org.zstack.header.log.MaskSensitiveInfo;
+import org.zstack.header.message.*;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.query.QueryCondition;
@@ -123,6 +118,9 @@ public class RestServer implements Component, CloudBusEventListener {
     private static final OkHttpClient http;
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private static final DateTimeFormatter formatter;
+    private static final Set<String> maskSensitiveInfoClassNames = Platform.getReflections()
+            .getTypesAnnotatedWith(MaskSensitiveInfo.class).stream()
+            .map(Class::getSimpleName).collect(Collectors.toSet());
 
     @Autowired
     private CloudBus bus;
@@ -1201,8 +1199,8 @@ public class RestServer implements Component, CloudBusEventListener {
                api.requestAnnotation.isAction() ? api.actionName : api.requestAnnotation.parameterName(), entity, req, rsp);
     }
 
-    private void writeResponse(ApiResponse response, RestResponseWrapper w, Object replyOrEvent) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        if (CoreGlobalProperty.MASK_SENSITIVE_INFO) {
+    private void writeResponse(ApiResponse response, RestResponseWrapper w, Message replyOrEvent) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        if (CoreGlobalProperty.MASK_SENSITIVE_INFO || maskSensitiveInfoClassNames.contains(replyOrEvent.getClass().getSimpleName())) {
             replyOrEvent = LogSafeGson.desensitize(replyOrEvent);
         }
 

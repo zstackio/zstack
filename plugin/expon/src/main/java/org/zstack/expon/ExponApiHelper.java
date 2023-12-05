@@ -126,10 +126,10 @@ public class ExponApiHelper {
         return rsp.getUssGateways();
     }
 
-    public VHostControllerModule queryVhostController(String name) {
-        QueryVHostControllerRequest q = new QueryVHostControllerRequest();
+    public VhostControllerModule queryVhostController(String name) {
+        QueryVhostControllerRequest q = new QueryVhostControllerRequest();
         q.addCond("name", name);
-        QueryVHostControllerResponse rsp = queryErrorOut(q, QueryVHostControllerResponse.class);
+        QueryVhostControllerResponse rsp = queryErrorOut(q, QueryVhostControllerResponse.class);
         if (rsp.getTotal() == 0) {
             return null;
         }
@@ -137,12 +137,12 @@ public class ExponApiHelper {
         return rsp.getVhosts().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
     }
 
-    public VHostControllerModule createVHostController(String name) {
-        CreateVHostControllerRequest req = new CreateVHostControllerRequest();
+    public VhostControllerModule createVhostController(String name) {
+        CreateVhostControllerRequest req = new CreateVhostControllerRequest();
         req.setName(name);
-        CreateVHostControllerResponse rsp = callErrorOut(req, CreateVHostControllerResponse.class);
+        CreateVhostControllerResponse rsp = callErrorOut(req, CreateVhostControllerResponse.class);
 
-        VHostControllerModule inv = new VHostControllerModule();
+        VhostControllerModule inv = new VhostControllerModule();
         inv.setId(rsp.getId());
         inv.setName(name);
         inv.setPath("/var/run/wds/" + name);
@@ -169,11 +169,11 @@ public class ExponApiHelper {
     }
 
     public boolean addVhostVolumeToUss(String volumeId, String vhostId, String ussGwId) {
-        AddVHostControllerToUssRequest req = new AddVHostControllerToUssRequest();
+        AddVhostControllerToUssRequest req = new AddVhostControllerToUssRequest();
         req.setLunId(volumeId);
         req.setVhostId(vhostId);
         req.setUssGwId(ussGwId);
-        AddVHostControllerToUssResponse rsp = call(req, AddVHostControllerToUssResponse.class);
+        AddVhostControllerToUssResponse rsp = call(req, AddVhostControllerToUssResponse.class);
         if (rsp.isError(ExponError.VHOST_BIND_USS_FAILED) && rsp.getMessage().contains("already bind")) {
             return true;
         }
@@ -183,11 +183,11 @@ public class ExponApiHelper {
     }
 
     public boolean removeVhostVolumeFromUss(String volumeId, String vhostId, String ussGwId) {
-        RemoveVHostControllerFromUssRequest req = new RemoveVHostControllerFromUssRequest();
+        RemoveVhostControllerFromUssRequest req = new RemoveVhostControllerFromUssRequest();
         req.setLunId(volumeId);
         req.setVhostId(vhostId);
         req.setUssGwId(ussGwId);
-        RemoveVHostControllerFromUssResponse rsp = call(req, RemoveVHostControllerFromUssResponse.class);
+        RemoveVhostControllerFromUssResponse rsp = call(req, RemoveVhostControllerFromUssResponse.class);
         if (rsp.isError(ExponError.VHOST_ALREADY_UNBIND_USS)) {
             return true;
         }
@@ -488,8 +488,6 @@ public class ExponApiHelper {
         req.setPort(port);
         req.setNodes(uss);
         CreateIscsiTargetResponse rsp = callErrorOut(req, CreateIscsiTargetResponse.class);
-
-        sleep();
         return queryIscsiController(name);
     }
 
@@ -554,8 +552,6 @@ public class ExponApiHelper {
             req.setHosts(hosts);
         }
         CreateIscsiClientGroupResponse rsp = callErrorOut(req, CreateIscsiClientGroupResponse.class);
-
-        sleep();
         return queryIscsiClient(name);
     }
 
@@ -640,14 +636,5 @@ public class ExponApiHelper {
         req.setAction(ExponAction.remove.name());
         req.setLuns(Collections.singletonList(new LunResource(snapId, "snapshot")));
         callErrorOut(req, ChangeSnapshotInIscsiClientGroupResponse.class);
-    }
-
-    private void sleep() {
-        // TODO remove it
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
-        }
     }
 }

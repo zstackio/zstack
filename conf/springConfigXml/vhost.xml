@@ -12,8 +12,8 @@
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="KvmVHostNodeServer"
-          class="org.zstack.vhost.kvm.KvmVHostNodeServer">
+    <bean id="KvmVhostNodeServer"
+          class="org.zstack.vhost.kvm.KvmVhostNodeServer">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint"/>

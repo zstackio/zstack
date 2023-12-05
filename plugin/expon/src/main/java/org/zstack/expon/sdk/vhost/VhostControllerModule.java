@@ -1,6 +1,6 @@
 package org.zstack.expon.sdk.vhost;
 
-public class VHostControllerModule {
+public class VhostControllerModule {
     private String name;
     private String id;
     private String path;

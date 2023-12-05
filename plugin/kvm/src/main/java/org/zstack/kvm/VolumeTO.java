@@ -53,7 +53,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private int controllerIndex;
 
     static {
-        deviceTypes.put(VolumeProtocol.VHost, VHOST);
+        deviceTypes.put(VolumeProtocol.Vhost, VHOST);
     }
 
     public VolumeTO() {
