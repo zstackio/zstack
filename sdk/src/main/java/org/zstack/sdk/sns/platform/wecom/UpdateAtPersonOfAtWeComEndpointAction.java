@@ -31,8 +31,11 @@ public class UpdateAtPersonOfAtWeComEndpointAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String endpointUuid;
 
-    @Param(required = true, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String userId;
+
+    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String remark;
 
     @Param(required = false)
     public java.util.List systemTags;

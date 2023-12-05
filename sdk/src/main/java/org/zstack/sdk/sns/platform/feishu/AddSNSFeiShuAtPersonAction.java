@@ -31,6 +31,9 @@ public class AddSNSFeiShuAtPersonAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String endpointUuid;
 
+    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String remark;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

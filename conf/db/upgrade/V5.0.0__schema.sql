@@ -9,6 +9,7 @@ CREATE TABLE  `zstack`.`SNSWeComAtPersonVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `userId` varchar(64) NOT NULL,
     `endpointUuid` varchar(32) NOT NULL,
+    `remark` varchar(128) default '' null,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
@@ -26,6 +27,7 @@ CREATE TABLE  `zstack`.`SNSFeiShuAtPersonVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `userId` varchar(64) NOT NULL,
     `endpointUuid` varchar(32) NOT NULL,
+    `remark` varchar(128) default '' null,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
@@ -39,3 +41,6 @@ alter table SNSDingTalkAtPersonVO
 
 alter table SNSDingTalkAtPersonVO
     add createDate timestamp NOT NULL DEFAULT '0000-00-00 00:00:00';
+
+alter table SNSDingTalkAtPersonVO
+    add remark varchar(128) default '' null;
