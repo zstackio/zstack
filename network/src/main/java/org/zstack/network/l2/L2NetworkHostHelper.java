@@ -25,10 +25,14 @@ public class L2NetworkHostHelper {
 
     public void initL2NetworkHostRef(String l2NetworkUuid, List<String> hostUuids, String l2ProviderType) {
         List<L2NetworkHostRefVO> vos = new ArrayList<>();
+        List<String> oldHosts = Q.New(L2NetworkHostRefVO.class)
+                .select(L2NetworkHostRefVO_.hostUuid)
+                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
+                .in(L2NetworkHostRefVO_.hostUuid, hostUuids)
+                .listValues();
+
         hostUuids.forEach(uuid -> {
-            if (Q.New(L2NetworkHostRefVO.class)
-                    .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                    .eq(L2NetworkHostRefVO_.hostUuid, uuid).isExists()) {
+            if (oldHosts.contains(uuid)) {
                 return;
             }
 
@@ -47,27 +51,31 @@ public class L2NetworkHostHelper {
         }
     }
 
-    public void initL2NetworkHostRefOrSetDetached(List<String> l2NetworkUuids, List<String> hostUuids, String l2ProviderType) {
+    public void initL2NetworkHostRefOrSetDetached(List<String> l2NetworkUuids, String hostUuid, String l2ProviderType) {
         List<L2NetworkHostRefVO> newVos = new ArrayList<>();
-        List<L2NetworkHostRefVO> oldVos = new ArrayList<>();
-        for (String l2Uuid : l2NetworkUuids) {
-            for (String hostUuid : hostUuids) {
-                L2NetworkHostRefVO ref = Q.New(L2NetworkHostRefVO.class)
-                        .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2Uuid)
-                        .eq(L2NetworkHostRefVO_.hostUuid, hostUuid).find();
-                if (ref != null) {
-                    ref.setAttachStatus(L2NetworkAttachStatus.Detached);
-                    oldVos.add(ref);
-                } else {
-                    L2NetworkHostRefVO vo = new L2NetworkHostRefVO();
-                    vo.setHostUuid(hostUuid);
-                    vo.setL2NetworkUuid(l2Uuid);
-                    vo.setL2ProviderType(l2ProviderType);
-                    vo.setAttachStatus(L2NetworkAttachStatus.Detached);
-                    newVos.add(vo);
-                }
+        List<L2NetworkHostRefVO> oldVos = Q.New(L2NetworkHostRefVO.class)
+                .in(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuids)
+                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
+                .list();
+        List<String> oldL2s = new ArrayList<>();
+
+        oldVos.forEach(ref -> {
+            ref.setAttachStatus(L2NetworkAttachStatus.Detached);
+            oldL2s.add(ref.getL2NetworkUuid());
+        });
+
+        l2NetworkUuids.forEach(l2Uuid -> {
+            if (oldL2s.contains(l2Uuid)) {
+                return;
             }
-        }
+
+            L2NetworkHostRefVO vo = new L2NetworkHostRefVO();
+            vo.setHostUuid(hostUuid);
+            vo.setL2NetworkUuid(l2Uuid);
+            vo.setL2ProviderType(l2ProviderType);
+            vo.setAttachStatus(L2NetworkAttachStatus.Detached);
+            newVos.add(vo);
+        });
 
         if (!newVos.isEmpty()) {
             logger.debug(String.format("add L2NetworkHostRefVO, %s", JSONObjectUtil.toJsonString(newVos)));
@@ -108,7 +116,7 @@ public class L2NetworkHostHelper {
         if (!Q.New(L2NetworkHostRefVO.class)
                 .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
                 .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid).isExists()) {
-            throw  new CloudRuntimeException(String.format("can not find host l2 network ref[l2NetworkUuid: %s, hostUuid: %s]",
+            throw new CloudRuntimeException(String.format("can not find host l2 network ref[l2NetworkUuid: %s, hostUuid: %s]",
                     l2NetworkUuid, hostUuid));
         }
 
