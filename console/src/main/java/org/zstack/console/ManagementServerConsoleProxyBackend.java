@@ -458,14 +458,13 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         umsg.setConsoleProxyOverriddenIp(msg.getConsoleProxyOverriddenIp());
         umsg.setConsoleProxyPort(msg.getConsoleProxyPort());
         bus.makeServiceIdByManagementNodeId(umsg, ConsoleConstants.SERVICE_ID, msg.getUuid());
-        bus.send(umsg, new CloudBusCallBack(evt) {
+        bus.send(umsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     bus.publish(evt);
                 } else {
-                    UpdateConsoleProxyAgentReply rly = reply.castReply();
-                    evt.setError(rly.getError());
+                    evt.setError(reply.getError());
                     bus.publish(evt);
                 }
             }
