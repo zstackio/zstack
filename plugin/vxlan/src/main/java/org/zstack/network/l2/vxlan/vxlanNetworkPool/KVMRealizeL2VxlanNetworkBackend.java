@@ -1,7 +1,5 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
-import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO;
-import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO_;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -28,9 +26,7 @@ import org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
-import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
-import org.zstack.network.l2.vxlan.vtep.VtepVO;
-import org.zstack.network.l2.vxlan.vtep.VtepVO_;
+import org.zstack.network.l2.vxlan.vtep.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
@@ -64,7 +60,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     private static String NEED_POPULATE = "needPopulate";
 
     public static String makeBridgeName(int vxlan) {
-        return String.format("br_vx_%s",vxlan);
+        return String.format("br_vx_%s", vxlan);
     }
 
     @Override
@@ -111,8 +107,8 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
         List<Integer> dstports = Q.New(VtepVO.class).select(VtepVO_.port)
                 .eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid())
-                .eq(VtepVO_.hostUuid,hostUuid)
-                .eq(VtepVO_.vtepIp,vtepIp)
+                .eq(VtepVO_.hostUuid, hostUuid)
+                .eq(VtepVO_.vtepIp, vtepIp)
                 .listValues();
         Integer dstport = dstports.get(0);
 
@@ -356,11 +352,6 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     @Override
     public HypervisorType getSupportedHypervisorType() {
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
-    }
-
-    @Override
-    public VSwitchType getSupportedVSwitchType() {
-        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
     }
 
     @Override

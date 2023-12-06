@@ -16,7 +16,10 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
@@ -29,7 +32,10 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -200,12 +206,12 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                 List<VxlanNetworkVO> vxlanNetworkVOS;
                 if (VxlanNetworkGlobalConfig.CLUSTER_LAZY_ATTACH.value(Boolean.class)) {
                     vxlanNetworkVOS = SQL.New("select vxlan from VxlanNetworkVO vxlan, VmNicVO nic, L3NetworkVO l3 " +
-                            "where vxlan.uuid = l3.l2NetworkUuid " +
-                            "and nic.l3NetworkUuid = l3.uuid " +
-                            "and vxlan.poolUuid = :poolUuid " +
-                            "group by vxlan.uuid")
-                                         .param("poolUuid", l2Network.getUuid())
-                                         .list();
+                                    "where vxlan.uuid = l3.l2NetworkUuid " +
+                                    "and nic.l3NetworkUuid = l3.uuid " +
+                                    "and vxlan.poolUuid = :poolUuid " +
+                                    "group by vxlan.uuid")
+                            .param("poolUuid", l2Network.getUuid())
+                            .list();
                 } else {
                     vxlanNetworkVOS = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.poolUuid, l2Network.getUuid()).list();
                 }
@@ -223,9 +229,9 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                 }
 
                 List<Integer> dstports = Q.New(VtepVO.class).select(VtepVO_.port)
-                        .eq(VtepVO_.poolUuid,  l2Network.getUuid())
-                        .eq(VtepVO_.hostUuid,hostUuid)
-                        .eq(VtepVO_.vtepIp,(String) data.get(VTEP_IP))
+                        .eq(VtepVO_.poolUuid, l2Network.getUuid())
+                        .eq(VtepVO_.hostUuid, hostUuid)
+                        .eq(VtepVO_.vtepIp, (String) data.get(VTEP_IP))
                         .listValues();
                 Integer dstport = dstports.get(0);
 
@@ -303,11 +309,6 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     @Override
     public HypervisorType getSupportedHypervisorType() {
         return HypervisorType.valueOf("KVM");
-    }
-
-    @Override
-    public VSwitchType getSupportedVSwitchType() {
-        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
     }
 
     @Override

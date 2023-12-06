@@ -54,8 +54,8 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     private ResourceConfigFacade rcf;
 
     private Map<String, L2NetworkFactory> l2NetworkFactories = Collections.synchronizedMap(new HashMap<String, L2NetworkFactory>());
-    private Map<L2NetworkType, Map<HypervisorType, Map<VSwitchType, L2NetworkRealizationExtensionPoint>>> realizationExts = new HashMap<>();
-    private final Map<L2ProviderType, L2NetworkRealizationExtensionPoint> l2ProviderMap = new HashMap<>();
+    private Map<L2NetworkType, Map<HypervisorType, L2NetworkRealizationExtensionPoint>> realizationExts = new HashMap<>();
+    private final Map<L2ProviderType, Map<L2NetworkType, L2NetworkRealizationExtensionPoint>> l2ProviderMap = new HashMap<>();
     private Map<L2NetworkType, Map<HypervisorType, L2NetworkAttachClusterExtensionPoint>> attachClusterExts = new HashMap<>();
     private List<L2NetworkCreateExtensionPoint> createExtensions = new ArrayList<L2NetworkCreateExtensionPoint>();
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -498,39 +498,34 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         return factory;
     }
 
-    @Override
-    public L2NetworkRealizationExtensionPoint getRealizationExtension(L2NetworkType l2Type, VSwitchType vSwitchType, HypervisorType hvType) {
-        Map<HypervisorType, Map<VSwitchType, L2NetworkRealizationExtensionPoint>> map = realizationExts.get(l2Type);
+    public L2NetworkRealizationExtensionPoint getRealizationExtension(L2NetworkType l2Type, HypervisorType hvType) {
+        Map<HypervisorType, L2NetworkRealizationExtensionPoint> map = realizationExts.get(l2Type);
         if (map == null) {
             throw new IllegalArgumentException(String.format("Cannot find L2NetworkRealizationExtensionPoint supporting L2NetworkType[%s]", l2Type));
         }
 
-        Map<VSwitchType,L2NetworkRealizationExtensionPoint> vSwitchTypeL2ExtMap = map.get(hvType);
-        if (vSwitchTypeL2ExtMap == null) {
+        L2NetworkRealizationExtensionPoint extp = map.get(hvType);
+        if (extp == null) {
             throw new IllegalArgumentException(String.format("Cannot find L2NetworkRealizationExtensionPoint for L2NetworkType[%s] supporting hypervisor[%s]", l2Type, hvType));
         }
 
-        L2NetworkRealizationExtensionPoint extp = vSwitchTypeL2ExtMap.get(vSwitchType);
-        if (extp == null) {
-            throw new IllegalArgumentException(String.format("Cannot find L2NetworkRealizationExtensionPoint for L2NetworkType[%s] vSwitch type[%s] supporting hypervisor[%s]", l2Type, vSwitchType,hvType));
-        }
-
         return extp;
     }
 
     @Override
-    public L2NetworkRealizationExtensionPoint getRealizationExtension(L2ProviderType providerType) {
-        L2NetworkRealizationExtensionPoint extp = l2ProviderMap.get(providerType);
+    public L2NetworkRealizationExtensionPoint getRealizationExtension(L2NetworkType l2Type, L2ProviderType providerType) {
+        Map<L2NetworkType, L2NetworkRealizationExtensionPoint> map = l2ProviderMap.get(providerType);
+        if (map == null) {
+            throw new IllegalArgumentException(String.format("Cannot find L2NetworkRealizationExtensionPoint supporting L2ProviderType[%s]", providerType));
+        }
+
+        L2NetworkRealizationExtensionPoint extp = map.get(l2Type);
         if (extp == null) {
-            throw new IllegalArgumentException(String.format("Cannot find L2NetworkRealizationExtensionPoint for L2ProviderType[%s]", providerType));
+            throw new IllegalArgumentException(String.format("Cannot find L2NetworkRealizationExtensionPoint for L2ProviderType[%s] supporting L2NetworkType[%s]",
+                    providerType, l2Type));
         }
 
         return extp;
-    }
-
-    @Override
-    public L2NetworkRealizationExtensionPoint getRealizationExtension(L2NetworkType l2Type, HypervisorType hvType) {
-        return null;
     }
 
     @Override
@@ -539,7 +534,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             return getRealizationExtension(l2Type, hvType);
         }
 
-        return getRealizationExtension(L2ProviderType.valueOf(providerType));
+        return getRealizationExtension(l2Type, L2ProviderType.valueOf(providerType));
     }
 
     @Override
@@ -570,31 +565,21 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         }
 
         for (L2NetworkRealizationExtensionPoint extp : pluginRgty.getExtensionList(L2NetworkRealizationExtensionPoint.class)) {
-            Map<HypervisorType, Map<VSwitchType,L2NetworkRealizationExtensionPoint>> map = realizationExts.get(extp.getSupportedL2NetworkType());
-            if (map == null) {
-                map = new HashMap<HypervisorType, Map<VSwitchType,L2NetworkRealizationExtensionPoint>>(1);
-                realizationExts.put(extp.getSupportedL2NetworkType(), map);
-            }
-            Map<VSwitchType, L2NetworkRealizationExtensionPoint> vSwitchL2ExtMap = map.get(extp.getSupportedHypervisorType());
-            if (vSwitchL2ExtMap == null) {
-                vSwitchL2ExtMap = new HashMap<VSwitchType,L2NetworkRealizationExtensionPoint>(1);
-                map.put(extp.getSupportedHypervisorType(), vSwitchL2ExtMap);
-            }
-            vSwitchL2ExtMap.put(extp.getSupportedVSwitchType(), extp);
-        }
-
-        for (L2NetworkRealizationExtensionPoint extp : pluginRgty.getExtensionList(L2NetworkRealizationExtensionPoint.class)) {
             L2ProviderType providerType = extp.getL2ProviderType();
+            // for backends that do not support l2ProviderType
             if (providerType == null) {
+                Map<HypervisorType, L2NetworkRealizationExtensionPoint> map = realizationExts.computeIfAbsent(
+                        extp.getSupportedL2NetworkType(), k -> new HashMap<HypervisorType, L2NetworkRealizationExtensionPoint>(1));
+                map.put(extp.getSupportedHypervisorType(), extp);
                 continue;
             }
 
-            L2NetworkRealizationExtensionPoint old = l2ProviderMap.get(providerType);
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate l2 network provider for type[%s]", providerType));
-            }
-            logger.debug(String.format("add exp: %s for l2 provideType:%s", extp.getClass().getSimpleName(), providerType));
-            l2ProviderMap.put(providerType, extp);
+            Map<L2NetworkType, L2NetworkRealizationExtensionPoint> map = l2ProviderMap.computeIfAbsent(
+                    providerType, k -> new HashMap<L2NetworkType, L2NetworkRealizationExtensionPoint>());
+
+            L2NetworkType l2Type = extp.getSupportedL2NetworkType();
+            logger.debug(String.format("add exp: %s for l2 type: %s , providerType: %s", extp.getClass().getSimpleName(), l2Type, providerType));
+            map.put(l2Type, extp);
         }
 
         for (L2NetworkAttachClusterExtensionPoint extp : pluginRgty.getExtensionList(L2NetworkAttachClusterExtensionPoint.class)) {
