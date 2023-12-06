@@ -220,9 +220,8 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     protected void realizeNetwork(String hostUuid, String htype, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
-        final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
 
-        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
         ext.realize(getSelfInventory(), hostUuid, completion);
     }
 

@@ -136,8 +136,9 @@ public interface KVMConstant {
 
     String KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS = "kvm.host.skip.ping.no.failure.extensions";
 
-
     public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
+    public static final String L2_PROVIDER_TYPE_OVS_DPDK = "OvsDpdk";
+    public static final String L2_PROVIDER_TYPE_MACVLAN = "MacVlan";
 
     enum KvmVmState {
         NoState,
