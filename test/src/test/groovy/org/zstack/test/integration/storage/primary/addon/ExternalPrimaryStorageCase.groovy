@@ -213,10 +213,8 @@ class ExternalPrimaryStorageCase extends SubCase {
         ps = queryPrimaryStorage {}[0] as ExternalPrimaryStorageInventory
         assert ps.getAddonInfo() != null
 
-        /*
         def psRet = zqlQuery("query primarystorage")[0]
         assert !psRet.url.contains("Admin123")
-         */
 
         attachPrimaryStorageToCluster {
             primaryStorageUuid = ps.uuid
