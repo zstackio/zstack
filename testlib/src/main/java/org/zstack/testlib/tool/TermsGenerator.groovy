@@ -7,19 +7,20 @@ import org.zstack.header.vo.ResourceVO
 import org.zstack.utils.path.PathUtil
 
 import javax.persistence.Entity
+import java.nio.charset.Charset
 
 class TermsGenerator {
-    static String termFileFormat = "terms_%s.properties"
+    static String termFileFormat = "terms_%s.yaml"
 
-    static String translationFileFormat = "translation_from_%s_to_%s.properties"
+    static String translationFileFormat = "translation_from_%s_to_%s.yaml"
 
     static List<TermTranslatePropertyLine> generateTermsOfZStackVersion(String version) {
-        String outputDir = System.getProperty("user.home")
+        String outputDir = System.getProperty("user.dir")
 
         Set<Class> resourceVOs = Platform.reflections.getSubTypesOf(ResourceVO.class)
         resourceVOs = resourceVOs.findAll { return it.isAnnotationPresent(Entity.class) && !it.isAnnotationPresent(EO.class) }
 
-        List<TermTranslatePropertyLine> linesFromProperties = loadFileFromResource(PathUtil.join(outputDir, String.format(termFileFormat, version)))
+        List<TermTranslatePropertyLine> linesFromProperties = loadFileFromResource(PathUtil.join(outputDir, '../../conf', String.format(termFileFormat, version)))
 
         List<String> termKeysFromResourceConfig = resourceVOs.collect {
             // VmInstanceVO -> VmInstance
@@ -36,7 +37,7 @@ class TermsGenerator {
 
         String content = linesToWrite.collect { it.toString() }.join("\n")
 
-        new File(PathUtil.join(outputDir, String.format(termFileFormat, version))).write(content)
+        new File(PathUtil.join(outputDir, "../../conf", String.format(termFileFormat, version))).write(content, Charset.forName("UTF-8").toString())
         return linesToWrite
     }
 
@@ -71,13 +72,41 @@ class TermsGenerator {
             }
         }
 
-        String outputDir = System.getProperty("user.home")
+        String outputDir = System.getProperty("user.dir")
         String content = replaceMap
                 .values()
                 .findAll { Strings.isNotBlank(it.translation) && Strings.isNotBlank(it.replaceTo) }
                 .collect { it.toTranslationString() }
                 .join("\n")
-        new File(PathUtil.join(outputDir, String.format(translationFileFormat, replaceTo, replaceTo == "cloud" ? "zsv" : "cloud"))).write(content)
+        new File(PathUtil.join(outputDir, '../../conf', String.format(translationFileFormat, replaceTo, replaceTo == "cloud" ? "zsv" : "cloud"))).write(content, Charset.forName("UTF-8").toString())
+
+        List<TermTranslatePropertyLine> replaceList = replaceMap
+                .values()
+                .findAll { Strings.isNotBlank(it.translation) && Strings.isNotBlank(it.replaceTo) }
+
+        replaceList.each {
+            println "replace ${it.translation} to ${it.replaceTo}"
+        }
+
+        // replace terms in i18n messages_zh_CN.properties of every lines
+        String i18nConf = PathUtil.join(outputDir, '../../conf/i18n', "messages_zh_CN.properties")
+        List<String> outputLines = []
+        if (PathUtil.exists(i18nConf)) {
+            for (String line : new File(i18nConf).readLines(Charset.forName("UTF-8").toString())) {
+                replaceList.each {
+                    line = line.replaceAll(it.translation, it.replaceTo)
+                }
+
+                outputLines.add(line)
+                outputLines.add("\n")
+            }
+        }
+
+        File f = new File(PathUtil.
+                join(outputDir, '../conf/i18n', "messages_${replaceTo == "cloud" ? "zsv" : "cloud"}_zh_CN.properties"))
+        for (String line : outputLines) {
+            f.append(line, Charset.forName("UTF-8").toString())
+        }
     }
 
     static List<TermTranslatePropertyLine> loadFileFromResource(String fileName) {
@@ -85,12 +114,10 @@ class TermsGenerator {
             return new ArrayList<TermTranslatePropertyLine>()
         }
 
-        InputStream is = new FileInputStream(fileName)
-        String content = new String(is.getBytes())
-        is.close()
-
-        return content.split("\n").collect {
-            String[] tokens = it.split("=")
+        List<TermTranslatePropertyLine> results = []
+        for (String line : new File(fileName).readLines(Charset.forName("UTF-8").toString())) {
+            println "not processed line: ${line}"
+            String[] tokens = line.split("=")
 
             String token1
             if (tokens.size() > 1)
@@ -98,15 +125,18 @@ class TermsGenerator {
             else
                 token1 = ""
 
-            TermTranslatePropertyLine line = new TermTranslatePropertyLine(tokens[0].trim(), token1)
-            return line
+            TermTranslatePropertyLine propertyLine = new TermTranslatePropertyLine(tokens[0].trim(), token1)
+            println "line: ${propertyLine}"
+            results.add(propertyLine)
         }
+
+        return results
     }
 
     static class TermTranslatePropertyLine {
         TermTranslatePropertyLine(String term, String translation) {
-            this.term = term
-            this.translation = translation
+            this.term = new String(term.getBytes(), Charset.forName("UTF-8").toString())
+            this.translation = new String(translation.getBytes(), Charset.forName("UTF-8").toString())
         }
 
         String term
@@ -122,3 +152,4 @@ class TermsGenerator {
         }
     }
 }
+
