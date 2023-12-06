@@ -1,5 +1,8 @@
 package org.zstack.header.console;
 
+
+import java.sql.Timestamp;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -13,6 +16,7 @@ public class ConsoleInventory {
     private int port;
     private String token;
     private String version;
+    private Timestamp expiredDate;
 
     public static ConsoleInventory valueOf(ConsoleProxyVO vo) {
         ConsoleInventory inv = new ConsoleInventory();
@@ -22,6 +26,7 @@ public class ConsoleInventory {
         inv.setScheme(vo.getScheme());
         inv.setTargetScheme(vo.getTargetSchema());
         inv.setVersion(vo.getVersion());
+        inv.setExpiredDate(vo.getExpiredDate());
         return inv;
     }
 
@@ -71,5 +76,12 @@ public class ConsoleInventory {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public Timestamp getExpiredDate() {
+        return expiredDate;
+    }
+    public void setExpiredDate(Timestamp expiredDate) {
+        this.expiredDate = expiredDate;
     }
 }

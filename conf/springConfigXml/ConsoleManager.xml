@@ -18,6 +18,7 @@
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.PostVmInstantiateResourceExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
             <zstack:extension interface="org.zstack.header.identity.SessionLogoutExtensionPoint" />
         </zstack:plugin>

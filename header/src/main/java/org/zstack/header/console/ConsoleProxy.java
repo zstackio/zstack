@@ -12,7 +12,7 @@ import org.zstack.header.vm.VmInstanceInventory;
  * To change this template use File | Settings | File Templates.
  */
 public interface ConsoleProxy {
-    void establishProxy(SessionInventory session, VmInstanceInventory vm, ReturnValueCompletion<ConsoleProxyInventory> completion);
+    void establishProxy(VmInstanceInventory vm, ReturnValueCompletion<ConsoleProxyInventory> completion);
 
     void checkAvailability(ReturnValueCompletion<Boolean> completion);
 

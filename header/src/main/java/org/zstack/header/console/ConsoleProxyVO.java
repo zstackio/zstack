@@ -71,6 +71,9 @@ public class ConsoleProxyVO extends ResourceVO {
     private Timestamp createDate;
 
     @Column
+    private Timestamp expiredDate;
+
+    @Column
     private Timestamp lastOpDate;
 
     @PreUpdate
@@ -196,5 +199,13 @@ public class ConsoleProxyVO extends ResourceVO {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public Timestamp getExpiredDate() {
+        return expiredDate;
+    }
+
+    public void setExpiredDate(Timestamp expiredDate) {
+        this.expiredDate = expiredDate;
     }
 }
