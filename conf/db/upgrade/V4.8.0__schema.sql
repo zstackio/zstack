@@ -194,3 +194,5 @@ DROP PROCEDURE IF EXISTS checkHostInitiatorRefVO;
 DROP TABLE IF EXISTS HostInitiatorRefVO;
 
 UPDATE ResourceConfigVO SET createDate = CURRENT_TIMESTAMP where name='iam2.force.enable.securityGroup' and createDate='0000-00-00 00:00:00';
+
+update AlarmLabelVO set value='/var/lib/zstack/' where alarmUuid='b632652cc16044cdb6b4f516ed93a118' and value='/var/lib/zstack';
