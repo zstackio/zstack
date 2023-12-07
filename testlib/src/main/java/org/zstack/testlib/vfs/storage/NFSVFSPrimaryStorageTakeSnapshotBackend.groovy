@@ -10,7 +10,9 @@ import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageConstant
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.LocalStorageSpec
 import org.zstack.testlib.NfsPrimaryStorageSpec
+import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.extensions.VFSPrimaryStorageTakeSnapshotBackend
 import org.zstack.testlib.vfs.extensions.VFSSnapshot
 
@@ -26,7 +28,12 @@ class NFSVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSystemBased
                 .select(VolumeVO_.primaryStorageUuid)
                 .eq(VolumeVO_.uuid, cmd.volumeUuid)
                 .findValue()
-        return doTakeSnapshot(NfsPrimaryStorageSpec.vfs(primaryStorageUuid, spec), cmd, volume)
+
+        VFS vfs = NfsPrimaryStorageSpec.vfs(primaryStorageUuid, spec)
+        vfs.Assert(vfs.exists(cmd.installPath), "cannot find file[${cmd.installPath}]")
+        vfs.delete(cmd.installPath)
+
+        return doTakeSnapshot(vfs, cmd, volume)
     }
 
     @Override
