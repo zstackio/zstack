@@ -35,4 +35,8 @@ public class VolumeGlobalConfig {
     public static GlobalConfig VOLUME_PHYSICAL_BLOCK_SIZE = new GlobalConfig(CATEGORY, "physical.block.size");
 
     public static GlobalConfig AUTO_SNAPSHOT_BEFORE_CHANGE_OPERATION = new GlobalConfig(CATEGORY, "auto.snapshot.before.change");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class)
+    public static GlobalConfig ZEROED_BEFORE_DELETE = new GlobalConfig(CATEGORY, "zeroed.before.delete");
 }
