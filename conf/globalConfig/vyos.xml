@@ -40,6 +40,6 @@
         <name>enable.vyos.cmd</name>
         <description>enable or disable vyos command</description>
         <type>java.lang.Boolean</type>
-        <defaultValue>true</defaultValue>
+        <defaultValue>false</defaultValue>
     </config>
 </globalConfig>
