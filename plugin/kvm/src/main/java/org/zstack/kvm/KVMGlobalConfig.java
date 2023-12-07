@@ -1,10 +1,12 @@
 package org.zstack.kvm;
 
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
@@ -40,6 +42,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig ALLOW_LIVE_SNAPSHOT_ON_REDHAT = new GlobalConfig(CATEGORY, "redhat.liveSnapshotOn");
     @GlobalConfigValidation(validValues = {"none", "writethrough", "writeback"})
+    @BindResourceConfig({VolumeVO.class, VmInstanceVO.class})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.cacheMode");
     @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough", "Hygon_Customized",
             "Dhyana", "EPYC", "EPYC-IBPB", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX",
@@ -59,6 +62,7 @@ public class KVMGlobalConfig {
     @BindResourceConfig({ClusterVO.class})
     public static GlobalConfig AUTO_VM_NIC_MULTIQUEUE = new GlobalConfig(CATEGORY, "auto.set.vm.nic.multiqueue");
     @GlobalConfigValidation
+    @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig MIGRATE_AUTO_CONVERGE = new GlobalConfig(CATEGORY, "migrate.autoConverge");
     @GlobalConfigValidation
     public static GlobalConfig MIGRATE_XBZRLE = new GlobalConfig(CATEGORY, "migrate.xbzrle");
@@ -66,8 +70,6 @@ public class KVMGlobalConfig {
     public static GlobalConfig TEST_SSH_PORT_ON_OPEN_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOpenTimeout");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
     public static GlobalConfig TEST_SSH_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOnConnectTimeout");
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
-    public static GlobalConfig TEST_KVMAGENT_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testKvmagentPortOnConnectTimeout");
     @GlobalConfigValidation
     public static GlobalConfig RESTART_AGENT_IF_FAKE_DEAD = new GlobalConfig(CATEGORY, "restartagentwhenfakedead");
 
@@ -104,10 +106,28 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig SUSPEND_TO_DISK = new GlobalConfig(CATEGORY, "vm.suspend.to.disk");
+
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig WEBSSH_IDLE_TIMEOUT = new GlobalConfig(CATEGORY, "webssh.idleTimeout");
 
     @GlobalConfigValidation(numberGreaterThan = 0)
     @GlobalConfigDef(defaultValue = "8888", type = Long.class, description = "the default port used by web-based SSH server")
     public static GlobalConfig HOST_WEBSSH_PORT = new GlobalConfig(CATEGORY, "host.webssh.port");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigDef(defaultValue = "8889", type = Long.class, description = "the default https port used by web-based SSH server")
+    public static GlobalConfig HOST_WEBSSH_HTTPS_PORT = new GlobalConfig(CATEGORY, "host.webssh.https.port");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable install host shutdown hook")
+    public static GlobalConfig INSTALL_HOST_SHUTDOWN_HOOK = new GlobalConfig(CATEGORY, "install.host.shutdown.hook");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable memory auto balloon")
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig MEMORY_AUTO_BALLOON = new GlobalConfig(CATEGORY, "memory.auto.balloon");
+
+    @GlobalConfigValidation(validValues = {"true", "false", "none"})
+    @GlobalConfigDef(defaultValue = "none", description = "enable host ksm")
+    @BindResourceConfig({HostVO.class})
+    public static GlobalConfig HOST_KSM = new GlobalConfig(CATEGORY, "host.ksm");
 }

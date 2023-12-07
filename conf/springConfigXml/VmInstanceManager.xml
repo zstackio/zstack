@@ -34,7 +34,7 @@
             <list>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateHostAndPrimaryStorageFlow</value>
-                <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
+		        <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicIpFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
@@ -87,7 +87,8 @@
                 <value>org.zstack.compute.vm.VmDestroyOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
-                <value>org.zstack.compute.vm.VmReturnReleaseNicFlow</value>
+		        <value>org.zstack.compute.vm.VmReturnReleaseNicFlow</value>
+		        <value>org.zstack.compute.vm.VmPostReleaseNicFlow</value>
                 <value>org.zstack.compute.vm.VmDeleteVolumeFlow</value>
             </list>
         </property>
@@ -205,6 +206,7 @@
         <value>virtio</value>
         <value>e1000</value>
         <value>rtl8139</value>
+        <value>pcnet</value>
     </util:list>
 
     <bean id="VmNicManager" class="org.zstack.compute.vm.VmNicManagerImpl">
@@ -219,9 +221,16 @@
         <property name="supportNicDriverTypes" ref="SupportNicDriverTypes"/>
         <property name="defaultPVNicDriver" value="virtio"/>
         <property name="defaultNicDriver" value="e1000"/>
+        <property name="pcNetNicDriver" value="pcnet"/>
     </bean>
 
     <bean id="VmNicFactory" class="org.zstack.compute.vm.VmNicFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceNicFactory" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="TfVmNicFactory" class="org.zstack.compute.vm.TfVmNicFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmInstanceNicFactory" />
         </zstack:plugin>

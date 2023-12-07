@@ -11,9 +11,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
@@ -175,7 +173,13 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
 		return getSupportedL2NetworkType();
 	}
 
-	@Override
+    @Override
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    }
+
+
+    @Override
 	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class));
         VmInstanceVO vm = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
@@ -185,12 +189,8 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
         HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(vxlan, host);
         Integer vlanId = struct.getVlanId();
 
-        NicTO to = new NicTO();
-		to.setMac(nic.getMac());
-        to.setUuid(nic.getUuid());
+        NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
 		to.setBridgeName(makeBridgeName(l2Network.getUuid(), vlanId));
-		to.setDeviceId(nic.getDeviceId());
-		to.setNicInternalName(nic.getInternalName());
 		to.setMetaData(String.valueOf(vlanId));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
 		return to;

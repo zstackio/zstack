@@ -38,7 +38,7 @@ public class OperationChecker {
         Set<String> ops = states.get(operationName);
         if (exceptionIfNoOperation) {
             if (ops == null) {
-                throw new IllegalArgumentException(String.format("Unable to find allowed states for operation[%s]", operationName));
+                throw new IllegalArgumentException(String.format("Unable to find allowed states for operation[%s], current state is %s", operationName, state));
             }
         } else {
             if (ops == null) {
@@ -47,6 +47,14 @@ public class OperationChecker {
         }
         
         return allowedWhenHavingState == ops.contains(state);
+    }
+
+    public boolean isOperationForbidden(String operationName, String state) {
+        Set<String> ops = states.get(operationName);
+        if (ops == null) {
+            return false;
+        }
+        return ops.contains(state);
     }
 
     public Set<String> getStatesForOperation(String operationName) {

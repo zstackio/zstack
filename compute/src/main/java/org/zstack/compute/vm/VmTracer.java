@@ -88,7 +88,9 @@ public abstract class VmTracer {
                 logger.debug(String.format("[Vm Tracer] detects stranger vm[identity:%s, state:%s]", vmUuid, actualState));
                 String cachedHostUuid = strangeVms.get(vmUuid);
 
-                if (cachedHostUuid != null) {
+                // only report stranger vm once for each host
+                // but if hostUuid changed, report it again
+                if (cachedHostUuid != null && cachedHostUuid.equals(hostUuid)) {
                     logger.debug(String.format("[Vm Tracer] detects stranger vm[identity:%s, state:%s] but it's already in cache, skip firing event", vmUuid, actualState));
                     return;
                 }
@@ -179,7 +181,11 @@ public abstract class VmTracer {
         }
 
         for (VmInstanceState state : vmStates.values()) {
-            if (state != VmInstanceState.Running && state != VmInstanceState.Stopped && state != VmInstanceState.Paused && state != VmInstanceState.Crashed) {
+            if (state != VmInstanceState.Running
+                    && state != VmInstanceState.Stopped
+                    && state != VmInstanceState.Paused
+                    && state != VmInstanceState.Crashed
+                    && state != VmInstanceState.NoState) {
                 throw new CloudRuntimeException(String.format("host can only report vm state as Running, Stopped, Paused, Crashed, got %s", state));
             }
         }

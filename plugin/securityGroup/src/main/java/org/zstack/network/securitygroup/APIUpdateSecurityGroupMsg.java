@@ -18,6 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateSecurityGroupEvent.class
 )
 public class APIUpdateSecurityGroupMsg extends APIMessage implements SecurityGroupMessage {
+    
     @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)

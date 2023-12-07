@@ -54,6 +54,14 @@ public interface VmInstanceDeviceManager {
     ErrorCode deleteVmDeviceAddress(String resourceUuid, String vmInstanceUuid);
 
     /**
+     * delete vm device address
+     *
+     * @param resourceUuid the uuid of resource that want to delete device address
+     * @return ErrorCode if success it is null else not
+     */
+    ErrorCode deleteVmDeviceAddress(String resourceUuid);
+
+    /**
      * delete vm related all devices' address
      *
      * @param vmInstanceUuid vm uuid will be used to find related device address
@@ -92,6 +100,8 @@ public interface VmInstanceDeviceManager {
      * @return List<VmInstanceDeviceAddressVO> a list of vm device address
      */
     List<VmInstanceDeviceAddressVO> revertDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid);
+
+    List<VmInstanceDeviceAddressVO> revertExistingDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid);
 
 
     List<VmInstanceDeviceAddressVO> revertRequestedDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid, List<String> needRevertResourceUuidList);

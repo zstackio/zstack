@@ -19,6 +19,8 @@ class SdnControllerTest extends Test {
         include("vip.xml")
         include("vxlan.xml")
         include("sdnController.xml")
+        include("sugonSdnController.xml")
+        include("TfPortAllocator.xml")
         eip()
         lb()
         portForwarding()

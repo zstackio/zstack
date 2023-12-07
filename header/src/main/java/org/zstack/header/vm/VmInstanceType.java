@@ -8,6 +8,8 @@ public class VmInstanceType {
     private static Map<String, VmInstanceType> types = Collections.synchronizedMap(new HashMap<String, VmInstanceType>());
     private final String typeName;
 
+    private boolean supportUpdateOnHypervisor = true;
+
     public VmInstanceType(String typeName) {
         this.typeName = typeName;
         types.put(typeName, this);
@@ -39,5 +41,13 @@ public class VmInstanceType {
     @Override
     public int hashCode() {
         return typeName.hashCode();
+    }
+
+    public boolean isSupportUpdateOnHypervisor() {
+        return supportUpdateOnHypervisor;
+    }
+
+    public void setSupportUpdateOnHypervisor(boolean supportUpdateOnHypervisor) {
+        this.supportUpdateOnHypervisor = supportUpdateOnHypervisor;
     }
 }

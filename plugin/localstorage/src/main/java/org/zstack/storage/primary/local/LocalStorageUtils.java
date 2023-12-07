@@ -257,6 +257,7 @@ public class LocalStorageUtils {
             DebugUtils.Assert(installPath != null || volumeSnapshotUuid != null, "installPath cannot be null");
             DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
             if (volumeSnapshotUuid == null) {
+                DebugUtils.Assert(!installPath.startsWith("file://"), "installPath cannot start with file://");
                 fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
             } else {
                 fullPath = String.format("%s%s;hostUuid://%s", ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA, volumeSnapshotUuid, hostUuid);

@@ -44,6 +44,14 @@ public class VtepInventory  {
         return this.type;
     }
 
+    public java.lang.String physicalInterface;
+    public void setPhysicalInterface(java.lang.String physicalInterface) {
+        this.physicalInterface = physicalInterface;
+    }
+    public java.lang.String getPhysicalInterface() {
+        return this.physicalInterface;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

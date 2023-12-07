@@ -101,6 +101,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="LocalStorageVmMigrationMetric" class="org.zstack.storage.primary.local.LocalStorageVmMigrationMetric">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.vm.VmMigrationMetric"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="LocalStorageVmMigrationHostAllocatorFactory"
           class="org.zstack.storage.primary.local.LocalStorageVmMigrationHostAllocatorFactory">
         <zstack:plugin>
@@ -127,5 +133,11 @@
                 <value>org.zstack.compute.allocator.LeastVmPreferredSortFlow</value>
             </list>
         </property>
+    </bean>
+
+    <bean id="LocalHostUsageCollector" class="org.zstack.storage.primary.local.LocalStorageHostUsageReport">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" order="-2"/>
+        </zstack:plugin>
     </bean>
 </beans>

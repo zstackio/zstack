@@ -131,8 +131,8 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 @Override
                 @Transactional(readOnly = true)
                 public List<String> call() {
-                    String sql = "select eip.uuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where " +
-                            " vm.uuid = nic.vmInstanceUuid and eip.vipUuid = vip.uuid " +
+                    String sql = "select eip.uuid from EipVO eip, VipVO vip, VmNicVO nic where " +
+                            " eip.vipUuid = vip.uuid " +
                             " and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid in (:vipL3Uuids) and vip.serviceProvider in (:providers) " +
                             " and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);

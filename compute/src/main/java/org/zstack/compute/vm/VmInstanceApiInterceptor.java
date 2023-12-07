@@ -1,9 +1,13 @@
 package org.zstack.compute.vm;
 
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
+import org.zstack.compute.VmNicUtils;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
@@ -39,9 +43,9 @@ import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -56,9 +60,7 @@ import java.util.stream.Collectors;
 import static java.lang.Integer.parseInt;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.CollectionUtils.getDuplicateElementsOfList;
 
 /**
@@ -157,10 +159,22 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVmNicDriverMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
             validate((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
+        } else if (msg instanceof APIFstrimVmMsg) {
+            validate((APIFstrimVmMsg) msg);
+        } else if (msg instanceof APITakeVmConsoleScreenshotMsg) {
+            validate((APITakeVmConsoleScreenshotMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APITakeVmConsoleScreenshotMsg msg) {
+        VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
+        if (!vm.getState().equals(VmInstanceState.Running)) {
+            throw new ApiMessageInterceptionException(operr(
+                    "can not take vm console screenshot for vm[uuid:%s] which is not Running", msg.getVmInstanceUuid()));
+        }
     }
 
     private void validate(APIGetInterdependentL3NetworksBackupStoragesMsg msg) {
@@ -177,6 +191,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIChangeVmNicNetworkMsg msg) {
         List<Map<String, String>> networkServices = new ArrayList<>();
         VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+
+        //l2 must use same vswitch
+        long count  = SQL.New("select count(distinct l2.vSwitchType) from L2NetworkVO l2, L3NetworkVO l3 where l2.uuid = l3.l2NetworkUuid" +
+                " and l3.uuid in :l3Uuids")
+                .param("l3Uuids", Arrays.asList(nicVO.getL3NetworkUuid(), msg.getDestL3NetworkUuid()))
+                .find();
+        if (count > 1) {
+            throw new ApiMessageInterceptionException(operr("could not change to L3 network, the l2 of l3[uuid:%s, %s] use different vswitch",
+                    nicVO.getL3NetworkUuid(), msg.getDestL3NetworkUuid()));
+        }
         for (VmNicChangeNetworkExtensionPoint extension : pluginRgty.getExtensionList(VmNicChangeNetworkExtensionPoint.class)) {
             Map<String, String> ret = extension.getVmNicAttachedNetworkService(VmNicInventory.valueOf(nicVO));
             if (ret == null) {
@@ -419,6 +443,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                             "the vm[uuid:%s] is already on host[uuid:%s]", msg.getVmInstanceUuid(), msg.getHostUuid()
                     ));
                 }
+
+                if (vo.getState() == VmInstanceState.Paused && VmSystemTags.VM_STATE_PAUSED_AFTER_MIGRATE.hasTag(msg.getVmInstanceUuid())) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the vm[uuid:%s] is still paused after the last migration, please resume it before migrate.", msg.getVmInstanceUuid()));
+                }
             }
         }.execute();
     }
@@ -461,19 +490,43 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         new SQLBatch() {
             @Override
             protected void scripts() {
-                VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
-                Integer cpuSum = msg.getCpuNum();
-                Long memorySize = msg.getMemorySize();
-                if ((cpuSum == null && memorySize == null)) {
+                VmInstanceVO vo = q(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
+                if (msg.getReservedMemorySize() != null) {
+                    Long memorySize = msg.getMemorySize() == null ? vo.getMemorySize() : msg.getMemorySize();
+                    if (msg.getReservedMemorySize() > memorySize) {
+                        throw new ApiMessageInterceptionException(argerr(
+                                "reservedMemorySize[%s] is greater than memorySize[%s]", msg.getReservedMemorySize(), memorySize
+                        ));
+                    }
+                }
+
+                if (msg.getCpuNum() == null && msg.getMemorySize() == null) {
                     return;
                 }
 
-                VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
+                boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
+                if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).notEq(VmInstanceVO_.uuid, msg.getUuid()).isExists()) {
+                    throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
+                            msg.getName()));
+                }
+
+                Integer cpuSum = msg.getCpuNum();
+                Long memorySize = msg.getMemorySize();
+
+                VmInstanceState vmState = q(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getUuid(), Boolean.class);
                 if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
-                    throw new ApiMessageInterceptionException(argerr(
-                            "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
-                    ));
+                    if (cpuSum != null && cpuSum != vo.getCpuNum()) {
+                        throw new ApiMessageInterceptionException(argerr(
+                                "the VM cannot do cpu hot plug because of disabling cpu hot plug. Please stop the VM then do the cpu hot plug again"
+                        ));
+                    }
+
+                    if (memorySize != null && memorySize != vo.getMemorySize()) {
+                        throw new ApiMessageInterceptionException(argerr(
+                                "the VM cannot do memory hot plug because of disabling memory hot plug. Please stop the VM then do the memory hot plug again"
+                        ));
+                    }
                 }
 
                 if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
@@ -481,7 +534,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                             vo.getUuid(), vo.getState(),
                             StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ",")));
                 }
-
 
                 if (VmInstanceState.Stopped.equals(vmState)) {
                     return;
@@ -947,6 +999,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
             msg.getStaticIpMap().put(e.getKey(), e.getValue());
         }
+
+        if (!StringUtils.isEmpty(msg.getVmNicParams())) {
+            List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
+
+            VmNicParm vmNicParam;
+            try {
+                vmNicParam = JSONObjectUtil.toObject(msg.getVmNicParams(), VmNicParm.class);
+            } catch (JsonSyntaxException e) {
+                throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
+            }
+
+            VmNicUtils.validateVmParms(Arrays.asList(vmNicParam), Arrays.asList(msg.getL3NetworkUuid()), supportNicDriverTypes);
+        }
     }
 
     private void validate(APIAttachVmNicToVmMsg msg) {
@@ -1005,15 +1070,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     @Transactional(readOnly = true)
     private void validate(APIChangeVmNicStateMsg msg) {
         VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        if (msg.getState().equals(VmNicState.enable.toString())) {
+            MacOperator mo = new MacOperator();
+            if (mo.checkDuplicateMac(nicVO.getHypervisorType(), nicVO.getMac())) {
+                throw new ApiMessageInterceptionException(Platform.argerr("Duplicate mac address [%s]", nicVO.getMac()));
+            }
+        }
+
         if (!nicVO.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)) {
             throw new ApiMessageInterceptionException(operr("could not update nic[uuid: %s] state, due to nic type[%s] not support",
                     msg.getVmNicUuid(), nicVO.getType()));
-        }
-        if (!Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, nicVO.getVmInstanceUuid())
-                .eq(VmInstanceVO_.type, VmInstanceConstant.USER_VM_TYPE)
-                .eq(VmInstanceVO_.hypervisorType, VmInstanceConstant.KVM_HYPERVISOR_TYPE).isExists()) {
-            throw new ApiMessageInterceptionException(operr("could not update nic[uuid: %s] state, due to vm not support",
-                    msg.getVmNicUuid()));
         }
         msg.setVmInstanceUuid(nicVO.getVmInstanceUuid());
         msg.l3Uuid = nicVO.getL3NetworkUuid();
@@ -1081,6 +1147,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validateZoneOrClusterOrHostOrL3Exist(NewVmInstanceMessage2 msg) {
+        if (CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && StringUtils.isEmpty(msg.getZoneUuid())
+                && StringUtils.isEmpty(msg.getClusterUuid()) && StringUtils.isEmpty(msg.getHostUuid())) {
+            throw new ApiMessageInterceptionException(operr("could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set"));
+        }
+    }
+
     private void validateInstanceSettings(NewVmInstanceMessage2 msg) {
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
 
@@ -1091,6 +1164,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             if (msg.getCpuNum() <= 0 || msg.getMemorySize() <= 0) {
                 throw new ApiMessageInterceptionException(operr("Unexpected CPU/memory settings"));
+            }
+
+            if (msg.getReservedMemorySize() != null) {
+                if (msg.getReservedMemorySize() > msg.getMemorySize()) {
+                    throw new ApiMessageInterceptionException(operr("reserved memory[%s] is greater than memory size[%s]", msg.getReservedMemorySize(), msg.getMemorySize()));
+                }
+            } else {
+                msg.setReservedMemorySize(0L);
             }
 
             return;
@@ -1108,6 +1189,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         msg.setCpuNum(ivo.getCpuNum());
         msg.setMemorySize(ivo.getMemorySize());
+        // reserved memory should support customize
+        if (msg.getReservedMemorySize() == null) {
+            msg.setReservedMemorySize(ivo.getReservedMemorySize());
+        }
     }
 
     private void validateDataDiskSizes(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
@@ -1124,31 +1209,90 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateVmInstanceMsg msg) {
         validate((NewVmInstanceMessage2) msg);
 
-        SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
-        imgq.select(ImageVO_.state, ImageVO_.system, ImageVO_.mediaType, ImageVO_.status);
-        imgq.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
-        Tuple imgt = imgq.findTuple();
-        ImageState imgState = imgt.get(0, ImageState.class);
-        if (imgState == ImageState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid()));
+        if (CollectionUtils.isNotEmpty(msg.getDiskAOs())) {
+            APICreateVmInstanceMsg.DiskAO rootDiskAO = msg.getDiskAOs().stream()
+                    .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
+            if (rootDiskAO == null) {
+                throw new ApiMessageInterceptionException(argerr("missing root disk"));
+            }
+            msg.setPlatform(rootDiskAO.getPlatform());
+            msg.setGuestOsType(rootDiskAO.getGuestOsType());
+            msg.setArchitecture(rootDiskAO.getArchitecture());
+            if (CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
+                if (rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
+                    msg.setVirtio(true);
+                }
+            } else {
+                msg.setVirtio(false);
+            }
         }
 
-        ImageStatus imgStatus = imgt.get(3, ImageStatus.class);
-        if (imgStatus != ImageStatus.Ready) {
-            throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not ready yet, can't create vm from it", msg.getImageUuid()));
+        ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
+        if (image == null) {
+            String err = "";
+            if (msg.getPlatform() == null) {
+                err = Platform.missingVariables("platform");
+            }
+
+            if (msg.getGuestOsType() == null) {
+                err += Platform.missingVariables("guestOsType");
+            }
+
+            if (msg.getArchitecture() == null) {
+                err += Platform.missingVariables("architecture");
+            }
+
+            if (msg.getRootDiskOfferingUuid() == null && msg.getRootDiskSize() == null) {
+                err += "rootDiskOfferingUuid or rootDiskSize cannot be all null";
+            }
+
+            if (!err.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr(String.format("when imageUuid is null, %s", err)));
+            }
+        } else {
+            ImageState imgState = image.getState();
+            if (imgState == ImageState.Disabled) {
+                throw new ApiMessageInterceptionException(operr("image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid()));
+            }
+
+            ImageStatus imgStatus = image.getStatus();
+            if (imgStatus != ImageStatus.Ready) {
+                throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not ready yet, can't create vm from it", msg.getImageUuid()));
+            }
+
+            ImageMediaType imgFormat = image.getMediaType();
+            if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO) {
+                throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
+            }
+
+            boolean isSystemImage = image.isSystem();
+            if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
+                throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
+            }
+
+            if (msg.getPlatform() == null && image.getPlatform() == null) {
+                throw new ApiMessageInterceptionException(operr("at least one of field platform in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            }
+
+            if (msg.getGuestOsType() == null && image.getGuestOsType() == null) {
+                throw new ApiMessageInterceptionException(operr("at least one of field guestOsType in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            }
+
+            if (msg.getArchitecture() == null && image.getArchitecture() == null) {
+                throw new ApiMessageInterceptionException(operr("at least one of field architecture in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            }
+
+            validateRootDiskOffering(imgFormat, msg);
+
+            if (msg.getVirtio() == null) {
+                if (image.getVirtio() != null) {
+                    msg.setVirtio(image.getVirtio());
+                } else {
+                    msg.setVirtio(false);
+                }
+            }
         }
 
-        ImageMediaType imgFormat = imgt.get(2, ImageMediaType.class);
-        if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO) {
-            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
-        }
-
-        boolean isSystemImage = imgt.get(1, Boolean.class);
-        if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
-        }
-
-        validateRootDiskOffering(imgFormat, msg);
         validateDataDiskSizes(msg);
 
         List<String> allDiskOfferingUuids = new ArrayList<String>();
@@ -1171,6 +1315,47 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validatePsWhetherSameCluster(msg);
+        validateDataDiskAOs(msg);
+    }
+
+    private void validateDataDiskAOs(APICreateVmInstanceMsg msg) {
+        if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
+            return;
+        }
+        for (APICreateVmInstanceMsg.DiskAO diskAO : msg.getDiskAOs()) {
+            if (diskAO.isBoot()) {
+                continue;
+            }
+            checkMutualExclusion(diskAO);
+        }
+    }
+
+    public void checkMutualExclusion(APICreateVmInstanceMsg.DiskAO diskAO) {
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("size", diskAO.getSize() > 0);
+        map.put("templateUuid", diskAO.getTemplateUuid() != null);
+        map.put("diskOfferingUuid", diskAO.getDiskOfferingUuid() != null);
+        map.put("sourceUuid", diskAO.getSourceUuid() != null);
+        int count = 0;
+        StringBuilder errorMsg = new StringBuilder();
+        for (Map.Entry<String, Boolean> entry : map.entrySet()) {
+            if (entry.getValue()) {
+                count++;
+                errorMsg.append(entry.getKey()).append(", ");
+            }
+        }
+
+        if (count > 1) {
+            throw new ApiMessageInterceptionException(operr("Cannot set the following properties at the same time : " + errorMsg));
+        }
+
+        if (count == 0) {
+            StringJoiner properties = new StringJoiner(", ");
+            for (String key : map.keySet()) {
+                properties.add(key);
+            }
+            throw new ApiMessageInterceptionException(operr("Need to set one of the following properties, and can only be one of them: " + properties));
+        }
     }
 
     private void validate(APICreateVmInstanceFromVolumeMsg msg) {
@@ -1200,6 +1385,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(NewVmInstanceMessage2 msg) {
         validateInstanceSettings(msg);
+        boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
+        if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).isExists()) {
+            throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
+                    msg.getName()));
+        }
 
         Set<String> macs = new HashSet<>();
         if (null != msg.getSystemTags()) {
@@ -1214,25 +1404,43 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
-        l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state);
-        List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
-        List<String> duplicateElements = getDuplicateElementsOfList(uuids);
-        if (duplicateElements.size() > 0) {
-            throw new ApiMessageInterceptionException(operr("Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
+        if (msg.getVmNicParams() != null && !msg.getVmNicParams().isEmpty()) {
+            List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
+            if (msg.getL3NetworkUuids() == null || msg.getL3NetworkUuids().isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("l3NetworkUuids and vmNicInventories mustn't both be empty or both be set"));
+            }
+
+            List<VmNicParm> vmNicInventories;
+            try {
+                vmNicInventories = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
+            } catch (JsonSyntaxException e) {
+                throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
+            }
+
+            VmNicUtils.validateVmParms(vmNicInventories, msg.getL3NetworkUuids(), supportNicDriverTypes);
         }
 
-        l3q.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
-        List<Tuple> l3ts = l3q.listTuple();
-        for (Tuple t : l3ts) {
-            String l3Uuid = t.get(0, String.class);
-            Boolean system = t.get(1, Boolean.class);
-            L3NetworkState state = t.get(2, L3NetworkState.class);
-            if (state != L3NetworkState.Enabled) {
-                throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
+        if (!CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
+            SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
+            l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state);
+            List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
+            List<String> duplicateElements = getDuplicateElementsOfList(uuids);
+            if (duplicateElements.size() > 0) {
+                throw new ApiMessageInterceptionException(operr("Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
             }
-            if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-                throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
+
+            l3q.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
+            List<Tuple> l3ts = l3q.listTuple();
+            for (Tuple t : l3ts) {
+                String l3Uuid = t.get(0, String.class);
+                Boolean system = t.get(1, Boolean.class);
+                L3NetworkState state = t.get(2, L3NetworkState.class);
+                if (state != L3NetworkState.Enabled) {
+                    throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
+                }
+                if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
+                    throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
+                }
             }
         }
 
@@ -1285,9 +1493,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (VmInstanceConstant.USER_VM_TYPE.equals(msg.getType())) {
-            if (msg.getDefaultL3NetworkUuid() == null && msg.getL3NetworkUuids().size() != 1) {
+            if (msg.getDefaultL3NetworkUuid() == null && (!CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && msg.getL3NetworkUuids().size() != 1)) {
                 throw new ApiMessageInterceptionException(argerr("there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null"));
-            } else if (msg.getDefaultL3NetworkUuid() == null && msg.getL3NetworkUuids().size() == 1) {
+            } else if (msg.getDefaultL3NetworkUuid() == null && (msg.getL3NetworkUuids()!= null &&msg.getL3NetworkUuids().size() == 1)) {
                 msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
             } else if (msg.getDefaultL3NetworkUuid() != null && !msg.getL3NetworkUuids().contains(msg.getDefaultL3NetworkUuid())) {
                 throw new ApiMessageInterceptionException(argerr("defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", msg.getDefaultL3NetworkUuid(), msg.getL3NetworkUuids()));
@@ -1295,73 +1503,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validateCdRomsTag(msg);
-    }
-
-    private boolean isCpuTopologyTags(String tag) {
-        return VmHardwareSystemTags.CPU_SOCKETS.isMatch(tag)
-                || VmHardwareSystemTags.CPU_CORES.isMatch(tag)
-                || VmHardwareSystemTags.CPU_THREADS.isMatch(tag);
-    }
-
-    private static class CpuTopology {
-        int cpuNum;
-        Integer cpuSockets;
-        Integer cpuCores;
-        Integer cpuThreads;
-
-        public CpuTopology(int cpuNum, List<String> systemTags) {
-            this.cpuNum = cpuNum;
-
-            this.cpuSockets = getValueFromSystemTag(systemTags, VmHardwareSystemTags.CPU_SOCKETS, VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
-            this.cpuCores = getValueFromSystemTag(systemTags, VmHardwareSystemTags.CPU_CORES, VmHardwareSystemTags.CPU_CORES_TOKEN);
-            this.cpuThreads = getValueFromSystemTag(systemTags, VmHardwareSystemTags.CPU_THREADS, VmHardwareSystemTags.CPU_THREADS_TOKEN);
-        }
-
-        private Integer getValueFromSystemTag(List<String> systemTags, PatternedSystemTag tag, String token) {
-            for (String t : systemTags) {
-                if (tag.isMatch(t)) {
-                    try {
-                        return Integer.valueOf(tag.getTokenByTag(t, token));
-                    } catch (NumberFormatException e) {
-                        return null;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        boolean isEmpty() {
-            return cpuSockets == null && cpuCores == null && cpuThreads == null;
-        }
-
-        void calculateValidTopology() {
-            if (cpuSockets == null) {
-                if (cpuCores == null && cpuThreads == null) {
-                    return;
-                }
-
-                throw new ApiMessageInterceptionException(argerr("cpuSockets must be specified when cpuCores or cpuThreads is set"));
-            }
-
-            if (cpuCores == null && cpuThreads == null) {
-                cpuCores = cpuNum / cpuSockets;
-                cpuThreads = 1;
-            } else if (cpuCores != null && cpuThreads == null) {
-                cpuThreads = cpuNum / cpuSockets / cpuCores;
-            } else if (cpuCores == null) {
-                cpuCores = cpuNum / cpuSockets / cpuThreads;
-            }
-
-            // check the topology is valid
-            if (cpuNum == cpuSockets * cpuCores * cpuThreads) {
-                return;
-            }
-
-            throw new ApiMessageInterceptionException(argerr("invalid cpu topology." +
-                            " cpuNum[%s], cpuSockets[%s], cpuCores[%s], cpuThreads[%s]",
-                    cpuNum, cpuSockets, cpuCores, cpuThreads));
-        }
+        validateZoneOrClusterOrHostOrL3Exist(msg);
     }
 
     private void validateCdRomsTag(NewVmInstanceMessage msg) {
@@ -1433,4 +1575,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validate(APIFstrimVmMsg msg) {
+        Tuple t = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getUuid())
+                .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                .findTuple();
+        VmInstanceState state = t.get(0, VmInstanceState.class);
+
+        if (state != VmInstanceState.Running) {
+            throw new ApiMessageInterceptionException(operr(
+                    "vm[uuid:%s] can only fstrim when state is Running, current state is %s", msg.getUuid(), state));
+        }
+        msg.setHostUuid(t.get(1, String.class));
+    }
 }

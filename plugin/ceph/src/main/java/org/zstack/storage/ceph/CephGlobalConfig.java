@@ -26,6 +26,10 @@ public class CephGlobalConfig {
     public static GlobalConfig BACKUP_STORAGE_MON_AUTO_RECONNECT = new GlobalConfig(CATEGORY, "backupStorage.mon.autoReconnect");
     @GlobalConfigValidation
     public static GlobalConfig GC_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    public static GlobalConfig TRASH_CLEANUP_INTERVAL = new GlobalConfig(CATEGORY, "trash.cleanup.interval");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig IMAGE_EXPIRATION_TIME = new GlobalConfig(CATEGORY, "image.expiration.time");
     @GlobalConfigValidation
     public static GlobalConfig CEPH_BS_ALLOW_PORTS = new GlobalConfig(CATEGORY, "cephbs.allow.ports");
     @GlobalConfigValidation

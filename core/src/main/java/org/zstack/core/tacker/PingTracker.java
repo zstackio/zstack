@@ -155,7 +155,7 @@ public abstract class PingTracker implements Component {
         }
     }
 
-    protected void startTracker() {
+    protected synchronized void startTracker() {
         if (trackerThread != null) {
             trackerThread.cancel(true);
         }

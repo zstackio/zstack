@@ -1,13 +1,13 @@
 package org.zstack.sdnController.header;
 
-import org.zstack.header.network.l2.APICreateL2NetworkEvent;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by shixin.ruan on 09/30/2019.
  */
 @RestResponse(allTo = "inventory")
-public class APICreateL2HardwareVxlanNetworkPoolEvent extends APICreateL2NetworkEvent {
+public class APICreateL2HardwareVxlanNetworkPoolEvent extends APIEvent {
     private HardwareL2VxlanNetworkPoolInventory inventory;
 
     public APICreateL2HardwareVxlanNetworkPoolEvent(String apiId) {

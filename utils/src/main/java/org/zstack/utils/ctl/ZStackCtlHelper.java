@@ -47,7 +47,7 @@ public class ZStackCtlHelper {
             ZStackCtlResult result = new ZStackCtlResult();
             ShellResult shellResult = ShellUtils.runAndReturn(sb.toString());
 
-            if (shellResult.isReturnCode(0)) {
+            if (!shellResult.isReturnCode(0)) {
                 result.setError(shellResult.getStderr());
                 result.setSuccess(false);
                 return result;

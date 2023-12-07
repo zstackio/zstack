@@ -916,10 +916,14 @@ public class NetworkUtils {
     public static final String NETWORK_CFG_EMPTY = "none";
 
     public static final String DEFAULT_IPV4_PREFIX = "32";
+    public static final String DEFAULT_IPV6_PREFIX = "128";
     public static final String DEFAULT_IPV4_PREFIX_SPLIT = "/";
+    public static final String DEFAULT_IPV6_PREFIX_SPLIT = "/";
 
     public static String ipv4PrefixToNetmask(String prefix) {
-        int prefixLength = Integer.parseInt(prefix);
+        return ipv4PrefixToNetmask(Integer.parseInt(prefix));
+    }
+    public static String ipv4PrefixToNetmask(Integer prefixLength) {
         if (prefixLength < 1 || prefixLength > 32) {
             return String.format("255.255.255.255");
         }
@@ -933,5 +937,33 @@ public class NetworkUtils {
         return String.format("%d.%d.%d.%d", netmask1, netmask2, netmask3, netmask4);
     }
 
+    /**
+     * Checks if the provided IP address is an Automatic Private IP Address (APIPA).
+     * Read vm ip to usedIp need avoid it
+     */
+    public static Boolean isAutomaticPrivateIpAddr(String ipv4) {
+        if (ipv4 == null || ipv4.isEmpty()) {
+            return false;
+        }
+        String[] parts = ipv4.split("\\.");
+        if (parts.length != 4) {
+            return false;
+        }
+        try {
+            return Integer.parseInt(parts[0]) == 169 && Integer.parseInt(parts[1]) == 254;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public static Boolean isValidInternalAddress(String ip) {
+        if (isIpv4Address(ip)) {
+            return isAutomaticPrivateIpAddr(ip);
+        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            return IPv6NetworkUtils.isLinkLocalAddress(ip);
+        } else {
+            return Boolean.FALSE;
+        }
+    }
 }
 

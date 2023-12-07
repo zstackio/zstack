@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.vm.VmNicVO;
-import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.network.l3.*;
+import org.zstack.header.vm.*;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -95,9 +95,14 @@ public class MacOperator {
     }
 
     public boolean checkDuplicateMac(String hypervisorType, String mac) {
+        if (!VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(hypervisorType)) {
+            return false;
+        }
+
         return Q.New(VmNicVO.class)
                 .eq(VmNicVO_.hypervisorType, hypervisorType)
                 .eq(VmNicVO_.mac, mac.toLowerCase())
+                .notEq(VmNicVO_.state, VmNicState.disable)
                 .isExists();
     }
 }

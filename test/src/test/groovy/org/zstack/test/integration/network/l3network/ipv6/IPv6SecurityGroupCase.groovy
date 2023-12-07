@@ -7,7 +7,7 @@ import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
 import org.zstack.network.securitygroup.RuleTO
 import org.zstack.network.securitygroup.SecurityGroupMembersTO
 import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType
-import org.zstack.network.securitygroup.SecurityGroupRuleTO
+import org.zstack.network.securitygroup.VmNicSecurityTO
 import org.zstack.network.securitygroup.SecurityGroupRuleType
 import org.zstack.network.securitygroup.SecurityGroupRuleVO
 import org.zstack.network.service.flat.FlatDhcpBackend
@@ -175,16 +175,19 @@ class IPv6SecurityGroupCase extends SubCase {
         }
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule6.rules.size() == 0
-            assert rule6.securityGroupBaseRules.size() == 2
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule4.rules.size() == 1
-            assert rule4.securityGroupBaseRules.size() == 2
+
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 1
+            assert ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 1
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         cmd = null
@@ -194,17 +197,22 @@ class IPv6SecurityGroupCase extends SubCase {
         }
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule6.rules.size() == 1
-            assert rule6.securityGroupBaseRules.size() == 4 /* each sg has 2 base rules */
 
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule4.rules.size() == 1
-            assert rule4.securityGroupBaseRules.size() == 4
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 2
+            assert ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 2
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         cmd = null
@@ -215,17 +223,22 @@ class IPv6SecurityGroupCase extends SubCase {
 
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule6.rules.size() == 1
-            assert rule6.securityGroupBaseRules.size() == 2
 
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule4.rules.size() == 0
-            assert rule4.securityGroupBaseRules.size() == 2
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 1
+            assert !ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 1
+            assert !ip6RuleMap.containsKey(sg4.uuid)
+            assert ip6RuleMap.containsKey(sg6.uuid)
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         cmd == null
@@ -235,17 +248,22 @@ class IPv6SecurityGroupCase extends SubCase {
         }
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule6.rules.size() == 1
-            assert rule6.securityGroupBaseRules.size() == 4 /* each sg has 2 base rules */
 
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule4.rules.size() == 1
-            assert rule4.securityGroupBaseRules.size() == 4
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 2
+            assert ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 2
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         cmd == null
@@ -255,17 +273,22 @@ class IPv6SecurityGroupCase extends SubCase {
         }
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule6.rules.size() == 0
-            assert rule6.securityGroupBaseRules.size() == 2 /* each sg has 2 base rules */
 
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule4.rules.size() == 1
-            assert rule4.securityGroupBaseRules.size() == 2
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 1
+            assert ruleMap.containsKey(sg4.uuid)
+            assert !ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 1
+            assert ip6RuleMap.containsKey(sg4.uuid)
+            assert !ip6RuleMap.containsKey(sg6.uuid)
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         cmd == null
@@ -275,17 +298,22 @@ class IPv6SecurityGroupCase extends SubCase {
         }
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule6.rules.size() == 1
-            assert rule6.securityGroupBaseRules.size() == 4 /* each sg has 2 base rules */
 
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule4.rules.size() == 1
-            assert rule4.securityGroupBaseRules.size() == 4
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 2
+            assert ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 2
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
     }
 
@@ -314,13 +342,21 @@ class IPv6SecurityGroupCase extends SubCase {
 
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule4.securityGroupBaseRules.size() == 2
+
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 1
+            assert !ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 1
+            assert !ip6RuleMap.containsKey(sg4.uuid)
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         cmd == null
@@ -333,14 +369,21 @@ class IPv6SecurityGroupCase extends SubCase {
             vmNicUuids = [nic.uuid]
         }
         retryInSecs {
-            assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 2
+            assert ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 2
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         cmd == null
@@ -350,14 +393,21 @@ class IPv6SecurityGroupCase extends SubCase {
         }
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule6.securityGroupBaseRules.size() == 2
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 1
+            assert ruleMap.containsKey(sg4.uuid)
+            assert !ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 1
+            assert !ip6RuleMap.containsKey(sg6.uuid)
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         cmd == null
@@ -371,18 +421,34 @@ class IPv6SecurityGroupCase extends SubCase {
         }
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 2
+            assert ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 2
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
     }
 
     void testSecurityGroupApplyNetworkServices() {
         HostInventory host = env.inventoryByName("kvm-1")
+
+        SecurityGroupInventory sg4 = querySecurityGroup {
+            conditions = ["name=SecurityGroup4"]
+        }[0]
+        SecurityGroupInventory sg6 = querySecurityGroup {
+            conditions = ["name=SecurityGroup6"]
+        }[0]
 
         VmInstanceInventory vm = queryVmInstance {
             conditions = ["name=vm-sg"]
@@ -399,23 +465,23 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = vm.uuid
         }
         retryInSecs {
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule = cmd.ruleTOs.get(0)
-            assert rule.vmNicUuid == nic.uuid
-            assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 4
-            RuleTO ruleTo = rule.rules.get(0)
-            assert ruleTo.ipVersion == IPv6Constants.IPv4
-            assert ruleTo.allowedCidr == "192.168.0.1/24"
+            assert cmd != null
 
-            assert cmd.ipv6RuleTOs.size() == 1
-            rule = cmd.ipv6RuleTOs.get(0)
-            assert rule.vmNicUuid == nic.uuid
-            assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 4
-            ruleTo = rule.rules.get(0)
-            assert ruleTo.ipVersion == IPv6Constants.IPv6
-            assert ruleTo.allowedCidr == "2002::/64"
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 2
+            assert ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 2
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         KVMAgentCommands.RefreshAllRulesOnHostCmd rcmd = null
@@ -427,31 +493,24 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = host.uuid
         }
         retryInSecs {
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule = cmd.ruleTOs.get(0)
-            assert rule.vmNicUuid == nic.uuid
-            assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 4
-            RuleTO ruleTo = rule.rules.get(0)
-            assert ruleTo.ipVersion == IPv6Constants.IPv4
-            assert ruleTo.allowedCidr == "192.168.0.1/24"
+            assert cmd != null
 
-            assert cmd.ipv6RuleTOs.size() == 1
-            rule = cmd.ipv6RuleTOs.get(0)
-            assert rule.vmNicUuid == nic.uuid
-            assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 4
-            ruleTo = rule.rules.get(0)
-            assert ruleTo.ipVersion == IPv6Constants.IPv6
-            assert ruleTo.allowedCidr == "2002::/64"
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 2
+            assert ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg4.uuid).size() == 3
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 2
+            assert ip6RuleMap.get(sg4.uuid).size() == 2
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
-
-        SecurityGroupInventory sg4 = querySecurityGroup {
-            conditions = ["name=SecurityGroup4"]
-        }[0]
-        SecurityGroupInventory sg6 = querySecurityGroup {
-            conditions = ["name=SecurityGroup6"]
-        }[0]
 
         cmd = null
         deleteVmNicFromSecurityGroup {
@@ -463,18 +522,21 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = vm.uuid
         }
         retryInSecs {
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.rules.size() == 0
+            assert cmd != null
 
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule = cmd.ipv6RuleTOs.get(0)
-            assert rule.vmNicUuid == nic.uuid
-            assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 2
-            RuleTO ruleTo = rule.rules.get(0)
-            assert ruleTo.ipVersion == IPv6Constants.IPv6
-            assert ruleTo.allowedCidr == "2002::/64"
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 1
+            assert !ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 1
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
 
         rcmd = null
@@ -482,18 +544,21 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = host.uuid
         }
         retryInSecs {
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.rules.size() == 0
+            assert cmd != null
 
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule = cmd.ipv6RuleTOs.get(0)
-            assert rule.vmNicUuid == nic.uuid
-            assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 2
-            RuleTO ruleTo = rule.rules.get(0)
-            assert ruleTo.ipVersion == IPv6Constants.IPv6
-            assert ruleTo.allowedCidr == "2002::/64"
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 1
+            assert !ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 1
+            assert ip6RuleMap.get(sg6.uuid).size() == 3
+            
+            VmNicSecurityTO vmNicTo = cmd.vmNicTOs.get(0)
+            assert vmNicTo.vmNicUuid == nic.uuid
+            assert vmNicTo.actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
         }
     }
 
@@ -521,8 +586,8 @@ class IPv6SecurityGroupCase extends SubCase {
         rule4.allowedCidr = "192.168.0.1/24"
         rule4.type = SecurityGroupRuleType.Ingress.toString()
         rule4.protocol = SecurityGroupRuleProtocolType.ICMP.toString()
-        rule4.startPort = 0
-        rule4.endPort = 3
+        rule4.startPort = -1
+        rule4.endPort = -1
 
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule41 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
         rule41.allowedCidr = "192.168.1.1/24"
@@ -551,15 +616,15 @@ class IPv6SecurityGroupCase extends SubCase {
         rule6.type = SecurityGroupRuleType.Egress.toString()
         rule6.protocol = SecurityGroupRuleProtocolType.ICMP.toString()
         rule6.ipVersion = 6
-        rule6.startPort = 0
-        rule6.endPort = 3
+        rule6.startPort = -1
+        rule6.endPort = -1
 
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule61 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
         rule61.allowedCidr = "2003::/64"
         rule61.type = SecurityGroupRuleType.Egress.toString()
         rule61.protocol = SecurityGroupRuleProtocolType.UDP.toString()
         rule61.startPort = 100
-        rule61.startPort = 200
+        rule61.endPort = 200
         rule61.ipVersion = 6
 
         addSecurityGroupRule {
@@ -581,6 +646,9 @@ class IPv6SecurityGroupCase extends SubCase {
         SecurityGroupInventory sg4 = querySecurityGroup {
             conditions = ["name=SecurityGroup4"]
         }[0]
+        SecurityGroupInventory sg6 = querySecurityGroup {
+            conditions=["name=SecurityGroup6"]
+        }[0]
 
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
@@ -594,13 +662,16 @@ class IPv6SecurityGroupCase extends SubCase {
 
         retryInSecs {
             assert cmd != null
-            assert cmd.ipv6RuleTOs.size() == 1
-            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
-            assert rule4.securityGroupBaseRules.size() == 2
+
+            Map<String, List<RuleTO>> ruleMap = cmd.ruleTOs
+            assert ruleMap.size() == 1
+            assert !ruleMap.containsKey(sg4.uuid)
+            assert ruleMap.containsKey(sg6.uuid)
+            assert ruleMap.get(sg6.uuid).size() == 2
+
+            Map<String, List<RuleTO>> ip6RuleMap = cmd.ip6RuleTOs
+            assert ip6RuleMap.size() == 1
+            assert ip6RuleMap.get(sg6.uuid).size() == 4
         }
     }
 }

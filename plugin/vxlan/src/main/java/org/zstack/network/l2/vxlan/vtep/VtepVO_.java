@@ -17,6 +17,7 @@ public class VtepVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VtepVO, String> clusterUuid;
     public static volatile SingularAttribute<VtepVO, String> type;
     public static volatile SingularAttribute<VtepVO, String> poolUuid;
+    public static volatile SingularAttribute<VtepVO, String> physicalInterface;
     public static volatile SingularAttribute<VtepVO, Timestamp> createDate;
     public static volatile SingularAttribute<VtepVO, Timestamp> lastOpDate;
 }

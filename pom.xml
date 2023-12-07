@@ -10,8 +10,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.compiler.version>3.6.1</project.compiler.version>
         <project.java.version>1.8</project.java.version>
-        <spring.framework.version>5.2.22.RELEASE</spring.framework.version>
-        <spring.security.version>5.7.5</spring.security.version>
+        <spring.framework.version>5.2.25.RELEASE</spring.framework.version>
+        <spring.security.version>5.7.11</spring.security.version>
         <hibernate.version>5.3.26.Final</hibernate.version>
         <aspectj.version>1.8.9</aspectj.version>
         <aspectj.plugin.version>1.10</aspectj.plugin.version>
@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.zstack</groupId>
     <artifactId>zstack</artifactId>
-    <version>4.6.0</version>
+    <version>4.8.0</version>
     <packaging>pom</packaging>
     <name>zstack</name>
     <modules>
@@ -101,7 +101,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.10</version>
+                <version>4.13.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -278,12 +278,12 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20170516</version>
+                <version>20231013</version>
             </dependency>
             <dependency>
-                <groupId>com.jcraft</groupId>
+                <groupId>com.github.mwiede</groupId>
                 <artifactId>jsch</artifactId>
-                <version>0.1.55</version>
+                <version>0.2.9</version>
             </dependency>
             <dependency>
                 <groupId>com.hierynomus</groupId>
@@ -298,7 +298,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>30.0-jre</version>
+                <version>32.1.2-jre</version>
             </dependency>
             <!--<dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -397,7 +397,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.32</version>
+                <version>2.2</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
@@ -450,11 +450,6 @@
                 <artifactId>caffeine</artifactId>
                 <version>2.5.2</version>
             </dependency>
-            <dependency>
-                <groupId>org.xerial</groupId>
-                <artifactId>sqlite-jdbc</artifactId>
-                <version>3.20.0</version>
-            </dependency>
 	        <dependency>
 	            <groupId>io.prometheus</groupId>
 	            <artifactId>simpleclient</artifactId>
@@ -483,7 +478,7 @@
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.9.11</version>
+                <version>1.14.5</version>
             </dependency>
             <dependency>
                 <groupId>com.esotericsoftware</groupId>
@@ -498,17 +493,17 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.13.4.1</version>
+                <version>2.15.2</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>2.13.4</version>
+                <version>2.15.2</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>2.13.4</version>
+                <version>2.15.2</version>
             </dependency>
             <dependency>
                 <groupId>org.jasig.cas.client</groupId>

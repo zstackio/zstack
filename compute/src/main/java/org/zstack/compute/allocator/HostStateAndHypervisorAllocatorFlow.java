@@ -83,6 +83,7 @@ public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFl
             if (CollectionUtils.isEmpty(candidates)) {
                 fail(operr("no host having state=Enabled status=Connected hypervisorType=%s found",
                         spec.getHypervisorType()));
+                return;
             }
 
             ErrorCode error;

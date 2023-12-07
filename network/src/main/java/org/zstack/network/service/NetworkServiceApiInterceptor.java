@@ -8,18 +8,22 @@ import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
+import org.zstack.header.vm.*;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.Utils;
-
+import org.zstack.utils.network.IPv6Constants;
 
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -97,6 +101,43 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
             for (String type : types) {
                 if (existingNwsTypes.contains(type)) {
                     throw new ApiMessageInterceptionException(operr("there has been a network service[%s] attached to L3 network[uuid:%s]", type, msg.getL3NetworkUuid()));
+                }
+
+                if (type.equals(NetworkServiceType.DHCP.toString())) {
+                    List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).
+                            eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                            .list();
+                    if (ipRangeVOS.isEmpty()) {
+                        continue;
+                    }
+
+                    boolean isUseForUserVm = false;
+                    List<String> usedVmNicUuids = Q.New(UsedIpVO.class).select(UsedIpVO_.vmNicUuid)
+                             .in(UsedIpVO_.ipRangeUuid, ipRangeVOS.stream().map(IpRangeVO::getUuid).collect(Collectors.toList()))
+                             .listValues();
+                    if (!usedVmNicUuids.isEmpty()) {
+                        List<String> usedVmInstanceUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                                .in(VmNicVO_.uuid, usedVmNicUuids)
+                                .listValues();
+                        isUseForUserVm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.type, VmInstanceConstant.USER_VM_TYPE)
+                                .in(VmInstanceVO_.uuid, usedVmInstanceUuids)
+                                .isExists();
+                    }
+
+                    List<FreeIpInventory> freeIpInventories = new ArrayList<>();
+                    for (IpRangeVO ipRangeVO : ipRangeVOS) {
+                        List<FreeIpInventory> tempFreeIpInventories;
+                        if (ipRangeVO.getIpVersion() == IPv6Constants.IPv6) {
+                            tempFreeIpInventories = IpRangeHelper.getFreeIp(ipRangeVO, 2, "::");
+                        } else {
+                            tempFreeIpInventories = IpRangeHelper.getFreeIp(ipRangeVO, 2, "0.0.0.0");
+                        }
+                        freeIpInventories.addAll(tempFreeIpInventories);
+                    }
+
+                    if ((isUseForUserVm && freeIpInventories.isEmpty())) {
+                        throw new ApiMessageInterceptionException(operr("there are not enough IPs for allocation when attaching the DHCP service to L3 network[uuid:%s].", msg.getL3NetworkUuid()));
+                    }
                 }
             }
         }

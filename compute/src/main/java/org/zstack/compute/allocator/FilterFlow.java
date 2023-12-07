@@ -6,7 +6,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -21,9 +20,7 @@ public class FilterFlow extends AbstractHostAllocatorFlow {
 
     @Override
     public void allocate() {
-        if (amITheFirstFlow()) {
-            throw new CloudRuntimeException(String.format("FilterFlow cannot be the first flow in the host allocator chains"));
-        }
+        throwExceptionIfIAmTheFirstFlow();
 
         for (HostAllocatorFilterExtensionPoint filter : pluginRgty.getExtensionList(HostAllocatorFilterExtensionPoint.class)) {
             logger.debug(String.format("before being filtered by HostAllocatorFilterExtensionPoint[%s], candidates num: %s", filter.getClass(), candidates.size()));

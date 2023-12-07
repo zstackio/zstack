@@ -28,9 +28,9 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
-import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -554,6 +554,20 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             completion.success();
             return;
         }
+
+        L3NetworkVO defaultL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, struct.getL3NetworkUuid()).find();
+        if (defaultL3!= null && defaultL3.getNetworkServices().stream().noneMatch(
+                service -> Objects.equals(UserdataConstant.USERDATA_TYPE_STRING, service.getNetworkServiceType()))) {
+            completion.success();
+            return;
+        }
+
+        if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
+            // userdata depends on the ipv4 address
+            completion.success();
+            return;
+        }
+
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("flat-network-userdata-set-for-vm-%s", struct.getVmUuid()));

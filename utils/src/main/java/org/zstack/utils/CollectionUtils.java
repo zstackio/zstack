@@ -8,6 +8,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -51,6 +52,24 @@ public class CollectionUtils {
         return ret;
     }
 
+    public static <FROM, TO> List<TO> transform(Collection<FROM> from, java.util.function.Function<FROM, TO> mapper) {
+        return from.stream().map(mapper).collect(Collectors.toList());
+    }
+
+    public static <T> List<T> filter(Collection<T> from, Predicate<T> tester) {
+        return from.stream().filter(tester).collect(Collectors.toList());
+    }
+
+    public static <T> T findOneOrNull(Collection<T> from, Predicate<T> tester) {
+        return from.stream().filter(tester).findFirst().orElse(null);
+    }
+
+    public static <FROM, KEY, VALUE> Map<KEY, VALUE> toMap(Collection<FROM> from,
+                                                           java.util.function.Function<FROM, KEY> keyMapper,
+                                                           java.util.function.Function<FROM, VALUE> valueMapper) {
+        return from.stream().collect(Collectors.toMap(keyMapper, valueMapper));
+    }
+
     public static <K, V> Set<K> transformToSet(Collection<V> from, Function<K, V> func) {
         Set<K> ret = new HashSet<K>();
         for (V v : from) {
@@ -59,19 +78,6 @@ public class CollectionUtils {
                 continue;
             }
             ret.add(k);
-        }
-
-        return ret;
-    }
-
-    public static <K, V> Set<K> transformToSet(Collection<V> from, ListFunction<K, V> func) {
-        Set<K> ret = new HashSet<K>();
-        for (V v : from) {
-            List<K> k = func.call(v);
-            if (k == null) {
-                continue;
-            }
-            ret.addAll(k);
         }
 
         return ret;
@@ -142,5 +148,17 @@ public class CollectionUtils {
 
     public static boolean isEmpty(Collection coll) {
         return coll == null || coll.isEmpty();
+    }
+
+    @SafeVarargs
+    public static <T> boolean contains(T[] array, T... items) {
+        for (T a: array) {
+            for (T b: items) {
+                if (Objects.equals(a, b)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

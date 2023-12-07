@@ -131,17 +131,24 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             placePip703();
             placeAnsible4100();
 
-            ShellUtils.run(String.format("if ! sudo ansible --version | grep -q 'core 2.11.12'; then " +
-                    "if grep -i -s -E 'centos|rocky' /etc/system-release; then " +
-                    "sudo yum remove -y ansible; " +
-                    "elif grep -i -s ubuntu /etc/issue; then " +
-                    "sudo apt-get --assume-yes remove ansible; " +
-                    "else echo \"Warning: can't remove ansible from unknown platform\"; " +
+            ShellUtils.run(String.format(
+                    "NEED_INSTALL=false; " +
+                    "if [ -d /var/lib/zstack/virtualenv/zstacksys ]; then " +
+                    ". /var/lib/zstack/virtualenv/zstacksys/bin/activate; " +
+                    "if ! ansible --version | grep -q 'core 2.11.12'; then " +
+                    "deactivate; " +
+                    "NEED_INSTALL=true; " +
                     "fi; " +
-                    "sudo pip uninstall -y ansible; " +
-                    "sudo pip install -i file://%s --trusted-host localhost -I setuptools==39.2.0; " +
-                    "sudo pip install -i file://%s --trusted-host localhost -I ansible==4.10.0; " +
-                    "fi", AnsibleConstant.PYPI_REPO, AnsibleConstant.PYPI_REPO), false);
+                    "else " +
+                    "NEED_INSTALL=true; "+
+                    "fi; " +
+                    "if $NEED_INSTALL; then " +
+                    "sudo bash -c 'rm -rf /var/lib/zstack/virtualenv/zstacksys && virtualenv /var/lib/zstack/virtualenv/zstacksys --python=python2.7; "+
+                    ". /var/lib/zstack/virtualenv/zstacksys/bin/activate; "+
+                    "TMPDIR=/usr/local/zstack/ pip install -i file://%s --trusted-host localhost -I setuptools==39.2.0; "+
+                    "TMPDIR=/usr/local/zstack/ pip install -i file://%s --trusted-host localhost -I ansible==4.10.0'; "+
+                    "fi" , AnsibleConstant.PYPI_REPO, AnsibleConstant.PYPI_REPO), false);
+
 
             deployModule("ansible/zstacklib", "zstacklib.py");
         } catch (IOException e) {
@@ -194,6 +201,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         }
 
         arguments.put("host", msg.getTargetIp());
+        arguments.put("mn_ip", Platform.getCanonicalServerIp());
         if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
             arguments.put("host_uuid", msg.getTargetUuid());
         }
@@ -242,21 +250,20 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 String playBookPath = msg.getPlayBookPath();
                 Map<String, Object> arguments = collectArguments(msg);
                 logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookPath()));
-
                 String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
                 long timeout = TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout());
                 try {
                     String output;
                     if (AnsibleGlobalProperty.DEBUG_MODE2) {
-                        output = ShellUtils.run(String.format("PYTHONPATH=%s timeout %d %s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
+                        output = ShellUtils.run(String.format("bash -c '. /var/lib/zstack/virtualenv/zstacksys/bin/activate; PYTHONPATH=%s timeout %d %s %s -i %s -vvvv --private-key %s -e '\\''%s'\\' | tee -a %s",
                                 AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.dumpPretty(arguments), AnsibleConstant.LOG_PATH),
                                 AnsibleConstant.ROOT_DIR);
                     } else if (AnsibleGlobalProperty.DEBUG_MODE) {
-                        output = ShellUtils.run(String.format("PYTHONPATH=%s timeout %d %s %s -i %s -vvvv --private-key %s -e '%s'",
+                        output = ShellUtils.run(String.format("bash -c '. /var/lib/zstack/virtualenv/zstacksys/bin/activate; PYTHONPATH=%s timeout %d %s %s -i %s -vvvv --private-key %s -e '\\''%s'\\'",
                                 AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.dumpPretty(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     } else {
-                        output = ShellUtils.run(String.format("PYTHONPATH=%s timeout %d %s %s -i %s --private-key %s -e '%s'",
+                        output = ShellUtils.run(String.format("bash -c '. /var/lib/zstack/virtualenv/zstacksys/bin/activate; PYTHONPATH=%s timeout %d %s %s -i %s --private-key %s -e '\\''%s'\\'",
                                 AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.dumpPretty(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     }

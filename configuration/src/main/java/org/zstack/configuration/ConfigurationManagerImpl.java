@@ -875,6 +875,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         // write inventory.py
         {
             StringBuilder pysb = new StringBuilder();
+            pysb.append("#-*-coding: UTF-8 -*-\n");
             pysb.append("from zstacklib.utils import log");
             generateMandoryFieldClass(pysb);
             generateApiMessagePythonClass(pysb, basePkgs);
@@ -919,6 +920,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         vo.setDescription(msg.getDescription());
         vo.setState(InstanceOfferingState.Enabled);
         vo.setMemorySize(msg.getMemorySize());
+        vo.setReservedMemorySize(msg.getReservedMemorySize());
         vo.setDuration(InstanceOfferingDuration.Permanent);
         vo.setType(type);
 

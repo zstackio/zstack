@@ -1,9 +1,13 @@
 package org.zstack.header.image;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.URLBuilder;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Optional;
 
 public class ImageHelper {
     private static final HashMap<String, AbstractImageUpdate> updateImageFactory = new HashMap<>();
@@ -63,13 +67,19 @@ public class ImageHelper {
     }
 
     public static void updateImageIfVirtioIsNull(ImageInventory imageInventory) {
-        updateImageFactory.get(imageInventory.getPlatform()).doUpdateImageIfVirtioIsNull(imageInventory);
+        if (imageInventory.getVirtio() == null && imageInventory.getPlatform() != null) {
+            updateImageFactory.get(imageInventory.getPlatform()).doUpdateImageIfVirtioIsNull(imageInventory);
+        }
     }
 
     public static abstract class ExportUrl {
         static public String addNameToExportUrl(String exportUrl, String name) {
+            if (Strings.isEmpty(name)) {
+                return exportUrl;
+            }
+
             String image = StringUtils.substringAfterLast(exportUrl, "/");
-            String urlName = name == null ? "" : URLBuilder.buildUrlComponent(name);
+            String urlName = URLBuilder.buildUrlComponent(name);
             return exportUrl.replace(image, String.format("%s-%s", urlName, image));
         }
 

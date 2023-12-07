@@ -45,7 +45,7 @@ doc {
 					desc "镜像UUID。云主机的根云盘会从该字段指定的镜像创建。"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 				}
 				column {
@@ -54,8 +54,17 @@ doc {
 					desc "三层网络UUID列表。可以指定一个或多个三层网络，云主机会在每个网络上创建一个网卡。"
 					location "body"
 					type "List"
-					optional false
+					optional true
 					since "0.6"
+				}
+				column {
+					name "vmNicParams"
+					enclosedIn "params"
+					desc "网卡信息"
+					location "body"
+					type "String"
+					optional true
+					since "4.7.0"
 				}
 				column {
 					name "type"
@@ -247,6 +256,78 @@ doc {
 					type "Map"
 					optional true
 					since "4.4.24"
+				}
+				column {
+					name "sshKeyPairUuids"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "4.7.21"
+				}
+				column {
+					name "dataVolumeTemplateUuids"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "4.7.0"
+				}
+				column {
+					name "diskAOs"
+					enclosedIn "params"
+					desc "boot=true表示diskAO用于设置云主机平台、架构、操作系统与根盘总线；diskAO.boot=false表示加载的硬盘"
+					location "body"
+					type "List"
+					optional true
+					since "4.7.0"
+				}
+				column {
+					name "platform"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.7.0"
+				}
+				column {
+					name "guestOsType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.7.0"
+				}
+				column {
+					name "architecture"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.7.21"
+				}
+				column {
+					name "reservedMemorySize"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Long"
+					optional true
+					since "4.7.21"
+				}
+				column {
+					name "virtio"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Boolean"
+					optional true
+					since "4.7.0"
 				}
 			}
         }

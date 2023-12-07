@@ -50,6 +50,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>RedHat</name>
+        <version>9</version>
+        <osRelease>RHEL 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Ubuntu</name>
         <version>16</version>
         <osRelease>Ubuntu 16</osRelease>
@@ -65,6 +71,12 @@
         <name>Ubuntu</name>
         <version>20</version>
         <osRelease>Ubuntu 20</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Ubuntu</name>
+        <version>22</version>
+        <osRelease>Ubuntu 22</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -128,6 +140,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>openEuler</name>
+        <version>22.03</version>
+        <osRelease>openEuler 22.03</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>SUSE</name>
         <version>12</version>
         <osRelease>SUSE Linux 12</osRelease>
@@ -150,7 +168,25 @@
         <version>7</version>
         <osRelease>Oracle Linux 7</osRelease>
     </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Linux</name>
+        <version></version>
+        <osRelease>Other Kernel ≥ 4.20 or Hygon Linux</osRelease>
+    </osInfo>
 
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
+        <version>4.0</version>
+        <osRelease>Windows NT 4.0</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
+        <version>2003</version>
+        <osRelease>WindowsServer 2003</osRelease>
+    </osInfo>
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
@@ -178,6 +214,12 @@
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
+        <version>2022</version>
+        <osRelease>WindowsServer 2022</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
         <version>7</version>
         <osRelease>Windows 7</osRelease>
     </osInfo>
@@ -192,6 +234,12 @@
         <name>Windows</name>
         <version>10</version>
         <osRelease>Windows 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
+        <version>11</version>
+        <osRelease>Windows 11</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>

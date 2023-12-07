@@ -10,6 +10,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -31,6 +32,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -56,15 +58,17 @@ public abstract class ImageCacheCleaner {
     protected Future<Void> gcThread;
 
     protected abstract String getPrimaryStorageType();
+    protected List<String> listPrimaryStoragesBySelfType() {
+        return Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.uuid)
+                .eq(PrimaryStorageVO_.type, getPrimaryStorageType())
+                .listValues();
+    };
 
     protected void startGC() {
         cleanupIntervalConfig().installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                if (gcThread != null) {
-                    gcThread.cancel(true);
-                }
-
                 startGCThread();
             }
         });
@@ -172,6 +176,13 @@ public abstract class ImageCacheCleaner {
     }
 
     protected void doCleanup(String psUuid, boolean needDestinationCheck, NoErrorCompletion completion) {
+        List<String> psUuids = new ArrayList<>();
+        if (psUuid == null) {
+            psUuids.addAll(listPrimaryStoragesBySelfType());
+        } else {
+            psUuids.add(psUuid);
+        }
+
         SimpleFlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("do-clean-up-image-cache-on-%s", psUuid));
         chain.then(new NoRollbackFlow() {
@@ -187,15 +198,48 @@ public abstract class ImageCacheCleaner {
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (psUuid == null) {
-                    logger.debug("no primary storage uuid specified, skip image cache clean up");
+                if (psUuids.isEmpty()) {
+                    logger.debug("cannot find any primary storage, skip image cache clean up");
                     trigger.next();
                     return;
                 }
 
-                cleanUpImageCache(psUuid, new NoErrorCompletion() {
+                new While<>(psUuids).each((uuid, compl) -> {
+                    cleanUpImageCache(uuid, new NoErrorCompletion() {
+                        @Override
+                        public void done() {
+                            compl.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (psUuids.isEmpty()) {
+                    logger.debug("cannot find any primary storage, skip sync primary storage capacity");
+                    trigger.next();
+                    return;
+                }
+
+                new While<>(psUuids).each((uuid, compl) -> {
+                    SyncPrimaryStorageCapacityMsg msg = new SyncPrimaryStorageCapacityMsg();
+                    msg.setPrimaryStorageUuid(uuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                    bus.send(msg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            compl.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
                         trigger.next();
                     }
                 });
@@ -214,7 +258,11 @@ public abstract class ImageCacheCleaner {
         }).start();
     }
 
-    private void startGCThread() {
+    private synchronized void startGCThread() {
+        if (gcThread != null) {
+            gcThread.cancel(true);
+        }
+
         logger.debug(String.format("%s starts with the interval %s secs", this.getClass().getSimpleName(), PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.value(Long.class)));
 
         gcThread = thdf.submitPeriodicTask(new PeriodicTask() {

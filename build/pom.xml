@@ -4,7 +4,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>4.6.0</version>
+        <version>4.8.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>build</artifactId>
@@ -355,6 +355,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>memory-balloon</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>sdk</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -531,6 +536,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>sugonSdnController</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>ovf</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -542,6 +552,26 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>cube</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>zops-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>zsv</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>virtualSwitchNetwork</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>hostNetwork</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
@@ -772,6 +802,26 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>directory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>macvlan</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>sshKeyPair</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>snmp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>hostNetwork</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

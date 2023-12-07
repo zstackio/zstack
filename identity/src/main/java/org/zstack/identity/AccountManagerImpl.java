@@ -53,6 +53,7 @@ import javax.persistence.TypedQuery;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -473,6 +474,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             session = svo == null ? null : SessionInventory.valueOf(svo);
         }
         msg.setSession(session);
+
+        for (LogoutExtensionPoint ext : pluginRgty.getExtensionList(LogoutExtensionPoint.class)) {
+            ext.beforeLogout(session);
+        }
+
         logOutSession(msg.getSessionUuid());
         bus.reply(msg, reply);
     }
@@ -606,6 +612,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 return AccountInventory.valueOf(vo);
             }
         }.execute();
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeCreateAccountExtensionPoint.class),
+                arg -> arg.beforeCreateAccount(inv));
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class),
                 arg -> arg.afterCreateAccount(inv));
@@ -857,9 +866,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         .count();
                 sql("select uuid from AccountVO account where account.type = :type", String.class)
                         .param("type", AccountType.Normal)
-                        .limit(1000)
+                        .limit(2000)
                         .paginate(count, (List<String> normalAccounts) -> {
-                            List<QuotaVO> needPersistQuotas = new ArrayList<>();
+                            ConcurrentLinkedQueue<QuotaVO> needPersistQuotas = new ConcurrentLinkedQueue<>();
                             normalAccounts.parallelStream().forEach(nA -> {
                                 List<String> existingQuota = q(QuotaVO.class).select(QuotaVO_.name).eq(QuotaVO_.identityUuid, nA).listValues();
                                 for (Map.Entry<String, QuotaDefinition> e : quotaDefinitionMap.entrySet()) {
@@ -883,6 +892,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                                     }
                                 }
                             });
+                            
                             needPersistQuotas.forEach(this::persist);
                         });
             }

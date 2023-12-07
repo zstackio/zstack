@@ -3,6 +3,8 @@ package org.zstack.storage.backup;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -17,6 +19,7 @@ public class BackupStorageGlobalConfig {
     public static GlobalConfig PING_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "ping.parallelismDegree");
 
     @GlobalConfigValidation
+    @BindResourceConfig(BackupStorageVO.class)
     public static GlobalConfig RESERVED_CAPACITY = new GlobalConfig(CATEGORY, "reservedCapacity");
 
     @GlobalConfigValidation

@@ -73,4 +73,12 @@
     <message>
         <name>org.zstack.header.storage.primary.APIGetPrimaryStorageLicenseInfoMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APICleanUpStorageTrashOnPrimaryStorageMsg</name>
+    </message>
 </service>

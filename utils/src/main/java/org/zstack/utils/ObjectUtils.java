@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  */
@@ -67,5 +69,19 @@ public class ObjectUtils {
         }
         byte[] temp = SerializableHelper.writeObject(object);
         return SerializableHelper.readObject(temp);
+    }
+
+    /**
+     * <pre>
+     * getOrNull("123", String::length) = 3
+     * getOrNull("", String::length) = 0
+     * getOrNull(null, String::length) = null
+     *
+     * getOrNull(vm, VmInstanceVO::getUuid) = "2b0f9a804b654e4b8ca56301878a7d51"
+     * getOrNull(null, VmInstanceVO::getUuid) = null
+     * <pre/>
+     */
+    public static <O,T> T getOrNull(O object, Function<? super O, ? extends T> mapper) {
+        return Optional.of(object).map(mapper).orElse(null);
     }
 }

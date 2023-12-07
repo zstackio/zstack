@@ -667,15 +667,15 @@ class RestDocumentationGenerator implements DocumentGenerator {
             initializer.bindResources.get(it.value.getIdentity()).each { names.add(it.getName()) }
             GlobalConfigMarkDown configMd = new GlobalConfigMarkDown(it.value, names,
                     initializer.validatorMap.get(it.value.getIdentity()))
+            if (!f.parentFile.exists()) {
+                f.parentFile.mkdirs()
+            }
             if (mode == DocMode.CREATE_MISSING) {
                 if (f.exists()) {
                     logger.info("${path} exists, skip it")
                     return
                 }
                 logger.info("generating global config markdown for config[${it.key}]")
-                if (!f.parentFile.exists()) {
-                    f.parentFile.mkdirs()
-                }
                 f.write(configMd.generate())
                 logger.info("written a global config markdown ${path}")
             } else {

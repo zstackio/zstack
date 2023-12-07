@@ -1940,6 +1940,18 @@ public class LoadBalancerBase {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.COOKIE_NAME, msg.getUuid(), LoadBalancerSystemTags.COOKIE_NAME_TOKEN, msg.getCookieName());
                 }
 
+                if (msg.getHttpRedirectHttps() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS, msg.getUuid(), LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS_TOKEN, msg.getHttpRedirectHttps());
+                }
+
+                if (msg.getRedirectPort() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.REDIRECT_PORT, msg.getUuid(), LoadBalancerSystemTags.REDIRECT_PORT_TOKEN, msg.getRedirectPort());
+                }
+
+                if (msg.getStatusCode() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.STATUS_CODE, msg.getUuid(), LoadBalancerSystemTags.STATUS_CODE_TOKEN, msg.getStatusCode());
+                }
+
                 if (msg.getConnectionIdleTimeout() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout());
                 }
@@ -2484,7 +2496,7 @@ public class LoadBalancerBase {
                                 if(server.containsKey("weight")){
                                     struct.getServerIpWeight().put(server.get("ipAddress"), Long.valueOf(server.get("weight")));
                                 }else{
-                                    struct.getVmNicWeight().put(server.get("ipAddress"), LoadBalancerConstants.BALANCER_WEIGHT_default);
+                                    struct.getServerIpWeight().put(server.get("ipAddress"), LoadBalancerConstants.BALANCER_WEIGHT_default);
                                 }
                             }
                         }

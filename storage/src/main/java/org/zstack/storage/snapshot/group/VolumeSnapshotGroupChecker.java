@@ -6,6 +6,7 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.volume.Volume;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
@@ -37,7 +38,19 @@ public class VolumeSnapshotGroupChecker {
                 .collect(Collectors.groupingBy(t -> t.get(0, String.class),
                         Collectors.toMap(it -> ((Tuple) it).get(1, String.class), it -> ((Tuple) it).get(2, String.class))));
 
+        Map<String, Map<String, String>> vmAttachedVolsWithoutMemoryVolume = Q.New(VolumeVO.class)
+                .notEq(VolumeVO_.type, VolumeType.Memory)
+                .in(VolumeVO_.vmInstanceUuid, groupVmRef.values().stream().distinct().collect(Collectors.toList()))
+                .select(VolumeVO_.vmInstanceUuid, VolumeVO_.uuid, VolumeVO_.name).listTuple().stream()
+                .collect(Collectors.groupingBy(t -> t.get(0, String.class),
+                        Collectors.toMap(it -> ((Tuple) it).get(1, String.class), it -> ((Tuple) it).get(2, String.class))));
+
         for (VolumeSnapshotGroupVO group : groups) {
+            if (!hasMemorySnapshot(group)) {
+                results.add(getAvailability(group, vmAttachedVolsWithoutMemoryVolume.get(group.getVmInstanceUuid())));
+                continue;
+            }
+
             results.add(getAvailability(group, vmAttachedVols.get(group.getVmInstanceUuid())));
         }
 
@@ -49,13 +62,15 @@ public class VolumeSnapshotGroupChecker {
         return getAvailability(group);
     }
 
-    public static VolumeSnapshotGroupAvailability getAvailability(VolumeSnapshotGroupVO group) {
-        List<Tuple> attachedVolUuids;
-        boolean hasMemorySnapshot = group.getVolumeSnapshotRefs()
+    private static boolean hasMemorySnapshot(VolumeSnapshotGroupVO group) {
+        return group.getVolumeSnapshotRefs()
                 .stream()
                 .anyMatch(ref -> VolumeType.Memory.toString().equals(ref.getVolumeType()));
+    }
 
-        if (hasMemorySnapshot) {
+    public static VolumeSnapshotGroupAvailability getAvailability(VolumeSnapshotGroupVO group) {
+        List<Tuple> attachedVolUuids;
+        if (hasMemorySnapshot(group)) {
             attachedVolUuids = Q.New(VolumeVO.class).select(VolumeVO_.uuid, VolumeVO_.name)
                     .eq(VolumeVO_.vmInstanceUuid, group.getVmInstanceUuid())
                     .listTuple();

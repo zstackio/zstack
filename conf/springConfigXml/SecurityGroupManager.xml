@@ -34,6 +34,7 @@
     <bean id="SecurityGroupApiInterceptor" class="org.zstack.network.securitygroup.SecurityGroupApiInterceptor">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+			<zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
 		</zstack:plugin>
     </bean>
 
@@ -67,4 +68,10 @@
 			</list>
 		</property>
 	</bean>
+
+	<bean id="SecurityGroupUpgradeExtension" class="org.zstack.network.securitygroup.SecurityGroupUpgradeExtension" >
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
 </beans>

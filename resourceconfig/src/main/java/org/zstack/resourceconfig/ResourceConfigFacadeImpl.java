@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.*;
 import org.zstack.header.AbstractService;
@@ -17,6 +18,8 @@ import org.zstack.utils.logging.CLogger;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 public class ResourceConfigFacadeImpl extends AbstractService implements ResourceConfigFacade {
     private static final CLogger logger = Utils.getLogger(ResourceConfigFacadeImpl.class);
@@ -47,7 +50,9 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIUpdateResourceConfigMsg) {
             handle((APIUpdateResourceConfigMsg) msg);
-        } else if (msg instanceof APIDeleteResourceConfigMsg) {
+        } else if (msg instanceof APIUpdateResourceConfigsMsg) {
+            handle((APIUpdateResourceConfigsMsg) msg);
+        }else if (msg instanceof APIDeleteResourceConfigMsg) {
             handle((APIDeleteResourceConfigMsg) msg);
         } else if (msg instanceof APIGetResourceBindableConfigMsg) {
             handle((APIGetResourceBindableConfigMsg) msg);
@@ -68,10 +73,47 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
 
     private void handle(APIUpdateResourceConfigMsg msg) {
         ResourceConfig rc = getResourceConfig(msg.getIdentity());
-        rc.updateValue(msg.getResourceUuid(), msg.getValue());
-
         APIUpdateResourceConfigEvent evt = new APIUpdateResourceConfigEvent(msg.getId());
-        evt.setInventory(ResourceConfigInventory.valueOf(rc.loadConfig(msg.getResourceUuid())));
+
+        try {
+            rc.updateValue(msg.getResourceUuid(), msg.getValue());
+            evt.setInventory(ResourceConfigInventory.valueOf(rc.loadConfig(msg.getResourceUuid())));
+        } catch (GlobalConfigException e) {
+            evt.setError(operr(e.getMessage()));
+        }
+
+        bus.publish(evt);
+    }
+
+    private void handle(APIUpdateResourceConfigsMsg msg) {
+        List<String> identities = new ArrayList<>();
+        for (APIUpdateResourceConfigsMsg.ResourceConfigAO resourceConfigAO : msg.getResourceConfigs()) {
+            String identity = GlobalConfig.produceIdentity(resourceConfigAO.getCategory(), resourceConfigAO.getName());
+            identities.add(identity);
+            ResourceConfig rc = getResourceConfig(identity);
+            try {
+                rc.updateValue(msg.getResourceUuid(), resourceConfigAO.getValue());
+            } catch (Exception e) {
+                logger.debug(String.format("updated resource config[resourceUuid:%s, category:%s, name:%s] to %s failed",
+                        msg.getResourceUuid(),  resourceConfigAO.getCategory(), resourceConfigAO.getName(), resourceConfigAO.getValue()));
+            } finally {
+                continue;
+            }
+        }
+
+        APIUpdateResourceConfigsEvent evt = new APIUpdateResourceConfigsEvent(msg.getId());
+        evt.setInventories(new ArrayList<>());
+        for (String identity : identities) {
+            ResourceConfig rc = getResourceConfig(identity);
+            List<ResourceConfigInventory> configs = rc.getEffectiveResourceConfigs(msg.getResourceUuid());
+            ResourceConfigStruct struct = new ResourceConfigStruct();
+            struct.setEffectiveConfigs(configs);
+            struct.setName(rc.globalConfig.getName());
+            struct.setValue(configs.isEmpty() ? rc.defaultValue(String.class) : configs.get(0).getValue());
+
+            evt.getInventories().add(struct);
+        }
+
         bus.publish(evt);
     }
 
@@ -156,6 +198,38 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         }
 
         return rc.getResourceConfigValue(resourceUuid, clz);
+    }
+
+    @Override
+    public <T> Map<String, T> getResourceConfigValues(GlobalConfig gc, List<String> resourceUuids, Class<T> clz) {
+        ResourceConfig rc = resourceConfigs.get(gc.getIdentity());
+        if (rc == null) {
+            logger.debug(String.format("resource is not bound to global config[category:%s, name:%s], " +
+                    "use global config instead", gc.getCategory(), gc.getName()));
+
+            Map<String, T> result = new HashMap<>();
+            resourceUuids.forEach(resourceUuid -> result.put(resourceUuid, gc.value(clz)));
+            return result;
+        }
+
+        return rc.getResourceConfigValues(resourceUuids, clz);
+    }
+
+    public <T> Map<String, T> getResourceConfigValueByResourceUuids(GlobalConfig gc, List<String> resourceUuids, Class<T> clz) {
+        Map<String, T> resourceConfigMap = new HashMap<>();
+
+        resourceUuids.forEach(uuid -> {
+            ResourceConfig rc = resourceConfigs.get(gc.getIdentity());
+            if (rc == null) {
+                logger.debug(String.format("resource[uuid:%s] is not bound to global config[category:%s, name:%s], " +
+                        "use global config instead", uuid, gc.getCategory(), gc.getName()));
+                resourceConfigMap.put(uuid, gc.value(clz));
+                return;
+            }
+            resourceConfigMap.put(uuid, rc.getResourceConfigValue(uuid, clz));
+        });
+
+        return resourceConfigMap;
     }
 
     protected void buildResourceConfig(Field field) throws Exception {

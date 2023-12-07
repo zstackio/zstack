@@ -9,14 +9,18 @@ import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.*;
 import org.zstack.core.db.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
 import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -80,6 +84,15 @@ public class ResourceConfig {
                 it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
     }
 
+    public void validateNewValue(String resourceUuid, String newValue) {
+        String originValue = loadConfigValue(resourceUuid);
+        String oldValue = originValue == null ? globalConfig.value() : originValue;
+
+        globalConfig.getValidators().forEach(it ->
+                it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
+        validatorExtensions.forEach(it -> it.validateResourceConfig(resourceUuid, oldValue, newValue));
+    }
+
     public void updateValue(String resourceUuid, String newValue) {
         String resourceType = getResourceType(resourceUuid);
         updateValue(resourceUuid, resourceType, newValue, true);
@@ -97,6 +110,12 @@ public class ResourceConfig {
     public <T> T getResourceConfigValue(String resourceUuid, Class<T> clz) {
         String value = getResourceConfigValue(resourceUuid);
         return TypeUtils.stringToValue(value, clz);
+    }
+
+    public <T> Map<String, T> getResourceConfigValues(List<String> resourceUuids, Class<T> clz) {
+        Map<String, T> values = new HashMap<>();
+        getResourceConfigValues(resourceUuids).forEach((key, value) -> values.put(key, TypeUtils.stringToValue(value, clz)));
+        return values;
     }
 
     void init() {
@@ -207,7 +226,6 @@ public class ResourceConfig {
                 resourceUuid, resourceType, globalConfig.getCategory(), globalConfig.getName()));
     }
 
-
     @Transactional(readOnly = true)
     protected String getResourceConfigValue(String resourceUuid) {
         String resourceType = Q.New(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
@@ -227,7 +245,55 @@ public class ResourceConfig {
         return getter.getResourceConfigValue(resourceUuid);
     }
 
-    List<ResourceConfigInventory> getEffectiveResourceConfigs(String resourceUuid) {
+    @Transactional(readOnly = true)
+    protected Map<String, String> getResourceConfigValues(List<String> resourceUuids) {
+        Map<String, String> valuesByResourceUuids = new HashMap<>();
+
+        if (resourceUuids.isEmpty()) {
+            return valuesByResourceUuids;
+        }
+
+        List<Tuple> resourceTypeUuidPairs = Q.New(ResourceVO.class).select(ResourceVO_.resourceType, ResourceVO_.uuid)
+                .in(ResourceVO_.uuid, resourceUuids).listTuple();
+
+        if (resourceTypeUuidPairs.isEmpty()) {
+            logger.warn("no resource found, cannot get it's resource config, use global config instead");
+
+            resourceUuids.forEach(it -> valuesByResourceUuids.put(it, globalConfig.value()));
+            return valuesByResourceUuids;
+        }
+
+        resourceUuids.removeAll(resourceTypeUuidPairs.stream().map(it -> it.get(1, String.class)).collect(Collectors.toSet()));
+        resourceUuids.forEach(it -> valuesByResourceUuids.put(it, globalConfig.value()));
+
+        Map<String, List<String>> typeByResourceUuids = groupResourceUuidsByType(resourceTypeUuidPairs);
+
+        if (typeByResourceUuids.keySet().size() >= 2) {
+            throw new OperationFailureException(
+                    operr("resources has inconsistent resourceTypes. Details: %s", typeByResourceUuids.toString()));
+        }
+
+        typeByResourceUuids.forEach((resourceType, resUuids) -> {
+            ResourceConfigGetter getter = configGetter.get(resourceType);
+            if (getter == null) {
+                logger.warn(String.format("resource[type:%s] is not bound to global config[category:%s, name:%s]," +
+                        " use global config instead", resourceType, globalConfig.getCategory(), globalConfig.getName()));
+
+                resUuids.forEach(uuid -> valuesByResourceUuids.put(uuid, globalConfig.value()));
+                return;
+            }
+            valuesByResourceUuids.putAll(getter.getResourceConfigValues(resUuids));
+        });
+
+        return valuesByResourceUuids;
+    }
+
+    private Map<String, List<String>> groupResourceUuidsByType(List<Tuple> resourceTypeUuidPairs) {
+        return resourceTypeUuidPairs.stream().collect(Collectors.groupingBy(pair -> pair.get(0, String.class),
+                        Collectors.mapping(pair -> pair.get(1, String.class), Collectors.toList())));
+    }
+
+    public List<ResourceConfigInventory> getEffectiveResourceConfigs(String resourceUuid) {
         String resourceType = Q.New(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
         if (resourceType == null) {
             logger.warn(String.format("no resource[uuid:%s] found, cannot get it's resource config," +
@@ -248,6 +314,7 @@ public class ResourceConfig {
     private class ResourceConfigGetter {
         String resourceType;
         List<String> parentTypeSql = new ArrayList<>();
+        List<String> parentResourceUuidPairsSql = new ArrayList<>();
 
         private String getResourceConfigValue(String resourceUuid) {
             String v = loadConfigValue(resourceUuid);
@@ -268,6 +335,36 @@ public class ResourceConfig {
             }
 
             return globalConfig.value();
+        }
+
+        private Map<String, String> getResourceConfigValues(List<String> resourceUuids) {
+            Map<String, String> valuesByResourceUuids = new HashMap<>();
+
+            loadResourceUuidsAndValues(resourceUuids).forEach(it -> valuesByResourceUuids.put(it.get(0, String.class), it.get(1, String.class)));
+            resourceUuids.removeAll(valuesByResourceUuids.keySet());
+
+            for (String sql : parentResourceUuidPairsSql) {
+                List<Tuple> parentResourceUuidPairs =
+                        SQL.New(String.format(sql, "'" + String.join("','", resourceUuids) + "'"), Tuple.class).list();
+                if (parentResourceUuidPairs.isEmpty()) {
+                    continue;
+                }
+
+                Map<String, List<String>> parentUuidAndResourceUuids = parentResourceUuidPairs.stream()
+                        .collect(Collectors.groupingBy(tuple -> tuple.get(0, String.class),
+                                Collectors.mapping(tuple -> tuple.get(1, String.class), Collectors.toList())));
+
+                loadResourceUuidsAndValues(new ArrayList<>(parentUuidAndResourceUuids.keySet())).forEach(tuple -> {
+                    if (parentUuidAndResourceUuids.containsKey(tuple.get(0, String.class))) {
+                        List<String> uuids = parentUuidAndResourceUuids.get(tuple.get(0, String.class));
+                        uuids.forEach(resourceUuid -> valuesByResourceUuids.put(resourceUuid, tuple.get(1, String.class)));
+                        resourceUuids.removeAll(uuids);
+                    }
+                });
+            }
+
+            resourceUuids.forEach(it -> valuesByResourceUuids.put(it, globalConfig.value()));
+            return valuesByResourceUuids;
         }
 
         private List<ResourceConfigInventory> getConnectedResourceConfigs(String resourceUuid) {
@@ -292,6 +389,11 @@ public class ResourceConfig {
             for (Class parentClass : connectedClasses.subList(1, connectedClasses.size())) {
                 Optional.ofNullable(DBGraph.findVerticesWithSmallestWeight(resourceClass, parentClass)).ifPresent(vertex ->
                         parentTypeSql.add(vertex.toSQL("uuid", SimpleQuery.Op.EQ, "'%s'")));
+            }
+
+            for (Class parentClass : connectedClasses.subList(1, connectedClasses.size())) {
+                Optional.ofNullable(DBGraph.findVerticesWithSmallestWeight(resourceClass, parentClass)).ifPresent(vertex ->
+                        parentResourceUuidPairsSql.add(vertex.toBidirectionalSQL("uuid", SimpleQuery.Op.IN, "(%s)")));
             }
 
             getter.resourceType = resourceClass.getSimpleName();
@@ -378,6 +480,13 @@ public class ResourceConfig {
                 .findValue();
     }
 
+    private List<Tuple> loadResourceUuidsAndValues(List<String> resourceUuids) {
+        return Q.New(ResourceConfigVO.class)
+                .select(ResourceConfigVO_.resourceUuid, ResourceConfigVO_.value)
+                .eq(ResourceConfigVO_.name, globalConfig.getName())
+                .eq(ResourceConfigVO_.category, globalConfig.getCategory())
+                .in(ResourceConfigVO_.resourceUuid, resourceUuids).listTuple();
+    }
 
     List<Class> getResourceClasses() {
         return resourceClasses;

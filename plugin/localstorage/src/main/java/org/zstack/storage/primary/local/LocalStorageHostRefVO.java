@@ -2,6 +2,7 @@ package org.zstack.storage.primary.local;
 
 import org.zstack.header.host.HostEO;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
+import org.zstack.header.storage.primary.StorageCapacityAO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -13,7 +14,7 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @IdClass(CompositePrimaryKeyForLocalStorageHostRefVO.class)
-public class LocalStorageHostRefVO {
+public class LocalStorageHostRefVO extends StorageCapacityAO {
     @Column
     @Id
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
@@ -31,14 +32,6 @@ public class LocalStorageHostRefVO {
     @Column
     @Index
     private long availableCapacity;
-
-    @Column
-    @Index
-    private long totalPhysicalCapacity;
-
-    @Column
-    @Index
-    private long availablePhysicalCapacity;
 
     @Column
     private long systemUsedCapacity;
@@ -62,6 +55,7 @@ public class LocalStorageHostRefVO {
         this.systemUsedCapacity = systemUsedCapacity;
     }
 
+    @Override
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
     }
@@ -94,22 +88,6 @@ public class LocalStorageHostRefVO {
         this.availableCapacity = availableCapacity;
     }
 
-    public long getTotalPhysicalCapacity() {
-        return totalPhysicalCapacity;
-    }
-
-    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
-        this.totalPhysicalCapacity = totalPhysicalCapacity;
-    }
-
-    public long getAvailablePhysicalCapacity() {
-        return availablePhysicalCapacity;
-    }
-
-    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
-        this.availablePhysicalCapacity = availablePhysicalCapacity;
-    }
-
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -124,5 +102,10 @@ public class LocalStorageHostRefVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return hostUuid;
     }
 }

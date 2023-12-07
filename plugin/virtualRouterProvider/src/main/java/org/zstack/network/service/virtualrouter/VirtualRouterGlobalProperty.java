@@ -9,7 +9,7 @@ import java.util.List;
  */
 @GlobalPropertyDefinition
 public class VirtualRouterGlobalProperty {
-    @GlobalProperty(name="VirtualRouter.agentPackageName", defaultValue = "virtualrouter-4.6.0.tar.gz")
+    @GlobalProperty(name="VirtualRouter.agentPackageName", defaultValue = "virtualrouter-4.8.0.tar.gz")
     public static String AGENT_PACKAGE_NAME;
     @GlobalProperty(name="VirtualRouter.agentPort", defaultValue = "7272")
     public static int AGENT_PORT;

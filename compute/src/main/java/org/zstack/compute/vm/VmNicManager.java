@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 
 import java.util.List;
@@ -12,5 +13,7 @@ public interface VmNicManager {
 
     String getDefaultNicDriver();
 
-    void setNicDriverType(VmNicInventory nic, boolean isImageSupportVirtIo, boolean isParaVirtualization);
+    String getPcNetNicDriver();
+
+    void setNicDriverType(VmNicInventory nic, boolean isImageSupportVirtIo, boolean isParaVirtualization, VmInstanceInventory vm);
 }

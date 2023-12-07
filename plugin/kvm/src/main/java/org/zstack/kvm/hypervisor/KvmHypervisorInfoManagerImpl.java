@@ -37,58 +37,6 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     @Autowired
     private HypervisorMetadataCollector collector;
 
-    private static class ResourceHypervisorInfo {
-        String uuid;
-        String resourceType;
-        String virtualizer;
-        String version;
-
-        String matchTargetUuid;
-        String matchTargetResourceType;
-        String matchTargetVersion;
-
-        KvmHypervisorInfoVO vo;
-
-        static ResourceHypervisorInfo fromVmVirtualizerInfo(VirtualizerInfoTO info) {
-            return fromVmVirtualizerInfo(info, null);
-        }
-
-        static ResourceHypervisorInfo fromVmVirtualizerInfo(VirtualizerInfoTO info, String hostUuid) {
-            ResourceHypervisorInfo result = from(info);
-            result.resourceType = VmInstanceVO.class.getSimpleName();
-            result.matchTargetResourceType = HostVO.class.getSimpleName();
-            result.matchTargetUuid = hostUuid;
-            return result;
-        }
-
-        static ResourceHypervisorInfo fromHostVirtualizerInfo(VirtualizerInfoTO info) {
-            ResourceHypervisorInfo result = from(info);
-            result.resourceType = HostVO.class.getSimpleName();
-            result.matchTargetResourceType = KvmHostHypervisorMetadataVO.class.getSimpleName();
-            return result;
-        }
-
-        static ResourceHypervisorInfo from(VirtualizerInfoTO info) {
-            ResourceHypervisorInfo result = new ResourceHypervisorInfo();
-            result.uuid = info.getUuid();
-            result.virtualizer = info.getVirtualizer();
-            result.version = info.getVersion();
-            return result;
-        }
-
-        KvmHypervisorInfoVO generate() {
-            if (vo == null) {
-                vo = new KvmHypervisorInfoVO();
-                vo.setUuid(uuid);
-            }
-            vo.setHypervisor(virtualizer);
-            vo.setVersion(version);
-            vo.setMatchState(KvmHypervisorInfoHelper.isQemuVersionMatched(version, matchTargetVersion));
-
-            return vo;
-        }
-    }
-
     @Override
     public void save(GetVirtualizerInfoRsp rsp) {
         final String hostUuid = rsp.getHostInfo().getUuid();
@@ -265,27 +213,30 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     @Override
     public void refreshMetadata() {
         List<HypervisorMetadataDefinition> collected = collector.collect();
-        saveMetadataList(collected);
+        boolean anyRecordUpdated = saveMetadataList(collected);
+        if (anyRecordUpdated) {
+            refreshHostMatchState();
+        }
     }
 
-    private void saveMetadataList(List<HypervisorMetadataDefinition> definitions) {
+    private boolean saveMetadataList(List<HypervisorMetadataDefinition> definitions) {
         List<HostOsCategoryVO> categoryVOS = definitions.stream()
                 .map(this::mapToHostOsCategory)
                 .collect(Collectors.collectingAndThen(
                         Collectors.toCollection(() -> new TreeSet<>(Comparator
                                 .comparing(HostOsCategoryVO::getArchitecture)
                                 .thenComparing(HostOsCategoryVO::getOsReleaseVersion))), ArrayList::new));
-        saveHostOsCategoryList(categoryVOS);
+        return saveHostOsCategoryList(categoryVOS);
     }
 
     @Transactional
-    protected void saveHostOsCategoryList(List<HostOsCategoryVO> categoryVOS) {
+    protected boolean saveHostOsCategoryList(List<HostOsCategoryVO> categoryVOS) {
         // refresh all metadata with current management node
         SQL.New(KvmHostHypervisorMetadataVO.class)
                 .eq(KvmHostHypervisorMetadataVO_.managementNodeUuid, Platform.getManagementServerId())
                 .delete();
         if (CollectionUtils.isEmpty(categoryVOS)) {
-            return;
+            return false;
         }
 
         Set<String> requestArchitectures = categoryVOS.stream()
@@ -323,12 +274,77 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
             metadataList.addAll(category.getMetadataList());
         }
 
+        boolean anyRecordUpdated = false;
         if (!needPersistCategories.isEmpty()) {
             db.persistCollection(needPersistCategories);
+            anyRecordUpdated = true;
         }
         if (!metadataList.isEmpty()) {
             db.persistCollection(metadataList);
+            anyRecordUpdated = true;
         }
+        return anyRecordUpdated;
+    }
+
+    private void refreshHostMatchState() {
+        Function<String, String> sqlGenerator = fragment -> String.format(
+                "select " +
+                    "%s " +
+                "from " +
+                    "KvmHypervisorInfoVO hyper," +
+                    "ResourceVO resource " +
+                "where " +
+                    "hyper.uuid = resource.uuid " +
+                    "and resource.resourceType = :resourceType", fragment);
+
+        Long count = SQL.New(sqlGenerator.apply("count(*)"), Long.class)
+                .param("resourceType", HostVO.class.getSimpleName())
+                .find();
+
+        Map<String, HypervisorVersionState> originStateMap = new HashMap<>();
+        Map<String, HypervisorVersionState> stateMap = new HashMap<>();
+        SQL.New(sqlGenerator.apply("hyper.uuid, hyper.matchState "), Tuple.class)
+                .param("resourceType", HostVO.class.getSimpleName())
+                .limit(100)
+                .paginate(count, (List<Tuple> tuples) -> {
+                        final Map<String, HypervisorVersionState> map = tuples.stream().collect(Collectors.toMap(
+                                tuple -> tuple.get(0, String.class),
+                                tuple -> tuple.get(1, HypervisorVersionState.class)
+                        ));
+                        originStateMap.putAll(map);
+                        stateMap.putAll(refreshHostMatchStateFragment(map.keySet()));
+                });
+
+        // key: state, value: [KvmHypervisorInfoVO.uuid]
+        Map<HypervisorVersionState, List<String>> updatedMap = new HashMap<>();
+        originStateMap.forEach((uuid, originState) -> {
+            final HypervisorVersionState state = stateMap.get(uuid);
+            if (originState == state) {
+                return;
+            }
+            updatedMap.compute(state, (v, list) -> {
+                if (list == null) {
+                    return new ArrayList<>(Arrays.asList(uuid));
+                }
+                list.add(uuid);
+                return list;
+            });
+        });
+
+        updatedMap.forEach((state, uuidList) ->
+            SQL.New(KvmHypervisorInfoVO.class)
+                    .in(KvmHypervisorInfoVO_.uuid, uuidList)
+                    .set(KvmHypervisorInfoVO_.matchState, state)
+                    .update()
+        );
+    }
+
+    private Map<String, HypervisorVersionState> refreshHostMatchStateFragment(Set<String> hyperUuidSet) {
+        return ResourceHypervisorInfo.from(hyperUuidSet).stream()
+                .collect(Collectors.toMap(
+                        hyper -> hyper.uuid,
+                        hyper -> KvmHypervisorInfoHelper.isQemuVersionMatched(hyper.version, hyper.matchTargetVersion)
+                ));
     }
 
     /**

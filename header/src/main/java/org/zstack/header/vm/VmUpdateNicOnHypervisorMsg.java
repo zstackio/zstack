@@ -31,6 +31,7 @@ public class VmUpdateNicOnHypervisorMsg extends NeedReplyMessage implements Host
     public void setNicsUuid(List<String> nicsUuid) {
         this.nicsUuid = nicsUuid;
     }
+
     public List<String> getNicsUuid() {
         return nicsUuid;
     }

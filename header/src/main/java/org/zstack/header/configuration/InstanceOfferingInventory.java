@@ -24,6 +24,7 @@ public class InstanceOfferingInventory implements Serializable {
     private Integer cpuNum;
     private Integer cpuSpeed;
     private Long memorySize;
+    private Long reservedMemorySize;
     private String type;
     private String allocatorStrategy;
     private Integer sortKey;
@@ -39,6 +40,7 @@ public class InstanceOfferingInventory implements Serializable {
         this.setCpuNum(vo.getCpuNum());
         this.setCpuSpeed(vo.getCpuSpeed());
         this.setMemorySize(vo.getMemorySize());
+        this.setReservedMemorySize(vo.getReservedMemorySize());
         this.setUuid(vo.getUuid());
         this.setName(vo.getName());
         this.setDescription(vo.getDescription());
@@ -54,6 +56,7 @@ public class InstanceOfferingInventory implements Serializable {
         this.setCpuNum(vo.getCpuNum());
         this.setCpuSpeed(vo.getCpuSpeed());
         this.setMemorySize(vo.getMemorySize());
+        this.setReservedMemorySize(vo.getReservedMemorySize());
         this.setUuid(vo.getUuid());
         this.setName(vo.getName());
         this.setDescription(vo.getDescription());
@@ -175,5 +178,13 @@ public class InstanceOfferingInventory implements Serializable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 }

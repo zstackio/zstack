@@ -1,5 +1,6 @@
 package org.zstack.storage.primary;
 
+import com.google.common.collect.Maps;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,19 +9,27 @@ import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.*;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
@@ -46,6 +55,7 @@ import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceStartExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.resourceconfig.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -59,12 +69,14 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
-        VmInstanceCreateExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
+        VmInstanceCreateExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator,
+        PrimaryStorageSortExtensionPoint {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -85,11 +97,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private PrimaryStorageOverProvisioningManager ratioMgr;
     @Autowired
     private PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
+    @Autowired
+    protected PrimaryStorageUsageReport primaryStorageUsageForecaster;
 
     private final Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private final Map<String, AutoDeleteTrashTask> autoDeleteTrashTask = new HashMap<>();
+    private static final Map<String, List<PrimaryStorageExtensionFactory>> extensionFactories = Maps.newConcurrentMap();
     private AutoDeleteTrashTask globalTrashTask;
 
     static {
@@ -126,6 +141,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((APIGetPrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof APIGetPrimaryStorageLicenseInfoMsg) {
             handle((APIGetPrimaryStorageLicenseInfoMsg) msg);
+        } else if (msg instanceof APIGetPrimaryStorageUsageReportMsg) {
+            handle((APIGetPrimaryStorageUsageReportMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -238,6 +255,35 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         bus.reply(msg, reply);
     }
 
+    private void handle(APIGetPrimaryStorageUsageReportMsg msg) {
+        APIGetPrimaryStorageUsageReportReply reply = new APIGetPrimaryStorageUsageReportReply();
+
+        if (CollectionUtils.isEmpty(msg.getUris())) {
+            reply.setUsageReport(primaryStorageUsageForecaster.getUsageReportByResourceUuids(
+                    Collections.singletonList(msg.getPrimaryStorageUuid())).get(msg.getPrimaryStorageUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        GetPrimaryStorageUsageReportMsg gmsg = new GetPrimaryStorageUsageReportMsg();
+        gmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        gmsg.setUris(msg.getUris());
+
+        bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, gmsg.getPrimaryStorageUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                } else {
+                    GetPrimaryStorageUsedPhysicalCapacityForecastReply re = r.castReply();
+                    reply.setUriUsageForecast(re.getUsageReportMap());
+                }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     private void passThrough(PrimaryStorageMessage pmsg) {
         PrimaryStorageVO vo = dbf.findByUuid(pmsg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
         if (vo == null && allowedMessageAfterSoftDeletion.contains(pmsg.getClass())) {
@@ -251,8 +297,18 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return;
         }
 
-        PrimaryStorageFactory factory = getPrimaryStorageFactory(PrimaryStorageType.valueOf(vo.getType()));
         PrimaryStorageVO finalVo = vo;
+
+        PrimaryStorageFactory factory = getPrimaryStorageFactory(PrimaryStorageType.valueOf(vo.getType()));
+        if (extensionFactories.containsKey(factory.getPrimaryStorageType().toString())) {
+            PrimaryStorageExtensionFactory extFactory = extensionFactories.get(factory.getPrimaryStorageType().toString()).stream().filter(it -> it.getMessageClasses()
+                    .stream().anyMatch(clz -> clz.isAssignableFrom(msg.getClass()))).findFirst().orElse(null);
+            if (extFactory != null) {
+                PrimaryStorage ps = Platform.New(()-> extFactory.getPrimaryStorage(finalVo));
+                ps.handleMessage(msg);
+                return;
+            }
+        }
         PrimaryStorage ps = Platform.New(()-> factory.getPrimaryStorage(finalVo));
         ps.handleMessage(msg);
     }
@@ -510,7 +566,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 return;
             }
         }
-
         String allocatorStrategyType = getAllocateStrategyFromMsg(msg);
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType));
@@ -572,7 +627,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType));
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
-
         PrimaryStorageAllocationSpec spec = buildAllocateSpecFromMsg(msg);
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
 
@@ -745,6 +799,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
         }
 
+        if (allocatorStrategyType == null && msg.getDiskOfferingUuid() != null) {
+            allocatorStrategyType = Q.New(DiskOfferingVO.class)
+                    .eq(DiskOfferingVO_.uuid, msg.getDiskOfferingUuid())
+                    .select(DiskOfferingVO_.allocatorStrategy)
+                    .findValue();
+        }
+
         if (allocatorStrategyType == null) {
             allocatorStrategyType = msg.getAllocationStrategy() == null ?
                     PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE
@@ -774,10 +835,19 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         spec.setRequiredHostUuid(msg.getRequiredHostUuid());
         spec.setRequiredZoneUuid(msg.getRequiredZoneUuid());
         spec.setBackupStorageUuid(msg.getBackupStorageUuid());
-        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
         spec.setTags(msg.getTags());
         spec.setAllocationMessage(msg);
         spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
+        spec.setCandidatePrimaryStorageUuids(msg.getCandidatePrimaryStorageUuids());
+        if (CollectionUtils.isEmpty(msg.getCandidatePrimaryStorageUuids()) && msg.getDiskOfferingUuid() != null
+                && DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getDiskOfferingUuid())) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getDiskOfferingUuid(), DiskOfferingUserConfig.class);
+            if (config.getAllocate() != null && config.getAllocate().getAllPrimaryStorages() != null) {
+                List<String> requiredPrimaryStorageUuidsFromDiskOffering = config.getAllocate().getAllPrimaryStorages().stream()
+                        .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+                spec.setCandidatePrimaryStorageUuids(requiredPrimaryStorageUuidsFromDiskOffering);
+            }
+        }
         return spec;
     }
 
@@ -896,6 +966,28 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void startPrimaryStorageAutoDeleteTrashTask(String resourceUuid, String newValue){
         primaryStorageAutoDeleteTrashTask(resourceUuid, newValue);
+    }
+
+    @Override
+    public void sort(List<PrimaryStorageVO> primaryStorageVOS, VmInstanceSpec.ImageSpec imageSpec, String allocateStrategy) {
+        if (primaryStorageVOS.size() < 2) {
+            return;
+        }
+
+        if (allocateStrategy == null) {
+            allocateStrategy = PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE;
+        }
+        PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
+                PrimaryStorageAllocatorStrategyType.valueOf(allocateStrategy));
+        PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
+        PrimaryStorageAllocationSpec allocationSpec = new PrimaryStorageAllocationSpec();
+        if (imageSpec != null && imageSpec.getInventory() != null) {
+            allocationSpec.setImageUuid(imageSpec.getInventory().getUuid());
+            Optional.ofNullable(imageSpec.getSelectedBackupStorage())
+                    .ifPresent(it -> allocationSpec.setBackupStorageUuid(it.getBackupStorageUuid()));
+        }
+
+        strategy.sort(allocationSpec, primaryStorageVOS);
     }
 
     class AutoDeleteTrashTask {
@@ -1035,6 +1127,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         f.getClass().getName(), old.getClass().getName(), old.getPrimaryStorageType()));
             }
             primaryStorageFactories.put(f.getPrimaryStorageType().toString(), f);
+        }
+
+        for (PrimaryStorageExtensionFactory f : pluginRgty.getExtensionList(PrimaryStorageExtensionFactory.class)) {
+            List<PrimaryStorageExtensionFactory> factories = extensionFactories.computeIfAbsent(f.getPrimaryStorageType(), k->new ArrayList<>());
+            factories.add(f);
         }
     }
 
@@ -1197,36 +1294,33 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(instanceOffering, InstanceOfferingUserConfig.class);
             if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
                 String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-                if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
+                if (!msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty() && !msg.getCandidatePrimaryStorageUuidsForRootVolume().contains(psUuid)) {
                     throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the instance offering is %s, and the primary storage specified in the creation parameter is %s"
-                            , psUuid, msg.getPrimaryStorageUuidForRootVolume()));
+                            , psUuid, msg.getCandidatePrimaryStorageUuidsForRootVolume()));
                 }
                 msg.setPrimaryStorageUuidForRootVolume(psUuid);
             }
         }
 
         String rootDiskOffering = msg.getRootDiskOfferingUuid();
-        if (rootDiskOffering == null) {
+        if (rootDiskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
             return;
         }
 
-        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
-            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
+        }
 
-            if (config.getAllocate() == null) {
-                return;
+        if (!config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
+                    .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            if (!msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty() && Collections.disjoint(requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForRootVolume())) {
+                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                        requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForRootVolume()));
+            } else if (msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty()) {
+                msg.setCandidatePrimaryStorageUuidsForRootVolume(requiredPrimaryStorageUuids);
             }
-
-            if (config.getAllocate().getPrimaryStorage() == null) {
-                return;
-            }
-
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
-                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuidForRootVolume()));
-            }
-            msg.setPrimaryStorageUuidForRootVolume(psUuid);
         }
     }
 
@@ -1236,28 +1330,26 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         String diskOffering = msg.getDataDiskOfferingUuids().get(0);
-        if (diskOffering == null) {
+        if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             return;
         }
 
-        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
-            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
-
-            if (config.getAllocate() == null) {
-                return;
-            }
-
-            if (config.getAllocate().getPrimaryStorage() == null) {
-                return;
-            }
-
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (msg.getPrimaryStorageUuidForDataVolume() != null && !msg.getPrimaryStorageUuidForDataVolume().equals(psUuid)) {
-                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuidForDataVolume()));
-            }
-            msg.setPrimaryStorageUuidForDataVolume(psUuid);
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
         }
+
+        if (!config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
+                    .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            if (!msg.getCandidatePrimaryStorageUuidsForDataVolume().isEmpty() && Collections.disjoint(requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForDataVolume())) {
+                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                        requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForDataVolume()));
+             } else if (msg.getCandidatePrimaryStorageUuidsForDataVolume().isEmpty()) {
+                msg.setCandidatePrimaryStorageUuidsForDataVolume(requiredPrimaryStorageUuids);
+            }
+        }
+
     }
 
     @Override

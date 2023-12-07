@@ -3,6 +3,7 @@ package org.zstack.storage.ceph;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -12,7 +13,7 @@ public class CephCapacity {
     private String fsid;
     private Long totalCapacity;
     private Long availableCapacity;
-    private List<CephPoolCapacity> poolCapacities;
+    private final List<CephPoolCapacity> poolCapacities = new ArrayList<>();
     private String cephManufacturer;
 
     public CephCapacity() {
@@ -23,7 +24,7 @@ public class CephCapacity {
         this.fsid = fsid;
         this.availableCapacity = rsp.getAvailableCapacity();
         this.totalCapacity = rsp.getTotalCapacity();
-        this.poolCapacities = rsp.getPoolCapacities();
+        this.setPoolCapacities(rsp.getPoolCapacities());
         this.cephManufacturer = rsp.getType();
     }
 
@@ -31,7 +32,7 @@ public class CephCapacity {
         this.fsid = fsid;
         this.availableCapacity = rsp.getAvailableCapacity();
         this.totalCapacity = rsp.getTotalCapacity();
-        this.poolCapacities = rsp.getPoolCapacities();
+        this.setPoolCapacities(rsp.getPoolCapacities());
         this.cephManufacturer = rsp.getType();
     }
 
@@ -56,7 +57,10 @@ public class CephCapacity {
     }
 
     public void setPoolCapacities(List<CephPoolCapacity> poolCapacities) {
-        this.poolCapacities = poolCapacities;
+        this.poolCapacities.clear();
+        if (poolCapacities != null) {
+            this.poolCapacities.addAll(poolCapacities);
+        }
     }
 
     public boolean isXsky() {

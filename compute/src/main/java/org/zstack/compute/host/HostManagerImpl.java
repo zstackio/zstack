@@ -124,6 +124,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         APIGetHostWebSshUrlEvent event = new APIGetHostWebSshUrlEvent(msg.getId());
         GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
         getHostWebSshUrlMsg.setUuid(msg.getUuid());
+        getHostWebSshUrlMsg.setHttps(msg.getHttps());
         bus.makeLocalServiceId(getHostWebSshUrlMsg ,HostConstant.SERVICE_ID);
         bus.send(getHostWebSshUrlMsg, new CloudBusCallBack(msg) {
             @Override
@@ -596,7 +597,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         startRefreshHostPowerStatusTask();
     }
 
-    private void startRefreshHostPowerStatusTask() {
+    private synchronized void startRefreshHostPowerStatusTask() {
         if (refreshHostPowerStatusTask != null) {
             refreshHostPowerStatusTask.cancel(true);
         }
@@ -650,7 +651,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         });
     }
 
-    private void startReportHostCapacityTask() {
+    private synchronized void startReportHostCapacityTask() {
         if (reportHostCapacityTask != null) {
             reportHostCapacityTask.cancel(true);
         }

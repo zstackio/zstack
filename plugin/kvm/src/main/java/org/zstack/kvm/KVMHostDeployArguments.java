@@ -10,8 +10,6 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String init;
     @SerializedName("skipIpv6")
     private String skipIpv6;
-    @SerializedName("isMini")
-    private String isMini;
     @SerializedName("isBareMetal2Gateway")
     private String isBareMetal2Gateway;
     @SerializedName("bridgeDisableIptables")
@@ -24,6 +22,13 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String updatePackages;
     @SerializedName("post_url")
     private String postUrl;
+    @SerializedName("isInstallHostShutdownHook")
+    private String isInstallHostShutdownHook;
+    @SerializedName("isEnableKsm")
+    private String isEnableKsm;
+
+    @SerializedName("extra_packages")
+    private String extraPackages;
 
     public String getInit() {
         return init;
@@ -39,14 +44,6 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setSkipIpv6(String skipIpv6) {
         this.skipIpv6 = skipIpv6;
-    }
-
-    public String getIsMini() {
-        return isMini;
-    }
-
-    public void setIsMini(String isMini) {
-        this.isMini = isMini;
     }
 
     public String getIsBareMetal2Gateway() {
@@ -97,8 +94,32 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
         this.postUrl = postUrl;
     }
 
+    public String getIsInstallHostShutdownHook() {
+        return isInstallHostShutdownHook;
+    }
+
+    public void setIsInstallHostShutdownHook(String isInstallHostShutdownHook) {
+        this.isInstallHostShutdownHook = isInstallHostShutdownHook;
+    }
+
+    public String getIsEnableKsm() {
+        return isEnableKsm;
+    }
+
+    public void setIsEnableKsm(String isEnableKsm) {
+        this.isEnableKsm = isEnableKsm;
+    }
+
     @Override
     public String getPackageName() {
         return packageName;
+    }
+
+    public String getExtraPackages() {
+        return extraPackages;
+    }
+
+    public void setExtraPackages(String extraPackages) {
+        this.extraPackages = extraPackages;
     }
 }

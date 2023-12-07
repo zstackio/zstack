@@ -216,8 +216,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         String vmInstanceUuid = volumeUuids.isEmpty() ? null : Q.New(VolumeVO.class).select(VolumeVO_.vmInstanceUuid)
                 .in(VolumeVO_.uuid, volumeUuids).eq(VolumeVO_.type, VolumeType.Root).findValue();
 
-        Map<String, List<String>> psVolumeRef = ts.stream().collect(Collectors.groupingBy(t -> ((Tuple)t).get(1, String.class),
-                        Collectors.mapping(t -> ((Tuple)t).get(0, String.class), Collectors.toList())));
+        Map<String, List<String>> psVolumeRef = ts.stream().
+                filter(t -> t.get(1, String.class) != null)
+                .collect(Collectors.groupingBy(t -> ((Tuple) t).get(1, String.class),
+                        Collectors.mapping(t -> ((Tuple) t).get(0, String.class), Collectors.toList())));
 
         final ErrorCode[] err = new ErrorCode[1];
         new While<>(psVolumeRef.entrySet()).each((e, completion) -> {
@@ -596,8 +598,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 chain.getUuid(), snapshot.getUuid()));
     }
 
-    @Transactional
     private VolumeSnapshotStruct saveChainTypeSnapshot(VolumeSnapshotVO vo) {
+        return saveChainTypeSnapshot(vo, SnapshotMode.AUTO);
+    }
+
+    @Transactional
+    private VolumeSnapshotStruct saveChainTypeSnapshot(VolumeSnapshotVO vo, SnapshotMode mode) {
         String sql = "select c" +
                 " from VolumeSnapshotTreeVO c" +
                 " where c.volumeUuid = :volUuid" +
@@ -617,7 +623,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         }
 
         if (chain == null) {
-            return newChain(vo, maxIncrementalSnapshotNum == 0);
+            return newChain(vo, SnapshotMode.isFullSnapShot(mode, () -> maxIncrementalSnapshotNum == 0));
         } else {
             sql = "select s" +
                     " from VolumeSnapshotVO s" +
@@ -629,7 +635,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             q.setParameter("chainUuid", chain.getUuid());
             VolumeSnapshotVO latest = q.getSingleResult();
 
-            if (latest.getDistance() >= maxIncrementalSnapshotNum) {
+            VolumeSnapshotVO finalLatest = latest;
+            if (SnapshotMode.isFullSnapShot(mode, () -> finalLatest.getDistance() >= maxIncrementalSnapshotNum)) {
                 dbf.getEntityManager().merge(chain);
                 return newChain(vo, true);
             }
@@ -737,7 +744,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             protected VolumeSnapshotStruct scripts() {
                 VolumeSnapshotStruct s = null;
                 if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
-                    s = saveChainTypeSnapshot(vo);
+                    s = saveChainTypeSnapshot(vo, msg.getRequiredSnapshotMode());
                 } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
                     s = saveIndividualTypeSnapshot(vo);
                 } else {
@@ -849,6 +856,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         final TakeSnapshotMsg tmsg = new TakeSnapshotMsg();
                         tmsg.setPrimaryStorageUuid(primaryStorageUuid);
                         tmsg.setStruct(struct);
+                        tmsg.setName(msg.getName());
+                        tmsg.setDescription(msg.getDescription());
                         bus.makeTargetServiceIdByResourceUuid(tmsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
                         bus.send(tmsg, new CloudBusCallBack(trigger) {
                             @Override

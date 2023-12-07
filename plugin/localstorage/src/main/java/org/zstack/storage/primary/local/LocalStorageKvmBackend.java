@@ -43,6 +43,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.UndoSnapshotCreationOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -256,6 +257,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     public static class CreateEmptyVolumeRsp extends AgentResponse {
         public Long actualSize;
+        public Long size;
     }
 
     public static class GetPhysicalCapacityCmd extends AgentCommand {
@@ -311,6 +313,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     public static class CreateVolumeFromCacheRsp extends AgentResponse {
         public Long actualSize;
+        public Long size;
     }
 
     public static class CreateVolumeWithBackingCmd extends AgentCommand {
@@ -1227,6 +1230,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 vol.setInstallPath(returnValue.getInstallPath());
                 vol.setActualSize(returnValue.getActualSize());
                 vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                if (returnValue.getSize() != null) {
+                    vol.setSize(returnValue.getSize());
+                }
+
                 r.setVolume(vol);
                 completion.success(r);
             }
@@ -1266,7 +1273,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
             @Override
             public void success(CreateEmptyVolumeRsp returnValue) {
-                completion.success(new VolumeInfo(cmd.getInstallUrl(), returnValue.actualSize));
+                completion.success(new VolumeInfo(cmd.getInstallUrl(), returnValue.actualSize, returnValue.size));
             }
 
             @Override
@@ -1557,14 +1564,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
                             ImageCacheVO cvo = q.find();
 
-                            LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
-                            path.installPath = cvo.getInstallUrl();
-                            path.hostUuid = hostUuid;
-
                             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
                             rmsg.setDiskSize(cvo.getSize());
                             rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
-                            rmsg.setAllocatedInstallUrl(path.makeFullPath());
+                            rmsg.setAllocatedInstallUrl(cvo.getInstallUrl());
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
                             bus.send(rmsg);
 
@@ -1674,6 +1677,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public void success(CreateVolumeFromCacheRsp returnValue) {
                                 actualSize = returnValue.actualSize;
+                                if (returnValue.size != null) {
+                                    volume.setSize(returnValue.size);
+                                }
+
                                 trigger.next();
                             }
 
@@ -1993,6 +2000,32 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 ret.setInventory(sp);
 
+                completion.success(ret);
+            }
+        });
+    }
+
+    @Override
+    void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg, final String hostUuid, final ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply> completion) {
+        CommitVolumeOnHypervisorMsg hmsg = new CommitVolumeOnHypervisorMsg();
+        hmsg.setHostUuid(hostUuid);
+        hmsg.setVmUuid(msg.getVmUuid());
+        hmsg.setVolume(msg.getVolume());
+        hmsg.setSrcPath(msg.getSrcPath());
+        hmsg.setDstPath(msg.getDstPath());
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
+                CommitVolumeOnHypervisorReply treply = (CommitVolumeOnHypervisorReply) reply;
+                ret.setSize(treply.getSize());
+                ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 completion.success(ret);
             }
         });

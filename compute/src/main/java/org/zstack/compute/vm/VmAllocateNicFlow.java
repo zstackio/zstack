@@ -1,11 +1,13 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
@@ -18,6 +20,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
@@ -26,6 +29,9 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -54,12 +60,25 @@ public class VmAllocateNicFlow implements Flow {
     private VmNicManager nicManager;
     @Autowired
     protected VmInstanceManager vmMgr;
+    @Autowired
+    protected PluginRegistry pluginRgty;
+
+    @Autowired
+    protected ResourceConfigFacade rcf;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         taskProgress("create nics");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        List<VmNicSpec> l3Networks = spec.getL3Networks();
+        for (VmNicSpec l3Network : l3Networks) {
+            for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
+                for (L3NetworkInventory l3Inv : l3Network.getL3Invs()) {
+                    ext.vmPreAttachL3Network(spec.getVmInventory(), l3Inv);
+                }
+            }
+        }
         final Map<String, NicIpAddressInfo> nicNetworkInfoMap =
                 Optional.ofNullable(data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString()))
                 .map(obj -> (Map<String, NicIpAddressInfo>) obj)
@@ -95,6 +114,8 @@ public class VmAllocateNicFlow implements Flow {
                 customMac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
             }
             final String mac = customMac;
+            CustomNicOperator nicOperator = new CustomNicOperator(spec.getVmInventory().getUuid(),nw.getUuid());
+            final String customNicUuid = nicOperator.getCustomNicId();
 
             // choose vnic factory based on enableSRIOV system tag & enableVhostUser globalConfig
             VmInstanceNicFactory vnicFactory;
@@ -107,17 +128,28 @@ public class VmAllocateNicFlow implements Flow {
                     enableSriov ? "vf nic" : "vnic", nw.getUuid()));
             boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
 
-            L2NetworkVO l2nw =  dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
-            VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
-            VmNicType type = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+            L2NetworkVO l2nw = dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
+            VmNicType type;
+            if (l2nw.getType().equals(L2NetworkConstant.L2_TF_NETWORK_TYPE)) {
+                type = VmNicType.valueOf(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE);
+            } else {
+                VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
+                type = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+            }
+
             if (type == null) {
-                throw new OperationFailureException(Platform.operr("there is no available nicType on L2 network [%s]", l2nw.getUuid()));
+                errs.add(Platform.operr("there is no available nicType on L2 network [%s]", l2nw.getUuid()));
+                wcomp.allDone();
             }
             vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
 
             VmNicInventory nic = new VmNicInventory();
-            nic.setUuid(Platform.getUuid());
+            if (customNicUuid != null) {
+                nic.setUuid(customNicUuid);
+            } else {
+                nic.setUuid(Platform.getUuid());
+            }
             /* the first ip is ipv4 address for dual stack nic */
             nic.setVmInstanceUuid(spec.getVmInventory().getUuid());
             nic.setL3NetworkUuid(nw.getUuid());
@@ -129,18 +161,13 @@ public class VmAllocateNicFlow implements Flow {
                 return;
             }
 
-            if (nicSpec.getNicDriverType() != null) {
+            if (!StringUtils.isEmpty(nicSpec.getNicDriverType())) {
                 nic.setDriverType(nicSpec.getNicDriverType());
             } else {
-                boolean imageHasVirtio = false;
-                try {
-                    imageHasVirtio = spec.getImageSpec().getInventory().getVirtio();
-                } catch (Exception e) {
-                    logger.debug(String.format("there is no image spec for vm %s", spec.getVmInventory().getUuid()));
-                }
-
-                nicManager.setNicDriverType(nic, imageHasVirtio,
-                        ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization());
+                boolean vmHasVirtio = VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid());
+                nicManager.setNicDriverType(nic, vmHasVirtio,
+                        ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization(),
+                        spec.getVmInventory());
             }
 
             nic.setDeviceId(deviceId);
@@ -190,7 +217,8 @@ public class VmAllocateNicFlow implements Flow {
                         }
                     }
                     nics.add(nic);
-                    dbf.updateAndRefresh(nicVO);
+                    nicVO = dbf.updateAndRefresh(nicVO);
+                    addVmNicConfig(nicVO, spec, nicSpec);
                 }
             }.execute();
             wcomp.done();
@@ -207,6 +235,32 @@ public class VmAllocateNicFlow implements Flow {
         });
     }
 
+    private void addVmNicConfig(VmNicVO vmNicVO, VmInstanceSpec vmSpec, VmNicSpec nicSpec) {
+        if (nicSpec == null) {
+            return;
+        }
+
+        List<VmNicParm> vmNicParms = nicSpec.getVmNicParms();
+        if (CollectionUtils.isEmpty(vmNicParms)) {
+            return;
+        }
+
+        VmNicParm vmNicParm = vmNicParms.get(0);
+
+        // add vmnic bandwidth systemtag
+        if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {
+            VmNicQosConfigBackend backend = vmMgr.getVmNicQosConfigBackend(vmSpec.getVmInventory().getType());
+            backend.addNicQos(vmSpec.getVmInventory().getUuid(), vmNicVO.getUuid(), vmNicParm.getInboundBandwidth(), vmNicParm.getOutboundBandwidth());
+        }
+
+        //add vmnic multiqueue config
+        if (vmNicParm.getMultiQueueNum() != null) {
+            ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
+            Integer queues = vmNicParm.getMultiQueueNum();
+            multiQueues.updateValue(vmNicVO.getUuid(), queues.toString());
+        }
+    }
+
     @Override
     public void rollback(final FlowRollback chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -216,6 +270,11 @@ public class VmAllocateNicFlow implements Flow {
             return;
         }
         logger.debug(String.format("%s nic need for delete", destNics.size()));
+        for (VmNicInventory vmNic : destNics) {
+            for (VmDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class)) {
+                ext.afterDetachNic(vmNic);
+            }
+        }
         dbf.removeByPrimaryKeys(destNics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList()), VmNicVO.class);
         chain.rollback();
         return;

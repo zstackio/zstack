@@ -4,6 +4,7 @@ import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.network.securitygroup.VmNicSecurityTO;
 import org.zstack.utils.data.SizeUnit;
 
 import java.util.ArrayList;
@@ -13,7 +14,6 @@ import java.util.Map;
 
 public class KVMSimulatorConfig {
     public volatile boolean connectSuccess = true;
-    public volatile boolean iptablesSucc = true;
     public List<ConnectCmd> connectCmds = new ArrayList<ConnectCmd>();
     public volatile String simulatorHostUuid;
     public Map<String, String> connectHostUuids = new HashMap<String, String>();
@@ -52,6 +52,7 @@ public class KVMSimulatorConfig {
     public volatile List<DetachDataVolumeCmd> detachDataVolumeCmds = new ArrayList<DetachDataVolumeCmd>();
     public volatile String destroyedVmUuid;
     public volatile boolean securityGroupSuccess = true;
+    public volatile List<VmNicSecurityTO> vmNicSecuritys = new ArrayList<VmNicSecurityTO>();
     public volatile Map<String, SecurityGroupRuleTO> securityGroups = new HashMap<String, SecurityGroupRuleTO>();
     public volatile List<RefreshAllRulesOnHostCmd> securityGroupRefreshAllRulesOnHostCmds = new ArrayList<RefreshAllRulesOnHostCmd>();
     public volatile Map<String, KvmVmState> vms = new HashMap<String, KvmVmState>();

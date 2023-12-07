@@ -9,6 +9,15 @@ public class CreateVolumeSnapshotMsg extends NeedReplyMessage implements NeedQuo
     private String volumeUuid;
     private String name;
     private String description;
+    private SnapshotMode requiredSnapshotMode = SnapshotMode.AUTO;
+
+    public SnapshotMode getRequiredSnapshotMode() {
+        return requiredSnapshotMode;
+    }
+
+    public void setRequiredSnapshotMode(SnapshotMode requiredSnapshotMode) {
+        this.requiredSnapshotMode = requiredSnapshotMode;
+    }
 
     public String getAccountUuid() {
         return accountUuid;

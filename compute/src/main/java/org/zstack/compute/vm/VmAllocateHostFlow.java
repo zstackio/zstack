@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
@@ -14,6 +15,7 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -21,6 +23,8 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
@@ -29,9 +33,13 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -61,7 +69,7 @@ public class VmAllocateHostFlow implements Flow {
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
         ImageInventory image = spec.getImageSpec().getInventory();
         long diskSize;
-        if (image.getMediaType() != null && image.getMediaType().equals(ImageMediaType.ISO.toString())) {
+        if (image == null || (image.getMediaType() != null && image.getMediaType().equals(ImageMediaType.ISO.toString()))) {
             DiskOfferingVO dvo = dbf.findByUuid(spec.getRootDiskOffering().getUuid(), DiskOfferingVO.class);
             diskSize = dvo.getDiskSize();
             diskOfferings.add(DiskOfferingInventory.valueOf(dvo));
@@ -76,6 +84,7 @@ public class VmAllocateHostFlow implements Flow {
         msg.setDiskSize(diskSize);
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+        msg.setClusterUuids(spec.getRequiredClusterUuids());
         List<L3NetworkInventory> l3Invs = VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks());
         msg.setL3NetworkUuids(CollectionUtils.transformToList(l3Invs,
                 new Function<String, L3NetworkInventory>() {
@@ -99,17 +108,27 @@ public class VmAllocateHostFlow implements Flow {
         } else {
             msg.setAllocatorStrategy(spec.getVmInventory().getAllocatorStrategy());
         }
-        if (spec.getRequiredPrimaryStorageUuidForRootVolume() != null) {
-            msg.addRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
+        if (spec.getCandidatePrimaryStorageUuidsForRootVolume().size() == 1) {
+            msg.addRequiredPrimaryStorageUuid(spec.getCandidatePrimaryStorageUuidsForRootVolume().get(0));
+        } else if (spec.getCandidatePrimaryStorageUuidsForRootVolume().size() > 1) {
+            msg.addOptionalPrimaryStorageUuids(new HashSet<>(spec.getCandidatePrimaryStorageUuidsForRootVolume()));
         }
-        if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
-            msg.addRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
+        if (spec.getCandidatePrimaryStorageUuidsForDataVolume().size() == 1) {
+            msg.addRequiredPrimaryStorageUuid(spec.getCandidatePrimaryStorageUuidsForDataVolume().get(0));
+        } else if (spec.getCandidatePrimaryStorageUuidsForDataVolume().size() > 1) {
+            msg.addOptionalPrimaryStorageUuids(new HashSet<>(spec.getCandidatePrimaryStorageUuidsForDataVolume()));
         }
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setVmInstance(spec.getVmInventory());
 
         if (spec.getImageSpec() != null && spec.getImageSpec().getSelectedBackupStorage() != null) {
             msg.setRequiredBackupStorageUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+        }
+        msg.setAllowNoL3Networks(true);
+
+        if (!CollectionUtils.isEmpty(spec.getDiskAOs())) {
+            msg.getRequiredPrimaryStorageUuids().addAll(spec.getDiskAOs().stream()
+                    .map(APICreateVmInstanceMsg.DiskAO::getPrimaryStorageUuid).filter(Objects::nonNull).collect(Collectors.toList()));
         }
         return msg;
     }

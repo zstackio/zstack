@@ -1,9 +1,10 @@
 package org.zstack.storage.volume;
 
-import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.configuration.DiskOfferingSystemTags;
+import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -20,6 +21,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -58,11 +60,13 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.host.HostStatus.Connected;
 
@@ -234,6 +238,19 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vol.setAccountUuid(msg.getAccountUuid());
         vol.setShareable(getShareableCapabilityFromMsg(msg));
+
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vol.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
+
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
@@ -530,7 +547,30 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         bus.reply(msg, reply);
     }
 
+    public static void preCheckPrimaryStorage(VolumeCreateMessage msg) {
+        String diskOffering = msg.getDiskOfferingUuid();
+        if (diskOffering == null || msg.getPrimaryStorageUuid() == null ||
+                !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            return;
+        }
+
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
+        }
+
+        if (!config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
+                    .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            if (!requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuid())) {
+                throw new OperationFailureException(operr("primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                        requiredPrimaryStorageUuids, msg.getPrimaryStorageUuid()));
+            }
+        }
+    }
+
     private VolumeInventory createVolume(CreateVolumeMsg msg) {
+        preCheckPrimaryStorage(msg);
         VolumeVO vo = new VolumeVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -552,6 +592,21 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             vo.setDeviceId(0);
         }
         vo.setAccountUuid(msg.getAccountUuid());
+        if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
+            vo.setShareable(true);
+        }
+
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vo.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
 
         List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {
@@ -967,6 +1022,18 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setStatus(VolumeStatus.NotInstantiated);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
 
+        if (msg.getSystemTags() != null) {
+            Iterator<String> iterators = msg.getSystemTags().iterator();
+            while (iterators.hasNext()) {
+                String tag = iterators.next();
+                if (VolumeSystemTags.VOLUME_QOS.isMatch(tag)) {
+                    vo.setVolumeQos(VolumeSystemTags.VOLUME_QOS.getTokenByTag(tag, VolumeSystemTags.VOLUME_QOS_TOKEN));
+                    iterators.remove();
+                    break;
+                }
+            }
+        }
+
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);
         }
@@ -992,7 +1059,16 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
         dbf.reload(vo);
 
-        if (msg.getPrimaryStorageUuid() == null) {
+        List<String> requiredPrimaryStorageUuids = null;
+        if (msg.getDiskOfferingUuid() != null && DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getDiskOfferingUuid())) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getDiskOfferingUuid(), DiskOfferingUserConfig.class);
+            if (config.getAllocate() != null && !config.getAllocate().getAllPrimaryStorages().isEmpty()) {
+                requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
+                        .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            }
+        }
+
+        if (msg.getPrimaryStorageUuid() == null && requiredPrimaryStorageUuids == null) {
             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
 
             VolumeInventory inv = VolumeInventory.valueOf(vo);
@@ -1058,6 +1134,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 return arg.getPrimaryStorageTypeForInstantiateDataVolumeOnCreationExtensionPoint();
             }
         });
+
+        pluginRgty.saveExtensionAsMap(MaxDataVolumeNumberExtensionPoint.class, MaxDataVolumeNumberExtensionPoint::getHypervisorTypeForMaxDataVolumeNumberExtension);
 
         {
             List<VolumeFactory> exts = pluginRgty.getExtensionList(
@@ -1267,12 +1345,22 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {}
 
     @Override
+    public void afterInstantiateVolumeForNewCreatedVm(VmInstanceInventory vm, VolumeInventory volume) {
+        updateVolumeInfo(vm, volume);
+    }
+
+    @Override
     public void afterAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        updateVolumeInfo(vm, volume);
+    }
+
+    private void updateVolumeInfo(VmInstanceInventory vm, VolumeInventory volume) {
         String format = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid()).select(VolumeVO_.format).findValue();
         SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
                 .set(VolumeVO_.vmInstanceUuid, volume.isShareable() ? null : vm.getUuid())
                 .set(VolumeVO_.format, format != null ? format :
                         VolumeFormat.getVolumeFormatByMasterHypervisorType(vm.getHypervisorType()))
+                .set(VolumeVO_.lastAttachDate, Timestamp.valueOf(LocalDateTime.now()))
                 .update();
     }
 

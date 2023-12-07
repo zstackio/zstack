@@ -275,6 +275,7 @@ public class SystemTag {
 
                 tagMgr.validateSystemTag(resourceUuid, resourceClass.getSimpleName(), tag);
 
+                SystemTagVO keepSameTagVO = null;
                 if (recreate) {
                     String sql;
                     if (useOp() == Op.LIKE) {
@@ -300,12 +301,21 @@ public class SystemTag {
                     }
 
                     for (SystemTagVO vo : vos) {
+                        if (quickRecreate && vo.getTag().equals(this.tag) && keepSameTagVO == null) {
+                            keepSameTagVO = vo;
+                            continue;
+                        }
+
                         dbf.getEntityManager().remove(vo);
                     }
 
                     dbf.getEntityManager().flush();
 
                     tagMgr.fireTagDeleted(invs);
+                }
+
+                if (quickRecreate && keepSameTagVO != null) {
+                    return SystemTagInventory.valueOf(keepSameTagVO);
                 }
 
                 String uuid;

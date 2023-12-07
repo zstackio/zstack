@@ -169,17 +169,14 @@ public class VolumeSnapshotReferenceTreeBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 for (String path : backingChains.get(startPath)) {
+                    if (path.contains(endPath) && !rootDeleted) {
+                        break;
+                    }
+
                     String usedDetails = trash.makeSurePrimaryStorageInstallPathNotUsed(path);
                     if (usedDetails != null) {
                         logger.error("[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP]" +
                                 " install path[" + path + "] is still used, details: " + usedDetails);
-                        break;
-                    }
-
-                    if (path.contains(endPath)) {
-                        if (rootDeleted) {
-                            toDeletePaths.add(path);
-                        }
                         break;
                     }
 

@@ -28,6 +28,46 @@ public class HostNetworkInterfaceInventory  {
         return this.bondingUuid;
     }
 
+    public java.lang.String interfaceModel;
+    public void setInterfaceModel(java.lang.String interfaceModel) {
+        this.interfaceModel = interfaceModel;
+    }
+    public java.lang.String getInterfaceModel() {
+        return this.interfaceModel;
+    }
+
+    public java.lang.String vendorId;
+    public void setVendorId(java.lang.String vendorId) {
+        this.vendorId = vendorId;
+    }
+    public java.lang.String getVendorId() {
+        return this.vendorId;
+    }
+
+    public java.lang.String deviceId;
+    public void setDeviceId(java.lang.String deviceId) {
+        this.deviceId = deviceId;
+    }
+    public java.lang.String getDeviceId() {
+        return this.deviceId;
+    }
+
+    public java.lang.String subvendorId;
+    public void setSubvendorId(java.lang.String subvendorId) {
+        this.subvendorId = subvendorId;
+    }
+    public java.lang.String getSubvendorId() {
+        return this.subvendorId;
+    }
+
+    public java.lang.String subdeviceId;
+    public void setSubdeviceId(java.lang.String subdeviceId) {
+        this.subdeviceId = subdeviceId;
+    }
+    public java.lang.String getSubdeviceId() {
+        return this.subdeviceId;
+    }
+
     public java.lang.String interfaceName;
     public void setInterfaceName(java.lang.String interfaceName) {
         this.interfaceName = interfaceName;

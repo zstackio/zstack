@@ -2,6 +2,7 @@ package org.zstack.header.vm;
 
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private int cpuNum;
     private long cpuSpeed;
     private long memorySize;
+    private long reservedMemorySize;
     private List<VmNicSpec> l3NetworkSpecs;
     private String type;
     private String rootDiskOfferingUuid;
@@ -27,17 +29,62 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String zoneUuid;
     private String clusterUuid;
     private String hostUuid;
-    private String primaryStorageUuidForRootVolume;
-    private String primaryStorageUuidForDataVolume;
     private String description;
     private String resourceUuid;
     private String defaultL3NetworkUuid;
     private String allocatorStrategy;
     private String strategy;
+    private String platform;
+    private String guestOsType;
+    private String architecture;
+    private Boolean virtio;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
+    private List<String> sshKeyPairUuids;
+    private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
+    private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
+
+    public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
+        return candidatePrimaryStorageUuidsForRootVolume;
+    }
+
+    public void setCandidatePrimaryStorageUuidsForRootVolume(List<String> candidatePrimaryStorageUuidsForRootVolume) {
+        this.candidatePrimaryStorageUuidsForRootVolume.clear();
+        if (candidatePrimaryStorageUuidsForRootVolume != null) {
+            this.candidatePrimaryStorageUuidsForRootVolume.addAll(candidatePrimaryStorageUuidsForRootVolume);
+        }
+    }
+
+    public List<String> getCandidatePrimaryStorageUuidsForDataVolume() {
+        return candidatePrimaryStorageUuidsForDataVolume;
+    }
+
+    public void setCandidatePrimaryStorageUuidsForDataVolume(List<String> candidatePrimaryStorageUuidsForDataVolume) {
+        this.candidatePrimaryStorageUuidsForDataVolume.clear();
+        if (candidatePrimaryStorageUuidsForDataVolume != null) {
+            this.candidatePrimaryStorageUuidsForDataVolume.addAll(candidatePrimaryStorageUuidsForDataVolume);
+        }
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -206,6 +253,15 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     }
 
     @Override
+    public long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
+    }
+
+    @Override
     public String getAllocatorStrategy() {
         return allocatorStrategy;
     }
@@ -241,20 +297,28 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         this.resourceUuid = resourceUuid;
     }
 
+    @Deprecated
     public String getPrimaryStorageUuidForRootVolume() {
-        return primaryStorageUuidForRootVolume;
+        return this.candidatePrimaryStorageUuidsForRootVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForRootVolume.get(0);
     }
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
-        this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+        this.candidatePrimaryStorageUuidsForRootVolume.clear();
+        if (primaryStorageUuidForRootVolume != null) {
+            this.candidatePrimaryStorageUuidsForRootVolume.add(primaryStorageUuidForRootVolume);
+        }
     }
 
+    @Deprecated
     public String getPrimaryStorageUuidForDataVolume() {
-        return primaryStorageUuidForDataVolume;
+        return this.candidatePrimaryStorageUuidsForDataVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForDataVolume.get(0);
     }
 
     public void setPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
-        this.primaryStorageUuidForDataVolume = primaryStorageUuidForDataVolume;
+        this.candidatePrimaryStorageUuidsForDataVolume.clear();
+        if (primaryStorageUuidForDataVolume != null) {
+            this.candidatePrimaryStorageUuidsForDataVolume.add(primaryStorageUuidForDataVolume);
+        }
     }
 
     public List<String> getDataVolumeTemplateUuids() {
@@ -287,5 +351,37 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDisableL3Networks(List<String> disableL3Networks) {
         this.disableL3Networks = disableL3Networks;
+    }
+
+    public List<String> getSshKeyPairUuids() {
+        return sshKeyPairUuids;
+    }
+
+    public void setSshKeyPairUuids(List<String> sshKeyPairUuids) {
+        this.sshKeyPairUuids = sshKeyPairUuids;
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 }

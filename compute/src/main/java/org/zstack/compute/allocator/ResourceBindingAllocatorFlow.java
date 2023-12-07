@@ -13,7 +13,6 @@ import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.ResourceBindingCollector;
 import org.zstack.header.allocator.ResourceBindingStrategy;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 
@@ -43,9 +42,10 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
         }
     }
 
-    private Map<String, List<String>> getBindedResources() {
+    private Map<String, List<String>> getBindedResourcesFromTag() {
         String resources = VmSystemTags.VM_RESOURCE_BINGDING
                 .getTokenByResourceUuid(spec.getVmInstance().getUuid(), VmSystemTags.VM_RESOURCE_BINGDING_TOKEN);
+
         if (StringUtils.isEmpty(resources)) {
             return null;
         }
@@ -76,17 +76,24 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
 
     @Override
     public void allocate() {
-        if (amITheFirstFlow()) {
-            throw new CloudRuntimeException("ResourceBindingAllocatorFlow cannot be the first flow in the chain");
-        }
+        throwExceptionIfIAmTheFirstFlow();
 
-        if (!validateAllocationScene() || !VmSystemTags.VM_RESOURCE_BINGDING.hasTag(spec.getVmInstance().getUuid())) {
+        Boolean resourceConfig = rcf.getResourceConfigValue(VmGlobalConfig.VM_HA_ACROSS_CLUSTERS, spec.getVmInstance().getUuid(), Boolean.class);
+        if (!validateAllocationScene() || (!VmSystemTags.VM_RESOURCE_BINGDING.hasTag(spec.getVmInstance().getUuid()) && resourceConfig)) {
             next(candidates);
             return;
         }
 
-        Map<String, List<String>> resources = getBindedResources();
-        if (resources == null || resources.isEmpty()) {
+        // get bind resources from system tag
+        Map<String, List<String>> resources = getBindedResourcesFromTag();
+        resources = resources != null ? resources : new HashMap<>();
+        // get bind resources from config
+        ResourceBindingClusterCollector clusterCollector = new ResourceBindingClusterCollector();
+        if (!resourceConfig) {
+            resources.computeIfAbsent(clusterCollector.getType(), k -> new ArrayList<>()).add(spec.getVmInstance().getClusterUuid());
+        }
+
+        if (resources.isEmpty()) {
             next(candidates);
             return;
         }

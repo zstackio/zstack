@@ -9,11 +9,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public interface HypervisorFactory {
-
-    default boolean isAllowedOperation(String opName, String vmState) {
-        return false;
-    }
-
     HostVO createHost(HostVO vo, AddHostMessage msg);
 
     Host getHost(HostVO vo);
@@ -47,5 +42,9 @@ public interface HypervisorFactory {
 
     default Map<String, HostOperationSystem> getHostOsMap(Collection<String> hostUuidList) {
         return hostUuidList.stream().collect(Collectors.toMap(Function.identity(), this::getHostOS));
+    }
+
+    default boolean supportGetHostOs() {
+        return false;
     }
 }

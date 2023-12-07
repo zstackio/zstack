@@ -1,5 +1,7 @@
 package org.zstack.header.errorcode;
 
+import org.apache.commons.collections.CollectionUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -65,17 +67,17 @@ public class ErrorCodeList extends ErrorCode {
     public String getReadableDetails() {
         ErrorCodeList root = this;
         StringBuffer errorBuf = new StringBuffer();
-        if (root.causes != null && !root.causes.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(root.causes)) {
             root.causes.forEach(cause -> {
                 if (errorBuf.length() > 0) {
                     errorBuf.append(",");
                 }
                 errorBuf.append(getReadableDetails(cause));
             });
-        } else {
-            return super.getReadableDetails();
+            return errorBuf.toString().trim();
         }
-        return errorBuf.toString().trim();
+
+        return super.getReadableDetails();
     }
 
     private String getReadableDetails(ErrorCode errCode) {

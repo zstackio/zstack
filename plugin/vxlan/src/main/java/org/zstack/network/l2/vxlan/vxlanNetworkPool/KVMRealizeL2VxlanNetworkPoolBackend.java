@@ -1,16 +1,13 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -23,15 +20,11 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
-import org.zstack.network.l2.L2NetworkDefaultMtu;
-import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.*;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.network.service.NetworkServiceGlobalConfig;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -58,6 +51,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     private VxlanNetworkFactory VxlanNetworkFactory;
 
     private static String VTEP_IP = "vtepIp";
+    private static String PHYSICAL_INTERFACE = "physicalInterface";
     private static String NEED_POPULATE = "needPopulate";
 
     @Override
@@ -115,6 +109,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                         }
 
                         data.put(VTEP_IP, rsp.getVtepIp());
+                        data.put(PHYSICAL_INTERFACE, rsp.getPhysicalInterfaceName());
                         String info = String.format("successfully checked cidr[%s] for l2VxlanNetworkPool[uuid:%s, name:%s] on kvm host[uuid:%s]",
                                 cmd.getCidr(), vxlanPool.getUuid(), vxlanPool.getName(), hostUuid);
                         logger.debug(info);
@@ -147,6 +142,11 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                             vtepVOS.stream().map(VtepVO::getVtepIp).collect(Collectors.toSet()), hostUuid));
 
                 } else if (vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
+                    if (data.get(PHYSICAL_INTERFACE) != null &&
+                            !data.get(PHYSICAL_INTERFACE).equals(vtepVOS.get(0).getPhysicalInterface())) {
+                        vtepVOS.get(0).setPhysicalInterface((String) data.get(PHYSICAL_INTERFACE));
+                        dbf.update(vtepVOS.get(0));
+                    }
                     logger.debug(String.format(
                             "vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s] checks successfully",
                             vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
@@ -169,6 +169,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                 cmsg.setHostUuid(hostUuid);
                 cmsg.setPort(VXLAN_PORT);
                 cmsg.setVtepIp((String) data.get(VTEP_IP));
+                cmsg.setPhysicalInterface((String) data.get(PHYSICAL_INTERFACE));
                 cmsg.setType(KVM_VXLAN_TYPE);
 
                 bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2Network.getUuid());
@@ -305,17 +306,18 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     }
 
     @Override
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    }
+
+    @Override
     public L2NetworkType getL2NetworkTypeVmNicOn() {
         return getSupportedL2NetworkType();
     }
 
     @Override
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
-        to.setMac(nic.getMac());
-        to.setUuid(nic.getUuid());
-        to.setDeviceId(nic.getDeviceId());
-        to.setNicInternalName(nic.getInternalName());
+        KVMAgentCommands.NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
     }

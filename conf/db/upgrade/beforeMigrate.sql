@@ -89,3 +89,149 @@ BEGIN
     SELECT CURTIME();
 END $$
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `DELETE_INDEX`;
+
+DELIMITER $$
+CREATE PROCEDURE `DELETE_INDEX`(
+    IN tb_name VARCHAR(64),
+    IN idx_name VARCHAR(64)
+)
+DETERMINISTIC
+READS SQL DATA
+begin_label: BEGIN
+    IF idx_name = '' OR idx_name IS NULL THEN
+        LEAVE begin_label;
+    END IF;
+
+    IF EXISTS ( SELECT * FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                AND table_name = tb_name
+                AND index_name = idx_name ) THEN
+        SET @sql = CONCAT('ALTER TABLE ', tb_name, ' DROP INDEX ', idx_name);
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+    END IF;
+
+    SELECT CURTIME();
+END$$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `CREATE_INDEX`;
+
+DELIMITER $$
+CREATE PROCEDURE `CREATE_INDEX`(
+    IN tb_name VARCHAR(64),
+    IN idx_name VARCHAR(64),
+    IN col_name VARCHAR(64)
+)
+    DETERMINISTIC
+    READS SQL DATA
+begin_label: BEGIN
+    IF idx_name = '' OR idx_name IS NULL THEN
+        LEAVE begin_label;
+    END IF;
+
+    IF NOT EXISTS ( SELECT * FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = tb_name
+                  AND index_name = idx_name ) THEN
+        SET @sql = CONCAT('ALTER TABLE ', tb_name, ' ADD INDEX ', idx_name, ' (`', col_name, '`)');
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+    END IF;
+
+    SELECT CURTIME();
+END$$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `ADD_COLUMN`;
+
+DELIMITER $$
+CREATE PROCEDURE `ADD_COLUMN`(
+    IN tb_name VARCHAR(64),
+    IN col_name VARCHAR(64),
+    IN col_data_type VARCHAR(64),
+    IN allow_null BOOL,
+    IN default_value VARCHAR(255)
+)
+BEGIN
+	DECLARE alter_sql VARCHAR(1000);
+    IF NOT EXISTS( SELECT 1
+                           FROM INFORMATION_SCHEMA.COLUMNS
+                           WHERE table_name = tb_name
+                                AND table_schema = 'zstack'
+                                AND column_name = col_name) THEN
+                SET @alter_sql = CONCAT('ALTER TABLE zstack.', tb_name, ' ADD COLUMN ', col_name, ' ', col_data_type);
+                IF NOT allow_null THEN
+                    SET @alter_sql = CONCAT(@alter_sql, ' NOT NULL');
+                END IF;
+                IF default_value IS NOT NULL THEN
+        				  SET @alter_sql = CONCAT(@alter_sql, ' DEFAULT ''', default_value, '''');
+                ELSE
+        				  SET @alter_sql = CONCAT(@alter_sql, ' DEFAULT NULL');
+                END IF;
+                SELECT @alter_sql;
+                PREPARE stmt FROM @alter_sql;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+    END IF;
+
+SELECT CURTIME();
+END$$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `ADD_CONSTRAINT`;
+
+DELIMITER $$
+CREATE PROCEDURE `ADD_CONSTRAINT`(
+    IN tb_name VARCHAR(64),
+    IN cons_name VARCHAR(255),
+    IN references_col VARCHAR(64),
+    IN referencing_table VARCHAR(64),
+    IN referencing_col VARCHAR(64),
+    IN on_delete VARCHAR(64)
+)
+BEGIN
+	DECLARE alter_sql VARCHAR(1000);
+    IF NOT EXISTS( SELECT 1
+                           FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+                           WHERE table_name = tb_name
+                                AND table_schema = 'zstack'
+                                AND CONSTRAINT_NAME = cons_name) THEN
+                SET @alter_sql = CONCAT('ALTER TABLE zstack.', tb_name, ' ADD CONSTRAINT ', cons_name,
+                        ' FOREIGN KEY (', references_col, ') REFERENCES ', 'zstack.', referencing_table, ' (', referencing_col,
+                        ') ON DELETE ', on_delete);
+                SELECT @alter_sql;
+                PREPARE stmt FROM @alter_sql;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+    END IF;
+
+SELECT CURTIME();
+END$$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `DROP_COLUMN`;
+DELIMITER $$
+CREATE PROCEDURE `DROP_COLUMN`(
+	IN tb_name VARCHAR(64),
+	IN col_name VARCHAR(64)
+)
+BEGIN
+	DECLARE alter_sql VARCHAR(1000);
+	IF EXISTS( SELECT NULL
+		FROM INFORMATION_SCHEMA.COLUMNS
+		WHERE table_name = tb_name
+			AND table_schema = 'zstack'
+			AND column_name = col_name) THEN
+		SET @alter_sql = CONCAT('ALTER TABLE zstack.', tb_name, ' DROP ', col_name);
+		SELECT @alter_sql;
+		PREPARE stmt FROM @alter_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+	END IF;
+
+SELECT CURTIME();
+END$$
+DELIMITER ;

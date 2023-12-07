@@ -391,7 +391,6 @@ CREATE PROCEDURE UpdateHygonClusterVmCpuModeConfig()
         SET config_category = 'kvm';
         SET resource_type = 'ClusterVO';
         SET config_value = 'Hygon_Customized';
-        SET tag_uuid = REPLACE(UUID(), '-', '');
 
         OPEN cur;
 
@@ -410,6 +409,7 @@ CREATE PROCEDURE UpdateHygonClusterVmCpuModeConfig()
                 IF @config_exist = 1 THEN
                     UPDATE ResourceConfigVO SET value = config_value WHERE name = config_name AND category = config_category AND resourceUuid = resource_uuid AND resourceType = resource_type;
                 ELSE
+                    SET tag_uuid = REPLACE(UUID(), '-', '');
                     INSERT INTO ResourceConfigVO (uuid, name, description, category, value, resourceUuid, resourceType, lastOpDate, createDate)
                             VALUES (tag_uuid, config_name, config_description, config_category, config_value, resource_uuid, resource_type, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
                 END IF;
@@ -421,3 +421,5 @@ CREATE PROCEDURE UpdateHygonClusterVmCpuModeConfig()
 DELIMITER ;
 CALL UpdateHygonClusterVmCpuModeConfig();
 DROP PROCEDURE IF EXISTS UpdateHygonClusterVmCpuModeConfig;
+
+UPDATE GlobalConfigVO set `value` = 'InfoSec' where `value` = 'infoSec' and category ='encrypt' and name = 'encrypt.driver';

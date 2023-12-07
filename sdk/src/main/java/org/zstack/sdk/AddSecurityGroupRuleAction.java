@@ -25,7 +25,7 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String securityGroupUuid;
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
@@ -33,6 +33,9 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
 
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List remoteSecurityGroupUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer priority = -1;
 
     @Param(required = false)
     public java.util.List systemTags;

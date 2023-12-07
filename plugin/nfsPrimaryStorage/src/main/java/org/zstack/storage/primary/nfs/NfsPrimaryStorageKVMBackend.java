@@ -63,6 +63,7 @@ import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.min;
@@ -418,6 +419,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     private void doPing(List<String> hostUuids, PrimaryStorageInventory psInv, Completion completion){
         List<ErrorCode> errs = new ArrayList<>();
+        AtomicBoolean isCapacityUpdated = new AtomicBoolean(false);
         new While<>(hostUuids).each((huuid, compl) -> {
             PingCmd cmd = new PingCmd();
             cmd.setUuid(psInv.getUuid());
@@ -436,6 +438,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         NfsPrimaryStorageAgentResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(NfsPrimaryStorageAgentResponse.class);
                         if (rsp.isSuccess()) {
                             nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Connected);
+                            if (isCapacityUpdated.compareAndSet(false, true)) {
+                                updatePrimaryStorageCapacity(psInv.getUuid(), rsp);
+                            }
                         } else {
                             ErrorCode err = operr("failed to ping nfs primary storage[uuid:%s] from host[uuid:%s],because %s. " +
                                             "disconnect this host-ps connection",
@@ -893,12 +898,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
 
         NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
-        cmd.setUuid(msg.getSrcPrimaryStorageUuid());
+        cmd.setUuid(dstPsInv.getUuid());
+        cmd.srcPrimaryStorageUuid = msg.getSrcPrimaryStorageUuid();
         cmd.srcFolderPath = msg.getSrcFolderPath();
         cmd.dstFolderPath = msg.getDstFolderPath();
         cmd.independentPath = msg.getIndependentPath();
         cmd.filtPaths = trash.findTrashInstallPath(msg.getSrcFolderPath(), msg.getSrcPrimaryStorageUuid());
         cmd.isMounted = mounted;
+        cmd.volumeInstallPath = msg.getVolumeInstallPath();
 
         if (!mounted) {
             cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(dstPsInv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
@@ -914,6 +921,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             public void success(KvmResponseWrapper w) {
                 logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
                 NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
+                reply.setDstFilesActualSize(w.getResponse(NfsToNfsMigrateBitsRsp.class).dstFilesActualSize);
                 completion.success(reply);
             }
             @Override
@@ -1137,6 +1145,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 volume.setInstallPath(cmd.getInstallUrl());
                 volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                 volume.setActualSize(rsp.actualSize);
+                if (rsp.size != null) {
+                    volume.setSize(rsp.size);
+                }
 
                 nfsMgr.reportCapacityIfNeeded(pinv.getUuid(), rsp);
                 complete.success(volume);
@@ -1388,7 +1399,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
 
                 nfsMgr.reportCapacityIfNeeded(primaryStorage.getUuid(), rsp);
-                completion.success(new VolumeInfo(installPath, rsp.actualSize));
+                completion.success(new VolumeInfo(installPath, rsp.actualSize, rsp.size));
             }
         });
     }

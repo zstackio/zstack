@@ -12,6 +12,7 @@ import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
@@ -27,6 +28,12 @@ import org.zstack.header.query.QueryOp;
 import org.zstack.header.vm.*;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.network.service.lb.APIAddBackendServerToServerGroupMsg;
+import org.zstack.network.service.lb.LoadBalancerType;
+import org.zstack.network.service.lb.LoadBalancerVO;
+import org.zstack.network.service.lb.LoadBalancerVO_;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.network.IPv6Constants;
@@ -34,6 +41,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,7 +50,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 /**
  */
-public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
+public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -80,11 +88,27 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVirtualRouterMsg) msg);
         } else if (msg instanceof APIReconnectVirtualRouterMsg) {
             validate((APIReconnectVirtualRouterMsg) msg);
+        } else if (msg instanceof APIAddBackendServerToServerGroupMsg) {
+            validate((APIAddBackendServerToServerGroupMsg)msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIAddBackendServerToServerGroupMsg msg) {
+        String type = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).select(LoadBalancerVO_.type).findValue();
+        if (!(type == LoadBalancerType.Shared.toString())) {
+            return;
+        }
+
+        if (msg.getVmNics().isEmpty()) {
+            boolean vrExist = Q.New(VirtualRouterLoadBalancerRefVO.class).eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, msg.getLoadBalancerUuid()).isExists();
+            if (!vrExist) {
+                throw new ApiMessageInterceptionException(argerr("could not add server ip to load balancer server group, because share lb has no service provider, please add vmnic first"));
+            }
+        }
     }
 
     private void validate(APIUpdateVirtualRouterMsg msg) {
@@ -301,5 +325,10 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
                 dbf.persist(agentVersionVO);
             }
         }
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return Arrays.asList(APIAddBackendServerToServerGroupMsg.class);
     }
 }

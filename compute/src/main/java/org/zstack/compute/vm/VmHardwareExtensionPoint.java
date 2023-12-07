@@ -34,10 +34,6 @@ public class VmHardwareExtensionPoint implements VmInstanceStartExtensionPoint, 
             return null;
         }
 
-        if (sockets == null) {
-            return "cpuSockets must be specified";
-        }
-
         Integer cpuNum = inv.getCpuNum();
         Integer maxVcpuNum = null;
         Boolean isNuma = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, inv.getUuid(), Boolean.class);
@@ -45,53 +41,8 @@ public class VmHardwareExtensionPoint implements VmInstanceStartExtensionPoint, 
             maxVcpuNum = rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, inv.getUuid(), Integer.class);
         }
 
-        int socketNum = Integer.parseInt(sockets);
-        int coreNum, threadNum;
-        if (threads == null && cores != null) {
-            coreNum = Integer.parseInt(cores);
-            threadNum = maxVcpuNum != null ? maxVcpuNum : cpuNum / coreNum / socketNum;
-        } else if (threads == null) {
-            threadNum = 1;
-        } else {
-            threadNum = Integer.parseInt(threads);
-        }
-
-        if (cores == null) {
-            coreNum = maxVcpuNum != null ? maxVcpuNum : cpuNum / threadNum / socketNum;
-        } else {
-            coreNum = Integer.parseInt(cores);
-        }
-
-        if ((maxVcpuNum != null ? maxVcpuNum : cpuNum) != coreNum * threadNum * socketNum) {
-            return String.format("cpu topology is not correct, cpuNum[%s], maxVcpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s];" +
-                            " Calculated cpuSockets[%s], cpuCores[%s], cpuThreads[%s]",
-                    cpuNum, maxVcpuNum, sockets, cores, threads, socketNum, coreNum, threadNum);
-        }
-
-        // update missing topology tag
-        if (!String.valueOf(threadNum).equals(threads)) {
-            SystemTagCreator creator = VmHardwareSystemTags.CPU_THREADS.newSystemTagCreator(inv.getUuid());
-            creator.setTagByTokens(map(
-                    e(VmHardwareSystemTags.CPU_THREADS_TOKEN, String.valueOf(threadNum))
-            ));
-            creator.recreate = true;
-            creator.create();
-        }
-
-        if (!String.valueOf(coreNum).equals(cores)) {
-            SystemTagCreator creator = VmHardwareSystemTags.CPU_CORES.newSystemTagCreator(inv.getUuid());
-            creator.setTagByTokens(map(
-                    e(VmHardwareSystemTags.CPU_CORES_TOKEN, String.valueOf(coreNum))
-            ));
-            creator.recreate = true;
-            creator.create();
-        }
-
-        logger.debug(String.format("cpu topology is correct, cpuNum[%s], maxVcpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s]. " +
-                        "Calculated cpuSockets[%s], cpuCores[%s], cpuThreads[%s]",
-                cpuNum, maxVcpuNum, sockets, cores, threads, socketNum, coreNum, threadNum));
-
-        return null;
+        CpuTopology topology = new CpuTopology(maxVcpuNum != null ? maxVcpuNum : cpuNum, sockets, cores, threads);
+        return topology.calculateValidTopologyWithoutException();
     }
 
     @Override

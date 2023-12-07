@@ -92,7 +92,7 @@
     "code": "1005",
     "method": "regex",
     "regex": "failed to download bits from the imagestore backup storage\\[hostname:.*, path:.*] to the local primary storage\\[uuid:.*, path:.*].*",
-    "message_cn": "无法从镜像仓库服务器 [主机名：%2$s，路径：%3$s] 下载资源到本地主存储 [uuid：%4$s，路径：%5$s]。",
+    "message_cn": "无法从镜像仓库服务器 [物理机名：%2$s，路径：%3$s] 下载资源到本地存储 [uuid：%4$s，路径：%5$s]。",
     "message_en": "Could not download resources from the ImageStore backup storage [hostname: %2$s, path: %3$s] to the local primary storage [uuid: %4$s, path: %5$s]."
   },
   {
@@ -116,7 +116,7 @@
     "code": "1008",
     "method": "regex",
     "regex": ".*, because:cannot find pool\\[.*] in the ceph cluster, you must create it manually",
-    "message_cn": "未能在 Ceph 集群中找到存储池 [%1$s]，您需要先手动创建。",
+    "message_cn": "未能在 分布式存储 集群中找到存储池 [%1$s]，您需要先手动创建。",
     "message_en": "Could not find pool [%1$s] in Ceph cluster. You need to create one manually."
   },
   {
@@ -132,7 +132,7 @@
     "code": "1000",
     "method": "regex",
     "regex": ".*cannot add ceph primary storage, there has been some ceph primary storage using mon\\[hostnames:.*].*",
-    "message_cn": "无法添加 Ceph 主存储，监控节点 [%1$s] 已被占用。",
+    "message_cn": "无法添加 分布式存储，监控节点 [%1$s] 已被占用。",
     "message_en": "Could not add Ceph primary storage. The mon [%1$s] is occupied."
   },
   {
@@ -140,7 +140,7 @@
     "code": "1001",
     "method": "regex",
     "regex": "cannot find any Connected ceph mon for the primary storage.*",
-    "message_cn": "无法为 Ceph 主存储找到一个已连接的监控节点。",
+    "message_cn": "无法为 Ceph主存储找到一个已连接的监控节点。",
     "message_en": "Could not find any connected Ceph mon for the Ceph primary storage."
   },
   {
@@ -148,7 +148,7 @@
     "code": "1002",
     "method": "regex",
     "regex": "operation error, because:The ceph storage type to be added does not support auto initialize pool, please create it manually",
-    "message_cn": "要添加的 Ceph 存储类型不支持自动创建存储池，请手动创建。",
+    "message_cn": "要添加的 Ceph主存储类型不支持自动创建存储池，请手动创建。",
     "message_en": "The Ceph storage type to be added does not support auto creation of storage pools. Please create one manually."
   },
   {
@@ -156,7 +156,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "there is another CEPH primary storage.* with the same FSID.*, you cannot add the same CEPH setup as two different primary storage",
-    "message_cn": "已经存在一个 FSID 为 [%3$s] 的 Ceph 主存储，您不能将同一个 Ceph 集群设置为两个不同的主存储。",
+    "message_cn": "已经存在一个 FSID 为 [%3$s] 的 Ceph主存储，您不能将同一个 Ceph主存储 集群设置为两个不同的主存储。",
     "message_en": "A Ceph primary storage with the FSID [%3$s] already exists. You could not add a Ceph cluster as two different primary storages."
   },
   {
@@ -332,7 +332,7 @@
     "code": "1010",
     "method": "regex",
     "regex": ".*failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because No enough physical memory for guest.*",
-    "message_cn": "在物理机上启动云主机失败，因为物理机已经没有足够的物理内存可供虚拟机使用。",
+    "message_cn": "在物理机上启动云主机失败，因为物理机已经没有足够的物理内存可供云主机使用。",
     "message_en": "Failed to start VM on KVM host, because host does not have enough physical memory for VM."
   },
   {
@@ -421,7 +421,7 @@
     "method": "regex",
     "regex": "host\\[.*] capacity is not enough to offer cpu\\[[0-9]], memory\\[[0-9] bytes]",
     "message_cn": "物理机无法提供足够的资源 [CPU：%1$s，内存：%2$s 字节]。",
-    "message_en": "Host could not provide enough resources [CPU: %1$s, memory: %2$s bytes]."
+    "message_en": "Host could not provide enough resources [CPU: %2$s, memory: %3$s bytes]."
   },
   {
     "category": "HOST",
@@ -500,7 +500,7 @@
     "code": "1031",
     "method": "regex",
     "regex": ".*failed to migrate vm\\[uuid:.*] from kvm host\\[uuid:.*, ip:.*] to dest host\\[ip:.*].*.No enough physical memory for guest.*",
-    "message_cn": "在物理机上迁移云主机失败，因为物理机已经没有足够的物理内存可供虚拟机使用。",
+    "message_cn": "在物理机上迁移云主机失败，因为物理机已经没有足够的物理内存可供云主机使用。",
     "message_en": "Failed to migrate VM on KVM host, because host does not have enough physical memory for VM."
   },
   {
@@ -748,7 +748,7 @@
     "code": "1001",
     "method": "regex",
     "regex": ".*hijacked detected. Your license.* permits .* hosts, but consumed .*, request additional .*. You can either apply a new license or delete additional hosts.*",
-    "message_cn": "强制检测，您的许可证 [%1$s] 允许 %2$s 台主机，目前己用 %3$s 台。您可以申请新的许可证，也可以删除已添加的主机。",
+    "message_cn": "强制检测，您的许可证 [%1$s] 允许 %2$s 台物理机，目前己用 %3$s 台。您可以申请新的许可证，也可以删除已添加的物理机。",
     "message_en": "Your license [%1$s] permits %2$s hosts, but consumed %3$s. You can either apply for a new license or delete extra hosts."
   },
   {
@@ -756,7 +756,7 @@
     "code": "1002",
     "method": "regex",
     "regex": ".*you can only add .* hosts with the trail license; please apply for a commercial license if you want to add more hosts.*",
-    "message_cn": "您当前的许可证只允许添加 %1$s 台物理主机，如果您想要添加更多物理主机，请申请商业许可证。",
+    "message_cn": "您当前的许可证只允许添加 %1$s 台物理物理机，如果您想要添加更多物理物理机，请申请商业许可证。",
     "message_en": "You can only add %1$s hosts with the trial license. Please apply for a commercial license if you want to add more hosts."
   },
   {
@@ -764,7 +764,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "you can only add [0-9]* hosts with current license; please upgrade the license if you want to add more hosts",
-    "message_cn": "您当前的许可证只允许添加 %1$s 台物理主机，如果您想要添加更多物理主机，请更新或申请商业许可证。",
+    "message_cn": "您当前的许可证只允许添加 %1$s 台物理物理机，如果您想要添加更多物理物理机，请更新或申请商业许可证。",
     "message_en": "You can only add %1$s hosts with the current license. Please upgrade the license or apply for a commercial one if you want to add more hosts."
   },
   {
@@ -820,7 +820,7 @@
     "code": "1002",
     "method": "regex",
     "regex": "required local primary storage.* cannot satisfy conditions.*, or hosts providing the primary storage don't satisfy conditions\\[.*, size \u003e .*]",
-    "message_cn": "本地主存储的状态不是 Enabled/Connected，或者主存储内的物理机状态不满足条件：[状态为 Enabled/Connected，存储容量 \u003e %6$s 字节]。",
+    "message_cn": "本地存储的状态不是 Enabled/Connected，或者主存储内的物理机状态不满足条件：[状态为 Enabled/Connected，存储容量 \u003e %6$s 字节]。",
     "message_en": "Status/State of the local primary storage is not Enabled/Connected. Or hosts providing the primary storage do not satisfy conditions: [Status/State: Enabled/Connected, storage capacity: \u003e %6$s bytes]."
   },
   {
@@ -828,7 +828,7 @@
     "code": "1003",
     "method": "regex",
     "regex": "the required host.*, size \u003e .* or doesn't belong to a local primary storage satisfying conditions.* or its cluster doesn't attach to any local primary storage",
-    "message_cn": "所需要的物理机都不满足以下条件：1 状态为 Enabled/Connected，并且存储容量 \u003e %4$s 字节； 2 所属于的本地主存储状态为 Enabled/Connected； 3 有符合条件的本地主存储加载到物理机所属的集群上。",
+    "message_cn": "所需要的物理机都不满足以下条件：1 状态为 Enabled/Connected，并且存储容量 \u003e %4$s 字节； 2 所属于的本地存储状态为 Enabled/Connected； 3 有符合条件的本地存储加载到物理机所属的集群上。",
     "message_en": "The required host does not meet the following requirements: 1 Status/State: Enabled/Connected, size: \u003e %4$s bytes. 2 Status/State of the local primary storages: Enabled/Connected. 3 The cluster is attached to a local primary storage."
   },
   {
@@ -836,7 +836,7 @@
     "code": "1004",
     "method": "regex",
     "regex": "no local primary storage in zone.* or contain hosts satisfying conditions.*",
-    "message_cn": "该区域内所有的本地主存储都不满足以下条件：1 状态为 Enabled/Connected；2 没有包含任何状态为 Enabled/Connected，并且存储容量 \u003e %6$s 字节的物理机。",
+    "message_cn": "该区域内所有的本地存储都不满足以下条件：1 状态为 Enabled/Connected；2 没有包含任何状态为 Enabled/Connected，并且存储容量 \u003e %6$s 字节的物理机。",
     "message_en": "No local primary storage in the zone meets the following requirements: 1 Status/State: Enabled/Connected. 2 The zone has hosts with the status/state Enabled/Connected and storage capacity \u003e %6$s bytes."
   },
   {
@@ -844,7 +844,7 @@
     "code": "1005",
     "method": "regex",
     "regex": "no local primary storage can satisfy conditions.* or contain hosts satisfying conditions.*, size .*",
-    "message_cn": "所有的本地主存储都不满足以下条件：1 状态为 Enabled/Connected；2 没有包含任何状态为 Enabled/Connected，并且存储容量 \u003e %6$s 字节的物理机。",
+    "message_cn": "所有的本地存储都不满足以下条件：1 状态为 Enabled/Connected；2 没有包含任何状态为 Enabled/Connected，并且存储容量 \u003e %6$s 字节的物理机。",
     "message_en": "No local primary storage meets the following requirements: 1 Status/State: Enabled/Connected. 2 The zone has hosts with the status/state Enabled/Connected and storage capacity \u003e %6$s bytes."
   },
   {
@@ -876,7 +876,7 @@
     "code": "1009",
     "method": "regex",
     "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*] to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*",
-    "message_cn": "无法将主机上的 SharedBlock 主存储加载到集群。",
+    "message_cn": "无法将物理机上的 SharedBlock 主存储加载到集群。",
     "message_en": "Could not attach SharedBlock storage to cluster."
   },
   {
@@ -900,7 +900,7 @@
     "code": "1012",
     "method": "regex",
     "regex": ".*the NFS primary storage\\[uuid:.*, name:.*] has not attached to any clusters, or no hosts in the attached clusters are connected.*",
-    "message_cn": "NFS 主存储没有连接到任何集群，或者没有连接到所连接集群中的主机。",
+    "message_cn": "NFS 主存储没有连接到任何集群，或者没有连接到所连接集群中的物理机。",
     "message_en": "The NFS primary storage is not attached to any clusters, or no hosts in the attached clusters are connected."
   },
   {
@@ -948,7 +948,7 @@
     "code": "1018",
     "method": "regex",
     "regex": "There is no LocalStorage primary storage.*when the cluster mounts multiple primary storage, the system uses the local primary storage.*",
-    "message_cn": "集群内没有正处于已启用且已连接状态的本地主存储，请检查集群内主存储的启用和就绪状态。",
+    "message_cn": "集群内没有正处于已启用且已连接状态的本地存储，请检查集群内主存储的启用和就绪状态。",
     "message_en": "Mo local primary storages with [state: Enabled, status: Connected] available in the cluster. Please check the state/status of the local primary storages."
   },
   {
@@ -956,7 +956,7 @@
     "code": "1019",
     "method": "regex",
     "regex": ".*can not find vg .* and create vg with forceWipw=.*",
-    "message_cn": "无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。",
+    "message_cn": "无法将物理机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。",
     "message_en": "Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again."
   },
   {
@@ -1029,7 +1029,7 @@
     "code": "1000",
     "method": "regex",
     "regex": ".*Couldn't connect to host, port: .* The problem may be caused by an incorrect smtpServer or smtpPort.*",
-    "message_cn": "无法连接到主机，这个问题可能是 SMTP 服务器或者端口配置不正确导致的。",
+    "message_cn": "无法连接到物理机，这个问题可能是 SMTP 服务器或者端口配置不正确导致的。",
     "message_en": "Could not connect to host. Possible reason: incorrect SMTP server or SMTP port."
   },
   {
@@ -1053,7 +1053,7 @@
     "code": "1000",
     "method": "regex",
     "regex": ".*failed to run virt-v2v command, because .*... for more details, please see log in conversion host: /tmp/v2v_log/.*",
-    "message_cn": "执行 virt-v2v 命令失败，详细内容请登录宿主机查找日志：/tmp/v2v_log/。",
+    "message_cn": "执行 virt-v2v 命令失败，详细内容请登录宿物理机查找日志：/tmp/v2v_log/。",
     "message_en": "Failed to run the virt-v2v command. For more details, please see log in conversion host: /tmp/v2v_log/."
   },
   {
@@ -1221,7 +1221,7 @@
     "code": "1010",
     "method": "regex",
     "regex": "The vm's root volume is on the local storage.* however, the host on which the root volume is has been deleted",
-    "message_cn": "云主机的根盘在本地主存储上，但该根盘所在的物理机己经下线。",
+    "message_cn": "云主机的根盘在本地存储上，但该根盘所在的物理机己经下线。",
     "message_en": "The VM's root volume is on the local primary storage. However, the host where the root volume resides is deleted."
   },
   {
@@ -1261,7 +1261,7 @@
     "code": "1015",
     "method": "regex",
     "regex": ".*host\\[uuid: .*] of local primary storage\\[uuid: .*] doesn't have enough capacity\\[current: .*bytes, needed: .*]",
-    "message_cn": "在物理机 [uuid：%1$s] 的本地主存储 [%2$s] 上没有足够的容量 [当前：%3$s 字节，需要：%4$s 字节]。",
+    "message_cn": "在物理机 [uuid：%1$s] 的本地存储 [%2$s] 上没有足够的容量 [当前：%3$s 字节，需要：%4$s 字节]。",
     "message_en": "Host [uuid: %1$s] of local primary storage [%2$s] does not have enough capacity [current: %3$s bytes, needed: %4$s bytes]."
   },
   {
@@ -1301,7 +1301,7 @@
     "code": "1020",
     "method": "regex",
     "regex": "unable to recover the vm.*. The vm's root volume is on the local storage.* however, the host on which the root volume is has been deleted",
-    "message_cn": "无法恢复云主机，因为虚拟机的根盘处于物理机的本地存储上，但该物理机已经下线。",
+    "message_cn": "无法恢复云主机，因为云主机的根盘处于物理机的本地存储上，但该物理机已经下线。",
     "message_en": "Could not recover VM. The VN's root volume is on a local storage; however, the host where the root volume resides is deleted."
   },
   {
@@ -1309,7 +1309,7 @@
     "code": "1021",
     "method": "regex",
     "regex": "the vm\\[uuid:.*] doesn't support to online attach volume\\[.*] on the basis of that the image platform type of the vm is other.*",
-    "message_cn": "该虚拟机不支持在线添加云盘，因为这台虚拟机的基础镜像平台类型为“其他”。",
+    "message_cn": "该云主机不支持在线添加云盘，因为这台云主机的基础镜像平台类型为“其他”。",
     "message_en": "Could not attach volume to the VM online, because the image platform type of the VM is \"Other\"."
   },
   {
@@ -1461,7 +1461,7 @@
     "code": "1040",
     "method": "regex",
     "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.* error reading header from .*: Operation not permitted.*",
-    "message_cn": "无法启动云主机，因为云盘对应的 Ceph 文件读取失败。",
+    "message_cn": "无法启动云主机，因为云盘对应的 Ceph主存储 文件读取失败。",
     "message_en": "Failed to start VM, because failed to read the Ceph file of the volume."
   },
   {

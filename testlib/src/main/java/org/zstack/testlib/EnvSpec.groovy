@@ -42,6 +42,8 @@ import org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointAction
 import org.zstack.sdk.sns.platform.email.CreateSNSEmailEndpointAction
 import org.zstack.sdk.sns.platform.email.CreateSNSEmailPlatformAction
 import org.zstack.sdk.sns.platform.http.CreateSNSHttpEndpointAction
+import org.zstack.sdk.sns.platform.snmp.CreateSNSSnmpEndpointAction
+import org.zstack.sdk.sns.platform.snmp.CreateSNSSnmpPlatformAction
 import org.zstack.sdk.zwatch.alarm.CreateAlarmAction
 import org.zstack.sdk.zwatch.alarm.DeleteAlarmAction
 import org.zstack.sdk.zwatch.alarm.SubscribeEventAction
@@ -176,7 +178,9 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateAliyunProxyVSwitchAction.metaClass, CreateAliyunProxyVSwitchAction.Result.metaClass, DeleteAliyunProxyVSwitchAction.class],
             [CreateMonitorGroupAction.metaClass, CreateMonitorGroupAction.Result.metaClass, DeleteMonitorGroupAction.class],
             [CreateMonitorTemplateAction.metaClass, CreateMonitorTemplateAction.Result.metaClass, DeleteMonitorTemplateAction.class],
-            [CreateDirectoryAction.metaClass, CreateDirectoryAction.Result.metaClass, DeleteDirectoryAction.class]
+            [CreateDirectoryAction.metaClass, CreateDirectoryAction.Result.metaClass, DeleteDirectoryAction.class],
+            [CreateSNSSnmpPlatformAction.metaClass, CreateSNSSnmpPlatformAction.Result.metaClass, DeleteSNSApplicationPlatformAction.class],
+            [CreateSNSSnmpEndpointAction.metaClass, CreateSNSSnmpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
@@ -216,6 +220,10 @@ class EnvSpec extends ApiHelper implements Node  {
 
                 dclasses.each {
                     def action = it.getConstructor().newInstance()
+                    if (delegate.value.inventory == null) {
+                        return
+                    }
+
                     logger.debug("auto-deleting resource by ${it} uuid:${delegate.value.inventory.uuid}")
                     action.uuid = delegate.value.inventory.uuid
                     action.sessionId = session.uuid
@@ -688,6 +696,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
                               "BaremetalInstanceSequenceNumberVO", "BaremetalImageCacheVO",
                               "GarbageCollectorVO",
+                              "GuestOsCategoryVO",
                               "TaskProgressVO", "TaskStepVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
@@ -695,7 +704,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO", "EventLogVO", "VmSchedHistoryVO",
                               "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO", "FileIntegrityVerificationVO",
                               "EncryptEntityMetadataVO", "VmInstanceDeviceAddressGroupVO", "HostOsCategoryVO", "KvmHostHypervisorMetadataVO",
-                              "HaStrategyConditionVO"]) {
+                              "HaStrategyConditionVO", "SystemTagVO", "ConsoleProxyAgentVO", "ConsoleProxyVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }
@@ -844,7 +853,6 @@ class EnvSpec extends ApiHelper implements Node  {
             SQL.New(VmSchedHistoryVO).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
-            SQL.New(GuestOsCategoryVO.class).hardDelete()
 
             if (GLOBAL_DELETE_HOOK != null) {
                 GLOBAL_DELETE_HOOK()
@@ -1039,6 +1047,8 @@ class EnvSpec extends ApiHelper implements Node  {
                 ret = handler()
             } else if (handler.maximumNumberOfParameters == 1) {
                 ret = handler(entity)
+            } else if (handler.maximumNumberOfParameters == 3) {
+                ret = handler(req, entity, this)
             } else {
                 ret = handler(entity, this)
             }

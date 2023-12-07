@@ -4,15 +4,18 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.other.APIAuditor;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneVO;
 
 import java.util.Collections;
@@ -97,16 +100,22 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false)
     private Long memorySize;
 
+    @APIParam(required = false, numberRange = {0, Long.MAX_VALUE})
+    private Long reservedMemorySize;
+
     /**
      * @desc uuid of image. See :ref:`ImageInventory`
      */
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(resourceType = ImageVO.class, checkAccount = true, required = false)
     private String imageUuid;
     /**
      * @desc a list of L3Network uuid the vm will create nic on. See :ref:`L3NetworkInventory`
      */
-    @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, required = false)
     private List<String> l3NetworkUuids;
+
+    @APIParam(required = false)
+    private String vmNicParams;
     /**
      * @desc see type of :ref:`VmInstanceInventory`
      * @choices - UserVm
@@ -185,6 +194,144 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false)
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
 
+    @APIParam(required = false)
+    private List<String> sshKeyPairUuids;
+
+    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
+    private String platform;
+
+    @APIParam(required = false, maxLength = 255)
+    private String guestOsType;
+
+    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el", "loongarch64"})
+    private String architecture;
+
+    @APIParam(required = false)
+    private Boolean virtio;
+
+    @PythonClassInventory
+    public static class DiskAO {
+        private boolean boot;
+        private String platform;
+        private String guestOsType;
+        private String architecture;
+        private String primaryStorageUuid;
+        private long size;
+        private String templateUuid;
+        private String diskOfferingUuid;
+        private String sourceType;
+        private String sourceUuid;
+        private List<String> systemTags;
+        private String name;
+
+        public boolean isBoot() {
+            return boot;
+        }
+
+        public void setBoot(boolean boot) {
+            this.boot = boot;
+        }
+
+        public String getPlatform() {
+            return platform;
+        }
+
+        public void setPlatform(String platform) {
+            this.platform = platform;
+        }
+
+        public String getGuestOsType() {
+            return guestOsType;
+        }
+
+        public void setGuestOsType(String guestOsType) {
+            this.guestOsType = guestOsType;
+        }
+
+        public String getArchitecture() {
+            return architecture;
+        }
+
+        public void setArchitecture(String architecture) {
+            this.architecture = architecture;
+        }
+
+        public String getPrimaryStorageUuid() {
+            return primaryStorageUuid;
+        }
+
+        public void setPrimaryStorageUuid(String primaryStorageUuid) {
+            this.primaryStorageUuid = primaryStorageUuid;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public String getTemplateUuid() {
+            return templateUuid;
+        }
+
+        public void setTemplateUuid(String templateUuid) {
+            this.templateUuid = templateUuid;
+        }
+
+        public String getDiskOfferingUuid() {
+            return diskOfferingUuid;
+        }
+
+        public void setDiskOfferingUuid(String diskOfferingUuid) {
+            this.diskOfferingUuid = diskOfferingUuid;
+        }
+
+        public String getSourceType() {
+            return sourceType;
+        }
+
+        public void setSourceType(String sourceType) {
+            this.sourceType = sourceType;
+        }
+
+        public String getSourceUuid() {
+            return sourceUuid;
+        }
+
+        public void setSourceUuid(String sourceUuid) {
+            this.sourceUuid = sourceUuid;
+        }
+
+        public List<String> getSystemTags() {
+            return systemTags;
+        }
+
+        public void setSystemTags(List<String> systemTags) {
+            this.systemTags = systemTags;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
+    @APIParam(required = false)
+    private List<DiskAO> diskAOs;
+
+    public List<DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
+
     public String getStrategy() {
         return strategy;
     }
@@ -231,6 +378,14 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setMemorySize(Long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    public Long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 
     public String getImageUuid() {
@@ -287,6 +442,15 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setL3NetworkUuids(List<String> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
+    }
+
+    @Override
+    public String getVmNicParams() {
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(String vmNicParams) {
+        this.vmNicParams = vmNicParams;
     }
 
     public List<String> getDataDiskOfferingUuids() {
@@ -353,6 +517,50 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 
+    public List<String> getSshKeyPairUuids() {
+        return sshKeyPairUuids;
+    }
+
+    public void setSshKeyPairUuids(List<String> sshKeyPairUuids) {
+        this.sshKeyPairUuids = sshKeyPairUuids;
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public boolean isVirtio() {
+        return virtio;
+    }
+
+    public Boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
+    }
+
     public static APICreateVmInstanceMsg __example__() {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
         msg.setName("vm1");
@@ -371,4 +579,5 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     public Result audit(APIMessage msg, APIEvent rsp) {
         return new Result(rsp.isSuccess() ? ((APICreateVmInstanceEvent)rsp).getInventory().getUuid() : "", VmInstanceVO.class);
     }
+
 }

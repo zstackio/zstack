@@ -5,6 +5,7 @@ import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.Message;
@@ -12,6 +13,7 @@ import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.JsonWrapper;
@@ -148,7 +150,15 @@ public class VmInstanceSpec implements Serializable {
         }
 
         public boolean relyOnImageCache() {
-            return !needDownload && CollectionUtils.isEmpty(inventory.getBackupStorageRefs());
+            return !needDownload && inventory != null &&  CollectionUtils.isEmpty(inventory.getBackupStorageRefs());
+        }
+
+        public boolean isIso() {
+            return inventory != null && ImageConstant.ImageMediaType.ISO.toString().equals(inventory.getMediaType());
+        }
+
+        public boolean relayOnImage() {
+            return inventory != null;
         }
     }
 
@@ -294,12 +304,15 @@ public class VmInstanceSpec implements Serializable {
     private ImageSpec imageSpec = new ImageSpec();
     private List<VolumeSpec> volumeSpecs = new ArrayList<>();
     private String requiredClusterUuid;
+    private List<String> requiredClusterUuids;
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
     private String memorySnapshotUuid;
-    private String requiredPrimaryStorageUuidForRootVolume;
-    private String requiredPrimaryStorageUuidForDataVolume;
+    private String allocatedPrimaryStorageUuidForRootVolume;
+    private String allocatedPrimaryStorageUuidForDataVolume;
+    private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
+    private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
     private String bootMode;
 
     private List<HostName> hostnames = new ArrayList<>();
@@ -336,7 +349,46 @@ public class VmInstanceSpec implements Serializable {
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
 
+    public List<String> getRequiredClusterUuids() {
+        return requiredClusterUuids;
+    }
+
+    public void setRequiredClusterUuids(List<String> requiredClusterUuids) {
+        this.requiredClusterUuids = requiredClusterUuids;
+    }
+
+    public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
+        return candidatePrimaryStorageUuidsForRootVolume;
+    }
+
+    public void setCandidatePrimaryStorageUuidsForRootVolume(List<String> candidatePrimaryStorageUuidsForRootVolume) {
+        this.candidatePrimaryStorageUuidsForRootVolume.clear();
+        if (candidatePrimaryStorageUuidsForRootVolume != null) {
+            this.candidatePrimaryStorageUuidsForRootVolume.addAll(candidatePrimaryStorageUuidsForRootVolume);
+        }
+    }
+
+    public List<String> getCandidatePrimaryStorageUuidsForDataVolume() {
+        return candidatePrimaryStorageUuidsForDataVolume;
+    }
+
+    public void setCandidatePrimaryStorageUuidsForDataVolume(List<String> candidatePrimaryStorageUuidsForDataVolume) {
+        this.candidatePrimaryStorageUuidsForDataVolume.clear();
+        if (candidatePrimaryStorageUuidsForDataVolume != null) {
+            this.candidatePrimaryStorageUuidsForDataVolume.addAll(candidatePrimaryStorageUuidsForDataVolume);
+        }
+    }
+
     private List<String> disableL3Networks;
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
 
     public boolean isSkipIpAllocation() {
         return skipIpAllocation;
@@ -666,20 +718,28 @@ public class VmInstanceSpec implements Serializable {
         return nsTypes;
     }
 
+    @Deprecated
     public String getRequiredPrimaryStorageUuidForRootVolume() {
-        return requiredPrimaryStorageUuidForRootVolume;
+        return this.candidatePrimaryStorageUuidsForRootVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForRootVolume.get(0);
     }
 
-    public void setRequiredPrimaryStorageUuidForRootVolume(String requiredPrimaryStorageUuidForRootVolume) {
-        this.requiredPrimaryStorageUuidForRootVolume = requiredPrimaryStorageUuidForRootVolume;
+    public void setRequiredPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
+        this.candidatePrimaryStorageUuidsForRootVolume.clear();
+        if (primaryStorageUuidForRootVolume != null) {
+            this.candidatePrimaryStorageUuidsForRootVolume.add(primaryStorageUuidForRootVolume);
+        }
     }
 
+    @Deprecated
     public String getRequiredPrimaryStorageUuidForDataVolume() {
-        return requiredPrimaryStorageUuidForDataVolume;
+        return this.candidatePrimaryStorageUuidsForDataVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForDataVolume.get(0);
     }
 
-    public void setRequiredPrimaryStorageUuidForDataVolume(String requiredPrimaryStorageUuidForDataVolume) {
-        this.requiredPrimaryStorageUuidForDataVolume = requiredPrimaryStorageUuidForDataVolume;
+    public void setRequiredPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
+        this.candidatePrimaryStorageUuidsForDataVolume.clear();
+        if (primaryStorageUuidForDataVolume != null) {
+            this.candidatePrimaryStorageUuidsForDataVolume.add(primaryStorageUuidForDataVolume);
+        }
     }
 
     public HostInventory getSrcHost() {
@@ -759,5 +819,38 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDisableL3Networks(List<String> disableL3Networks) {
         this.disableL3Networks = disableL3Networks;
+    }
+
+    public String getAllocatedPrimaryStorageUuidForRootVolume() {
+        return allocatedPrimaryStorageUuidForRootVolume;
+    }
+
+    public void setAllocatedPrimaryStorageUuidForRootVolume(String allocatedPrimaryStorageUuidForRootVolume) {
+        this.allocatedPrimaryStorageUuidForRootVolume = allocatedPrimaryStorageUuidForRootVolume;
+    }
+
+    public String getAllocatedPrimaryStorageUuidForDataVolume() {
+        return allocatedPrimaryStorageUuidForDataVolume;
+    }
+
+    public void setAllocatedPrimaryStorageUuidForDataVolume(String allocatedPrimaryStorageUuidForDataVolume) {
+        this.allocatedPrimaryStorageUuidForDataVolume = allocatedPrimaryStorageUuidForDataVolume;
+    }
+
+    public String getVolumeFormatFromImage() {
+        ImageSpec image = getImageSpec();
+        // if no image is specified, use default format
+        if (!image.relayOnImage()) {
+            return ImageConstant.QCOW2_FORMAT_STRING;
+        }
+
+        if (image.isIso()) {
+            return VolumeFormat.getVolumeFormatByMasterHypervisorType(getDestHost().getHypervisorType()).toString();
+        } else if (image.getInventory().getFormat() != null) {
+            VolumeFormat imageFormat = VolumeFormat.valueOf(getImageSpec().getInventory().getFormat());
+            return imageFormat.getOutputFormat(getDestHost().getHypervisorType());
+        } else {
+            return ImageConstant.QCOW2_FORMAT_STRING;
+        }
     }
 }

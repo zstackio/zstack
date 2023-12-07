@@ -10,9 +10,9 @@ import java.util.List;
 public interface HostCapacityReserveManager {
     List<HostVO> filterOutHostsByReservedCapacity(List<HostVO> candidates, long requiredCpu, long requiredMemory);
 
-    ReservedHostCapacity getReservedHostCapacityByZones(List<String> zoneUuids);
+    ReservedHostCapacity getReservedHostCapacityByZones(List<String> zoneUuids, String hypervisorType);
 
-    ReservedHostCapacity getReservedHostCapacityByClusters(List<String> clusterUuids);
+    ReservedHostCapacity getReservedHostCapacityByClusters(List<String> clusterUuids, String hypervisorType);
 
     ReservedHostCapacity getReservedHostCapacityByHosts(List<String> hostUuids);
 

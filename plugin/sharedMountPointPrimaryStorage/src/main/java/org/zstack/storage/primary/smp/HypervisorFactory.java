@@ -9,4 +9,6 @@ public interface HypervisorFactory {
     String getHypervisorType();
 
     HypervisorBackend getHypervisorBackend(PrimaryStorageVO vo);
+
+    default String getExtensionType() {return null;}
 }

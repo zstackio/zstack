@@ -76,4 +76,28 @@ public class SharedBlockCandidateStruct  {
         return this.size;
     }
 
+    public java.lang.String source;
+    public void setSource(java.lang.String source) {
+        this.source = source;
+    }
+    public java.lang.String getSource() {
+        return this.source;
+    }
+
+    public java.lang.String transport;
+    public void setTransport(java.lang.String transport) {
+        this.transport = transport;
+    }
+    public java.lang.String getTransport() {
+        return this.transport;
+    }
+
+    public java.lang.String targetIdentifier;
+    public void setTargetIdentifier(java.lang.String targetIdentifier) {
+        this.targetIdentifier = targetIdentifier;
+    }
+    public java.lang.String getTargetIdentifier() {
+        return this.targetIdentifier;
+    }
+
 }

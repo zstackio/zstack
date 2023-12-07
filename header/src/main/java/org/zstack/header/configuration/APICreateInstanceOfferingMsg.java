@@ -32,6 +32,8 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage implements AP
     private int cpuSpeed;
     @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"})
     private long memorySize;
+    @APIParam(numberRange = {0, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"}, required = false)
+    private long reservedMemorySize;
     private String allocatorStrategy;
     private int sortKey;
     private String type;
@@ -61,6 +63,14 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage implements AP
 
     public void setMemorySize(long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    public long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 
     public String getAllocatorStrategy() {

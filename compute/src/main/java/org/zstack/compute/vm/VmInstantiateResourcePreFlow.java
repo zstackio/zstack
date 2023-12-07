@@ -15,6 +15,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Iterator;
@@ -48,6 +49,10 @@ public class VmInstantiateResourcePreFlow implements Flow {
         extp.preInstantiateVmResource(spec, new Completion(chain) {
             @Override
             public void success() {
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("trace vm instance spec: %s\n", JSONObjectUtil.toJsonString(spec)));
+                }
+
                 runExtensions(it, spec, chain);
             }
 

@@ -852,12 +852,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 startExpungeTask();
             }
         });
-        ImageGlobalConfig.EXPUNGE_PERIOD.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
-            @Override
-            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                startExpungeTask();
-            }
-        });
     }
 
     private void installGlobalConfigValidator() {
@@ -895,7 +889,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         };
     }
 
-    private void startExpungeTask() {
+    private synchronized void startExpungeTask() {
         if (expungeTask != null) {
             expungeTask.cancel(true);
         }
@@ -1776,7 +1770,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         saveRefVOByBsInventorys(backupStorages, image.getUuid());
                                         trigger.next();
                                     } else {
-                                        trigger.fail(operr(reply.getError(), "cannot find proper backup storage"));
+                                        trigger.fail(operr("cannot find proper backup storage").causedBy(reply.getError()));
                                     }
                                 }
                             });

@@ -14,6 +14,7 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
 import org.zstack.kvm.KVMCompleteNicInformationExtensionPoint;
 import org.zstack.kvm.KVMConstant;
@@ -91,18 +92,18 @@ public class KVMRealizeHardwareVxlanPoolNetworkBackend implements L2NetworkReali
     }
 
     @Override
-    public L2NetworkType getL2NetworkTypeVmNicOn() {
-        return L2NetworkType.valueOf(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE);
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
     }
 
     @Override
+    public L2NetworkType getL2NetworkTypeVmNicOn() {
+        return L2NetworkType.valueOf(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE);
+    }
+    @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        NicTO to = new NicTO();
-        to.setMac(nic.getMac());
-        to.setUuid(nic.getUuid());
+        NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
         to.setBridgeName(makeBridgeName(l2Network.getUuid()));
-        to.setDeviceId(nic.getDeviceId());
-        to.setNicInternalName(nic.getInternalName());
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
     }

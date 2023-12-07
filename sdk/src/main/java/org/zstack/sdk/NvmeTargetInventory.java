@@ -28,6 +28,14 @@ public class NvmeTargetInventory  {
         return this.nqn;
     }
 
+    public java.lang.String nvmeServerUuid;
+    public void setNvmeServerUuid(java.lang.String nvmeServerUuid) {
+        this.nvmeServerUuid = nvmeServerUuid;
+    }
+    public java.lang.String getNvmeServerUuid() {
+        return this.nvmeServerUuid;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;

@@ -18,8 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
-
 /**
  * Created by MaJin on 2020/6/29.
  */
@@ -54,11 +52,17 @@ public class APICreateVmInstanceFromVolumeMsg extends APICreateMessage implement
     @APIParam(required = false)
     private Long memorySize;
 
+    @APIParam(required = false, numberRange = {0, Long.MAX_VALUE})
+    private Long reservedMemorySize;
+
     /**
      * @desc a list of L3Network uuid the vm will create nic on. See :ref:`L3NetworkInventory`
      */
-    @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, required = false)
     private List<String> l3NetworkUuids;
+
+    @APIParam(required = false)
+    private String vmNicParams;
     /**
      * @desc see type of :ref:`VmInstanceInventory`
      * @choices - UserVm
@@ -140,6 +144,11 @@ public class APICreateVmInstanceFromVolumeMsg extends APICreateMessage implement
     }
 
     @Override
+    public Long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    @Override
     public String getZoneUuid() {
         return zoneUuid;
     }
@@ -148,12 +157,26 @@ public class APICreateVmInstanceFromVolumeMsg extends APICreateMessage implement
         this.memorySize = memorySize;
     }
 
+    @Override
+    public void setReservedMemorySize(Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
+    }
+
     public List<String> getL3NetworkUuids() {
         return l3NetworkUuids;
     }
 
     public void setL3NetworkUuids(List<String> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
+    }
+
+    @Override
+    public String getVmNicParams() {
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(String vmNicParams) {
+        this.vmNicParams = vmNicParams;
     }
 
     public String getType() {

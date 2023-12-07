@@ -223,7 +223,6 @@ public class KVMSimulatorController {
             rsp.setSuccess(true);
             rsp.setLibvirtVersion("1.0.0");
             rsp.setQemuVersion("1.3.0");
-            rsp.setIptablesSucc(true);
             logger.debug("KVM connected");
         } else {
             rsp.setSuccess(false);
@@ -289,10 +288,7 @@ public class KVMSimulatorController {
             rsp.setSuccess(false);
         } else {
             config.securityGroups.clear();
-            for (SecurityGroupRuleTO rto : cmd.getRuleTOs()) {
-                config.securityGroups.put(rto.getVmNicInternalName(), rto);
-                logger.debug(String.format("successfully applied security group rules for vm nic[%s], %s", rto.getVmNicInternalName(), rto));
-            }
+            config.vmNicSecuritys.addAll(cmd.getVmNicTOs());
             config.securityGroupRefreshAllRulesOnHostCmds.add(cmd);
         }
         reply(entity, rsp);
@@ -313,10 +309,11 @@ public class KVMSimulatorController {
             rsp.setError("fail to apply security group rules on purpose");
             rsp.setSuccess(false);
         } else {
-            for (SecurityGroupRuleTO rto : cmd.getRuleTOs()) {
-                config.securityGroups.put(rto.getVmNicInternalName(), rto);
-                logger.debug(String.format("succesfully applied security group rules for vm nic[%s], %s", rto.getVmNicInternalName(), rto));
-            }
+            config.vmNicSecuritys.addAll(cmd.getVmNicTOs());
+            // for (SecurityGroupRuleTO rto : cmd.getRuleTOs()) {
+            //     config.securityGroups.put(rto.getVmNicInternalName(), rto);
+            //     logger.debug(String.format("succesfully applied security group rules for vm nic[%s], %s", rto.getVmNicInternalName(), rto));
+            // }
         }
         reply(entity, rsp);
     }

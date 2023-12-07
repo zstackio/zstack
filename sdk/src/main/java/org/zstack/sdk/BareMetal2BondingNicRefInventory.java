@@ -1,6 +1,7 @@
 package org.zstack.sdk;
 
 import org.zstack.sdk.VmNicInventory;
+import org.zstack.sdk.BareMetal2InstanceProvisionNicInventory;
 import org.zstack.sdk.BareMetal2BondingInventory;
 
 public class BareMetal2BondingNicRefInventory  {
@@ -37,6 +38,14 @@ public class BareMetal2BondingNicRefInventory  {
         return this.bondingUuid;
     }
 
+    public java.lang.String provisionNicUuid;
+    public void setProvisionNicUuid(java.lang.String provisionNicUuid) {
+        this.provisionNicUuid = provisionNicUuid;
+    }
+    public java.lang.String getProvisionNicUuid() {
+        return this.provisionNicUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -59,6 +68,14 @@ public class BareMetal2BondingNicRefInventory  {
     }
     public VmNicInventory getVmNic() {
         return this.vmNic;
+    }
+
+    public BareMetal2InstanceProvisionNicInventory provisionNic;
+    public void setProvisionNic(BareMetal2InstanceProvisionNicInventory provisionNic) {
+        this.provisionNic = provisionNic;
+    }
+    public BareMetal2InstanceProvisionNicInventory getProvisionNic() {
+        return this.provisionNic;
     }
 
     public BareMetal2BondingInventory bareMetal2Bonding;

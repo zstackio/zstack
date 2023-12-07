@@ -1,5 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO;
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO_;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -58,6 +60,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     private CloudBus bus;
 
     private static String VTEP_IP = "vtepIp";
+    private static String PHYSICAL_INTERFACE = "physicalInterface";
     private static String NEED_POPULATE = "needPopulate";
 
     public static String makeBridgeName(int vxlan) {
@@ -91,6 +94,15 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         p.remove(vtepIp);
         peers.clear();
         peers.addAll(p);
+
+        //add remote vtep ip
+        String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
+
+        List<String> gwpeers = Q.New(RemoteVtepVO.class).select(RemoteVtepVO_.vtepIp).eq(RemoteVtepVO_.poolUuid, l2vxlan.getPoolUuid()).eq(RemoteVtepVO_.clusterUuid, clusterUuid).listValues();
+        if (gwpeers.size() > 0) {
+            Set<String> gwp = new HashSet<String>(gwpeers);
+            peers.addAll(gwp);
+        }
 
         String info = String.format(
                 "get vtep peers [%s] and vtep ip [%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s]", peers,
@@ -204,6 +216,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                                 cmd.getCidr(), l2vxlan.getUuid(), l2vxlan.getName(), hostUuid);
                         logger.debug(info);
                         data.put(VTEP_IP, rsp.getVtepIp());
+                        data.put(PHYSICAL_INTERFACE, rsp.getPhysicalInterfaceName());
 
                         trigger.next();
                     }
@@ -225,6 +238,11 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                             vtepVOS.stream().map(v -> v.getVtepIp()).collect(Collectors.toSet()), hostUuid));
                 } else if (vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
                     /* vtep is already created */
+                    if (data.get(PHYSICAL_INTERFACE) != null &&
+                            !data.get(PHYSICAL_INTERFACE).equals(vtepVOS.get(0).getPhysicalInterface())) {
+                        vtepVOS.get(0).setPhysicalInterface((String) data.get(PHYSICAL_INTERFACE));
+                        dbf.update(vtepVOS.get(0));
+                    }
                     logger.debug(String.format(
                             "vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s] checks successfully",
                             vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
@@ -246,6 +264,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 cmsg.setHostUuid(hostUuid);
                 cmsg.setPort(VXLAN_PORT);
                 cmsg.setVtepIp((String) data.get(VTEP_IP));
+                cmsg.setPhysicalInterface((String) data.get(PHYSICAL_INTERFACE));
                 cmsg.setType(KVM_VXLAN_TYPE);
 
                 bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2vxlan.getPoolUuid());
@@ -340,6 +359,11 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     }
 
     @Override
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    }
+
+    @Override
     public L2NetworkType getL2NetworkTypeVmNicOn() {
         return getSupportedL2NetworkType();
     }
@@ -347,12 +371,8 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     @Override
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         final Integer vni = getVni(l2Network.getUuid());
-        KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
-        to.setMac(nic.getMac());
-        to.setUuid(nic.getUuid());
+        KVMAgentCommands.NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
         to.setBridgeName(makeBridgeName(vni));
-        to.setDeviceId(nic.getDeviceId());
-        to.setNicInternalName(nic.getInternalName());
         to.setMetaData(String.valueOf(vni));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;

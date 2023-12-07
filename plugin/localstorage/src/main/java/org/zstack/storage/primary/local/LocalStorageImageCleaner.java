@@ -106,12 +106,19 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             query.setParameter("status", VolumeStatus.NotInstantiated);
             List<String> filterIds = query.getResultList();
 
-            sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
-                    " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and ref.primaryStorageUuid = :psUuid and vol.rootImageUuid is not null) and c.id in (:ids)";
+            if (psUUid == null) {
+                sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
+                        " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and vol.rootImageUuid is not null) and c.id in (:ids)";
+            } else {
+                sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
+                        " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and ref.primaryStorageUuid = :psUuid and vol.rootImageUuid is not null) and c.id in (:ids)";
+            }
             cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
             cq.setParameter("rtype", VolumeVO.class.getSimpleName());
             cq.setParameter("huuid", hostUuid);
-            cq.setParameter("psUuid", psUUid);
+            if (psUUid != null) {
+                cq.setParameter("psUuid", psUUid);
+            }
             cq.setParameter("ids", cacheIds);
             List<ImageCacheVO> results = cq.getResultList();
 
@@ -225,6 +232,13 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
 
     @Override
     protected void doCleanup(String psUuid, boolean needDestinationCheck, NoErrorCompletion completion) {
+        List<String> psUuids = new ArrayList<>();
+        if (psUuid == null) {
+            psUuids.addAll(listPrimaryStoragesBySelfType());
+        } else {
+            psUuids.add(psUuid);
+        }
+
         SimpleFlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("do-clean-up-image-cache-on-local-storage-%s", psUuid));
         chain.then(new NoRollbackFlow() {
@@ -240,15 +254,48 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (psUuid == null) {
-                    logger.debug("no primary storage uuid specified, skip image cache clean up");
+                if (psUuids.isEmpty()) {
+                    logger.debug("cannot find any primary storage, skip image cache clean up");
                     trigger.next();
                     return;
                 }
 
-                cleanUpImageCache(psUuid, new NoErrorCompletion() {
+                new While<>(psUuids).each((uuid, compl) -> {
+                    cleanUpImageCache(uuid, new NoErrorCompletion() {
+                        @Override
+                        public void done() {
+                            compl.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (psUuids.isEmpty()) {
+                    logger.debug("cannot find any primary storage, skip sync primary storage capacity");
+                    trigger.next();
+                    return;
+                }
+
+                new While<>(psUuids).each((uuid, compl) -> {
+                    SyncPrimaryStorageCapacityMsg msg = new SyncPrimaryStorageCapacityMsg();
+                    msg.setPrimaryStorageUuid(uuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                    bus.send(msg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            compl.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
                         trigger.next();
                     }
                 });

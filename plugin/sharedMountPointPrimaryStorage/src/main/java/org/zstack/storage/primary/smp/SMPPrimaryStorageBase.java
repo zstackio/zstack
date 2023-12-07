@@ -78,13 +78,17 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private HypervisorFactory getHypervisorFactoryByHypervisorType(String hvType) {
+        return getHypervisorFactoryByHypervisorAndExtensionType(hvType, null);
+    }
+
+    protected HypervisorFactory getHypervisorFactoryByHypervisorAndExtensionType(String hvType, String extensionType) {
         for (HypervisorFactory f : pluginRgty.getExtensionList(HypervisorFactory.class)) {
-            if (hvType.equals(f.getHypervisorType())) {
+            if (hvType.equals(f.getHypervisorType()) && Objects.equals(f.getExtensionType(), extensionType)) {
                 return f;
             }
         }
 
-        throw new CloudRuntimeException(String.format("cannot find HypervisorFactory[type = %s]", hvType));
+        throw new CloudRuntimeException(String.format("cannot find HypervisorFactory[hypervisroType = %s, extensionType = %s]", hvType, extensionType));
     }
 
     protected HypervisorFactory getHypervisorFactoryByHostUuid(String huuid) {
@@ -95,12 +99,15 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         return getHypervisorFactoryByHypervisorType(hvType);
     }
 
-    protected HypervisorFactory getHypervisorFactoryByClusterUuid(String cuuid) {
+    protected String getHypervisorTypeByClusterUuid(String cuuid) {
         SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
         q.select(ClusterVO_.hypervisorType);
         q.add(ClusterVO_.uuid, Op.EQ, cuuid);
-        String hvType = q.findValue();
+        return q.findValue();
+    }
 
+    protected HypervisorFactory getHypervisorFactoryByClusterUuid(String cuuid) {
+        String hvType = getHypervisorTypeByClusterUuid(cuuid);
         return getHypervisorFactoryByHypervisorType(hvType);
     }
 
@@ -650,6 +657,10 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof ResizeVolumeOnPrimaryStorageMsg) {
+            handle((ResizeVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof UndoSnapshotCreationOnPrimaryStorageMsg) {
+            handle((UndoSnapshotCreationOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -720,6 +731,24 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(ResizeVolumeOnPrimaryStorageMsg msg) {
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
+        bkd.handle(msg, new ReturnValueCompletion<ResizeVolumeOnPrimaryStorageReply>(msg) {
+
+            @Override
+            public void success(ResizeVolumeOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                ResizeVolumeOnPrimaryStorageReply reply = new ResizeVolumeOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -1013,6 +1042,23 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 TakeSnapshotReply reply = new TakeSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
+        bkd.handle(msg, new ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(UndoSnapshotCreationOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                UndoSnapshotCreationOnPrimaryStorageReply reply = new UndoSnapshotCreationOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

@@ -23,12 +23,12 @@ public class ImageMessageFiller {
         }
 
         if (msg.getPlatform() == null) {
-            msg.setPlatform(ImagePlatform.Linux.toString());
+            msg.setPlatform(ImageDefaultBehavior.getDefaultPlatform());
         }
-
-        if (msg.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
+        if (msg.getPlatform() != null && msg.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
             msg.setPlatform(ImagePlatform.Other.toString());
-        } else if (msg.getPlatform().equals(ImagePlatform.WindowsVirtio.toString())) {
+        }
+        if (msg.getPlatform() != null && msg.getPlatform().equals(ImagePlatform.WindowsVirtio.toString())) {
             msg.setPlatform(ImagePlatform.Windows.toString());
         }
 
@@ -38,7 +38,7 @@ public class ImageMessageFiller {
         }
 
         if (msg.getGuestOsType() == null) {
-            msg.setGuestOsType(GuestOsCategory.getDefaultGuestOsTypeByPlatform(msg.getPlatform()));
+            msg.setGuestOsType(msg.getPlatform() == null ? null : GuestOsCategory.getDefaultGuestOsTypeByPlatform(msg.getPlatform()));
         }
 
         setBootModeIfAarch64(msg);

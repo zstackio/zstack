@@ -52,6 +52,14 @@ public class SSOClientInventory  {
         return this.loginMNUrl;
     }
 
+    public java.lang.String redirectUrl;
+    public void setRedirectUrl(java.lang.String redirectUrl) {
+        this.redirectUrl = redirectUrl;
+    }
+    public java.lang.String getRedirectUrl() {
+        return this.redirectUrl;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

@@ -8,7 +8,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -56,13 +55,10 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
 
     @Override
     public void allocate() {
-        List<HostVO> ret;
-        if (amITheFirstFlow()) {
-            throw new CloudRuntimeException("HostCapacityAllocatorFlow cannot be the first allocator flow");
-        } else {
-            ret = allocate(candidates, spec.getCpuCapacity(), spec.getMemoryCapacity(), spec.getOldMemoryCapacity());
-        }
+        throwExceptionIfIAmTheFirstFlow();
 
+        List<HostVO> ret =
+                allocate(candidates, spec.getCpuCapacity(), spec.getMemoryCapacity(), spec.getOldMemoryCapacity());
         ret = reserveMgr.filterOutHostsByReservedCapacity(ret, spec.getCpuCapacity(), spec.getMemoryCapacity());
 
         if (ret.isEmpty()) {

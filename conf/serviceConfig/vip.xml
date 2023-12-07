@@ -8,6 +8,14 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.vip.APIGetVipAvailablePortMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.vip.APICheckVipPortAvailabilityMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.vip.APIDeleteVipMsg</name>
     </message>
 

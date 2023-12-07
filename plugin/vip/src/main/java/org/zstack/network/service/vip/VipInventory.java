@@ -12,9 +12,7 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Column;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -212,10 +210,12 @@ public class VipInventory implements Serializable {
         this.servicesRefs = servicesRefs;
     }
 
+    @Deprecated
     public String getUseFor() {
         return useFor;
     }
 
+    @Deprecated
     public void setUseFor(String useFor) {
         this.useFor = useFor;
     }
@@ -306,4 +306,15 @@ public class VipInventory implements Serializable {
         }
         return ipVersions;
     }
+
+    public Set<String> getServicesTypes() {
+        if (getServicesRefs() != null && !getServicesRefs().isEmpty()) {
+            return getServicesRefs().stream()
+                    .map(VipNetworkServicesRefInventory::getServiceType)
+                    .collect(Collectors.toSet());
+        }
+
+        return new HashSet<>();
+    }
+
 }

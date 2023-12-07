@@ -1,16 +1,22 @@
 package org.zstack.test.integration.console
 
+import org.springframework.http.HttpEntity
+import org.zstack.console.ConsoleGlobalConfig
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.gc.GCStatus
 import org.zstack.header.console.ConsoleConstants
-import org.zstack.header.console.ConsoleProxyAgentState
-import org.zstack.header.console.ConsoleProxyAgentStatus
 import org.zstack.header.console.ConsoleProxyAgentVO
+import org.zstack.header.console.ConsoleProxyCommands
+import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.sdk.SessionInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
 
 class ConsoleProxyCase extends SubCase {
     EnvSpec env
@@ -29,6 +35,80 @@ class ConsoleProxyCase extends SubCase {
                 name = "test"
                 password = "password"
             }
+
+            instanceOffering {
+                name = "instanceOffering"
+                memory = SizeUnit.GIGABYTE.toByte(1)
+                cpu = 1
+            }
+
+            diskOffering {
+                name = "diskOffering"
+                diskSize = SizeUnit.GIGABYTE.toByte(20)
+            }
+
+            sftpBackupStorage {
+                name = "sftp"
+                url = "/sftp"
+                username = "root"
+                password = "password"
+                hostname = "localhost"
+
+                image {
+                    name = "image1"
+                    url = "http://zstack.org/download/test.qcow2"
+                }
+            }
+
+            zone {
+                name = "zone"
+                description = "test"
+
+                cluster {
+                    name = "cluster"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm"
+                        managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    attachPrimaryStorage("local")
+                    attachL2Network("l2")
+                }
+
+                localPrimaryStorage {
+                    name = "local"
+                    url = "/local_ps"
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2"
+                    physicalInterface = "eth0"
+
+                    l3Network {
+                        name = "l3"
+
+                        ip {
+                            startIp = "12.16.10.10"
+                            endIp = "12.16.10.100"
+                            netmask = "255.255.255.0"
+                            gateway = "12.16.10.1"
+                        }
+                    }
+                }
+
+                attachBackupStorage("sftp")
+            }
+
+            vm {
+                name = "vm"
+                useInstanceOffering("instanceOffering")
+                useImage("image1")
+                useL3Networks("l3")
+            }
         }
     }
 
@@ -36,22 +116,64 @@ class ConsoleProxyCase extends SubCase {
     void test() {
         env.create {
             testUpdateConsoleProxyAgent()
+            testConsoleProxyGC()
+        }
+    }
+
+    void testConsoleProxyGC() {
+        ConsoleProxyAgentVO agent = dbf.listAll(ConsoleProxyAgentVO)[0]
+
+        env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH) { ConsoleProxyCommands.EstablishProxyRsp rsp, HttpEntity<String> e ->
+            rsp.proxyPort = 5900
+            rsp.token = "test token"
+            return rsp
+        }
+
+        boolean error = true
+        env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH) { rsp, HttpEntity<String> e ->
+            if (error) {
+                throw new HttpError(504, "on purpose")
+            }
+
+            return rsp
+        }
+
+        ConsoleGlobalConfig.DELETE_CONSOLE_PROXY_RETRY_DELAY.updateValue(100)
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        requestConsoleAccess {
+            vmInstanceUuid = vm.uuid
+        }
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        GarbageCollectorInventory gc = queryGCJob {
+            conditions = ["status!=${GCStatus.Done}".toString(), "context~=%${vm.uuid}%".toString()]
+        }[0] as GarbageCollectorInventory
+        assert gc != null
+        assert gc.status == GCStatus.Idle.toString()
+
+        error = false
+        triggerGCJob {
+            uuid = gc.uuid
+        }
+
+        retryInSecs {
+            gc = queryGCJob {
+                conditions = ["status=${GCStatus.Done}".toString(), "context~=%${vm.uuid}%".toString()]
+            }[0] as GarbageCollectorInventory
+            assert gc.status == GCStatus.Done.toString()
         }
     }
 
     def testUpdateConsoleProxyAgent() {
-        // create console proxy agent
-        ConsoleProxyAgentVO agent = new ConsoleProxyAgentVO()
-        agent.setUuid(Platform.getManagementServerId())
-        agent.setManagementIp(Platform.getManagementServerIp())
-        agent.setConsoleProxyOverriddenIp(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)
-        agent.setConsoleProxyPort(CoreGlobalProperty.CONSOLE_PROXY_PORT)
-        agent.setState(ConsoleProxyAgentState.Enabled)
-        agent.setStatus(ConsoleProxyAgentStatus.Connecting)
-        agent.setDescription(String.format("Console proxy agent running on the management node[uuid:%s]", Platform.getManagementServerId()))
-        agent.setType(ConsoleConstants.MANAGEMENT_SERVER_CONSOLE_PROXY_TYPE)
-        agent = dbf.persistAndRefresh(agent)
+        retryInSecs {
+            assert dbf.count(ConsoleProxyAgentVO) == 1
+        }
 
+        ConsoleProxyAgentVO agent = dbf.listAll(ConsoleProxyAgentVO)[0]
         updateConsoleProxyAgent {
             uuid = agent.uuid
             consoleProxyOverriddenIp = "127.0.0.1"
@@ -92,9 +214,6 @@ class ConsoleProxyCase extends SubCase {
                 consoleProxyPort = 4900
             }
         }
-
-        // delete console proxy agent
-        dbf.remove(agent)
     }
 
     @Override

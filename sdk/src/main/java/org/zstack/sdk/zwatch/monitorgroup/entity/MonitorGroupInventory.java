@@ -60,4 +60,12 @@ public class MonitorGroupInventory  {
         return this.uuid;
     }
 
+    public java.util.List monitorGroupTemplateRefs;
+    public void setMonitorGroupTemplateRefs(java.util.List monitorGroupTemplateRefs) {
+        this.monitorGroupTemplateRefs = monitorGroupTemplateRefs;
+    }
+    public java.util.List getMonitorGroupTemplateRefs() {
+        return this.monitorGroupTemplateRefs;
+    }
+
 }

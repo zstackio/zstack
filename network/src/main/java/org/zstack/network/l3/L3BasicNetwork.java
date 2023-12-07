@@ -24,9 +24,15 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.identity.AccountManager;
@@ -213,6 +219,26 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
+        boolean isExistSystemL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true)
+                .eq(L3NetworkVO_.l2NetworkUuid, l2NetworkVO.getUuid()).isExists();
+        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
+                .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
+        if (isExistSystemL3) {
+            if (clusterUuids != null && !clusterUuids.isEmpty()) {
+                for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                    List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid).in(HostVO_.clusterUuid, clusterUuids).listValues();
+                    if (l2NetworkVO.getType().equals(L2NetworkConstant.VXLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
+                        ext.syncManagementServiceTypeExtensionPoint(hostUuids, "vxlan" + l2NetworkVO.getVirtualNetworkId(), null, true);
+                    }
+                    if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+                        ext.syncManagementServiceTypeExtensionPoint(hostUuids, l2NetworkVO.getPhysicalInterface(), l2NetworkVO.getVirtualNetworkId(), true);
+                    }
+                }
+            }
+        }
+
         L3NetworkInventory inv = L3NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
         deleteHook();
@@ -259,22 +285,40 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(AllocateIpMsg msg) {
-        IpAllocatorType strategyType = getIpAllocatorType(msg);
-        IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
         AllocateIpReply reply = new AllocateIpReply();
-        UsedIpInventory ip = ias.allocateIp(msg);
-        if (ip == null) {
-            String reason = msg.getRequiredIp() == null ?
-                    String.format("no ip is available in this l3Network[name:%s, uuid:%s]", self.getName(), self.getUuid()) :
-                    String.format("IP[%s] is not available", msg.getRequiredIp());
-            reply.setError(err(L3Errors.ALLOCATE_IP_ERROR,
-                    "IP allocator strategy[%s] failed, because %s", strategyType, reason));
-        } else {
-            logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, printer.print(ip)));
-            reply.setIpInventory(ip);
-        }
 
-        bus.reply(msg, reply);
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                IpAllocatorType strategyType = getIpAllocatorType(msg);
+                IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
+                UsedIpInventory ip = ias.allocateIp(msg);
+                if (ip == null) {
+                    String reason = msg.getRequiredIp() == null ?
+                            String.format("no ip is available in this l3Network[name:%s, uuid:%s]", self.getName(), self.getUuid()) :
+                            String.format("IP[%s] is not available", msg.getRequiredIp());
+                    reply.setError(err(L3Errors.ALLOCATE_IP_ERROR,
+                            "IP allocator strategy[%s] failed, because %s", strategyType, reason));
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+
+                logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, printer.print(ip)));
+                reply.setIpInventory(ip);
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "allocate-ip-of-l3-" + msg.getL3NetworkUuid();
+            }
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -466,38 +510,6 @@ public class L3BasicNetwork implements L3Network {
         bus.publish(evt);
     }
 
-    private List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit, String start) {
-        SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
-        q.select(UsedIpVO_.ip);
-        q.add(UsedIpVO_.ipRangeUuid, Op.EQ, ipr.getUuid());
-
-        List<String> used = q.listValue();
-        used = used.stream().distinct().collect(Collectors.toList());
-
-        List<String> spareIps = new ArrayList<>();
-        if (ipr.getIpVersion() == IPv6Constants.IPv6) {
-            spareIps.addAll(NetworkUtils.getFreeIpv6InRange(ipr.getStartIp(), ipr.getEndIp(), used, limit, start));
-        } else {
-            IpRangeVO cloneIpr = new IpRangeVO();
-            cloneIpr.setStartIp(ipr.getStartIp());
-            cloneIpr.setEndIp(ipr.getEndIp());
-            cloneIpr.setNetmask(ipr.getNetmask());
-            IpRangeHelper.stripNetworkAndBroadcastAddress(cloneIpr);
-            spareIps.addAll(NetworkUtils.getFreeIpInRange(cloneIpr.getStartIp(), cloneIpr.getEndIp(), used, limit, start));
-        }
-        return CollectionUtils.transformToList(spareIps, new Function<FreeIpInventory, String>() {
-            @Override
-            public FreeIpInventory call(String arg) {
-                FreeIpInventory f = new FreeIpInventory();
-                f.setGateway(ipr.getGateway());
-                f.setIp(arg);
-                f.setNetmask(ipr.getNetmask());
-                f.setIpRangeUuid(ipr.getUuid());
-                return f;
-            }
-        });
-    }
-
     private void handle(APIGetFreeIpMsg msg) {
         APIGetFreeIpReply reply = new APIGetFreeIpReply();
 
@@ -549,7 +561,7 @@ public class L3BasicNetwork implements L3Network {
                     start = "0.0.0.0";
                 }
             }
-            List<FreeIpInventory> tempFreeIpInventorys = getFreeIp(ipRangeVO, limit,start);
+            List<FreeIpInventory> tempFreeIpInventorys = IpRangeHelper.getFreeIp(ipRangeVO, limit,start);
             freeIpInventorys.addAll(tempFreeIpInventorys);
             if (freeIpInventorys.size() >= msg.getLimit()) {
                 break;
@@ -591,16 +603,18 @@ public class L3BasicNetwork implements L3Network {
 
 
     private void handle(APIAddIpRangeByNetworkCidrMsg msg) {
-        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-        IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
-        IpRangeInventory inv = factory.createIpRange(ipr, msg);
-
-        tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
-
-        setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
-
+        List<IpRangeInventory> iprs = IpRangeInventory.fromMessage(msg);
+        List<IpRangeInventory> ret = new ArrayList<>();
+        for (IpRangeInventory ipr : iprs) {
+            IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
+            IpRangeInventory inv = factory.createIpRange(ipr, msg);
+            setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
+            ret.add(inv);
+        }
+        tagMgr.createTagsFromAPICreateMessage(msg, iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
-        evt.setInventory(inv);
+        evt.setInventory(ret.get(0));
+        evt.setInventories(ret);
         bus.publish(evt);
     }
 
@@ -615,6 +629,7 @@ public class L3BasicNetwork implements L3Network {
 
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
         evt.setInventory(inv);
+        evt.setInventories(Collections.singletonList(inv));
         bus.publish(evt);
     }
 
@@ -904,6 +919,24 @@ public class L3BasicNetwork implements L3Network {
         }).start();
     }
 
+    private void syncManagementServiceTypeWhileDelete(ServiceTypeExtensionPoint ext, L2NetworkVO l2NetworkVO, List<String> hostUuids) {
+        String l2NetworkType = l2NetworkVO.getType();
+        switch (l2NetworkType) {
+            case L2NetworkConstant.VXLAN_NETWORK_TYPE:
+                ext.syncManagementServiceTypeExtensionPoint(hostUuids, "vxlan" + l2NetworkVO.getVirtualNetworkId(), null, true);
+                break;
+
+            case L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE:
+            case L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE:
+            case L2NetworkConstant.L2_VLAN_NETWORK_TYPE:
+                ext.syncManagementServiceTypeExtensionPoint(hostUuids, l2NetworkVO.getPhysicalInterface(), l2NetworkVO.getVirtualNetworkId(), true);
+                break;
+
+            default:
+                break;
+        }
+    }
+
     private void handle(APIDeleteIpRangeMsg msg) {
         self = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         final APIDeleteIpRangeEvent evt = new APIDeleteIpRangeEvent(msg.getId());
@@ -943,6 +976,8 @@ public class L3BasicNetwork implements L3Network {
         final String issuer = L3NetworkVO.class.getSimpleName();
         final List<L3NetworkInventory> ctx = L3NetworkInventory.valueOf(Arrays.asList(self));
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
         chain.setName(String.format("delete-l3-network-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
@@ -999,6 +1034,19 @@ public class L3BasicNetwork implements L3Network {
             @Override
             public void handle(Map data) {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                boolean isExistSystemL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true)
+                        .eq(L3NetworkVO_.l2NetworkUuid, l2NetworkVO.getUuid()).isExists();
+                List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
+                        .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
+                if (!isExistSystemL3) {
+                    if (clusterUuids != null && !clusterUuids.isEmpty()) {
+                        List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                                .in(HostVO_.clusterUuid, clusterUuids).listValues();
+                        for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                            syncManagementServiceTypeWhileDelete(ext, l2NetworkVO, hostUuids);
+                        }
+                    }
+                }
                 completion.success();
             }
         }).error(new FlowErrorHandler(msg) {

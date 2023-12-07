@@ -1,9 +1,13 @@
 package org.zstack.kvm;
 
+import org.apache.commons.collections.map.MultiKeyMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -37,6 +41,9 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
 
     @Autowired
     private CloudBus bus;
+
+    @Autowired
+    private ThreadFacade thdf;
 
     private static String makeBridgeName(String l2Uuid) {
         return KVMHostUtils.getNormalizedBridgeName(l2Uuid, "br_%s");
@@ -160,21 +167,19 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     }
 
     @Override
-    public L2NetworkType getL2NetworkTypeVmNicOn() {
-        return L2NetworkType.valueOf(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
     }
 
     @Override
+    public L2NetworkType getL2NetworkTypeVmNicOn() {
+        return L2NetworkType.valueOf(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
+    }
+    @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        NicTO to = new NicTO();
-        to.setMac(nic.getMac());
-        to.setUuid(nic.getUuid());
+        NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
         to.setBridgeName(makeBridgeName(l2Network.getUuid()));
         to.setPhysicalInterface(l2Network.getPhysicalInterface());
-        to.setDeviceId(nic.getDeviceId());
-        to.setNicInternalName(nic.getInternalName());
-        to.setType(nic.getType());
-
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
 
         return to;
@@ -228,34 +233,74 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     @Override
     public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
         if (l2Network.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
-            // vlan bridges and novlan bridge use the same bridge name
-            // in ovs, so before delete l2 network we should check if
-            // the PhysicalInterface is using by another l2 network.
-            List<L2NetworkVO> l2NetworkVOs = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, l2Network.getPhysicalInterface())
-                    .notEq(L2NetworkVO_.uuid, l2Network.getUuid()).list();
-
-            if (l2NetworkVOs.isEmpty()) {
-                delete(l2Network, hostUuid, completion, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
-                return;
-            }
-
-            boolean noNeedDelete = false;
-            String clusterUuid = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.clusterUuid).findValue();
-            for (L2NetworkVO l2 : l2NetworkVOs) {
-                boolean anotherl2AttachCluster = l2.getAttachedClusterRefs().stream().anyMatch(ref -> ref.getClusterUuid().equals(clusterUuid));
-                if (anotherl2AttachCluster) {
-                    noNeedDelete = true;
-                    break;
-                }
-            }
-            if (noNeedDelete) {
-                completion.success();
-                return;
-            }
-            delete(l2Network, hostUuid, completion, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
+            deleteOvsBridge(l2Network, hostUuid, completion);
         } else {
             delete(l2Network, hostUuid, completion, KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH);
         }
     }
 
+    private void deleteOvsBridge(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                // vlan bridges and novlan bridge use the same bridge name
+                // in ovs, so before delete l2 network we should check if
+                // the PhysicalInterface is using by another l2 network.
+                List<L2NetworkVO> l2NetworkVOs = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, l2Network.getPhysicalInterface())
+                        .notEq(L2NetworkVO_.uuid, l2Network.getUuid()).list();
+
+                if (l2NetworkVOs.isEmpty()) {
+                    delete(l2Network, hostUuid, new Completion(completion) {
+                        @Override
+                        public void success() {
+                            completion.success();
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    }, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
+                    return;
+                }
+                boolean noNeedDelete = false;
+                String clusterUuid = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.clusterUuid).findValue();
+                for (L2NetworkVO l2 : l2NetworkVOs) {
+                    boolean anotherl2AttachCluster = l2.getAttachedClusterRefs().stream().anyMatch(ref -> ref.getClusterUuid().equals(clusterUuid));
+                    if (anotherl2AttachCluster) {
+                        noNeedDelete = true;
+                        break;
+                    }
+                }
+                if (noNeedDelete) {
+                    completion.success();
+                    chain.next();
+                    return;
+                }
+                delete(l2Network, hostUuid, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                }, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
+            }
+            @Override
+            public String getSyncSignature() {
+                return String.format("delete-ovsbridge-interface-%s-in-host-%s",l2Network.getPhysicalInterface(),hostUuid);
+            }
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
 }

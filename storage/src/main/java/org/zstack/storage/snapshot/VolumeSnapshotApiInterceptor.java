@@ -121,6 +121,8 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("Can not take memory snapshot, expected vm states are [%s, %s]",
                     VmInstanceState.Running.toString(), VmInstanceState.Paused.toString()));
         }
+
+        msg.setVmInstanceUuid(group.getVmInstanceUuid());
     }
 /*
     private void validate(APIBackupVolumeSnapshotMsg msg) {

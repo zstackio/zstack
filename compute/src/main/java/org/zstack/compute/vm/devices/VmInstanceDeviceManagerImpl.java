@@ -131,6 +131,19 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     }
 
     @Override
+    public ErrorCode deleteVmDeviceAddress(String resourceUuid) {
+        if (resourceUuid == null) {
+            return operr("missing parameter, resourceUuid is requested");
+        }
+
+        SQL.New(VmInstanceDeviceAddressVO.class)
+                .eq(VmInstanceDeviceAddressVO_.resourceUuid, resourceUuid)
+                .delete();
+
+        return null;
+    }
+
+    @Override
     public ErrorCode deleteAllDeviceAddressesByVm(String vmInstanceUuid) {
         if (vmInstanceUuid == null) {
             return operr("missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
@@ -216,6 +229,29 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
         }
 
         for (VmInstanceDeviceAddressArchiveVO archive : group.getAddressList()) {
+            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), DeviceAddress.fromString(archive.getDeviceAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
+            createdAddressList.add(vo);
+        }
+
+        return createdAddressList;
+    }
+
+    @Override
+    public List<VmInstanceDeviceAddressVO> revertExistingDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid) {
+        VmInstanceDeviceAddressGroupVO group = Q.New(VmInstanceDeviceAddressGroupVO.class)
+                .eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, archiveForResourceUuid)
+                .find();
+
+        List<VmInstanceDeviceAddressVO> createdAddressList = new ArrayList<>();
+        if (group == null) {
+            return createdAddressList;
+        }
+
+        for (VmInstanceDeviceAddressArchiveVO archive : group.getAddressList()) {
+            if (!vmDeviceExists(archive.getResourceUuid())) {
+                continue;
+            }
+
             VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), DeviceAddress.fromString(archive.getDeviceAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
             createdAddressList.add(vo);
         }

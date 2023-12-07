@@ -47,4 +47,8 @@
     <message>
         <name>org.zstack.header.network.l2.APIGetCandidateClustersForAttachingL2NetworkMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.sugonSdnController.header.APICreateL2TfNetworkMsg</name>
+    </message>
 </service>

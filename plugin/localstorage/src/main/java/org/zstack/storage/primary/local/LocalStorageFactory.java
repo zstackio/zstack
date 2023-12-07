@@ -987,7 +987,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void preVmMigration(VmInstanceInventory vm, VmMigrationType vmMigrationType, Completion completion) {
+    public void preVmMigration(VmInstanceInventory vm, VmMigrationType vmMigrationType, String dstHostUuid, Completion completion) {
         if (!VmMigrationType.HostMigration.equals(vmMigrationType)) {
             completion.success();
             return;
@@ -1318,7 +1318,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void preCreateVolume(APICreateDataVolumeMsg msg) {
+    public void preCreateVolume(VolumeCreateMessage msg) {
         String diskOffering = msg.getDiskOfferingUuid();
         if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             return;
@@ -1329,11 +1329,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return;
         }
 
+        msg.setPrimaryStorageUuid(config.getAllocate().getPrimaryStorage().getUuid());
         String psUuid = msg.getPrimaryStorageUuid();
         String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                 .eq(PrimaryStorageVO_.uuid,psUuid)
                 .findValue();
-        if (!psType.equals(type.toString())) {
+        if (!type.toString().equals(psType)) {
             return;
         }
 

@@ -79,6 +79,8 @@ public interface KVMConstant {
     String KVM_CONFIG_SECONDARY_VM_PATH = "/secondary/vm/config";
     String KVM_START_COLO_SYNC_PATH = "/start/colo/sync";
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
+    String CLEAN_FIRMWARE_FLASH = "/clean/firmware/flash";
+    String FSTRIM_VM_PATH = "/vm/fstrim";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
@@ -98,11 +100,14 @@ public interface KVMConstant {
     String KVM_REPORT_VM_SHUTDOWN_EVENT = "/kvm/reportvmshutdown";
     String KVM_REPORT_VM_REBOOT_EVENT = "/kvm/reportvmreboot";
     String KVM_REPORT_VM_CRASH_EVENT = "/kvm/reportvmcrash";
+    String KVM_REPORT_HOST_STOP_EVENT = "/kvm/reporthoststop";
 
     String KVM_TRANSMIT_VM_OPERATION_TO_MN = "/host/transmitvmoperation";
     String KVM_HOST_PHYSICAL_NIC_ALARM_EVENT = "/host/physicalNic/alarm";
     String KVM_HOST_ATTACH_VOLUME_PATH = "/host/volume/attach";
     String KVM_HOST_DETACH_VOLUME_PATH = "/host/volume/detach";
+    String KVM_BLOCK_COMMIT_VOLUME_PATH = "/vm/volume/blockcommit";
+    String TAKE_VM_CONSOLE_SCREENSHOT_PATH = "/vm/console/screenshot";
 
     String KVM_AGENT_OWNER = "kvm";
 
@@ -115,6 +120,7 @@ public interface KVMConstant {
     String CPU_MODE_CUSTOM = "custom";
     String CPU_MODE_HOST_MODEL = "host-model";
     String CPU_MODE_HOST_PASSTHROUGH = "host-passthrough";
+    String CPU_MODE_HYGON_CUSTOMIZED = "Hygon_Customized";
 
     String IPTABLES_COMMENTS = "kvmagent.allow.port";
 
@@ -126,6 +132,12 @@ public interface KVMConstant {
     String VIRTUALIZER_QEMU = "qemu";
 
     int IPMI_DEFAULT_PORT = 623;
+    int KVM_HOST_POWER_OPERATION_TIMEOUT_SECONDS = 300;
+
+    String KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS = "kvm.host.skip.ping.no.failure.extensions";
+
+
+    public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
 
     enum KvmVmState {
         NoState,
@@ -142,6 +154,8 @@ public interface KVMConstant {
                 return null;
             } else if (state == VmInstanceState.Paused) {
                 return Paused;
+            } else if (state == VmInstanceState.Migrating) {
+                return Running;
             } else {
                 return null;
             }
@@ -156,6 +170,8 @@ public interface KVMConstant {
                 return VmInstanceState.Paused;
             } else if (this == Crashed) {
                 return VmInstanceState.Crashed;
+            } else if (this == NoState) {
+                return VmInstanceState.NoState;
             } else {
                 return VmInstanceState.Unknown;
             }

@@ -44,4 +44,12 @@ public class MonitorGroupTemplateRefInventory  {
         return this.lastOpDate;
     }
 
+    public boolean isApplied;
+    public void setIsApplied(boolean isApplied) {
+        this.isApplied = isApplied;
+    }
+    public boolean getIsApplied() {
+        return this.isApplied;
+    }
+
 }

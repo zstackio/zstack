@@ -97,7 +97,7 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
         submitTrackerTask(newValue);
     }
 
-    private void submitTrackerTask(long interval) {
+    private synchronized void submitTrackerTask(long interval) {
         if (trackerThread != null) {
             trackerThread.cancel(true);
         }

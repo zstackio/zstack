@@ -17,4 +17,6 @@ public interface ConsoleProxy {
     void checkAvailability(ReturnValueCompletion<Boolean> completion);
 
     void deleteProxy(VmInstanceInventory vm, Completion completion);
+
+    void deleteProxy(ConsoleProxyInventory proxy, Completion completion);
 }

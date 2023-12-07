@@ -114,7 +114,7 @@ doc {
 				column {
 					name "vSwitchType"
 					enclosedIn "params"
-					desc ""
+					desc "虚拟交换机类型"
 					location "body"
 					type "String"
 					optional true

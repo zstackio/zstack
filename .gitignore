@@ -33,3 +33,4 @@ test-premium/zstack-integration-test-result/
 envDSLTree
 test/zstack-integration-test-result/
 premium/test-premium/zstack-api.log
+**/bin/

@@ -63,8 +63,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
             validate((APIAddCephPrimaryStoragePoolMsg) msg);
         } else if (msg instanceof APIUpdateCephPrimaryStoragePoolMsg) {
             validate((APIUpdateCephPrimaryStoragePoolMsg) msg);
-        } else if (msg instanceof APIAttachPrimaryStorageToClusterMsg) {
-            validate((APIAttachPrimaryStorageToClusterMsg) msg);
         }
         
         return msg;
@@ -252,22 +250,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
 
         checkMonUrls(msg.getMonUrls());
         checkExistingBackupStorage(msg.getMonUrls());
-    }
-
-    private void validate(APIAttachPrimaryStorageToClusterMsg msg) {
-        List<String> existPSs = Q.New(PrimaryStorageClusterRefVO.class)
-                .eq(PrimaryStorageClusterRefVO_.clusterUuid, msg.getClusterUuid())
-                .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
-                .listValues();
-
-        if (existPSs.isEmpty()) {
-            return;
-        }
-
-        existPSs.add(msg.getPrimaryStorageUuid());
-        if (existPSs.stream().anyMatch(v -> CephSystemTags.THIRDPARTY_PLATFORM.hasTag(v))) {
-            throw new ApiMessageInterceptionException(argerr("Third-party ceph cannot mixed with other primary storage."));
-        }
     }
 
     @Override

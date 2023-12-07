@@ -1,6 +1,7 @@
 package org.zstack.header.host;
 
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.NeedJsonSchema;
 
 /**
@@ -10,6 +11,7 @@ public class HostCanonicalEvents {
     public static final String HOST_STATUS_CHANGED_PATH = "/host/status/change";
     public static final String HOST_DELETED_PATH = "/host/delete";
     public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
+    public static final String HOST_HARDWARE_CHANGED_PATH = "/host/hardware/changed";
     public static final String HOST_CHECK_MOUNT_FAULT = "/host/mount/path/fault";
     public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/failed";
     public static final String HOST_PHYSICAL_NIC_STATUS_UP = "/host/physicalNic/status/up";
@@ -243,6 +245,27 @@ public class HostCanonicalEvents {
         }
 
         public void setReason(ErrorCode reason) {
+            this.reason = reason;
+        }
+    }
+
+    public static class HostHardwareChangedData {
+        public String hostUuid;
+        public ErrorCodeList reason;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public ErrorCodeList getReason() {
+            return reason;
+        }
+
+        public void setReason(ErrorCodeList reason) {
             this.reason = reason;
         }
     }

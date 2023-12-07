@@ -19,6 +19,13 @@ import org.zstack.utils.network.NetworkUtils;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.zstack.identity.AccountManager;
+import org.zstack.header.identity.AccountConstant;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 /**
  */
 public class VipApiInterceptor implements ApiMessageInterceptor {
@@ -30,16 +37,45 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
     private CloudBus bus;
     @Autowired
     private VipManager vipMgr;
+    @Autowired
+    private AccountManager acntMgr;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APICreateVipMsg) {
             validate((APICreateVipMsg) msg);
+        } else if (msg instanceof APIGetVipAvailablePortMsg) {
+            validate((APIGetVipAvailablePortMsg) msg);
+        } else if (msg instanceof APICheckVipPortAvailabilityMsg) {
+            validate((APICheckVipPortAvailabilityMsg) msg);
         } else if (msg instanceof APIDeleteVipMsg) {
             validate((APIDeleteVipMsg) msg);
         }
 
         return msg;
+    }
+    private void checkVipBelongToAccount(String vipUuid, String accountUuid) {
+
+        if (!accountUuid.equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)) {
+            List<String> accessibleUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VipVO.class);
+
+            if (accessibleUuids == null || accessibleUuids.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("account have no vips"));
+            }
+            if (!accessibleUuids.contains(vipUuid)) {
+                throw new ApiMessageInterceptionException(argerr("vip can not be accessed by this account"));
+            }
+        }
+    }
+   
+    private void validate(APICheckVipPortAvailabilityMsg msg) {
+        String accountUuid = msg.getSession().getAccountUuid();
+        checkVipBelongToAccount(msg.getVipUuid(), accountUuid);
+    }
+
+    private void validate(APIGetVipAvailablePortMsg msg) {
+        String accountUuid = msg.getSession().getAccountUuid();
+        checkVipBelongToAccount(msg.getVipUuid(), accountUuid);
     }
 
     private void validate(APIDeleteVipMsg msg) {

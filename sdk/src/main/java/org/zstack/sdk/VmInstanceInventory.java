@@ -132,6 +132,14 @@ public class VmInstanceInventory  {
         return this.memorySize;
     }
 
+    public java.lang.Long reservedMemorySize;
+    public void setReservedMemorySize(java.lang.Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
+    }
+    public java.lang.Long getReservedMemorySize() {
+        return this.reservedMemorySize;
+    }
+
     public java.lang.Integer cpuNum;
     public void setCpuNum(java.lang.Integer cpuNum) {
         this.cpuNum = cpuNum;

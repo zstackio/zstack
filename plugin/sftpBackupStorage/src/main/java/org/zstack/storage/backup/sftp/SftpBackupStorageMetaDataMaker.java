@@ -129,9 +129,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         for (String metadata : metadatas) {
             if (metadata.contains("backupStorageRefs")) {
                 ImageInventory imageInventory = JSONObjectUtil.toObject(metadata, ImageInventory.class);
-                if (imageInventory.getVirtio() == null) {
-                    ImageHelper.updateImageIfVirtioIsNull(imageInventory);
-                }
+                ImageHelper.updateImageIfVirtioIsNull(imageInventory);
 
                 if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())
                         || imageVOs.stream().anyMatch(image -> image.getUuid().equals(imageInventory.getUuid()))) {
@@ -172,7 +170,10 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 imageVO.setMd5Sum(imageInventory.getMd5Sum());
                 imageVO.setMediaType(ImageConstant.ImageMediaType.valueOf(imageInventory.getMediaType()));
                 imageVO.setName(imageInventory.getName());
-                imageVO.setPlatform(ImagePlatform.valueOf(imageInventory.getPlatform()));
+                if (imageInventory.getPlatform() != null) {
+                    imageVO.setPlatform(ImagePlatform.valueOf(imageInventory.getPlatform()));
+                }
+                imageVO.setArchitecture(imageInventory.getArchitecture());
                 imageVO.setSize(imageInventory.getSize());
                 imageVO.setState(ImageState.valueOf(imageInventory.getState()));
                 imageVO.setSystem(imageInventory.isSystem());

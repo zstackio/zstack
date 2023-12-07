@@ -2,6 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
     http://www.springframework.org/schema/aop
@@ -22,6 +23,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmInstanceCreateExtensionPoint" />
             <zstack:extension interface="org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator" />
             <zstack:extension interface="org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator" />
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageSortExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
@@ -45,6 +47,78 @@
             <list>
                 <value>org.zstack.storage.primary.PrimaryStorageSortFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageSortByAvailablePhysicalCapacityFlow</value>
+            </list>
+        </property>
+
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="LeastVolumePrimaryStorageAllocatorFactory"
+          class="org.zstack.storage.primary.LeastVolumePrimaryStorageAllocatorFactory">
+        <property name="allocatorFlowNames">
+            <list>
+                <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageAvoidAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageTagAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageReservedCapacityAllocatorFlow</value>
+            </list>
+        </property>
+        <property name="sortFlowNames">
+            <list>
+                <value>org.zstack.storage.primary.PrimaryStorageSortFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageSortByVolumeQuantityFlow</value>
+            </list>
+        </property>
+
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="MaximumAvailableCapacityAllocatorFactory"
+          class="org.zstack.storage.primary.MaximumAvailableCapacityAllocatorFactory">
+        <property name="allocatorFlowNames">
+            <list>
+                <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageAvoidAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageTagAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageReservedCapacityAllocatorFlow</value>
+            </list>
+        </property>
+        <property name="sortFlowNames">
+            <list>
+                <value>org.zstack.storage.primary.PrimaryStorageSortFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageSortByAvailableVirtualCapacityFlow</value>
+            </list>
+        </property>
+
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="CustomOrderPrimaryStorageAllocatorFactory"
+          class="org.zstack.storage.primary.CustomOrderPrimaryStorageAllocatorFactory">
+        <property name="allocatorFlowNames">
+            <list>
+                <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageAvoidAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageTagAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageReservedCapacityAllocatorFlow</value>
+            </list>
+        </property>
+        <property name="sortFlowNames">
+            <list>
+                <value>org.zstack.storage.primary.PrimaryStorageSortFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageSortByCustomOrderFlow</value>
             </list>
         </property>
 
@@ -94,6 +168,12 @@
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PrimaryStorageUsageForecaster" class="org.zstack.storage.primary.PrimaryStorageUsageReport">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" order="-2"/>
         </zstack:plugin>
     </bean>
 </beans>

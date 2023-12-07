@@ -5,7 +5,7 @@ import org.zstack.header.network.l2.L2NetworkInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "二层网络清单"
 
 	field {
 		name "success"

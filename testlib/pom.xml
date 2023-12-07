@@ -5,7 +5,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>4.6.0</version>
+        <version>4.8.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>1.10.19</version>
+            <version>4.11.0</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -155,6 +155,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>flatNetworkProvider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>sugonSdnController</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

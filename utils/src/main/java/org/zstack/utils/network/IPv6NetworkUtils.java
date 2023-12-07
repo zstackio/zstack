@@ -378,7 +378,41 @@ public class IPv6NetworkUtils {
     }
 
     public static String ipv6TagValueToAddress(String tag) {
+        if (tag == null){
+            return null;
+        }
         return tag.replace("--", "::");
+    }
+
+    public static String ipv6AddressToTagValue(String address) {
+        if (address == null){
+            return null;
+        }
+        return address.replace("::", "--");
+    }
+
+
+    public static boolean isValidGlobalIpv6(String ipv6) {
+        if (ipv6 == null) {
+            return false;
+        }
+        // Link-local addresses start with fe80
+        if (ipv6.toLowerCase().startsWith("fe80")) {
+            return false;
+        }
+        // Unique-local addresses start with fd
+        if (ipv6.toLowerCase().startsWith("fd")) {
+            return false;
+        }
+        return isValidIpv6(ipv6);
+    }
+
+    public static boolean isValidIpv6(String ipv6) {
+        if (ipv6.split(NetworkUtils.DEFAULT_IPV6_PREFIX_SPLIT).length == 2) {
+            return isIpv6Address(ipv6.split(NetworkUtils.DEFAULT_IPV6_PREFIX_SPLIT)[0]);
+        } else {
+            return isIpv6Address(ipv6);
+        }
     }
 
     public static boolean isValidIpv4(String ipv4) {
@@ -395,4 +429,14 @@ public class IPv6NetworkUtils {
         return mac.matches(IPv6NetworkUtils.macRegex);
     }
 
+    /**
+     * Check if the IP starts with the Link-Local prefix "fe80".
+     * Read vm ip to usedIp need avoid it
+     */
+    public static Boolean isLinkLocalAddress(String ipv6) {
+        if (ipv6 == null || ipv6.isEmpty()) {
+            return false;
+        }
+        return ipv6.toLowerCase().startsWith("fe80");
+    }
 }

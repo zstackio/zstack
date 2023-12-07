@@ -1,8 +1,11 @@
 package org.zstack.sdnController.header;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
@@ -40,4 +43,8 @@ public class APICreateL2HardwareVxlanNetworkPoolMsg extends APICreateL2NetworkMs
         return msg;
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateL2HardwareVxlanNetworkPoolEvent) rsp).getInventory().getUuid() : "", L2NetworkVO.class);
+    }
 }

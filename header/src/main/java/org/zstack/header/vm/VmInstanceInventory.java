@@ -217,6 +217,8 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     private Long memorySize;
 
+    private Long reservedMemorySize;
+
     private Integer cpuNum;
 
     private Long cpuSpeed;
@@ -294,6 +296,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setCpuNum(vo.getCpuNum());
         this.setCpuSpeed(vo.getCpuSpeed());
         this.setMemorySize(vo.getMemorySize());
+        this.setReservedMemorySize(vo.getReservedMemorySize());
         this.setAllocatorStrategy(vo.getAllocatorStrategy());
         this.setPlatform(vo.getPlatform());
         this.setArchitecture(vo.getArchitecture());
@@ -380,6 +383,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setCpuNum(inv.getCpuNum());
         this.setCpuSpeed(inv.getCpuSpeed());
         this.setMemorySize(inv.getMemorySize());
+        this.setReservedMemorySize(inv.getReservedMemorySize());
         this.setAllocatorStrategy(inv.getAllocatorStrategy());
         this.setArchitecture(inv.getArchitecture());
         this.setGuestOsType(inv.getGuestOsType());
@@ -409,6 +413,14 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     public void setMemorySize(Long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    public Long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 
     public Integer getCpuNum() {

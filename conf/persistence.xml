@@ -49,8 +49,10 @@
         <class>org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO</class>
         <class>org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO</class>
         <class>org.zstack.network.l2.vxlan.vtep.VtepVO</class>
+        <class>org.zstack.network.l2.vxlan.vtep.RemoteVtepVO</class>
         <class>org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeVO</class>
         <class>org.zstack.header.network.l2.L2NetworkClusterRefVO</class>
+        <class>org.zstack.header.network.l2.L2NetworkHostRefVO</class>
         <class>org.zstack.header.network.l3.L3NetworkVO</class>
         <class>org.zstack.header.network.l3.L3NetworkEO</class>
         <class>org.zstack.header.network.l3.L3NetworkDnsVO</class>
@@ -60,6 +62,10 @@
         <class>org.zstack.header.network.l3.UsedIpVO</class>
         <class>org.zstack.header.network.l3.AddressPoolVO</class>
         <class>org.zstack.header.network.l3.NormalIpRangeVO</class>
+        <class>org.zstack.network.hostNetwork.HostNetworkBondingVO</class>
+        <class>org.zstack.network.hostNetwork.HostNetworkInterfaceVO</class>
+        <class>org.zstack.network.hostNetwork.HostNetworkBondingServiceRefVO</class>
+        <class>org.zstack.network.hostNetwork.HostNetworkInterfaceServiceRefVO</class>
         <class>org.zstack.network.service.vip.VipVO</class>
         <class>org.zstack.network.service.vip.VipNetworkServicesRefVO</class>
         <class>org.zstack.network.service.vip.VipPeerL3NetworkRefVO</class>
@@ -107,6 +113,7 @@
         <class>org.zstack.network.securitygroup.SecurityGroupVO</class>
         <class>org.zstack.network.securitygroup.SecurityGroupFailureHostVO</class>
         <class>org.zstack.network.securitygroup.VmNicSecurityGroupRefVO</class>
+        <class>org.zstack.network.securitygroup.VmNicSecurityPolicyVO</class>
         <class>org.zstack.network.securitygroup.SecurityGroupSequenceNumberVO</class>
         <class>org.zstack.network.service.portforwarding.PortForwardingRuleVO</class>
         <class>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO</class>
@@ -190,5 +197,10 @@
         <class>org.zstack.directory.ResourceDirectoryRefVO</class>
         <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
         <class>org.zstack.header.host.HostIpmiVO</class>
+        <class>org.zstack.header.sshkeypair.SshKeyPairVO</class>
+        <class>org.zstack.header.sshkeypair.SshKeyPairRefVO</class>
+        <class>org.zstack.header.storage.primary.PrimaryStorageHistoricalUsageVO</class>
+        <class>org.zstack.storage.ceph.primary.CephOsdGroupHistoricalUsageVO</class>
+        <class>org.zstack.storage.primary.local.LocalStorageHostHistoricalUsageVO</class>
     </persistence-unit>
 </persistence>

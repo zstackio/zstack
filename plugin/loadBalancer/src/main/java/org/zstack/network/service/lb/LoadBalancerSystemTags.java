@@ -46,13 +46,22 @@ public class LoadBalancerSystemTags {
     public static PatternedSystemTag BALANCER_ALGORITHM = new PatternedSystemTag(String.format("balancerAlgorithm::{%s}", BALANCER_ALGORITHM_TOKEN), LoadBalancerListenerVO.class);
 
     public static final String SESSION_PERSISTENCE_TOKEN = "sessionPersistence";
-    public static PatternedSystemTag SESSION_PERSISTENCE= new PatternedSystemTag(String.format("sessionPersistence::{%s}", SESSION_PERSISTENCE_TOKEN), LoadBalancerListenerVO.class);
+    public static PatternedSystemTag SESSION_PERSISTENCE = new PatternedSystemTag(String.format("sessionPersistence::{%s}", SESSION_PERSISTENCE_TOKEN), LoadBalancerListenerVO.class);
 
     public static final String SESSION_IDLE_TIMEOUT_TOKEN = "sessionIdleTimeout";
-    public static PatternedSystemTag SESSION_IDLE_TIMEOUT= new PatternedSystemTag(String.format("sessionIdleTimeout::{%s}", SESSION_IDLE_TIMEOUT_TOKEN), LoadBalancerListenerVO.class);
+    public static PatternedSystemTag SESSION_IDLE_TIMEOUT = new PatternedSystemTag(String.format("sessionIdleTimeout::{%s}", SESSION_IDLE_TIMEOUT_TOKEN), LoadBalancerListenerVO.class);
 
     public static final String COOKIE_NAME_TOKEN = "cookieName";
-    public static PatternedSystemTag COOKIE_NAME= new PatternedSystemTag(String.format("cookieName::{%s}", COOKIE_NAME_TOKEN), LoadBalancerListenerVO.class);
+    public static PatternedSystemTag COOKIE_NAME = new PatternedSystemTag(String.format("cookieName::{%s}", COOKIE_NAME_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String HTTP_REDIRECT_HTTPS_TOKEN = "httpRedirectHttps ";
+    public static PatternedSystemTag HTTP_REDIRECT_HTTPS = new PatternedSystemTag(String.format("httpRedirectHttps::{%s}", HTTP_REDIRECT_HTTPS_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String REDIRECT_PORT_TOKEN = "redirectPort";
+    public static PatternedSystemTag REDIRECT_PORT = new PatternedSystemTag(String.format("redirectPort::{%s}", REDIRECT_PORT_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String STATUS_CODE_TOKEN = "statusCode";
+    public static PatternedSystemTag STATUS_CODE = new PatternedSystemTag(String.format("statusCode::{%s}", STATUS_CODE_TOKEN), LoadBalancerListenerVO.class);
 
     public static final String BALANCER_WEIGHT_TOKEN = "balancerWeight";
     public static final String BALANCER_NIC_TOKEN = "balancerNic";

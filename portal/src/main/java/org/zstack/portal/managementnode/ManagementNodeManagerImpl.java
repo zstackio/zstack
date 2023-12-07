@@ -688,7 +688,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         return node;
     }
 
-    private void startHeartbeat() {
+    private synchronized void startHeartbeat() {
         if (heartBeatTask != null) {
             heartBeatTask.cancel(true);
         }
@@ -877,8 +877,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         }
 
                         updateHeartbeat();
-                        checkAllNodesHealth();
                         fenceSuspects();
+                        checkAllNodesHealth();
                     } catch (Throwable t) {
                         if (handleHeartbeatFailure(t)) {
                             // this stops the management node

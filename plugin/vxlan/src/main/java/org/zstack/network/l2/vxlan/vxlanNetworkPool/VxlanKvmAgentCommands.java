@@ -234,6 +234,30 @@ public class VxlanKvmAgentCommands {
     public static class PopulateVxlanNetworksFdbResponse extends AgentResponse {
     }
 
+    public static class DeleteVxlanNetworksFdbCmd extends AgentCommand {
+        private List<String> networkUuids;
+        private List<String> peers;
+
+        public List<String> getNetworkUuids() {
+            return networkUuids;
+        }
+
+        public void setNetworkUuids(List<String> networkUuids) {
+            this.networkUuids = networkUuids;
+        }
+
+        public List<String> getPeers() {
+            return peers;
+        }
+
+        public void setPeers(List<String> peers) {
+            this.peers = peers;
+        }
+    }
+
+    public static class DeleteVxlanNetworksFdbResponse extends AgentResponse {
+    }
+
     public static class CheckVxlanCidrCmd extends AgentCommand {
         private String cidr;
         private String vtepip;
@@ -268,12 +292,22 @@ public class VxlanKvmAgentCommands {
     public static class CheckVxlanCidrResponse extends AgentResponse {
         private String vtepIp;
 
+        private String physicalInterfaceName;
+
         public String getVtepIp() {
             return vtepIp;
         }
 
         public void setVtepIp(String vtepIp) {
             this.vtepIp = vtepIp;
+        }
+
+        public String getPhysicalInterfaceName() {
+            return physicalInterfaceName;
+        }
+
+        public void setPhysicalInterfaceName(String physicalInterfaceName) {
+            this.physicalInterfaceName = physicalInterfaceName;
         }
     }
 

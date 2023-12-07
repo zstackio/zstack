@@ -6,7 +6,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.compute.vm.VmNicManager;
+import org.zstack.compute.vm.VmNicManagerImpl;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
@@ -61,6 +65,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ValidateFunction;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -88,7 +93,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
-public class KVMHostFactory extends AbstractHypervisorFactory implements Component,
+public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
         ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory {
     private static final CLogger logger = Utils.getLogger(KVMHostFactory.class);
 
@@ -110,8 +115,6 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
         RAW_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
         VMDK_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
         QCOW2_FORMAT.setFirstChoice(hypervisorType);
-        allowedOperations.addState(VmInstanceState.Running, AttachVolumeToVmOnHypervisorMsg.class.getName())
-                .addState(VmInstanceState.Paused, AttachVolumeToVmOnHypervisorMsg.class.getName());
     }
 
     @Autowired
@@ -136,6 +139,8 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
     private ResourceConfigFacade rcf;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private VmNicManager vmNicManager;
 
     private Future<Void> checkSocketChannelTimeoutThread;
 
@@ -256,6 +261,11 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
     public HostInventory getHostInventory(String uuid) {
         KVMHostVO vo = dbf.findByUuid(uuid, KVMHostVO.class);
         return vo == null ? null : KVMHostInventory.valueOf(vo);
+    }
+
+    @Override
+    public boolean supportGetHostOs() {
+        return true;
     }
 
     @Override
@@ -463,6 +473,21 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
             return null;
         });
 
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_HOST_STOP_EVENT, KVMAgentCommands.ReportHostStopEventCmd.class, cmd -> {
+            ChangeHostStatusMsg cmsg = new ChangeHostStatusMsg();
+            HostVO hostVO = Q.New(HostVO.class).eq(HostVO_.managementIp, cmd.hostIp).find();
+
+            if (hostVO == null) {
+                return null;
+            }
+            cmsg.setUuid(hostVO.getUuid());
+            cmsg.setStatusEvent(HostStatusEvent.disconnected.toString());
+            bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, cmsg.getHostUuid());
+            bus.send(cmsg);
+            return null;
+        });
+
+
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_HOST_PHYSICAL_NIC_ALARM_EVENT, KVMAgentCommands.PhysicalNicAlarmEventCmd.class, cmd -> {
             HostCanonicalEvents.HostPhysicalNicStatusData cData = new HostCanonicalEvents.HostPhysicalNicStatusData();
             cData.setHostUuid(cmd.host);
@@ -617,11 +642,30 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
             throw new CloudRuntimeException(e);
         }
         for (GuestOsCharacter.Config config : configs.getOsInfo()) {
+            validateGuestOsCharacter(config);
             allGuestOsCharacter.put(String.format("%s_%s_%s", config.getArchitecture(), config.getPlatform(), config.getOsRelease()), config);
         }
     }
 
-    private void startTcpChannelTimeoutChecker() {
+    private void validateGuestOsCharacter(GuestOsCharacter.Config config) {
+        if (config.getCpuModel() != null) {
+            try {
+                KVMGlobalConfig.NESTED_VIRTUALIZATION.validate(config.getCpuModel());
+            } catch (GlobalConfigException e) {
+                throw new CloudRuntimeException(String.format("Invalid cpu model of config %s", JSONObjectUtil.toJsonString(config)));
+            }
+        }
+
+        if (config.getNicDriver() == null) {
+            return;
+        }
+
+        if (!vmNicManager.getSupportNicDriverTypes().contains(config.getNicDriver())) {
+            throw new CloudRuntimeException(String.format("Invalid nic driver of config %s, valid values are %s", JSONObjectUtil.toJsonString(config), vmNicManager.getSupportNicDriverTypes()));
+        }
+    }
+
+    private synchronized void startTcpChannelTimeoutChecker() {
         if (checkSocketChannelTimeoutThread != null) {
             checkSocketChannelTimeoutThread.cancel(true);
         }

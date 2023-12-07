@@ -8,19 +8,34 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.network.l2.L2NetworkAttachStatus;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkHostRefVO;
+import org.zstack.header.network.l2.L2NetworkHostRefVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceHostRouteBackend;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.zstack.utils.logging.CLogger;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.core.db.Q;
+import org.zstack.utils.Utils;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.host.*;
+
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
+    private static final CLogger logger = Utils.getLogger(AttachedL2NetworkAllocatorFlow.class);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -62,40 +77,83 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
             return new ArrayList<>();
         }
 
+        List<String> retHostUuids;
         if (hostUuids.isEmpty()) {
-            sql = "select h from HostVO h where h.clusterUuid in (:cuuids)";
-            TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
-            hq.setParameter("cuuids", clusterUuids);
-
-            if (usePagination()) {
-                hq.setFirstResult(paginationInfo.getOffset());
-                hq.setMaxResults(paginationInfo.getLimit());
-            }
-
-            return hq.getResultList();
+            retHostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                    .in(HostVO_.clusterUuid, clusterUuids).listValues();
         } else {
-            sql = "select h from HostVO h where h.clusterUuid in (:cuuids) and h.uuid in (:huuids)";
-            TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
-            hq.setParameter("cuuids", clusterUuids);
-            hq.setParameter("huuids", hostUuids);
-
-            if (usePagination()) {
-                hq.setFirstResult(paginationInfo.getOffset());
-                hq.setMaxResults(paginationInfo.getLimit());
-            }
-
-            return hq.getResultList();
+            retHostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                    .in(HostVO_.clusterUuid, clusterUuids)
+                    .in(HostVO_.uuid, hostUuids).listValues();
         }
+
+        if (retHostUuids.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        /* in normal case, there is no L2NetworkHostRefVO  */
+        List<String> excludeHostUuids = Q.New(L2NetworkHostRefVO.class).in(L2NetworkHostRefVO_.l2NetworkUuid, l2uuids)
+                .notEq(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Attached)
+                .select(L2NetworkHostRefVO_.hostUuid).listValues();
+        retHostUuids.removeAll(excludeHostUuids);
+        if (retHostUuids.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        sql = "select h from HostVO h where h.uuid in (:huuids)";
+        TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        hq.setParameter("huuids", retHostUuids);
+
+        if (usePagination()) {
+            hq.setFirstResult(paginationInfo.getOffset());
+            hq.setMaxResults(paginationInfo.getLimit());
+        }
+
+        return hq.getResultList();
     }
 
     @Override
     public void allocate() {
         if (spec.getL3NetworkUuids().isEmpty()) {
-            if (CoreGlobalProperty.UNIT_TEST_ON || spec.isAllowNoL3Networks()) {
+            if (spec.isAllowNoL3Networks()) {
                 skip();
                 return;
             } else {
-                throw new CloudRuntimeException("l3Network uuids can not be empty AttachedL2NetworkAllocatorFlow");
+                spec.setAllowNoL3Networks(true);
+
+                String sql;
+                Set<String> clusterUuids = new HashSet<>();
+                clusterUuids.add(spec.getVmInstance().getClusterUuid());
+                List<String> hostUuids = null;
+                if (!amITheFirstFlow()) {
+                    hostUuids = candidates.stream().map(HostVO::getUuid).collect(Collectors.toList());
+                }
+
+                if (hostUuids == null || hostUuids.isEmpty()) {
+                    sql = "select h from HostVO h where h.clusterUuid in (:cuuids)";
+                    TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+                    hq.setParameter("cuuids", clusterUuids);
+                    if (usePagination()) {
+                        hq.setFirstResult(paginationInfo.getOffset());
+                        hq.setMaxResults(paginationInfo.getLimit());
+                    }
+                    candidates = hq.getResultList();
+                } else {
+                    sql = "select h from HostVO h where h.clusterUuid in (:cuuids) and h.uuid in (:huuids)";
+                    TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+                    hq.setParameter("cuuids", clusterUuids);
+                    hq.setParameter("huuids", hostUuids);
+
+                    if (usePagination()) {
+                        hq.setFirstResult(paginationInfo.getOffset());
+                        hq.setMaxResults(paginationInfo.getLimit());
+                    }
+                    candidates = hq.getResultList();
+               }
+
+                next(candidates);
+                logger.debug(String.format("vm clusteruuid:%s, candidates size:%s", spec.getVmInstance().getClusterUuid(), candidates.size()));
+                return;
             }
         }
 

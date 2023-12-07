@@ -388,6 +388,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     
     public static class CreateRootVolumeFromTemplateResponse extends NfsPrimaryStorageAgentResponse {
         public Long actualSize;
+        public Long size;
     }
 
     public static class CreateVolumeWithBackingCmd extends CreateVolumeCmd {
@@ -440,6 +441,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {
         public Long actualSize;
+        public Long size;
     }
 
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
@@ -857,10 +859,12 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String url;
         public String options;
         public String mountPath;
+        public String volumeInstallPath;
+        public String srcPrimaryStorageUuid;
     }
 
     public static class NfsToNfsMigrateBitsRsp extends NfsPrimaryStorageAgentResponse {
-
+        public Map<String, Long> dstFilesActualSize;
     }
 
     public static class NfsRebaseVolumeBackingFileCmd extends NfsPrimaryStorageAgentCommand {

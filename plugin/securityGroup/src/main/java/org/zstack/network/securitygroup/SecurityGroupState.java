@@ -8,5 +8,18 @@ package org.zstack.network.securitygroup;
  */
 public enum SecurityGroupState {
     Enabled,
-    Disabled
+    Disabled;
+
+    public static Boolean isValid(String value) {
+        if (value == null) {
+            return false;
+        }
+
+        try {
+            SecurityGroupState.valueOf(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
 }

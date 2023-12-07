@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener, Component, ManagementNodeReadyExtensionPoint {
     private final static CLogger logger = Utils.getLogger(HostTrackImpl.class);
 
-    private Map<String, Tracker> trackers = new HashMap<>();
+    private Map<String, Tracker> trackers = new ConcurrentHashMap<>();
     private static boolean alwaysStartRightNow = false;
 
     @Autowired
@@ -189,19 +189,19 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        submitReconnectTask();
+                        submitReconnectTask(errorCode);
                     }
                 });
             } else if (decision == ReconnectDecision.StopPing) {
                 cancel();
             } else if (decision == ReconnectDecision.SubmitReconnectTask) {
-                submitReconnectTask();
+                submitReconnectTask(null);
             } else {
                 throw new CloudRuntimeException("should not be here");
             }
         }
 
-        private void submitReconnectTask() {
+        private void submitReconnectTask(ErrorCode lastConnectError) {
             if (isCanceled()) {
                 return;
             }
@@ -210,14 +210,22 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                 reconnectTask.cancel();
             }
 
-            reconnectTask = getHostReconnectTaskFactory(hypervisorType).createTask(uuid, new NoErrorCompletion() {
+            reconnectTask = createTask(lastConnectError);
+            reconnectTask.start();
+        }
+
+        HostReconnectTask createTask(ErrorCode lastConnectError) {
+            final HostReconnectTaskFactory factory = getHostReconnectTaskFactory(hypervisorType);
+            NoErrorCompletion completion = new NoErrorCompletion() {
                 @Override
                 public void done() {
                     continueToRunThisTimer();
                 }
-            });
+            };
 
-            reconnectTask.start();
+            return lastConnectError == null ?
+                    factory.createTask(uuid, completion) :
+                    factory.createTaskWithLastConnectError(uuid, lastConnectError, completion);
         }
 
         @Override

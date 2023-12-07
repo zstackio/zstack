@@ -44,10 +44,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.StopVmInstanceMsg;
-import org.zstack.header.vm.VmAttachVolumeValidatorMethod;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.storage.volume.VolumeUtils;
 import org.zstack.utils.CollectionDSL;
@@ -411,6 +408,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
             handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {
+            handle((CleanUpStorageTrashOnPrimaryStorageMsg)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -447,6 +446,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void handle(CleanUpStorageTrashOnPrimaryStorageMsg msg) {
+        throw new OperationFailureException(operr("operation not supported"));
     }
 
     protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
@@ -917,6 +920,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((APICleanUpTrashOnPrimaryStorageMsg) msg);
         } else if (msg instanceof APIGetTrashOnPrimaryStorageMsg) {
             handle((APIGetTrashOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof APICleanUpStorageTrashOnPrimaryStorageMsg) {
+            handle((APICleanUpStorageTrashOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -941,6 +946,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
 
         bus.reply(msg, reply);
+    }
+
+    protected void handle(APICleanUpStorageTrashOnPrimaryStorageMsg msg) {
+        throw new OperationFailureException(operr("operation not supported"));
     }
 
     protected synchronized void updateTrashSize(CleanTrashResult result, Long size) {
@@ -1153,64 +1162,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("sync-capacity-of-primary-storage-%s", self.getUuid()));
         chain.then(new ShareFlow() {
-            Long volumeUsage;
-            Long snapshotUsage;
-            Long totalPhysicalSize;
-            Long availablePhysicalSize;
 
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "sync-capacity-used-by-volumes";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        VolumeReportPrimaryStorageCapacityUsageMsg msg = new VolumeReportPrimaryStorageCapacityUsageMsg();
-                        msg.setPrimaryStorageUuid(self.getUuid());
-                        bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
-                        bus.send(msg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                VolumeReportPrimaryStorageCapacityUsageReply r = reply.castReply();
-                                volumeUsage = r.getUsedCapacity();
-                                volumeUsage = ratioMgr.calculateByRatio(self.getUuid(), volumeUsage);
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "sync-capacity-used-by-volume-snapshots";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        VolumeSnapshotReportPrimaryStorageCapacityUsageMsg msg = new VolumeSnapshotReportPrimaryStorageCapacityUsageMsg();
-                        msg.setPrimaryStorageUuid(self.getUuid());
-                        bus.makeLocalServiceId(msg, VolumeSnapshotConstant.SERVICE_ID);
-                        bus.send(msg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                // note: snapshot size is physical size,
-                                // don't calculate over-provisioning here
-                                VolumeSnapshotReportPrimaryStorageCapacityUsageReply r = reply.castReply();
-                                snapshotUsage = r.getUsedSize();
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "sync-physical-capacity";
 
@@ -1219,9 +1173,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(trigger) {
                             @Override
                             public void success(PhysicalCapacityUsage returnValue) {
-                                totalPhysicalSize = returnValue.totalPhysicalSize;
-                                availablePhysicalSize = returnValue.availablePhysicalSize;
-                                availablePhysicalSize = availablePhysicalSize < 0 ? 0 : availablePhysicalSize;
+                                PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+                                updater.run(cap -> {
+                                    cap.setAvailablePhysicalCapacity(returnValue.availablePhysicalSize < 0 ? 0 : returnValue.availablePhysicalSize);
+                                    cap.setTotalPhysicalCapacity(returnValue.totalPhysicalSize);
+                                    return cap;
+                                });
                                 trigger.next();
                             }
 
@@ -1233,27 +1190,33 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "recalculate-primary-storage-capacity";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                        rmsg.setPrimaryStorageUuid(self.getUuid());
+                        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        writeToDb();
                         self = dbf.reload(self);
                         reply.setInventory(getSelfInventory());
                         bus.reply(msg, reply);
-                    }
-
-                    private void writeToDb() {
-                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
-                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                            @Override
-                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                                long avail = cap.getTotalCapacity() - volumeUsage - snapshotUsage;
-                                cap.setAvailableCapacity(avail);
-                                cap.setAvailablePhysicalCapacity(availablePhysicalSize);
-                                cap.setTotalPhysicalCapacity(totalPhysicalSize);
-                                return cap;
-                            }
-                        });
                     }
                 });
 
@@ -1738,7 +1701,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     @VmAttachVolumeValidatorMethod
-    static void vmAttachVolumeValidator(String vmUuid, String volumeUuid) {
+    static void vmAttachVolumeValidator(VmInstanceInventory vmInv, String volumeUuid) {
         PrimaryStorageState state = SQL.New("select pri.state from PrimaryStorageVO pri " +
                 "where pri.uuid = (select vol.primaryStorageUuid from VolumeVO vol where vol.uuid = :volUuid)", PrimaryStorageState.class)
                 .param("volUuid", volumeUuid)

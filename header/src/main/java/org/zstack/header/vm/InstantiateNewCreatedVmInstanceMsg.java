@@ -2,6 +2,7 @@ package org.zstack.header.vm;
 
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,8 +14,6 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private String rootDiskOfferingUuid;
     private String hostUuid;
-    private String primaryStorageUuidForRootVolume;
-    private String primaryStorageUuidForDataVolume;
     private String strategy;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
@@ -22,6 +21,40 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private List<String> avoidHostUuids;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
+    private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
+    private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
+
+    public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
+        return candidatePrimaryStorageUuidsForRootVolume;
+    }
+
+    public void setCandidatePrimaryStorageUuidsForRootVolume(List<String> candidatePrimaryStorageUuidsForRootVolume) {
+        this.candidatePrimaryStorageUuidsForRootVolume.clear();
+        if (candidatePrimaryStorageUuidsForRootVolume != null) {
+            this.candidatePrimaryStorageUuidsForRootVolume.addAll(candidatePrimaryStorageUuidsForRootVolume);
+        }
+    }
+
+    public List<String> getCandidatePrimaryStorageUuidsForDataVolume() {
+        return candidatePrimaryStorageUuidsForDataVolume;
+    }
+
+    public void setCandidatePrimaryStorageUuidsForDataVolume(List<String> candidatePrimaryStorageUuidsForDataVolume) {
+        this.candidatePrimaryStorageUuidsForDataVolume.clear();
+        if (candidatePrimaryStorageUuidsForDataVolume != null) {
+            this.candidatePrimaryStorageUuidsForDataVolume.addAll(candidatePrimaryStorageUuidsForDataVolume);
+        }
+    }
+
+    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+
+    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+        return diskAOs;
+    }
+
+    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+        this.diskAOs = diskAOs;
+    }
 
     public List<String> getSoftAvoidHostUuids() {
         return softAvoidHostUuids;
@@ -76,20 +109,28 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
         return getVmInstanceInventory().getUuid();
     }
 
+    @Deprecated
     public String getPrimaryStorageUuidForRootVolume() {
-        return primaryStorageUuidForRootVolume;
+        return this.candidatePrimaryStorageUuidsForRootVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForRootVolume.get(0);
     }
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
-        this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+        this.candidatePrimaryStorageUuidsForRootVolume.clear();
+        if (primaryStorageUuidForRootVolume != null) {
+            this.candidatePrimaryStorageUuidsForRootVolume.add(primaryStorageUuidForRootVolume);
+        }
     }
 
+    @Deprecated
     public String getPrimaryStorageUuidForDataVolume() {
-        return primaryStorageUuidForDataVolume;
+        return this.candidatePrimaryStorageUuidsForDataVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForDataVolume.get(0);
     }
 
     public void setPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
-        this.primaryStorageUuidForDataVolume = primaryStorageUuidForDataVolume;
+        this.candidatePrimaryStorageUuidsForDataVolume.clear();
+        if (primaryStorageUuidForDataVolume != null) {
+            this.candidatePrimaryStorageUuidsForDataVolume.add(primaryStorageUuidForDataVolume);
+        }
     }
 
     public void setStrategy(String strategy) {
@@ -156,3 +197,4 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
         this.disableL3Networks = disableL3Networks;
     }
 }
+

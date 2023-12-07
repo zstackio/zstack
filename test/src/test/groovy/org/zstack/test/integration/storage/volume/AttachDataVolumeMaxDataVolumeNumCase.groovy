@@ -26,6 +26,7 @@ class AttachDataVolumeMaxDataVolumeNumCase extends SubCase {
     EnvSpec env
     VmInstanceInventory vm
     private static final int MAX_DATA_VOLUME_NUMBER = 24
+    private static final int EXCEED_DATA_VOLUME_NUMBER = 2
 
     @Override
     void setup() {
@@ -60,36 +61,37 @@ class AttachDataVolumeMaxDataVolumeNumCase extends SubCase {
             return rsp
         }
 
-        for (int i = 0; i < MAX_DATA_VOLUME_NUMBER; i++){
+        int successAttachedVolumeNum = 0
+        def threadList = []
+        for (int i = 0; i < MAX_DATA_VOLUME_NUMBER + EXCEED_DATA_VOLUME_NUMBER; i++){
             VolumeInventory dataVolume = createDataVolume {
                 name = 'test-vol'
                 diskOfferingUuid = diskOffering.uuid
                 systemTags = i % 2 == 0 ? ["capability::virtio-scsi"] : []
             } as VolumeInventory
 
-            attachDataVolumeToVm {
-                vmInstanceUuid = vm.uuid
-                volumeUuid = dataVolume.uuid
-            }
-
-            assert cmd.addons["attachedDataVolumes"].size() == i
+            threadList.add(new Thread(new Runnable() {
+                @Override
+                void run() {
+                    attachDataVolumeToVm {
+                        vmInstanceUuid = vm.uuid
+                        volumeUuid = dataVolume.uuid
+                    }
+                    successAttachedVolumeNum++
+                }
+            }))
         }
 
-        assert Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, vm.uuid).count() == 24
+        threadList.each { it.start() }
+        threadList.each { it.join() }
 
-        VolumeInventory newDataVol = createDataVolume {
-            name = '25thVol'
-            diskOfferingUuid = diskOffering.uuid
-        } as VolumeInventory
-
-        expect(AssertionError.class) {
-            attachDataVolumeToVm {
-                vmInstanceUuid = vm.uuid
-                volumeUuid = newDataVol.uuid
-            }
-        }
-
-        assert Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, vm.uuid).count() == 24
+        // expect success-attached-volume-number will not exceed the max-data-volume-number
+        assert successAttachedVolumeNum == MAX_DATA_VOLUME_NUMBER
+        assert cmd.addons["attachedDataVolumes"].size() == MAX_DATA_VOLUME_NUMBER - 1
+        assert Q.New(VolumeVO.class)
+                .eq(VolumeVO_.type, VolumeType.Data)
+                .eq(VolumeVO_.vmInstanceUuid, vm.uuid)
+                .count() == MAX_DATA_VOLUME_NUMBER
     }
 
     void testDataVolumeOrder(){
