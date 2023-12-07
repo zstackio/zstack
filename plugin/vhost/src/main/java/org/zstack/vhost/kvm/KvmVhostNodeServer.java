@@ -1,13 +1,19 @@
 package org.zstack.vhost.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.storage.addon.primary.ActiveVolumeTO;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
@@ -21,7 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
-        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
+        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
+        KvmVmActiveVolumeSyncExtensionPoint {
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
@@ -128,4 +135,71 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
     public void afterAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd) {}
     @Override
     public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd, ErrorCode err, Map data) {}
+
+    @Override
+    public List<String> getStoragePathsForVolumeSync(HostInventory host, PrimaryStorageInventory attachedPs) {
+        if (!PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE.equals(attachedPs.getType())) {
+            return null;
+        }
+
+        PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(attachedPs.getUuid());
+        if (nodeSvc == null) {
+            return null;
+        }
+
+        return nodeSvc.getActiveVolumesLocation(host);
+    }
+
+    @Override
+    public void handleInactiveVolume(HostInventory host, Map<PrimaryStorageInventory, List<String>> inactiveVolumePaths, Completion completion) {
+        if (inactiveVolumePaths.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(inactiveVolumePaths.entrySet()).all((entry, compl) -> {
+            PrimaryStorageInventory ps = entry.getKey();
+            List<String> paths = entry.getValue();
+
+            PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(ps.getUuid());
+            if (nodeSvc == null) {
+                compl.done();
+                return;
+            }
+
+            List<BaseVolumeInfo> infos = nodeSvc.getActiveVolumesInfo(paths, host, false);
+            if (infos.isEmpty()) {
+                compl.done();
+                return;
+            }
+
+            new While<>(infos).each((info, c) -> {
+                nodeSvc.deactivate(info, host, new Completion(c) {
+                    @Override
+                    public void success() {
+                        c.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        c.addError(errorCode);
+                        c.done();
+                    }
+                });
+            }).run(new WhileDoneCompletion(compl) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
+                    if (!errorCodeList.getCauses().isEmpty()) {
+                        compl.addError(errorCodeList.getCauses().get(0));
+                    }
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
+            }
+        });
+    }
 }
