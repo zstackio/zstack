@@ -14,7 +14,7 @@
 
     <bean id="UpgradeChecker" class="org.zstack.core.upgrade.UpgradeChecker">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
 </beans>

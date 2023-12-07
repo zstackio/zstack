@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.Component;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class UpgradeChecker implements ManagementNodeReadyExtensionPoint {
+public class UpgradeChecker implements Component {
     private static final CLogger logger = Utils.getLogger(UpgradeChecker.class);
     
     @Autowired
@@ -32,13 +32,19 @@ public class UpgradeChecker implements ManagementNodeReadyExtensionPoint {
     private Set<String> grayScaleConfigChangeSet = new HashSet<>();
 
     @Override
-    public void managementNodeReady() {
+    public boolean start() {
         if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            return;
+            return true;
         }
         initGrayScaleConfig();
+        return true;
     }
 
+    @Override
+    public boolean stop() {
+        return true;
+    }
+    
     public void initGrayScaleConfig() {
         File oldGrayUpgradeFile = PathUtil.findFileOnClassPath("grayUpgrade/old_grayUpgrade.json", true);
         File grayUpgradeFile = PathUtil.findFileOnClassPath("grayUpgrade/grayUpgrade.json", true);
