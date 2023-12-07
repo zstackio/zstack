@@ -233,7 +233,7 @@
 	<config>
 		<name>resourceBinding.Scene</name>
 		<description>Scenarios supported by resource binding</description>
-		<defaultValue>Auto</defaultValue>
+		<defaultValue>All</defaultValue>
 		<category>vm</category>
 		<type>java.lang.String</type>
 	</config>
