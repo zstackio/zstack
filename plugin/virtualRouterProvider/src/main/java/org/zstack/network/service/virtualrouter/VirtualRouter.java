@@ -667,10 +667,7 @@ public class VirtualRouter extends ApplianceVmBase {
         }
 
         AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
-        if (agentVersionVO == null) {
-            return true;
-        }
-        if(agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())){
+        if (agentVersionVO != null && agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
             return false;
         }
 
