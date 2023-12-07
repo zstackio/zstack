@@ -189,6 +189,13 @@ public class ExponApiHelper {
         return true;
     }
 
+    public List<UssGatewayModule> getVhostControllerBoundUss(String vhostId) {
+        GetVhostControllerBoundUssRequest req = new GetVhostControllerBoundUssRequest();
+        req.setVhostId(vhostId);
+        GetVhostControllerBoundUssResponse rsp = call(req, GetVhostControllerBoundUssResponse.class);
+        return rsp.getUss();
+    }
+
     public VolumeModule createVolume(String name, String poolId, long size) {
         CreateVolumeRequest req = new CreateVolumeRequest();
         req.setName(name);

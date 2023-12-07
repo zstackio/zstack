@@ -3040,6 +3040,30 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class VolumeSyncCmd extends AgentCommand {
+        private List<String> storagePaths;
+
+        public void setStoragePaths(List<String> storagePaths) {
+            this.storagePaths = storagePaths;
+        }
+
+        public List<String> getStoragePaths() {
+            return storagePaths;
+        }
+    }
+
+    public static class VolumeSyncRsp extends AgentResponse {
+        private Map<String, List<String>> inactiveVolumePaths;
+
+        public void setInactiveVolumePaths(Map<String, List<String>> inactiveVolumePaths) {
+            this.inactiveVolumePaths = inactiveVolumePaths;
+        }
+
+        public Map<String, List<String>> getInactiveVolumePaths() {
+            return inactiveVolumePaths;
+        }
+    }
+
     public static class RefreshAllRulesOnHostCmd extends AgentCommand {
         private List<SecurityGroupRuleTO> ruleTOs;
         private List<SecurityGroupRuleTO> ipv6RuleTOs;

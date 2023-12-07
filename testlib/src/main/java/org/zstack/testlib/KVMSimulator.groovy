@@ -346,6 +346,10 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
+        spec.simulator(KVMConstant.KVM_VOLUME_SYNC_PATH) {
+            return new VolumeSyncRsp()
+        }
+
         spec.simulator(KVMConstant.KVM_ATTACH_VOLUME) { HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachDataVolumeCmd.class)
             // assume all data volumes has same deviceType.

@@ -4,7 +4,12 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
+import org.zstack.expon.ExponApiHelper
 import org.zstack.expon.ExponStorageController
+import org.zstack.expon.sdk.vhost.VhostControllerModule
+import org.zstack.header.host.HostConstant
+import org.zstack.header.host.PingHostMsg
+import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetMsg
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetReply
 import org.zstack.header.storage.backup.ExportImageToRemoteTargetMsg
@@ -16,6 +21,7 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.VolumeTO
 import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory
@@ -24,6 +30,7 @@ import org.zstack.tag.SystemTagCreator
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.CollectionUtils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -41,6 +48,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     VmInstanceInventory vm
     VolumeInventory vol, vol2
     HostInventory host1, host2
+    CloudBus bus
 
     String exponUrl = "https://admin:Admin123@172.25.102.64:443/pool"
     String exportProtocol = "iscsi://"
@@ -149,10 +157,14 @@ class ExternalPrimaryStorageCase extends SubCase {
             bs = env.inventoryByName("sftp") as BackupStorageInventory
             host1 = env.inventoryByName("kvm") as HostInventory
             // host2 = env.inventoryByName("kvm2") as HostInventory
+            bus = bean(CloudBus.class)
+
+            KVMGlobalConfig.VM_SYNC_ON_HOST_PING.updateValue(true)
             simulatorEnv()
             testCreateExponStorage()
             testSessionExpired()
             testCreateVm()
+            testHandleInactiveVolume()
             testAttachIso()
             testCreateDataVolume()
             testCreateSnapshot()
@@ -311,6 +323,41 @@ class ExternalPrimaryStorageCase extends SubCase {
         } as VmInstanceInventory
 
         deleteVm(vm2.uuid)
+    }
+
+    void testHandleInactiveVolume() {
+        ExternalPrimaryStorageFactory factory = Platform.getComponentLoader().getComponent(ExternalPrimaryStorageFactory.class)
+        ExponStorageController controller = factory.getControllerSvc(ps.uuid) as ExponStorageController
+        ExponApiHelper apiHelper = controller.apiHelper
+
+        VhostControllerModule vhost = apiHelper.getVhostController("volume-" + vm.rootVolumeUuid)
+
+        assert !CollectionUtils.isEmpty(controller.apiHelper.getVhostControllerBoundUss(vhost.id))
+
+        env.simulator(KVMConstant.KVM_VOLUME_SYNC_PATH) { HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.VolumeSyncCmd.class)
+            assert cmd.storagePaths.get(0).endsWith("/volume-*")
+            def rsp = new KVMAgentCommands.VolumeSyncRsp()
+            rsp.inactiveVolumePaths = new HashMap<>()
+            rsp.inactiveVolumePaths.put(cmd.storagePaths.get(0), asList("/var/run/wds/volume-" + vm.rootVolumeUuid))
+            return rsp
+        }
+
+        def msg = new PingHostMsg()
+        msg.hostUuid = host1.uuid
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host1.uuid)
+        MessageReply r = bus.call(msg)
+        assert r.success
+
+        retryInSecs {
+            assert CollectionUtils.isEmpty(controller.apiHelper.getVhostControllerBoundUss(vhost.id))
+        }
+
+        env.simulator(KVMConstant.KVM_VOLUME_SYNC_PATH) { HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.VolumeSyncCmd.class)
+            assert cmd.storagePaths.get(0).endsWith("/volume-*")
+            return new KVMAgentCommands.VolumeSyncRsp()
+        }
     }
 
     void testAttachIso() {
