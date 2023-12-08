@@ -569,6 +569,8 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
 			put("org.zstack.storage.device.localRaid.RunningState", "org.zstack.sdk.RunningState");
 			put("org.zstack.storage.device.localRaid.SmartDataStruct", "org.zstack.sdk.SmartDataStruct");
+			put("org.zstack.storage.device.multipath.DeviceTO", "org.zstack.sdk.DeviceTO");
+			put("org.zstack.storage.device.multipath.MultipathTopologyStruct", "org.zstack.sdk.MultipathTopologyStruct");
 			put("org.zstack.storage.device.nvme.NvmeLunHostRefInventory", "org.zstack.sdk.NvmeLunHostRefInventory");
 			put("org.zstack.storage.device.nvme.NvmeLunInventory", "org.zstack.sdk.NvmeLunInventory");
 			put("org.zstack.storage.device.nvme.NvmeServerClusterRefInventory", "org.zstack.sdk.NvmeServerClusterRefInventory");
@@ -845,6 +847,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DataVolumeSpending", "org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpending");
 			put("org.zstack.sdk.DataVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpendingInventory");
 			put("org.zstack.sdk.DeleteSnapshotGroupResult", "org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult");
+			put("org.zstack.sdk.DeviceTO", "org.zstack.storage.device.multipath.DeviceTO");
 			put("org.zstack.sdk.DirectoryInventory", "org.zstack.directory.DirectoryInventory");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
 			put("org.zstack.sdk.ESXHostInventory", "org.zstack.vmware.ESXHostInventory");
@@ -1003,6 +1006,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MulticastRouterInventory", "org.zstack.multicast.router.header.MulticastRouterInventory");
 			put("org.zstack.sdk.MulticastRouterRendezvousPointInventory", "org.zstack.multicast.router.header.MulticastRouterRendezvousPointInventory");
 			put("org.zstack.sdk.MulticastRouterVpcVRouterRefInventory", "org.zstack.multicast.router.header.MulticastRouterVpcVRouterRefInventory");
+			put("org.zstack.sdk.MultipathTopologyStruct", "org.zstack.storage.device.multipath.MultipathTopologyStruct");
 			put("org.zstack.sdk.NasFileSystemInventory", "org.zstack.nas.NasFileSystemInventory");
 			put("org.zstack.sdk.NasMountTargetInventory", "org.zstack.nas.NasMountTargetInventory");
 			put("org.zstack.sdk.NasProtocolType", "org.zstack.nas.NasProtocolType");
