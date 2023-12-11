@@ -933,26 +933,15 @@ public class KVMHost extends HostBase implements Host {
         }
 
         KVMHostVO host = dbf.findByUuid(msg.getHostUuid(), KVMHostVO.class);
-        File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
-
-        String privKeyContent;
-        try {
-            privKeyContent = FileUtils.readFileToString(privKeyFile, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new CloudRuntimeException(
-                    String.format("read host[%s] private key failed. because %s", host.getUuid(), e.getMessage())
-            );
-        }
-
         HTTP.Builder hb = HTTP.post();
         hb.body("");
         try {
-            hb.url(String.format("http://localhost:%s?username=%s&&hostname=%s&&port=%s&&privatekey=%s",
+            hb.url(String.format("http://localhost:%s?username=%s&&hostname=%s&&port=%s&&password=%s",
                     KVMGlobalConfig.HOST_WEBSSH_PORT.value(),
-                    "root",
+                    msg.getUserName(),
                     host.getManagementIp(),
                     host.getPort().toString(),
-                    URLEncoder.encode(privKeyContent, "UTF-8")));
+                    msg.getPassword()));
 
             Response r = hb.callWithException();
             // 1. webssh maybe is not running
@@ -966,7 +955,7 @@ public class KVMHost extends HostBase implements Host {
             WebSshResponseStruct webSsh = JSONObjectUtil.toObject(Objects.requireNonNull(r.body()).string(), WebSshResponseStruct.class);
             // 2. return id is null, because authentication fail or connections is full
             if (null == webSsh.id) {
-                reply.setError(operr("create connection to host[%s] failed, because %s", host.getUuid(), webSsh.status));
+                reply.setError(operr("ssh connect to host[%s] username[%s] on port[%s] failed, because %s", host.getUuid(), host.getUsername(), host.getPort(), webSsh.status));
                 reply.setSuccess(false);
                 bus.reply(msg, reply);
                 return;
@@ -974,10 +963,6 @@ public class KVMHost extends HostBase implements Host {
 
             reply.setUrl(String.format("%s://{{ip}}:%s/ws?id=%s", schema, port, webSsh.id));
             bus.reply(msg, reply);
-        } catch (UnsupportedEncodingException e) {
-            throw new CloudRuntimeException(
-                    String.format("urlencode host[%s] private key failed. because %s", host.getUuid(), e.getMessage())
-            );
         } catch (IOException | NullPointerException e) {
             throw new CloudRuntimeException(
                     String.format("get host[%s] webssh url failed. because %s", host.getUuid(), e.getMessage())

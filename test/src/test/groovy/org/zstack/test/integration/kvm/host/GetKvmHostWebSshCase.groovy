@@ -46,6 +46,8 @@ class GetKvmHostWebSshCase extends SubCase {
     void testGetKvmHostWebSsh() {
         def ret = getHostWebSshUrl {
             uuid = host.uuid
+            userName = "root"
+            password = "password"
         } as GetHostWebSshUrlResult
 
         String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
@@ -56,6 +58,8 @@ class GetKvmHostWebSshCase extends SubCase {
         def ret = getHostWebSshUrl {
             uuid = host.uuid
             https = true
+            userName = "root"
+            password = "password"
         } as GetHostWebSshUrlResult
 
         String port = KVMGlobalConfig.HOST_WEBSSH_HTTPS_PORT.value();
