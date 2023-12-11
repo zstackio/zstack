@@ -2,16 +2,21 @@ package org.zstack.network.l2;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -24,9 +29,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.inerr;
@@ -59,6 +62,8 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             handleDeletionCleanup(action, completion);
         } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_CODE)) {
             handleDetach(action, completion);
+        } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_FROM_HOST_CODE)) {
+            handleDetachFromHost(action, completion);
         } else {
             completion.success();
         }
@@ -92,6 +97,42 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 completion.success();
             }
         });
+    }
+
+    private void handleDetachFromHost(CascadeAction action, final Completion completion) {
+        List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
+        List<DetachL2NetworkFromHostMsg> msgs = CollectionUtils.transformToList(structs, new Function<DetachL2NetworkFromHostMsg, L2NetworkDetachStruct>() {
+            @Override
+            public DetachL2NetworkFromHostMsg call(L2NetworkDetachStruct arg) {
+                DetachL2NetworkFromHostMsg msg = new DetachL2NetworkFromHostMsg();
+                msg.setHostUuid(arg.getHostUuid());
+                msg.setL2NetworkUuid(arg.getL2NetworkUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, arg.getL2NetworkUuid());
+                return msg;
+            }
+        });
+
+        List<ErrorCode> errors = Collections.synchronizedList(new LinkedList<ErrorCode>());
+        new While<>(msgs).step((dmsg, wcomp) ->
+                bus.send(dmsg, new CloudBusCallBack(wcomp) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            wcomp.done();
+                        } else {
+                            errors.add(reply.getError());
+                            wcomp.allDone();
+                        }
+                    }
+                }), 10).run(new WhileDoneCompletion(null) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errors.isEmpty()) {
+                            completion.fail(errors.get(0));
+                            return;
+                        }
+                        completion.success();
+                    }});
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
@@ -240,7 +281,8 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             if (ctx != null) {
                 return action.copy().setParentIssuer(NAME).setParentIssuerContext(ctx);
             }
-        } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_CODE)) {
+        } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_CODE) ||
+                action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_FROM_HOST_CODE)) {
             return action.copy().setParentIssuer(NAME);
         }
 

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidateNetworkInterfacesAction extends AbstractAction {
+public class AttachL2NetworkToHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateNetworkInterfacesResult value;
+        public org.zstack.sdk.AttachL2NetworkToHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,13 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List hostUuids;
+    public java.lang.String l2NetworkUuid;
 
-    @Param(required = false, validValues = {"interface","bonding","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String interfaceType = "all";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean intersecting = true;
-
-    @Param(required = false)
-    public java.lang.Integer limit = 1000;
-
-    @Param(required = false)
-    public java.lang.Integer start = 0;
+    @Param(required = false, validValues = {"LinuxBridge"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String l2ProviderType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -58,6 +52,12 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -66,8 +66,8 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateNetworkInterfacesResult value = res.getResult(org.zstack.sdk.GetCandidateNetworkInterfacesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateNetworkInterfacesResult() : value; 
+        org.zstack.sdk.AttachL2NetworkToHostResult value = res.getResult(org.zstack.sdk.AttachL2NetworkToHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachL2NetworkToHostResult() : value; 
 
         return ret;
     }
@@ -96,11 +96,11 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/cluster/hosts-network-interfaces";
+        info.httpMethod = "POST";
+        info.path = "/l2-networks/{l2NetworkUuid}/hosts/{hostUuid}";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

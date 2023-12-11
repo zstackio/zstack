@@ -16,6 +16,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Created by frank on 7/18/2015.
@@ -23,6 +24,7 @@ import java.util.Map;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
     protected static final CLogger logger = Utils.getLogger(VmDetachNicOnHypervisorFlow.class);
+
     @Autowired
     private CloudBus bus;
 
@@ -50,7 +52,13 @@ public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
                 if (reply.isSuccess()) {
                     trigger.next();
                 } else {
-                    trigger.fail(reply.getError());
+                    Pattern pattern = Pattern.compile(VmInstanceConstant.DETACH_NIC_FAILED_REGEX);
+                    if (pattern.matcher(reply.getError().getDetails()).matches()) {
+                        logger.warn(reply.getError().toString());
+                        trigger.next();
+                    } else {
+                        trigger.fail(reply.getError());
+                    }
                 }
             }
         });

@@ -45,7 +45,6 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -130,7 +129,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             handleDeletionCleanup(action, completion);
         } else if (action.isActionCode(PrimaryStorageConstant.PRIMARY_STORAGE_DETACH_CODE)) {
             handlePrimaryStorageDetach(action, completion);
-        } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_CODE)) {
+        } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_CODE) ||
+                action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_FROM_HOST_CODE)) {
             handleL2NetworkDetach(action, completion);
         } else {
             completion.success();
@@ -147,12 +147,21 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
         for (L2NetworkDetachStruct s : structs) {
             String sql = "select vm.uuid, nic.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3"
-                    + " where vm.clusterUuid = :clusterUuid"
-                    + " and l3.l2NetworkUuid = :l2NetworkUuid"
+                    + " where l3.l2NetworkUuid = :l2NetworkUuid"
                     + " and nic.l3NetworkUuid = l3.uuid"
                     + " and nic.vmInstanceUuid = vm.uuid";
-            TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-            q.setParameter("clusterUuid", s.getClusterUuid());
+
+            TypedQuery<Tuple> q;
+            if (s.getClusterUuid() != null) {
+                sql += " and vm.clusterUuid = :clusterUuid";
+                q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("clusterUuid", s.getClusterUuid());
+            } else {
+                sql += " and (vm.hostUuid = :hostUuid or (vm.hostUuid is null and vm.lastHostUuid = :hostUuid))";
+                q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("hostUuid", s.getHostUuid());
+            }
+
             q.setParameter("l2NetworkUuid", s.getL2NetworkUuid());
             List<Tuple> result = q.getResultList();
             Map<String, String> nicVmMap = new HashMap<>();

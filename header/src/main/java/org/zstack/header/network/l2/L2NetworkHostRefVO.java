@@ -1,7 +1,5 @@
 package org.zstack.header.network.l2;
 
-import org.zstack.header.cluster.ClusterEO;
-import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.search.SqlTrigger;
@@ -47,7 +45,7 @@ public class L2NetworkHostRefVO {
     private String l2ProviderType;
 
     @Column
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     private L2NetworkAttachStatus attachStatus;
 
     @Column
