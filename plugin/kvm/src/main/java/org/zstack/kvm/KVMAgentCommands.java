@@ -3605,7 +3605,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class TakeSnapshotCmd extends AgentCommand implements HasThreadContext {
+    public static class TakeSnapshotCmd extends PrimaryStorageCommand implements HasThreadContext {
         private String vmUuid;
         private String volumeUuid;
         private VolumeTO volume;
