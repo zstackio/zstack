@@ -125,6 +125,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
         getHostWebSshUrlMsg.setUuid(msg.getUuid());
         getHostWebSshUrlMsg.setHttps(msg.getHttps());
+        getHostWebSshUrlMsg.setUserName(msg.getUserName());
+        getHostWebSshUrlMsg.setPassword(msg.getPassword());
         bus.makeLocalServiceId(getHostWebSshUrlMsg ,HostConstant.SERVICE_ID);
         bus.send(getHostWebSshUrlMsg, new CloudBusCallBack(msg) {
             @Override

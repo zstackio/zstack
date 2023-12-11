@@ -1,6 +1,7 @@
 package org.zstack.header.host;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -22,6 +23,13 @@ public class APIGetHostWebSshUrlMsg extends APIMessage {
     @APIParam(required = false)
     private Boolean https = false;
 
+    @APIParam(nonempty = true)
+    private String userName;
+
+    @APIParam(nonempty = true)
+    @NoLogging
+    private String password;
+
     public String getUuid() {
         return uuid;
     }
@@ -38,9 +46,27 @@ public class APIGetHostWebSshUrlMsg extends APIMessage {
         this.https = https;
     }
 
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public static APIGetHostWebSshUrlMsg __example__() {
         APIGetHostWebSshUrlMsg msg = new APIGetHostWebSshUrlMsg();
         msg.setUuid(uuid());
+        msg.setUserName("root");
+        msg.setPassword("password");
         return msg;
     }
 }
