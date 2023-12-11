@@ -1,7 +1,5 @@
 package org.zstack.expon;
 
-import org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper;
-
 public class ExponNameHelper {
 
     public static String buildVhostControllerName(String zsVolumeUuid) {
@@ -9,7 +7,11 @@ public class ExponNameHelper {
     }
 
     public static String buildVhostControllerPath(String zsVolumeUuid) {
-        return "/var/run/wds/" + zsVolumeUuid;
+        return "/var/run/wds/volume-" + zsVolumeUuid;
+    }
+
+    public static String getVolumeUuidFromVhostControllerPath(String path) {
+        return path.replace("/var/run/wds/volume-", "");
     }
 
     public static String buildUssGwName(String protocol, String managerIp) {

@@ -20,6 +20,7 @@
             <zstack:extension interface="org.zstack.kvm.KVMDetachVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMAttachVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMConvertVolumeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KvmVmActiveVolumeSyncExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

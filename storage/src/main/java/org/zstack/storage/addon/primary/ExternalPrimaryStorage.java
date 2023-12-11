@@ -325,11 +325,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         BackupStorageSelector selector = pluginRgty.getExtensionFromMap(externalVO.getIdentity(), BackupStorageSelector.class);
         List<String> preferBsTypes = selector.getPreferBackupStorageTypes();
         if (!CollectionUtils.isEmpty(msg.getRequiredBackupStorageTypes())) {
-            preferBsTypes.removeAll(msg.getRequiredBackupStorageTypes());
+            preferBsTypes.retainAll(msg.getRequiredBackupStorageTypes());
         }
 
         if (CollectionUtils.isEmpty(preferBsTypes)) {
             reply.setError(operr("no backup storage type specified support to primary storage[uuid:%s]", self.getUuid()));
+            bus.reply(msg, reply);
+            return;
         }
 
         List<BackupStorageVO> availableBs = SQL.New("select bs from BackupStorageVO bs, BackupStorageZoneRefVO ref" +

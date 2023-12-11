@@ -37,6 +37,7 @@ import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.path.PathUtil;
 import org.zstack.vhost.kvm.VhostVolumeTO;
 
 import java.net.URI;
@@ -364,6 +365,39 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         throw new OperationFailureException(operr("not supported protocol[%s]", v.getProtocol()));
+    }
+
+    @Override
+    public List<String> getActiveVolumesLocation(HostInventory h) {
+        // TODO support other protocols
+        return Collections.singletonList("file://" + PathUtil.join(vhostSocketDir, "volume-*"));
+    }
+
+    @Override
+    public List<BaseVolumeInfo> getActiveVolumesInfo(List<String> activePaths, HostInventory h, boolean shareable) {
+        List<BaseVolumeInfo> infos = new ArrayList<>();
+        for (String path : activePaths) {
+            BaseVolumeInfo info = new BaseVolumeInfo();
+            String volUuid = null;
+            if (path.startsWith(vhostSocketDir)) {
+                volUuid = getVolumeUuidFromVhostControllerPath(path);
+                info.setUuid(volUuid);
+                info.setProtocol(VolumeProtocol.Vhost.toString());
+                info.setShareable(shareable);
+            } else {
+                // TODO support other protocols
+            }
+
+            VolumeModule vol = apiHelper.queryVolume(buildVolumeName(volUuid));
+            if (vol == null) {
+                continue;
+            }
+
+            info.setInstallPath(buildExponPath(vol.getPoolName(), vol.getId()));
+            infos.add(info);
+        }
+
+        return infos;
     }
 
     @Override
