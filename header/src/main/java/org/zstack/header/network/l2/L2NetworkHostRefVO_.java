@@ -10,7 +10,7 @@ public class L2NetworkHostRefVO_ {
     public static volatile SingularAttribute<L2NetworkHostRefVO, String> hostUuid;
     public static volatile SingularAttribute<L2NetworkHostRefVO, String> l2NetworkUuid;
     public static volatile SingularAttribute<L2NetworkHostRefVO, String> l2ProviderType;
-    public static volatile SingularAttribute<L2NetworkAttachStatus, String> attachStatus;
+    public static volatile SingularAttribute<L2NetworkHostRefVO, L2NetworkAttachStatus> attachStatus;
     public static volatile SingularAttribute<L2NetworkHostRefVO, Timestamp> createDate;
     public static volatile SingularAttribute<L2NetworkHostRefVO, Timestamp> lastOpDate;
 }

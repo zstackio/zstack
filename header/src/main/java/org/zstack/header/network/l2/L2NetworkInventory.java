@@ -41,9 +41,12 @@ import java.util.List;
                 foreignKey = "uuid", expandedInventoryKey = "l2NetworkUuid"),
         @ExpandedQuery(expandedField = "clusterRef", inventoryClass = L2NetworkClusterRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "l2NetworkUuid", hidden = true),
+        @ExpandedQuery(expandedField = "hostRef", inventoryClass = L2NetworkHostRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "l2NetworkUuid", hidden = true),
 })
 @ExpandedQueryAliases({
-        @ExpandedQueryAlias(alias = "cluster", expandedField = "clusterRef.cluster")
+        @ExpandedQueryAlias(alias = "cluster", expandedField = "clusterRef.cluster"),
+        @ExpandedQueryAlias(alias = "host", expandedField = "hostRef.host")
 })
 public class L2NetworkInventory implements Serializable {
     /**
@@ -95,6 +98,8 @@ public class L2NetworkInventory implements Serializable {
             joinColumn = @JoinColumn(name = "l2NetworkUuid", referencedColumnName = "clusterUuid"))
     private List<String> attachedClusterUuids;
 
+    private List<L2NetworkHostRefInventory> attachedHostRefs;
+
     public L2NetworkInventory() {
     }
 
@@ -113,6 +118,7 @@ public class L2NetworkInventory implements Serializable {
         for (L2NetworkClusterRefVO ref : vo.getAttachedClusterRefs()) {
             this.attachedClusterUuids.add(ref.getClusterUuid());
         }
+        this.setAttachedHostRefs(L2NetworkHostRefInventory.valueOf(vo.getAttachedHostRefs()));
     }
 
     public static L2NetworkInventory valueOf(L2NetworkVO vo) {
@@ -213,5 +219,13 @@ public class L2NetworkInventory implements Serializable {
 
     public void setAttachedClusterUuids(List<String> attachedClusterUuids) {
         this.attachedClusterUuids = attachedClusterUuids;
+    }
+
+    public List<L2NetworkHostRefInventory> getAttachedHostRefs() {
+        return attachedHostRefs;
+    }
+
+    public void setAttachedHostRefs(List<L2NetworkHostRefInventory> attachedHostRefs) {
+        this.attachedHostRefs = attachedHostRefs;
     }
 }

@@ -1,6 +1,5 @@
 package org.zstack.header.network.l2;
 
-import org.springframework.security.access.method.P;
 import org.zstack.header.configuration.PythonClass;
 
 @PythonClass
@@ -34,6 +33,8 @@ public interface L2NetworkConstant {
     public static final String VSWITCH_TYPE_OVS_KERNEL = "OvsKernel";
 
     public static final String DETACH_L2NETWORK_CODE = "l2Network.detach";
+
+    public static final String DETACH_L2NETWORK_FROM_HOST_CODE = "l2Network.detach.host";
 
     // https://elixir.bootlin.com/linux/v5.6/source/include/uapi/linux/if.h#L33
     public static final int LINUX_IF_NAME_MAX_SIZE = 15;

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidateNetworkInterfacesAction extends AbstractAction {
+public class GetCandidateNetworkBondingsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateNetworkInterfacesResult value;
+        public org.zstack.sdk.GetCandidateNetworkBondingsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,12 +27,6 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List hostUuids;
-
-    @Param(required = false, validValues = {"interface","bonding","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String interfaceType = "all";
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean intersecting = true;
 
     @Param(required = false)
     public java.lang.Integer limit = 1000;
@@ -66,8 +60,8 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateNetworkInterfacesResult value = res.getResult(org.zstack.sdk.GetCandidateNetworkInterfacesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateNetworkInterfacesResult() : value; 
+        org.zstack.sdk.GetCandidateNetworkBondingsResult value = res.getResult(org.zstack.sdk.GetCandidateNetworkBondingsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateNetworkBondingsResult() : value; 
 
         return ret;
     }
@@ -97,7 +91,7 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/cluster/hosts-network-interfaces";
+        info.path = "/cluster/hosts-network-bondings";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

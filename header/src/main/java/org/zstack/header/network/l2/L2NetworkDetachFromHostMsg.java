@@ -1,26 +1,18 @@
 package org.zstack.header.network.l2;
 
-/**
- */
-public class L2NetworkDetachStruct {
+import org.zstack.header.message.NeedReplyMessage;
+
+public class L2NetworkDetachFromHostMsg extends NeedReplyMessage implements L2NetworkMessage {
     private String l2NetworkUuid;
-    private String clusterUuid;
     private String hostUuid;
 
+    @Override
     public String getL2NetworkUuid() {
         return l2NetworkUuid;
     }
 
     public void setL2NetworkUuid(String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
-    }
-
-    public String getClusterUuid() {
-        return clusterUuid;
-    }
-
-    public void setClusterUuid(String clusterUuid) {
-        this.clusterUuid = clusterUuid;
     }
 
     public String getHostUuid() {

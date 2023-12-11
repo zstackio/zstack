@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -25,6 +26,8 @@ import static org.zstack.core.Platform.operr;
  * To change this template use File | Settings | File Templates.
  */
 public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
+    private static final L2NetworkHostHelper l2NetworkHostHelper = new L2NetworkHostHelper();
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -34,7 +37,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof L2NetworkMessage) {
-            L2NetworkMessage l2msg = (L2NetworkMessage)msg;
+            L2NetworkMessage l2msg = (L2NetworkMessage) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, l2msg.getL2NetworkUuid());
         }
     }
@@ -42,13 +45,17 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APICreateL2NetworkMsg) {
-            validate((APICreateL2NetworkMsg)msg);
+            validate((APICreateL2NetworkMsg) msg);
         } else if (msg instanceof APIDeleteL2NetworkMsg) {
-            validate((APIDeleteL2NetworkMsg)msg);
+            validate((APIDeleteL2NetworkMsg) msg);
         } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
-            validate((APIDetachL2NetworkFromClusterMsg)msg);
+            validate((APIDetachL2NetworkFromClusterMsg) msg);
         } else if (msg instanceof APIAttachL2NetworkToClusterMsg) {
             validate((APIAttachL2NetworkToClusterMsg) msg);
+        } else if (msg instanceof APIAttachL2NetworkToHostMsg) {
+            validate((APIAttachL2NetworkToHostMsg) msg);
+        } else if (msg instanceof APIDetachL2NetworkFromHostMsg) {
+            validate((APIDetachL2NetworkFromHostMsg) msg);
         }
 
         setServiceId(msg);
@@ -72,7 +79,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (!otherL2s.isEmpty()) {
             if (Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
                     .in(L2NetworkClusterRefVO_.l2NetworkUuid, otherL2s).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("could not attach l2 network, because there "+
+                throw new ApiMessageInterceptionException(argerr("could not attach l2 network, because there " +
                                 "is another network [uuid:%s] on physical interface [%s] with different vswitch type",
                         otherL2s.get(0), l2.getPhysicalInterface()));
             }
@@ -90,6 +97,44 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         q.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
         if (!q.isExists()) {
             throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has not attached to cluster[uuid:%s]", msg.getL2NetworkUuid(), msg.getClusterUuid()));
+        }
+    }
+
+    private void validate(APIAttachL2NetworkToHostMsg msg) {
+        boolean ifL2AttachedCluster = SQL.New("select l2.uuid from L2VirtualSwitchNetworkVO l2, L2NetworkClusterRefVO ref, HostVO host" +
+                        " where l2.uuid = ref.l2NetworkUuid" +
+                        " and ref.clusterUuid = host.clusterUuid" +
+                        " and l2.uuid = :l2Uuid" +
+                        " and host.uuid = :hostUuid")
+                .param("l2Uuid", msg.getL2NetworkUuid())
+                .param("hostUuid", msg.getHostUuid())
+                .find() != null;
+
+        if (!ifL2AttachedCluster) {
+            throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has not attached to cluster of host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
+        }
+
+        if (l2NetworkHostHelper.checkIfL2NetworkHostRefNotExist(msg.getL2NetworkUuid(), msg.getHostUuid())) {
+            throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] does not supported to attach to host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
+        }
+    }
+
+    private void validate(APIDetachL2NetworkFromHostMsg msg) {
+        boolean ifL2AttachedCluster = SQL.New("select l2.uuid from L2VirtualSwitchNetworkVO l2, L2NetworkClusterRefVO ref, HostVO host" +
+                        " where l2.uuid = ref.l2NetworkUuid" +
+                        " and ref.clusterUuid = host.clusterUuid" +
+                        " and l2.uuid = :l2Uuid" +
+                        " and host.uuid = :hostUuid")
+                .param("l2Uuid", msg.getL2NetworkUuid())
+                .param("hostUuid", msg.getHostUuid())
+                .find() != null;
+
+        if (!ifL2AttachedCluster) {
+            throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has not attached to cluster of host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
+        }
+
+        if (!l2NetworkHostHelper.checkIfL2AttachedToHost(msg.getL2NetworkUuid(), msg.getHostUuid())) {
+            throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has not attached to host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
         }
     }
 

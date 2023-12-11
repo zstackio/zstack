@@ -15,19 +15,15 @@ import java.util.List;
         @ExpandedQuery(expandedField = "host", inventoryClass = HostInventory.class,
                 foreignKey = "hostUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "l2Network", inventoryClass = L2NetworkInventory.class,
-                foreignKey = "l2NetworkUuid", expandedInventoryKey = "uuid"),
+                foreignKey = "l2NetworkUuid", expandedInventoryKey = "uuid")
 })
 public class L2NetworkHostRefInventory {
     private String hostUuid;
     private String l2NetworkUuid;
-
     private String l2ProviderType;
-
     private L2NetworkAttachStatus attachStatus;
-
     private Timestamp createDate;
     private Timestamp lastOpDate;
-
 
     public static L2NetworkHostRefInventory valueOf(L2NetworkHostRefVO vo) {
         L2NetworkHostRefInventory inv = new L2NetworkHostRefInventory();
