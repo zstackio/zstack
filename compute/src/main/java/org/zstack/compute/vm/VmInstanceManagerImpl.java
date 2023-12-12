@@ -39,6 +39,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
+import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
@@ -1285,6 +1286,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         } else {
                             smsg.setStrategy(msg.getStrategy());
                         }
+
+                        smsg.setArchitecture(msg.getArchitecture() == null ? null :
+                                CpuArchitecture.valueOf(msg.getArchitecture()));
 
                         smsg.setTimeout(msg.getTimeout());
                         smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());

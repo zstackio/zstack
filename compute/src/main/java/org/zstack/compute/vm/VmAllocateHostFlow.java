@@ -85,6 +85,7 @@ public class VmAllocateHostFlow implements Flow {
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setClusterUuids(spec.getRequiredClusterUuids());
+        msg.setArchitecture(spec.getArchitecture() == null ? null : spec.getArchitecture().name());
         List<L3NetworkInventory> l3Invs = VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks());
         msg.setL3NetworkUuids(CollectionUtils.transformToList(l3Invs,
                 new Function<String, L3NetworkInventory>() {

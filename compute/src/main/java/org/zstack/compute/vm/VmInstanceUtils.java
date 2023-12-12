@@ -40,9 +40,6 @@ public class VmInstanceUtils {
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
-        cmsg.setPlatform(msg.getPlatform());
-        cmsg.setGuestOsType(msg.getGuestOsType());
-        cmsg.setArchitecture(msg.getArchitecture());
         if (msg.getVirtio() == null) {
             cmsg.setVirtio(false);
         } else {

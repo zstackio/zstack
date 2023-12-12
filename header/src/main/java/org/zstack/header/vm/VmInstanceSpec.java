@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant;
@@ -313,6 +314,7 @@ public class VmInstanceSpec implements Serializable {
     private String allocatedPrimaryStorageUuidForDataVolume;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
+    private CpuArchitecture architecture;
     private String bootMode;
 
     private List<HostName> hostnames = new ArrayList<>();
@@ -796,6 +798,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setInstantiateResourcesSkipExisting(boolean instantiateResourcesSkipExisting) {
         this.instantiateResourcesSkipExisting = instantiateResourcesSkipExisting;
+    }
+
+    public CpuArchitecture getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(CpuArchitecture architecture) {
+        this.architecture = architecture;
     }
 
     public String getBootMode() {

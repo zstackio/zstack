@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private String rootDiskOfferingUuid;
     private String hostUuid;
     private String strategy;
+    private CpuArchitecture architecture;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private List<String> softAvoidHostUuids;
@@ -139,6 +141,14 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public String getStrategy() {
         return strategy;
+    }
+
+    public void setArchitecture(CpuArchitecture architecture) {
+        this.architecture = architecture;
+    }
+
+    public CpuArchitecture getArchitecture() {
+        return architecture;
     }
 
     public List<String> getRootVolumeSystemTags() {

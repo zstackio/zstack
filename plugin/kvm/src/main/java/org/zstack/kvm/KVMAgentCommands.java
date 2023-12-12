@@ -586,6 +586,10 @@ public class KVMAgentCommands {
             return cpuArchitecture;
         }
 
+        public void setCpuArchitecture(String cpuArchitecture) {
+            this.cpuArchitecture = cpuArchitecture;
+        }
+
         public String getHostCpuModelName() {
             return hostCpuModelName;
         }

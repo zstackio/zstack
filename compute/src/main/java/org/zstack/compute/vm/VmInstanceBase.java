@@ -6990,6 +6990,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.setUserdataList(buildUserdata());
         selectBootOrder(spec);
+        spec.setArchitecture(struct.getArchitecture());
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
         spec.setUsbRedirect(Boolean.parseBoolean(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN)));
