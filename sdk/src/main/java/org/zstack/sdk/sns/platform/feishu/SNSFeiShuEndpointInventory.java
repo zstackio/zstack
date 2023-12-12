@@ -28,6 +28,14 @@ public class SNSFeiShuEndpointInventory extends org.zstack.sdk.sns.SNSApplicatio
         return this.atPersonUserIds;
     }
 
+    public java.util.List atPersonList;
+    public void setAtPersonList(java.util.List atPersonList) {
+        this.atPersonList = atPersonList;
+    }
+    public java.util.List getAtPersonList() {
+        return this.atPersonList;
+    }
+
     public java.lang.String secret;
     public void setSecret(java.lang.String secret) {
         this.secret = secret;

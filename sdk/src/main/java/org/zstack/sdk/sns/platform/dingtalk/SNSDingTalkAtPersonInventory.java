@@ -44,4 +44,12 @@ public class SNSDingTalkAtPersonInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String remark;
+    public void setRemark(java.lang.String remark) {
+        this.remark = remark;
+    }
+    public java.lang.String getRemark() {
+        return this.remark;
+    }
+
 }

@@ -28,4 +28,12 @@ public class SNSWeComEndpointInventory extends org.zstack.sdk.sns.SNSApplication
         return this.atPersonUserIds;
     }
 
+    public java.util.List atPersonList;
+    public void setAtPersonList(java.util.List atPersonList) {
+        this.atPersonList = atPersonList;
+    }
+    public java.util.List getAtPersonList() {
+        return this.atPersonList;
+    }
+
 }

@@ -34,6 +34,9 @@ public class CreateSNSWeComEndpointAction extends AbstractAction {
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List atPersonUserIds;
 
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map atPersonList;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
