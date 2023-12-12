@@ -96,9 +96,6 @@ public class SourceClassMap {
 			put("org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder", "org.zstack.sdk.ExternalServiceCapabilitiesBuilder");
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
-			put("org.zstack.crypto.ccs.CCSCertificateInventory", "org.zstack.sdk.CCSCertificateInventory");
-			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
-			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
@@ -168,6 +165,9 @@ public class SourceClassMap {
 			put("org.zstack.header.buildapp.BuildApplicationInventory", "org.zstack.sdk.BuildApplicationInventory");
 			put("org.zstack.header.buildsystem.AppBuildSystemInventory", "org.zstack.sdk.AppBuildSystemInventory");
 			put("org.zstack.header.buildsystem.AppBuildSystemZoneRefInventory", "org.zstack.sdk.AppBuildSystemZoneRefInventory");
+			put("org.zstack.header.ccs.CCSCertificateInventory", "org.zstack.sdk.CCSCertificateInventory");
+			put("org.zstack.header.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
+			put("org.zstack.header.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.header.cloudformation.CloudFormationStackEventInventory", "org.zstack.sdk.CloudFormationStackEventInventory");
 			put("org.zstack.header.cloudformation.PreviewResourceStruct", "org.zstack.sdk.PreviewResourceStruct");
 			put("org.zstack.header.cloudformation.ResourceStackInventory", "org.zstack.sdk.ResourceStackInventory");
@@ -270,8 +270,8 @@ public class SourceClassMap {
 			put("org.zstack.header.scheduler.SchedulerJobInventory", "org.zstack.sdk.SchedulerJobInventory");
 			put("org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory", "org.zstack.sdk.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.header.scheduler.SchedulerTriggerInventory", "org.zstack.sdk.SchedulerTriggerInventory");
-			put("org.zstack.header.securitymachine.SecretResourcePoolInventory", "org.zstack.sdk.SecretResourcePoolInventory");
 			put("org.zstack.header.securitymachine.SecurityMachineInventory", "org.zstack.sdk.SecurityMachineInventory");
+			put("org.zstack.header.securitymachine.secretresourcepool.SecretResourcePoolInventory", "org.zstack.sdk.SecretResourcePoolInventory");
 			put("org.zstack.header.simulator.SimulatorHostInventory", "org.zstack.sdk.SimulatorHostInventory");
 			put("org.zstack.header.sriov.VmVfNicInventory", "org.zstack.sdk.VmVfNicInventory");
 			put("org.zstack.header.storage.backup.BackupMode", "org.zstack.sdk.BackupMode");
@@ -738,9 +738,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BuildAppExportHistoryInventory", "org.zstack.header.buildapp.BuildAppExportHistoryInventory");
 			put("org.zstack.sdk.BuildApplicationInventory", "org.zstack.header.buildapp.BuildApplicationInventory");
-			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");
-			put("org.zstack.sdk.CCSCertificateUserRefInventory", "org.zstack.crypto.ccs.CCSCertificateUserRefInventory");
-			put("org.zstack.sdk.CCSCertificateUserState", "org.zstack.crypto.ccs.CCSCertificateUserState");
+			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.header.ccs.CCSCertificateInventory");
+			put("org.zstack.sdk.CCSCertificateUserRefInventory", "org.zstack.header.ccs.CCSCertificateUserRefInventory");
+			put("org.zstack.sdk.CCSCertificateUserState", "org.zstack.header.ccs.CCSCertificateUserState");
 			put("org.zstack.sdk.CdpPolicyInventory", "org.zstack.header.storage.cdp.CdpPolicyInventory");
 			put("org.zstack.sdk.CdpPolicyState", "org.zstack.header.storage.cdp.CdpPolicyState");
 			put("org.zstack.sdk.CdpTaskInventory", "org.zstack.header.storage.cdp.CdpTaskInventory");
@@ -1032,7 +1032,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
 			put("org.zstack.sdk.SdnControllerInventory", "org.zstack.sdnController.header.SdnControllerInventory");
 			put("org.zstack.sdk.SdnVniRange", "org.zstack.sdnController.header.SdnVniRange");
-			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.SecretResourcePoolInventory");
+			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.secretresourcepool.SecretResourcePoolInventory");
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
