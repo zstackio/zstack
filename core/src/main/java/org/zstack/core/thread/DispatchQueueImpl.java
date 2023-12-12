@@ -950,14 +950,18 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             tb.append(String.format("\nASYNC LEVEL: %s", maxThreadNum));
 
             int index = 0;
-            for (Object obj : runningQueue) {
-                ChainFuture cf = (ChainFuture) obj;
-                tb.append(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
+            synchronized (runningQueue) {
+                for (Object obj : runningQueue) {
+                    ChainFuture cf = (ChainFuture) obj;
+                    tb.append(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
+                }
             }
 
-            for (Object obj : pendingQueue) {
-                ChainFuture cf = (ChainFuture) obj;
-                tb.append(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
+            synchronized (pendingQueue) {
+                for (Object obj : pendingQueue) {
+                    ChainFuture cf = (ChainFuture) obj;
+                    tb.append(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
+                }
             }
 
             return tb.toString();
