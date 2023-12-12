@@ -48,7 +48,7 @@ public class KVMGlobalConfig {
             "Dhyana", "EPYC", "EPYC-IBPB", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX",
             "SandyBridge", "IvyBridge", "Conroe", "Penryn", "Nehalem", "Westmere", "Opteron_G1",
             "Opteron_G2", "Opteron_G3", "Opteron_G4", "pentium", "pentium2", "pentium3",
-            "Kunpeng-920", "FT-2000+", "Tengyun-S2500"})
+            "Kunpeng-920", "FT-2000+", "Tengyun-S2500", "Loongson-3A5000"})
     @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig NESTED_VIRTUALIZATION = new GlobalConfig(CATEGORY, "vm.cpuMode");
     @GlobalConfigValidation
