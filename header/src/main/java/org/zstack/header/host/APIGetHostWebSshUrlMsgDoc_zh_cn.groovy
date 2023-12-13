@@ -57,6 +57,24 @@ doc {
 					optional true
 					since "4.7.11"
 				}
+				column {
+					name "userName"
+					enclosedIn "params"
+					desc "用户名"
+					location "body"
+					type "String"
+					optional false
+					since "4.8.0"
+				}
+				column {
+					name "password"
+					enclosedIn "params"
+					desc "密码"
+					location "body"
+					type "String"
+					optional false
+					since "4.8.0"
+				}
 			}
         }
 
