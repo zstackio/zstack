@@ -31,6 +31,7 @@ public class ConsoleProxyInventory {
     private String proxyIdentity;
     private String status;
     private String version;
+    private Timestamp expiredDate;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -52,6 +53,7 @@ public class ConsoleProxyInventory {
         inv.setVersion(vo.getVersion());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setStatus(vo.getStatus().toString());
+        inv.setExpiredDate(vo.getExpiredDate());
         return inv;
     }
 
@@ -189,5 +191,13 @@ public class ConsoleProxyInventory {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public Timestamp getExpiredDate() {
+        return expiredDate;
+    }
+
+    public void setExpiredDate(Timestamp expiredDate) {
+        this.expiredDate = expiredDate;
     }
 }

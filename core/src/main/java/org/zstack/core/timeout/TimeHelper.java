@@ -5,6 +5,7 @@ import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 
 import javax.annotation.PostConstruct;
+import java.sql.Timestamp;
 import java.util.concurrent.TimeUnit;
 
 public class TimeHelper implements Timer {
@@ -40,5 +41,10 @@ public class TimeHelper implements Timer {
 
     public long getCurrentTimeMillis() {
         return currentTimeMillis;
+    }
+
+    @Override
+    public Timestamp getCurrentTimestamp() {
+        return new Timestamp(currentTimeMillis);
     }
 }

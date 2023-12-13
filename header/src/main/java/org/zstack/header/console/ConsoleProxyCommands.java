@@ -200,6 +200,7 @@ public interface ConsoleProxyCommands {
         private int idleTimeout;
         private int vncTokenTimeout;
         private String tlsVersion;
+        private long expiredDate;
 
         public String getToken() {
             return token;
@@ -295,6 +296,14 @@ public interface ConsoleProxyCommands {
 
         public void setTlsVersion(String tlsVersion) {
             this.tlsVersion = tlsVersion;
+        }
+
+        public long getExpiredDate() {
+            return expiredDate;
+        }
+
+        public void setExpiredDate(long expiredDate) {
+            this.expiredDate = expiredDate;
         }
     }
 
