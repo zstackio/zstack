@@ -29,7 +29,7 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
     public java.util.List hostUuids;
 
     @Param(required = false, validValues = {"interface","bonding","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String interfaceType = "all";
+    public java.lang.String interfaceType = "interface";
 
     @Param(required = false)
     public java.lang.Integer limit = 1000;
