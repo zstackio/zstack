@@ -46,6 +46,7 @@ import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.TypeUtils;
@@ -508,6 +509,9 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             if (at != null && at.validValues().length != 0) {
                 List<String> values = new ArrayList<>(at.validValues().length);
                 Collections.addAll(values, at.validValues());
+                sb.append(String.format("\n%s#valid values: %s", whiteSpace(8), values));
+            } else if (at != null && at.validEnums().length != 0) {
+                List<String> values = CollectionUtils.valuesForEnums(at.validEnums()).collect(Collectors.toList());
                 sb.append(String.format("\n%s#valid values: %s", whiteSpace(8), values));
             }
             if (at != null && at.validRegexValues() != null && at.validRegexValues().trim().equals("") == false) {

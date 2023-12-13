@@ -2,6 +2,7 @@ package org.zstack.header.message;
 
 import org.springframework.core.Ordered;
 import org.springframework.util.StringUtils;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
 import org.zstack.header.message.APIMessage.InvalidApiMessageException;
@@ -9,6 +10,7 @@ import org.zstack.header.message.APIMessage.InvalidApiMessageException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,12 +45,17 @@ public class ApiMessageParamValidator implements ApiMessageValidator, Ordered {
         }
     
         if (at.validValues().length > 0) {
-            if (value instanceof Collection) {
-                for (Object v : (Collection<?>) value) {
-                    validateValue(at.validValues(), v.toString(), f.getName(), getClass().getName());
-                }
-            } else {
-                validateValue(at.validValues(), value.toString(), f.getName(), getClass().getName());
+            Collection<?> values = (value instanceof Collection) ?
+                    (Collection<?>) value : Collections.singletonList(value);
+            for (Object v : values) {
+                validateValue(at.validValues(), v.toString(), f.getName(), getClass().getName());
+            }
+        } else if (at.validEnums().length > 0) {
+            Collection<?> values = (value instanceof Collection) ?
+                    (Collection<?>) value : Collections.singletonList(value);
+            final String[] validValues = CollectionUtils.valuesForEnums(at.validEnums()).toArray(String[]::new);
+            for (Object v : values) {
+                validateValue(validValues, v.toString(), f.getName(), getClass().getName());
             }
         }
     

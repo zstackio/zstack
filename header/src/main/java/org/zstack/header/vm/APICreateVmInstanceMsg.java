@@ -5,17 +5,16 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.other.APIAuditor;
-import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneVO;
 
 import java.util.Collections;
@@ -203,7 +202,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, maxLength = 255)
     private String guestOsType;
 
-    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el", "loongarch64"})
+    @APIParam(required = false, maxLength = 32, validEnums = {CpuArchitecture.class})
     private String architecture;
 
     @APIParam(required = false)

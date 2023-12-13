@@ -5,10 +5,12 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ListFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  */
@@ -160,5 +162,21 @@ public class CollectionUtils {
             }
         }
         return false;
+    }
+
+    public static Stream<String> valuesForEnums(Class<? extends Enum<?>>[] enumClasses) {
+        return Arrays.stream(enumClasses)
+                    .flatMap(CollectionUtils::valuesForEnum)
+                    .distinct();
+    }
+
+    public static Stream<String> valuesForEnum(Class<? extends Enum<?>> enumClass) {
+        try {
+            final Method method = enumClass.getMethod("values");
+            final Object[] strings = (Object[]) method.invoke(null);
+            return Arrays.stream(strings).map(Object::toString);
+        } catch (Exception e) {
+            throw new RuntimeException("failed to parse valid values from enumClass: " + enumClass, e);
+        }
     }
 }

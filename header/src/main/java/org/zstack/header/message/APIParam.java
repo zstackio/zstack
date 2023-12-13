@@ -12,6 +12,12 @@ public @interface APIParam {
 
     String[] validValues() default {};
 
+    /**
+     * Specify that this input parameter must be the value of some enumeration.
+     * Note: "validEnums" and {@link #validValues()} cannot be set simultaneously.
+     */
+    Class<? extends Enum<?>>[] validEnums() default {};
+
     String validRegexValues() default "";
 
     Class resourceType() default Object.class;
