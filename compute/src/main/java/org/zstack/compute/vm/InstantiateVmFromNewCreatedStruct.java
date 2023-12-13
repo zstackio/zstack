@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
@@ -21,6 +22,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<VmNicSpec> l3NetworkUuids;
     private String rootDiskOfferingUuid;
     private VmCreationStrategy strategy = VmCreationStrategy.InstantStart;
+    private CpuArchitecture architecture;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private String requiredHostUuid;
@@ -124,6 +126,14 @@ public class InstantiateVmFromNewCreatedStruct {
         return strategy;
     }
 
+    public void setArchitecture(CpuArchitecture architecture) {
+        this.architecture = architecture;
+    }
+
+    public CpuArchitecture getArchitecture() {
+        return architecture;
+    }
+
     public static InstantiateVmFromNewCreatedStruct fromMessage(InstantiateNewCreatedVmInstanceMsg msg) {
         InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
         struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
@@ -134,6 +144,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
         struct.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
+        struct.architecture = msg.getArchitecture();
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         struct.setRequiredHostUuid(msg.getHostUuid());
@@ -155,6 +166,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
         struct.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
+        struct.architecture = msg.getArchitecture() == null ? null : CpuArchitecture.valueOf(msg.getArchitecture());
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         struct.setRequiredHostUuid(msg.getHostUuid());

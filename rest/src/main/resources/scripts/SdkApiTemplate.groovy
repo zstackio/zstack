@@ -13,11 +13,13 @@ import org.zstack.header.rest.SDK
 import org.zstack.header.rest.SDKPackage
 import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.rest.sdk.SdkFile
+import org.zstack.utils.CollectionUtils
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
 import java.lang.reflect.Field
+import java.util.stream.Collectors
 
 /**
  * Created by xing5 on 2016/12/9.
@@ -136,6 +138,15 @@ class SdkApiTemplate implements SdkTemplate {
                     annotationFields.add(String.format("validValues = {%s}", { ->
                         def vv = []
                         for (String v : apiParam.validValues()) {
+                            vv.add("\"${v}\"")
+                        }
+                        return vv.join(",")
+                    }()))
+                } else if (apiParam.validEnums().length > 0) {
+                    annotationFields.add(String.format("validValues = {%s}", { ->
+                        def vv = []
+                        def validValues = CollectionUtils.valuesForEnums(apiParam.validEnums()).collect(Collectors.toList())
+                        for (String v : validValues) {
                             vv.add("\"${v}\"")
                         }
                         return vv.join(",")

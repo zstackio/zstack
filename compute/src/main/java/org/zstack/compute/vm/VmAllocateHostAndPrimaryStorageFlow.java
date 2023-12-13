@@ -322,6 +322,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         if (zoneUuid != null) {
             q.eq(ClusterVO_.zoneUuid, zoneUuid);
         }
+        if (spec.getArchitecture() != null) {
+            q.eq(ClusterVO_.architecture, spec.getArchitecture().name());
+        }
+
         List<String> possibleClusterUuids = q.listValues();
         List<String> needClusterUuids;
         if (!CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForRootVolume())) {

@@ -2262,6 +2262,13 @@ ${fieldStr}
                         l.add("\"${it}\"")
                     }
                     values = "values (${l.join(",")})"
+                } else if (ap != null && ap.validEnums().length != 0) {
+                    def l = []
+                    def validValues = CollectionUtils.valuesForEnums(ap.validEnums()).collect(Collectors.toList())
+                    validValues.each {
+                        l.add("\"${it}\"")
+                    }
+                    values = "values (${l.join(",")})"
                 }
 
                 String desc = MUTUAL_FIELDS.get(af.name)

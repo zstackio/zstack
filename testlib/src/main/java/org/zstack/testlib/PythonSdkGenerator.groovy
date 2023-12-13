@@ -2,7 +2,6 @@ package org.zstack.testlib
 
 import com.google.common.base.Charsets
 import com.google.common.io.Resources
-import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
 import org.zstack.core.Platform
 import org.zstack.header.identity.SuppressCredentialCheck
@@ -10,9 +9,11 @@ import org.zstack.header.message.*
 import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
+import org.zstack.utils.CollectionUtils
 import org.zstack.utils.FieldUtils
 
 import java.lang.reflect.Field
+import java.util.stream.Collectors
 
 /**
  * Created by xing5 on 2017/3/31.
@@ -46,6 +47,9 @@ class PythonSdkGenerator {
                 ap.add("required=${toPythonBoolean(apiParam.required())}")
                 if (apiParam.validValues().length > 0) {
                     ap.add("valid_values=[${apiParam.validValues().collect { "'" + it + "'" }.join(",")}]")
+                } else if (apiParam.validEnums().length > 0) {
+                    def validValues = CollectionUtils.valuesForEnums(apiParam.validEnums()).collect(Collectors.toList())
+                    ap.add("valid_values=[${validValues.collect { "'" + it + "'" }.join(",")}]")
                 }
                 if (!apiParam.validRegexValues().isEmpty()) {
                     String regex = apiParam.validRegexValues().replace("'", "\\\'")
