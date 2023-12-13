@@ -93,4 +93,7 @@ public class HostSystemTags {
 
     public static String MEMORY_SLOTS_MAXIMUM_TOKEN = "memorySlotsMaximum";
     public static PatternedSystemTag MEMORY_SLOTS_MAXIMUM = new PatternedSystemTag(String.format("memorySlotsMaximum::{%s}", MEMORY_SLOTS_MAXIMUM_TOKEN), HostVO.class);
+
+    public static String DEPLOY_MODE_TOKEN = "deployMode";
+    public static PatternedSystemTag DEPLOY_MODE = new PatternedSystemTag(String.format("deployMode::{%s}", DEPLOY_MODE_TOKEN), HostVO.class);
 }

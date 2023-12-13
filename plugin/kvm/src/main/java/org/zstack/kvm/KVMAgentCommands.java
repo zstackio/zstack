@@ -405,6 +405,7 @@ public class KVMAgentCommands {
         private String uptime;
         private String memorySlotsMaximum;
         private String cpuCache;
+        private String deployMode;
         private List<String> ipAddresses;
         private List<String> libvirtCapabilities;
 
@@ -630,6 +631,14 @@ public class KVMAgentCommands {
 
         public void setMemorySlotsMaximum(String memorySlotsMaximum) {
             this.memorySlotsMaximum = memorySlotsMaximum;
+        }
+
+        public String getDeployMode() {
+            return deployMode;
+        }
+
+        public void setDeployMode(String deployMode) {
+            this.deployMode = deployMode;
         }
     }
 
