@@ -5685,7 +5685,6 @@ public class KVMHost extends HostBase implements Host {
                 recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_MANUFACTURER, HostSystemTags.SYSTEM_MANUFACTURER_TOKEN, ret.getSystemManufacturer(), errorCodeList);
                 recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_UUID, HostSystemTags.SYSTEM_UUID_TOKEN, ret.getSystemUUID(), errorCodeList);
                 recordHardwareChangesAndCreateTag(HostSystemTags.MEMORY_SLOTS_MAXIMUM, HostSystemTags.MEMORY_SLOTS_MAXIMUM_TOKEN, ret.getMemorySlotsMaximum(), errorCodeList);
-
                 createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
                 createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
                 createTagWithoutNonValue(HostSystemTags.IPMI_ADDRESS, HostSystemTags.IPMI_ADDRESS_TOKEN, ret.getIpmiAddress(), true);
@@ -5695,6 +5694,7 @@ public class KVMHost extends HostBase implements Host {
                 createTagWithoutNonValue(HostSystemTags.BIOS_RELEASE_DATE, HostSystemTags.BIOS_RELEASE_DATE_TOKEN, ret.getBiosReleaseDate(), true);
                 createTagWithoutNonValue(HostSystemTags.BMC_VERSION, HostSystemTags.BMC_VERSION_TOKEN, ret.getBmcVersion(), true);
                 createTagWithoutNonValue(HostSystemTags.UPTIME, HostSystemTags.UPTIME_TOKEN, ret.getUptime(), true);
+                createTagWithoutNonValue(HostSystemTags.DEPLOY_MODE, HostSystemTags.DEPLOY_MODE_TOKEN, ret.getDeployMode(), true);
 
                 saveHostExtraIps(ret);
 
