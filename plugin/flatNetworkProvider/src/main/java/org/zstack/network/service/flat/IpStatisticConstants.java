@@ -12,6 +12,7 @@ public interface IpStatisticConstants {
         String VROUTER = "VRouter";
         String VPC_VROUTER = "VpcVRouter";
         String DHCP = "DHCP";
+        String ZSKERNEL = "ZSkernel";
     }
 
     interface SortBy {

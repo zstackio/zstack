@@ -39,6 +39,25 @@ public class UsedIpInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
+    public UsedIpInventory() {
+    }
+
+    public UsedIpInventory(UsedIpVO vo) {
+        this.setUuid(vo.getUuid());
+        this.setIpVersion(vo.getIpVersion());
+        this.setIp(vo.getIp());
+        this.setIpInLong(vo.getIpInLong());
+        this.setIpRangeUuid(vo.getIpRangeUuid());
+        this.setL3NetworkUuid(vo.getL3NetworkUuid());
+        this.setGateway(vo.getGateway());
+        this.setNetmask(vo.getNetmask());
+        this.setUsedFor(vo.getUsedFor());
+        this.setVmNicUuid(vo.getVmNicUuid());
+        this.setMetaData(vo.getMetaData());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
+    }
+
     public static UsedIpInventory valueOf(UsedIpVO vo) {
         UsedIpInventory inv = new UsedIpInventory();
         inv.setCreateDate(vo.getCreateDate());

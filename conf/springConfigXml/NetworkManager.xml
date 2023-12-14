@@ -100,6 +100,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="StaticIpAllocatorStrategy" class="org.zstack.network.l3.StaticIpAllocatorStrategy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l3.IpAllocatorStrategy"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="NetworkServiceManager"
           class="org.zstack.network.service.NetworkServiceManagerImpl">
         <zstack:plugin>

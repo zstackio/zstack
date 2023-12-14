@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@Inheritance(strategy = InheritanceType.JOINED)
 @EntityGraph(
         parents = {
                 @EntityGraph.Neighbour(type = IpRangeVO.class, myField = "ipRangeUuid", targetField = "uuid"),
@@ -75,6 +76,22 @@ public class UsedIpVO {
     }
 
     public UsedIpVO() {
+    }
+
+    public UsedIpVO(UsedIpVO vo) {
+        this.setUuid(vo.getUuid());
+        this.setIpRangeUuid(vo.getIpRangeUuid());
+        this.setL3NetworkUuid(vo.getL3NetworkUuid());
+        this.setVmNicUuid(vo.getVmNicUuid());
+        this.setIpVersion(vo.getIpVersion());
+        this.setIp(vo.getIp());
+        this.setGateway(vo.getGateway());
+        this.setNetmask(vo.getNetmask());
+        this.setIpInLong(vo.getIpInLong());
+        this.setUsedFor(vo.getUsedFor());
+        this.setMetaData(vo.getMetaData());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
     }
 
     public String getUuid() {
