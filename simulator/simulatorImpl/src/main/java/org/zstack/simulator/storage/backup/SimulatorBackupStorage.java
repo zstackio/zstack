@@ -13,6 +13,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 
+import static org.zstack.core.Platform.operr;
+
 public class SimulatorBackupStorage extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(SimulatorBackupStorage.class);
 
@@ -127,6 +129,12 @@ public class SimulatorBackupStorage extends BackupStorageBase {
     @Override
     protected void handle(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
         RestoreImagesBackupStorageMetadataToDatabaseReply reply = new RestoreImagesBackupStorageMetadataToDatabaseReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(CalculateImageHashOnBackupStorageMsg msg) {
+        CalculateImageHashOnBackupStorageReply reply = new CalculateImageHashOnBackupStorageReply();
         bus.reply(msg, reply);
     }
 }

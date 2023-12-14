@@ -59,4 +59,8 @@
     <message>
         <name>org.zstack.header.image.APISetImageBootModeMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.image.APICalculateImageHashMsg</name>
+    </message>
 </service>
