@@ -10,9 +10,16 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
@@ -31,6 +38,25 @@ public class RBAC {
     static class APIPermissionCheckerWrapper {
         boolean takeOver;
         APIPermissionChecker checker;
+    }
+
+    public static void checkMergeTo() {
+        DebugUtils.Assert(permissions.stream().anyMatch(p -> p.mergeTo != null), "No RBAC permission has mergeTo field");
+
+        permissions.forEach(p -> {
+            if (p.mergeTo != null) {
+                Optional<Permission> opt = permissions.stream().filter(it -> it.name != null && it.name.equals(p.mergeTo)).findFirst();
+                if (!opt.isPresent()) {
+                    throw new CloudRuntimeException(String.format("cannot find permission[name:%s] to merge to", p.mergeTo));
+                }
+
+                Permission target = opt.get();
+
+                DebugUtils.Assert(target.getAdminOnlyAPIs().containsAll(p.getAdminOnlyAPIs()), String.format("permission[name:%s] merge to permission[name:%s], but adminOnlyAPIs not match", p.name, target.name));
+                DebugUtils.Assert(target.getNormalAPIs().containsAll(p.getNormalAPIs()), String.format("permission[name:%s] merge to permission[name:%s], but normalAPIs not match", p.name, target.name));
+                DebugUtils.Assert(new HashSet<>(target.getTargetResources()).containsAll(p.getTargetResources()), String.format("permission[name:%s] merge to permission[name:%s], but targetResources not match", p.name, target.name));
+            }
+        });
     }
 
     public static void checkMissingRBACInfo() {
@@ -241,6 +267,7 @@ public class RBAC {
         private List<Class> targetResources = new ArrayList<>();
         private Set<String> _adminOnlyAPIs = new HashSet<>();
         private Set<String> _normalAPIs = new HashSet<>();
+        private String mergeTo;
         private String name;
 
         public Set<String> getAdminOnlyAPIs() {
@@ -368,10 +395,16 @@ public class RBAC {
             return this;
         }
 
+        public PermissionBuilder mergeTo(String targetPermissionName) {
+            permission.mergeTo = targetPermissionName;
+            return this;
+        }
+
         public Permission build() {
             permission = RBACDescriptionHelper.flatten(permission);
             DebugUtils.Assert(permissions.stream().noneMatch(it -> it.name != null && it.name.equals(permission.name)),
                     String.format("RBAC already has a permission named: %s", permission.name));
+
             permissions.add(permission);
             return permission;
         }
@@ -471,6 +504,11 @@ public class RBAC {
         if (!opt.isPresent()) {
             throw new CloudRuntimeException(String.format("cannot find permission[name:%s]", name));
         }
+
+        if (opt.get().mergeTo != null) {
+            return findPermissionByName(opt.get().mergeTo);
+        }
+
         return opt.get();
     }
 
@@ -509,6 +547,20 @@ public class RBAC {
                 }
             }
         });
+
+        // merge permissions
+        permissions.stream().sorted(Comparator.comparing(p -> p.mergeTo != null))
+                .forEach(p -> {
+                    if (p.mergeTo == null) {
+                        return;
+                    }
+
+                    Permission target = findPermissionByName(p.mergeTo);
+                    target.getAdminOnlyAPIs().addAll(p.getAdminOnlyAPIs());
+                    target.getAdminOnlyAPIs().removeAll(p.getNormalAPIs());
+                    target.getNormalAPIs().addAll(p.getNormalAPIs());
+                    target.getTargetResources().addAll(p.getTargetResources());
+                });
 
         roleBuilders.forEach(rb -> {
             rb.permissionsByNames.forEach(pname -> {
