@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>securityMachine</id>
+    <interceptor>SecurityMachineApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.securitymachine.api.securitymachine.APIAddSecurityMachineMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.securitymachine.api.securitymachine.APIDeleteSecurityMachineMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.securitymachine.api.securitymachine.APIQuerySecurityMachineMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.securitymachine.api.securitymachine.APIUpdateSecurityMachineMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.securitymachine.api.securitymachine.APIChangeSecurityMachineStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.securitymachine.api.securitymachine.APISecurityMachineEncryptMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.securitymachine.api.securitymachine.APISecurityMachineDetectSyncMsg</name>
+    </message>
+</service>
