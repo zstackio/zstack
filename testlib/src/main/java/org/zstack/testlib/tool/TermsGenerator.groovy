@@ -88,8 +88,17 @@ class TermsGenerator {
             println "replace ${it.translation} to ${it.replaceTo}"
         }
 
+        String propertyFileName = "messages_zh_CN.properties"
+        String outputFileName = "messages_${replaceTo == "cloud" ? "zsv" : "cloud"}_zh_CN.properties"
+        replaceI18nProperties(outputDir, '../../conf/i18n', propertyFileName, "../conf/i18n", outputFileName, replaceList)
+        propertyFileName = "Elaboration.json"
+        outputFileName = "Elaboration_${replaceTo == "cloud" ? "zsv" : "cloud"}.json"
+        replaceI18nProperties(outputDir, '../../conf/errorElaborations', propertyFileName, "../conf/errorElaborations", outputFileName, replaceList)
+    }
+
+    static void replaceI18nProperties(String workDir, String sourceDir, String fileName, String destDir, String destFileName, List<TermTranslatePropertyLine> replaceList) {
         // replace terms in i18n messages_zh_CN.properties of every lines
-        String i18nConf = PathUtil.join(outputDir, '../../conf/i18n', "messages_zh_CN.properties")
+        String i18nConf = PathUtil.join(workDir, sourceDir, fileName)
         List<String> outputLines = []
         if (PathUtil.exists(i18nConf)) {
             for (String line : new File(i18nConf).readLines(Charset.forName("UTF-8").toString())) {
@@ -103,7 +112,7 @@ class TermsGenerator {
         }
 
         File f = new File(PathUtil.
-                join(outputDir, '../conf/i18n', "messages_${replaceTo == "cloud" ? "zsv" : "cloud"}_zh_CN.properties"))
+                join(workDir, destDir, destFileName))
         for (String line : outputLines) {
             f.append(line, Charset.forName("UTF-8").toString())
         }

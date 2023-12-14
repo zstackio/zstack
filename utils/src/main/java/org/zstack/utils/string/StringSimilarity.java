@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public class StringSimilarity {
     private static final CLogger logger = Utils.getLogger(StringSimilarity.class);
 
-    public static final String elaborateFolder = "errorElaborations";
+    public static String elaborateFolder = "errorElaborations";
     public static File classPathFolder = PathUtil.findFolderOnClassPath(StringSimilarity.elaborateFolder);
 
     // used for Jaro Similarity
