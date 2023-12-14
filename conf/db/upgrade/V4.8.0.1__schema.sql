@@ -1,5 +1,5 @@
+UPDATE `zstack`.`L2NetworkHostRefVO` set `attachStatus` = 'Detached' WHERE `attachStatus` = '0' or `attachStatus` = '1' or `attachStatus` = '2';
 UPDATE `zstack`.`L2NetworkHostRefVO` set `attachStatus` = 'Attached' WHERE `attachStatus` = '3';
-UPDATE `zstack`.`L2NetworkHostRefVO` set `attachStatus` = 'Detached' WHERE `attachStatus` != '3';
 
 CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
