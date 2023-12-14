@@ -10,15 +10,18 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.image.*;
-import org.zstack.header.longjob.*;
+import org.zstack.header.longjob.LongJob;
+import org.zstack.header.longjob.LongJobFor;
+import org.zstack.header.longjob.LongJobVO;
+import org.zstack.header.longjob.UseApiTimeout;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.ImageHashAlgorithm;
 import org.zstack.longjob.LongJobGlobalConfig;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.Utils;
@@ -29,10 +32,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.longjob.LongJobUtils.*;
-import static org.zstack.longjob.LongJobUtils.setJobResult;
 
 
 /**
@@ -72,6 +73,7 @@ public class AddImageLongJob implements LongJob {
                 event.setInventory(image);
                 job = setJobResult(job.getUuid(), event);
                 completion.success(event);
+                calculateImageHash(image);
             }
         }
 
@@ -116,6 +118,17 @@ public class AddImageLongJob implements LongJob {
                     }
                 }
             });
+        }
+
+        void calculateImageHash(ImageInventory image) {
+            for (ImageBackupStorageRefInventory ref : image.getBackupStorageRefs()) {
+                CalculateImageHashMsg msg = new CalculateImageHashMsg();
+                msg.setAlgorithm(ImageHashAlgorithm.MD5.toString());
+                msg.setUuid(image.getUuid());
+                msg.setBackupStorageUuid(ref.getBackupStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, msg.getImageUuid());
+                bus.send(msg);
+            }
         }
     }
 

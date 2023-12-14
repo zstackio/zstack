@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpRefVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `zstack`.`HostNetworkInterfaceLldpVO` (`uuid`, `interfaceUuid`, `mode`, `createDate`, `lastOpDate`)
-SELECT REPLACE(UUID(),'-',''), t.uuid, 'rx_only', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM `zstack`.`HostNetworkInterfaceLldpVO` t;
+SELECT REPLACE(UUID(),'-',''), t.uuid, 'rx_only', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM `zstack`.`HostNetworkInterfaceVO` t;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`HostKernelInterfaceVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
@@ -67,3 +67,4 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostKernelInterfaceTrafficTypeVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE ConsoleProxyVO ADD COLUMN `expiredDate` timestamp NOT NULL;
+UPDATE ImageEO SET md5sum = NULL where md5sum != 'not calculated';

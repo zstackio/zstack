@@ -10,8 +10,6 @@ import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -26,7 +24,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.backup.BackupStoragePathMaker;
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands.*;
@@ -689,6 +686,13 @@ public class SftpBackupStorage extends BackupStorageBase {
     protected void handle(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
         RestoreImagesBackupStorageMetadataToDatabaseReply reply = new RestoreImagesBackupStorageMetadataToDatabaseReply();
         doRestoreImagesBackupStorageMetadataToDatabase(msg);
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(CalculateImageHashOnBackupStorageMsg msg) {
+        CalculateImageHashOnBackupStorageReply reply = new CalculateImageHashOnBackupStorageReply();
+        reply.setError(operr("sftp backup storage do not support calculate image hash"));
         bus.reply(msg, reply);
     }
 

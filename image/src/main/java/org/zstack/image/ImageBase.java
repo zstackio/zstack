@@ -130,6 +130,8 @@ public class ImageBase implements Image {
             handle((UpdateImageMsg) msg);
         } else if (msg instanceof GetImageEncryptedMsg) {
             handle((GetImageEncryptedMsg) msg);
+        } else if (msg instanceof CalculateImageHashMsg) {
+            handle((CalculateImageHashMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -152,6 +154,34 @@ public class ImageBase implements Image {
             }
         });
 
+    }
+
+    private void handle(CalculateImageHashMsg msg) {
+        CalculateImageHashReply reply = new CalculateImageHashReply();
+        if (self.getMd5Sum() != null) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        CalculateImageHashOnBackupStorageMsg cmsg = new CalculateImageHashOnBackupStorageMsg();
+        cmsg.setImageUuid(msg.getUuid());
+        cmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
+        cmsg.setAlgorithm(msg.getAlgorithm());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, msg.getBackupStorageUuid());
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                CalculateImageHashOnBackupStorageReply breply = r.castReply();
+                SQL.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).set(ImageVO_.md5Sum, breply.getHashValue()).update();
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void getImageMd5(GetImageEncryptedMsg msg, final ReturnValueCompletion<String> completion) {
@@ -657,6 +687,8 @@ public class ImageBase implements Image {
             handle((APISyncImageSizeMsg) msg);
         } else if (msg instanceof APISetImageBootModeMsg) {
             handle((APISetImageBootModeMsg) msg);
+        } else if (msg instanceof APICalculateImageHashMsg) {
+            handle((APICalculateImageHashMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -671,6 +703,25 @@ public class ImageBase implements Image {
         creator.create();
         APISetImageBootModeEvent evt = new APISetImageBootModeEvent(msg.getId());
         bus.publish(evt);
+    }
+
+    private void handle(final APICalculateImageHashMsg msg) {
+        final APICalculateImageHashEvent evt = new APICalculateImageHashEvent(msg.getId());
+        CalculateImageHashMsg cmsg = new CalculateImageHashMsg(msg);
+        bus.makeTargetServiceIdByResourceUuid(cmsg, ImageConstant.SERVICE_ID, cmsg.getImageUuid());
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+
+                evt.setInventory(ImageInventory.valueOf(dbf.reload(self)));
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APISyncImageSizeMsg msg) {

@@ -269,10 +269,14 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
         }
         dbf.persistCollection(lldpVOS);
 
+        if (interfaceUuidsOnHost.isEmpty()) {
+            return;
+        }
+
         lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class)
                 .in(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuidsOnHost)
                 .list();
-        if (lldpVOS == null || lldpVOS.isEmpty()) {
+        if (lldpVOS.isEmpty()) {
             return;
         }
 
