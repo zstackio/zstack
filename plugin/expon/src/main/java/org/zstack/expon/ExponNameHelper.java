@@ -18,6 +18,10 @@ public class ExponNameHelper {
         return protocol + "_" + managerIp.replace(".", "_");
     }
 
+    public static String getUssManagerIp(String name) {
+        return name.split("_", 2)[1].replace("_", ".");
+    }
+
     public static String buildExponPath(String poolName, String volId) {
         String base = volId.replace("-", "");
         return String.format("expon://%s/%s", poolName, base);

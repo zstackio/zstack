@@ -12,8 +12,7 @@ import java.util.Map;
         path = "/block/snaps",
         method = HttpMethod.POST,
         responseClass = CreateVolumeSnapshotResponse.class,
-        // TODO change to true
-        sync = false
+        sync = true
 )
 public class CreateVolumeSnapshotRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

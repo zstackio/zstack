@@ -1,7 +1,5 @@
 package org.zstack.expon;
 
-import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
-
 public class ExponIscsiHelper {
 
     static String iscsiTargetPrefix = "iscsi_zstack_active";
@@ -13,12 +11,12 @@ public class ExponIscsiHelper {
 
     static String iscsiHeartbeatVolumeName = "iscsi_zstack_heartbeat";
 
-    static String buildIscsiClientName(String clientIp) {
+    static String buildIscsiExportClientName(String clientIp) {
         return "iscsi_" + clientIp.replace(".", "_");
     }
 
-    static String buildIscsiClientName(BaseVolumeInfo vol) {
-        return "volume_" + vol.getUuid();
+    static String buildIscsiVolumeClientName(String volUuid) {
+        return "volume_" + volUuid;
     }
 
     static String buildVolumeIscsiTargetName(int index) {

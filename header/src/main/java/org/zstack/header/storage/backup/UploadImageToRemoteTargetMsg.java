@@ -3,7 +3,7 @@ package org.zstack.header.storage.backup;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 
-public class ExportImageToRemoteTargetMsg extends NeedReplyMessage implements BackupStorageMessage {
+public class UploadImageToRemoteTargetMsg extends NeedReplyMessage implements BackupStorageMessage {
     private ImageInventory image;
     private String backupStorageUuid;
     private String remoteTargetUrl;

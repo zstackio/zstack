@@ -49,19 +49,6 @@ public class ExponClient {
     }
 
     public void configure(ExponConfig c) {
-        logger.debug("okhttp location " + OkHttpClient.class.getProtectionDomain().getCodeSource().getLocation());
-        try {
-            logger.debug("okttp version: %s" + Class.forName("okhttp3.OkHttp").getField("VERSION").get(null));
-        } catch (Exception e) {
-            logger.debug("cannot get okhttp version", e);
-        }
-        try {
-            logger.debug("okttp version: %s" + Class.forName("okhttp3.internal.Version").getDeclaredMethods()[0].invoke(null));
-        } catch (Exception e) {
-            logger.debug("cannot get okhttp version", e);
-        }
-
-
         config = c;
 
         if (c.readTimeout != null || c.writeTimeout != null) {

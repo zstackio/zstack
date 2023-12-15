@@ -16,7 +16,6 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.addon.primary.ActiveVolumeTO;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
@@ -117,8 +116,8 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint,
             return volumeTO;
         }
 
-        ActiveVolumeTO vol = nodeSvc.getActiveResult(BaseVolumeInfo.valueOf(volumeInventory), h, false);
-        volumeTO.setInstallPath(vol.getInstallPath());
+        String path = nodeSvc.getActivePath(BaseVolumeInfo.valueOf(volumeInventory), h, false);
+        volumeTO.setInstallPath(path);
         return volumeTO;
     }
 
@@ -138,8 +137,8 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint,
         iso.setProtocol(isoTO.getProtocol());
         iso.setShareable(true);
 
-        ActiveVolumeTO vol = nodeSvc.getActiveResult(iso,  h, true);
-        isoTO.setPath(vol.getInstallPath());
+        String path = nodeSvc.getActivePath(iso,  h, true);
+        isoTO.setPath(path);
         return isoTO;
     }
 
