@@ -28,6 +28,7 @@
         <module>ldap</module>
         <module>vxlan</module>
         <module>acl</module>
+        <module>opencrypto</module>
     </modules>
     <dependencies>
         <dependency>
