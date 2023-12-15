@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("host")
                 .adminOnlyAPIs("org.zstack.header.host.**")
                 .normalAPIs(APIQueryHostMsg.class)
                 .build();
