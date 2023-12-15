@@ -31,6 +31,9 @@ public class KVMHostVO extends HostVO {
     @Column
     private String osVersion;
 
+    @Column
+    private String iscsiInitiatorName;
+
     public KVMHostVO() {
     }
 
@@ -84,6 +87,14 @@ public class KVMHostVO extends HostVO {
 
     public void setOsVersion(String osVersion) {
         this.osVersion = osVersion;
+    }
+
+    public String getIscsiInitiatorName() {
+        return iscsiInitiatorName;
+    }
+
+    public void setIscsiInitiatorName(String iscsiInitiatorName) {
+        this.iscsiInitiatorName = iscsiInitiatorName;
     }
 }
 

@@ -44,4 +44,12 @@ public class KVMHostInventory extends org.zstack.sdk.HostInventory {
         return this.osVersion;
     }
 
+    public java.lang.String iscsiInitiatorName;
+    public void setIscsiInitiatorName(java.lang.String iscsiInitiatorName) {
+        this.iscsiInitiatorName = iscsiInitiatorName;
+    }
+    public java.lang.String getIscsiInitiatorName() {
+        return this.iscsiInitiatorName;
+    }
+
 }

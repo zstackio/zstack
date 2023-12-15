@@ -16,4 +16,5 @@ public class KVMHostVO_ extends HostVO_ {
     public static volatile SingularAttribute<KVMHostVO, String> osDistribution;
     public static volatile SingularAttribute<KVMHostVO, String> osRelease;
     public static volatile SingularAttribute<KVMHostVO, String> osVersion;
+    public static volatile SingularAttribute<KVMHostVO, String> iscsiInitiatorName;
 }

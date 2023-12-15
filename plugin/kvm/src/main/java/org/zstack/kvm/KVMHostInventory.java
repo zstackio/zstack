@@ -34,6 +34,8 @@ public class KVMHostInventory extends HostInventory {
 
     private String osVersion;
 
+    private String iscsiInitiatorName;
+
     protected KVMHostInventory(KVMHostVO vo) {
         super(vo);
         this.setUsername(vo.getUsername());
@@ -42,6 +44,7 @@ public class KVMHostInventory extends HostInventory {
         this.setOsDistribution(vo.getOsDistribution());
         this.setOsRelease(vo.getOsRelease());
         this.setOsVersion(vo.getOsVersion());
+        this.setIscsiInitiatorName(vo.getIscsiInitiatorName());
     }
 
     public KVMHostInventory() {
@@ -106,4 +109,11 @@ public class KVMHostInventory extends HostInventory {
         this.osVersion = osVersion;
     }
 
+    public String getIscsiInitiatorName() {
+        return iscsiInitiatorName;
+    }
+
+    public void setIscsiInitiatorName(String iscsiInitiatorName) {
+        this.iscsiInitiatorName = iscsiInitiatorName;
+    }
 }
