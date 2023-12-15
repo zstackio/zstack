@@ -8,7 +8,6 @@ import org.zstack.header.storage.addon.StorageHealthy;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
-import org.zstack.header.volume.VolumeType;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -23,13 +22,10 @@ public interface PrimaryStorageControllerSvc {
     StorageCapabilities reportCapabilities();
 
     String allocateSpace(AllocateSpaceSpec aspec);
-    String buildVolumeInstallPath(String volumeUuid, VolumeType volumeType);
-
-    String buildVolumeSnapshotInstallPath(String volumeInstallPath, String snapshotUuid);
-    String buildImageInstallPath(String imageUuid, String resourceType);
 
     void createVolume(CreateVolumeSpec v, ReturnValueCompletion<VolumeStats>comp);
     void deleteVolume(String installPath, Completion comp);
+    void deleteVolumeAndSnapshot(String installPath, Completion comp);
     void trashVolume(String installPath, Completion comp);
     void cloneVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats>comp);
     void copyVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats>comp);
@@ -43,7 +39,7 @@ public interface PrimaryStorageControllerSvc {
     void setVolumeQos(BaseVolumeInfo v, Completion comp);
 
     void export(ExportSpec espec, VolumeProtocol protocol, ReturnValueCompletion<RemoteTarget> comp);
-    void unexport(String installPath, RemoteTarget target, Completion comp);
+    void unexport(ExportSpec espec, VolumeProtocol protocol, Completion comp);
 
     void createSnapshot(CreateVolumeSnapshotSpec spec, ReturnValueCompletion<VolumeSnapshotStats> comp);
     void deleteSnapshot(String installPath, Completion comp);

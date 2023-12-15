@@ -1,8 +1,26 @@
 package org.zstack.storage.addon.primary;
 
+import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
+
 public class ExternalPrimaryStorageNameHelper {
     public static String buildVolumeName(String volumeUuid) {
         return String.format("volume_%s", volumeUuid);
+    }
+
+    public static BaseVolumeInfo getVolumeInfo(String volumeName) {
+        if (volumeName.startsWith("volume_")) {
+            BaseVolumeInfo info = new BaseVolumeInfo();
+            info.setUuid(volumeName.substring("volume_".length()));
+            info.setType("volume");
+            return info;
+        } else if (volumeName.startsWith("image_")) {
+            BaseVolumeInfo info = new BaseVolumeInfo();
+            info.setUuid(volumeName.substring("image_".length()));
+            info.setType("image");
+            return info;
+        } else {
+            throw new IllegalArgumentException(String.format("unknown volume name[%s]", volumeName));
+        }
     }
 
     public static String buildChangeImageVolumeName(String volumeUuid) {
