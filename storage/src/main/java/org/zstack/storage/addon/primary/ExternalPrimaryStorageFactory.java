@@ -235,7 +235,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
         new While<>(vols).each((vol, compl) -> {
             PrimaryStorageNodeSvc svc = getNodeSvc(vol.getPrimaryStorageUuid());
-            svc.deactivate(vol, host, new Completion(compl) {
+            svc.deactivate(vol.getInstallPath(), vol.getProtocol(), host, new Completion(compl) {
                 @Override
                 public void success() {
                     compl.done();
@@ -347,7 +347,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         }
 
         HostInventory host = HostInventory.valueOf(dbf.findByUuid(vm.getHostUuid(), HostVO.class));
-        // TODO change interface
+        // TODO change async interface
         svc.activate(BaseVolumeInfo.valueOf(volume), host, volume.isShareable(), new NopeReturnValueCompletion());
     }
 
@@ -362,8 +362,8 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         }
 
         HostInventory host = HostInventory.valueOf(dbf.findByUuid(vm.getHostUuid(), HostVO.class));
-        // TODO change interface
-        svc.deactivate(BaseVolumeInfo.valueOf(volume), host, new NopeCompletion());
+        // TODO change async interface
+        svc.deactivate(volume.getInstallPath(), volume.getProtocol(), host, new NopeCompletion());
     }
 
     @Override

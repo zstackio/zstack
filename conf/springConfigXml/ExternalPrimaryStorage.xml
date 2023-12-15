@@ -34,4 +34,10 @@
             <zstack:extension interface="org.zstack.header.Service"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="ExternalPrimaryStorageImageCacheCleaner" class="org.zstack.storage.addon.primary.ExternalPrimaryStorageImageCacheCleaner">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

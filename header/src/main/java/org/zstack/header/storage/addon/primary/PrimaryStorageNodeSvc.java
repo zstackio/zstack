@@ -13,11 +13,13 @@ public interface PrimaryStorageNodeSvc {
 
     void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp);
 
-    void deactivate(BaseVolumeInfo v, HostInventory h, Completion comp);
+    void deactivate(String installPath, String protocol, HostInventory h, Completion comp);
 
-    ActiveVolumeTO getActiveResult(BaseVolumeInfo v, HostInventory h, boolean shareable);
+    String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable);
+    BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable);
 
-    List<BaseVolumeInfo> getActiveVolumesInfo(List<String> activePaths, HostInventory h, boolean shareable);
+    // TODO use HostInventory
+    List<ActiveVolumeClient> getActiveClients(String installPath, String protocol);
 
     List<String> getActiveVolumesLocation(HostInventory h);
 

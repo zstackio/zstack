@@ -12,8 +12,7 @@ import java.util.Map;
         path = "/block/snaps/{snapshotId}/clone",
         method = HttpMethod.POST,
         responseClass = CloneVolumeResponse.class,
-        // TODO: change to true
-        sync = false
+        sync = true
 )
 public class CloneVolumeRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

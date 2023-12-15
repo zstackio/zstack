@@ -8,8 +8,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.storage.addon.primary.ActiveVolumeTO;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
@@ -25,6 +25,9 @@ import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.argerr;
 
 public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
         KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
@@ -90,13 +93,23 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
             return volumeTO;
         }
 
+        if (!volumeTO.isUseVirtio()) {
+            throw new OperationFailureException(
+                    argerr("vhostuser disk only support virtio mode, check image platform has virtio driver or not"));
+        }
+
+        if (volumeTO.isUseVirtioSCSI()) {
+            throw new OperationFailureException(
+                    argerr("vhostuser disk not support virtio-scsi mode, please turn off virtio-scsi mode"));
+        }
+
         PrimaryStorageNodeSvc nodeSvc = getNodeService(volumeInventory);
         if (nodeSvc == null) {
             return volumeTO;
         }
 
-        ActiveVolumeTO vol = nodeSvc.getActiveResult(BaseVolumeInfo.valueOf(volumeInventory), host,false);
-        volumeTO.setInstallPath(vol.getInstallPath());
+        String path = nodeSvc.getActivePath(BaseVolumeInfo.valueOf(volumeInventory), host,false);
+        volumeTO.setInstallPath(path);
         return volumeTO;
     }
 
@@ -167,14 +180,16 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
                 return;
             }
 
-            List<BaseVolumeInfo> infos = nodeSvc.getActiveVolumesInfo(paths, host, false);
+            List<BaseVolumeInfo> infos = paths.stream()
+                    .map(path -> nodeSvc.getActiveVolumeInfo(path, host, false))
+                    .collect(Collectors.toList());
             if (infos.isEmpty()) {
                 compl.done();
                 return;
             }
 
             new While<>(infos).each((info, c) -> {
-                nodeSvc.deactivate(info, host, new Completion(c) {
+                nodeSvc.deactivate(info.getInstallPath(), info.getProtocol(), host, new Completion(c) {
                     @Override
                     public void success() {
                         c.done();

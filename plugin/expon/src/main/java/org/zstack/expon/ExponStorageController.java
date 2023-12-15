@@ -47,8 +47,8 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.expon.ExponIscsiHelper.*;
 import static org.zstack.expon.ExponNameHelper.*;
-import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.buildImageName;
-import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.buildVolumeName;
+import static org.zstack.iscsi.IscsiUtils.getHostMnIpFromInitiatorName;
+import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ExponStorageController implements PrimaryStorageControllerSvc, PrimaryStorageNodeSvc {
@@ -105,7 +105,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         accountInfo.password = uri.getUserInfo().split(":")[1];
 
         apiHelper = new ExponApiHelper(accountInfo, client);
-        apiHelper.login();
     }
 
     @Override
@@ -215,7 +214,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
         IscsiModule iscsi = allocateIscsiTarget(nodes);
 
-        String iscsiClientName = buildIscsiClientName(vol);
+        String iscsiClientName = buildIscsiVolumeClientName(vol.getUuid());
         IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
         if (client == null) {
             client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(clientIqn));
@@ -236,23 +235,18 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
         target.setDiskId(getDiskId(lunId, lunType));
-        target.setClientIp(h.getManagementIp());
         to.setInstallPath(target.getResourceURI());
         return to;
     }
 
     private String getDiskId(String lunId, String lunType) {
-        String wwn = null;
         if (lunType.equals("volume")) {
             VolumeModule vol = apiHelper.getVolume(lunId);
-            wwn = vol.getWwn();
+            return vol.getWwn();
+        } else {
+            VolumeSnapshotModule snap = apiHelper.getVolumeSnapshot(lunId);
+            return snap.getWwn();
         }
-
-        if (wwn == null) {
-            wwn = lunId.replace("-", "").substring(16, 32);
-        }
-
-        return wwn;
     }
 
     private synchronized IscsiModule allocateIscsiTarget(List<IscsiSeverNode> nodes) {
@@ -275,7 +269,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         int index = Integer.parseInt(iscsi.getName().substring(iscsi.getName().lastIndexOf("_") + 1));
         return createIscsiTarget(index, tianshuId, nodes);
     }
-
 
     private IscsiModule createIscsiTarget(int index, String tianshuId, List<IscsiSeverNode> nodes) {
         IscsiModule iscsi = apiHelper.createIscsiController(buildVolumeIscsiTargetName(index),
@@ -306,7 +299,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             iscsi = apiHelper.createIscsiController(iscsiExportTargetName, tianshuId, 3260, IscsiUssResource.valueOf(nodes));
         }
 
-        String iscsiClientName = buildIscsiClientName(espec.getClientMnIp());
+        String iscsiClientName = buildIscsiExportClientName(espec.getClientMnIp());
         IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
         if (client == null) {
             client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(espec.getClientQualifiedName()));
@@ -325,18 +318,15 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
         target.setDiskId(getDiskId(lunId, lunType));
-        target.setClientIp(espec.getClientMnIp());
         return target;
     }
 
     @Override
-    public ActiveVolumeTO getActiveResult(BaseVolumeInfo v, HostInventory h, boolean shareable) {
+    public String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable) {
         if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
             String vhostName = buildVhostControllerName(v.getUuid());
             VhostControllerModule vhost = getOrCreateVhostController(vhostName);
-            VhostVolumeTO to = new VhostVolumeTO();
-            to.setInstallPath(vhost.getPath());
-            return to;
+            return vhost.getPath();
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
             String lunId, lunType;
             if (v.getInstallPath().contains("@")) {
@@ -347,24 +337,43 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
                 lunType = "volume";
             }
 
-            String iscsiClientName = buildIscsiClientName(v);
+            String iscsiClientName = buildIscsiVolumeClientName(v.getUuid());
             IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
             IscsiModule iscsi = apiHelper.getIscsiClientAttachedTargets(client.getId()).get(0);
             List<IscsiSeverNode> nodes = getIscsiServers(addonInfo.getClusters().get(0).getId());
 
-            IscsiVolumeTO to = new IscsiVolumeTO();
             IscsiRemoteTarget target = new IscsiRemoteTarget();
             target.setPort(3260);
             target.setTransport("tcp");
             target.setIqn(iscsi.getIqn());
             target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
             target.setDiskId((getDiskId(lunId, lunType)));
-            target.setClientIp(h.getManagementIp());
-            to.setInstallPath(target.getResourceURI());
-            return to;
+            return target.getResourceURI();
         }
 
         throw new OperationFailureException(operr("not supported protocol[%s]", v.getProtocol()));
+    }
+
+    @Override
+    public BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable) {
+        BaseVolumeInfo info = new BaseVolumeInfo();
+        String volUuid = null;
+        if (activePath.startsWith(vhostSocketDir)) {
+            volUuid = getVolumeUuidFromVhostControllerPath(activePath);
+            info.setUuid(volUuid);
+            info.setProtocol(VolumeProtocol.Vhost.toString());
+            info.setShareable(shareable);
+        } else {
+            // TODO support other protocols
+        }
+
+        VolumeModule vol = apiHelper.queryVolume(buildVolumeName(volUuid));
+        if (vol == null) {
+            return null;
+        }
+
+        info.setInstallPath(buildExponPath(vol.getPoolName(), vol.getId()));
+        return info;
     }
 
     @Override
@@ -374,45 +383,53 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public List<BaseVolumeInfo> getActiveVolumesInfo(List<String> activePaths, HostInventory h, boolean shareable) {
-        List<BaseVolumeInfo> infos = new ArrayList<>();
-        for (String path : activePaths) {
-            BaseVolumeInfo info = new BaseVolumeInfo();
-            String volUuid = null;
-            if (path.startsWith(vhostSocketDir)) {
-                volUuid = getVolumeUuidFromVhostControllerPath(path);
-                info.setUuid(volUuid);
-                info.setProtocol(VolumeProtocol.Vhost.toString());
-                info.setShareable(shareable);
-            } else {
-                // TODO support other protocols
-            }
-
-            VolumeModule vol = apiHelper.queryVolume(buildVolumeName(volUuid));
-            if (vol == null) {
-                continue;
-            }
-
-            info.setInstallPath(buildExponPath(vol.getPoolName(), vol.getId()));
-            infos.add(info);
+    public List<ActiveVolumeClient> getActiveClients(String installPath, String protocol) {
+        VolumeModule vol = apiHelper.getVolume(getVolIdFromPath(installPath));
+        if (vol == null) {
+            return Collections.emptyList();
         }
 
-        return infos;
+        String volUuid = getVolumeInfo(vol.getName()).getUuid();
+        if (VolumeProtocol.Vhost.toString().equals(protocol)) {
+            String vhostName = buildVhostControllerName(volUuid);
+            VhostControllerModule vhost = apiHelper.getVhostController(vhostName);
+            List<UssGatewayModule> uss = apiHelper.getVhostControllerBoundUss(vhost.getId());
+            return uss.stream().map(it -> {
+                ActiveVolumeClient client = new ActiveVolumeClient();
+                client.setManagerIp(getUssManagerIp(it.getName()));
+                return client;
+            }).collect(Collectors.toList());
+        } else if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
+            String iscsiClientName = buildIscsiVolumeClientName(volUuid);
+            IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+            return client.getHosts().stream().map(it -> {
+                ActiveVolumeClient c = new ActiveVolumeClient();
+                if (it.contains("iqn")) {
+                    c.setQualifiedName(it);
+                    c.setManagerIp(getHostMnIpFromInitiatorName(it));
+                } else {
+                    c.setManagerIp(it);
+                }
+                return c;
+            }).collect(Collectors.toList());
+        } else {
+            throw new OperationFailureException(operr("not supported protocol[%s]", protocol));
+        }
     }
 
     @Override
-    public void deactivate(BaseVolumeInfo vol, HostInventory h, Completion comp) {
-        if (VolumeProtocol.Vhost.toString().equals(vol.getProtocol())) {
-            deactivateVhost(vol, h);
+    public void deactivate(String installPath, String protocol, HostInventory h, Completion comp) {
+        if (VolumeProtocol.Vhost.toString().equals(protocol)) {
+            deactivateVhost(installPath, h);
             comp.success();
             return;
-        } else if (VolumeProtocol.iSCSI.toString().equals(vol.getProtocol())) {
-            deactivateIscsi(vol, h);
+        } else if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
+            deactivateIscsi(installPath, h);
             comp.success();
             return;
         }
 
-        comp.fail(operr("not supported protocol[%s]", vol.getProtocol()));
+        comp.fail(operr("not supported protocol[%s]", protocol));
     }
 
     @Override
@@ -452,7 +469,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
         target.setDiskId(heartbeatVol.getWwn());
-        target.setClientIp(h.getManagementIp());
         to.setInstallPath(target.getResourceURI());
         to.setHostId(getHostId(h));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
@@ -498,8 +514,15 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         comp.success();
     }
 
-    private void deactivateVhost(BaseVolumeInfo vol, HostInventory h) {
-        String vhostName = buildVhostControllerName(vol.getUuid());
+    private void deactivateVhost(String installPath, HostInventory h) {
+        String volId = getVolIdFromPath(installPath);
+        VolumeModule vol = apiHelper.getVolume(volId);
+        if (vol == null) {
+            return;
+        }
+
+        String volUuid = getVolumeInfo(vol.getName()).getUuid();
+        String vhostName = buildVhostControllerName(volUuid);
 
         UssGatewayModule uss = getUssGateway(VolumeProtocol.Vhost, h.getManagementIp());
         VhostControllerModule vhost = apiHelper.getVhostController(vhostName);
@@ -507,12 +530,19 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             return;
         }
 
-        VolumeModule exponVol = getVolumeModule(vol);
-        apiHelper.removeVhostVolumeFromUss(exponVol.getId(), vhost.getId(), uss.getId());
+        apiHelper.removeVhostVolumeFromUss(volId, vhost.getId(), uss.getId());
     }
 
-    private void deactivateIscsi(BaseVolumeInfo vol, HostInventory h) {
-        String iscsiClientName = buildIscsiClientName(vol);
+    private void deactivateIscsi(String installPath, HostInventory h) {
+        String volId = getVolIdFromPath(installPath);
+        VolumeModule vol = apiHelper.getVolume(volId);
+        if (vol == null) {
+            return;
+        }
+
+        String volUuid = getVolumeInfo(vol.getName()).getUuid();
+
+        String iscsiClientName = buildIscsiVolumeClientName(volUuid);
         IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
         if (client == null) {
             return;
@@ -528,7 +558,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
     }
 
-    private synchronized void unexportIscsi(String source, IscsiRemoteTarget target) {
+    private synchronized void unexportIscsi(String source, String clientIp) {
         String lunId, lunType;
         if (source.contains("@")) {
             lunId = getSnapIdFromPath(source);
@@ -538,8 +568,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             lunType = "volume";
         }
 
-
-        String iscsiClientName = buildIscsiClientName(target.getClientIp());
+        String iscsiClientName = buildIscsiExportClientName(clientIp);
         IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
         if (client == null) {
             return;
@@ -659,7 +688,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         // TODO allocate pool
         FailureDomainModule pool = allocateFreePool(aspec.getSize());
         if (pool == null) {
-            throw new OperationFailureException(operr("no available pool with enough space[%d] and healthy", aspec.getSize()));
+            throw new OperationFailureException(operr("no available pool with enough space[%d] and healthy status", aspec.getSize()));
         }
 
         return buildExponPath(pool.getFailureDomainName(), "");
@@ -667,25 +696,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     private FailureDomainModule allocateFreePool(long size) {
         List<FailureDomainModule> pools = getSelfPools();
-        return pools.stream().filter(it -> it.getHealthStatus().equals(HealthStatus.health.name()) &&
+        return pools.stream().filter(it -> !it.getHealthStatus().equals(HealthStatus.error.name()) &&
                         it.getValidSize() - it.getRealDataSize() > size)
                 .max(Comparator.comparingLong(FailureDomainModule::getAvailableCapacity))
                 .orElse(null);
-    }
-
-    @Override
-    public String buildVolumeInstallPath(String volumeUuid, VolumeType volumeType) {
-        throw new RuntimeException("not supported");
-    }
-
-    @Override
-    public String buildVolumeSnapshotInstallPath(String volumeInstallPath, String snapshotUuid) {
-        return volumeInstallPath + "@" + snapshotUuid;
-    }
-
-    @Override
-    public String buildImageInstallPath(String imageUuid, String resourceType) {
-        throw new RuntimeException("not supported");
     }
 
     @Override
@@ -696,7 +710,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         if (v.getAllocatedUrl() == null) {
             FailureDomainModule pool = allocateFreePool(v.getSize());
             if (pool == null) {
-                comp.fail(operr("no available pool with enough space[%d] and healthy", v.getSize()));
+                comp.fail(operr("no available pool with enough space[%d] and healthy status", v.getSize()));
                 return;
             }
             poolName = pool.getFailureDomainName();
@@ -717,6 +731,13 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void deleteVolume(String installPath, Completion comp) {
+        String volId = getVolIdFromPath(installPath);
+        apiHelper.deleteVolume(volId, true);
+        comp.success();
+    }
+
+    @Override
+    public void deleteVolumeAndSnapshot(String installPath, Completion comp) {
         String volId = getVolIdFromPath(installPath);
         apiHelper.deleteVolume(volId, true);
         comp.success();
@@ -842,18 +863,19 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public void unexport(String installPath, RemoteTarget target, Completion comp) {
-        if (target instanceof NvmeRemoteTarget) {
-            unexportNvmf(installPath, (NvmeRemoteTarget) target);
-        } else if (target instanceof IscsiRemoteTarget) {
-            unexportIscsi(installPath, (IscsiRemoteTarget) target);
+    public void unexport(ExportSpec espec, VolumeProtocol protocol, Completion comp) {
+        if (protocol == VolumeProtocol.NVMEoF) {
+            unexportNvmf(espec.getInstallPath());
+        } else if (protocol == VolumeProtocol.iSCSI) {
+            unexportIscsi(espec.getInstallPath(), espec.getClientMnIp());
         } else {
-            throw new RuntimeException("unsupport target " + target.getClass().getSimpleName());
+            comp.fail(operr("unsupported protocol %s", protocol.name()));
+            return;
         }
         comp.success();
     }
 
-    private synchronized void unexportNvmf(String source, NvmeRemoteTarget target) {
+    private synchronized void unexportNvmf(String source) {
         String lunId, lunType;
         if (source.contains("@")) {
             lunId = getSnapIdFromPath(source);

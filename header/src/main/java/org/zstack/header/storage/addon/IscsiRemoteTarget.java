@@ -11,8 +11,6 @@ public class IscsiRemoteTarget extends BlockRemoteTarget {
 
     private String diskId;
 
-    private String clientIp;
-
     public String getTransport() {
         return transport;
     }
@@ -56,13 +54,5 @@ public class IscsiRemoteTarget extends BlockRemoteTarget {
 
     public void setIqn(String iqn) {
         this.iqn = iqn;
-    }
-
-    public String getClientIp() {
-        return clientIp;
-    }
-
-    public void setClientIp(String clientIp) {
-        this.clientIp = clientIp;
     }
 }
