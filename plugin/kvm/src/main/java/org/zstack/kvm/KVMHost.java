@@ -4865,11 +4865,12 @@ public class KVMHost extends HostBase implements Host {
         return inaccessiblePsCount == attachedPsCount && attachedPsCount > 0;
     }
 
-    private void updateHostOsInformation(String distro, String release, String version) {
+    private void updateHostOsInformation(String distro, String release, String version, String iscsiInitiatorName) {
         final KVMHostVO kvmHostVO = getSelf();
         kvmHostVO.setOsDistribution(distro);
         kvmHostVO.setOsRelease(release);
         kvmHostVO.setOsVersion(version);
+        kvmHostVO.setIscsiInitiatorName(iscsiInitiatorName);
         self = dbf.updateAndRefresh(kvmHostVO);
 
         // for compatibility
@@ -5740,7 +5741,7 @@ public class KVMHost extends HostBase implements Host {
             }
 
             private void saveKvmHostRelatedFacts(HostFactResponse ret) {
-                updateHostOsInformation(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
+                updateHostOsInformation(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion(), ret.getIscsiInitiatorName());
 
                 createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
                 createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);

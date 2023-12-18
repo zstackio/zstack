@@ -3,3 +3,5 @@ UPDATE `zstack`.`L2NetworkHostRefVO` set `attachStatus` = 'Attached' WHERE `atta
 
 ALTER TABLE ConsoleProxyVO ADD COLUMN `expiredDate` timestamp NOT NULL;
 UPDATE ImageEO SET md5sum = NULL where md5sum != 'not calculated';
+
+ALTER TABLE `zstack`.`KVMHostVO` ADD COLUMN `iscsiInitiatorName` varchar(256) DEFAULT NULL;
