@@ -8,10 +8,7 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.volume.Volume;
-import org.zstack.header.volume.VolumeAO;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
@@ -107,6 +104,13 @@ public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInve
 
     public Set<VolumeVO> getAllDiskVolumes() {
         return getAllVolumes(VolumeVO::isDisk);
+    }
+
+    public VolumeVO getMemoryVolume() {
+        if (allVolumes == null) {
+            return null;
+        }
+        return allVolumes.stream().filter(v -> v.getType().equals(VolumeType.Memory)).findAny().orElse(null);
     }
 
     public VolumeVO getRootVolume() {
