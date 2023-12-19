@@ -74,8 +74,8 @@ class RestDocumentationGenerator implements DocumentGenerator {
         void init() {
             try {
                 loadSystemProperties()
-                parseGlobalConfigFields()
                 loadConfigFromXml()
+                parseGlobalConfigFields()
                 loadConfigFromJava()
                 link()
             } catch (IllegalArgumentException ie) {
@@ -105,6 +105,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
                         try {
                             def bind = field.getAnnotation(BindResourceConfig.class)
                             def validator = field.getAnnotation(GlobalConfigValidation.class)
+                            def configBef = field.getAnnotation(GlobalConfigDef.class)
                             GlobalConfig config = (GlobalConfig) field.get(null)
                             if (config == null) {
                                 throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] " +
@@ -132,14 +133,20 @@ class RestDocumentationGenerator implements DocumentGenerator {
                                         + validator.validValues().join(", ") + "}")
                                 continue
                             }
+
+                            GlobalConfig conf = configs.get(config.getIdentity())
+                            boolean isInteger = (conf != null && conf.type == Integer.class.getName()) ||
+                                    (configBef != null && configBef.type() == Integer.class)
+
                             if (validator.numberGreaterThan() == Long.MIN_VALUE
                                     && validator.numberLessThan() == Long.MAX_VALUE) {
                                 if (validator.inNumberRange().length != 0) {
                                     validatorMap.put(config.getIdentity(), "["
                                             + validator.inNumberRange().join(" ,") + "]")
                                 } else {
-                                    validatorMap.put(config.getIdentity(), "[" + Long.MIN_VALUE + ", "
-                                            + Long.MAX_VALUE + "]")
+                                    validatorMap.put(config.getIdentity(),
+                                            generateRangeString(isInteger, validator.numberGreaterThan(),
+                                                    validator.numberLessThan()))
                                 }
                                 continue
                             }
@@ -156,16 +163,9 @@ class RestDocumentationGenerator implements DocumentGenerator {
                                         + validator.numberGreaterThan().toString() + ", "
                                         + validator.numberLessThan().toString() + "]")
                             } else {
-                                if (validator.numberLessThan() != Long.MAX_VALUE) {
-                                    validatorMap.put(config.getIdentity(), "["
-                                            + Long.MIN_VALUE + ", "
-                                            + validator.numberLessThan().toString() + "]")
-                                }
-                                if (validator.numberGreaterThan() != Long.MIN_VALUE) {
-                                    validatorMap.put(config.getIdentity(), "["
-                                            + validator.numberGreaterThan().toString() + ", "
-                                            + Long.MAX_VALUE + "]")
-                                }
+                                validatorMap.put(config.getIdentity(),
+                                        generateRangeString(isInteger, validator.numberGreaterThan(),
+                                                validator.numberLessThan()))
                             }
 
                         } catch (IllegalAccessException e) {
@@ -176,6 +176,11 @@ class RestDocumentationGenerator implements DocumentGenerator {
             }
         }
 
+        String generateRangeString(boolean isInteger, long greaterThan, long lessThan) {
+            String typeRange = isInteger ? "${Integer.MIN_VALUE},${Integer.MAX_VALUE}" : "${Long.MIN_VALUE},${Long.MAX_VALUE}"
+            return "[" + (greaterThan != Long.MIN_VALUE ? greaterThan : typeRange.split(",")[0]) + ", " +
+                    (lessThan != Long.MAX_VALUE ? lessThan : typeRange.split(",")[1]) + "]"
+        }
 
         private void loadConfigFromJava() {
             for (Field field : globalConfigFields) {
