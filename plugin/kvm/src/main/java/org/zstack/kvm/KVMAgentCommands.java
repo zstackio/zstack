@@ -4148,4 +4148,29 @@ public class KVMAgentCommands {
             this.imageData = imageData;
         }
     }
+
+    public static class GetVmUptimeCmd extends AgentCommand {
+        private String vmUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
+
+    public static class GetVmUptimeRsp extends AgentResponse {
+        private String createTime;
+
+        public String getCreateTime() {
+            return createTime;
+        }
+
+        public void setCreateTime(String createTime) {
+            this.createTime = createTime;
+        }
+    }
+
 }

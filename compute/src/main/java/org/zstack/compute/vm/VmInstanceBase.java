@@ -3237,6 +3237,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIFstrimVmMsg) msg);
         } else if (msg instanceof APITakeVmConsoleScreenshotMsg) {
             handle((APITakeVmConsoleScreenshotMsg) msg);
+        } else if (msg instanceof APIGetVmUptimeMsg) {
+            handle((APIGetVmUptimeMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -3247,6 +3249,30 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
     }
+
+    private void handle(APIGetVmUptimeMsg msg) {
+        APIGetVmUptimeReply reply = new APIGetVmUptimeReply();
+
+        GetVmUptimeMsg gmsg = new GetVmUptimeMsg();
+        gmsg.setVmInstanceUuid(self.getUuid());
+        gmsg.setHostUuid(self.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setSuccess(false);
+                    reply.setError(r.getError());
+                } else {
+                    GetVmUptimeReply re = (GetVmUptimeReply) r;
+                    reply.setUptime(re.getUptime());
+                }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
 
     private void handle(APITakeVmConsoleScreenshotMsg msg) {
         APITakeVmConsoleScreenshotEvent event = new APITakeVmConsoleScreenshotEvent(msg.getId());
