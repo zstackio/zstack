@@ -29,6 +29,8 @@ import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
@@ -1422,7 +1424,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (!CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
             SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
-            l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state);
+            l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state, L3NetworkVO_.l2NetworkUuid);
             List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
             List<String> duplicateElements = getDuplicateElementsOfList(uuids);
             if (duplicateElements.size() > 0) {
@@ -1435,11 +1437,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 String l3Uuid = t.get(0, String.class);
                 Boolean system = t.get(1, Boolean.class);
                 L3NetworkState state = t.get(2, L3NetworkState.class);
+                String l2Uuid = t.get(3, String.class);
                 if (state != L3NetworkState.Enabled) {
                     throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
                 }
                 if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
                     throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
+                }
+                L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2Uuid).find();
+                if (l2NetworkVO.getAttachedClusterRefs() == null || l2NetworkVO.getAttachedClusterRefs().isEmpty()) {
+                    throw new ApiMessageInterceptionException(argerr(String.format("l2 network[uuid: %s] of l3 network[uuid: %s] not attached to cluster",
+                            l2NetworkVO.getUuid(), l3Uuid)));
+                } else if (msg.getClusterUuid() != null && l2NetworkVO.getAttachedClusterRefs().stream().noneMatch(c -> c.getClusterUuid().equals(msg.getClusterUuid()))) {
+                    throw new ApiMessageInterceptionException(argerr(String.format("l2 network[uuid: %s] of l3 network[uuid: %s] not attached to cluster[uuid: %s]",
+                            l2NetworkVO.getUuid(), l3Uuid, msg.getClusterUuid())));
                 }
             }
         }
