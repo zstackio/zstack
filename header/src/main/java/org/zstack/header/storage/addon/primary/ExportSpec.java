@@ -1,23 +1,10 @@
 package org.zstack.header.storage.addon.primary;
 
-import org.zstack.header.storage.addon.RemoteTarget;
-
 public class ExportSpec {
     private String installPath;
-    private Class<? extends RemoteTarget> targetType;
-
     private String clientMnIp;
     private String clientQualifiedName;
-
     private String format;
-
-    public Class<? extends RemoteTarget> getTargetType() {
-        return targetType;
-    }
-
-    public void setTargetType(Class<? extends RemoteTarget> targetType) {
-        this.targetType = targetType;
-    }
 
     public String getInstallPath() {
         return installPath;

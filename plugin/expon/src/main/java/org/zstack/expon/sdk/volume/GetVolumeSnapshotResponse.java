@@ -1,22 +1,8 @@
 package org.zstack.expon.sdk.volume;
 
-/**
- * @example
- * {
- * "id": "ae747374-6c5f-46e2-b9c4-6a033a0bdcdd",
- * "name": "csac_00001",
- * "snap_name": "snapshot-ae747374-6c5f-46e2-b9c4-6a033a0bdcdd ",
- * "snap_size": 107372100,
- * "data_size": 107372100,
- * "volume_id": "990273f1-3665-4c56-97a5-9c56b2a35954",
- * "volume_name": "volume-ae747374-6c5f-46e2-b9c4-6a033a0bdcdd",
- * "volume_disp_name": "volume1",
- * "is_delete": false,
- * "pool_id": "978273f1-3665-4c56-97a5-9c56b2a35954",
- * "pool_name": "zxc"
- * }
- */
-public class VolumeSnapshotModule {
+import org.zstack.expon.sdk.ExponResponse;
+
+public class GetVolumeSnapshotResponse extends ExponResponse {
     private String id;
     private String name;
     private String snapName;
@@ -28,8 +14,8 @@ public class VolumeSnapshotModule {
     private boolean isDelete;
     private String poolId;
     private String poolName;
-
     private String wwn;
+
 
     public String getId() {
         return id;

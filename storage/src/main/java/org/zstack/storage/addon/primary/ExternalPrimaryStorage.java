@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
@@ -15,11 +16,14 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -70,6 +74,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     protected AccountManager acntMgr;
     @Autowired
     protected ResourceConfigFacade rcf;
+    @Autowired
+    private ExternalPrimaryStorageImageCacheCleaner imageCacheCleaner;
 
     public ExternalPrimaryStorage(PrimaryStorageVO self, PrimaryStorageControllerSvc controller, PrimaryStorageNodeSvc node) {
         super(self);
@@ -93,6 +99,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((ResizeVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
+            handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -127,6 +135,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
         externalVO = dbf.updateAndRefresh(externalVO);
         evt.setInventory(externalVO.toInventory());
+        bus.publish(evt);
+    }
+
+    @Override
+    protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
+        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
+        imageCacheCleaner.cleanup(msg.getUuid(), false);
         bus.publish(evt);
     }
 
@@ -290,23 +305,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 volume.setInstallPath(stats.getInstallPath());
                 volume.setProtocol(externalVO.getDefaultProtocol());
                 reply.setVolume(volume);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    @Override
-    protected void handle(DeleteVolumeOnPrimaryStorageMsg msg) {
-        DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
-        deleteBits(msg.getVolume().getInstallPath(), new Completion(msg) {
-            @Override
-            public void success() {
                 bus.reply(msg, reply);
             }
 
@@ -612,6 +610,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         controller.cloneVolume(msg.getVolumeSnapshot().getPrimaryStorageInstallPath(), spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats dst) {
+                                imageCachePath = dst.getInstallPath();
                                 trigger.next();
                             }
 
@@ -697,6 +696,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         chain.setName(String.format("create-image-cache-from-volume-%s-on-primary-storage-%s", msg.getVolumeInventory().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
             RemoteTarget remoteTarget;
+            ExportSpec espec = new ExportSpec();
+            final String exportProtocol = rcf.getResourceConfigValue(
+                    ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
 
             String snapshotPath;
             String bsInstallPath;
@@ -769,12 +771,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ExportSpec espec = new ExportSpec();
+                        espec = new ExportSpec();
                         espec.setInstallPath(snapshotPath);
                         espec.setClientMnIp(getBsMnIp(msg.getBackupStorageUuid()));
-
-                        String exportProtocol = rcf.getResourceConfigValue(
-                                ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
                         espec.setClientQualifiedName(getClientQualifiedName(msg.getBackupStorageUuid(), exportProtocol));
                         controller.export(espec, VolumeProtocol.valueOf(exportProtocol), new ReturnValueCompletion<RemoteTarget>(trigger) {
                             @Override
@@ -792,11 +791,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (remoteTarget == null) {
+                        if (espec == null) {
                             trigger.rollback();
                             return;
                         }
-                        controller.unexport(snapshotPath, remoteTarget, new Completion(trigger) {
+
+                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -842,11 +842,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.unexport(snapshotPath, remoteTarget, new Completion(trigger) {
+                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 // prevent to rollback again.
-                                remoteTarget = null;
+                                espec = null;
                                 trigger.next();
                             }
 
@@ -1000,9 +1000,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         chain.setName(String.format("download-image-%s-to-%s", image.getUuid(), spec.getName()));
         chain.then(new ShareFlow() {
             RemoteTarget remoteTarget;
+            ExportSpec espec;
             VolumeStats volume;
 
             final String bsUuid = image.getBackupStorageRefs().get(0).getBackupStorageUuid();
+
+            final String exportProtocol = rcf.getResourceConfigValue(
+                    ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -1049,12 +1053,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ExportSpec espec = new ExportSpec();
+                        espec = new ExportSpec();
                         espec.setInstallPath(volume.getInstallPath());
                         espec.setClientMnIp(getBsMnIp(bsUuid));
-
-                        String exportProtocol = rcf.getResourceConfigValue(
-                                ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
                         espec.setClientQualifiedName(getClientQualifiedName(bsUuid, exportProtocol));
                         controller.export(espec, VolumeProtocol.valueOf(exportProtocol), new ReturnValueCompletion<RemoteTarget>(trigger) {
                             @Override
@@ -1072,11 +1073,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (remoteTarget == null) {
+                        if (espec == null) {
                             trigger.rollback();
                             return;
                         }
-                        controller.unexport(volume.getInstallPath(), remoteTarget, new Completion(trigger) {
+
+                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -1096,7 +1098,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ExportImageToRemoteTargetMsg dmsg = new ExportImageToRemoteTargetMsg();
+                        UploadImageToRemoteTargetMsg dmsg = new UploadImageToRemoteTargetMsg();
                         dmsg.setBackupStorageUuid(bsUuid);
                         dmsg.setImage(image);
                         dmsg.setRemoteTargetUrl(remoteTarget.getResourceURI());
@@ -1121,11 +1123,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.unexport(volume.getInstallPath(), remoteTarget, new Completion(trigger) {
+                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 // prevent to rollback again.
-                                remoteTarget = null;
+                                espec = null;
                                 trigger.next();
                             }
 
@@ -1197,7 +1199,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg) {
-        deleteBits(msg.getInstallPath(), new Completion(msg) {
+        String protocol = null;
+        if (VolumeVO.class.getSimpleName().equals(msg.getBitsType()) && msg.getBitsUuid() != null) {
+            protocol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getBitsUuid()).select(VolumeVO_.protocol).findValue();
+        }
+
+        trashVolume(msg.getInstallPath(), protocol, new Completion(msg) {
             @Override
             public void success() {
                 DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
@@ -1214,8 +1221,26 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(DeleteVolumeOnPrimaryStorageMsg msg) {
+        DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
+        trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     protected void handle(DeleteBitsOnPrimaryStorageMsg msg) {
-        deleteBits(msg.getInstallPath(), new Completion(msg) {
+        // only consider volume bits because Deprecated, will be removed in future
+        trashVolume(msg.getInstallPath(), null, new Completion(msg) {
             @Override
             public void success() {
                 DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
@@ -1233,7 +1258,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     protected void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
         DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();
-        directDeleteBits(msg.getInstallPath(), new Completion(msg) {
+        // TODO deactivate first
+        controller.deleteVolumeAndSnapshot(msg.getInstallPath(), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -1244,7 +1270,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
-
         });
     }
 
@@ -1518,7 +1543,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(AskInstallPathForNewSnapshotMsg msg) {
         AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
-        reply.setSnapshotInstallPath(controller.buildVolumeSnapshotInstallPath(msg.getVolumeInventory().getInstallPath(), msg.getSnapshotUuid()));
         bus.reply(msg, reply);
     }
 
@@ -1614,7 +1638,90 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         controller.deleteVolume(installPath, completion);
     }
 
-    private void deleteBits(String installPath, Completion completion) {
-        controller.trashVolume(installPath, completion);
+    private void trashVolume(String installPath, String protocol, Completion completion) {
+        deactivateAndDeleteVolume(installPath, protocol, false, completion);
+    }
+
+    private void deactivateAndDeleteVolume(String installPath, String protocol, boolean force, Completion completion) {
+        if (protocol == null) {
+            doDeleteBits(installPath, force, completion);
+            return;
+        }
+
+        List<ActiveVolumeClient> clients = node.getActiveClients(installPath, protocol);
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("deactivate-and-delete-volume-%s", installPath));
+        chain.then(new NoRollbackFlow() {
+            final String __name__ = "deactivate-volume";
+
+            @Override
+            public boolean skip(Map data) {
+                return clients.isEmpty();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(clients).each((client, c) -> {
+                    HostVO host = Q.New(HostVO.class).eq(HostVO_.managementIp, client.getManagerIp()).find();
+                    node.deactivate(installPath, protocol, HostInventory.valueOf(host), new Completion(c) {
+                        @Override
+                        public void success() {
+                            c.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            c.addError(errorCode);
+                            c.allDone();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodeList.getCauses().isEmpty()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                        }
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            final String __name__ = "delete-volume";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                doDeleteBits(installPath, force, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private void doDeleteBits(String installPath, boolean force, Completion completion) {
+        if (force) {
+            controller.deleteVolume(installPath, completion);
+        } else {
+            controller.trashVolume(installPath, completion);
+        }
     }
 }

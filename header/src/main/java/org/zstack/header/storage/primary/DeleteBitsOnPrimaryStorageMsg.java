@@ -7,6 +7,7 @@ import org.zstack.header.message.NeedReplyMessage;
  * we just delete bits
  * @see DeleteVolumeBitsOnPrimaryStorageMsg
  */
+@Deprecated
 public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String installPath;

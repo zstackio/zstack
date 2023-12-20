@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.expon.ExponApiHelper
 import org.zstack.expon.ExponStorageController
 import org.zstack.expon.sdk.vhost.VhostControllerModule
@@ -12,8 +13,12 @@ import org.zstack.header.host.PingHostMsg
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetMsg
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetReply
-import org.zstack.header.storage.backup.ExportImageToRemoteTargetMsg
 import org.zstack.header.storage.backup.ExportImageToRemoteTargetReply
+import org.zstack.header.storage.backup.UploadImageToRemoteTargetMsg
+import org.zstack.header.storage.primary.ImageCacheShadowVO
+import org.zstack.header.storage.primary.ImageCacheShadowVO_
+import org.zstack.header.storage.primary.ImageCacheVO
+import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.vm.VmBootDevice
 import org.zstack.header.vm.devices.DeviceAddress
 import org.zstack.header.vm.devices.VirtualDeviceInfo
@@ -88,6 +93,7 @@ class ExternalPrimaryStorageCase extends SubCase {
                     name = "image"
                     url = "http://zstack.org/download/test.qcow2"
                     size = SizeUnit.GIGABYTE.toByte(1)
+                    virtio = true
                 }
 
                 image {
@@ -95,6 +101,7 @@ class ExternalPrimaryStorageCase extends SubCase {
                     url = "http://zstack.org/download/test.iso"
                     size = SizeUnit.GIGABYTE.toByte(1)
                     format = "iso"
+                    virtio = true
                 }
             }
 
@@ -165,11 +172,14 @@ class ExternalPrimaryStorageCase extends SubCase {
             testSessionExpired()
             testCreateVm()
             testHandleInactiveVolume()
+            testCreateVolumeRollback()
             testAttachIso()
+            testExpungeActiveVolume()
             testCreateDataVolume()
             testCreateSnapshot()
             testCreateTemplate()
             testClean()
+            testImageCacheClean()
         }
     }
 
@@ -248,7 +258,7 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         assert result.getRootVolumePrimaryStorages().size() == 1
 
-        env.message(ExportImageToRemoteTargetMsg.class){ ExportImageToRemoteTargetMsg msg, CloudBus bus ->
+        env.message(UploadImageToRemoteTargetMsg.class){ UploadImageToRemoteTargetMsg msg, CloudBus bus ->
             ExportImageToRemoteTargetReply r = new  ExportImageToRemoteTargetReply()
             assert msg.getRemoteTargetUrl().startsWith(exportProtocol)
             assert msg.getFormat() == "raw"
@@ -358,6 +368,51 @@ class ExternalPrimaryStorageCase extends SubCase {
             assert cmd.storagePaths.get(0).endsWith("/volume-*")
             return new KVMAgentCommands.VolumeSyncRsp()
         }
+    }
+
+    void testCreateVolumeRollback() {
+        def vol = createDataVolume {
+            name = "test"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+
+        env.afterSimulator(KVMConstant.KVM_ATTACH_VOLUME) { rsp, HttpEntity<String> e ->
+            rsp.setError("on purpose")
+            return rsp
+        }
+
+        expectError {
+            attachDataVolumeToVm {
+                vmInstanceUuid = vm.uuid
+                volumeUuid = vol.uuid
+            }
+        }
+
+        env.afterSimulator(KVMConstant.KVM_ATTACH_VOLUME) { rsp, HttpEntity<String> e ->
+            return rsp
+        }
+
+        deleleVolume(vol.uuid)
+    }
+
+    void testExpungeActiveVolume() {
+        def vol = createDataVolume {
+            name = "test"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+
+
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = vol.uuid
+        }
+
+        // skip deactivate volume
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, vol.uuid).set(VolumeVO_.vmInstanceUuid, null).update()
+
+        deleleVolume(vol.uuid)
     }
 
     void testAttachIso() {
@@ -524,6 +579,25 @@ class ExternalPrimaryStorageCase extends SubCase {
         }
     }
 
+    void testImageCacheClean() {
+        deleteImage {
+            uuid = image.uuid
+        }
+
+        expungeImage {
+            imageUuid = image.uuid
+        }
+
+        cleanUpImageCacheOnPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        retryInSecs {
+            assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image.uuid).count() == 0
+            assert Q.New(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.imageUuid, image.uuid).count() == 0
+        }
+    }
+
     void deleteVm(String vmUuid) {
         destroyVmInstance {
             uuid = vmUuid
@@ -531,6 +605,16 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         expungeVmInstance {
             uuid = vmUuid
+        }
+    }
+
+    void deleleVolume(String volUuid) {
+        deleteDataVolume {
+            uuid = volUuid
+        }
+
+        expungeDataVolume {
+            uuid = volUuid
         }
     }
 }

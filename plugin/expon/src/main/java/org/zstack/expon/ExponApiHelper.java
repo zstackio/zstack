@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class ExponApiHelper {
 
@@ -222,13 +221,6 @@ public class ExponApiHelper {
         req.setName(name);
         CloneVolumeResponse rsp = callErrorOut(req, CloneVolumeResponse.class);
 
-        // TODO remove it
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         return queryVolume(name);
     }
 
@@ -265,16 +257,10 @@ public class ExponApiHelper {
         req.setVolumeId(volId);
         CreateVolumeSnapshotResponse rsp = callErrorOut(req, CreateVolumeSnapshotResponse.class);
 
-        // TODO remove it
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         return queryVolumeSnapshot(name);
     }
 
+    // TODO change to async
     public void deleteVolumeSnapshot(String snapId) {
         DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
         req.setSnapshotId(snapId);
@@ -290,6 +276,14 @@ public class ExponApiHelper {
         }
 
         return rsp.getSnaps().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    public VolumeSnapshotModule getVolumeSnapshot(String snapshotId) {
+        GetVolumeSnapshotRequest req = new GetVolumeSnapshotRequest();
+        req.setId(snapshotId);
+        GetVolumeSnapshotResponse rsp = callErrorOut(req, GetVolumeSnapshotResponse.class);
+
+        return JSONObjectUtil.rehashObject(rsp, VolumeSnapshotModule.class);
     }
 
     public NvmfModule queryNvmfController(String name) {

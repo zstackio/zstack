@@ -283,7 +283,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
+                                if (!reply.isSuccess()) {
                                     trigger.setError(reply.getError());
                                 }
 
