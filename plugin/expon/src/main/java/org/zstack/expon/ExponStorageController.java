@@ -42,6 +42,7 @@ import org.zstack.vhost.kvm.VhostVolumeTO;
 
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -95,8 +96,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         ExponConfig clientConfig = new ExponConfig();
         clientConfig.hostname = uri.getHost();
         clientConfig.port = uri.getPort();
-        clientConfig.readTimeout = 10000L;
-        clientConfig.writeTimeout = 10000L;
+        clientConfig.readTimeout = TimeUnit.MINUTES.toMillis(10);
+        clientConfig.writeTimeout = TimeUnit.MINUTES.toMillis(10);
         ExponClient client = new ExponClient();
         client.configure(clientConfig);
 
