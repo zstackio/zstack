@@ -70,6 +70,7 @@
     <import resource="springConfigXml/localStorage.xml"/>
     <import resource="springConfigXml/ManagementNodeManager.xml"/>
     <import resource="springConfigXml/mediator.xml"/>
+    <import resource="springConfigXml/smStorageEncrypt.xml"/>
     <import resource="springConfigXml/NetworkManager.xml"/>
     <import resource="springConfigXml/NetworkService.xml"/>
     <import resource="springConfigXml/NfsPrimaryStorage.xml"/>

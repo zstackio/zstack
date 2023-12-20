@@ -29,6 +29,7 @@
         <module>vxlan</module>
         <module>acl</module>
         <module>opencrypto</module>
+        <module>smStorageEncrypt</module>
     </modules>
     <dependencies>
         <dependency>

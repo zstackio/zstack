@@ -42,4 +42,7 @@ public class VolumeSystemTags {
 
     public static String VOLUME_ENCRYPT_TOKEN = "volumeEncrypt";
     public static PatternedSystemTag VOLUME_ENCRYPT = new PatternedSystemTag(String.format("volumeEncrypt::{%s}", VOLUME_ENCRYPT_TOKEN), VolumeVO.class);
+
+    public static String VOLUME_ENCRYPT_KEYID_TOKEN = "volumeEncryptKeyId";
+    public static PatternedSystemTag VOLUME_ENCRYPT_KEYID = new PatternedSystemTag(String.format("volumeEncryptKeyId::{%s}", VOLUME_ENCRYPT_KEYID_TOKEN), VolumeVO.class);
 }

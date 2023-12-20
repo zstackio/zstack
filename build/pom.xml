@@ -217,6 +217,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>smStorageEncrypt</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>nfsPrimaryStorage</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -817,6 +822,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>mediator</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>smStorageEncrypt</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
