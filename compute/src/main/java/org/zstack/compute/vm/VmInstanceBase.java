@@ -1604,7 +1604,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 }
 
-                doDetachNic(VmNicInventory.valueOf(nicVO), true, false, msg.isDbOnly(), new Completion(chain) {
+                doDetachNic(VmNicInventory.valueOf(nicVO), true, false, msg.isDbOnly(), true, new Completion(chain) {
                     @Override
                     public void success() {
                         self = dbf.reload(self);
@@ -4825,10 +4825,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, Completion completion) {
-        doDetachNic(vmNic, releaseNic, isRollback, false, completion);
+        doDetachNic(vmNic, releaseNic, isRollback, false, false, completion);
     }
 
-    private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, boolean dbOnly, Completion completion) {
+    private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, boolean dbOnly, boolean noApi, Completion completion) {
         FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
         fchain.setName(String.format("detach-l3-network-from-vm-%s", vmNic.getVmInstanceUuid()));
         fchain.then(new NoRollbackFlow() {
@@ -4853,7 +4853,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                detachNic(vmNic.getUuid(), releaseNic, isRollback, dbOnly, new Completion(trigger) {
+                detachNic(vmNic.getUuid(), releaseNic, isRollback, dbOnly, noApi, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -5062,7 +5062,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void detachNic(final String nicUuid, boolean releaseNic, boolean isRollback, boolean dbOnly, final Completion completion) {
+    private void detachNic(final String nicUuid, boolean releaseNic, boolean isRollback, boolean dbOnly, boolean noApi, final Completion completion) {
         VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), arg -> arg.getUuid().equals(nicUuid) ? arg : null);
         if (vmNicVO == null) {
             completion.success();
@@ -5097,6 +5097,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
+        flowChain.getData().put(Params.ignoreDetachError.toString(), noApi);
         setAdditionalFlow(flowChain, spec);
         if (!dbOnly) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());

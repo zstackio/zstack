@@ -52,13 +52,17 @@ public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
                 if (reply.isSuccess()) {
                     trigger.next();
                 } else {
-                    Pattern pattern = Pattern.compile(VmInstanceConstant.DETACH_NIC_FAILED_REGEX);
-                    if (pattern.matcher(reply.getError().getDetails()).matches()) {
-                        logger.warn(reply.getError().toString());
-                        trigger.next();
-                    } else {
-                        trigger.fail(reply.getError());
+                    boolean ignoreError = (boolean) data.get(VmInstanceConstant.Params.ignoreDetachError.toString());
+                    if (ignoreError) {
+                        Pattern pattern = Pattern.compile(VmInstanceConstant.DETACH_NIC_FAILED_REGEX);
+                        if (pattern.matcher(reply.getError().getDetails()).matches()) {
+                            logger.warn(reply.getError().toString());
+                            trigger.next();
+                            return;
+                        }
                     }
+
+                    trigger.fail(reply.getError());
                 }
             }
         });
