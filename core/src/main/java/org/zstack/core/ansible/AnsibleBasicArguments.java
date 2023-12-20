@@ -25,6 +25,16 @@ public class AnsibleBasicArguments implements Serializable {
     private String remotePass;
     @SerializedName("remote_port")
     private String remotePort;
+    @SerializedName("zstack_repo")
+    private String zstackRepo;
+
+    public String getZstackRepo() {
+        return zstackRepo;
+    }
+
+    public void setZstackRepo(String zstackRepo) {
+        this.zstackRepo = zstackRepo;
+    }
 
     public String getPipUrl() {
         return pipUrl;
