@@ -336,7 +336,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         return vols;
     }
 
-    private void activeVolumeIfNeed(VmInstanceInventory vm, VolumeInventory volume) {
+    private void activeVolumeIfNeed(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
         PrimaryStorageNodeSvc svc = getNodeSvcByVolume(volume);
         if (svc == null) {
             return;
@@ -347,36 +347,42 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         }
 
         HostInventory host = HostInventory.valueOf(dbf.findByUuid(vm.getHostUuid(), HostVO.class));
-        // TODO change async interface
-        svc.activate(BaseVolumeInfo.valueOf(volume), host, volume.isShareable(), new NopeReturnValueCompletion());
+        svc.activate(BaseVolumeInfo.valueOf(volume), host, volume.isShareable(), new ReturnValueCompletion<ActiveVolumeTO>(completion) {
+            @Override
+            public void success(ActiveVolumeTO returnValue) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
-    private void deactivateVolumeIfNeed(VmInstanceInventory vm, VolumeInventory volume) {
+    private void deactivateVolumeIfNeed(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
         PrimaryStorageNodeSvc svc = getNodeSvcByVolume(volume);
-        if (svc == null) {
-            return;
-        }
-
-        if (vm.getHostUuid() == null) {
+        if (svc == null || vm.getHostUuid() == null) {
+            completion.success();
             return;
         }
 
         HostInventory host = HostInventory.valueOf(dbf.findByUuid(vm.getHostUuid(), HostVO.class));
         // TODO change async interface
-        svc.deactivate(volume.getInstallPath(), volume.getProtocol(), host, new NopeCompletion());
+        svc.deactivate(volume.getInstallPath(), volume.getProtocol(), host, completion);
     }
 
     @Override
-    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
-        activeVolumeIfNeed(vm, volume);
+    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
+        activeVolumeIfNeed(vm, volume, completion);
     }
 
     @Override
     public void beforeAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Map data) {}
 
     @Override
-    public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {
-        activeVolumeIfNeed(vm, volume);
+    public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
+        activeVolumeIfNeed(vm, volume, completion);
     }
 
     @Override
@@ -384,7 +390,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
     @Override
     public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode, Map data) {
-        deactivateVolumeIfNeed(vm, volume);
+        deactivateVolumeIfNeed(vm, volume, new NopeCompletion());
     }
 
     @Override
@@ -395,8 +401,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
     @Override
     public void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
-        deactivateVolumeIfNeed(vm, volume);
-        completion.success();
+        deactivateVolumeIfNeed(vm, volume, completion);
     }
 
     @Override

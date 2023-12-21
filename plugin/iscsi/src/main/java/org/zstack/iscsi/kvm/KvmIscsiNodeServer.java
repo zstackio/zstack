@@ -1,17 +1,21 @@
 package org.zstack.iscsi.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -21,11 +25,16 @@ import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
+import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeProtocolCapability;
-import org.zstack.iscsi.kvm.KvmIscsiCommands.*;
+import org.zstack.iscsi.kvm.KvmIscsiCommands.AgentRsp;
+import org.zstack.iscsi.kvm.KvmIscsiCommands.KvmCancelSelfFencerCmd;
+import org.zstack.iscsi.kvm.KvmIscsiCommands.KvmSetupSelfFencerCmd;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.DebugUtils;
@@ -36,7 +45,7 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 
-public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint,
+public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, VmInstanceMigrateExtensionPoint,
         KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
         KVMPreAttachIsoExtensionPoint, KvmSetupSelfFencerExtensionPoint {
     @Autowired
@@ -333,11 +342,11 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint,
         }).start();
     }
 
-    protected <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, final Class<T> respType, final ReturnValueCompletion<T> completion) {
+    protected <T extends AgentRsp> void httpCall(String path, final String hostUuid, KVMAgentCommands.AgentCommand cmd, final Class<T> respType, final ReturnValueCompletion<T> completion) {
         httpCall(path, hostUuid, cmd, false, respType, completion);
     }
 
-    protected <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, boolean noCheckStatus, final Class<T> respType, final ReturnValueCompletion<T> completion) {
+    protected <T extends AgentRsp> void httpCall(String path, final String hostUuid, KVMAgentCommands.AgentCommand cmd, boolean noCheckStatus, final Class<T> respType, final ReturnValueCompletion<T> completion) {
         DebugUtils.Assert(hostUuid != null, "Host must be set here");
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
@@ -363,4 +372,78 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint,
         });
     }
 
+    @Override
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
+        List<BaseVolumeInfo> vols = getIscsiVolume(inv);
+        if (vols.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        HostInventory host = HostInventory.valueOf(dbf.findByUuid(destHostUuid, HostVO.class));
+        new While<>(vols).each((vol, compl) -> {
+            PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(vol.getPrimaryStorageUuid());
+            String path = nodeSvc.getActivePath(vol, host, vol.isShareable());
+            if (!path.startsWith("iscsi")) {
+                compl.done();
+                return;
+            }
+
+            KVMAgentCommands.LoginIscsiTargetCmd cmd = new KVMAgentCommands.LoginIscsiTargetCmd();
+            cmd.setUrl(path);
+            httpCall(KVMConstant.KVM_LOGIN_ISCSI_PATH, destHostUuid, cmd, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(compl) {
+                @Override
+                public void success(AgentRsp rsp) {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
+
+    private List<BaseVolumeInfo> getIscsiVolume(VmInstanceInventory vm) {
+        List<BaseVolumeInfo> vols = new ArrayList<>();
+
+        vm.getAllDiskVolumes().forEach(vol -> vols.add(BaseVolumeInfo.valueOf(vol)));
+
+        if (extPsFactory.getNodeSvc(vm.getRootVolume().getPrimaryStorageUuid()) != null) {
+            List<VmCdRomVO> cdRomVOS = Q.New(VmCdRomVO.class).eq(VmCdRomVO_.vmInstanceUuid, vm.getUuid()).list();
+            cdRomVOS.forEach(cdRomVO -> {
+                if (cdRomVO.getIsoUuid() != null && VolumeProtocol.iSCSI.name().equals(cdRomVO.getProtocol())) {
+                    BaseVolumeInfo info = BaseVolumeInfo.valueOf(cdRomVO);
+                    info.setPrimaryStorageUuid(vm.getRootVolume().getPrimaryStorageUuid());
+                    vols.add(info);
+                }
+            });
+        }
+
+        vols.removeIf(info -> {
+            if (info.getInstallPath() == null || !VolumeProtocol.iSCSI.name().equals(info.getProtocol())) {
+                return true;
+            }
+            String identity = info.getInstallPath().split("://")[0];
+            return !extPsFactory.support(identity);
+        });
+
+        return vols;
+    }
 }

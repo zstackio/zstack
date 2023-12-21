@@ -189,7 +189,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         List<IscsiSeverNode> nodes = apiHelper.getIscsiTargetServer(tianshuId);
         nodes.removeIf(it -> !it.getUssName().startsWith("iscsi_zstack"));
         if (nodes.isEmpty()) {
-            throw new RuntimeException("no zstack iscsi uss server found");
+            throw new RuntimeException("no zstack iscsi uss server found, please create a iscsi uss with prefix iscsi_zstack");
         }
         return nodes;
     }
