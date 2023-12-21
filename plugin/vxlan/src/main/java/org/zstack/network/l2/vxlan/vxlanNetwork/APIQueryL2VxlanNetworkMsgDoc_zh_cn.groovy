@@ -4,11 +4,11 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.APIQueryL2VxlanNetworkReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryL2VxlanNetwork"
+    title "查询二层VXLAN网络(QueryL2VxlanNetwork)"
 
     category "network.l2"
 
-    desc """在这里填写API描述"""
+    desc """查询二层VXLAN网络"""
 
     rest {
         request {

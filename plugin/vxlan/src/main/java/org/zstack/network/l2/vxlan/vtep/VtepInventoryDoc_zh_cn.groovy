@@ -6,7 +6,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "VXLAN隧道端点清单"
 
 	field {
 		name "uuid"
@@ -22,19 +22,19 @@ doc {
 	}
 	field {
 		name "vtepIp"
-		desc ""
+		desc "隧道端点IP地址"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "port"
-		desc ""
+		desc "端口"
 		type "Integer"
 		since "0.6"
 	}
 	field {
 		name "type"
-		desc ""
+		desc "类型"
 		type "String"
 		since "0.6"
 	}
@@ -52,7 +52,7 @@ doc {
 	}
 	field {
 		name "poolUuid"
-		desc ""
+		desc "VXLAN资源池UUID"
 		type "String"
 		since "0.6"
 	}

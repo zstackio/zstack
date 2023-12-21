@@ -1,13 +1,13 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.L2PortGroupNetworkInventory;
+import org.zstack.sdk.L2NetworkInventory;
 
 public class CreateL2PortGroupResult {
-    public L2PortGroupNetworkInventory inventory;
-    public void setInventory(L2PortGroupNetworkInventory inventory) {
+    public L2NetworkInventory inventory;
+    public void setInventory(L2NetworkInventory inventory) {
         this.inventory = inventory;
     }
-    public L2PortGroupNetworkInventory getInventory() {
+    public L2NetworkInventory getInventory() {
         return this.inventory;
     }
 

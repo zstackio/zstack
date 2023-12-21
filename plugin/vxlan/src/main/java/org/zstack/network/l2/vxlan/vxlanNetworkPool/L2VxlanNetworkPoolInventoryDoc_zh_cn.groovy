@@ -8,7 +8,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "VXLAN资源池清单"
 
 	ref {
 		name "attachedVtepRefs"
@@ -36,7 +36,7 @@ doc {
 	}
 	field {
 		name "attachedCidrs"
-		desc ""
+		desc "已加载CIDR映射表"
 		type "Map"
 		since "0.6"
 	}
@@ -66,13 +66,13 @@ doc {
 	}
 	field {
 		name "physicalInterface"
-		desc ""
+		desc "物理网卡"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "type"
-		desc ""
+		desc "二层网络类型"
 		type "String"
 		since "0.6"
 	}
@@ -90,7 +90,7 @@ doc {
 	}
 	field {
 		name "attachedClusterUuids"
-		desc ""
+		desc "挂载集群的UUID列表"
 		type "List"
 		since "0.6"
 	}

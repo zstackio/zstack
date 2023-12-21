@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-    title "虚拟交换机清单"
+    title "虚拟交换机类型清单"
 
     ref {
         name "error"

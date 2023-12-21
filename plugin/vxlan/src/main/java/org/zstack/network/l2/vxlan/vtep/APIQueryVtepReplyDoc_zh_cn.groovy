@@ -5,7 +5,7 @@ import org.zstack.network.l2.vxlan.vtep.VtepInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "VXLAN隧道端点清单"
 
 	field {
 		name "success"

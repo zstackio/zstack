@@ -1,9 +1,10 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.OverriddenApiParam;
+import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
-import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.rest.RestRequest;
 
 @OverriddenApiParams({
@@ -30,10 +31,5 @@ public class APICreateL2VxlanNetworkPoolMsg extends APICreateL2NetworkMsg {
         msg.setZoneUuid(uuid());
 
         return msg;
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreateL2VxlanNetworkPoolEvent) rsp).getInventory().getUuid() : "", L2NetworkVO.class);
     }
 }

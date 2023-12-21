@@ -5,7 +5,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "创建remote vxlan隧道端点清单"
+	title "远端VXLAN隧道端点清单"
 
 	ref {
 		name "inventory"
