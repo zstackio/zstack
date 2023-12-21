@@ -92,9 +92,9 @@ class GlobalConfigCase extends SubCase {
             name = KVMGlobalConfig.VM_CREATE_CONCURRENCY.name
         } as GetGlobalConfigOptionsResult
 
-        // number range for this category is {1, 10}
-        assert configOptions.options.numberGreaterThan == 0
-        assert configOptions.options.numberLessThan == 11
+        // number range for this category is {1, 10},  1 <= value <= 10
+        assert configOptions.options.numberGreaterThanOrEqual == 1
+        assert configOptions.options.numberLessThanOrEqual == 10
     }
 
     void testGetNumberBoundary() {
@@ -103,9 +103,9 @@ class GlobalConfigCase extends SubCase {
             name = KVMGlobalConfig.HOST_SYNC_LEVEL.name
         } as GetGlobalConfigOptionsResult
 
-        // number boundary for this category is > 2
-        assert configOptions.options.numberGreaterThan == 2
-        assert configOptions.options.numberLessThan == Long.MAX_VALUE
+        // number boundary for this category is >=2 , range [2, 2147483647]
+        assert configOptions.options.numberGreaterThanOrEqual == 2
+        assert configOptions.options.numberLessThanOrEqual == (long) Integer.MAX_VALUE
     }
 
     void testFloatPointNumberTolerance() {
