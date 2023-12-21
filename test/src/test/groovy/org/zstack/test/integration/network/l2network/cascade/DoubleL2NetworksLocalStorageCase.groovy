@@ -2,6 +2,8 @@ package org.zstack.test.integration.network.l2network.cascade
 
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -179,6 +181,12 @@ use:
         VmInstanceVO vmvo = dbFindByUuid(vmi.uuid,VmInstanceVO.class)
         int nicNumber = vmvo.getVmNics().size() 
         assert nicNumber >= 1
+
+        env.simulator(KVMConstant.KVM_DETACH_NIC_PATH) {
+            def rsp = new KVMAgentCommands.DetachNicRsp()
+            rsp.setError("NIC device is still attached after 10 seconds. Please check virtio driver or stop VM and detach again.")
+            return rsp
+        }
 
         detachL2NetworkFromCluster {
             l2NetworkUuid = l2i1.uuid

@@ -31,6 +31,7 @@ public interface VmInstanceConstant {
         DeletionPolicy,
         AttachingIsoInventory,
         DetachingIsoUuid,
+        ignoreDetachError,
         ReleaseNicAfterDetachNic,
         VmNicInventory,
         L3NetworkInventory,
