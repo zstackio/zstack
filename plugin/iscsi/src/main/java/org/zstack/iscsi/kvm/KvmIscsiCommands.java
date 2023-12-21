@@ -1,5 +1,7 @@
 package org.zstack.iscsi.kvm;
 
+import org.zstack.kvm.KVMAgentCommands;
+
 import java.util.List;
 
 public class KvmIscsiCommands {
@@ -7,7 +9,7 @@ public class KvmIscsiCommands {
     public static final String CANCEL_ISCSI_SELF_FENCER_PATH = "/ha/iscsi/cancelselffencer";
     public static final String ISCSI_CHECK_VMSTATE_PATH = "/iscsi/check/vmstate";
 
-    public static class AgentCmd {
+    public static class AgentCmd extends KVMAgentCommands.AgentCommand {
         public String uuid;
     }
 

@@ -4133,6 +4133,8 @@ public class KVMAgentCommands {
 
     public static class LoginIscsiTargetCmd extends AgentCommand implements Serializable {
         @GrayVersion(value = "5.0.0")
+        private String url;
+        @GrayVersion(value = "5.0.0")
         private String hostname;
         @GrayVersion(value = "5.0.0")
         private int port;
@@ -4182,6 +4184,14 @@ public class KVMAgentCommands {
 
         public void setTarget(String target) {
             this.target = target;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
         }
     }
 

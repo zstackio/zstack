@@ -10,7 +10,6 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
@@ -23,13 +22,8 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
 
     private void sortPlugins() {
         for (List<PluginExtension> exts : extensionsByInterfaceName.values()) {
-            Collections.sort(exts, new Comparator<PluginExtension>() {
-                @Override
-                public int compare(PluginExtension o1, PluginExtension o2) {
-                    // greater order means the position is more proceeding in plugin list
-                    return o2.getOrder() - o1.getOrder();
-                }
-            });
+            // greater order means the position is more proceeding in plugin list
+            exts.sort(Comparator.comparingInt(PluginExtension::getOrder).reversed());
         }
     }
 
