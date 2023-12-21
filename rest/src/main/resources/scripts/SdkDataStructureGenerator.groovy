@@ -239,7 +239,7 @@ ${output.join("\n")}
         }
 
         if (!at.allTo().isEmpty()) {
-            Field f = responseClass.getDeclaredField(at.allTo())
+            Field f = getFieldRecursively(responseClass, at.allTo())
             addToFields(at.allTo(), f)
         } else {
             if (at.fieldsTo().length == 1 && at.fieldsTo()[0] == "all") {
@@ -304,6 +304,20 @@ ${output.join("\n")}
 }
 """
         sdkFileMap[responseClass] = file
+    }
+
+    static Field getFieldRecursively(Class<?> clazz, String fieldName) {
+        try {
+            return clazz.getDeclaredField(fieldName)
+        } catch (NoSuchFieldException e) {
+            Class<?> superClass = clazz.getSuperclass()
+
+            if (superClass != null && superClass != Object.class) {
+                return getFieldRecursively(superClass, fieldName)
+            } else {
+                throw e
+            }
+        }
     }
 
     def makeFieldText(String fname, Field field) {

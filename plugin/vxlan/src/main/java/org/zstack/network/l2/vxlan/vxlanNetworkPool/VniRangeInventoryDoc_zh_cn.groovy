@@ -7,7 +7,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "vni范围清单"
 
 	field {
 		name "uuid"
@@ -29,13 +29,13 @@ doc {
 	}
 	field {
 		name "startVni"
-		desc ""
+		desc "起始VNI"
 		type "Integer"
 		since "0.6"
 	}
 	field {
 		name "endVni"
-		desc ""
+		desc "结束VNI"
 		type "Integer"
 		since "0.6"
 	}

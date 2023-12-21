@@ -3,11 +3,11 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APICreateL2VlanNetworkEvent
 
 doc {
-    title "创建Vlan二层网络(CreateL2VlanNetwork)"
+    title "创建二层Vlan网络(CreateL2VlanNetwork)"
 
     category "二层网络"
 
-    desc """创建Vlan二层网络"""
+    desc """创建二层Vlan网络"""
 
     rest {
         request {
@@ -83,6 +83,7 @@ doc {
 					type "String"
 					optional true
 					since "4.1.0"
+					values ("LinuxBridge","OvsDpdk","MacVlan")
 				}
 				column {
 					name "resourceUuid"

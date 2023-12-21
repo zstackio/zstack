@@ -3,11 +3,11 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APIUpdateVniRangeEvent
 
 doc {
-    title "UpdateVniRange"
+    title "修改VNI范围(UpdateVniRange)"
 
     category "network.l2"
 
-    desc """修改 Vni Range"""
+    desc """修改VNI范围"""
 
     rest {
         request {
@@ -33,7 +33,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "updateVniRange"
-					desc ""
+					desc "资源名称"
 					location "body"
 					type "String"
 					optional false
@@ -42,7 +42,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -51,7 +51,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true
