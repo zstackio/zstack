@@ -1,0 +1,9 @@
+delete from `SystemTagVO` where resourceUuid ='5d3bb9d271a349b283893317f531f723';
+delete from `SystemTagVO` where resourceUuid ='5z6gsgkc5kccpylj9ocgbd647p2700b7';
+delete from `SystemTagVO` where resourceUuid ='66dfdee6fd314aac96ca3779774ad977';
+delete from `SystemTagVO` where resourceUuid ='ded02f9786444c6296e9bc3efb8eb484';
+delete from `SystemTagVO` where resourceUuid ='fuz2p4fa71urf4fd7cknoxsalvj60ynk';
+delete from `SystemTagVO` where resourceUuid ='ue0x30t7wfyuba87nwk6ywu3ub5svtwk';
+delete from `SystemTagVO` where resourceUuid ='d0b35ac37c58e358cb74e664532f1044';
+delete from `SystemTagVO` where resourceUuid ='uhgfoh0soh6e1qai005elfa9c6h2s2y0';
+delete from `SystemTagVO` where resourceUuid ='829d96de006043c3b34202861ca82078';
