@@ -1,13 +1,13 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.SftpBackupStorageInventory;
+import org.zstack.sdk.BackupStorageInventory;
 
 public class AddSftpBackupStorageResult {
-    public SftpBackupStorageInventory inventory;
-    public void setInventory(SftpBackupStorageInventory inventory) {
+    public BackupStorageInventory inventory;
+    public void setInventory(BackupStorageInventory inventory) {
         this.inventory = inventory;
     }
-    public SftpBackupStorageInventory getInventory() {
+    public BackupStorageInventory getInventory() {
         return this.inventory;
     }
 

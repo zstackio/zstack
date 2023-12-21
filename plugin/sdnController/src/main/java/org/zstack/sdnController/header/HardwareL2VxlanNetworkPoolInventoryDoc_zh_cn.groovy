@@ -12,7 +12,7 @@ doc {
 
 	field {
 		name "sdnControllerUuid"
-		desc ""
+		desc "SDN控制器UUID"
 		type "String"
 		since "3.7"
 	}
@@ -42,7 +42,7 @@ doc {
 	}
 	field {
 		name "attachedCidrs"
-		desc ""
+		desc "已加载CIDR映射表"
 		type "Map"
 		since "3.7"
 	}
@@ -72,13 +72,13 @@ doc {
 	}
 	field {
 		name "physicalInterface"
-		desc ""
+		desc "物理网卡"
 		type "String"
 		since "3.7"
 	}
 	field {
 		name "type"
-		desc ""
+		desc "二层网络类型"
 		type "String"
 		since "3.7"
 	}
@@ -96,7 +96,7 @@ doc {
 	}
 	field {
 		name "attachedClusterUuids"
-		desc ""
+		desc "挂载集群的UUID列表"
 		type "List"
 		since "3.7"
 	}
