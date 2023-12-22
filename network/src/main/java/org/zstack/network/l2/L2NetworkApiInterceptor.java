@@ -11,11 +11,14 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
@@ -116,6 +119,12 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (l2NetworkHostHelper.checkIfL2NetworkHostRefNotExist(msg.getL2NetworkUuid(), msg.getHostUuid())) {
             throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] does not supported to attach to host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
+        }
+
+        HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
+        if (asList(HostState.PreMaintenance, HostState.Maintenance).contains(host.getState())) {
+            throw new ApiMessageInterceptionException(operr("could not attach l2Network[uuid:%s] to host[uuid:%s] " +
+                    "which is in the premaintenance or maintenance state", msg.getL2NetworkUuid(), msg.getHostUuid()));
         }
     }
 
