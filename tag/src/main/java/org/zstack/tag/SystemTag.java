@@ -159,6 +159,7 @@ public class SystemTag {
         q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());
         q.add(SystemTagVO_.resourceUuid, Op.EQ, resourceUuid);
         q.add(SystemTagVO_.tag, useOp(), useTagFormat());
+        q.orderBy(SystemTagVO_.createDate, SimpleQuery.Od.DESC);
         return q.listValue();
     }
 
