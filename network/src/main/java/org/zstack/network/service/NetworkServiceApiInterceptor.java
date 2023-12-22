@@ -115,7 +115,7 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
                     List<String> usedVmNicUuids = Q.New(UsedIpVO.class).select(UsedIpVO_.vmNicUuid)
                              .in(UsedIpVO_.ipRangeUuid, ipRangeVOS.stream().map(IpRangeVO::getUuid).collect(Collectors.toList()))
                              .listValues();
-                    if (!usedVmNicUuids.isEmpty()) {
+                    if (!usedVmNicUuids.isEmpty() && usedVmNicUuids.stream().anyMatch(Objects::nonNull)) {
                         List<String> usedVmInstanceUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
                                 .in(VmNicVO_.uuid, usedVmNicUuids)
                                 .listValues();
