@@ -28,6 +28,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorFactory;
+import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -857,17 +858,31 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "save-volume-snapshot-integrity";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        List<AfterCreateVolumeSnapshotExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterCreateVolumeSnapshotExtensionPoint.class);
-
-                        if (extensionList.isEmpty()) {
-                            trigger.next();
+                    private void doAfterCreateVolumeSnapshot(final Iterator<AfterCreateVolumeSnapshotExtensionPoint> it, VolumeSnapshotInventory snap,
+                                                     Completion completion) {
+                        if (!it.hasNext()) {
+                            completion.success();
                             return;
                         }
 
-                        extensionList.forEach(exp -> exp.afterCreateVolumeSnapshot(snapshot, new Completion(trigger) {
+                        AfterCreateVolumeSnapshotExtensionPoint ext = it.next();
+                        ext.afterCreateVolumeSnapshot(snap, new Completion(completion) {
+                            @Override
+                            public void success() {
+                                doAfterCreateVolumeSnapshot(it, snap, completion);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Iterator<AfterCreateVolumeSnapshotExtensionPoint> it = pluginRgty.getExtensionList(AfterCreateVolumeSnapshotExtensionPoint.class).listIterator();
+                        doAfterCreateVolumeSnapshot(it, snapshot, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -877,7 +892,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
                             }
-                        }));
+                        });
                     }
                 });
 
