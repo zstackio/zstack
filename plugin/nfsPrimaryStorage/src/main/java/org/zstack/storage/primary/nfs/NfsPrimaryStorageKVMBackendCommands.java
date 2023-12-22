@@ -423,6 +423,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class CreateEmptyVolumeCmd extends CreateVolumeCmd {
         private long size;
         private boolean withoutVolume;
+        private String backingFile;
 
         public long getSize() {
             return size;
@@ -437,6 +438,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
         public void setWithoutVolume(boolean withoutVolume) {
             this.withoutVolume = withoutVolume;
+        }
+
+        public String getBackingFile() {
+            return backingFile;
+        }
+
+        public void setBackingFile(String backingFile) {
+            this.backingFile = backingFile;
         }
     }
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {

@@ -173,7 +173,8 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
     @Override
     public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
-        if (!isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid()) || !needPreCreateVolume) {
             completion.success();
             return;
         }
@@ -192,7 +193,8 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
         chain.then(new Flow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                bkd.createEmptyVolume(inv, msg.getHostUuid(), new ReturnValueCompletion<VolumeInfo>(msg) {
+                String backingFile = cmd.isOnline() ? cmd.getVolumeInstallPath() : null;
+                bkd.createEmptyVolume(inv, msg.getHostUuid(), backingFile, new ReturnValueCompletion<VolumeInfo>(msg) {
                     @Override
                     public void success(VolumeInfo returnValue) {
                         trigger.next();

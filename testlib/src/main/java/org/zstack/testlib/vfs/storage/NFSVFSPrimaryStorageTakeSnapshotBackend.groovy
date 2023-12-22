@@ -28,10 +28,11 @@ class NFSVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSystemBased
                 .select(VolumeVO_.primaryStorageUuid)
                 .eq(VolumeVO_.uuid, cmd.volumeUuid)
                 .findValue()
-
         VFS vfs = NfsPrimaryStorageSpec.vfs(primaryStorageUuid, spec)
-        vfs.Assert(vfs.exists(cmd.installPath), "cannot find file[${cmd.installPath}]")
-        vfs.delete(cmd.installPath)
+        if (cmd.isOnline()) {
+            vfs.Assert(vfs.exists(cmd.installPath), "cannot find file[${cmd.installPath}]")
+            vfs.delete(cmd.installPath)
+        }
 
         return doTakeSnapshot(vfs, cmd, volume)
     }

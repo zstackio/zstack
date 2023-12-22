@@ -109,7 +109,7 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void deleteBits(String path, String hostUuid, Completion completion);
 
-    abstract void createEmptyVolume(VolumeInventory volume, String hostUuid, ReturnValueCompletion<VolumeInfo> completion);
+    abstract void createEmptyVolume(VolumeInventory volume, String hostUuid, String backingFile, ReturnValueCompletion<VolumeInfo> completion);
 
     abstract void checkHostAttachedPSMountPath(String hostUuid, Completion completion);
 

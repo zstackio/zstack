@@ -1899,7 +1899,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     @Override
     public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
-        if (!isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid()) || !needPreCreateVolume) {
             completion.success();
             return;
         }
@@ -1914,6 +1915,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         scmd.setSize(msg.getVolume().getSize());
         scmd.setVolumeUuid(cmd.getVolumeUuid());
         scmd.setInstallUrl(cmd.getInstallPath());
+        scmd.setBackingFile(cmd.getVolumeInstallPath());
 
         KVMHostAsyncHttpCallMsg smsg = new KVMHostAsyncHttpCallMsg();
         smsg.setCommand(scmd);

@@ -1244,11 +1244,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
-    public void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<VolumeInfo> completion) {
+    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<VolumeInfo> completion) {
         createEmptyVolume(volume, hostUuid, null, completion);
     }
 
-    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<VolumeInfo> completion) {
+    public void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<VolumeInfo> completion) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(volume.getUuid()));
         if (volume.getInstallPath() != null && !volume.getInstallPath().equals("")) {
