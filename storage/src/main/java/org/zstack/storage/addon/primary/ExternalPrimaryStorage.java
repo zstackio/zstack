@@ -101,6 +101,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof SetTrashExpirationTimeMsg) {
+            handle((SetTrashExpirationTimeMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -316,6 +318,23 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    protected void handle(final SetTrashExpirationTimeMsg msg) {
+        controller.setTrashExpireTime(msg.getExpirationTime(), new Completion(msg) {
+            @Override
+            public void success() {
+                SetTrashExpirationTimeReply reply = new SetTrashExpirationTimeReply();
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                SetTrashExpirationTimeReply reply = new SetTrashExpirationTimeReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     private void handle(final SelectBackupStorageMsg msg) {
         SelectBackupStorageReply reply = new SelectBackupStorageReply();
 
@@ -426,12 +445,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    // TODO
     protected void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
-        throw new UnsupportedOperationException("not supported");
-    }
-
-    private void createImageCacheFromVolume(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-image-cache-from-volume-%s-on-primary-storage-%s", msg.getVolumeInventory().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
@@ -492,7 +506,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         spec.setName(buildImageName(msg.getImageInventory().getUuid()));
                         spec.setUuid(msg.getVolumeInventory().getUuid());
                         spec.setSize(msg.getVolumeInventory().getSize());
-                        controller.cloneVolume(snapshotPath, spec, new ReturnValueCompletion<VolumeStats>(trigger) {
+
+                        ReturnValueCompletion<VolumeStats> completion = new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats dst) {
                                 trigger.next();
@@ -502,7 +517,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
                             }
-                        });
+                        };
+
+                        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat())) {
+                            controller.cloneVolume(snapshotPath, spec, completion);
+                        } else {
+                            controller.copyVolume(snapshotPath, spec, completion);
+                        }
                     }
 
                     @Override
@@ -523,30 +544,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             }
                         });
 
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "flatten-volume";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        controller.flattenVolume(imageCachePath, new ReturnValueCompletion<VolumeStats>(trigger) {
-                            @Override
-                            public void success(VolumeStats stats) {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
                     }
                 });
 
