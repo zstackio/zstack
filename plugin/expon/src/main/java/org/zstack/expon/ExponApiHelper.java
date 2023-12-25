@@ -4,6 +4,8 @@ import org.zstack.expon.sdk.*;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterRequest;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterResponse;
 import org.zstack.expon.sdk.cluster.TianshuClusterModule;
+import org.zstack.expon.sdk.config.SetTrashExpireTimeRequest;
+import org.zstack.expon.sdk.config.SetTrashExpireTimeResponse;
 import org.zstack.expon.sdk.iscsi.*;
 import org.zstack.expon.sdk.nvmf.*;
 import org.zstack.expon.sdk.pool.*;
@@ -630,5 +632,11 @@ public class ExponApiHelper {
         req.setAction(ExponAction.remove.name());
         req.setLuns(Collections.singletonList(new LunResource(snapId, "snapshot")));
         callErrorOut(req, ChangeSnapshotInIscsiClientGroupResponse.class);
+    }
+
+    public void setTrashExpireTime(int days) {
+        SetTrashExpireTimeRequest req = new SetTrashExpireTimeRequest();
+        req.setTrashRecycle(days);
+        callErrorOut(req, SetTrashExpireTimeResponse.class);
     }
 }

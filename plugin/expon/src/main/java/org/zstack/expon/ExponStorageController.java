@@ -85,6 +85,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         capabilities.setSupportedImageFormats(Collections.singletonList("raw"));
     }
 
+    enum LunType {
+        Volume,
+        Snapshot
+    }
+
     public ExponStorageController(ExternalPrimaryStorageVO self) {
         this(self.getUrl());
         this.self = self;
@@ -195,14 +200,15 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     private synchronized ActiveVolumeTO activeIscsiVolume(HostInventory h, BaseVolumeInfo vol, boolean shareable) {
-        String lunId, lunType;
+        String lunId;
+        LunType lunType;
         String source = vol.getInstallPath();
         if (source.contains("@")) {
             lunId = getSnapIdFromPath(source);
-            lunType = "snapshot";
+            lunType = LunType.Snapshot;
         } else {
             lunId = getVolIdFromPath(source);
-            lunType = "volume";
+            lunType = LunType.Volume;
         }
 
         String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
@@ -219,14 +225,18 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
         if (client == null) {
             client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(clientIqn));
-            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
-            if (lunType.equals("volume")) {
-                apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), shareable);
-            } else {
-                apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
-            }
         } else if (!client.getHosts().contains(clientIqn)) {
             apiHelper.addHostToIscsiClient(clientIqn, client.getId());
+        }
+
+        if (client.getiscsiGwCount() == 0) {
+            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
+        }
+
+        if (lunType.equals("volume") && client.getVolNum() == 0) {
+            apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), shareable);
+        } else if (lunType.equals("snapshot") && client.getSnapNum() == 0) {
+            apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
         }
 
         IscsiVolumeTO to = new IscsiVolumeTO();
@@ -240,8 +250,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         return to;
     }
 
-    private String getDiskId(String lunId, String lunType) {
-        if (lunType.equals("volume")) {
+    private String getDiskId(String lunId, LunType lunType) {
+        if (lunType == LunType.Volume) {
             VolumeModule vol = apiHelper.getVolume(lunId);
             return vol.getWwn();
         } else {
@@ -282,14 +292,15 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     synchronized IscsiRemoteTarget exportIscsi(ExportSpec espec) {
-        String lunId, lunType;
+        String lunId;
+        LunType lunType;
         String source = espec.getInstallPath();
         if (source.contains("@")) {
             lunId = getSnapIdFromPath(source);
-            lunType = "snapshot";
+            lunType = LunType.Snapshot;
         } else {
             lunId = getVolIdFromPath(source);
-            lunType = "volume";
+            lunType = LunType.Volume;
         }
 
         String tianshuId = addonInfo.getClusters().get(0).getId();
@@ -307,7 +318,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
         }
 
-        if (lunType.equals("volume")) {
+        if (lunType == LunType.Volume && client.getVolNum() == 0) {
             apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), false);
         } else {
             apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
@@ -329,13 +340,14 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             VhostControllerModule vhost = getOrCreateVhostController(vhostName);
             return vhost.getPath();
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
-            String lunId, lunType;
+            String lunId;
+            LunType lunType;
             if (v.getInstallPath().contains("@")) {
                 lunId = getSnapIdFromPath(v.getInstallPath());
-                lunType = "snapshot";
+                lunType = LunType.Snapshot;
             } else {
                 lunId = getVolIdFromPath(v.getInstallPath());
-                lunType = "volume";
+                lunType = LunType.Volume;
             }
 
             String iscsiClientName = buildIscsiVolumeClientName(v.getUuid());
@@ -945,5 +957,17 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void validateConfig(String config) {
 
+    }
+
+    @Override
+    public void setTrashExpireTime(int timeInSeconds, Completion completion) {
+        // set trash expire time in days in advanced method
+        int days = timeInSeconds / 3600 / 24;
+        if (timeInSeconds % (3600 * 24) > 0) {
+            days++;
+        }
+
+        apiHelper.setTrashExpireTime(days);
+        completion.success();
     }
 }

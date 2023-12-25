@@ -63,4 +63,12 @@
         <type>java.lang.Integer</type>
         <category>primaryStorage</category>
     </config>
+
+    <config>
+        <name>trash.expiration.time</name>
+        <description>Volume that have been in trash more than expiration time in seconds will be automatically deleted.</description>
+        <defaultValue>86400</defaultValue>
+        <type>java.lang.Integer</type>
+        <category>primaryStorage</category>
+    </config>
 </globalConfig>

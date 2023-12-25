@@ -32,6 +32,11 @@ public class PrimaryStorageGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 0)
     @BindResourceConfig({PrimaryStorageVO.class})
     public static GlobalConfig PRIMARY_STORAGE_AUTO_DELETE_TRASH = new GlobalConfig(CATEGORY, "primarystorage.auto.delete.trash.interval");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @BindResourceConfig({PrimaryStorageVO.class})
+    public static GlobalConfig TRASH_EXPIRATION_TIME = new GlobalConfig(CATEGORY, "trash.expiration.time");
+
     @GlobalConfigValidation(inNumberRange = {1, 255})
     @GlobalConfigDef(defaultValue = "10", type = Integer.class,  description = "allocator concurrency level, if enabled.")
     public static GlobalConfig ALLOCATE_PRIMARYSTORAGE_CONCURRENCY = new GlobalConfig(CATEGORY, "allocate.primaryStore.Concurrency");
