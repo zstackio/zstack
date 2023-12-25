@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.primary.local
 
+import org.apache.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
@@ -12,10 +13,15 @@ import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
+import javax.json.JsonObject
+
 /**
  * Created by lining on 2018/01/24.
  */
@@ -132,6 +138,14 @@ class CreateDataVolumeSnapshotCase extends SubCase {
                 volumeUuid = dataVolume2
             }
 
+            def call = false
+            env.hijackSimulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) { rsp, org.springframework.http.HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.CreateEmptyVolumeCmd.class) as LocalStorageKvmBackend.CreateEmptyVolumeCmd
+                assert cmd.backingFile == Q.New(VolumeVO.class).eq(VolumeVO_.uuid, dataVolume2).select(VolumeVO_.installPath).findValue()
+                call = true
+                return rsp
+            }
+
             // for data safe, over capacity should success too.
             env.afterSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) {
                 def rsp = new KVMAgentCommands.TakeSnapshotResponse()
@@ -145,6 +159,7 @@ class CreateDataVolumeSnapshotCase extends SubCase {
                 name = "data-volume-snapshot"
                 volumeUuid = dataVolume2
             }
+            assert call
 
             assert Q.New(LocalStorageHostRefVO.class).select(LocalStorageHostRefVO_.availableCapacity).findValue() == 0
             assert Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, dataVolume2)
