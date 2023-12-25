@@ -941,6 +941,34 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 startPrimaryStorageAutoDeleteTrashTask(newConfig.value());
             }
         });
+
+        PrimaryStorageGlobalConfig.TRASH_EXPIRATION_TIME.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                List<String> supportTypes = PrimaryStorageType.getSupportFeaturesTypes(PrimaryStorageType::isSupportStorageTrash);
+                if (supportTypes.isEmpty()) {
+                    return;
+                }
+
+                List<String> psUuids = Q.New(PrimaryStorageVO.class)
+                        .select(PrimaryStorageVO_.uuid)
+                        .in(PrimaryStorageVO_.type, supportTypes)
+                        .listValues();
+
+                if (psUuids.isEmpty()) {
+                    return;
+                }
+
+                List<SetTrashExpirationTimeMsg> msgs = psUuids.stream().map(uuid -> {
+                            SetTrashExpirationTimeMsg msg = new SetTrashExpirationTimeMsg();
+                            msg.setUuid(uuid);
+                            msg.setExpirationTime(newConfig.value(Integer.class));
+                            return msg;
+                        }).collect(Collectors.toList());
+
+                bus.send(msgs);
+            }
+        });
     }
 
     private void initResourcePrimaryStorageAutoDeleteTrash(){

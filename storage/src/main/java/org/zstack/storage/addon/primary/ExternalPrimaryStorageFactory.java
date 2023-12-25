@@ -61,6 +61,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
     static {
         type.setSupportHeartbeatFile(true);
+        type.setSupportStorageTrash(true);
     }
 
     @Override

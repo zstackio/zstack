@@ -4,6 +4,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -19,6 +20,7 @@ public class PrimaryStorageType {
     private boolean supportConfigVolumeProvisionStrategy;
     private boolean supportSharedVolume;
     private boolean supportConfigVolumeProvisioningStrategy;
+    private boolean supportStorageTrash;
     private int order;
     private PrimaryStorageFindBackupStorage primaryStorageFindBackupStorage;
     private  boolean supportCreateVolumeSnapshotCheckCapacity = true;
@@ -106,10 +108,10 @@ public class PrimaryStorageType {
         return exposedTypes;
     }
 
-    public static List<String> getSupportSharedVolumePSTypeNames() {
+    public static List<String> getSupportFeaturesTypes(Predicate<PrimaryStorageType> predicate) {
         List<PrimaryStorageType> exposedTypes = getExposedTypes();
         return exposedTypes.stream()
-                .filter(PrimaryStorageType::isSupportSharedVolume)
+                .filter(predicate)
                 .map(PrimaryStorageType::toString)
                 .collect(Collectors.toList());
     }
@@ -195,5 +197,13 @@ public class PrimaryStorageType {
 
     public void setSupportCreateVolumeSnapshotCheckCapacity(boolean supportCreateVolumeSnapshotCheckCapacity) {
         this.supportCreateVolumeSnapshotCheckCapacity = supportCreateVolumeSnapshotCheckCapacity;
+    }
+
+    public boolean isSupportStorageTrash() {
+        return supportStorageTrash;
+    }
+
+    public void setSupportStorageTrash(boolean supportStorageTrash) {
+        this.supportStorageTrash = supportStorageTrash;
     }
 }
