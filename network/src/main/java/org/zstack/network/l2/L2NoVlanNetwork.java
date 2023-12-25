@@ -987,32 +987,14 @@ public class L2NoVlanNetwork implements L2Network {
         });
     }
 
-    protected List<HostInventory> getAttachableHosts(String hostUuid) {
-        List<HostVO> host = Q.New(HostVO.class)
-                .eq(HostVO_.uuid, hostUuid)
-                .notIn(HostVO_.state, asList(HostState.PreMaintenance, HostState.Maintenance))
-                .eq(HostVO_.status, HostStatus.Connected)
-                .list();
-
-        if (host == null) {
-            return new ArrayList<>();
-        }
-
-        return HostInventory.valueOf(host);
-    }
-
     private void attachL2NetworkToHost(final AttachL2NetworkToHostMsg msg, final Completion completion) {
         if (l2NetworkHostHelper.checkIfL2AttachedToHost(msg.getL2NetworkUuid(), msg.getHostUuid())) {
             completion.success();
             return;
         }
 
-        List<HostInventory> hostInvs = getAttachableHosts(msg.getHostUuid());
-        if (hostInvs.isEmpty()) {
-            completion.success();
-            return;
-        }
-        prepareL2NetworkOnHosts(hostInvs, msg.getL2ProviderType(), new Completion(msg, completion) {
+        HostInventory inv = HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class));
+        prepareL2NetworkOnHosts(Collections.singletonList(inv), msg.getL2ProviderType(), new Completion(msg, completion) {
             @Override
             public void success() {
                 logger.debug(String.format("successfully attached L2Network[uuid:%s] to host [uuid:%s]", self.getUuid(), msg.getHostUuid()));
