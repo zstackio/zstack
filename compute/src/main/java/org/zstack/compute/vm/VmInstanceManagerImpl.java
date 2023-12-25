@@ -62,7 +62,6 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
-import org.zstack.header.vm.cdrom.VmCdRomInventory;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.*;
@@ -270,8 +269,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void handle(final APIGetVmsCapabilitiesMsg msg) {
-        APIGetVmsCapabilitiesEvent evt = new APIGetVmsCapabilitiesEvent(msg.getId());
-        ErrorCodeList err = new ErrorCodeList();
+        APIGetVmsCapabilitiesReply reply = new APIGetVmsCapabilitiesReply();
         Map<String, VmCapabilities> vmsCaps = Maps.newConcurrentMap();
         msg.getVmUuids()
                 .parallelStream()
@@ -279,8 +277,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     vmsCaps.put(v, new VmCapabilitiesJudger().judge(v));
                 });
 
-        evt.setVmsCaps(vmsCaps);
-        bus.publish(evt);
+        reply.setVmsCaps(vmsCaps);
+        bus.reply(msg, reply);
     }
 
     private void handle(final APIUpdatePriorityConfigMsg msg) {
