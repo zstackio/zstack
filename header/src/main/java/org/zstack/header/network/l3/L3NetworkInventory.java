@@ -119,6 +119,8 @@ public class L3NetworkInventory implements Serializable {
 
     private Boolean enableIPAM;
 
+    private Boolean isolated;
+
     /**
      * @desc the time this resource gets created
      */
@@ -173,6 +175,7 @@ public class L3NetworkInventory implements Serializable {
         inv.setHostRoute(L3NetworkHostRouteInventory.valueOf(vo.getHostRoutes()));
         inv.setIpVersion(vo.getIpVersion());
         inv.setEnableIPAM(vo.getEnableIPAM());
+        inv.setIsolated(vo.getIsolated());
         return inv;
     }
 
@@ -378,5 +381,21 @@ public class L3NetworkInventory implements Serializable {
 
     public void setEnableIPAM(Boolean enableIPAM) {
         this.enableIPAM = enableIPAM;
+    }
+
+    public Boolean getSystem() {
+        return system;
+    }
+
+    public void setSystem(Boolean system) {
+        this.system = system;
+    }
+
+    public Boolean getIsolated() {
+        return isolated;
+    }
+
+    public void setIsolated(Boolean isolated) {
+        this.isolated = isolated;
     }
 }

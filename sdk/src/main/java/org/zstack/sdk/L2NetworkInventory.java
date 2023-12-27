@@ -68,6 +68,22 @@ public class L2NetworkInventory  {
         return this.virtualNetworkId;
     }
 
+    public java.lang.Boolean isolated;
+    public void setIsolated(java.lang.Boolean isolated) {
+        this.isolated = isolated;
+    }
+    public java.lang.Boolean getIsolated() {
+        return this.isolated;
+    }
+
+    public java.lang.String pvlan;
+    public void setPvlan(java.lang.String pvlan) {
+        this.pvlan = pvlan;
+    }
+    public java.lang.String getPvlan() {
+        return this.pvlan;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

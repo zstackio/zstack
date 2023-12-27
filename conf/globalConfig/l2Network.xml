@@ -7,4 +7,11 @@
         <category>l2Network</category>
         <type>java.lang.Boolean</type>
     </config>
+    <config>
+        <name>l2.isolated</name>
+        <description>l2 isolated with physical switch</description>
+        <defaultValue>false</defaultValue>
+        <category>l2Network</category>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>

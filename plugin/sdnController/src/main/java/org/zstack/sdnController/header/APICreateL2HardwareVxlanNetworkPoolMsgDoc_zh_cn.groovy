@@ -121,6 +121,24 @@ doc {
 					since "4.1.2"
 					values ("LinuxBridge","OvsDpdk")
 				}
+				column {
+					name "isolated"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Boolean"
+					optional true
+					since "4.8.0"
+				}
+				column {
+					name "pvlan"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.8.0"
+				}
 			}
         }
 

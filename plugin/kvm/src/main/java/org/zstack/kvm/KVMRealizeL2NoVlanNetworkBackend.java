@@ -56,6 +56,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setDisableIptables(NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES);
         cmd.setMtu(new MtuGetter().getL2Mtu(l2Network));
+        cmd.setIsolated(l2Network.getIsolated());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);

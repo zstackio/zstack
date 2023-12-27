@@ -21,6 +21,7 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.ansible.*;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -40,10 +41,7 @@ import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -3901,9 +3899,10 @@ public class KVMHost extends HostBase implements Host {
         if (pci != null) {
             to.setPci(pci);
         }
-
+        to.setL2NetworkUuid(l2inv.getUuid());
         to.setResourceUuid(nic.getUuid());
         to.setState(nic.getState());
+        to.setIsolated(l2inv.getIsolated());
         return to;
     }
 

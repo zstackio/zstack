@@ -109,6 +109,10 @@ public interface KVMConstant {
     String KVM_BLOCK_COMMIT_VOLUME_PATH = "/vm/volume/blockcommit";
     String TAKE_VM_CONSOLE_SCREENSHOT_PATH = "/vm/console/screenshot";
 
+    String KVM_HOST_IPSET_ATTACH_NIC_PATH = "/network/ipset/attach";
+    String KVM_HOST_IPSET_DETACH_NIC_PATH = "/network/ipset/detach";
+    String KVM_HOST_IPSET_SYNC_PATH = "/network/ipset/sync";
+
     String KVM_AGENT_OWNER = "kvm";
 
     String ALI_REPO = "ali";
