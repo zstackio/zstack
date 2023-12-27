@@ -3,6 +3,7 @@ package org.zstack.vhost.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -16,9 +17,7 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeProtocol;
-import org.zstack.header.volume.VolumeProtocolCapability;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 
@@ -189,6 +188,17 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
             }
 
             new While<>(infos).each((info, c) -> {
+                if (info.getInstallPath() == null) {
+                    VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, info.getUuid()).find();
+                    if (volume == null) {
+                        c.done();
+                        return;
+                    }
+
+                    info.setInstallPath(volume.getInstallPath());
+                    info.setProtocol(volume.getProtocol());
+                }
+
                 nodeSvc.deactivate(info.getInstallPath(), info.getProtocol(), host, new Completion(c) {
                     @Override
                     public void success() {

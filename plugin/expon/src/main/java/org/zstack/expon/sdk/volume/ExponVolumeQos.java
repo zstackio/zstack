@@ -29,12 +29,12 @@ public class ExponVolumeQos implements ExponParam {
         }
 
         ExponVolumeQos ret = new ExponVolumeQos();
-        ret.bpsLimit = qos.getTotalBandwidth();
-        ret.iopsLimit = qos.getTotalIOPS();
-        ret.readBpsLimit = qos.getReadBandwidth();
-        ret.readIopsLimit = qos.getReadIOPS();
-        ret.writeBpsLimit = qos.getWriteBandwidth();
-        ret.writeIopsLimit = qos.getWriteIOPS();
+        ret.bpsLimit = qos.getTotalBandwidth() == null || qos.getTotalBandwidth() < 0 ? 0 : qos.getTotalBandwidth();
+        ret.readBpsLimit = qos.getReadBandwidth() == null || qos.getReadBandwidth() < 0 ? 0 : qos.getReadBandwidth();
+        ret.writeBpsLimit = qos.getWriteBandwidth() == null || qos.getWriteBandwidth() < 0 ? 0 : qos.getWriteBandwidth();
+        ret.iopsLimit = qos.getTotalIOPS() == null || qos.getTotalIOPS() < 0 ? 0 : qos.getTotalIOPS();
+        ret.readIopsLimit = qos.getReadIOPS() == null || qos.getReadIOPS() < 0 ? 0 : qos.getReadIOPS();
+        ret.writeIopsLimit = qos.getWriteIOPS() == null || qos.getWriteIOPS() < 0 ? 0 : qos.getWriteIOPS();
         return ret;
     }
 

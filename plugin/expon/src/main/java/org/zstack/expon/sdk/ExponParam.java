@@ -121,6 +121,12 @@ public interface ExponParam {
                 }
 
                 if (at.numberRange().length > 0 && value instanceof Number) {
+                    if (((Number) value).intValue() == 0) {
+                        if (!at.nonempty()) {
+                            continue;
+                        }
+                    }
+
                     validateNumberRange(at.numberRange(), (Number) value, p.field.getName());
                 }
             }
