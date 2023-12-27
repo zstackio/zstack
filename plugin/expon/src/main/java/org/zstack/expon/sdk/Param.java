@@ -11,4 +11,6 @@ public @interface Param {
     String[] validValues() default {};
 
     long[] numberRange() default {};
+
+    boolean nonempty() default false;
 }

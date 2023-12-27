@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExponRestRequest(
-        path = "/task/status",
+        path = "/tasks/{id}",
         method = HttpMethod.GET,
         responseClass = GetTaskStatusResponse.class,
         version = "v1",
@@ -14,6 +14,17 @@ import java.util.Map;
 )
 public class GetTaskStatusRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
+
+    @Param
+    private String id;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     @Override
     public Map<String, Parameter> getParameterMap() {

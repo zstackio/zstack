@@ -8,6 +8,7 @@ public class CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply extends Message
     private String installPath;
     private long size;
     private long actualSize;
+    private String protocol;
     private boolean incremental;
 
     public long getActualSize() {
@@ -32,6 +33,14 @@ public class CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply extends Message
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 
     public void setIncremental(boolean incremental) {
