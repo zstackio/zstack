@@ -40,6 +40,7 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import static java.util.Arrays.asList
+import static org.zstack.expon.ExponNameHelper.getVolIdFromPath
 
 class ExternalPrimaryStorageCase extends SubCase {
     EnvSpec env
@@ -54,6 +55,8 @@ class ExternalPrimaryStorageCase extends SubCase {
     VolumeInventory vol, vol2
     HostInventory host1, host2
     CloudBus bus
+    ExponStorageController controller
+    ExponApiHelper apiHelper
 
     String exponUrl = "https://admin:Admin123@172.25.102.64:443/pool"
     String exportProtocol = "iscsi://"
@@ -79,7 +82,7 @@ class ExternalPrimaryStorageCase extends SubCase {
 
             diskOffering {
                 name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
+                diskSize = SizeUnit.GIGABYTE.toByte(2)
             }
 
             sftpBackupStorage {
@@ -242,6 +245,10 @@ class ExternalPrimaryStorageCase extends SubCase {
             primaryStorageUuid = ps.uuid
             clusterUuid = cluster.uuid
         }
+
+        ExternalPrimaryStorageFactory factory = Platform.getComponentLoader().getComponent(ExternalPrimaryStorageFactory.class)
+        controller = factory.getControllerSvc(ps.uuid) as ExponStorageController
+        apiHelper = controller.apiHelper
     }
 
     void testSessionExpired() {
@@ -288,11 +295,14 @@ class ExternalPrimaryStorageCase extends SubCase {
                 def otherVm = createVmInstance {
                     name = "vm"
                     instanceOfferingUuid = instanceOffering.uuid
+                    rootDiskOfferingUuid = diskOffering.uuid
                     imageUuid = image.uuid
                     l3NetworkUuids = [l3.uuid]
                     hostUuid = host1.uuid
                 } as VmInstanceInventory
 
+                assert otherVm.allVolumes[0].size == diskOffering.diskSize
+                assert apiHelper.getVolume(getVolIdFromPath(otherVm.allVolumes[0].installPath)).volumeSize == diskOffering.diskSize
                 deleteVm(otherVm.uuid)
                 success = true
             }
@@ -336,9 +346,6 @@ class ExternalPrimaryStorageCase extends SubCase {
     }
 
     void testHandleInactiveVolume() {
-        ExternalPrimaryStorageFactory factory = Platform.getComponentLoader().getComponent(ExternalPrimaryStorageFactory.class)
-        ExponStorageController controller = factory.getControllerSvc(ps.uuid) as ExponStorageController
-        ExponApiHelper apiHelper = controller.apiHelper
 
         VhostControllerModule vhost = apiHelper.getVhostController("volume-" + vm.rootVolumeUuid)
 
@@ -563,8 +570,6 @@ class ExternalPrimaryStorageCase extends SubCase {
             rootVolumeUuid = vm.rootVolumeUuid
             backupStorageUuids = [bs.uuid]
         } as ImageInventory
-
-
     }
 
     void testClean() {

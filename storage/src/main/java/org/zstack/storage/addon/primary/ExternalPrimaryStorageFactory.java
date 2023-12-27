@@ -340,10 +340,12 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     private void activeVolumeIfNeed(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
         PrimaryStorageNodeSvc svc = getNodeSvcByVolume(volume);
         if (svc == null) {
+            completion.success();
             return;
         }
 
         if (vm.getHostUuid() == null || VmInstanceState.Stopped.toString().equals(vm.getState())) {
+            completion.success();
             return;
         }
 
@@ -519,6 +521,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
                         CreateTemplateFromVolumeOnPrimaryStorageReply r = reply.castReply();
                         out.setBackupStorageInstallPath(r.getTemplateBackupStorageInstallPath());
                         out.setActualSize(r.getActualSize());
+                        out.setSize(vol.getSize());
                         trigger.next();
                     }
                 });
@@ -527,18 +530,21 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 final ParamOut out = (ParamOut) data.get(ParamOut.class);
-                if (out.getBackupStorageInstallPath() != null) {
-                    DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
-                    msg.setInstallPath(out.getBackupStorageInstallPath());
-                    msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
-                    bus.send(msg, new CloudBusCallBack(trigger) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            trigger.rollback();
-                        }
-                    });
+                if (out.getBackupStorageInstallPath() == null) {
+                    trigger.rollback();
+                    return;
                 }
+
+                DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
+                msg.setInstallPath(out.getBackupStorageInstallPath());
+                msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        trigger.rollback();
+                    }
+                });
             }
         });
 
@@ -568,7 +574,6 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
                 cmsg.setAccountUuid(accountUuid);
                 cmsg.setVolumeUuid(vol.getUuid());
                 cmsg.setName(vol.getName());
-                cmsg.setDescription(vol.getDescription());
                 cmsg.setDescription(vol.getDescription());
 
                 bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
