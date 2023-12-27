@@ -98,6 +98,8 @@ public class SourceClassMap {
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.westone.WestoneSecretResourcePoolInventory", "org.zstack.sdk.WestoneSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.zhongfu.ZhongfuSecretResourcePoolInventory", "org.zstack.sdk.ZhongfuSecretResourcePoolInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
 			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
@@ -1174,6 +1176,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VpcVpnIpSecConfigStruct", "org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct");
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
+			put("org.zstack.sdk.WestoneSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.westone.WestoneSecretResourcePoolInventory");
 			put("org.zstack.sdk.XDragonHostInventory", "org.zstack.xdragon.XDragonHostInventory");
 			put("org.zstack.sdk.ZBoxBackupInventory", "org.zstack.externalbackup.zbox.ZBoxBackupInventory");
 			put("org.zstack.sdk.ZBoxBackupStorageBackupInfo", "org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo");
@@ -1184,6 +1187,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZBoxVmBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVmBackupInfo");
 			put("org.zstack.sdk.ZBoxVolumeBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo");
 			put("org.zstack.sdk.ZQLQueryReturn", "org.zstack.zql.ZQLQueryReturn");
+			put("org.zstack.sdk.ZhongfuSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.zhongfu.ZhongfuSecretResourcePoolInventory");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
