@@ -35,6 +35,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.image.CancelDownloadImageMsg;
 import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -51,7 +52,6 @@ import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -108,6 +108,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     abstract protected void handle(GetImageEncryptedOnBackupStorageMsg msg);
 
     abstract protected void handle(RestoreImagesBackupStorageMetadataToDatabaseMsg msg);
+
+    abstract protected void handle(CalculateImageHashOnBackupStorageMsg msg);
 
     abstract protected void connectHook(boolean newAdd, Completion completion);
 
@@ -246,6 +248,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             handle((GetImageEncryptedOnBackupStorageMsg) msg);
         } else if (msg instanceof RestoreImagesBackupStorageMetadataToDatabaseMsg) {
             handle((RestoreImagesBackupStorageMetadataToDatabaseMsg) msg);
+        } else if (msg instanceof CalculateImageHashOnBackupStorageMsg) {
+            handle((CalculateImageHashOnBackupStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
