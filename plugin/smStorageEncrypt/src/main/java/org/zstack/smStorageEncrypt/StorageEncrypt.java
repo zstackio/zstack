@@ -16,7 +16,6 @@ import org.zstack.header.securitymachine.secretresourcepool.SecretResourcePoolCo
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.kvm.KVMBeforeAsyncJsonPostExtensionPoint;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.storage.primary.sharedblock.SharedBlockKvmCommands;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
@@ -39,7 +38,7 @@ public class StorageEncrypt implements KVMBeforeAsyncJsonPostExtensionPoint {
     public LinkedHashMap kvmBeforeAsyncJsonPostExtensionPoint(String path, LinkedHashMap commandMap, Map header) {
 
         LinkedHashMap linkedHashMap = new LinkedHashMap();
-        if (path.contains(SharedBlockKvmCommands.CREATE_VOLUME_FROM_CACHE_PATH) || path.contains(SharedBlockKvmCommands.CREATE_EMPTY_VOLUME_PATH)) {
+        if (path.contains(StorageEncryptConstants.CREATE_VOLUME_FROM_CACHE_PATH) || path.contains(StorageEncryptConstants.CREATE_EMPTY_VOLUME_PATH)) {
             String volumeUuid = (String) commandMap.get(StorageEncryptConstants.VOLUME_UUID);
             Boolean isEncrypt = isEncrypt(volumeUuid);
             if (isEncrypt){
@@ -112,7 +111,7 @@ public class StorageEncrypt implements KVMBeforeAsyncJsonPostExtensionPoint {
             }
         }
 
-        if (path.contains(SharedBlockKvmCommands.OFFLINE_MERGE_SNAPSHOT_PATH)){
+        if (path.contains(StorageEncryptConstants.OFFLINE_MERGE_SNAPSHOT_PATH)){
             String volumeUuid = (String) commandMap.get(StorageEncryptConstants.VOLUME_UUID);
             Boolean isEncrypt = isEncrypt(volumeUuid);
             if (isEncrypt){
@@ -124,7 +123,7 @@ public class StorageEncrypt implements KVMBeforeAsyncJsonPostExtensionPoint {
             }
         }
 
-        if (path.contains(SharedBlockKvmCommands.REVERT_VOLUME_FROM_SNAPSHOT_PATH)){
+        if (path.contains(StorageEncryptConstants.REVERT_VOLUME_FROM_SNAPSHOT_PATH)){
             String volumeUuid = (String) commandMap.get(StorageEncryptConstants.VOLUME_UUID);
             Boolean isEncrypt = isEncrypt(volumeUuid);
             if (isEncrypt){
@@ -136,7 +135,7 @@ public class StorageEncrypt implements KVMBeforeAsyncJsonPostExtensionPoint {
             }
         }
 
-        if (path.contains(SharedBlockKvmCommands.SHRINK_SNAPSHOT_PATH)){
+        if (path.contains(StorageEncryptConstants.SHRINK_SNAPSHOT_PATH)){
             String volumeUuid = (String) commandMap.get(StorageEncryptConstants.VOLUME_UUID);
             Boolean isEncrypt = isEncrypt(volumeUuid);
             if (isEncrypt){
@@ -148,7 +147,7 @@ public class StorageEncrypt implements KVMBeforeAsyncJsonPostExtensionPoint {
             }
         }
 
-        if (path.contains(SharedBlockKvmCommands.CREATE_TEMPLATE_FROM_VOLUME_PATH)){
+        if (path.contains(StorageEncryptConstants.CREATE_TEMPLATE_FROM_VOLUME_PATH)){
             String volumePath = (String) commandMap.get(StorageEncryptConstants.VOLUME_PATH);
             String tmpUuid = volumePath.split("/")[3];
             VolumeSnapshotVO s = dbf.findByUuid(tmpUuid, VolumeSnapshotVO.class);
@@ -169,7 +168,7 @@ public class StorageEncrypt implements KVMBeforeAsyncJsonPostExtensionPoint {
             }
         }
 
-        if (path.contains(SharedBlockKvmCommands.RESIZE_VOLUME_PATH)){
+        if (path.contains(StorageEncryptConstants.RESIZE_VOLUME_PATH)){
             String volumeUuid = (String) commandMap.get(StorageEncryptConstants.VOLUME_UUID);
             Boolean isLive = (Boolean) commandMap.get(StorageEncryptConstants.LIVE);
             if (!isLive) {
