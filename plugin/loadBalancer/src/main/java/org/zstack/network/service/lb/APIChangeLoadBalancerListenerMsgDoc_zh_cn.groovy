@@ -246,6 +246,33 @@ doc {
 					since "4.7.21"
 					values ("301","302","303","307","308")
 				}
+				column {
+					name "httpVersions"
+					enclosedIn "changeLoadBalancerListener"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "5.0.0"
+				}
+				column {
+					name "tcpProxyProtocol"
+					enclosedIn "changeLoadBalancerListener"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.0.0"
+				}
+				column {
+					name "httpCompressAlgos"
+					enclosedIn "changeLoadBalancerListener"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "5.0.0"
+				}
 			}
         }
 

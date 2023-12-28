@@ -189,7 +189,6 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         String type = msg.getType() != null ? msg.getType() : LoadBalancerType.Shared.toString();
         LoadBalancerFactory f = getLoadBalancerFactory(type);
-        final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(msg.getVipUuid(), VipVO.class));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-lb-%s", msg.getName()));
         chain.then(new ShareFlow() {
@@ -237,47 +236,71 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 flow(new Flow() {
                     String __name__ = "acquire-vip";
 
-                    boolean s = false;
+                    List<String> vipUuidsAcquireSuccess = Collections.synchronizedList(new ArrayList<>());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(f.getNetworkServiceType());
-                        struct.setServiceUuid(vo.getUuid());
-                        Vip v = new Vip(vip.getUuid());
-                        v.setStruct(struct);
-                        v.acquire(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                s = true;
-                                trigger.next();
-                            }
+                        new While<>(msg.getVipUuids()).step((vipUuid, whileCompletion) -> {
+                            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                            struct.setUseFor(f.getNetworkServiceType());
+                            struct.setServiceUuid(vo.getUuid());
+                            Vip v = new Vip(vipUuid);
+                            v.setStruct(struct);
+                            v.acquire(new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    vipUuidsAcquireSuccess.add(vipUuid);
+                                    whileCompletion.done();
+                                }
 
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    whileCompletion.addError(errorCode);
+                                    whileCompletion.allDone();
+                                }
+                            });
+                        }, 2).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                    return;
+                                }
+                                trigger.next();
                             }
                         });
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
-                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(f.getNetworkServiceType());
-                        struct.setServiceUuid(vo.getUuid());
-                        Vip v = new Vip(vip.getUuid());
-                        v.setStruct(struct);
-                        v.release(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.rollback();
-                            }
+                        if (vipUuidsAcquireSuccess.isEmpty()) {
+                            trigger.rollback();
+                            return;
+                        }
 
+                        new While<>(vipUuidsAcquireSuccess).step((vipUuid, whileCompletion) -> {
+                            LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
+                            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                            struct.setUseFor(f.getNetworkServiceType());
+                            struct.setServiceUuid(vo.getUuid());
+                            Vip v = new Vip(vipUuid);
+                            v.setStruct(struct);
+                            v.release(new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO add GC
+                                    logger.warn(errorCode.toString());
+                                    whileCompletion.done();
+                                }
+                            });
+                        }, 2).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void fail(ErrorCode errorCode) {
-                                //TODO add GC
-                                logger.warn(errorCode.toString());
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.rollback();
                             }
                         });
@@ -824,7 +847,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         }
 
         List<Tuple> lbPortList = SQL.New("select lbl.loadBalancerPort, lbl.loadBalancerPort from LoadBalancerListenerVO lbl, LoadBalancerVO lb "
-                + "where lbl.protocol in (:protocols) and lbl.loadBalancerUuid=lb.uuid and lb.vipUuid = :vipUuid", Tuple.class).
+                + "where lbl.protocol in (:protocols) and lbl.loadBalancerUuid=lb.uuid and (lb.vipUuid = :vipUuid or lb.ipv6VipUuid = :vipUuid)", Tuple.class).
                 param("protocols", protocols).
                 param("vipUuid", vipUuid).list();
 
@@ -843,26 +866,30 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     @Override
     public ServiceReference getServiceReference(String vipUuid) {
         long count = 0;
-        List<String> l3Uuids = SQL.New("select nic.l3NetworkUuid" +
-                " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
-                " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
-                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
-                " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
-                " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
-                " and nicRef.status != 'Pending'")
+        List<String> l3Uuids = SQL.New("select distinct nic.l3NetworkUuid " +
+                        "from LoadBalancerVO lb " +
+                        "join LoadBalancerServerGroupVO g on lb.uuid = g.loadBalancerUuid " +
+                        "join LoadBalancerListenerVO listener on lb.uuid = listener.loadBalancerUuid " +
+                        "join LoadBalancerListenerServerGroupRefVO lgref on listener.uuid = lgref.listenerUuid " +
+                        "join LoadBalancerServerGroupVmNicRefVO nicRef on g.uuid = nicRef.serverGroupUuid " +
+                        "join VmNicVO nic on nicRef.vmNicUuid = nic.uuid " +
+                        "where (lb.vipUuid = :vipUuid or lb.ipv6VipUuid = :vipUuid) " +
+                        "and nicRef.status != 'Pending'")
                         .param("vipUuid", vipUuid).list();
+
         if (l3Uuids != null && !l3Uuids.isEmpty()) {
             count = new HashSet<>(l3Uuids).size();
         }
-        List<String> uuids = SQL.New("select distinct lb.uuid" +
-                " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
-                " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
-                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
-                " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
-                " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
-                " and nicRef.status != 'Pending'")
-                .param("vipUuid", vipUuid).list();
-
+        List<String> uuids = SQL.New("select distinct lb.uuid " +
+                        "from LoadBalancerVO lb " +
+                        "join LoadBalancerServerGroupVO g on lb.uuid = g.loadBalancerUuid " +
+                        "join LoadBalancerListenerVO listener on lb.uuid = listener.loadBalancerUuid " +
+                        "join LoadBalancerListenerServerGroupRefVO lgref on listener.uuid = lgref.listenerUuid " +
+                        "join LoadBalancerServerGroupVmNicRefVO nicRef on g.uuid = nicRef.serverGroupUuid " +
+                        "join VmNicVO nic on nicRef.vmNicUuid = nic.uuid " +
+                        "where (lb.vipUuid = :vipUuid or lb.ipv6VipUuid = :vipUuid) " +
+                        "and nicRef.status != 'Pending'")
+                        .param("vipUuid", vipUuid).list();
         return new VipGetServiceReferencePoint.ServiceReference(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, count, uuids == null?new ArrayList<>() : uuids);
     }
 
@@ -898,7 +925,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         vo = dbf.reload(vo);
         LoadBalancerStruct struct = new LoadBalancerStruct();
         struct.setLb(LoadBalancerInventory.valueOf(vo));
-        struct.setVip(VipInventory.valueOf(dbf.findByUuid(vo.getVipUuid(), VipVO.class)));
+        struct.setVip(StringUtils.isEmpty(vo.getVipUuid()) ? null : VipInventory.valueOf(dbf.findByUuid(vo.getVipUuid(), VipVO.class)));
+        struct.setIpv6Vip(StringUtils.isEmpty(vo.getIpv6VipUuid()) ? null :VipInventory.valueOf(dbf.findByUuid(vo.getIpv6VipUuid(), VipVO.class)));
 
         List<String> activeNicUuids = new ArrayList<String>();
         for (LoadBalancerListenerVO l : vo.getListeners()) {
@@ -912,7 +940,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 }
                 groupInventories.add(LoadBalancerServerGroupInventory.valueOf(groupVO));
             }
-            struct.getListenerServerGroupMap().put(l.getUuid(), groupInventories);
+        struct.getListenerServerGroupMap().put(l.getUuid(), groupInventories);
         }
 
         if (activeNicUuids.isEmpty()) {

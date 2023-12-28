@@ -60,6 +60,14 @@ public class LoadBalancerInventory  {
         return this.vipUuid;
     }
 
+    public java.lang.String ipv6VipUuid;
+    public void setIpv6VipUuid(java.lang.String ipv6VipUuid) {
+        this.ipv6VipUuid = ipv6VipUuid;
+    }
+    public java.lang.String getIpv6VipUuid() {
+        return this.ipv6VipUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

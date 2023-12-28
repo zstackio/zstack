@@ -4,6 +4,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.network.service.lb.LoadBalancerVO;
@@ -29,6 +30,11 @@ public class VyosGlobalConfig {
     @GlobalConfigValidation
     @BindResourceConfig({LoadBalancerVO.class})
     public static GlobalConfig ENABLE_HAPROXY_LOG = new GlobalConfig(CATEGORY, "enable.haproxy.log");
+
+    // the priority: listener > loadbalancer > vpc
+    @GlobalConfigValidation
+    @BindResourceConfig({VmInstanceVO.class, LoadBalancerVO.class, LoadBalancerListenerVO.class})
+    public static GlobalConfig ENABLE_LOADBALANCER_FULL_LOG = new GlobalConfig(CATEGORY, "enable.loadbalancer.full.log");
 
     @GlobalConfigValidation
     @BindResourceConfig({VmInstanceVO.class})

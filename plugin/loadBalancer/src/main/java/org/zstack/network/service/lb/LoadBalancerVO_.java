@@ -15,6 +15,7 @@ public class LoadBalancerVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LoadBalancerVO, String> description;
     public static volatile SingularAttribute<LoadBalancerVO, String> providerType;
     public static volatile SingularAttribute<LoadBalancerVO, String> vipUuid;
+    public static volatile SingularAttribute<LoadBalancerVO, String> ipv6VipUuid;
     public static volatile SingularAttribute<LoadBalancerVO, String> serverGroupUuid;
     public static volatile SingularAttribute<LoadBalancerVO, LoadBalancerState> state;
     public static volatile SingularAttribute<LoadBalancerVO, LoadBalancerType> type;

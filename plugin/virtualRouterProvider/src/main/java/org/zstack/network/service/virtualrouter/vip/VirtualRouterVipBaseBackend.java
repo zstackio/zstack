@@ -1,10 +1,12 @@
 package org.zstack.network.service.virtualrouter.vip;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
@@ -224,6 +226,15 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
     @Override
     protected void acquireVipOnBackend(Completion completion) {
+        acquireVip(StringUtils.EMPTY, completion);
+    }
+
+    @Override
+    protected void acquireVipOnSpecificBackend(String specificBackendUuid, Completion completion) {
+        acquireVip(specificBackendUuid, completion);
+    }
+
+    private void acquireVip(String specificVrUuid, Completion completion) {
         refresh();
 
         List<String> vrs = proxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), self.getUuid());
@@ -261,6 +272,13 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
                 DebugUtils.Assert(self.getPeerL3NetworkUuids() != null, "peerL3NetworkUuid cannot be null");
+
+                if (!StringUtils.isEmpty(specificVrUuid)) {
+                    VirtualRouterVmVO virtualRouterVmVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, specificVrUuid).find();
+                    data.put(VirtualRouterConstant.Param.VR.toString(), VirtualRouterVmInventory.valueOf(virtualRouterVmVO));
+                    trigger.next();
+                    return;
+                }
 
                 VirtualRouterStruct s = new VirtualRouterStruct();
                 s.setL3Network(L3NetworkInventory.valueOf(dbf.findByUuid(self.getPeerL3NetworkUuids().iterator().next(), L3NetworkVO.class)));

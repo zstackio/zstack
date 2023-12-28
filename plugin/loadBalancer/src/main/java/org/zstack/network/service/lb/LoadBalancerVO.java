@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
@@ -11,7 +12,9 @@ import org.zstack.network.service.vip.VipVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -23,6 +26,7 @@ import java.util.Set;
 @EntityGraph(
         parents = {
                 @EntityGraph.Neighbour(type = VipVO.class, myField = "vipUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VipVO.class, myField = "ipv6VipUuid", targetField = "uuid")
         },
 
         friends = {
@@ -48,8 +52,12 @@ public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
     private LoadBalancerType type;
 
     @Column
-    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.SET_NULL)
     private String vipUuid;
+
+    @Column
+    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.SET_NULL)
+    private String ipv6VipUuid;
 
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
@@ -133,6 +141,14 @@ public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
         this.vipUuid = vipUuid;
     }
 
+    public String getIpv6VipUuid() {
+        return ipv6VipUuid;
+    }
+
+    public void setIpv6VipUuid(String vip6Uuid) {
+        this.ipv6VipUuid = vip6Uuid;
+    }
+
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -163,5 +179,29 @@ public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
 
     public void setServerGroupUuid(String serverGroupUuid) {
         this.serverGroupUuid = serverGroupUuid;
+    }
+
+    public void deleteVip(String vipUuid) {
+        if (StringUtils.isEmpty(vipUuid)) {
+            return;
+        }
+
+        if (vipUuid.equals(getVipUuid())) {
+            setVipUuid(null);
+        } else if (vipUuid.equals(getIpv6VipUuid())) {
+            setIpv6VipUuid(null);
+        }
+    }
+
+    public List<String> getVipUuids() {
+        ArrayList<String> vipUuids  = new ArrayList<>();
+        if (!StringUtils.isEmpty(vipUuid)) {
+            vipUuids.add(vipUuid);
+        }
+        
+        if (!StringUtils.isEmpty(ipv6VipUuid)) {
+            vipUuids.add(ipv6VipUuid);
+        }
+        return vipUuids;
     }
 }

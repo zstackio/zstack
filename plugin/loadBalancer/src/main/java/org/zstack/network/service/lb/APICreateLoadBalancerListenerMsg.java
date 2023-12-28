@@ -58,6 +58,15 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
             LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT_WITH_1_3}, required = false)
     private String securityPolicyType;
 
+    @APIParam(required = false)
+    private List<String> httpVersions;
+
+    @APIParam(required = false)
+    private String tcpProxyProtocol;
+
+    @APIParam(required = false)
+    private List<String> httpCompressAlgos;
+
     @Override
     public String getLoadBalancerUuid() {
         return loadBalancerUuid;
@@ -177,6 +186,34 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
 
     public void setSecurityPolicyType(String securityPolicyType) {
         this.securityPolicyType = securityPolicyType;
+    }
+
+    public void setInstancePort(Integer instancePort) {
+        this.instancePort = instancePort;
+    }
+
+    public List<String> getHttpVersions() {
+        return httpVersions;
+    }
+
+    public void setHttpVersions(List<String> httpVersions) {
+        this.httpVersions = httpVersions;
+    }
+
+    public String getTcpProxyProtocol() {
+        return tcpProxyProtocol;
+    }
+
+    public void setTcpProxyProtocol(String tcpProxyProtocol) {
+        this.tcpProxyProtocol = tcpProxyProtocol;
+    }
+
+    public List<String> getHttpCompressAlgos() {
+        return httpCompressAlgos;
+    }
+
+    public void setHttpCompressAlgos(List<String> httpCompressAlgos) {
+        this.httpCompressAlgos = httpCompressAlgos;
     }
 
     public static APICreateLoadBalancerListenerMsg __example__() {
