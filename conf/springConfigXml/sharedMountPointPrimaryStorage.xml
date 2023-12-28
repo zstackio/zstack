@@ -54,4 +54,10 @@
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="KvmBackend" class="org.zstack.storage.primary.smp.KvmBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMTakeSnapshotExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

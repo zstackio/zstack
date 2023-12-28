@@ -11,6 +11,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.NfsPrimaryStorageSpec
 import org.zstack.testlib.SharedMountPointPrimaryStorageSpec
 import org.zstack.testlib.vfs.Qcow2
+import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.extensions.VFSPrimaryStorageTakeSnapshotBackend
 import org.zstack.testlib.vfs.extensions.VFSSnapshot
 
@@ -22,7 +23,12 @@ class SMPVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSystemBased
 
     @Override
     VFSSnapshot takeSnapshot(HttpEntity<String> e, EnvSpec spec, KVMAgentCommands.TakeSnapshotCmd cmd, VolumeInventory volume) {
-        return doTakeSnapshot(SharedMountPointPrimaryStorageSpec.vfs(volume.getPrimaryStorageUuid(), spec), cmd, volume)
+        def vfs = SharedMountPointPrimaryStorageSpec.vfs(volume.getPrimaryStorageUuid(), spec)
+        if (cmd.isOnline()) {
+            vfs.Assert(vfs.exists(cmd.installPath), "cannot find file[${cmd.installPath}]")
+            vfs.delete(cmd.installPath)
+        }
+        return doTakeSnapshot(vfs, cmd, volume)
     }
 
     @Override
