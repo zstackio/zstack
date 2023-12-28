@@ -2667,6 +2667,8 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolumeUuid(msg.getVolume().getUuid());
         cmd.setTimeout(timeoutManager.getTimeout());
         cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
+        cmd.primaryStorageUuid = msg.getVolume().getPrimaryStorageUuid();
+
         completeTakeSnapshotCmd(msg, cmd);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
