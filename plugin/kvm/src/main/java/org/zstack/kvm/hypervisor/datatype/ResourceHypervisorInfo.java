@@ -75,6 +75,7 @@ public class ResourceHypervisorInfo {
                     String type = tuple.get(1, String.class);
                     return mapResourceHypervisorInfo(uuid, type, uuidVoMap.get(uuid));
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         fillMatchTargetInfo(results);
@@ -82,6 +83,11 @@ public class ResourceHypervisorInfo {
     }
 
     private static ResourceHypervisorInfo mapResourceHypervisorInfo(String uuid, String type, KvmHypervisorInfoVO vo) {
+        if (vo == null) {
+            // maybe vm is in stopped states
+            return null;
+        }
+
         ResourceHypervisorInfo target = new ResourceHypervisorInfo();
         target.uuid = uuid;
         target.resourceType = type;
