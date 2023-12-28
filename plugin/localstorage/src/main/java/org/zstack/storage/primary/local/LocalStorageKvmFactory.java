@@ -20,6 +20,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInfo;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.*;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -173,7 +174,8 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
     @Override
     public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
-        if (!isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!needPreCreateVolume || !isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
             completion.success();
             return;
         }
@@ -186,64 +188,34 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
                 .find();
 
         LocalStorageHypervisorBackend bkd = getHypervisorBackend(primaryStorageVO);
-
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("prepare-local-storage-block-volume-%s-for-snapshot-%s", msg.getVolume().getUuid(), msg.getSnapshotName()));
-        chain.then(new Flow() {
+        String backingFile = cmd.isOnline() ? cmd.getVolumeInstallPath() : null;
+        bkd.createEmptyVolumeWithBackingFile(inv, msg.getHostUuid(), backingFile, new ReturnValueCompletion<VolumeInfo>(completion) {
             @Override
-            public void run(FlowTrigger trigger, Map data) {
-                bkd.createEmptyVolume(inv, msg.getHostUuid(), new ReturnValueCompletion<VolumeInfo>(msg) {
-                    @Override
-                    public void success(VolumeInfo returnValue) {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        ErrorCode err = operr("unable to create empty snapshot volume[name:%s, installpath: %s] on kvm host[uuid:%s, ip:%s], because %s",
-                                msg.getSnapshotName(), msg.getInstallPath(), host.getUuid(), host.getManagementIp(), errorCode);
-                        trigger.fail(err);
-                    }
-                });
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                bkd.deleteBits(msg.getInstallPath(), host.getUuid(), new Completion(msg) {
-                    @Override
-                    public void success() {
-                        trigger.rollback();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.rollback();
-                    }
-                });
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
+            public void success(VolumeInfo returnValue) {
                 completion.success();
             }
-        }).error(new FlowErrorHandler(completion) {
+
             @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
+            public void fail(ErrorCode errorCode) {
+                ErrorCode err = operr("unable to create empty snapshot volume[name:%s, installpath: %s] on kvm host[uuid:%s, ip:%s], because %s",
+                        msg.getSnapshotName(), msg.getInstallPath(), host.getUuid(), host.getManagementIp(), errorCode);
+                completion.fail(err);
             }
-        }).start();
+        });
     }
 
     @Override
     public void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp) {
-        if (!isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!needPreCreateVolume || !isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
             return;
         }
     }
 
     @Override
     public void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp, ErrorCode err) {
-        if (!isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!needPreCreateVolume || !isLocalPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
             return;
         }
 
@@ -265,6 +237,10 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete path:%s right now, skip this GC job because it's in use", cmd.getInstallPath()));
+                    return;
+                }
                 logger.debug(String.format("failed to clean garbage snapshot volume[name: %s, installpath:%s] for failed taking snapshot on volume[%s], "+
                         "create gc job to clean garbage late", msg.getSnapshotName(), cmd.getInstallPath(), msg.getVolume().getUuid()));
             }
