@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.dingtalk;
+package org.zstack.sdk.sns.platform.wecom;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSNSDingTalkAtPersonAction extends AbstractAction {
+public class AddSNSWeComAtPersonAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult value;
+        public org.zstack.sdk.sns.platform.wecom.AddSNSWeComAtPersonResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
     }
 
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
+    public java.lang.String userId;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String endpointUuid;
@@ -72,8 +72,8 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult value = res.getResult(org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult() : value; 
+        org.zstack.sdk.sns.platform.wecom.AddSNSWeComAtPersonResult value = res.getResult(org.zstack.sdk.sns.platform.wecom.AddSNSWeComAtPersonResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.wecom.AddSNSWeComAtPersonResult() : value; 
 
         return ret;
     }
@@ -103,7 +103,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/ding-talk/at-persons";
+        info.path = "/sns/application-endpoints/we-com/at-persons";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

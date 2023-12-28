@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.dingtalk;
+package org.zstack.sdk.sns.platform.wecom;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSNSDingTalkAtPersonAction extends AbstractAction {
+public class CreateSNSWeComEndpointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult value;
+        public org.zstack.sdk.sns.platform.wecom.CreateSNSWeComEndpointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,26 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
+    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String url;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endpointUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean atAll;
 
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String remark;
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List atPersonUserIds;
+
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map atPersonList;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String platformUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -72,8 +84,8 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult value = res.getResult(org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult() : value; 
+        org.zstack.sdk.sns.platform.wecom.CreateSNSWeComEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.wecom.CreateSNSWeComEndpointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.wecom.CreateSNSWeComEndpointResult() : value; 
 
         return ret;
     }
@@ -103,7 +115,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/ding-talk/at-persons";
+        info.path = "/sns/application-endpoints/we-com";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
