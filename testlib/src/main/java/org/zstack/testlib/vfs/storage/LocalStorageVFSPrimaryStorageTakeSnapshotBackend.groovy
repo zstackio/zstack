@@ -39,8 +39,10 @@ class LocalStorageVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSy
 
         VFS vfs = LocalStorageSpec.vfs(LocalStorageSpec.hostUuidFromHTTPHeaders(e), storagePath, spec)
 
-        vfs.Assert(vfs.exists(cmd.installPath), "cannot find file[${cmd.installPath}]")
-        vfs.delete(cmd.installPath)
+        if (cmd.isOnline()) {
+            vfs.Assert(vfs.exists(cmd.installPath), "cannot find file[${cmd.installPath}]")
+            vfs.delete(cmd.installPath)
+        }
 
         VFSSnapshot snapshot = new VFSSnapshot()
         if (cmd.fullSnapshot) {

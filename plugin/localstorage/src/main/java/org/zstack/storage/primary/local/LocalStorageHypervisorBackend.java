@@ -112,6 +112,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void createEmptyVolume(VolumeInventory volume, String hostUuid, ReturnValueCompletion<VolumeInfo> completion);
 
+    abstract void createEmptyVolumeWithBackingFile(VolumeInventory volume, String hostUuid, String backingFile, ReturnValueCompletion<VolumeInfo> completion);
+
     abstract void checkHostAttachedPSMountPath(String hostUuid, Completion completion);
 
     abstract void initializeHostAttachedPSMountPath(String hostUuid, Completion completion);
