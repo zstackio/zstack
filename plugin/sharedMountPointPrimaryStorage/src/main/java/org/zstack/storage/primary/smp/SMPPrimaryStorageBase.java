@@ -34,7 +34,10 @@ import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMs
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.volume.*;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMTakeSnapshotExtensionPoint;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -55,6 +58,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.storage.primary.smp.SMPPrimaryStorageFactory.type;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -62,7 +66,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * Created by xing5 on 2016/3/26.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class SMPPrimaryStorageBase extends PrimaryStorageBase {
+public class SMPPrimaryStorageBase extends PrimaryStorageBase implements KVMTakeSnapshotExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageBase.class);
 
     @Autowired
@@ -1199,6 +1203,80 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 UnlinkBitsOnPrimaryStorageReply reply = new UnlinkBitsOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+            }
+        });
+    }
+
+
+    private boolean isSharedMountPointPrimaryStorage(String psUuid) {
+        return psUuid != null && Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, psUuid)
+                .eq(PrimaryStorageVO_.type, type.toString())
+                .isExists();
+    }
+
+    @Override
+    public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd scmd, Completion completion) {
+        boolean needPreCreateVolume = scmd.isOnline();
+        if (!needPreCreateVolume || !isSharedMountPointPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+            completion.success();
+            return;
+        }
+
+        HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getHostUuid());
+        HypervisorBackend bkd = f.getHypervisorBackend(dbf.findByUuid(msg.getVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class));
+
+        VolumeInventory volumeInventory = new VolumeInventory(msg.getVolume());
+        volumeInventory.setInstallPath(scmd.getInstallPath());
+        volumeInventory.setName(msg.getSnapshotName());
+        bkd.createEmptyVolumeWithBackingFile(volumeInventory, msg.getHostUuid(), msg.getVolume().getInstallPath(), new ReturnValueCompletion<KvmBackend.AgentRsp>(completion) {
+            @Override
+            public void success(KvmBackend.AgentRsp rsp) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp) {
+    }
+
+    @Override
+    public void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp, ErrorCode err) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!needPreCreateVolume || !isSharedMountPointPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+            return;
+        }
+        HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getHostUuid());
+        HypervisorBackend bkd = f.getHypervisorBackend(dbf.findByUuid(msg.getVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class));
+        bkd.deleteBits(cmd.getInstallPath(), new Completion(msg) {
+            @Override
+            public void success() {
+                logger.debug(String.format("successfully cleaned garbage snapshot volume[name: %s, installpath:%s] for take snapshot on volume[%s]",
+                        msg.getSnapshotName(), cmd.getInstallPath(), msg.getVolume().getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete path:%s right now, skip this GC job because it's in use", cmd.getInstallPath()));
+                    return;
+                }
+                logger.debug(String.format("failed to clean garbage snapshot volume[name: %s, installpath:%s] for failed taking snapshot on volume[%s], "+
+                        "create gc job to clean garbage late", msg.getSnapshotName(), cmd.getInstallPath(), msg.getVolume().getUuid()));
+                SMPDeleteVolumeGC gc = new SMPDeleteVolumeGC();
+                gc.NAME = String.format("gc-smp-%s-snapshot-%s", msg.getVolume().getPrimaryStorageUuid(), cmd.getInstallPath());
+                gc.primaryStorageUuid = msg.getVolume().getPrimaryStorageUuid();
+                gc.hypervisorType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getVolume().getFormat()).toString();
+                VolumeInventory inv = new VolumeInventory(msg.getVolume());
+                inv.setInstallPath(cmd.getInstallPath());
+                gc.volume = inv;
+                gc.submit(SMPPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
             }
         });
     }
