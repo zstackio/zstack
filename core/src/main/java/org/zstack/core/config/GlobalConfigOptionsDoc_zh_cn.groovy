@@ -25,4 +25,16 @@ doc {
 		type "Long"
 		since "4.4.0"
 	}
+	field {
+		name "numberGreaterThanOrEqual"
+		desc "大于等于"
+		type "Long"
+		since "4.8.0"
+	}
+	field {
+		name "numberLessThanOrEqual"
+		desc "小于等于"
+		type "Long"
+		since "4.8.0"
+	}
 }

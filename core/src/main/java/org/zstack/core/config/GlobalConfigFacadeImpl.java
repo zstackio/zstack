@@ -661,6 +661,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     }
                 }
 
+                boolean isInteger = Integer.class.getName().equals(config.getType());
                 config.installQueryExtension(new GlobalConfigQueryExtensionPoint() {
                     @Override
                     public GlobalConfigOptions getConfigOptions() {
@@ -669,18 +670,24 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         if (at.validValues().length > 0) {
                             options.setValidValue(Arrays.asList(at.validValues()));
                         } else if (at.inNumberRange().length == 2){
-                            options.setNumberLessThan(at.inNumberRange()[1] + 1);
-                            options.setNumberGreaterThan(at.inNumberRange()[0] - 1);
+                            options.setNumberLessThanOrEqual(at.inNumberRange()[1]);
+                            options.setNumberGreaterThanOrEqual(at.inNumberRange()[0]);
                         } else if (at.numberLessThan() != Long.MAX_VALUE || at.numberGreaterThan() != Long.MIN_VALUE) {
-                            options.setNumberLessThan(Long.MAX_VALUE);
-                            options.setNumberGreaterThan(Long.MIN_VALUE);
+                            if (isInteger) {
+                                options.setNumberLessThanOrEqual((long) Integer.MAX_VALUE);
+                                options.setNumberGreaterThanOrEqual((long) Integer.MIN_VALUE);
+                            } else {
+                                options.setNumberLessThanOrEqual(Long.MAX_VALUE);
+                                options.setNumberGreaterThanOrEqual(Long.MIN_VALUE);
+                            }
                         }
 
                         if (at.numberLessThan() != Long.MAX_VALUE) {
-                            options.setNumberLessThan(at.numberLessThan());
+                            options.setNumberLessThanOrEqual(at.numberLessThan());
                         }
+
                         if (at.numberGreaterThan() != Long.MIN_VALUE) {
-                            options.setNumberGreaterThan(at.numberGreaterThan());
+                            options.setNumberGreaterThanOrEqual(at.numberGreaterThan());
                         }
 
                         return options;
