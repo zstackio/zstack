@@ -5256,6 +5256,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>(msg) {
             @Override
             public void success(DeleteSnapshotRsp returnValue) {
+                osdHelper.releaseAvailableCapWithRatio(msg.getSnapshot().getPrimaryStorageInstallPath(), msg.getSnapshot().getSize());
                 bus.reply(msg, reply);
                 completion.done();
             }
