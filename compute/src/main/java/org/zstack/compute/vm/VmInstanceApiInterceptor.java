@@ -874,7 +874,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     newAddedL3Uuids, l2Uuids));
         }
 
-        String sql = "select ip.l3NetworkUuid from UsedIpVO ip, VmNicVO nic where ip.vmNicUuid = nic.uuid and nic.vmInstanceUuid = :vmUuid and ip.l3NetworkUuid in (:l3Uuids)";
+        String sql = "select nic.l3NetworkUuid from VmNicVO nic where nic.vmInstanceUuid = :vmUuid and nic.l3NetworkUuid in (:l3Uuids)";
         List<String> attachedL3Uuids = SQL.New(sql, String.class)
                 .param("vmUuid", msg.getVmInstanceUuid())
                 .param("l3Uuids", newAddedL3Uuids)

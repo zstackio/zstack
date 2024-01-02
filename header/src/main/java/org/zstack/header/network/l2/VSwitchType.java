@@ -29,10 +29,7 @@ public class VSwitchType {
     public VSwitchType(String typeName, VmNicType nicType) {
         this.typeName = typeName;
         types.put(typeName, this);
-        if (vSwitchSupportNicTypesMap.get(typeName) == null) {
-            vSwitchSupportNicTypesMap.put(typeName, new ArrayList<VmNicType>());
-        }
-        vSwitchSupportNicTypesMap.get(typeName).add(nicType);
+        vSwitchSupportNicTypesMap.computeIfAbsent(typeName, k -> new ArrayList<VmNicType>()).add(nicType);
     }
 
     public boolean isExposed() {

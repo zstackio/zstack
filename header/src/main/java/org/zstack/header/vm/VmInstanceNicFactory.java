@@ -37,4 +37,8 @@ public interface VmInstanceNicFactory {
     default String  getPhysicalNicName(VmNicInventory nic) {
         return null;
     }
+
+    default void releaseVmNic(VmNicInventory nic) {
+        return;
+    }
 }
