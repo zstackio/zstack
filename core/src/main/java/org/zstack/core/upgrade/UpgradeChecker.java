@@ -110,6 +110,10 @@ public class UpgradeChecker implements Component {
             dbf.persist(agentVersionVO);
             return;
         }
+
+        if (currentVersion == null) {
+            return;
+        }
         
         if (Objects.equals(agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion())) {
             return;
