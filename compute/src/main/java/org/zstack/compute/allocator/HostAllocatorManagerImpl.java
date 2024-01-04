@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -26,20 +27,21 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageMsg;
-import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply;
+import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.query.QueryFacade;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -50,6 +52,7 @@ import javax.persistence.TypedQuery;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -78,6 +81,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private ErrorFacade errf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private QueryFacade qf;
 
     @Override
     @MessageSafe
@@ -101,6 +106,25 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Transactional(readOnly = true)
+    private List<BackupStorageInventory> getBackupStorageFromPs(String psUuid, List<String> backupStorageTypes) {
+        String sql = "select bs from BackupStorageVO bs, BackupStorageZoneRefVO ref, PrimaryStorageVO ps" +
+                " where bs.uuid = ref.backupStorageUuid and ps.zoneUuid = ref.zoneUuid and ps.uuid = :psUuid" +
+                " and bs.type in (:bsTypes) and bs.state = :bsState and bs.status = :bsStatus";
+
+        TypedQuery<BackupStorageVO> q = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+        q.setParameter("psUuid", psUuid);
+        q.setParameter("bsTypes", backupStorageTypes);
+        q.setParameter("bsState", BackupStorageState.Enabled);
+        q.setParameter("bsStatus", BackupStorageStatus.Connected);
+
+        List<BackupStorageInventory> candidates = BackupStorageInventory.valueOf(q.getResultList());
+        for (BackupStorageAllocatorFilterExtensionPoint ext : pluginRgty.getExtensionList(BackupStorageAllocatorFilterExtensionPoint.class)) {
+            candidates = ext.filterBackupStorageCandidatesByPS(candidates, psUuid);
+        }
+        return candidates;
     }
 
     @Transactional(readOnly = true)
@@ -130,24 +154,34 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
         List<String> backupStorageTypes = getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType());
 
-        String sql = "select bs from BackupStorageVO bs, BackupStorageZoneRefVO ref, PrimaryStorageVO ps" +
-                " where bs.uuid = ref.backupStorageUuid and ps.zoneUuid = ref.zoneUuid and ps.uuid = :psUuid" +
-                " and bs.type in (:bsTypes) and bs.state = :bsState and bs.status = :bsStatus";
+        List<BackupStorageInventory> candidates = getBackupStorageFromPs(ps.getUuid(),backupStorageTypes);
 
-        TypedQuery<BackupStorageVO> q = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
-        q.setParameter("psUuid", ps.getUuid());
-        q.setParameter("bsTypes", backupStorageTypes);
-        q.setParameter("bsState", BackupStorageState.Enabled);
-        q.setParameter("bsStatus", BackupStorageStatus.Connected);
-
-        List<BackupStorageInventory> candidates = BackupStorageInventory.valueOf(q.getResultList());
-        for(BackupStorageAllocatorFilterExtensionPoint ext : pluginRgty.getExtensionList(BackupStorageAllocatorFilterExtensionPoint.class)) {
-            candidates = ext.filterBackupStorageCandidatesByPS(candidates, ps.getUuid());
-        }
-        
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
         reply.setInventories(candidates);
         bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetCandidateImagesForCreatingVmMsg msg) {
+        PrimaryStorageVO ps = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid()).find();
+        List<String> backupStorageTypes = getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType());
+
+        APIGetCandidateImagesForCreatingVmReply reply = new APIGetCandidateImagesForCreatingVmReply();
+        reply.setInventories(ImageInventory.valueOf(getCandidateImages(ps.getUuid(), backupStorageTypes)));
+        bus.reply(msg, reply);
+    }
+
+    @Transactional(readOnly = true)
+    private List<ImageVO> getCandidateImages(String psUuid, List<String> backupStorageTypes) {
+        List<BackupStorageInventory> backupStorageInventories = getBackupStorageFromPs(psUuid, backupStorageTypes);
+        String sql2 = "select image from ImageVO image,ImageBackupStorageRefVO ref,BackupStorageVO bs where" +
+                " image.uuid=ref.imageUuid and ref.backupStorageUuid=bs.uuid and" +
+                " image.state=:imageState and image.status=:imageStatus and" +
+                " bs.uuid in (:backupStorageUuids)";
+        return SQL.New(sql2)
+                .param("imageState", ImageState.Enabled)
+                .param("imageStatus", ImageStatus.Ready)
+                .param("backupStorageUuids", backupStorageInventories.stream().map(BackupStorageInventory::getUuid).collect(Collectors.toList()))
+                .list();
     }
 
     private void handle(RecalculateHostCapacityMsg msg) {
@@ -568,6 +602,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             handle((APIGetHostAllocatorStrategiesMsg) msg);
         } else if (msg instanceof APIGetCandidateBackupStorageForCreatingImageMsg) {
             handle((APIGetCandidateBackupStorageForCreatingImageMsg) msg);
+        } else if (msg instanceof APIGetCandidateImagesForCreatingVmMsg) {
+            handle((APIGetCandidateImagesForCreatingVmMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
