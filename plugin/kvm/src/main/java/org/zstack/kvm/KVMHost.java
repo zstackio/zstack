@@ -4614,16 +4614,21 @@ public class KVMHost extends HostBase implements Host {
                                 @Override
                                 public void handle(Map data) {
                                     if (KVMSystemTags.RESTART_LIBVIRT_REQUESTED.hasTag(self.getUuid())) {
-                                        SshResult ret = new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
-                                                .setTimeout(20)
-                                                .setPrivateKey(asf.getPrivateKey())
-                                                .setUsername(getSelf().getUsername())
-                                                .setHostname(self.getManagementIp())
-                                                .setPort(getSelf().getPort())
-                                                .runAndClose();
+                                        StringBuilder cmd = new StringBuilder();
+                                        cmd.append("sudo systemctl restart libvirtd; " +
+                                                "sudo service zstack-kvmagent.service stop; " +
+                                                "sudo service zstack-kvmagent.service start");
 
-                                        if (ret.getReturnCode() != 0) {
-                                            trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
+                                        SshShell sshShell = new SshShell();
+                                        sshShell.setHostname(self.getManagementIp());
+                                        sshShell.setUsername(getSelf().getUsername());
+                                        sshShell.setPassword(getSelf().getPassword());
+                                        sshShell.setPort(getSelf().getPort());
+                                        sshShell.setWithSudo(true);
+                                        SshResult ret = sshShell.runCommand(cmd.toString());
+                                        if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                            trigger.fail(operr("Failed to restart service, because return " +
+                                                    "code[%d] and error[%s].", ret.getReturnCode(), ret.getStderr()));
                                             return;
                                         }
 
