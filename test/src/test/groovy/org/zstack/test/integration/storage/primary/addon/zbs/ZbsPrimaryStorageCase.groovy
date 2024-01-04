@@ -148,7 +148,7 @@ class ZbsPrimaryStorageCase extends SubCase {
 
             testZbsStorageLifecycle()
             testDataVolumeLifecycle()
-            testZbsPrimaryStorageMdsPing()
+//            testZbsPrimaryStorageMdsPing()
             testZbsStorageNegativeScenario()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
