@@ -12,9 +12,7 @@ import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.network.securitygroup.RuleTO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
-import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.network.securitygroup.VmNicSecurityTO;
-import org.zstack.network.service.MtuGetter;
 
 import java.io.Serializable;
 import java.util.*;
@@ -2813,6 +2811,7 @@ public class KVMAgentCommands {
         private String uuid;
         private String type;
         private long timeout;
+        private boolean forceStopIfNoOperatingSystemDetected;
         private List<VmNicInventory> vmNics;
 
         public String getUuid() {
@@ -2837,6 +2836,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public boolean isForceStopIfNoOperatingSystemDetected() {
+            return forceStopIfNoOperatingSystemDetected;
+        }
+
+        public void setForceStopIfNoOperatingSystemDetected(boolean forceStopIfNoOperatingSystemDetected) {
+            this.forceStopIfNoOperatingSystemDetected = forceStopIfNoOperatingSystemDetected;
         }
 
         public List<VmNicInventory> getVmNics() {

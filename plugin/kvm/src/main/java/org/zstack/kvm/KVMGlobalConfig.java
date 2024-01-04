@@ -1,6 +1,5 @@
 package org.zstack.kvm;
 
-import org.zstack.core.GlobalProperty;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
@@ -130,4 +129,9 @@ public class KVMGlobalConfig {
     @GlobalConfigDef(defaultValue = "none", description = "enable host ksm")
     @BindResourceConfig({HostVO.class})
     public static GlobalConfig HOST_KSM = new GlobalConfig(CATEGORY, "host.ksm");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "use 'force' mode when stop VM without operating system")
+    public static GlobalConfig STOP_VM_WITHOUT_OS_BY_FORCE_MODE =
+            new GlobalConfig(CATEGORY, "stop.vm.without.os.by.force.mode");
 }
