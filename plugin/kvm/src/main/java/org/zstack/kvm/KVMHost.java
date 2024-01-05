@@ -1,7 +1,6 @@
 package org.zstack.kvm;
 
 import okhttp3.Response;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,11 +99,7 @@ import org.zstack.utils.ssh.SshShell;
 import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
-import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -3515,6 +3510,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setType(msg.getType());
         cmd.setTimeout(120);
         cmd.setVmNics(vminv.getVmNics());
+        cmd.setForceStopIfNoOperatingSystemDetected(KVMGlobalConfig.STOP_VM_WITHOUT_OS_BY_FORCE_MODE.value(Boolean.class));
 
         try {
             extEmitter.beforeStopVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);
