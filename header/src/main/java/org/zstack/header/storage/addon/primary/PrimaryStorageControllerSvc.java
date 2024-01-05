@@ -46,4 +46,6 @@ public interface PrimaryStorageControllerSvc {
     void revertVolumeSnapshot(String snapshotInstallPath, ReturnValueCompletion<VolumeStats> comp);
 
     void validateConfig(String config);
+
+    void setTrashExpireTime(int timeInSeconds, Completion completion);
 }

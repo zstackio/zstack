@@ -379,10 +379,28 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
-    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
-        for (VmAttachVolumeExtensionPoint ext : attachVolumeExtensions) {
-            ext.preAttachVolume(vm, volume);
-        }
+    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
+        new While<>(attachVolumeExtensions).each((ext, comp) -> ext.preAttachVolume(vm, volume, new Completion(comp) {
+            @Override
+            public void success() {
+                comp.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.addError(errorCode);
+                comp.allDone();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().size() > 0) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                } else {
+                    completion.success();
+                }
+            }
+        });
     }
 
     public void beforeAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume, Map data) {
@@ -408,6 +426,25 @@ public class VmInstanceExtensionPointEmitter implements Component {
             @Override
             public void run(VmAttachVolumeExtensionPoint arg) {
                 arg.failedToAttachVolume(vm, volume, errorCode, data);
+            }
+        });
+    }
+
+    public void afterInstantiateVolume(VmInstanceInventory inv, VolumeInventory volume, NoErrorCompletion completion) {
+        new While<>(attachVolumeExtensions).each((ext, comp) -> ext.afterInstantiateVolume(inv, volume, new Completion(comp) {
+            @Override
+            public void success() {
+                comp.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.done();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
             }
         });
     }

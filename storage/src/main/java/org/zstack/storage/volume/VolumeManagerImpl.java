@@ -168,7 +168,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 throw new OperationFailureException(operr("get primaryStorage %s type failed", msg.getPrimaryStorageUuid()));
             }
 
-            if (!PrimaryStorageType.getSupportSharedVolumePSTypeNames().contains(psType)) {
+            if (!PrimaryStorageType.getSupportFeaturesTypes(PrimaryStorageType::isSupportSharedVolume).contains(psType)) {
                 throw new OperationFailureException(operr("primaryStorage type [%s] not support shared volume yet", psType));
             }
         }
@@ -334,7 +334,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         }
 
                         if (vvo.isShareable()) {
-                            amsg.setPossiblePrimaryStorageTypes(PrimaryStorageType.getSupportSharedVolumePSTypeNames());
+                            amsg.setPossiblePrimaryStorageTypes(PrimaryStorageType.getSupportFeaturesTypes(PrimaryStorageType::isSupportSharedVolume));
                         }
 
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

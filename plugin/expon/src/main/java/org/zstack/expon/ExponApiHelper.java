@@ -4,6 +4,8 @@ import org.zstack.expon.sdk.*;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterRequest;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterResponse;
 import org.zstack.expon.sdk.cluster.TianshuClusterModule;
+import org.zstack.expon.sdk.config.SetTrashExpireTimeRequest;
+import org.zstack.expon.sdk.config.SetTrashExpireTimeResponse;
 import org.zstack.expon.sdk.iscsi.*;
 import org.zstack.expon.sdk.nvmf.*;
 import org.zstack.expon.sdk.pool.*;
@@ -220,6 +222,19 @@ public class ExponApiHelper {
         }
         req.setName(name);
         CloneVolumeResponse rsp = callErrorOut(req, CloneVolumeResponse.class);
+
+        return getVolume(rsp.getId());
+    }
+
+    public VolumeModule copySnapshot(String snapId, String poolId, String name, ExponVolumeQos qos) {
+        CopyVolumeSnapshotRequest req = new CopyVolumeSnapshotRequest();
+        req.setSnapshotId(snapId);
+        req.setPhyPoolId(poolId);
+        if (qos != null) {
+            req.setQos(qos);
+        }
+        req.setName(name);
+        CopyVolumeSnapshotResponse rsp = callErrorOut(req, CopyVolumeSnapshotResponse.class);
 
         return queryVolume(name);
     }
@@ -621,7 +636,12 @@ public class ExponApiHelper {
         req.setId(clientId);
         req.setAction(ExponAction.remove.name());
         req.setLuns(Collections.singletonList(new LunResource(volId, "volume")));
-        callErrorOut(req, ChangeVolumeInIscsiClientGroupResponse.class);
+        ChangeVolumeInIscsiClientGroupResponse rsp = call(req, ChangeVolumeInIscsiClientGroupResponse.class);
+        if (rsp.isError(ExponError.LUN_ALREADY_UNMAPPED_ISCSI_CLIENT)) {
+            return;
+        }
+
+        errorOut(rsp);
     }
 
     public void removeSnapshotFromIscsiClientGroup(String snapId, String clientId) {
@@ -629,6 +649,17 @@ public class ExponApiHelper {
         req.setId(clientId);
         req.setAction(ExponAction.remove.name());
         req.setLuns(Collections.singletonList(new LunResource(snapId, "snapshot")));
-        callErrorOut(req, ChangeSnapshotInIscsiClientGroupResponse.class);
+        ChangeSnapshotInIscsiClientGroupResponse rsp = call(req, ChangeSnapshotInIscsiClientGroupResponse.class);
+        if (rsp.isError(ExponError.LUN_ALREADY_UNMAPPED_ISCSI_CLIENT)) {
+            return;
+        }
+
+        errorOut(rsp);
+    }
+
+    public void setTrashExpireTime(int days) {
+        SetTrashExpireTimeRequest req = new SetTrashExpireTimeRequest();
+        req.setTrashRecycle(days);
+        callErrorOut(req, SetTrashExpireTimeResponse.class);
     }
 }

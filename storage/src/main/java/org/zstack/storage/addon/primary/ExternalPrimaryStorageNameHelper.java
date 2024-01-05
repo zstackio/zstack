@@ -10,13 +10,23 @@ public class ExternalPrimaryStorageNameHelper {
     public static BaseVolumeInfo getVolumeInfo(String volumeName) {
         if (volumeName.startsWith("volume_")) {
             BaseVolumeInfo info = new BaseVolumeInfo();
-            info.setUuid(volumeName.substring("volume_".length()));
+            info.setUuid(volumeName.split("_")[1]);
             info.setType("volume");
             return info;
         } else if (volumeName.startsWith("image_")) {
             BaseVolumeInfo info = new BaseVolumeInfo();
-            info.setUuid(volumeName.substring("image_".length()));
+            info.setUuid(volumeName.split("_")[1]);
             info.setType("image");
+            return info;
+        } else if (volumeName.startsWith("reimage_volume")) {
+            BaseVolumeInfo info = new BaseVolumeInfo();
+            info.setUuid(volumeName.split("_")[2]);
+            info.setType("volume");
+            return info;
+        } else if (volumeName.startsWith("change_image_volume")) {
+            BaseVolumeInfo info = new BaseVolumeInfo();
+            info.setUuid(volumeName.split("_")[3]);
+            info.setType("volume");
             return info;
         } else {
             throw new IllegalArgumentException(String.format("unknown volume name[%s]", volumeName));

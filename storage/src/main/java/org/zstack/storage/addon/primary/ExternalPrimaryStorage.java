@@ -4,7 +4,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -12,6 +11,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -101,6 +101,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof SetTrashExpirationTimeMsg) {
+            handle((SetTrashExpirationTimeMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -153,6 +155,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         spec.setSize(volume.getSize());
         spec.setAllocatedUrl(msg.getAllocatedInstallUrl());
         if (msg instanceof InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            // FIXME: use more accurate name
             spec.setName(buildReimageVolumeName(((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) msg).getOriginVolumeUuid()));
             createRootVolume((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) msg, spec);
         } else if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
@@ -316,6 +319,23 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    protected void handle(final SetTrashExpirationTimeMsg msg) {
+        controller.setTrashExpireTime(msg.getExpirationTime(), new Completion(msg) {
+            @Override
+            public void success() {
+                SetTrashExpirationTimeReply reply = new SetTrashExpirationTimeReply();
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                SetTrashExpirationTimeReply reply = new SetTrashExpirationTimeReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     private void handle(final SelectBackupStorageMsg msg) {
         SelectBackupStorageReply reply = new SelectBackupStorageReply();
 
@@ -426,12 +446,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    // TODO
     protected void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
-        throw new UnsupportedOperationException("not supported");
-    }
-
-    private void createImageCacheFromVolume(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-image-cache-from-volume-%s-on-primary-storage-%s", msg.getVolumeInventory().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
@@ -439,52 +454,42 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
             String snapshotPath;
 
+            final String volumeUuid = msg.getVolumeInventory().getUuid();
+
             @Override
             public void setup() {
-                flow(new Flow() {
-                    String __name__ = "create-snapshot";
+                flow(new NoRollbackFlow() {
+                    final String __name__ = "create-volume-snapshot";
 
                     @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        CreateVolumeSnapshotSpec spec = new CreateVolumeSnapshotSpec();
-                        spec.setUuid(Platform.getUuid());
-                        spec.setVolumeInstallPath(msg.getVolumeInventory().getInstallPath());
-                        controller.createSnapshot(spec, new ReturnValueCompletion<VolumeSnapshotStats>(trigger) {
+                    public void run(final FlowTrigger trigger, Map data) {
+                        String volumeAccountUuid = acntMgr.getOwnerAccountUuidOfResource(volumeUuid);
+
+                        CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+                        cmsg.setName("Snapshot-" + volumeUuid);
+                        cmsg.setDescription("Take snapshot for " + volumeUuid);
+                        cmsg.setVolumeUuid(volumeUuid);
+                        cmsg.setAccountUuid(volumeAccountUuid);
+
+                        bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
-                            public void success(VolumeSnapshotStats stats) {
-                                snapshotPath = stats.getInstallPath();
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                }
+
+                                CreateVolumeSnapshotReply createVolumeSnapshotReply = (CreateVolumeSnapshotReply)r;
+                                snapshotPath = createVolumeSnapshotReply.getInventory().getPrimaryStorageInstallPath();
                                 trigger.next();
                             }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
                         });
-                    }
 
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (snapshotPath == null) {
-                            trigger.rollback();
-                            return;
-                        }
-
-                        controller.deleteSnapshot(snapshotPath, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.rollback();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.rollback();
-                            }
-                        });
                     }
                 });
                 flow(new Flow() {
-                    String __name__ = "clone-volume";
+                    final String __name__ = "clone-volume";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -492,9 +497,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         spec.setName(buildImageName(msg.getImageInventory().getUuid()));
                         spec.setUuid(msg.getVolumeInventory().getUuid());
                         spec.setSize(msg.getVolumeInventory().getSize());
-                        controller.cloneVolume(snapshotPath, spec, new ReturnValueCompletion<VolumeStats>(trigger) {
+
+                        ReturnValueCompletion<VolumeStats> completion = new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats dst) {
+                                imageCachePath = dst.getInstallPath();
                                 trigger.next();
                             }
 
@@ -502,7 +509,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
                             }
-                        });
+                        };
+
+                        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat())) {
+                            controller.cloneVolume(snapshotPath, spec, completion);
+                        } else {
+                            controller.copyVolume(snapshotPath, spec, completion);
+                        }
                     }
 
                     @Override
@@ -526,27 +539,17 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "flatten-volume";
+                flow(new Flow() {
 
-                    @Override
-                    public boolean skip(Map data) {
-                        return msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
-                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.flattenVolume(imageCachePath, new ReturnValueCompletion<VolumeStats>(trigger) {
-                            @Override
-                            public void success(VolumeStats stats) {
-                                trigger.next();
-                            }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+
                     }
                 });
 
@@ -554,7 +557,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     @Override
                     public void handle(Map data) {
                         CreateImageCacheFromVolumeOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeOnPrimaryStorageReply();
-                        // TODO
+                        // TODO get actual size
                         reply.setActualSize(msg.getVolumeInventory().getSize());
                         bus.reply(msg, reply);
                     }
@@ -572,7 +575,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }).start();
     }
 
-    // TODO
     @Override
     protected void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
         CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
@@ -587,7 +589,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             return;
         }
 
-        throw new UnsupportedOperationException("not supported");
+        createImageCacheFromSnapshot(msg);
     }
 
     private void createImageCacheFromSnapshot(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
@@ -596,18 +598,22 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             String imageCachePath;
 
+            ImageCacheInventory inventory;
+
+            ImageInventory image = msg.getImageInventory();
+
             @Override
             public void setup() {
                 flow(new Flow() {
-                    String __name__ = "clone-volume";
+                    String __name__ = "copy-volume";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         CreateVolumeSpec spec = new CreateVolumeSpec();
-                        spec.setName(buildImageName(msg.getImageInventory().getUuid()));
+                        spec.setName(buildImageName(image.getUuid()));
                         spec.setUuid(msg.getImageInventory().getUuid());
                         spec.setSize(msg.getImageInventory().getSize());
-                        controller.cloneVolume(msg.getVolumeSnapshot().getPrimaryStorageInstallPath(), spec, new ReturnValueCompletion<VolumeStats>(trigger) {
+                        controller.copyVolume(msg.getVolumeSnapshot().getPrimaryStorageInstallPath(), spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats dst) {
                                 imageCachePath = dst.getInstallPath();
@@ -642,19 +648,26 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "flatten-volume";
+                flow(new Flow() {
+                    final String __name__ = "create-snapshot-for-clone";
+
+                    boolean succ = false;
 
                     @Override
                     public boolean skip(Map data) {
-                        return msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+                        return controller.reportCapabilities().isSupportCloneFromVolume();
                     }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.flattenVolume(imageCachePath, new ReturnValueCompletion<VolumeStats>(trigger) {
+                        CreateVolumeSnapshotSpec spec = new CreateVolumeSnapshotSpec();
+                        spec.setVolumeInstallPath(imageCachePath);
+                        spec.setName(buildSnapshotName(image.getUuid()));
+                        controller.createSnapshot(spec, new ReturnValueCompletion<VolumeSnapshotStats>(trigger) {
                             @Override
-                            public void success(VolumeStats stats) {
+                            public void success(VolumeSnapshotStats stats) {
+                                imageCachePath = stats.getInstallPath();
+                                succ = true;
                                 trigger.next();
                             }
 
@@ -664,13 +677,60 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             }
                         });
                     }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (!succ) {
+                            trigger.rollback();
+                            return;
+                        }
+                        controller.deleteSnapshot(imageCachePath, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.rollback();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                flow(new Flow() {
+                    final String __name__ = "persist-image-cache-vo";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ImageCacheVO cache = new ImageCacheVO();
+                        if (image.getMd5Sum() == null) {
+                            cache.setMd5sum("not calculated");
+                        } else {
+                            cache.setMd5sum(image.getMd5Sum());
+                        }
+                        cache.setImageUuid(image.getUuid());
+                        cache.setMediaType(ImageConstant.ImageMediaType.valueOf(image.getMediaType()));
+                        cache.setInstallUrl(imageCachePath);
+                        // TODO get size
+                        cache.setSize(image.getSize());
+                        cache.setPrimaryStorageUuid(self.getUuid());
+                        dbf.persist(cache);
+                        inventory = cache.toInventory();
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        trigger.rollback();
+                    }
                 });
 
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
                         CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
-                        // TODO
+                        reply.setInventory(inventory);
                         reply.setIncremental(false);
                         bus.reply(msg, reply);
                     }
@@ -983,7 +1043,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 cache.setInstallUrl(volStats.getInstallPath());
                 cache.setSize(volStats.getSize());
                 cache.setPrimaryStorageUuid(self.getUuid());
-                cache.setInstallUrl(volStats.getInstallPath());
                 dbf.persist(cache);
                 completion.success(ImageCacheInventory.valueOf(cache));
             }
@@ -1014,7 +1073,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        spec.setSize(image.getSize());
+                        spec.setSize(Long.max(image.getActualSize(), image.getSize()));
                         controller.createVolume(spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats stats) {
@@ -1512,11 +1571,31 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
+                    // TODO: hardcode for expon
+                    final String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        // TODO
+                        boolean hasSnapshot = Q.New(VolumeSnapshotVO.class)
+                                .like(VolumeSnapshotVO_.primaryStorageInstallPath, String.format("%s%%", msg.getVolume().getInstallPath()))
+                                .isExists();
+                        if (!hasSnapshot) {
+                            trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.warn(String.format("failed to delete volume[uuid:%s, path:%s] on primary storage[uuid:%s], %s",
+                                            msg.getVolume().getUuid(), msg.getVolume().getInstallPath(), self.getUuid(), errorCode));
+                                    trigger.next();
+                                }
+                            });
+                        } else {
+                            trash.createTrash(TrashType.ReimageVolume, false, msg.getVolume());
+                        }
                         trigger.next();
                     }
                 });

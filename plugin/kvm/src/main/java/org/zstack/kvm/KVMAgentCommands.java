@@ -3579,6 +3579,7 @@ public class KVMAgentCommands {
     }
 
     public static class LoginIscsiTargetCmd extends AgentCommand implements Serializable {
+        private String url;
         private String hostname;
         private int port;
         private String target;
@@ -3624,6 +3625,14 @@ public class KVMAgentCommands {
 
         public void setTarget(String target) {
             this.target = target;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
         }
     }
 

@@ -4,7 +4,6 @@ public class CreateVolumeSnapshotSpec {
     private String name;
     private String uuid;
     private String volumeInstallPath;
-    private String allocatedUrl;
 
     public String getUuid() {
         return uuid;
@@ -12,14 +11,6 @@ public class CreateVolumeSnapshotSpec {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    public String getAllocatedUrl() {
-        return allocatedUrl;
-    }
-
-    public void setAllocatedUrl(String allocatedUrl) {
-        this.allocatedUrl = allocatedUrl;
     }
 
     public String getVolumeInstallPath() {
