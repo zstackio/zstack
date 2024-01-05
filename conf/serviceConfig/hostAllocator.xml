@@ -14,4 +14,8 @@
     <message>
         <name>org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.image.APIGetCandidateImagesForCreatingVmMsg</name>
+    </message>
 </service>
