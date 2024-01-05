@@ -281,6 +281,22 @@ public class VolumeSnapshotReferenceUtils {
         }
     }
 
+    public static void updateReferenceAfterMarkSnapshotAsVolume(VolumeSnapshotVO snapshot) {
+        if (VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString().equals(snapshot.getType())) {
+            return;
+        }
+
+        VolumeSnapshotReferenceVO ref = getVolumeBackingRef(snapshot.getVolumeUuid());
+        if (ref != null && snapshot.getPrimaryStorageInstallPath().equals(ref.getReferenceInstallUrl())) {
+            SQL.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.id, ref.getId())
+                    .set(VolumeSnapshotReferenceVO_.referenceUuid, snapshot.getVolumeUuid())
+                    .set(VolumeSnapshotReferenceVO_.referenceType, VolumeVO.class.getSimpleName())
+                    .update();
+            logger.debug(String.format("update volume snapshot reference[referVolumeSnapshotUuid:%s, referVolumeUuid:%s] after mark snapshot as volume",
+                    snapshot.getUuid(), snapshot.getVolumeUuid()));
+        }
+    }
+
     public static void cleanTemporaryImageReference(List<ImageInventory> images) {
         if (!PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE || CollectionUtils.isEmpty(images)) {
             return;
