@@ -7,10 +7,12 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.timeout.Timer;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
@@ -67,6 +69,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     protected AnsibleFacade asf;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected Timer timer;
 
     protected static final String ANSIBLE_PLAYBOOK_NAME = "consoleproxy.py";
 
@@ -80,8 +84,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
     protected abstract boolean isAgentConnected();
 
-    private void establishNewProxy(ConsoleProxy proxy, SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
-        proxy.establishProxy(session, vm, new ReturnValueCompletion<ConsoleProxyInventory>(complete) {
+    private void establishNewProxy(ConsoleProxy proxy, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
+        proxy.establishProxy(vm, new ReturnValueCompletion<ConsoleProxyInventory>(complete) {
             @Override
             public void success(ConsoleProxyInventory ret) {
                 ConsoleProxyVO vo = new ConsoleProxyVO();
@@ -98,8 +102,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                 vo.setUuid(Platform.getUuid());
                 vo.setAgentType(ret.getAgentType());
                 vo.setStatus(ConsoleProxyStatus.Active);
-                vo.setToken(ret.getToken());
                 vo.setVersion(ret.getVersion());
+                vo.setExpiredDate(ret.getExpiredDate());
                 vo = dbf.persistAndRefresh(vo);
 
                 complete.success(ConsoleInventory.valueOf(vo));
@@ -129,10 +133,16 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         if (vo == null) {
             // new console proxy
             ConsoleProxy proxy = getConsoleProxy(session, vm);
-            establishNewProxy(proxy, session, vm, complete);
+            establishNewProxy(proxy, vm, complete);
             return;
         }
 
+        if (timer.getCurrentTimestamp().after(vo.getExpiredDate())) {
+            dbf.remove(vo);
+            ConsoleProxy proxy = getConsoleProxy(session, vm);
+            establishNewProxy(proxy, vm, complete);
+            return;
+        }
 
         String hostIp = getHostIp(vm);
         if (hostIp == null) {
@@ -141,9 +151,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
         if (vo.getTargetHostname().equals(hostIp)) {
             // vm is on the same host
-            final ConsoleProxy proxy = getConsoleProxy(vm, vo);
-            dbf.remove(vo);
-            establishNewProxy(proxy, session, vm, complete);
+            updateConsoleProxy(vm, vo, complete);
         } else {
             // vm is on another host
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -178,7 +186,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             ConsoleProxy proxy = getConsoleProxy(session, vm);
-                            establishNewProxy(proxy, session, vm, new ReturnValueCompletion<ConsoleInventory>(trigger) {
+                            establishNewProxy(proxy, vm, new ReturnValueCompletion<ConsoleInventory>(trigger) {
                                 @Override
                                 public void success(ConsoleInventory returnValue) {
                                     ret = returnValue;
@@ -317,6 +325,53 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         }
     }
 
+    @Override
+    public void deactivateConsoleProxy(final VmInstanceInventory vm, final Completion completion) {
+        final ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class).eq(ConsoleProxyVO_.vmInstanceUuid, vm.getUuid())
+                .eq(ConsoleProxyVO_.status, ConsoleProxyStatus.Active).find();
+        ConsoleProxy proxy = getConsoleProxy(vm, vo);
+        proxy.deleteProxy(vm, new Completion(completion) {
+            @Override
+            public void success() {
+                vo.setStatus(ConsoleProxyStatus.Inactive);
+                dbf.updateAndRefresh(vo);
+                logger.debug(String.format("deactivate a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s",
+                        vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort()));
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DeleteConsoleProxyGcJob gc = new DeleteConsoleProxyGcJob();
+                gc.NAME = String.format("deactivate-console-proxy-%s", vo.getUuid());
+                gc.consoleProxy = ConsoleProxyInventory.valueOf(vo);
+                gc.submit(ConsoleGlobalConfig.DELETE_CONSOLE_PROXY_RETRY_DELAY.value(Long.class), TimeUnit.SECONDS);
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void updateConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo, ReturnValueCompletion<ConsoleInventory> completion) {
+        ConsoleProxy proxy = getConsoleProxy(vm, vo);
+        proxy.establishProxy(vm, new ReturnValueCompletion<ConsoleProxyInventory>(completion) {
+            @Override
+            public void success(ConsoleProxyInventory ret) {
+                vo.setTargetHostname(ret.getTargetHostname());
+                vo.setTargetPort(ret.getTargetPort());
+                vo.setStatus(ConsoleProxyStatus.Active);
+                vo.setExpiredDate(ret.getExpiredDate());
+                dbf.updateAndRefresh(vo);
+
+                completion.success(ConsoleInventory.valueOf(vo));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
 
     private void deploySaltState() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {

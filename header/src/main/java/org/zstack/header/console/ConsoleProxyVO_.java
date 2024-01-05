@@ -27,4 +27,5 @@ public class ConsoleProxyVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<ConsoleProxyVO, ConsoleProxyStatus> status;
     public static volatile SingularAttribute<ConsoleProxyVO, Timestamp> createDate;
     public static volatile SingularAttribute<ConsoleProxyVO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<ConsoleProxyVO, Timestamp> expiredDate;
 }
