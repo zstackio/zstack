@@ -6,6 +6,15 @@ public class CreateDataVolumeTemplateFromDataVolumeMsg extends NeedReplyMessage 
     private String volumeUuid;
     private String backupStorageUuid;
     private String imageUuid;
+    private boolean queuedInVolume = true;
+
+    public boolean isQueuedInVolume() {
+        return queuedInVolume;
+    }
+
+    public void setQueuedInVolume(boolean queuedInVolume) {
+        this.queuedInVolume = queuedInVolume;
+    }
 
     public String getImageUuid() {
         return imageUuid;
