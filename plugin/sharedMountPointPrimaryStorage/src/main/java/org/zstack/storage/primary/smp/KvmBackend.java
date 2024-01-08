@@ -41,10 +41,8 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
+import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
@@ -59,6 +57,7 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -291,6 +290,7 @@ public class KvmBackend extends HypervisorBackend {
         public long size;
         public String name;
         public String volumeUuid;
+        public String backingFile;
     }
 
     public static class CreateEmptyVolumeRsp extends AgentRsp {
@@ -1748,6 +1748,27 @@ public class KvmBackend extends HypervisorBackend {
                 } else {
                     completion.success(reply);
                 }
+            }
+        });
+    }
+
+    void createEmptyVolumeWithBackingFile(final VolumeInventory volume, String hostUuid, String backingFile, final ReturnValueCompletion<KvmBackend.AgentRsp> completion) {
+        final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
+        cmd.installPath = volume.getInstallPath();
+        cmd.name = volume.getName();
+        cmd.size = volume.getSize();
+        cmd.volumeUuid = volume.getUuid();
+        cmd.backingFile = backingFile;
+
+        new Do(hostUuid).go(CREATE_EMPTY_VOLUME_PATH, cmd, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp rsp) {
+                completion.success(rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
         });
     }

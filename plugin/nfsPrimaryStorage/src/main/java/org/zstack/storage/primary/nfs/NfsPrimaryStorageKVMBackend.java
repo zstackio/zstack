@@ -1899,7 +1899,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     @Override
     public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
-        if (!isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!needPreCreateVolume || !isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
             completion.success();
             return;
         }
@@ -1914,81 +1915,46 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         scmd.setSize(msg.getVolume().getSize());
         scmd.setVolumeUuid(cmd.getVolumeUuid());
         scmd.setInstallUrl(cmd.getInstallPath());
+        scmd.setBackingFile(cmd.getVolumeInstallPath());
 
         KVMHostAsyncHttpCallMsg smsg = new KVMHostAsyncHttpCallMsg();
         smsg.setCommand(scmd);
         smsg.setPath(CREATE_EMPTY_VOLUME_PATH);
         smsg.setHostUuid(host.getUuid());
-
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("prepare-nfs-block-volume-%s-for-snapshot-%s", msg.getVolume().getUuid(), msg.getSnapshotName()));
-        chain.then(new Flow() {
+        bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(smsg, new CloudBusCallBack(completion) {
             @Override
-            public void run(FlowTrigger trigger, Map data) {
-                bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, host.getUuid());
-                bus.send(smsg, new CloudBusCallBack(completion) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
 
-                        CreateEmptyVolumeResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CreateEmptyVolumeResponse.class);
-                        if (!rsp.isSuccess()) {
-                            ErrorCode err = operr("unable to create empty snapshot volume[name:%s, installpath: %s] on kvm host[uuid:%s, ip:%s], because %s",
-                                    scmd.getName(), scmd.getInstallUrl(), host.getUuid(), host.getManagementIp(), rsp.getError());
-                            trigger.fail(err);
-                            return;
-                        }
+                CreateEmptyVolumeResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CreateEmptyVolumeResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("unable to create empty snapshot volume[name:%s, installpath: %s] on kvm host[uuid:%s, ip:%s], because %s",
+                            scmd.getName(), scmd.getInstallUrl(), host.getUuid(), host.getManagementIp(), rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
 
-                        trigger.next();
-                    }
-                });
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                PrimaryStorageVO primaryStorageVO = Q.New(PrimaryStorageVO.class)
-                        .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
-                        .eq(PrimaryStorageVO_.uuid, msg.getVolume().getPrimaryStorageUuid())
-                        .find();
-                PrimaryStorageInventory pinv = PrimaryStorageInventory.valueOf(primaryStorageVO);
-                delete(pinv, cmd.getInstallPath(), false, new Completion(msg) {
-                    @Override
-                    public void success() {
-                        trigger.rollback();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.rollback();
-                    }
-                });
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
                 completion.success();
             }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
-            }
-        }).start();
+        });
     }
 
     @Override
     public void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp) {
-        if (!isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!needPreCreateVolume || !isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
             return;
         }
     }
 
     @Override
     public void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp, ErrorCode err) {
-        if (!isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
+        boolean needPreCreateVolume = cmd.isOnline();
+        if (!needPreCreateVolume || !isNfsPrimaryStorage(msg.getVolume().getPrimaryStorageUuid())) {
             return;
         }
 
@@ -2006,6 +1972,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete path:%s right now, skip this GC job because it's in use", cmd.getInstallPath()));
+                    return;
+                }
                 logger.debug(String.format("failed to clean garbage snapshot volume[name: %s, installpath:%s] for failed taking snapshot on volume[%s], "+
                         "create gc job to clean garbage late", msg.getSnapshotName(), cmd.getInstallPath(), msg.getVolume().getUuid()));
                 NfsDeleteVolumeSnapshotGC gc = new NfsDeleteVolumeSnapshotGC();
