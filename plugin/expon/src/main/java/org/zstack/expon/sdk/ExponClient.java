@@ -6,8 +6,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import okhttp3.*;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.springframework.http.HttpMethod;
 import org.zstack.core.Platform;
+import org.zstack.expon.sdk.volume.GetVolumeTaskProgressRequest;
+import org.zstack.expon.sdk.volume.GetVolumeTaskProgressResponse;
 import org.zstack.header.expon.Constants;
 import org.zstack.header.rest.DefaultSSLVerifier;
 import org.zstack.utils.Utils;
@@ -94,7 +97,12 @@ public class ExponClient {
     }
 
     public <T extends ExponResponse> T call(ExponRequest req, Class<T> clz) {
-        ApiResult ret = call(req);
+        String taskId = Platform.getUuid();
+        errorIfNotConfigured();
+        logger.debug(String.format("call request[%s]: %s", taskId, gson.toJson(req)));
+        ApiResult ret = new Api(req).call();
+        logger.debug(String.format("request[%s] result: %s", taskId, gson.toJson(ret)));
+
         if (ret.error != null) {
             ExponResponse rsp = new ExponResponse();
             rsp.retCode = ret.error.retCode;
@@ -105,9 +113,18 @@ public class ExponClient {
         return ret.getResult(clz);
     }
 
+    public void call(ExponRequest req, InternalCompletion completion) {
+        String taskId = Platform.getUuid();
+        errorIfNotConfigured();
+        logger.debug(String.format("async call request[%s]: %s", taskId, gson.toJson(req)));
+        new Api(req).call(completion);
+    }
+
     class Api {
         ExponRequest action;
         ExponRestRequest restInfo;
+
+        InternalCompletion completion;
 
         Api(ExponRequest action) {
             this.action = action;
@@ -174,12 +191,25 @@ public class ExponClient {
                         }
                     }
 
-                    if (response.code() == 200 || response.code() == 204) {
-                        return writeApiResult(response);
-                    } else if (response.code() == 202) {
-                        return pollResult(response);
-                    } else {
+                    if (response.code() != 200 && response.code() != 204) {
                         throw new ExponApiException(String.format("[Internal Error] the server returns an unknown status code[%s]", response.code()));
+                    }
+
+                    ApiResult res = writeApiResult(response);
+                    if (res.error != null) {
+                        if (completion != null) {
+                            completion.complete(res);
+                        }
+                        return res;
+                    }
+
+                    boolean async = !restInfo.sync() && restInfo.method() != HttpMethod.GET;
+                    Map rsp = res.getResult(LinkedHashMap.class);
+                    Object taskId = rsp.getOrDefault("task_id", null);
+                    if (async && taskId != null) {
+                        return pollResult(taskId.toString());
+                    } else {
+                        return res;
                     }
                 }
             } catch (IOException e) {
@@ -187,8 +217,13 @@ public class ExponClient {
             }
         }
 
-        private ApiResult pollResult(Response response) {
-            throw new ExponApiException("not supported yet");
+        private ApiResult pollResult(String taskId) {
+            if (this.completion == null) {
+                return syncPollResult(taskId);
+            } else {
+                asyncPollResult(taskId);
+                return null;
+            }
         }
 
         private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) throws Exception {
@@ -293,44 +328,29 @@ public class ExponClient {
             return err;
         }
 
-        private ApiResult syncPollResult(String url) {
+        private ApiResult syncPollResult(String taskId) {
             long current = System.currentTimeMillis();
             long timeout = this.getTimeout();
             long expiredTime = current + timeout;
             long interval = this.getInterval();
 
-            Object sessionId = action.getParameterValue(Constants.SESSION_ID);
-
+            ApiResult ret = new ApiResult();
+            ExponResponse rsp = new ExponResponse();
             while (current < expiredTime) {
-                Request.Builder builder = new Request.Builder()
-                        .url(url)
-                        .addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.BEARER, sessionId))
-                        .get();
-
-                Request req = builder.build();
+                ExponTask trsp = getTaskStatus(taskId);
+                if (TaskStatus.SUCCESS.name().equals(trsp.getStatus()) || TaskStatus.FAILED.name().equals(trsp.getStatus())) {
+                    rsp.setRetCode(trsp.getRetCode());
+                    rsp.setMessage(trsp.getRetMsg());
+                    ret.setResultString(gson.toJson(rsp));
+                    return ret;
+                }
 
                 try {
-                    try (Response response = http.newCall(req).execute()) {
-                        if (response.code() != 200 && response.code() != 503 && response.code() != 202) {
-                            return httpError(response.code(), response.body().string());
-                        }
-
-                        // 200 means the task has been completed
-                        // otherwise a 202 returned means it is still
-                        // in processing
-                        if (response.code() == 200 || response.code() == 503) {
-                            return writeApiResult(response);
-                        }
-
-                        TimeUnit.MILLISECONDS.sleep(interval);
-                        current += interval;
-                    }
+                    TimeUnit.MILLISECONDS.sleep(interval);
                 } catch (InterruptedException e) {
-                    //ignore
-                } catch (IOException e) {
-                    Thread.currentThread().interrupt();
-                    throw new ExponApiException(e);
+                    // ignore
                 }
+                current += interval;
             }
 
             ApiResult res = new ApiResult();
@@ -342,13 +362,106 @@ public class ExponClient {
             return res;
         }
 
+        private void asyncPollResult(final String taskId) {
+            final long current = System.currentTimeMillis();
+            final long timeout = this.getTimeout();
+            final long expiredTime = current + timeout;
+            final long i = this.getInterval();
+
+            final Timer timer = new Timer();
+
+            timer.schedule(new TimerTask() {
+                long count = current;
+                final long interval = i;
+
+                private void done(ApiResult res) {
+                    completion.complete(res);
+                    timer.cancel();
+                }
+
+                @Override
+                public void run() {
+                    try {
+                        ExponTask trsp = getTaskStatus(taskId);
+                        if (TaskStatus.SUCCESS.name().equals(trsp.getStatus()) || TaskStatus.FAILED.name().equals(trsp.getStatus())) {
+
+                            ApiResult ret = new ApiResult();
+                            ExponResponse rsp = new ExponResponse();
+
+                            rsp.setRetCode(trsp.getRetCode());
+                            rsp.setMessage(trsp.getRetMsg());
+                            ret.setResultString(gson.toJson(rsp));
+                            done(ret);
+                            return;
+                        }
+
+                        count += interval;
+                        if (count >= expiredTime) {
+                            ApiResult res = new ApiResult();
+                            res.error = errorCode(
+                                    Constants.POLLING_TIMEOUT_ERROR,
+                                    String.format("polling result of api[%s] timeout after %s ms", action.getClass().getSimpleName(), timeout)
+                            );
+
+                            done(res);
+                        }
+                    } catch (Throwable e) {
+                        ApiResult res = new ApiResult();
+                        res.error = errorCode(
+                                Constants.INTERNAL_ERROR,
+                                "an internal error happened: " + e.getMessage()
+                        );
+
+                        done(res);
+                    }
+                }
+            }, 0, i);
+        }
+
+        private ExponTask getTaskStatus(String taskId) {
+            if (NumberUtils.isNumber(taskId)) {
+                GetVolumeTaskProgressResponse rsp = getVolumeTaskProgress(Float.valueOf(taskId).intValue());
+                if (rsp.isSuccess()) {
+                    return ExponTask.valueOf(rsp.getTask());
+                }
+
+                throw new ExponApiException(String.format("failed to get task status, %s", rsp.getMessage()));
+
+            } else {
+                GetTaskStatusResponse rsp = getTaskDetail(taskId);
+                if (rsp.isSuccess()) {
+                    return ExponTask.valueOf(rsp);
+                }
+
+                throw new ExponApiException(String.format("failed to get task status, %s", rsp.getMessage()));
+            }
+        }
+
+        private GetTaskStatusResponse getTaskDetail(String taskId) {
+            GetTaskStatusRequest req = new GetTaskStatusRequest();
+            req.setId(taskId);
+            req.setSessionId(this.action.sessionId);
+            return ExponClient.this.call(req, GetTaskStatusResponse.class);
+        }
+
+        private GetVolumeTaskProgressResponse getVolumeTaskProgress(int taskId) {
+            GetVolumeTaskProgressRequest req = new GetVolumeTaskProgressRequest();
+            req.setTaskId(taskId);
+            req.setSessionId(this.action.sessionId);
+            return ExponClient.this.call(req, GetVolumeTaskProgressResponse.class);
+        }
+
         private ApiResult writeApiResult(Response response) throws IOException {
             ApiResult res = new ApiResult();
 
             if (response.code() == 200) {
-                res.setResultString(response.body().string());
-            } else if (response.code() == 503) {
-                res = gson.fromJson(response.body().string(), ApiResult.class);
+                String body = response.body().string();
+                ExponResponse rsp = gson.fromJson(body, ExponResponse.class);
+                if (rsp.isSuccess()) {
+                    res.setResultString(body);
+                } else {
+                    res.error = errorCode(rsp.retCode, StringEscapeUtils.unescapeJava(rsp.message));
+                }
             } else {
                 throw new ExponApiException(String.format("unknown status code: %s", response.code()));
             }
@@ -379,6 +492,11 @@ public class ExponClient {
             return doCall();
         }
 
+        void call(InternalCompletion completion) {
+            this.completion = completion;
+            doCall();
+        }
+
         private long getTimeout(){
             return action.timeout == ACTION_DEFAULT_TIMEOUT ? config.defaultPollingTimeout: action.timeout;
         }
@@ -392,14 +510,5 @@ public class ExponClient {
         if (config == null) {
             throw new RuntimeException("setConfig() must be called before any methods");
         }
-    }
-
-    public ApiResult call(ExponRequest action) {
-        String taskId = Platform.getUuid();
-        errorIfNotConfigured();
-        logger.debug(String.format("call request[%s]: %s", taskId, gson.toJson(action)));
-        ApiResult ret = new Api(action).call();
-        logger.debug(String.format("request[%s] result: %s", taskId, gson.toJson(ret)));
-        return ret;
     }
 }

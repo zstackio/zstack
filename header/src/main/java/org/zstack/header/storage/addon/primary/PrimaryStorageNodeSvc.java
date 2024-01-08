@@ -23,5 +23,7 @@ public interface PrimaryStorageNodeSvc {
 
     void deactivateHeartbeatVolume(HostInventory h, Completion comp);
 
+    HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h);
+
     String getIdentity();
 }

@@ -1,6 +1,7 @@
 package org.zstack.expon.sdk;
 
-import java.sql.Timestamp;
+import org.zstack.expon.sdk.volume.VolumeTask;
+
 import java.util.List;
 
 public class ExponTask {
@@ -9,11 +10,12 @@ public class ExponTask {
     private String name;
     private String description;
     private String operand;
-    private Timestamp beginTime;
-    private Timestamp endTime;
-    private int status;
+    private long beginTime;
+    private long endTime;
+    private String status;
     private int progress;
-    private int ret_code;
+    private String retCode;
+    private String retMsg;
     private List<String> steps;
     private int curStep;
     private boolean processing;
@@ -58,30 +60,6 @@ public class ExponTask {
         this.operand = operand;
     }
 
-    public Timestamp getBeginTime() {
-        return beginTime;
-    }
-
-    public void setBeginTime(Timestamp beginTime) {
-        this.beginTime = beginTime;
-    }
-
-    public Timestamp getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(Timestamp endTime) {
-        this.endTime = endTime;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
     public int getProgress() {
         return progress;
     }
@@ -90,13 +68,7 @@ public class ExponTask {
         this.progress = progress;
     }
 
-    public int getRet_code() {
-        return ret_code;
-    }
 
-    public void setRet_code(int ret_code) {
-        this.ret_code = ret_code;
-    }
 
     public List<String> getSteps() {
         return steps;
@@ -120,5 +92,90 @@ public class ExponTask {
 
     public void setProcessing(boolean processing) {
         this.processing = processing;
+    }
+
+    public String getRetCode() {
+        return retCode;
+    }
+
+    public void setRetCode(String retCode) {
+        this.retCode = retCode;
+    }
+
+
+    public String getRetMsg() {
+        return retMsg;
+    }
+
+    public void setRetMsg(String retMsg) {
+        this.retMsg = retMsg;
+    }
+
+    public long getBeginTime() {
+        return beginTime;
+    }
+
+    public void setBeginTime(long beginTime) {
+        this.beginTime = beginTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(long endTime) {
+        this.endTime = endTime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public static ExponTask valueOf(GetTaskStatusResponse rsp) {
+        ExponTask task = new ExponTask();
+        task.setId(rsp.getId());
+        task.setTaskId(rsp.getTaskId());
+        task.setName(rsp.getName());
+        task.setDescription(rsp.getDescription());
+        task.setOperand(rsp.getOperand());
+        task.setBeginTime(rsp.getBeginTime());
+        task.setEndTime(rsp.getEndTime());
+        task.setStatus(rsp.getStatus());
+        task.setProgress(rsp.getProgress());
+        task.setRetCode(rsp.getRetCode());
+        task.setRetMsg(rsp.getRetMsg());
+        task.setCurStep(rsp.getCurStep());
+        return task;
+    }
+
+    public static ExponTask valueOf(VolumeTask volumeTask) {
+        ExponTask task = new ExponTask();
+        task.setName(volumeTask.getVolName());
+        task.setProgress(volumeTask.getProgress());
+        task.setRetCode(Integer.toString(volumeTask.getCode()));
+        task.setRetMsg(volumeTask.getMsg());
+
+        switch (volumeTask.getState()) {
+            case "TASK_COMPLETE":
+                task.setStatus(TaskStatus.SUCCESS.toString());
+                break;
+            case "TASK_FAILED":
+                task.setStatus(TaskStatus.FAILED.toString());
+                break;
+            case "TASK_TORUN":
+            case "TASK_RUNNING":
+                task.setStatus(TaskStatus.RUNNING.toString());
+                break;
+            default:
+                task.setStatus(TaskStatus.FAILED.toString());
+                task.setRetMsg("Unknown task state: " + volumeTask.getState());
+                break;
+        }
+        return task;
+
     }
 }

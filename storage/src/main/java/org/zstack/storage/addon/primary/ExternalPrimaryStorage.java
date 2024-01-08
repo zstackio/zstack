@@ -172,8 +172,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-
-    // TODO full clone
     protected void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
         CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
         String snapPath = msg.getSnapshot().getPrimaryStorageInstallPath();
@@ -182,12 +180,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         spec.setUuid(msg.getVolumeUuid());
         spec.setSize(msg.getSnapshot().getSize());
         spec.setName(buildVolumeName(msg.getVolumeUuid()));
-        controller.cloneVolume(snapPath, spec, new ReturnValueCompletion<VolumeStats>(msg) {
+        ReturnValueCompletion<VolumeStats> completion = new ReturnValueCompletion<VolumeStats>(msg) {
             @Override
             public void success(VolumeStats stats) {
                 reply.setActualSize(stats.getActualSize());
                 reply.setSize(stats.getSize());
                 reply.setInstallPath(stats.getInstallPath());
+                // FIXME: bypass the incremental flag for expon
                 // reply.setIncremental(true);
                 bus.reply(msg, reply);
             }
@@ -197,7 +196,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
-        });
+        };
+
+        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE::isMatch)) {
+            controller.cloneVolume(snapPath, spec, completion);
+        } else {
+            controller.copyVolume(snapPath, spec, completion);
+        }
     }
 
     @Override
