@@ -203,7 +203,7 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
         if (lastRecordDate == null) {
             return new ArrayList<>();
         }
-        if (lastRecordDate < now) {
+        if (lastRecordDate < now && !percents.isEmpty()) {
             percents.remove(0);
         }
 
