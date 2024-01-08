@@ -12,6 +12,15 @@ public class ExportImageFromBackupStorageMsg extends NeedReplyMessage implements
     private String exportFormat;
     private Long requiredSize;
     private String imageName;
+    private RemoteTargetProtocol targetProtocol = RemoteTargetProtocol.HTTP;
+
+    public RemoteTargetProtocol getTargetProtocol() {
+        return targetProtocol;
+    }
+
+    public void setTargetProtocol(RemoteTargetProtocol targetProtocol) {
+        this.targetProtocol = targetProtocol;
+    }
 
     @Override
     public String getBackupStorageUuid() {
