@@ -724,7 +724,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
             public String getSyncSignature() {
                 if (msg instanceof VolumeTemplateOverlayMsg) {
                     if (PrimaryStorageGlobalConfig.UNDO_TEMP_SNAPSHOT.value(Boolean.class) &&
-                            !msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat())) {
+                            !msg.getMessage().hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat())) {
                         return syncThreadId;
                     }
 
