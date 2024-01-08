@@ -16,6 +16,6 @@ public class LocalStorageHostUsageReport extends
 
     @Override
     public void managementNodeReady() {
-        start();
+        //start();
     }
 }
