@@ -19,7 +19,6 @@ import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.core.upgrade.AgentVersionVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -588,23 +587,7 @@ public class VirtualRouter extends ApplianceVmBase {
             }
         });
     }
-
-    private boolean skipConnectVirtualRouter() {
-        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
-            if (agentVersionVO == null) {
-                return true;
-            }
-
-            if (!agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
-                return true;
-            }
-            return false;
-        }
-
-        return false;
-    }
-
+    
     private void handle(final ReconnectVirtualRouterVmMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -616,7 +599,7 @@ public class VirtualRouter extends ApplianceVmBase {
             public void run(final SyncTaskChain chain) {
                 final ReconnectVirtualRouterVmReply reply = new ReconnectVirtualRouterVmReply();
 
-                if (skipConnectVirtualRouter()) {
+                if (upgradeChecker.skipConnectAgent(self.getUuid())) {
                     bus.reply(msg, reply);
                     chain.next();
                     return;
@@ -661,19 +644,6 @@ public class VirtualRouter extends ApplianceVmBase {
         return vrMgr.buildUrl(mgmtIp, path);
     }
 
-    protected boolean checkVirtualRouterAgentChanges(String commandName){
-        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            return false;
-        }
-
-        AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
-        if (agentVersionVO != null && agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
-            return false;
-        }
-
-        return upgradeChecker.checkAgentHttpParamChanges(commandName);
-    }
-
     private void handle(final VirtualRouterAsyncHttpCallMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -685,7 +655,7 @@ public class VirtualRouter extends ApplianceVmBase {
             public void run(final SyncTaskChain chain) {
                 refreshVO();
 
-                if(checkVirtualRouterAgentChanges(msg.getCommandClassName())){
+                if (upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName())) {
                     throw new OperationFailureException(operr("This operation is not allowed on virtualRoute[uuid:%s] during grayscale upgrade!", self.getUuid()));
                 }
 
