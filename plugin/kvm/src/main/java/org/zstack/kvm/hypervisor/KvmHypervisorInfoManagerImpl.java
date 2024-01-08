@@ -3,13 +3,20 @@ package org.zstack.kvm.hypervisor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
+import org.zstack.header.host.GetVirtualizerInfoMsg;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.vm.VmCanonicalEvents;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.hypervisor.datatype.*;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
@@ -36,6 +43,10 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     private DatabaseFacade db;
     @Autowired
     private HypervisorMetadataCollector collector;
+    @Autowired
+    private EventFacade events;
+    @Autowired
+    private CloudBus bus;
 
     @Override
     public void save(GetVirtualizerInfoRsp rsp) {
@@ -219,6 +230,33 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         }
     }
 
+    private void registerRefreshVmHypervisorHooks() {
+        events.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_REBOOT, new EventCallback<Object>() {
+            @Override
+            protected void run(Map<String, String> tokens, Object data) {
+                onVmReboot(data.toString());
+            }
+        });
+    }
+
+    private void onVmReboot(String vmUuid) {
+        final String hostUuid = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .eq(VmInstanceVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                .select(VmInstanceVO_.hostUuid)
+                .findValue();
+        if (hostUuid == null) {
+            // This is not a KVM VM (maybe bare-metal)
+            return;
+        }
+
+        final GetVirtualizerInfoMsg message = new GetVirtualizerInfoMsg();
+        message.setHostUuid(hostUuid);
+        message.setVmInstanceUuids(Collections.singletonList(vmUuid));
+        bus.makeTargetServiceIdByResourceUuid(message, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(message); // no need to reply
+    }
+
     private boolean saveMetadataList(List<HypervisorMetadataDefinition> definitions) {
         List<HostOsCategoryVO> categoryVOS = definitions.stream()
                 .map(this::mapToHostOsCategory)
@@ -371,6 +409,7 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     @Override
     public boolean start() {
         refreshMetadata();
+        registerRefreshVmHypervisorHooks();
         return true;
     }
 
