@@ -229,6 +229,11 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.uuid = vo.getUuid();
         this.hostUuid = vo.getHostUuid();
         this.bondingUuid = vo.getBondingUuid();
+        this.interfaceModel = vo.getInterfaceModel();
+        this.vendorId = vo.getVendorId();
+        this.deviceId = vo.getDeviceId();
+        this.subvendorId = vo.getSubvendorId();
+        this.subdeviceId = vo.getSubdeviceId();
         this.interfaceName = vo.getInterfaceName();
         this.interfaceType = vo.getInterfaceType();
         this.mac = vo.getMac();
