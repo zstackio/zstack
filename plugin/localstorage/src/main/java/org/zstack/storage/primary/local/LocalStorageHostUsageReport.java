@@ -16,6 +16,8 @@ public class LocalStorageHostUsageReport extends
 
     @Override
     public void managementNodeReady() {
-        start();
+        // UI only show localStoragePrimaryStorage Capacity Usage, don't show the localHost Capacity Usage.
+        // therefore, do not need to collect and forecast localHost Capacity Usage.
+        //start();
     }
 }
