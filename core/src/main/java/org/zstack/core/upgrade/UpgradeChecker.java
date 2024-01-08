@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 
 public class UpgradeChecker implements Component {
     private static final CLogger logger = Utils.getLogger(UpgradeChecker.class);
-    
+
     @Autowired
     private DatabaseFacade dbf;
 
@@ -44,7 +44,7 @@ public class UpgradeChecker implements Component {
     public boolean stop() {
         return true;
     }
-    
+
     public void initGrayScaleConfig() {
         File oldGrayUpgradeFile = PathUtil.findFileOnClassPath("grayUpgrade/old_grayUpgrade.json", true);
         File grayUpgradeFile = PathUtil.findFileOnClassPath("grayUpgrade/grayUpgrade.json", true);
@@ -71,7 +71,16 @@ public class UpgradeChecker implements Component {
                 .forEach(grayScaleConfigChangeSet::add);
     }
 
-    public Boolean checkAgentHttpParamChanges(String commandName) {
+    public Boolean checkAgentHttpParamChanges(String agentUuid, String commandName) {
+        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            return false;
+        }
+
+        AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
+        if (agentVersionVO != null && agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
+            return false;
+        }
+        
         if (grayScaleConfigChangeSet.contains(commandName)) {
             return true;
         }
@@ -99,9 +108,9 @@ public class UpgradeChecker implements Component {
         if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
             return;
         }
-        
+
         AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
-        if(agentVersionVO == null){
+        if (agentVersionVO == null) {
             agentVersionVO = new AgentVersionVO();
             agentVersionVO.setUuid(agentUuid);
             agentVersionVO.setAgentType(agentType);
@@ -114,7 +123,7 @@ public class UpgradeChecker implements Component {
         if (currentVersion == null) {
             return;
         }
-        
+
         if (Objects.equals(agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion())) {
             return;
         }
@@ -123,5 +132,20 @@ public class UpgradeChecker implements Component {
             agentVersionVO.setCurrentVersion(currentVersion);
             dbf.update(agentVersionVO);
         }
+    }
+
+    public boolean skipConnectAgent(String agentUuid) {
+        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            return false;
+        }
+        
+        AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
+        if (agentVersionVO == null) {
+            return true;
+        }
+        if (!agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
+            return true;
+        }
+        return false;
     }
 }
