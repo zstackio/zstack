@@ -31,14 +31,12 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
-import org.zstack.core.upgrade.AgentVersionVO;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterInventory;
@@ -483,7 +481,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         void call(String resourceUuid, ReturnValueCompletion<T> completion) {
-            if(checkHostKvmAgentChanges(commandName)){
+            if (upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), commandName)) {
                 completion.fail(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
                 return;
             }
@@ -566,19 +564,6 @@ public class KVMHost extends HostBase implements Host {
                         String.format(",\"%s\":%s}", KVMConstant.KVM_HOST_ADDONS, JSONObjectUtil.toJsonString(kvmHostAddon)));
             }
         }
-    }
-
-    private boolean checkHostKvmAgentChanges(String commandName){
-        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            return false;
-        }
-
-        AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
-        if (agentVersionVO != null && agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
-            return false;
-        }
-
-        return upgradeChecker.checkAgentHttpParamChanges(commandName);
     }
     
     @Override
@@ -2372,7 +2357,7 @@ public class KVMHost extends HostBase implements Host {
             checkStatus();
         }
         
-        if(checkHostKvmAgentChanges(msg.getCommandClassName())){
+        if (upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName())) {
             throw new OperationFailureException(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
         }
         
