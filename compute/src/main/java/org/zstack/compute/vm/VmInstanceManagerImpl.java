@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
@@ -616,7 +617,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 .filter(vo -> l3UuidListOfCurrentAccount.contains(vo.getUuid()))
                 .collect(Collectors.toList()));
     }
-    
+
     private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
         DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
 
@@ -1100,7 +1101,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
             extensionPoint.preCreateVmInstance(msg);
         });
 
-        final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
         final ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
@@ -1112,7 +1112,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setClusterUuid(msg.getClusterUuid());
         vo.setDescription(msg.getDescription());
         vo.setImageUuid(msg.getImageUuid());
-        vo.setInstanceOfferingUuid(instanceOfferingUuid);
+        vo.setInstanceOfferingUuid(msg.getInstanceOfferingUuid());
         vo.setState(VmInstanceState.Created);
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
@@ -1153,27 +1153,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     otherDisks = msg.getDiskAOs().stream().filter(diskAO -> !diskAO.isBoot()).collect(Collectors.toList());
                     setDiskAOsName(otherDisks);
                     attachOtherDisk = !otherDisks.isEmpty();
-                }
-
-                if (VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class)) {
-                    flow(new Flow() {
-                        String __name__ = String.format("check-unique-name-for-vm-%s", finalVo.getUuid());
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, finalVo.getName()).notEq(VmInstanceVO_.uuid, finalVo.getUuid()).isExists();
-                            if (exists) {
-                                trigger.fail(operr("could not create vm, a vm with the name [%s] already exists", msg.getName()));
-                                return;
-                            }
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void rollback(FlowRollback trigger, Map data) {
-                            trigger.rollback();
-                        }
-                    });
                 }
 
                 flow(new Flow() {
@@ -1227,30 +1206,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "instantiate-just-create-vmInstance";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return VmCreationStrategy.JustCreate != VmCreationStrategy.valueOf(msg.getStrategy());
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        VmInstanceInventory inv = VmInstanceInventory.valueOf(finalVo);
-                        createVmButNotStart(msg, inv);
-                        instantiateVm = inv;
-                        trigger.next();
-                    }
-                });
-
                 flow(new Flow() {
                     String __name__ = "instantiate-new-created-vmInstance";
 
-                    @Override
-                    public boolean skip(Map data) {
-                        return VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy());
-                    }
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
@@ -1265,16 +1223,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         if (msg.getRootDiskOfferingUuid() != null) {
                             smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
                         } else if (msg.getRootDiskSize() > 0) {
-                            DiskOfferingVO dvo = new DiskOfferingVO();
-                            dvo.setUuid(Platform.getUuid());
-                            dvo.setAccountUuid(msg.getAccountUuid());
-                            dvo.setDiskSize(msg.getRootDiskSize());
-                            dvo.setName("for-create-vm-" + finalVo.getUuid());
-                            dvo.setType("TemporaryDiskOfferingType");
-                            dvo.setState(DiskOfferingState.Enabled);
-                            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+                            DiskOfferingVO dvo = getDiskOfferingVO();
                             dbf.persist(dvo);
                             smsg.setRootDiskOfferingUuid(dvo.getUuid());
+                            temporaryDiskOfferingUuids.add(dvo.getUuid());
                         }
 
                         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
@@ -1295,10 +1247,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         bus.send(smsg, new CloudBusCallBack(smsg) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (msg.getRootDiskOfferingUuid() == null && smsg.getRootDiskOfferingUuid() != null) {
-                                    dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
-                                }
-
                                 if (!temporaryDiskOfferingUuids.isEmpty()) {
                                     dbf.removeByPrimaryKeys(temporaryDiskOfferingUuids, DiskOfferingVO.class);
                                 }
@@ -1313,6 +1261,19 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                 trigger.fail(reply.getError());
                             }
                         });
+                    }
+
+                    @NotNull
+                    private DiskOfferingVO getDiskOfferingVO() {
+                        DiskOfferingVO dvo = new DiskOfferingVO();
+                        dvo.setUuid(Platform.getUuid());
+                        dvo.setAccountUuid(msg.getAccountUuid());
+                        dvo.setDiskSize(msg.getRootDiskSize());
+                        dvo.setName("for-create-vm-" + finalVo.getUuid());
+                        dvo.setType("TemporaryDiskOfferingType");
+                        dvo.setState(DiskOfferingState.Enabled);
+                        dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+                        return dvo;
                     }
 
                     @Override
@@ -1415,11 +1376,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         msg.getDataDiskSizes().forEach(size -> diskOfferingUuids.add(sizeDiskOfferingMap.get(size)));
         dbf.persistCollection(diskOfferingVos);
         return diskOfferingUuids;
-    }
-
-    private void createVmButNotStart(CreateVmInstanceMsg msg, VmInstanceInventory inv) {
-        InstantiateVmFromNewCreatedStruct struct = InstantiateVmFromNewCreatedStruct.fromMessage(msg);
-        new JsonLabel().create(InstantiateVmFromNewCreatedStruct.makeLabelKey(inv.getUuid()), struct, inv.getUuid());
     }
 
     private void handle(final CreateVmInstanceMsg msg) {
