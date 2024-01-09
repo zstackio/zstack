@@ -36,6 +36,8 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessage;
+import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
+import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
@@ -1360,6 +1362,25 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     @Override
     public void afterReimageVmInstance(VolumeInventory inventory) {
         removeVolumeFromOldSnapshotTreeInDb(inventory.getUuid());
+    }
+
+    @Override
+    public void innerOverwriteVolume(VolumeInventory originVolume, VolumeInventory transientVolume, VolumeDeletionPolicyManager.VolumeDeletionPolicy originVolumeDeletionPolicy) {
+        if (originVolumeDeletionPolicy != VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct) {
+            return;
+        }
+        boolean hasDirectBackingRef = Q.New(VolumeSnapshotReferenceVO.class)
+                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, originVolume.getUuid())
+                .eq(VolumeSnapshotReferenceVO_.referenceType, VolumeVO.class.getSimpleName())
+                .eq(VolumeSnapshotReferenceVO_.referenceInstallUrl, originVolume.getInstallPath())
+                .eq(VolumeSnapshotReferenceVO_.referenceUuid, originVolume.getUuid())
+                .isExists();
+
+        if (hasDirectBackingRef) {
+            SQL.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, originVolume.getUuid())
+                    .set(VolumeSnapshotReferenceVO_.referenceVolumeUuid, transientVolume.getUuid())
+                    .update();
+        }
     }
 
     @Override
