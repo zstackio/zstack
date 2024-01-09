@@ -25,6 +25,9 @@ public class AccountSync implements BeforeCreateAccountExtensionPoint, BeforeUpd
     @Override
     public void beforeCreateAccount(AccountInventory account)  {
         SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
+        if (sdn == null) {
+            return;
+        }
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
         SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
         sugonSdnController.createAccount(account);
@@ -33,6 +36,9 @@ public class AccountSync implements BeforeCreateAccountExtensionPoint, BeforeUpd
     @Override
     public void beforeDeleteAccount(AccountInventory account) {
         SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
+        if (sdn == null) {
+            return;
+        }
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
         SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
         sugonSdnController.deleteAccount(account);
@@ -41,6 +47,9 @@ public class AccountSync implements BeforeCreateAccountExtensionPoint, BeforeUpd
     @Override
     public void beforeUpdateAccount(AccountInventory account)  {
         SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
+        if (sdn == null) {
+            return;
+        }
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
         SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
         sugonSdnController.updateAccount(account);
