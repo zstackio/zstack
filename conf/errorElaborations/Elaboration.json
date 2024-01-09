@@ -967,7 +967,14 @@
     "message_cn": "减去保留容量 [%1$s] 后，主存储 [%2$s] 没有所需的容量大小 [%3$s bytes]，可能是主存储使用阈值设置较低。",
     "message_en": "primary storage [%1$s] don't have required size [%2$s] after subtracting reserved capacity. Possible reason: threshold of the primary storage usage is relatively low."
   },
-
+  {
+    "category": "PS",
+    "code": "1021",
+    "method": "regex",
+    "regex": "Cannot shrink .* volume\\[uuid:.*]'s size",
+    "message_cn": "不能缩小云盘 [uuid：%2$s] 的大小。",
+    "message_en": "Could not shrink volume [uuid: %2$s]'s size."
+  },
   {
     "category": "QUOTA",
     "code": "1000",
@@ -1015,14 +1022,6 @@
     "regex": ".*disk quota exceeded.*",
     "message_cn": "超出容量限制。",
     "message_en": "Disk quota exceeded."
-  },
-  {
-    "category": "SHAREDBLOCK",
-    "code": "1000",
-    "method": "regex",
-    "regex": "Cannot shrink .* volume\\[uuid:.*]'s size",
-    "message_cn": "不能缩小卷 [uuid：%2$s] 的大小。",
-    "message_en": "Could not shrink volume [uuid: %2$s]'s size."
   },
   {
     "category": "SNS",
