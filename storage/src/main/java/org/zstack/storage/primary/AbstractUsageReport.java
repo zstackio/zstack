@@ -5,6 +5,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -20,9 +22,10 @@ import org.zstack.utils.logging.CLogger;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -38,11 +41,12 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
 
     private static final int MAX_CACHE_LENGTHS_BY_DAY = 366;
     private static final int START_FORECAST_BY_DAY = 15;
-    private static final long COLLECT_AND_FORECAST_INTERVAL = 1;
+
     private static final String HISTORICAL_USED_PHYSICAL_CAPACITIES_PATH = "/tmp/historicalUsedPhysicalCapacities";
     private static final String FORECAST_RESULTS_PATH = "/tmp/forecast";
     private static final String CAPACITY_FORECAST_BIN_FILENAME = "zs-forecast-capacity";
     private static final String CAPACITY_FORECAST_BIN_PATH = "/usr/local/bin/zs-forecast-capacity";
+    private Future<Void> usageReportThread;
 
     private static class HistoricalUsage {
         EvictingQueue<Long> historicalUsedPhysicalCapacities = EvictingQueue.create(MAX_CACHE_LENGTHS_BY_DAY);
@@ -188,15 +192,18 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
         }
     }
 
-    protected final Map<String, HistoricalUsage> historicalUsageMap = new HashMap<>();
+    protected final Map<String, HistoricalUsage> historicalUsageMap = new ConcurrentHashMap<>();
 
-    protected final Map<String, usedPhysicalCapacityForecasts> usedPhysicalCapacityForecastsMap = new HashMap<>();
+    protected final Map<String, usedPhysicalCapacityForecasts> usedPhysicalCapacityForecastsMap = new ConcurrentHashMap<>();
 
     public List<Double> getFutureForecastsInPercent(String resourceUuid) {
         if (!usedPhysicalCapacityForecastsMap.containsKey(resourceUuid)) {
             return new ArrayList<>();
         }
         List<Double> percents = usedPhysicalCapacityForecastsMap.get(resourceUuid).getFutureForecastsInPercent();
+        if (percents.isEmpty()) {
+            logger.debug(String.format("[%s]. the percents of resourceUuid[%s] is empty", this.getClass().getSimpleName(), resourceUuid));
+        }
 
         long now = Timestamp.valueOf(LocalDate.now().atStartOfDay()).getTime();
         Long lastRecordDate = getLastHistoricalUsageRecordDateForResource(resourceUuid);
@@ -262,7 +269,7 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
             usageReport.setUsedPhysicalCapacitiesHistory(new ArrayList<>(historicalUsageMap.get(resourceUuid).getHistoricalUsedPhysicalCapacities()));
             usageReport.setTotalPhysicalCapacitiesHistory(new ArrayList<>(historicalUsageMap.get(resourceUuid).getTotalPhysicalCapacities()));
             usageReport.setStartTime(new ArrayList<>(historicalUsageMap.get(resourceUuid).getRecordDates()).get(0));
-            usageReport.setInterval(COLLECT_AND_FORECAST_INTERVAL);
+            usageReport.setInterval(PrimaryStorageGlobalConfig.COLLECT_AND_FORECAST_INTERVAL.value(Long.class));
 
             map.put(resourceUuid, usageReport);
         });
@@ -365,10 +372,13 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
         historicalUsageLoader.setUsagesToPersist(usagesToPersist);
     }
 
-    private void startCollectAndForecast() {
-        logger.debug(String.format("[%s] starts with the interval %s days", this.getClass().getSimpleName(), COLLECT_AND_FORECAST_INTERVAL));
+    private synchronized void startCollectAndForecast() {
+        logger.debug(String.format("[%s] starts with the interval %s days", this.getClass().getSimpleName(), PrimaryStorageGlobalConfig.COLLECT_AND_FORECAST_INTERVAL.value(Long.class)));
 
-        thdf.submitPeriodicTask(new PeriodicTask() {
+        if (usageReportThread != null) {
+            usageReportThread.cancel(true);
+        }
+        usageReportThread = thdf.submitPeriodicTask(new PeriodicTask() {
             @Override
             public TimeUnit getTimeUnit() {
                 return TimeUnit.DAYS;
@@ -376,7 +386,7 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
 
             @Override
             public long getInterval() {
-                return COLLECT_AND_FORECAST_INTERVAL;
+                return PrimaryStorageGlobalConfig.COLLECT_AND_FORECAST_INTERVAL.value(Long.class);
             }
 
             @Override
@@ -407,42 +417,45 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
     }
 
     private boolean skipCollectUsage(String resourceUuid, LocalDate nowRecordDate) {
-        if (historicalUsageMap.containsKey(resourceUuid) &&
-                historicalUsageMap.get(resourceUuid).getRecordDates()
-                        .contains(Timestamp.valueOf(nowRecordDate.atStartOfDay()).getTime())) {
-            return true;
-        }
+        return historicalUsageMap.containsKey(resourceUuid) && historicalUsageMap.get(resourceUuid).getRecordDates()
+                .contains(Timestamp.valueOf(nowRecordDate.atStartOfDay()).getTime());
+    }
 
-        Map<String, Timestamp> historicalLastUsageRecordDateMap = getHistoricalLastUsageRecordDateMap();
+    private boolean usageRecordedNotInDatabase(String resourceUuid, LocalDate nowRecordDate, Map<String, Timestamp> historicalLastUsageRecordDateMap) {
         if (!historicalLastUsageRecordDateMap.containsKey(resourceUuid)) {
-            return false;
+            return true;
         }
 
         long nowRecordDateToEpochMilli = Timestamp.valueOf(nowRecordDate.atStartOfDay()).getTime();
         long lastUsageRecordDateMilli = historicalLastUsageRecordDateMap.get(resourceUuid).getTime();
-        return nowRecordDateToEpochMilli <= lastUsageRecordDateMilli;
+        return nowRecordDateToEpochMilli > lastUsageRecordDateMilli;
     }
 
     protected void collectUsage(LocalDate nowRecordDate) {
         List<T> usagesToPersist = new ArrayList<>();
         List<ResourceUsage> resourceUsages = getResourceUsages();
+        Map<String, Timestamp> historicalLastUsageRecordDateMap = getHistoricalLastUsageRecordDateMap();
         resourceUsages.forEach(usage -> {
+            logger.debug(String.format("[%s]. ResourceUuid[%s] start to collect usage, time=%s", this.getClass().getSimpleName(), usage.getResourceUuid(), nowRecordDate));
             if (skipCollectUsage(usage.getResourceUuid(), nowRecordDate)) {
                 return;
             }
 
-            T vo;
-            try {
-                vo = usageClass.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
+            if (usageRecordedNotInDatabase(usage.getResourceUuid(), nowRecordDate, historicalLastUsageRecordDateMap)) {
+                T vo;
+                try {
+                    vo = usageClass.newInstance();
+                } catch (InstantiationException | IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+                vo.setPrimaryStorageUuid(usage.getPrimaryStorageUuid());
+                vo.setResourceUuid(usage.getResourceUuid());
+                vo.setTotalPhysicalCapacity(usage.getTotalPhysicalCapacity());
+                vo.setUsedPhysicalCapacity(usage.getUsedPhysicalCapacity());
+                vo.setRecordDate(Timestamp.valueOf(nowRecordDate.atStartOfDay()));
+
+                usagesToPersist.add(vo);
             }
-            vo.setPrimaryStorageUuid(usage.getPrimaryStorageUuid());
-            vo.setResourceUuid(usage.getResourceUuid());
-            vo.setTotalPhysicalCapacity(usage.getTotalPhysicalCapacity());
-            vo.setUsedPhysicalCapacity(usage.getUsedPhysicalCapacity());
-            vo.setRecordDate(Timestamp.valueOf(nowRecordDate.atStartOfDay()));
-            usagesToPersist.add(vo);
 
             historicalUsageMap.computeIfAbsent(usage.getResourceUuid(), k -> new HistoricalUsage(usage.getResourceUuid()));
             historicalUsageMap.get(usage.getResourceUuid()).getHistoricalUsedPhysicalCapacities().add(usage.getUsedPhysicalCapacity());
@@ -460,8 +473,8 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
 
     protected void forecastUsage() {
         List<String> resourceUuids = getResourceUuids();
-
         resourceUuids.forEach(resourceUuid -> {
+            logger.debug(String.format("[%s]. resourceUuid[%s] start to forecast usage, time=%s", this.getClass().getSimpleName(), resourceUuid, LocalDate.now()));
             if (!historicalUsageMap.containsKey(resourceUuid)) {
                 return;
             }
@@ -570,6 +583,12 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
     protected void start() {
         loadHistoricalUsageFromDatabase();
 
+        PrimaryStorageGlobalConfig.COLLECT_AND_FORECAST_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startCollectAndForecast();
+            }
+        });
         startCollectAndForecast();
     }
 }

@@ -46,4 +46,7 @@ public class PrimaryStorageGlobalConfig {
     @BindResourceConfig({PrimaryStorageVO.class})
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "Whether undo temp snapshot after template uploaded")
     public static GlobalConfig UNDO_TEMP_SNAPSHOT = new GlobalConfig(CATEGORY, "undo.tempSnapshot");
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigDef(defaultValue = "1", type = Long.class)
+    public static GlobalConfig COLLECT_AND_FORECAST_INTERVAL = new GlobalConfig(CATEGORY, "collect.forecast.interval");
 }
