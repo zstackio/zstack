@@ -1420,9 +1420,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         struct.setVmInstance(getSelfInventory());
         struct.setOperation(operation);
         if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged
-                || operation == VmAbnormalLifeCycleOperation.VmRunningFromCrashedStateHostNotChanged) {
+                || operation == VmAbnormalLifeCycleOperation.VmRunningFromCrashedStateHostNotChanged
+                || operation == VmAbnormalLifeCycleOperation.VmRunningWithoutOriginalHost) {
             // the vm is detected on the host again. It's largely because the host disconnected before
             // and now reconnected
+            // or vm is running without host info update in db when VmRunningWithoutOriginalHost happened
             changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
