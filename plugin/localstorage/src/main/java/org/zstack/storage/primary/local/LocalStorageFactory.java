@@ -42,6 +42,7 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
@@ -74,7 +75,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         GetAttachableVolumeExtensionPoint, HostMaintenancePolicyExtensionPoint, AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint,
         RecoverDataVolumeExtensionPoint, RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
         HostAfterConnectedExtensionPoint, InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint,
-        PostMarkRootVolumeAsSnapshotExtension, AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint,
+        PostMarkRootVolumeAsSnapshotExtension, VolumeSnapshotCreationExtensionPoint, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint,
         CreateRecycleExtensionPoint, AfterInstantiateVolumeExtensionPoint, CreateDataVolumeExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
@@ -1232,36 +1233,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void afterTakeLiveSnapshotsOnVolumes(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmReply treply, Completion completion) {
-        if (treply != null && !treply.isSuccess()) {
-            completion.success();
-            return;
-        }
-
-        for (CreateVolumesSnapshotsJobStruct job : msg.getVolumeSnapshotJobs()) {
-            if (!isLocalStorage(job.getPrimaryStorageUuid())) {
-                continue;
-            }
-
-            LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
-            ref.setPrimaryStorageUuid(job.getPrimaryStorageUuid());
-            ref.setResourceType(VolumeSnapshotVO.class.getSimpleName());
-            VmInstanceVO vmInstanceVO = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getLockedVmInstanceUuids().get(0)).find();
-            ref.setHostUuid(vmInstanceVO.getHostUuid() != null ? vmInstanceVO.getHostUuid() : vmInstanceVO.getLastHostUuid());
-            ref.setCreateDate(job.getVolumeSnapshotStruct().getCurrent().getCreateDate());
-            ref.setLastOpDate(job.getVolumeSnapshotStruct().getCurrent().getLastOpDate());
-            ref.setResourceUuid(job.getVolumeSnapshotStruct().getCurrent().getUuid());
-            ref.setSize(treply == null ? 0L : treply.getSnapshotsResults().stream()
-                    .filter(r -> r.getVolumeUuid().equals(job.getVolumeUuid()))
-                    .findFirst()
-                    .map(TakeSnapshotsOnKvmResultStruct::getSize)
-                    .orElse(0L));
-            dbf.persistAndRefresh(ref);
-        }
-        completion.success();
-    }
-
-    @Override
     public void checkVmCapability(VmInstanceInventory inv, VmCapabilities capabilities) {
         if (capabilities.isSupportLiveMigration()) {
             // this function will check if vm on local
@@ -1367,5 +1338,50 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void afterCreateVolume(VolumeVO volume) {
 
+    }
+
+    @Override
+    public void afterVolumeLiveSnapshotGroupCreatedOnBackend(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmReply treply, Completion completion) {
+        if (treply != null && !treply.isSuccess()) {
+            completion.fail(treply.getError());
+            return;
+        }
+
+        for (CreateVolumesSnapshotsJobStruct job : msg.getVolumeSnapshotJobs()) {
+            if (!isLocalStorage(job.getPrimaryStorageUuid())) {
+                continue;
+            }
+
+            LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
+            ref.setPrimaryStorageUuid(job.getPrimaryStorageUuid());
+            ref.setResourceType(VolumeSnapshotVO.class.getSimpleName());
+            VmInstanceVO vmInstanceVO = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getLockedVmInstanceUuids().get(0)).find();
+            ref.setHostUuid(vmInstanceVO.getHostUuid() != null ? vmInstanceVO.getHostUuid() : vmInstanceVO.getLastHostUuid());
+            ref.setCreateDate(job.getVolumeSnapshotStruct().getCurrent().getCreateDate());
+            ref.setLastOpDate(job.getVolumeSnapshotStruct().getCurrent().getLastOpDate());
+            ref.setResourceUuid(job.getVolumeSnapshotStruct().getCurrent().getUuid());
+            ref.setSize(treply == null ? 0L : treply.getSnapshotsResults().stream()
+                    .filter(r -> r.getVolumeUuid().equals(job.getVolumeUuid()))
+                    .findFirst()
+                    .map(TakeSnapshotsOnKvmResultStruct::getSize)
+                    .orElse(0L));
+            dbf.persistAndRefresh(ref);
+        }
+        completion.success();
+    }
+
+    @Override
+    public void afterVolumeLiveSnapshotGroupCreationFailsOnBackend(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmReply treply) {
+
+    }
+
+    @Override
+    public void afterVolumeSnapshotGroupCreated(VolumeSnapshotGroupInventory snapshotGroup, ConsistentType consistentType, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void afterVolumeSnapshotCreated(VolumeSnapshotInventory snapshot, Completion completion) {
+        completion.success();
     }
 }

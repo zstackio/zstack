@@ -267,49 +267,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("revert-vm-%s-from-snapshot-group-%s", self.getVmInstanceUuid(), msg.getGroupUuid()));
         chain.getData().put(VolumeSnapshotGroupConstant.Parmas.SnapshotGroupUuid.toString(), self.getUuid());
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "revert-vm-devices-info-before-restore-VmInstance";
-
-            @Override
-            public boolean skip(Map data) {
-                return self.getVolumeSnapshotRefs().stream().filter(sp -> sp.getVolumeType().equals(VolumeType.Memory.toString())).collect(Collectors.toList()).isEmpty();
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                new While<>(pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class)).each((ext, compl) -> {
-                    List<VmInstanceDeviceAddressArchiveVO> archiveVmInfos = vidm.getAddressArchiveInfoFromArchiveForResourceUuid(getSelfInventory().getVmInstanceUuid(), getSelfInventory().getUuid(), ext.getArchiveBundleCanonicalName());
-                    List<Object> bundles = archiveVmInfos.stream().map(archiveVmInfo -> (Object) JSONObjectUtil.toObject(archiveVmInfo.getMetadata(), ext.getArchiveBundleClass())).collect(Collectors.toList());
-                    if (bundles.isEmpty()) {
-                        compl.addError(operr("no bundle found for type:%s", ext.getArchiveBundleCanonicalName()));
-                        compl.allDone();
-                        return;
-                    }
-                    ext.beforeRevertMemorySnapshotGroup(getSelfInventory(), bundles, new Completion(compl) {
-                        @Override
-                        public void success() {
-                            compl.done();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            compl.addError(errorCode);
-                            compl.allDone();
-                        }
-                    });
-                }).run(new WhileDoneCompletion(trigger) {
-                    @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        if (errorCodeList.getCauses().isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-                        trigger.fail(errorCodeList.getCauses().get(0));
-                    }
-                });
-            }
-        });
-
+        chain.getData().put(VolumeSnapshotGroupConstant.Parmas.SnapshotGroup.toString(), getSelfInventory());
         pluginRgty.getExtensionList(RevertVmFromSnapShotGroupExtension.class)
                 .stream()
                 .filter(RevertVmFromSnapShotGroupExtension::needRunExtension)

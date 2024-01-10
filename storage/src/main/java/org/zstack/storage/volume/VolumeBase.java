@@ -31,10 +31,8 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.*;
-import org.zstack.header.storage.backup.VolumeBackupOverlayMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
@@ -58,7 +56,6 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -2883,110 +2880,18 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     }
                 });
             }
-        }).then(new Flow() {
-            String __name__ = "create-memory-volume-if-with-memory";
+        });
 
-            VolumeInventory memoryVolume = null;
+        List<VolumeSnapshotCreationExtensionPoint> exts = pluginRgty.getExtensionList(VolumeSnapshotCreationExtensionPoint.class);
+        List<Flow> flows = exts
+                .stream()
+                .map(ext -> ext.beforeCreateVolumeSnapshotFlow(msg))
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        flows.forEach(chain::then);
 
-            @Override
-            public boolean skip(Map data) {
-                return msg.getConsistentType() != ConsistentType.Application || Q.New(VolumeVO.class)
-                        .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstance().getUuid())
-                        .eq(VolumeVO_.type, VolumeType.Memory)
-                        .isExists();
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                CreateVolumeMsg cmsg = new CreateVolumeMsg();
-                cmsg.setAccountUuid(msg.getSession().getAccountUuid());
-                cmsg.setSize(0);
-                cmsg.setVmInstanceUuid(msg.getVmInstance().getUuid());
-                cmsg.setPrimaryStorageUuid(msg.getVmInstance().getRootVolume().getPrimaryStorageUuid());
-                cmsg.setName(String.format("memory-volume-of-vm-%s", msg.getVmInstance().getUuid()));
-                cmsg.setVolumeType(VolumeType.Memory.toString());
-                cmsg.setFormat(msg.getVmInstance().getRootVolume().getFormat());
-
-                bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
-                bus.send(cmsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        CreateVolumeReply r = reply.castReply();
-                        memoryVolume = r.getInventory();
-                        trigger.next();
-                    }
-                });
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                if (memoryVolume == null) {
-                    trigger.rollback();
-                    return;
-                }
-
-                DeleteVolumeMsg dmsg = new DeleteVolumeMsg();
-                dmsg.setDetachBeforeDeleting(false);
-                dmsg.setUuid(memoryVolume.getUuid());
-                dmsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
-                bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeConstant.SERVICE_ID, memoryVolume.getUuid());
-                bus.send(dmsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if(!reply.isSuccess()) {
-                            logger.debug(String.format("failed to delete volume[uuid: %s]", memoryVolume.getUuid()));
-                        }
-                        trigger.rollback();
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "instantiate-memory-volume-if-with-memory";
-
-            VolumeVO volume;
-
-            @Override
-            public boolean skip(Map data) {
-                if (msg.getConsistentType() != ConsistentType.Application) {
-                    return true;
-                }
-
-                volume = Q.New(VolumeVO.class)
-                        .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstance().getUuid())
-                        .eq(VolumeVO_.type, VolumeType.Memory).find();
-                return volume == null || volume.getStatus().equals(VolumeStatus.Ready);
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                InstantiateMemoryVolumeMsg imsg = new InstantiateMemoryVolumeMsg();
-                imsg.setHostUuid(msg.getVmInstance().getHostUuid());
-                imsg.setPrimaryStorageUuid(msg.getVmInstance().getRootVolume().getPrimaryStorageUuid());
-                imsg.setVolumeUuid(volume.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(imsg, VolumeConstant.SERVICE_ID, imsg.getVolumeUuid());
-                bus.send(imsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        volume.setInstallPath(((InstantiateVolumeReply) reply).getVolume().getInstallPath());
-                        volume.setDeviceId(Integer.MAX_VALUE);
-                        volume.setStatus(VolumeStatus.Ready);
-                        dbf.updateAndRefresh(volume);
-
-                        trigger.next();
-                    }
-                });
-            }
-        }).then(new Flow() {
+        chain.then(new Flow() {
             String __name__ = "take-snapshots";
 
             @Override
@@ -3053,17 +2958,12 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 });
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "archive-vm-devices-info-for-memory-snapshot-group";
-
-            @Override
-            public boolean skip(Map data) {
-                return msg.getConsistentType() != ConsistentType.Application;
-            }
+            String __name__ = "after-volume-snapshot-group-created";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                new While<>(pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class)).each((ext, compl) -> {
-                    ext.afterCreateMemorySnapshotGroup(((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)), new Completion(compl) {
+                new While<>(pluginRgty.getExtensionList(VolumeSnapshotCreationExtensionPoint.class)).each((ext, compl) -> {
+                    ext.afterVolumeSnapshotGroupCreated(((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)), msg.getConsistentType(), new Completion(compl) {
                         @Override
                         public void success() {
                             compl.done();
@@ -3079,7 +2979,6 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (errorCodeList.getCauses().isEmpty()) {
-                            vidm.archiveCurrentDeviceAddress(msg.getVmInstance().getUuid(), ((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)).getUuid());
                             trigger.next();
                             return;
                         }
