@@ -1,6 +1,11 @@
 package org.zstack.rest;
 
-import okhttp3.*;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -16,7 +21,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusEventListener;
+import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.log.LogSafeGson;
@@ -32,16 +39,37 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIBatchRequest;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.message.Event;
+import org.zstack.header.message.JsonSchemaBuilder;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
-import org.zstack.header.rest.*;
+import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.DefaultSSLVerifier;
+import org.zstack.header.rest.RESTConstant;
+import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.rest.RestAPIExtensionPoint;
+import org.zstack.header.rest.RestAuthenticationBackend;
+import org.zstack.header.rest.RestAuthenticationParams;
+import org.zstack.header.rest.RestAuthenticationType;
+import org.zstack.header.rest.RestException;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.RestResponse;
+import org.zstack.header.rest.RestResponseWrapper;
 import org.zstack.rest.sdk.DocumentGenerator;
 import org.zstack.rest.sdk.SdkFile;
 import org.zstack.rest.sdk.SdkTemplate;
-import org.zstack.utils.*;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.FieldUtils;
+import org.zstack.utils.GroovyUtils;
+import org.zstack.utils.TypeUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -53,7 +81,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -62,7 +89,21 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -306,6 +347,25 @@ public class RestServer implements Component, CloudBusEventListener {
                 .addHeader(RestConstants.HEADER_JOB_UUID, d.apiMessage.getId())
                 .addHeader(RestConstants.HEADER_JOB_SUCCESS, String.valueOf(evt.isSuccess()));
 
+        if (d.apiMessage instanceof APIBatchRequest) {
+            if (evt.isSuccess()) {
+                APIBatchRequest.Result batchResult = ((APIBatchRequest) d.apiMessage).collectResult(d.apiMessage, evt);
+
+                RestConstants.Batch result;
+                if (batchResult.getSuccessCount() == 0) {
+                    result = RestConstants.Batch.FAIL;
+                } else if (batchResult.getSuccessCount() == batchResult.getTotalCount()) {
+                    result = RestConstants.Batch.SUCCESS;
+                } else {
+                    result = RestConstants.Batch.PARTIAL;
+                }
+
+                rb.addHeader(RestConstants.HEADER_JOB_BATCH, result.toString());
+            } else {
+                rb.addHeader(RestConstants.HEADER_JOB_BATCH, RestConstants.Batch.FAIL.toString());
+            }
+        }
+
         Request request = rb.build();
 
         new Retry<Void>() {
@@ -317,6 +377,10 @@ public class RestServer implements Component, CloudBusEventListener {
                 try {
                     if (requestLogger.isTraceEnabled()) {
                         StringBuilder sb = new StringBuilder(String.format("Call Web-Hook[%s] (to %s%s)", d.webHook, d.requestInfo.remoteHost, d.requestInfo.requestUrl));
+
+                        String headers = CloudBusGson.toJson(request.headers());
+                        sb.append(String.format(" Headers: %s,", headers));
+
                         String body = CloudBusGson.toJson(response);
                         sb.append(String.format(" Body: %s", body));
 

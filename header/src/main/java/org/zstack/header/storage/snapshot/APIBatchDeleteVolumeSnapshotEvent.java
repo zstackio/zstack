@@ -35,5 +35,4 @@ public class APIBatchDeleteVolumeSnapshotEvent extends APIEvent {
         event.setResults(Arrays.asList(r1));
         return event;
     }
-
 }

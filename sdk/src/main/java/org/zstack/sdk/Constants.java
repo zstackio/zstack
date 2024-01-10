@@ -23,6 +23,7 @@ interface Constants {
     String HEADER_API_TIMEOUT = "X-API-Timeout";
     String HEADER_WEBHOOK = "X-Web-Hook";
     String HEADER_JOB_SUCCESS = "X-Job-Success";
+    String HEADER_JOB_BATCH = "X-Job-Batch";
     String HEADER_REQUEST_IP = "X-Request-Ip";
     String HEADER_DATE = "date";
     String HEADER_CONTENT_TYPE = "Content-Type";
