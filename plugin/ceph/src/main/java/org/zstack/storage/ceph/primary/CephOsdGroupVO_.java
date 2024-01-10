@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 
 @StaticMetamodel(CephOsdGroupVO.class)
 public class CephOsdGroupVO_ extends StorageCapacityAO_ {
+    public static volatile SingularAttribute<CephOsdGroupVO, String> uuid;
     public static volatile SingularAttribute<CephOsdGroupVO, String> primaryStorageUuid;
     public static volatile SingularAttribute<CephOsdGroupVO, String> osds;
     public static volatile SingularAttribute<CephOsdGroupVO, Long> availableCapacity;
