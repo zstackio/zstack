@@ -12,6 +12,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class RebootVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String vmInstanceUuid;
     private String type = StopVmType.grace.toString();
+    private boolean debug;
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
@@ -30,4 +31,11 @@ public class RebootVmInstanceMsg extends NeedReplyMessage implements VmInstanceM
         this.type = type;
     }
 
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
 }
