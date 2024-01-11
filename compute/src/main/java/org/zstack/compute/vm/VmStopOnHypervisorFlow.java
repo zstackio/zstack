@@ -39,6 +39,7 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
         } else if (spec.getMessage() instanceof RebootVmInstanceMsg) {
             msg.setType(((RebootVmInstanceMsg) spec.getMessage()).getType());
         }
+        msg.setDebug(spec.isDebug());
 
         for (BeforeStopVmOnHypervisorExtensionPoint ext : pluginRegistry.getExtensionList(BeforeStopVmOnHypervisorExtensionPoint.class)) {
             ext.beforeStopVmOnHypervisor(spec, msg);

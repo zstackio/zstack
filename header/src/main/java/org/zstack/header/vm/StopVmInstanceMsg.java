@@ -14,6 +14,7 @@ public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMes
     private boolean gcOnFailure;
     private String type = StopVmType.grace.toString();
     private boolean ignoreResourceReleaseFailure;
+    private boolean debug;
 
     public boolean isGcOnFailure() {
         return gcOnFailure;
@@ -48,5 +49,13 @@ public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMes
 
     public void setIgnoreResourceReleaseFailure(boolean ignoreResourceReleaseFailure) {
         this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 }

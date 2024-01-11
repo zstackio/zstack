@@ -613,6 +613,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     StopVmInstanceMsg smsg = new StopVmInstanceMsg();
                     smsg.setVmInstanceUuid(vmInv.getUuid());
                     smsg.setType(StopVmType.cold.toString());
+                    smsg.setDebug(true);
                     stopVm(smsg, new Completion(completion) {
                         @Override
                         public void success() {
@@ -634,6 +635,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     RebootVmInstanceMsg smsg = new RebootVmInstanceMsg();
                     smsg.setVmInstanceUuid(vmInv.getUuid());
                     smsg.setType(StopVmType.cold.toString());
+                    smsg.setDebug(true);
                     rebootVm(smsg, new Completion(completion) {
                         @Override
                         public void success() {
