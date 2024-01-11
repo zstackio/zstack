@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph;
 
 import org.zstack.core.convert.PasswordConverter;
+import org.zstack.header.core.encrypt.EncryptColumn;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
@@ -14,6 +15,7 @@ public class CephMonAO extends ResourceVO {
     @Column
     private String sshUsername;
 
+    @EncryptColumn
     @Column
     @Convert(converter = PasswordConverter.class)
     private String sshPassword;

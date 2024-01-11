@@ -104,6 +104,7 @@ public class SourceClassMap {
 			put("org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory", "org.zstack.sdk.HaiTaiSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.jit.JitSecurityMachineInventory", "org.zstack.sdk.JitSecurityMachineInventory");
 			put("org.zstack.directory.DirectoryInventory", "org.zstack.sdk.DirectoryInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
@@ -951,6 +952,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.IscsiServerInventory", "org.zstack.storage.device.iscsi.IscsiServerInventory");
 			put("org.zstack.sdk.IscsiTargetInventory", "org.zstack.storage.device.iscsi.IscsiTargetInventory");
 			put("org.zstack.sdk.ItemInventory", "org.zstack.monitoring.items.ItemInventory");
+			put("org.zstack.sdk.JitSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.jit.JitSecurityMachineInventory");
 			put("org.zstack.sdk.JobDetails", "org.zstack.header.image.APIGetUploadImageJobDetailsReply$JobDetails");
 			put("org.zstack.sdk.JsonLabelInventory", "org.zstack.core.jsonlabel.JsonLabelInventory");
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
