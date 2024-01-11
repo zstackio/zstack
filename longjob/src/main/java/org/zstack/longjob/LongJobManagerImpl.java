@@ -41,6 +41,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.ThreadContextUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -614,7 +615,11 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             public void success(APIEvent evt) {
                 reportProgress("100");
                 changeState(longJobUuid, LongJobStateEvent.succeed, it -> {
-                    if (Strings.isEmpty(it.getJobResult())) {
+                    if (!Strings.isEmpty(it.getJobResult())) {
+                        it.setJobResult(it.getJobResult());
+                    } else if (evt != null) {
+                        it.setJobResult(JSONObjectUtil.toJsonString(evt));
+                    } else {
                         it.setJobResult(LongJobUtils.succeeded);
                     }
                 });
