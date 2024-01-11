@@ -9,10 +9,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExponRestRequest(
-        path = "/block/snaps/{snapshotId}/copy_clone",
-        method = HttpMethod.POST,
-        responseClass = CloneVolumeResponse.class,
-        sync = true
+        path = "/sync/block/snaps/{snapshotId}/copy_clone",
+        method = HttpMethod.PUT,
+        responseClass = CopyVolumeSnapshotResponse.class,
+        sync = false // for async request
 )
 public class CopyVolumeSnapshotRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
@@ -25,6 +25,9 @@ public class CopyVolumeSnapshotRequest extends ExponRequest {
 
     @Param
     private String phyPoolId;
+
+    @Param
+    private int speed = 8;
 
     @Param
     private ExponVolumeQos qos = new ExponVolumeQos();
@@ -65,5 +68,13 @@ public class CopyVolumeSnapshotRequest extends ExponRequest {
 
     public void setQos(ExponVolumeQos qos) {
         this.qos = qos;
+    }
+
+    public int getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(int speed) {
+        this.speed = speed;
     }
 }

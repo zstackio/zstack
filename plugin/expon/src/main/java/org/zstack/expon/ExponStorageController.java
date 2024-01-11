@@ -23,7 +23,9 @@ import org.zstack.expon.sdk.volume.ExponVolumeQos;
 import org.zstack.expon.sdk.volume.VolumeModule;
 import org.zstack.expon.sdk.volume.VolumeSnapshotModule;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.expon.HealthStatus;
 import org.zstack.header.host.HostInventory;
@@ -35,6 +37,7 @@ import org.zstack.header.volume.*;
 import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.path.PathUtil;
@@ -518,6 +521,35 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         comp.success();
     }
 
+    @Override
+    public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
+        String tianshuId = addonInfo.getClusters().get(0).getId();
+        List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
+
+        IscsiModule iscsi = apiHelper.queryIscsiController(iscsiHeartbeatTargetName);
+        if (iscsi == null) {
+            throw new RuntimeException("heartbeat iscsi target not found");
+        }
+
+        VolumeModule heartbeatVol = apiHelper.queryVolume(iscsiHeartbeatVolumeName);
+        if (heartbeatVol == null) {
+            throw new RuntimeException("heartbeat volume not found");
+        }
+
+        IscsiHeartbeatVolumeTO to = new IscsiHeartbeatVolumeTO();
+        IscsiRemoteTarget target = new IscsiRemoteTarget();
+        target.setPort(3260);
+        target.setTransport("tcp");
+        target.setIqn(iscsi.getIqn());
+        target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
+        target.setDiskId(heartbeatVol.getWwn());
+        to.setInstallPath(target.getResourceURI());
+        to.setHostId(getHostId(h));
+        to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
+        to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
+        return to;
+    }
+
     private void deactivateVhost(String installPath, HostInventory h) {
         String volId = getVolIdFromPath(installPath);
         VolumeModule vol = apiHelper.getVolume(volId);
@@ -631,6 +663,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             });
         }
         addonInfo = info;
+        setTrashExpireTime(PrimaryStorageGlobalConfig.TRASH_EXPIRATION_TIME.value(Integer.class), new NopeCompletion());
         comp.success(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
     }
 
@@ -767,6 +800,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         stats.setInstallPath(buildExponPath(getPoolNameFromPath(srcInstallPath), vol.getId()));
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setSize(vol.getVolumeSize());
+        stats.setActualSize(vol.getDataSize());
         comp.success(stats);
     }
 
@@ -775,11 +809,22 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String snapId = getSnapIdFromPath(srcInstallPath);
         VolumeSnapshotModule snap = apiHelper.getVolumeSnapshot(snapId);
 
-        VolumeModule vol = apiHelper.copySnapshot(snapId, snap.getPoolId(), dst.getName(), ExponVolumeQos.valueOf(dst.getQos()));
-        VolumeStats stats = new VolumeStats();
-        stats.setInstallPath(buildExponPath(getPoolNameFromPath(srcInstallPath), vol.getId()));
-        stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
-        comp.success(stats);
+        apiHelper.copySnapshot(snapId, snap.getPoolId(), dst.getName(), ExponVolumeQos.valueOf(dst.getQos()), new ReturnValueCompletion<VolumeModule>(comp) {
+            @Override
+            public void success(VolumeModule vol) {
+                VolumeStats stats = new VolumeStats();
+                stats.setInstallPath(buildExponPath(getPoolNameFromPath(srcInstallPath), vol.getId()));
+                stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                stats.setSize(vol.getVolumeSize());
+                stats.setActualSize(vol.getDataSize());
+                comp.success(stats);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.fail(errorCode);
+            }
+        });
     }
 
     @Override

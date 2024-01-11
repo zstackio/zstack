@@ -906,6 +906,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                             SetTrashExpirationTimeMsg msg = new SetTrashExpirationTimeMsg();
                             msg.setUuid(uuid);
                             msg.setExpirationTime(newConfig.value(Integer.class));
+                            bus.makeLocalServiceId(msg, PrimaryStorageConstant.SERVICE_ID);
                             return msg;
                         }).collect(Collectors.toList());
 
