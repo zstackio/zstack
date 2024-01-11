@@ -100,9 +100,16 @@ import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -674,9 +681,80 @@ public class KVMHost extends HostBase implements Host {
             handle((CommitVolumeOnHypervisorMsg) msg);
         } else if (msg instanceof TakeVmConsoleScreenshotMsg) {
             handle((TakeVmConsoleScreenshotMsg) msg);
+        } else if (msg instanceof GetVmUptimeMsg) {
+            handle((GetVmUptimeMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetVmUptimeMsg msg) {
+        GetVmUptimeReply reply = new GetVmUptimeReply();
+
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("get-vm-%s-uptime-on-host-%s", msg.getVmInstanceUuid(), msg.getHostUuid()))
+                .run(completion -> {
+                    getVmUptime(msg.getVmInstanceUuid(), msg.getHostUuid(), new ReturnValueCompletion<GetVmUptimeRsp>(completion) {
+                        @Override
+                        public void success(GetVmUptimeRsp returnValue) {
+                            completion.success(returnValue.getCreateTime());
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+                })
+                .done(result -> {
+                    if (result.isSuccess()) {
+                        String returnValue = (String)result.getResult();
+                        if (StringUtils.isNotEmpty(returnValue)) {
+                            Pattern pattern = Pattern.compile(
+                                    "^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\s\\d{4}$");
+                            Matcher matcher = pattern.matcher(returnValue);
+                            if (matcher.matches()) {
+                                LocalDateTime parsedDateTime = LocalDateTime.parse(returnValue,
+                                        DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss yyyy", Locale.US));
+                                DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                                returnValue = parsedDateTime.format(outputFormatter);
+                            }
+                        }
+                        reply.setUptime(returnValue);
+                    } else {
+                        reply.setError(result.getErrorCode());
+                    }
+                    bus.reply(msg, reply);
+                })
+        );
+    }
+
+    private void getVmUptime(String vmInstanceUuid, String hostUuid, ReturnValueCompletion<GetVmUptimeRsp> completion) {
+        GetVmUptimeCmd cmd = new GetVmUptimeCmd();
+        cmd.setVmUuid(vmInstanceUuid);
+
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setPath(KVMConstant.GET_VM_UPTIME_PATH);
+        kmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(kmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                GetVmUptimeRsp rsp = r.toResponse(GetVmUptimeRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(rsp.getError()));
+                } else {
+                    completion.success(r.toResponse(GetVmUptimeRsp.class));
+                }
+            }
+        });
     }
 
     private void handle(TakeVmConsoleScreenshotMsg msg) {

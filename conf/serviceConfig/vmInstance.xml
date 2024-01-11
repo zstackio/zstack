@@ -239,4 +239,7 @@
     <message>
         <name>org.zstack.header.vm.APIFstrimVmMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetVmUptimeMsg</name>
+    </message>
 </service>
