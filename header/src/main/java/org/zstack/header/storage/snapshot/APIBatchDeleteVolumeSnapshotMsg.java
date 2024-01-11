@@ -2,7 +2,12 @@ package org.zstack.header.storage.snapshot;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIBatchRequest;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.other.APIMultiAuditor;
 import org.zstack.header.rest.APINoSee;
@@ -22,7 +27,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIBatchDeleteVolumeSnapshotEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 6)
-public class APIBatchDeleteVolumeSnapshotMsg extends APIDeleteMessage implements APIMultiAuditor {
+public class APIBatchDeleteVolumeSnapshotMsg extends APIDeleteMessage implements APIMultiAuditor, APIBatchRequest {
     /**
      * @desc volume snapshot uuid
      */
@@ -69,5 +74,15 @@ public class APIBatchDeleteVolumeSnapshotMsg extends APIDeleteMessage implements
         res.add(new APIAuditor.Result(amsg.volumeUuid, VolumeVO.class));
 
         return res;
+    }
+
+    @Override
+    public Result collectResult(APIMessage message, APIEvent rsp) {
+        APIBatchDeleteVolumeSnapshotEvent evt = (APIBatchDeleteVolumeSnapshotEvent) rsp;
+        return new Result(evt.getResults().size(),
+                evt.getResults().stream()
+                        .filter(BatchDeleteVolumeSnapshotStruct::isSuccess)
+                        .toArray().length
+        );
     }
 }
