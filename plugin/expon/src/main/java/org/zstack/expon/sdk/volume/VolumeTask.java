@@ -231,11 +231,11 @@ public class VolumeTask {
         this.treeid = treeid;
     }
 
-    public int getUpdateAt() {
+    public long getUpdateAt() {
         return updateAt;
     }
 
-    public void setUpdateAt(int updateAt) {
+    public void setUpdateAt(long updateAt) {
         this.updateAt = updateAt;
     }
 

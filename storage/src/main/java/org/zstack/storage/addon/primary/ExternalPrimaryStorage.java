@@ -186,6 +186,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 reply.setActualSize(stats.getActualSize());
                 reply.setSize(stats.getSize());
                 reply.setInstallPath(stats.getInstallPath());
+                reply.setProtocol(externalVO.getDefaultProtocol());
                 // FIXME: bypass the incremental flag for expon
                 // reply.setIncremental(true);
                 bus.reply(msg, reply);

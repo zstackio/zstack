@@ -788,6 +788,7 @@ public class VolumeSnapshotTreeBase {
             String installPath;
             long size;
             long actualSize;
+            String protocol;
 
             @Override
             public void setup() {
@@ -815,6 +816,7 @@ public class VolumeSnapshotTreeBase {
                                 installPath = cr.getInstallPath();
                                 actualSize = cr.getActualSize();
                                 size = cr.getSize();
+                                protocol = cr.getProtocol();
                                 if (cr.isIncremental()) {
                                     incremental = true;
                                     msg.getVolume().setInstallPath(installPath);
@@ -901,6 +903,7 @@ public class VolumeSnapshotTreeBase {
                         inv.setSize(size);
                         inv.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
                         inv.setFormat(currentRoot.getFormat());
+                        inv.setProtocol(protocol);
                         reply.setActualSize(actualSize);
                         reply.setInventory(inv);
                         bus.reply(msg, reply);
