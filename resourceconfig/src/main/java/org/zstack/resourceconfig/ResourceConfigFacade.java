@@ -12,6 +12,8 @@ public interface ResourceConfigFacade {
 
     <T> T getResourceConfigValue(GlobalConfig gc, String resourceUuid, Class<T> clz);
 
+    <T> T getResourceConfigValueByResourceType(GlobalConfig gc, String resourceUuid, String type, Class<T> clz);
+
     <T> Map<String, T> getResourceConfigValues(GlobalConfig gc, List<String> resourceUuids, Class<T> clz);
 
     <T> Map<String, T> getResourceConfigValueByResourceUuids(GlobalConfig gc, List<String> resourceUuids, Class<T> clz);

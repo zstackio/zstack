@@ -1978,6 +1978,7 @@ public class KVMAgentCommands {
 
         // TODO: only for test
         private boolean useColoBinary;
+        private String vmCpuVendorId;
 
         public void setSocketNum(Integer socketNum) {
             this.socketNum = socketNum;
@@ -2523,6 +2524,14 @@ public class KVMAgentCommands {
 
         public void setAddons(Map<String, Object> addons) {
             this.addons = addons;
+        }
+
+        public String getVmCpuVendorId() {
+            return vmCpuVendorId;
+        }
+
+        public void setVmCpuVendorId(String vmCpuVendorId) {
+            this.vmCpuVendorId = vmCpuVendorId;
         }
     }
 
