@@ -16,7 +16,7 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
 
     private static Map<KVMPropertyName, KVMPropertyChecker> propertyCheckerMap = new HashMap<>();
 
-    enum KVMPropertyName {
+    public enum KVMPropertyName {
         EPT("ept"),
         LIBVIRT_VERSION("libvirt version"),
         QEMU_IMG_VERSION("qemu version"),
@@ -129,7 +129,7 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
         checkers.forEach(checker -> propertyCheckerMap.put(checker.getPropertyName(), checker));
     }
 
-    private Map<KVMPropertyName, String> getPropertyMapOfHost(String hostUuid) {
+    public static Map<KVMPropertyName, String> getPropertyMapOfHost(String hostUuid) {
         Map<KVMPropertyName, String> hostPropertyMap = new HashMap<>();
         propertyCheckerMap.forEach((key, checker) -> {
             if (!checker.needCheck()) {
