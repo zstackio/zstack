@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.VmSchedHistoryRecorder;
+import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -21,7 +22,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
@@ -89,6 +89,8 @@ public abstract class HostBase extends AbstractHost {
     protected EventFacade evtf;
     @Autowired
     protected HostMaintenancePolicyManager hostMaintenancePolicyMgr;
+    @Autowired
+    protected UpgradeChecker upgradeChecker;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;
@@ -585,6 +587,7 @@ public abstract class HostBase extends AbstractHost {
     private void handle(final APIReconnectHostMsg msg) {
         ReconnectHostMsg rmsg = new ReconnectHostMsg();
         rmsg.setHostUuid(self.getUuid());
+        rmsg.setCalledByAPI(true);
         bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
         bus.send(rmsg, new CloudBusCallBack(msg) {
             @Override
@@ -934,10 +937,6 @@ public abstract class HostBase extends AbstractHost {
                     }
 
                     changeConnectionState(HostStatusEvent.disconnected);
-
-                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(PingHostFailedExtensionPoint.class),
-                            extension -> extension.afterPingHostFailed(self.getUuid(), errorCode));
-
                     completion.success(reply);
                 } else {
                     reply.setConnected(true);
@@ -1023,24 +1022,20 @@ public abstract class HostBase extends AbstractHost {
             return true;
         }
 
-        if (skipConnectHost()) {
-            return true;
+        if (msg.isCalledByAPI()) {
+            return false;
         }
 
-        return false;
+        return upgradeChecker.skipConnectAgent(self.getUuid());
     }
 
-    private boolean skipConnectHost() {
-        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
-            if (agentVersionVO == null) {
-                return true;
-            }
+    private boolean skipConnectHost(final ConnectHostMsg msg) {
+        if (msg.isNewAdd() || msg.isCalledByAPI()) {
+            return false;
         }
-
-        return false;
+        
+        return upgradeChecker.skipConnectAgent(self.getUuid());
     }
-
 
     private void reconnectHost(final ReconnectHostMsg msg, final NoErrorCompletion completion) {
         thdf.chainSubmit(new ChainTask(msg, completion) {
@@ -1066,6 +1061,7 @@ public abstract class HostBase extends AbstractHost {
 
                 ConnectHostMsg connectMsg = new ConnectHostMsg(self.getUuid());
                 connectMsg.setNewAdd(false);
+                connectMsg.setCalledByAPI(msg.isCalledByAPI());
                 bus.makeTargetServiceIdByResourceUuid(connectMsg, HostConstant.SERVICE_ID, self.getUuid());
                 bus.send(connectMsg, new CloudBusCallBack(msg, chain, completion) {
                     @Override
@@ -1271,8 +1267,8 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void run(SyncTaskChain chain) {
                 checkState();
-
-                if (skipConnectHost()) {
+                
+                if(skipConnectHost(msg)){
                     completion.success();
                     chain.next();
                     return;

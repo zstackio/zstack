@@ -15,6 +15,7 @@ import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -1340,12 +1341,16 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     public static class ApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<DhcpInfo> dhcp;
+        @GrayVersion(value = "5.0.0")
         public boolean rebuild;
+        @GrayVersion(value = "5.0.0")
         public String l3NetworkUuid;
     }
 
     public static class BatchApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<ApplyDhcpCmd> dhcpInfos;
     }
 
@@ -1353,6 +1358,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     public static class ReleaseDhcpCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<DhcpInfo> dhcp;
     }
 
@@ -1360,17 +1366,26 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     public static class PrepareDhcpCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String bridgeName;
+        @GrayVersion(value = "5.0.0")
         public String dhcpServerIp;
+        @GrayVersion(value = "5.0.0")
         public String dhcpNetmask;
+        @GrayVersion(value = "5.0.0")
         public String namespaceName;
+        @GrayVersion(value = "5.0.0")
         public Integer ipVersion;
+        @GrayVersion(value = "5.0.0")
         public String dhcp6ServerIp;
+        @GrayVersion(value = "5.0.0")
         public Integer prefixLen;
+        @GrayVersion(value = "5.0.0")
         public String addressMode;
     }
 
     public static class BatchPrepareDhcpCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public List<PrepareDhcpCmd> dhcpInfos;
     }
 
@@ -1384,13 +1399,21 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     public static class ResetDefaultGatewayCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String bridgeNameOfGatewayToRemove;
+        @GrayVersion(value = "5.0.0")
         public String namespaceNameOfGatewayToRemove;
+        @GrayVersion(value = "5.0.0")
         public String gatewayToRemove;
+        @GrayVersion(value = "5.0.0")
         public String macOfGatewayToRemove;
+        @GrayVersion(value = "5.0.0")
         public String gatewayToAdd;
+        @GrayVersion(value = "5.0.0")
         public String macOfGatewayToAdd;
+        @GrayVersion(value = "5.0.0")
         public String bridgeNameOfGatewayToAdd;
+        @GrayVersion(value = "5.0.0")
         public String namespaceNameOfGatewayToAdd;
     }
 
@@ -1398,7 +1421,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     public static class DeleteNamespaceCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.0.0")
         public String bridgeName;
+        @GrayVersion(value = "5.0.0")
         public String namespaceName;
     }
 

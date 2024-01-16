@@ -110,4 +110,5 @@
     <import resource="springConfigXml/sugonSdnController.xml"/>
     <import resource="springConfigXml/TfPortAllocator.xml"/>
     <import resource="springConfigXml/HostNetworkManager.xml"/>
+    <import resource="springConfigXml/upgrade.xml"/>
 </beans>

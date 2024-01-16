@@ -1,4 +1,7 @@
-package org.zstack.header.agent.versioncontrol;
+package org.zstack.core.upgrade;
+
+import org.zstack.header.vo.*;
+import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -6,9 +9,13 @@ import java.sql.Timestamp;
 
 @Table
 @Entity
+@SoftDeletionCascades({
+        @SoftDeletionCascade(parent = ResourceVO.class, joinColumn = "resourceUuid")
+})
 public class AgentVersionVO {
     @Id
     @Column
+    @ForeignKey(parentEntityClass = ResourceVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String uuid;
 
     @Column
@@ -25,6 +32,11 @@ public class AgentVersionVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public String getUuid() {
         return uuid;
