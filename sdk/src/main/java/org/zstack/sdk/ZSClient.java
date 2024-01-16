@@ -2,6 +2,11 @@ package org.zstack.sdk;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import okhttp3.*;
 import org.apache.commons.codec.binary.Base64;
 
@@ -11,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URLEncoder;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,12 +43,81 @@ public class ZSClient {
     private static final long ACTION_DEFAULT_POLLINGINTERVAL = -1;
 
     static {
-        gson = new GsonBuilder().create();
-        prettyGson = new GsonBuilder().setPrettyPrinting().create();
+        gson = new GsonBuilder()
+                .registerTypeAdapter(ErrorCode.class, new ErrorCodeDeserializer())
+                .create();
+        prettyGson = new GsonBuilder()
+                .setPrettyPrinting()
+                .registerTypeAdapter(ErrorCode.class, new ErrorCodeDeserializer())
+                .create();
         formatter = new DateTimeFormatterBuilder()
                 .parseCaseInsensitive()
                 .appendPattern("EEE, dd MMM yyyy HH:mm:ss VV")
                 .toFormatter(Locale.ENGLISH);
+    }
+
+    /**
+     * Deserializing ErrorCode using Gson will lose the information of "ErrorCodeList.causes".
+     * We need to distinguish whether this data structure is an ErrorCode or an ErrorCodeList before deserialization.
+     */
+    static class ErrorCodeDeserializer implements JsonDeserializer<ErrorCode> {
+        @Override
+        public ErrorCode deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext context) throws JsonParseException {
+            if (jsonElement == null || !jsonElement.isJsonObject()) {
+                return null;
+            }
+            JsonObject object = jsonElement.getAsJsonObject();
+
+            final JsonElement causes = object.get("causes");
+            boolean hasCauses = causes != null && causes.isJsonArray();
+
+            ErrorCode wrapper;
+            if (hasCauses) {
+                final ErrorCodeList wrappers = new ErrorCodeList();
+                List<ErrorCode> list = new ArrayList<>();
+                for (JsonElement element : causes.getAsJsonArray()) {
+                    list.add(context.deserialize(element, ErrorCode.class));
+                }
+                wrappers.setCauses(list);
+                wrapper = wrappers;
+            } else {
+                wrapper = new ErrorCode();
+            }
+
+            JsonElement item = object.get("code");
+            if (item != null && item.isJsonPrimitive()) {
+                wrapper.setCode(item.getAsString());
+            }
+            item = object.get("description");
+            if (item != null && item.isJsonPrimitive()) {
+                wrapper.setDescription(item.getAsString());
+            }
+            item = object.get("details");
+            if (item != null && item.isJsonPrimitive()) {
+                wrapper.setDetails(item.getAsString());
+            }
+            item = object.get("elaboration");
+            if (item != null && item.isJsonPrimitive()) {
+                wrapper.setElaboration(item.getAsString());
+            }
+            item = object.get("location");
+            if (item != null && item.isJsonPrimitive()) {
+                wrapper.setLocation(item.getAsString());
+            }
+            item = object.get("cost");
+            if (item != null && item.isJsonPrimitive()) {
+                wrapper.setCost(item.getAsString());
+            }
+            item = object.get("cause");
+            if (item != null && item.isJsonObject()) {
+                wrapper.setCause(context.deserialize(item, ErrorCode.class));
+            }
+            item = object.get("opaque");
+            if (item != null && item.isJsonObject()) {
+                wrapper.setOpaque(context.deserialize(item, LinkedHashMap.class));
+            }
+            return wrapper;
+        }
     }
 
     private static ZSConfig config;
