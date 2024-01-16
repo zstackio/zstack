@@ -124,4 +124,12 @@ public class AuditsInventory  {
         return this.signedText;
     }
 
+    public java.lang.String resourceType;
+    public void setResourceType(java.lang.String resourceType) {
+        this.resourceType = resourceType;
+    }
+    public java.lang.String getResourceType() {
+        return this.resourceType;
+    }
+
 }
