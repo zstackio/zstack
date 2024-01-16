@@ -9332,6 +9332,33 @@ abstract class ApiHelper {
     }
 
 
+    def createPolice(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreatePoliceAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreatePoliceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createPolicy(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreatePolicyAction.class) Closure c) {
         def a = new org.zstack.sdk.CreatePolicyAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -10873,6 +10900,33 @@ abstract class ApiHelper {
 
     def createWebhook(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateWebhookAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateWebhookAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createXingGongSuoSsoClient(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateXingGongSuoSsoClientAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateXingGongSuoSsoClientAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -13978,6 +14032,33 @@ abstract class ApiHelper {
 
     def deletePciDeviceOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeletePciDeviceOfferingAction.class) Closure c) {
         def a = new org.zstack.sdk.DeletePciDeviceOfferingAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deletePolice(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeletePoliceAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeletePoliceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -36323,6 +36404,33 @@ abstract class ApiHelper {
     }
 
 
+    def syncAllPolice(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncAllPoliceAction.class) Closure c) {
+        def a = new org.zstack.sdk.SyncAllPoliceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def syncChronyServers(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncChronyServersAction.class) Closure c) {
         def a = new org.zstack.sdk.SyncChronyServersAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -40186,6 +40294,33 @@ abstract class ApiHelper {
 
     def updatePciDeviceSpec(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdatePciDeviceSpecAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdatePciDeviceSpecAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updatePolice(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdatePoliceAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdatePoliceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

@@ -27,4 +27,6 @@ public interface RestConstants {
 
     final String ACCOUNT_REST_AUTH = "OAuth";
     final String ACCOUNT_REST_ACCESSKEY = "ZStack";
+
+    final String XIN_GONG_SUO_SSO = "XGS_SSO";
 }

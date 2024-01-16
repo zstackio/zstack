@@ -547,6 +547,8 @@ public class SourceClassMap {
 			put("org.zstack.sso.header.SSOClientInventory", "org.zstack.sdk.SSOClientInventory");
 			put("org.zstack.sso.header.SSORedirectTemplateInventory", "org.zstack.sdk.SSORedirectTemplateInventory");
 			put("org.zstack.sso.header.SSOTokenInventory", "org.zstack.sdk.SSOTokenInventory");
+			put("org.zstack.sso.xgs.PoliceInventory", "org.zstack.sdk.PoliceInventory");
+			put("org.zstack.sso.xgs.XgsSsoClientInventory", "org.zstack.sdk.XgsSsoClientInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory", "org.zstack.sdk.ImageStoreBackupStorageInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
@@ -1055,6 +1057,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceVirtStatus", "org.zstack.pciDevice.virtual.PciDeviceVirtStatus");
 			put("org.zstack.sdk.PendingTaskInfo", "org.zstack.header.core.progress.PendingTaskInfo");
 			put("org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory");
+			put("org.zstack.sdk.PoliceInventory", "org.zstack.sso.xgs.PoliceInventory");
 			put("org.zstack.sdk.PolicyInventory", "org.zstack.header.identity.PolicyInventory");
 			put("org.zstack.sdk.PolicyRouteRuleInventory", "org.zstack.policyRoute.PolicyRouteRuleInventory");
 			put("org.zstack.sdk.PolicyRouteRuleProtocol", "org.zstack.policyRoute.PolicyRouteRuleProtocol");
@@ -1290,6 +1293,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
 			put("org.zstack.sdk.XDragonHostInventory", "org.zstack.xdragon.XDragonHostInventory");
+			put("org.zstack.sdk.XgsSsoClientInventory", "org.zstack.sso.xgs.XgsSsoClientInventory");
 			put("org.zstack.sdk.XskyBlockVolumeInventory", "org.zstack.header.volume.block.XskyBlockVolumeInventory");
 			put("org.zstack.sdk.ZBoxBackupInventory", "org.zstack.externalbackup.zbox.ZBoxBackupInventory");
 			put("org.zstack.sdk.ZBoxBackupStorageBackupInfo", "org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo");
