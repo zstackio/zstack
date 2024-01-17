@@ -56,4 +56,12 @@
         <type>java.lang.Boolean</type>
     </config>
 
+    <config>
+        <name>migration.differentOs</name>
+        <description>true allows vm to migrate between hosts with different operating systems</description>
+        <category>hostAllocator</category>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
 </globalConfig>

@@ -28,4 +28,6 @@ public class HostAllocatorGlobalConfig {
     public static GlobalConfig HOST_ALLOCATOR_CONCURRENT_LEVEL = new GlobalConfig(CATEGORY, "hostAllocator.concurrent.level");
     @GlobalConfigValidation
     public static GlobalConfig HOST_ALLOCATOR_MAX_MEMORY = new GlobalConfig(CATEGORY, "hostAllocator.checkHostMem");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig MIGRATION_BETWEEN_DIFFERENT_OS = new GlobalConfig(CATEGORY, "migration.differentOs");
 }
