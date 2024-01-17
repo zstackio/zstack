@@ -37,6 +37,17 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
         this.session = session;
     }
 
+    @APINoSee
+    private String clientIp;
+
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
+    }
+
     public static class FieldParam {
         public Field field;
         public APIParam param;

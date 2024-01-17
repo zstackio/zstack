@@ -132,4 +132,12 @@ public class AuditsInventory  {
         return this.resourceType;
     }
 
+    public java.lang.String resourceName;
+    public void setResourceName(java.lang.String resourceName) {
+        this.resourceName = resourceName;
+    }
+    public java.lang.String getResourceName() {
+        return this.resourceName;
+    }
+
 }
