@@ -167,3 +167,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceLldpRefVO` (
 
 INSERT IGNORE INTO `zstack`.`HostNetworkInterfaceLldpVO` (`uuid`, `interfaceUuid`, `mode`, `createDate`, `lastOpDate`)
 SELECT REPLACE(UUID(),'-',''), t.uuid, 'rx_only', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM `zstack`.`HostNetworkInterfaceVO` t;
+
+
+ALTER TABLE AuditsVO ADD COLUMN `resourceName` varchar(255) DEFAULT NULL;
