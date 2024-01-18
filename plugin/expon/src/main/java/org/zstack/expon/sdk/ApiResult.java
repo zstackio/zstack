@@ -91,4 +91,8 @@ public class ApiResult {
         T ret = ExponClient.gson.fromJson(resultString, clz);
         return ret;
     }
+
+    public String getResultString() {
+        return resultString;
+    }
 }

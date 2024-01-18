@@ -97,11 +97,8 @@ public class ExponClient {
     }
 
     public <T extends ExponResponse> T call(ExponRequest req, Class<T> clz) {
-        String taskId = Platform.getUuid();
         errorIfNotConfigured();
-        logger.debug(String.format("call request[%s]: %s", taskId, gson.toJson(req)));
         ApiResult ret = new Api(req).call();
-        logger.debug(String.format("request[%s] result: %s", taskId, gson.toJson(ret)));
 
         if (ret.error != null) {
             ExponResponse rsp = new ExponResponse();
@@ -125,6 +122,9 @@ public class ExponClient {
         ExponRestRequest restInfo;
 
         InternalCompletion completion;
+
+        final String taskId = Platform.getUuid(); // for log
+        String reqBody; // for log
 
         Api(ExponRequest action) {
             this.action = action;
@@ -179,7 +179,9 @@ public class ExponClient {
             }
 
             Request request = reqBuilder.build();
-            logger.debug(String.format("request[%s]: %s", action.getClass().getSimpleName(), request.toString()));
+
+            logger.debug(String.format("call request[%s: %s]: %s, body: %s", action.getClass().getSimpleName(), taskId,
+                    request.toString(), reqBody));
 
             try {
                 try (Response response = http.newCall(request).execute()) {
@@ -312,7 +314,8 @@ public class ExponClient {
                 params.forEach((k, v) -> builder.addQueryParameter(k, v.toString()));
                 reqBuilder.url(builder.build()).delete();
             } else {
-                reqBuilder.url(builder.build()).method(restInfo.method().toString(), RequestBody.create(Constants.JSON, gson.toJson(params)));
+                reqBody = gson.toJson(params);
+                reqBuilder.url(builder.build()).method(restInfo.method().toString(), RequestBody.create(Constants.JSON, reqBody));
             }
 
             if (action instanceof LoginExponRequest) {
@@ -489,7 +492,15 @@ public class ExponClient {
         }
 
         ApiResult call() {
-            return doCall();
+            ApiResult ret = doCall();
+            if (ret.error != null) {
+                logger.debug(String.format("request[%s: %s] error: %s result: %s", action.getClass().getSimpleName(),
+                        taskId, gson.toJson(ret.error), ret.getResultString()));
+            } else {
+                logger.debug(String.format("request[%s: %s] result: %s", action.getClass().getSimpleName(),
+                        taskId, ret.getResultString()));
+            }
+            return ret;
         }
 
         void call(InternalCompletion completion) {

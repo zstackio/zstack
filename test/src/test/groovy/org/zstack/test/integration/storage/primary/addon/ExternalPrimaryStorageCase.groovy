@@ -7,6 +7,8 @@ import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.expon.ExponApiHelper
 import org.zstack.expon.ExponStorageController
+import org.zstack.expon.sdk.iscsi.IscsiClientGroupModule
+import org.zstack.expon.sdk.iscsi.IscsiModule
 import org.zstack.expon.sdk.vhost.VhostControllerModule
 import org.zstack.header.host.HostConstant
 import org.zstack.header.host.PingHostMsg
@@ -20,6 +22,9 @@ import org.zstack.header.storage.primary.ImageCacheShadowVO_
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.vm.VmBootDevice
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.header.vm.devices.DeviceAddress
 import org.zstack.header.vm.devices.VirtualDeviceInfo
 import org.zstack.header.volume.VolumeVO
@@ -40,6 +45,7 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import static java.util.Arrays.asList
+import static org.zstack.expon.ExponIscsiHelper.iscsiExportTargetName
 import static org.zstack.expon.ExponNameHelper.getVolIdFromPath
 
 class ExternalPrimaryStorageCase extends SubCase {
@@ -177,6 +183,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             testHandleInactiveVolume()
             testCreateVolumeRollback()
             testAttachIso()
+            testExponIscsiAttach()
             testExpungeActiveVolume()
             testCreateDataVolume()
             testCreateSnapshot()
@@ -366,10 +373,29 @@ class ExternalPrimaryStorageCase extends SubCase {
         MessageReply r = bus.call(msg)
         assert r.success
 
+        sleep(1000)
+        // vm in running, not deactivate volume
+        assert !CollectionUtils.isEmpty(controller.apiHelper.getVhostControllerBoundUss(vhost.id))
+
+        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.hostUuid, null).set(VmInstanceVO_.state, VmInstanceState.Starting).update()
+        r = bus.call(msg)
+        assert r.success
+
+        sleep(1000)
+        // vm in starting, not deactivate volume
+        assert !CollectionUtils.isEmpty(controller.apiHelper.getVhostControllerBoundUss(vhost.id))
+
+        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.hostUuid, null).set(VmInstanceVO_.state, VmInstanceState.Stopped).update()
+        r = bus.call(msg)
+        assert r.success
+
+        sleep(1000)
+        // vm in stop, deactivate volume
         retryInSecs {
             assert CollectionUtils.isEmpty(controller.apiHelper.getVhostControllerBoundUss(vhost.id))
         }
 
+        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.hostUuid, host1.uuid).set(VmInstanceVO_.state, VmInstanceState.Running).update()
         env.simulator(KVMConstant.KVM_VOLUME_SYNC_PATH) { HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.VolumeSyncCmd.class)
             assert cmd.storagePaths.get(0).endsWith("/volume-*")
@@ -469,6 +495,26 @@ class ExternalPrimaryStorageCase extends SubCase {
         detachIsoFromVmInstance {
             vmInstanceUuid = vm.uuid
         }
+    }
+
+    void testExponIscsiAttach() {
+        def poolId = controller.addonInfo.getPools()[0].id
+        def exponVol = controller.apiHelper.createVolume("test_" + Platform.uuid, poolId, SizeUnit.GIGABYTE.toByte(1))
+
+        IscsiModule iscsi = apiHelper.queryIscsiController(iscsiExportTargetName)
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient("iscsi_127_0_0_2") // bs ip
+        apiHelper.addVolumeToIscsiClientGroup(exponVol.id, client.id, iscsi.id, false)
+        apiHelper.addVolumeToIscsiClientGroup(exponVol.id, client.id, iscsi.id, false)
+
+        def snapshot = apiHelper.createVolumeSnapshot(exponVol.id, "test-snap", "todo")
+
+        apiHelper.addSnapshotToIscsiClientGroup(snapshot.id, client.id, iscsi.id)
+        apiHelper.addSnapshotToIscsiClientGroup(snapshot.id, client.id, iscsi.id)
+
+
+        apiHelper.removeVolumeFromIscsiClientGroup(exponVol.id, client.id)
+        apiHelper.removeSnapshotFromIscsiClientGroup(snapshot.id, client.id)
+        apiHelper.deleteVolume(exponVol.id, true)
     }
 
     void testCreateDataVolume() {
