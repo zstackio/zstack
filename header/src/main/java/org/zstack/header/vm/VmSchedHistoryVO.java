@@ -37,6 +37,12 @@ public class VmSchedHistoryVO implements ToInventory {
     @Column
     private String schedType;
 
+    /**
+     * @since zsv_4.1.6
+     */
+    @Column
+    private String reason;
+
     @Column
     private Boolean success;
 
@@ -95,6 +101,14 @@ public class VmSchedHistoryVO implements ToInventory {
 
     public void setSchedType(String schedType) {
         this.schedType = schedType;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public Boolean getSuccess() {
