@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.zstack</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.8.0</version>
+        <version>5.0.0</version>
     </parent>
     <artifactId>securityGroup</artifactId>
     <dependencies>

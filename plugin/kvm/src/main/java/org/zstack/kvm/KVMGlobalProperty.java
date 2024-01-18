@@ -9,7 +9,7 @@ import java.util.List;
  */
 @GlobalPropertyDefinition
 public class KVMGlobalProperty {
-    @GlobalProperty(name="KvmAgent.agentPackageName", defaultValue = "kvmagent-4.8.0.tar.gz")
+    @GlobalProperty(name="KvmAgent.agentPackageName", defaultValue = "kvmagent-5.0.0.tar.gz")
     public static String AGENT_PACKAGE_NAME;
     @GlobalProperty(name="KvmAgent.agentUrlRootPath", defaultValue = "")
     public static String AGENT_URL_ROOT_PATH;
