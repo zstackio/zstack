@@ -558,6 +558,7 @@ public class SourceClassMap {
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory", "org.zstack.sdk.TwoFactorAuthenticationInventory");
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory", "org.zstack.sdk.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus", "org.zstack.sdk.TwoFactorAuthenticationSecretStatus");
+			put("org.zstack.twoFactorAuthentication.vendor.ft.entity.OTPDeviceInfoInventory", "org.zstack.sdk.OTPDeviceInfoInventory");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.v2v.V2VConversionHostInventory", "org.zstack.sdk.V2VConversionHostInventory");
@@ -922,6 +923,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.NormalIpRangeInventory", "org.zstack.header.network.l3.NormalIpRangeInventory");
+			put("org.zstack.sdk.OTPDeviceInfoInventory", "org.zstack.twoFactorAuthentication.vendor.ft.entity.OTPDeviceInfoInventory");
 			put("org.zstack.sdk.OssBucketInventory", "org.zstack.header.aliyun.oss.OssBucketInventory");
 			put("org.zstack.sdk.OssBucketProperty", "org.zstack.header.aliyun.oss.OssBucketProperty");
 			put("org.zstack.sdk.OvfCdDriverInfo", "org.zstack.ovf.datatype.OvfCdDriverInfo");

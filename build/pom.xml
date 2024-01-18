@@ -99,6 +99,13 @@
                                         <include>*.jar</include>
                                     </includes>
                                 </resource>
+                                <resource>
+                                    <directory>../premium/twoFactorAuthentication/ext-libs</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <includes>
+                                        <include>*.jar</include>
+                                    </includes>
+                                </resource>
                             </webResources>
                         </configuration>
                     </plugin>
