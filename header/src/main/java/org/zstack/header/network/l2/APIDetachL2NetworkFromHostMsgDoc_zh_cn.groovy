@@ -3,7 +3,7 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIDetachL2NetworkFromHostEvent
 
 doc {
-    title "从物理机上卸载二层网络(DetachL2NetworkFromCluster)"
+    title "从物理机上卸载二层网络(DetachL2NetworkFromHost)"
 
     category "二层网络"
 

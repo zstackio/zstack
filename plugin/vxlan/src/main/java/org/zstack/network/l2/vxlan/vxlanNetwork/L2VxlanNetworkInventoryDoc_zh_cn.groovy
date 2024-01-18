@@ -6,17 +6,17 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "二层VXLAN网络清单"
 
 	field {
 		name "vni"
-		desc ""
+		desc "Vni号"
 		type "Integer"
 		since "0.6"
 	}
 	field {
 		name "poolUuid"
-		desc ""
+		desc "VXLAN资源池UUID"
 		type "String"
 		since "0.6"
 	}
@@ -46,13 +46,13 @@ doc {
 	}
 	field {
 		name "physicalInterface"
-		desc ""
+		desc "物理网卡"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "type"
-		desc ""
+		desc "二层网络类型"
 		type "String"
 		since "0.6"
 	}
@@ -70,7 +70,7 @@ doc {
 	}
 	field {
 		name "attachedClusterUuids"
-		desc ""
+		desc "挂载集群的UUID列表"
 		type "List"
 		since "0.6"
 	}

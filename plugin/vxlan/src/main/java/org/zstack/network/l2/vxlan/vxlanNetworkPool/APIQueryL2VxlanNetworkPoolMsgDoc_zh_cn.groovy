@@ -4,11 +4,11 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.APIQueryL2VxlanNetworkPoolRe
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryL2VxlanNetworkPool"
+    title "查询VXLAN资源池(QueryL2VxlanNetworkPool)"
 
     category "network.l2"
 
-    desc """在这里填写API描述"""
+    desc """查询VXLAN资源池"""
 
     rest {
         request {

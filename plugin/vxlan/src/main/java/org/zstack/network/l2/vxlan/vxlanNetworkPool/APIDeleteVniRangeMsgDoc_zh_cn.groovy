@@ -3,11 +3,11 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APIDeleteVniRangeEvent
 
 doc {
-    title "DeleteVniRange"
+    title "删除VNI范围(DeleteVniRange)"
 
     category "network.l2"
 
-    desc """在这里填写API描述"""
+    desc """删除VNI范围"""
 
     rest {
         request {
@@ -33,7 +33,7 @@ doc {
 				column {
 					name "deleteMode"
 					enclosedIn ""
-					desc ""
+					desc "删除模式"
 					location "body"
 					type "String"
 					optional true
@@ -42,7 +42,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -51,7 +51,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true

@@ -3,11 +3,11 @@ package org.zstack.network.l2.vxlan.vtep
 import org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepEvent
 
 doc {
-    title "CreateVxlanVtep"
+    title "创建VXLAN隧道端点(CreateVxlanVtep)"
 
     category "network.l2"
 
-    desc """创建vxlan隧道端点"""
+    desc """创建VXLAN隧道端点"""
 
     rest {
         request {
@@ -33,7 +33,7 @@ doc {
 				column {
 					name "poolUuid"
 					enclosedIn "params"
-					desc ""
+					desc "VXLAN资源池UUID"
 					location "body"
 					type "String"
 					optional false
@@ -42,7 +42,7 @@ doc {
 				column {
 					name "vtepIp"
 					enclosedIn "params"
-					desc ""
+					desc "隧道端点IP地址"
 					location "body"
 					type "String"
 					optional true
@@ -51,7 +51,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID"
 					location "body"
 					type "String"
 					optional true
@@ -60,7 +60,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -69,7 +69,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true
