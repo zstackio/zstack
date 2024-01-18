@@ -69,6 +69,11 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
         boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
         final String vrUuid = (String) data.get(VmInstanceConstant.Params.vmInstanceUuid.toString());
+        if (upgradeChecker.skipConnectAgent(vrUuid)) {
+            trigger.next();
+            return;
+        }
+
         String vrUserTag = VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER.getTokenByResourceUuid(
                             vrUuid, VirtualRouterVmVO.class, VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER_TOKEN);
         REMOTE_USER = vrUserTag != null ? vrUserTag : "vyos"; //old vpc vrouter has no tag, that's vyos.
