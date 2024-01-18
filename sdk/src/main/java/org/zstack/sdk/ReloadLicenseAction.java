@@ -56,9 +56,9 @@ public class ReloadLicenseAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.ReloadLicenseResult value = res.getResult(org.zstack.sdk.ReloadLicenseResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ReloadLicenseResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.ReloadLicenseResult() : value; 
 
         return ret;
     }
