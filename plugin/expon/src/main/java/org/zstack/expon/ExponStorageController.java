@@ -33,13 +33,17 @@ import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeProtocol;
+import org.zstack.header.volume.VolumeStats;
 import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.vhost.kvm.VhostVolumeTO;
 
@@ -56,6 +60,7 @@ import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ExponStorageController implements PrimaryStorageControllerSvc, PrimaryStorageNodeSvc {
+    private static CLogger logger = Utils.getLogger(ExponStorageController.class);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -215,17 +220,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         IscsiModule iscsi = allocateIscsiTarget(nodes);
 
         String iscsiClientName = buildIscsiVolumeClientName(vol.getUuid());
-        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
-        if (client == null) {
-            client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(clientIqn));
-        } else if (!client.getHosts().contains(clientIqn)) {
-            apiHelper.addHostToIscsiClient(clientIqn, client.getId());
-        }
+        IscsiClientGroupModule client = prepareOneToOneIscsiClientGroup(iscsiClientName, iscsi.getId(), tianshuId, clientIqn);
 
-        if (client.getiscsiGwCount() == 0) {
-            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
-        }
-
+        // one iscsi client group can only have one lun
         if (lunType == LunType.Volume && client.getVolNum() == 0) {
             apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), shareable);
         } else if (lunType == LunType.Snapshot && client.getSnapNum() == 0) {
@@ -241,6 +238,21 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setDiskId(getDiskId(lunId, lunType));
         to.setInstallPath(target.getResourceURI());
         return to;
+    }
+
+    private IscsiClientGroupModule prepareOneToOneIscsiClientGroup(String iscsiClientName, String iscsiTargetId, String tianshuId, String clientIqn) {
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+        if (client == null) {
+            client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(clientIqn));
+        } else if (!client.getHosts().contains(clientIqn)) {
+            apiHelper.addHostToIscsiClient(clientIqn, client.getId());
+        }
+
+        // one iscsi client group can only attach one iscsi target
+        if (client.getiscsiGwCount() == 0) {
+            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsiTargetId);
+        }
+        return client;
     }
 
     private String getDiskId(String lunId, LunType lunType) {
@@ -305,13 +317,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         String iscsiClientName = buildIscsiExportClientName(espec.getClientMnIp());
-        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
-        if (client == null) {
-            client = apiHelper.createIscsiClient(iscsiClientName, tianshuId, Collections.singletonList(espec.getClientQualifiedName()));
-            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
-        }
+        IscsiClientGroupModule client = prepareOneToOneIscsiClientGroup(iscsiClientName, iscsi.getId(), tianshuId, espec.getClientQualifiedName());
 
-        if (lunType == LunType.Volume && client.getVolNum() == 0) {
+        if (lunType == LunType.Volume) {
             apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), false);
         } else {
             apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
@@ -460,13 +468,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             heartbeatVol = apiHelper.createVolume(iscsiHeartbeatVolumeName, allocateFreePool(size).getId(), size);
         }
 
-        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiHeartbeatClientName);
-        if (client == null) {
-            client = apiHelper.createIscsiClient(iscsiHeartbeatClientName, tianshuId, Collections.singletonList(clientIqn));
-            apiHelper.addIscsiClientToIscsiTarget(client.getId(), iscsi.getId());
+        IscsiClientGroupModule client = prepareOneToOneIscsiClientGroup(iscsiHeartbeatClientName, iscsi.getId(), tianshuId, clientIqn);
+        if (client.getVolNum() == 0) {
             apiHelper.addVolumeToIscsiClientGroup(heartbeatVol.getId(), client.getId(), iscsi.getId(), false);
-        } else if (!client.getHosts().contains(clientIqn)) {
-            apiHelper.addHostToIscsiClient(clientIqn, client.getId());
         }
 
         IscsiHeartbeatVolumeTO to = new IscsiHeartbeatVolumeTO();
@@ -566,6 +570,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             return;
         }
 
+        retry(() -> apiHelper.removeVhostVolumeFromUss(volId, vhost.getId(), uss.getId()));
         apiHelper.removeVhostVolumeFromUss(volId, vhost.getId(), uss.getId());
     }
 
@@ -829,7 +834,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats> comp) {
-        throw new RuntimeException("not supported");
+        // TODO flatten snapshot
+        stats(installPath, comp);
     }
 
     @Override
@@ -845,7 +851,16 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void batchStats(Collection<String> installPath, ReturnValueCompletion<List<VolumeStats>> comp) {
-        throw new RuntimeException("not supported");
+        List<VolumeStats> stats = installPath.stream().map(it -> {
+            VolumeModule vol = apiHelper.getVolume(getVolIdFromPath(it));
+            VolumeStats s = new VolumeStats();
+            s.setInstallPath(it);
+            s.setSize(vol.getVolumeSize());
+            s.setActualSize(vol.getDataSize());
+            s.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+            return s;
+        }).collect(Collectors.toList());
+        comp.success(stats);
     }
 
     @Override
@@ -1020,5 +1035,23 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
         apiHelper.setTrashExpireTime(days);
         completion.success();
+    }
+
+    private void retry(Runnable r) {
+        retry(r, 3);
+    }
+
+    private void retry(Runnable r, int retry) {
+        while (retry-- > 0) {
+            try {
+                r.run();
+                return;
+            } catch (Exception e) {
+                logger.warn("runnable failed, try ", e);
+                try {
+                    TimeUnit.SECONDS.sleep(3);
+                } catch (InterruptedException ignore) {}
+            }
+        }
     }
 }

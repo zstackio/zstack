@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -665,7 +666,13 @@ public class ExponApiHelper {
         req.setAction(ExponAction.add.name());
         req.setLuns(Collections.singletonList(new LunResource(volId, "volume", readonly)));
         req.setGateways(Collections.singletonList(targetId));
-        callErrorOut(req, ChangeVolumeInIscsiClientGroupResponse.class);
+        ChangeVolumeInIscsiClientGroupResponse rsp = call(req, ChangeVolumeInIscsiClientGroupResponse.class);
+        if (!rsp.isSuccess() && rsp.isError(ExponError.LUN_ALREADY_MAPPED_SOME_ISCSI_CLIENT) &&
+                getIscsiClientGroupAttachedVolumes(clientId).contains(volId)) {
+            return;
+        }
+
+        errorOut(rsp);
     }
 
     public void addSnapshotToIscsiClientGroup(String snapId, String clientId, String targetId) {
@@ -674,7 +681,27 @@ public class ExponApiHelper {
         req.setAction(ExponAction.add.name());
         req.setLuns(Collections.singletonList(new LunResource(snapId, "snapshot", true)));
         req.setGateways(Collections.singletonList(targetId));
-        callErrorOut(req, ChangeSnapshotInIscsiClientGroupResponse.class);
+        ChangeVolumeInIscsiClientGroupResponse rsp = call(req, ChangeVolumeInIscsiClientGroupResponse.class);
+        if (!rsp.isSuccess() && rsp.isError(ExponError.LUN_ALREADY_MAPPED_SOME_ISCSI_CLIENT) &&
+                getIscsiClientGroupAttachedSnapshots(clientId).contains(snapId)) {
+            return;
+        }
+
+        errorOut(rsp);
+    }
+
+    public List<String> getIscsiClientGroupAttachedVolumes(String clientId) {
+        GetVolumesInIscsiClientGroupRequest req = new GetVolumesInIscsiClientGroupRequest();
+        req.setId(clientId);
+        GetVolumesInIscsiClientGroupResponse rsp = callErrorOut(req, GetVolumesInIscsiClientGroupResponse.class);
+        return rsp.getLuns().stream().map(IscsiClientMappedLunModule::getId).collect(Collectors.toList());
+    }
+
+    public List<String> getIscsiClientGroupAttachedSnapshots(String clientId) {
+        GetSnapshotsInIscsiClientGroupRequest req = new GetSnapshotsInIscsiClientGroupRequest();
+        req.setId(clientId);
+        GetSnapshotsInIscsiClientGroupResponse rsp = callErrorOut(req, GetSnapshotsInIscsiClientGroupResponse.class);
+        return rsp.getLuns().stream().map(IscsiClientMappedLunModule::getId).collect(Collectors.toList());
     }
 
     public void removeVolumeFromIscsiClientGroup(String volId, String clientId) {

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -17,6 +18,7 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
@@ -186,6 +188,17 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
                 compl.done();
                 return;
             }
+
+            // TODO: move to pre-check
+            List<String> vmInUseVolUuids = SQL.New("select vol.uuid from VolumeVO vol, VmInstanceVO vm" +
+                            " where vol.uuid in :volUuids" +
+                            " and vol.vmInstanceUuid = vm.uuid" +
+                            " and (vm.state = :vmState or vm.hostUuid = :huuid)", String.class)
+                    .param("vmState", VmInstanceState.Starting)
+                    .param("huuid", host.getUuid())
+                    .param("volUuids", infos.stream().map(BaseVolumeInfo::getUuid).collect(Collectors.toList()))
+                    .list();
+            infos.removeIf(info -> vmInUseVolUuids.contains(info.getUuid()));
 
             new While<>(infos).each((info, c) -> {
                 if (info.getInstallPath() == null) {
