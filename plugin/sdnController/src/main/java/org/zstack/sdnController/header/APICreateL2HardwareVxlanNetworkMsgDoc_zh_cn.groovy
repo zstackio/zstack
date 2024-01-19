@@ -24,7 +24,7 @@ doc {
 				column {
 					name "vni"
 					enclosedIn "params"
-					desc ""
+					desc "Vni号"
 					location "body"
 					type "Integer"
 					optional true
@@ -33,7 +33,7 @@ doc {
 				column {
 					name "poolUuid"
 					enclosedIn "params"
-					desc ""
+					desc "VXLAN资源池UUID"
 					location "body"
 					type "String"
 					optional false
@@ -69,7 +69,7 @@ doc {
 				column {
 					name "physicalInterface"
 					enclosedIn "params"
-					desc ""
+					desc "物理网卡"
 					location "body"
 					type "String"
 					optional false
@@ -78,7 +78,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "二层网络类型"
 					location "body"
 					type "String"
 					optional true
@@ -87,7 +87,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，二层网络会使用该字段值作为UUID"
 					location "body"
 					type "String"
 					optional true
@@ -105,7 +105,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -114,7 +114,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true
@@ -128,7 +128,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					values ("LinuxBridge","OvsDpdk")
+					values ("LinuxBridge","OvsDpdk","MacVlan")
 				}
 				column {
 					name "isolated"

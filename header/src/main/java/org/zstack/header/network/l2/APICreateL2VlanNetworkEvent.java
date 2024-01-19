@@ -1,6 +1,5 @@
 package org.zstack.header.network.l2;
 
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
 /**
@@ -26,12 +25,7 @@ import org.zstack.header.rest.RestResponse;
  * @since 0.1.0
  */
 @RestResponse(allTo = "inventory")
-public class APICreateL2VlanNetworkEvent extends APIEvent {
-    /**
-     * @desc see :ref:`L2VlanNetworkInventory`
-     */
-    private L2VlanNetworkInventory inventory;
-
+public class APICreateL2VlanNetworkEvent extends APICreateL2NetworkEvent {
     public APICreateL2VlanNetworkEvent(String apiId) {
         super(apiId);
     }
@@ -40,14 +34,6 @@ public class APICreateL2VlanNetworkEvent extends APIEvent {
         super(null);
     }
 
-    public L2VlanNetworkInventory getInventory() {
-        return inventory;
-    }
-
-    public void setInventory(L2VlanNetworkInventory inventory) {
-        this.inventory = inventory;
-    }
- 
     public static APICreateL2VlanNetworkEvent __example__() {
         APICreateL2VlanNetworkEvent event = new APICreateL2VlanNetworkEvent();
         L2VlanNetworkInventory net = new L2VlanNetworkInventory();

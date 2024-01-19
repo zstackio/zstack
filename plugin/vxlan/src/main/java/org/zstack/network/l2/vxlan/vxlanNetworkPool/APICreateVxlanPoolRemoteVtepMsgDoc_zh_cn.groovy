@@ -3,11 +3,11 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVxlanPoolRemoteVtepEvent
 
 doc {
-    title "CreateVxlanPoolRemoteVtep"
+    title "创建远端VXLAN隧道端点(CreateVxlanPoolRemoteVtep)"
 
     category "network.l2"
 
-    desc """在这里填写API描述"""
+    desc """创建远端VXLAN隧道端点"""
 
     rest {
         request {
@@ -42,7 +42,7 @@ doc {
 				column {
 					name "remoteVtepIp"
 					enclosedIn "params"
-					desc ""
+					desc "远端隧道端点IP地址"
 					location "body"
 					type "String"
 					optional false
