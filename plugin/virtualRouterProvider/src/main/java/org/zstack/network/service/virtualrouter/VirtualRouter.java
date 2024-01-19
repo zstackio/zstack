@@ -839,7 +839,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
-                reconnect(new Completion(msg, chain) {
+                reconnect(true, new Completion(msg, chain) {
                     @Override
                     public void success() {
                         evt.setInventory((ApplianceVmInventory) getSelfInventory());
@@ -864,6 +864,10 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     private void reconnect(final Completion completion) {
+        reconnect(false, completion);
+    }
+
+    private void reconnect(boolean fromApi, final Completion completion) {
         ApplianceVmStatus oldStatus = getSelf().getStatus();
 
         FlowChain chain = getReconnectChain();
@@ -873,6 +877,7 @@ public class VirtualRouter extends ApplianceVmBase {
         chain.getData().put(Params.isReconnect.toString(), Boolean.TRUE.toString());
         chain.getData().put(Params.managementNicIp.toString(), vr.getManagementNic().getIp());
         chain.getData().put(Params.applianceVmUuid.toString(), self.getUuid());
+        chain.getData().put(Params.fromApi.toString(), fromApi);
 
         SimpleQuery<ApplianceVmFirewallRuleVO> q = dbf.createQuery(ApplianceVmFirewallRuleVO.class);
         q.add(ApplianceVmFirewallRuleVO_.applianceVmUuid, Op.EQ, getSelf().getUuid());
