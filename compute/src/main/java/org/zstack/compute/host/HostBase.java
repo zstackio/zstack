@@ -427,7 +427,9 @@ public abstract class HostBase extends AbstractHost {
                         }
 
                         new While<>(vmUuids).step((vmUuid, compl) -> {
-                            VmSchedHistoryRecorder recorder = new VmSchedHistoryRecorder("HMT", vmUuid).begin();
+                            VmSchedHistoryRecorder recorder = VmSchedHistoryRecorder.ofHostMaintenance(vmUuid)
+                                    .withReason("Host[%s] is in maintenance state, vm on this host should be migrated", host.getUuid())
+                                    .begin();
                             MigrateVmMsg msg = new MigrateVmMsg();
                             msg.setVmInstanceUuid(vmUuid);
                             msg.setAllocationScene(AllocationScene.Auto);

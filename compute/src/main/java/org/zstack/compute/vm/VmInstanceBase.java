@@ -898,7 +898,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 //   1. throwing exception;
                 //   2. judges no need to start VM.
                 // thus, with monitoring, there might be false records.
-                final VmSchedHistoryRecorder recorder = new VmSchedHistoryRecorder("VMHA", msg.getVmInstanceUuid()).begin();
+                final VmSchedHistoryRecorder recorder = VmSchedHistoryRecorder.ofHA(msg.getVmInstanceUuid())
+                        .withReason("%s, try to start HA", msg.getHaReason())
+                        .begin();
                 ErrorCodeList errList = new ErrorCodeList();
                 new While<>(pluginRgty.getExtensionList(BeforeHaStartVmInstanceExtensionPoint.class)).each((ext, whileCompletion) -> {
                     ext.beforeHaStartVmInstance(msg.getVmInstanceUuid(), msg.getJudgerClassName(), msg.getSoftAvoidHostUuids(), new Completion(msg) {
