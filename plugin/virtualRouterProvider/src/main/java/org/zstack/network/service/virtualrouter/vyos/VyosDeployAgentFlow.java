@@ -67,9 +67,10 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             return;
         }
 
+        boolean fromApi = Boolean.parseBoolean((String) data.get(Params.fromApi.toString()));
         boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
         final String vrUuid = (String) data.get(VmInstanceConstant.Params.vmInstanceUuid.toString());
-        if (upgradeChecker.skipConnectAgent(vrUuid)) {
+        if (!fromApi && upgradeChecker.skipConnectAgent(vrUuid)) {
             trigger.next();
             return;
         }

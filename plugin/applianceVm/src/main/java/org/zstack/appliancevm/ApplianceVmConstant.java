@@ -40,6 +40,7 @@ public class ApplianceVmConstant {
         applianceVmUuid,
         timeout,
         rebuildSnat,
+        fromApi,
     }
 
     public static final String REFRESH_FIREWALL_PATH = "/appliancevm/refreshfirewall";
