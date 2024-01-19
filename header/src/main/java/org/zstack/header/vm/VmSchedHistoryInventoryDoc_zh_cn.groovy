@@ -27,6 +27,12 @@ doc {
 		since "4.4.24"
 	}
 	field {
+		name "reason"
+		desc "调度的详情，具体说明为什么进行虚拟机的调度"
+		type "String"
+		since "zsv 4.1.6"
+	}
+	field {
 		name "success"
 		desc "是否成功"
 		type "Boolean"
