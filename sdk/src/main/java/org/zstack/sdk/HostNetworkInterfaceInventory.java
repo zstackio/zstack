@@ -156,6 +156,14 @@ public class HostNetworkInterfaceInventory  {
         return this.offloadStatus;
     }
 
+    public java.lang.String virtStatus;
+    public void setVirtStatus(java.lang.String virtStatus) {
+        this.virtStatus = virtStatus;
+    }
+    public java.lang.String getVirtStatus() {
+        return this.virtStatus;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;
