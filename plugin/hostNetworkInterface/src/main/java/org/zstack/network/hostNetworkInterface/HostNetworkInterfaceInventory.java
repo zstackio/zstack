@@ -28,8 +28,11 @@ public class HostNetworkInterfaceInventory implements Serializable {
     private String interfaceModel;
     private String vendorId;
     private String deviceId;
+    private String deviceName;
+    private String vendorName;
     private String subvendorId;
     private String subdeviceId;
+    private String subvendorName;
     private String interfaceName;
     private String interfaceType;
     private Long speed;
@@ -93,6 +96,22 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.deviceId = deviceId;
     }
 
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
+    public String getVendorName() {
+        return vendorName;
+    }
+
+    public void setVendorName(String vendorName) {
+        this.vendorName = vendorName;
+    }
+
     public String getSubvendorId() {
         return subvendorId;
     }
@@ -107,6 +126,14 @@ public class HostNetworkInterfaceInventory implements Serializable {
 
     public void setSubdeviceId(String subdeviceId) {
         this.subdeviceId = subdeviceId;
+    }
+
+    public String getSubvendorName() {
+        return subvendorName;
+    }
+
+    public void setSubvendorName(String subvendorName) {
+        this.subvendorName = subvendorName;
     }
 
     public String getInterfaceName() {
@@ -232,8 +259,11 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.interfaceModel = vo.getInterfaceModel();
         this.vendorId = vo.getVendorId();
         this.deviceId = vo.getDeviceId();
+        this.deviceName = vo.getDeviceName();
+        this.vendorName = vo.getVendorName();
         this.subvendorId = vo.getSubvendorId();
         this.subdeviceId = vo.getSubdeviceId();
+        this.subvendorName = vo.getSubvendorName();
         this.interfaceName = vo.getInterfaceName();
         this.interfaceType = vo.getInterfaceType();
         this.mac = vo.getMac();

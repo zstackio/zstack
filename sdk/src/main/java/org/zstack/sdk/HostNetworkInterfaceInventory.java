@@ -52,6 +52,22 @@ public class HostNetworkInterfaceInventory  {
         return this.deviceId;
     }
 
+    public java.lang.String deviceName;
+    public void setDeviceName(java.lang.String deviceName) {
+        this.deviceName = deviceName;
+    }
+    public java.lang.String getDeviceName() {
+        return this.deviceName;
+    }
+
+    public java.lang.String vendorName;
+    public void setVendorName(java.lang.String vendorName) {
+        this.vendorName = vendorName;
+    }
+    public java.lang.String getVendorName() {
+        return this.vendorName;
+    }
+
     public java.lang.String subvendorId;
     public void setSubvendorId(java.lang.String subvendorId) {
         this.subvendorId = subvendorId;
@@ -66,6 +82,14 @@ public class HostNetworkInterfaceInventory  {
     }
     public java.lang.String getSubdeviceId() {
         return this.subdeviceId;
+    }
+
+    public java.lang.String subvendorName;
+    public void setSubvendorName(java.lang.String subvendorName) {
+        this.subvendorName = subvendorName;
+    }
+    public java.lang.String getSubvendorName() {
+        return this.subvendorName;
     }
 
     public java.lang.String interfaceName;
