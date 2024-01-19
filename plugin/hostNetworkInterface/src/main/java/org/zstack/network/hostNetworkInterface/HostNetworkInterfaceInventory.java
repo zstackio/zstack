@@ -44,6 +44,7 @@ public class HostNetworkInterfaceInventory implements Serializable {
     private String callBackIp;
     private String pciDeviceAddress;
     private String offloadStatus;
+    private String virtStatus;
     private String description;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -224,6 +225,14 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.offloadStatus = offloadStatus;
     }
 
+    public String getVirtStatus() {
+        return virtStatus;
+    }
+
+    public void setVirtStatus(String virtStatus) {
+        this.virtStatus = virtStatus;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -277,6 +286,7 @@ public class HostNetworkInterfaceInventory implements Serializable {
         this.slaveActive = vo.isSlaveActive();
         this.carrierActive = vo.isCarrierActive();
         this.offloadStatus = vo.getOffloadStatus();
+        this.virtStatus = vo.getVirtStatus();
         this.description = vo.getDescription();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
