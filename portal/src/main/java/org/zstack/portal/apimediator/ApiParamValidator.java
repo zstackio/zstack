@@ -35,6 +35,11 @@ public class ApiParamValidator implements GlobalApiMessageInterceptor {
     }
 
     @Override
+    public int getPriority() {
+        return -1;
+    }
+
+    @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         try {
             msg.validate(validators);
