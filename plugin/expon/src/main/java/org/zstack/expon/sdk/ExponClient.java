@@ -393,6 +393,9 @@ public class ExponClient {
 
                             rsp.setRetCode(trsp.getRetCode());
                             rsp.setMessage(trsp.getRetMsg());
+                            if (!trsp.isSuccess()) {
+                                ret.error = errorCode(trsp.getRetCode(), trsp.getRetMsg());
+                            }
                             ret.setResultString(gson.toJson(rsp));
                             done(ret);
                             return;

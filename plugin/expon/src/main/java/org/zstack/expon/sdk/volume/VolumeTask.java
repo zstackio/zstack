@@ -30,6 +30,14 @@ package org.zstack.expon.sdk.volume;
  * }
  */
 public class VolumeTask {
+    public enum TaskState {
+        TASK_STATE_TORUN,
+        TASK_STATE_RUNNING,
+        TASK_FAILED,
+        TASK_COMPLETE,
+    }
+
+
     private String volName;
     private long volSize;
     private int cloneid;

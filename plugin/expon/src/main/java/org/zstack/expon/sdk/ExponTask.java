@@ -102,6 +102,9 @@ public class ExponTask {
         this.retCode = retCode;
     }
 
+    public boolean isSuccess() {
+        return "0".equals(retCode);
+    }
 
     public String getRetMsg() {
         return retMsg;
@@ -166,13 +169,14 @@ public class ExponTask {
             case "TASK_FAILED":
                 task.setStatus(TaskStatus.FAILED.toString());
                 break;
-            case "TASK_TORUN":
-            case "TASK_RUNNING":
+            case "TASK_STATE_TORUN":
+            case "TASK_STATE_RUNNING":
                 task.setStatus(TaskStatus.RUNNING.toString());
                 break;
             default:
                 task.setStatus(TaskStatus.FAILED.toString());
                 task.setRetMsg("Unknown task state: " + volumeTask.getState());
+                task.setRetCode("1");
                 break;
         }
         return task;
