@@ -32,6 +32,7 @@
 			<zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
 			<zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint"/>
+			<zstack:extension interface="org.zstack.kvm.KVMTakeSnapshotExtensionPoint" />
 		</zstack:plugin>
 		
         <property name="syncGetCapacity" value="${NfsPrimaryStorageKVMBackend.syncGetCapacity:false}" />
