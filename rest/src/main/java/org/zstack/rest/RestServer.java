@@ -1408,7 +1408,10 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private String getClientIP(HttpServletRequest request) {
         if (request == null) return "";
-        String ipAddress = request.getHeader("X-Forwarded-For");
+        String ipAddress = request.getHeader("X-Request-Ip");
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getHeader("X-Forwarded-For");
+        }
         if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
             ipAddress = request.getHeader("Proxy-Client-IP");
         }
