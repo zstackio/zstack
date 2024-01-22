@@ -53,7 +53,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -831,7 +830,8 @@ public class RestServer implements Component, CloudBusEventListener {
                 params.contentType = entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_TYPE);
                 params.uri = getDecodedUrl(req);
             } else {
-                throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Authorization type must be '%s'", RestConstants.HEADER_OAUTH));
+                authType = RestAuthenticationType.valueOf(RestConstants.XIN_GONG_SUO_SSO);
+                params.authKey = auth;
             }
 
             RestAuthenticationBackend bkd = restAuthBackends.get(authType);
