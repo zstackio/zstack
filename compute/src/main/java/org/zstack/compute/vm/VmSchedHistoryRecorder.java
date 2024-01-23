@@ -87,11 +87,6 @@ public class VmSchedHistoryRecorder {
         return this;
     }
 
-    public VmSchedHistoryRecorder withReason(String format, Object... args) {
-        this.reason = String.format(format, args);
-        return this;
-    }
-
     public int end(String currentHostUuid) {
         DebugUtils.Assert(this.vo != null, "Recorder not started.");
 
