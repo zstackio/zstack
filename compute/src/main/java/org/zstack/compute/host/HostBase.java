@@ -55,8 +55,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -428,7 +427,7 @@ public abstract class HostBase extends AbstractHost {
 
                         new While<>(vmUuids).step((vmUuid, compl) -> {
                             VmSchedHistoryRecorder recorder = VmSchedHistoryRecorder.ofHostMaintenance(vmUuid)
-                                    .withReason("Host[%s] is in maintenance state, vm on this host should be migrated", host.getUuid())
+                                    .withReason(i18n("Host[%s] is in maintenance state, VM on this host should be migrated", host.getName()))
                                     .begin();
                             MigrateVmMsg msg = new MigrateVmMsg();
                             msg.setVmInstanceUuid(vmUuid);
