@@ -572,7 +572,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         sqlBuilder.append(") nic ")
                 .append("left join (select uuid, name from AccountVO) ac on ac.uuid = nic.accountUuid ")
                 .append("left join (select uuid, name, createDate, state, type from VmInstanceVO) vm ")
-                .append("on vm.uuid = nic.vmInstanceUuid")
+                .append("on vm.uuid = nic.vmInstanceUuid where vm.type = 'UserVm'")
                 .append(" order by ").append(sortBy).append(' ').append(msg.getSortDirection());
         if (!byIp) {
             sqlBuilder.append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getStart());
@@ -612,9 +612,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         Map<String, VmInstanceVO> vmvos = vms.stream()
                 .collect(Collectors.toMap(VmInstanceVO::getUuid, inv -> inv));
         Map<String, List<String>> vmToDefaultIpMap = new HashMap<>();
-        Map<String, Tuple> vrInfos = getApplianceVmInfo(vmUuids);
 
-        List<IpStatisticData> copiedElements = new ArrayList<>();
         for (IpStatisticData element : ipStatistics) {
             VmInstanceVO vmvo = vmvos.get(element.getVmInstanceUuid());
             if (vmvo == null) {
@@ -642,45 +640,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             } else {
                 element.setVmDefaultIp(vmToDefaultIpMap.get(vmvo.getUuid()));
             }
-
-            if (element.getVmInstanceUuid() != null) {
-                Tuple vrInfo = vrInfos.get(element.getVmInstanceUuid());
-                if (vrInfo != null) {
-                    String vmInstanceType = vrInfo.get(1, String.class);
-                    L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(vmInstanceType);
-                    if (exp != null) {
-                        List<String> ownerUuids = exp.getParentUuid(element.getVmInstanceUuid(), element.getVipUuid());
-                        if (ownerUuids.size() == 0) {
-                            element.setApplianceVmOwnerUuid(element.getApplianceVmOwnerUuid());
-                        } else if (ownerUuids.size() == 1) {
-                            element.setApplianceVmOwnerUuid(ownerUuids.get(0));
-                        } else {
-                            element.setApplianceVmOwnerUuid(ownerUuids.get(0));
-                            int cn = 1;
-                            while(cn < ownerUuids.size()) {
-                                IpStatisticData copy = new IpStatisticData();
-                                copy.setIp(element.getIp());
-                                copy.setVipUuid(element.getVipUuid());
-                                copy.setVipName(element.getVipName());
-                                copy.setVmInstanceUuid(element.getVmInstanceUuid());
-                                copy.setVmInstanceName(element.getVmInstanceName());
-                                copy.setVmInstanceType(element.getVmInstanceType());
-                                copy.setResourceTypes(element.getResourceTypes());
-                                copy.setState(element.getState());
-                                copy.setUseFor(element.getUseFor());
-                                copy.setCreateDate(element.getCreateDate());
-                                copy.setOwnerName(element.getOwnerName());
-                                copy.setVmDefaultIp(element.getVmDefaultIp());
-                                copy.setApplianceVmOwnerUuid(ownerUuids.get(cn));
-                                copiedElements.add(copy);
-                                cn = cn + 1;
-                            }
-                        }
-                    }
-                }
-            }
         }
-        ipStatistics.addAll(copiedElements);
 
         return ipStatistics;
     }
@@ -702,8 +662,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     private Long countVMNicIp(APIGetL3NetworkIpStatisticMsg msg) {
         if (acntMgr.isAdmin(msg.getSession())) {
-            String sql = "select count(*) from UsedIpVO u, VmNicVO n " +
-                    "where u.l3NetworkUuid = :l3Uuid and u.vmNicUuid = n.uuid";
+            String sql = "select count(*) from UsedIpVO u, VmNicVO n, VmInstanceVO i " +
+                    "where u.l3NetworkUuid = :l3Uuid and u.vmNicUuid = n.uuid and n.vmInstanceUuid = i.uuid " +
+                    "and i.type = 'UserVm'";
             if (StringUtils.isNotEmpty(msg.getIp())) {
                 sql += " and u.ip like '" + msg.getIp() + '\'';
             }
@@ -711,9 +672,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     .param("l3Uuid", msg.getL3NetworkUuid())
                     .find();
         } else {
-            String sql = "select count(*) from UsedIpVO u, VmNicVO n, AccountResourceRefVO a " +
-                    "where a.accountUuid = :accUuid and u.l3NetworkUuid = :l3Uuid " +
-                    "and u.vmNicUuid = n.uuid and n.uuid = a.resourceUuid";
+            String sql = "select count(*) from UsedIpVO u, VmNicVO n, VmInstanceVO i, AccountResourceRefVO a " +
+                    "where a.accountUuid = :accUuid and u.l3NetworkUuid = :l3Uuid and i.type = 'UserVm'" +
+                    "and u.vmNicUuid = n.uuid and n.vmInstanceUuid = i.uuid and n.uuid = a.resourceUuid";
             if (StringUtils.isNotEmpty(msg.getIp())) {
                 sql += " and u.ip like '" + msg.getIp() + '\'';
             }
