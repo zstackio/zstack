@@ -108,6 +108,15 @@ public class VmAllocateHostFlow implements Flow {
         } else {
             msg.setAllocatorStrategy(spec.getVmInventory().getAllocatorStrategy());
         }
+
+        if (msg.getAllocatorStrategy() == null &&
+                (spec.getRequiredClusterUuid() != null
+                        || spec.getRequiredHostUuid() != null
+                        || CollectionUtils.isEmpty(spec.getRequiredClusterUuids())
+                        || CollectionUtils.isEmpty(spec.getVmInventory().getVmNics()))) {
+            msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
+        }
+
         if (spec.getCandidatePrimaryStorageUuidsForRootVolume().size() == 1) {
             msg.addRequiredPrimaryStorageUuid(spec.getCandidatePrimaryStorageUuidsForRootVolume().get(0));
         } else if (spec.getCandidatePrimaryStorageUuidsForRootVolume().size() > 1) {
