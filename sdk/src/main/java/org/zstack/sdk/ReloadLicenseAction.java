@@ -28,6 +28,9 @@ public class ReloadLicenseAction extends AbstractAction {
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List managementNodeUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String additionSession;
+
     @Param(required = false)
     public java.util.List systemTags;
 
