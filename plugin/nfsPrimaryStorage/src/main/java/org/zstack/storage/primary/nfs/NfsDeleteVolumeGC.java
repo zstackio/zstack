@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
@@ -30,6 +31,10 @@ public class NfsDeleteVolumeGC extends TimeBasedGarbageCollector {
     @Override
     protected void triggerNow(GCCompletion completion) {
         if (!dbf.isExist(primaryStorageUuid, PrimaryStorageVO.class)) {
+            completion.cancel();
+            return;
+        }
+        if (StringUtils.isEmpty(volume.getInstallPath())) {
             completion.cancel();
             return;
         }

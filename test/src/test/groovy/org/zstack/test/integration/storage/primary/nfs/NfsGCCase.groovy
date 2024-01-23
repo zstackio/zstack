@@ -1,7 +1,10 @@
 package org.zstack.test.integration.storage.primary.nfs
 
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCStatus
+import org.zstack.core.gc.GarbageCollectorVO
+import org.zstack.core.gc.GarbageCollectorVO_
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
@@ -207,10 +210,11 @@ class NfsGCCase extends SubCase {
 
     void testSkipVolumeGCWhenVolumeInUse() {
         def call
+        def inUse = true
         env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) { NfsPrimaryStorageKVMBackendCommands.DeleteResponse rsp ->
             call = true
             rsp.setError("volume in use")
-            rsp.inUse = true
+            rsp.inUse = inUse
             return rsp
         }
 
@@ -255,6 +259,28 @@ class NfsGCCase extends SubCase {
                 conditions = ["context~=%${vol.uuid}%"]
             }[0].status == GCStatus.Done.toString()
         }
+
+        SQL.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.uuid, gc.uuid).delete()
+        inUse = false
+        call = false
+        gc = new NfsDeleteVolumeGC();
+        gc.NAME = String.format("gc-nfs-%s-volume-%s", nfs.uuid, vol.getUuid());
+        gc.primaryStorageUuid = nfs.uuid
+        gc.hypervisorType ="KVM"
+        volume.installPath = null
+        gc.volume = volume
+        gc.submit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+
+        triggerGCJob {
+            uuid = gc.uuid
+        }
+        retryInSecs {
+            assert !call
+            assert queryGCJob {
+                conditions = ["context~=%${vol.uuid}%"]
+            }[0].status == GCStatus.Done.toString()
+        }
+
         env.cleanSimulatorAndMessageHandlers()
     }
 

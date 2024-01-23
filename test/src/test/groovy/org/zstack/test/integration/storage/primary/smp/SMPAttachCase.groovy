@@ -2,7 +2,10 @@ package org.zstack.test.integration.storage.primary.smp
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCStatus
+import org.zstack.core.gc.GarbageCollectorVO
+import org.zstack.core.gc.GarbageCollectorVO_
 import org.zstack.header.Constants
 import org.zstack.header.host.HostVO
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO
@@ -69,11 +72,12 @@ class SMPAttachCase extends SubCase{
 
     void testSkipVolumeGCWhenVolumeInUse() {
         def call
+        def inUse = true
         env.afterSimulator(KvmBackend.DELETE_BITS_PATH) { KvmBackend.DeleteRsp rsp ->
             call = true
             rsp.error = "volume in use"
             rsp.success = false
-            rsp.inUse = true
+            rsp.inUse = inUse
             return rsp
         }
 
@@ -114,6 +118,27 @@ class SMPAttachCase extends SubCase{
         }
         retryInSecs {
             assert call
+            assert queryGCJob {
+                conditions = ["context~=%${vol.uuid}%"]
+            }[0].status == GCStatus.Done.toString()
+        }
+        SQL.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.uuid, gc.uuid).delete()
+
+        inUse = false
+        call = false
+        gc = new SMPDeleteVolumeGC();
+        gc.NAME = String.format("gc-smp-%s-volume-%s", primaryStorageInventory.uuid, vol.uuid)
+        gc.primaryStorageUuid = primaryStorageInventory.uuid
+        gc.hypervisorType = "KVM"
+        volume.setInstallPath(null)
+        gc.volume = volume
+        gc.deduplicateSubmit(SMPPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS)
+
+        triggerGCJob {
+            uuid = gc.uuid
+        }
+        retryInSecs {
+            assert !call
             assert queryGCJob {
                 conditions = ["context~=%${vol.uuid}%"]
             }[0].status == GCStatus.Done.toString()

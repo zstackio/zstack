@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.core.db.Q;
 import org.zstack.core.gc.EventBasedGarbageCollector;
 import org.zstack.core.gc.GC;
@@ -40,7 +41,7 @@ public class LocalStorageDeleteBitsGC extends EventBasedGarbageCollector {
             return;
         }
 
-        if (!dbf.isExist(hostUuid, HostVO.class)) {
+        if (!dbf.isExist(hostUuid, HostVO.class) || StringUtils.isEmpty(installPath)) {
             completion.cancel();
             return;
         }
