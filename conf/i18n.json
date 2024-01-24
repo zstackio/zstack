@@ -8903,7 +8903,7 @@
   {
     "raw": "Monitor number must be 1 or 2 or 4.",
     "en_US": "Monitor number must be 1 or 2 or 4.",
-    "zh_CN": "监听器数量必须是1、2或4",
+    "zh_CN": "显示器数量必须是1、2或4",
     "arguments": [],
     "line": 333,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
