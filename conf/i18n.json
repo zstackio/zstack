@@ -8836,7 +8836,7 @@
   {
     "raw": "do not change vm image when it\u0027s not stopped",
     "en_US": "do not change vm image when it\u0027s not stopped",
-    "zh_CN": "当云主机镜像未停止时，不要更改它",
+    "zh_CN": "当云主机镜像未停止时，禁止更改镜像",
     "arguments": [],
     "line": 243,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
