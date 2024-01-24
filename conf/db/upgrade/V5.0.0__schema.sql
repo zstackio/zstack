@@ -14,7 +14,7 @@ CREATE TABLE `zstack`.`PoliceVO` (
     `email`  varchar(255) default null,
     `phone`  varchar(255) default null,
     `address`  varchar(255) default null,
-    `police_id`  varchar(255) default null,
+    `police_id`  varchar(255)  UNIQUE default null ,
     `organization_id`  varchar(255) default null,
     `organization_name`  varchar(255) default null,
     `uuid` varchar(32) not null unique,
