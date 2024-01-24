@@ -35,6 +35,7 @@
         <module>hostNetworkInterface</module>
         <module>vhost</module>
         <module>expon</module>
+        <module>externalStorage</module>
     </modules>
     <dependencies>
         <dependency>

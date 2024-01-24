@@ -141,7 +141,7 @@ public class ExponApiHelper {
         return queryErrorOut(req, QueryTianshuClusterResponse.class).getResult();
     }
 
-    public UssGatewayModule getUssGateway(String name) {
+    public UssGatewayModule queryUssGateway(String name) {
         QueryUssGatewayRequest q = new QueryUssGatewayRequest();
         q.addCond("name", name);
         QueryUssGatewayResponse rsp = queryErrorOut(q, QueryUssGatewayResponse.class);

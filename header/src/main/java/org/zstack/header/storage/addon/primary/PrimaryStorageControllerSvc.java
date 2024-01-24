@@ -2,6 +2,8 @@ package org.zstack.header.storage.addon.primary;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.storage.addon.NodeHealthy;
 import org.zstack.header.storage.addon.RemoteTarget;
 import org.zstack.header.storage.addon.StorageCapacity;
 import org.zstack.header.storage.addon.StorageHealthy;
@@ -19,6 +21,7 @@ public interface PrimaryStorageControllerSvc {
 
     void reportCapacity(ReturnValueCompletion<StorageCapacity> comp);
     void reportHealthy(ReturnValueCompletion<StorageHealthy> comp);
+    void reportNodeHealthy(HostInventory host, ReturnValueCompletion<NodeHealthy> comp);
     StorageCapabilities reportCapabilities();
 
     String allocateSpace(AllocateSpaceSpec aspec);

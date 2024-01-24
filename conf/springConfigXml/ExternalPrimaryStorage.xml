@@ -40,4 +40,13 @@
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="ExternalPrimaryStorageKvmFactory" class="org.zstack.externalStorage.primary.kvm.ExternalPrimaryStorageKvmFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KvmVmActiveVolumeSyncExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>

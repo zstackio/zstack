@@ -5,7 +5,7 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by MaJin on 2021/3/18.
  */
-public class CreateTemporaryDataVolumeTemplateFromVolumeSnapshotReply extends MessageReply {
+public class CreateTemporaryDataVolumeTemplateFromVolumeSnapshotReply extends MessageReply implements ImageReply {
     private ImageInventory inventory;
     private String locateHostUuid;
     private String locatePsUuid;

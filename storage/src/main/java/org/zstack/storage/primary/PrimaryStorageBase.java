@@ -514,6 +514,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected void handle(UpdatePrimaryStorageHostStatusMsg msg) {
         updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), msg.getStatus(), msg.getReason());
+        bus.reply(msg, new UpdatePrimaryStorageHostStatusReply());
     }
 
     protected void updatePrimaryStorageHostStatus(String psUuid, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){
