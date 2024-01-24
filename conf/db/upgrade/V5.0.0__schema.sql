@@ -76,6 +76,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`EthernetVfPciDeviceVO` (
 
 ALTER TABLE ConsoleProxyVO ADD COLUMN `expiredDate` timestamp NOT NULL;
 
+delete from EncryptEntityMetadataVO where entityName = 'IAM2VirtualIDVO' and state = 'NeedDecrypt';
+
 ALTER TABLE `SecretResourcePoolVO` ADD COLUMN `ability` varchar(256) NOT NULL DEFAULT 'All';
 
 CREATE TABLE IF NOT EXISTS `zstack`.`JitSecurityMachineVO` (
