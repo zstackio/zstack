@@ -6,7 +6,8 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  * Created by MaJin on 2021/3/18.
  */
-public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends NeedReplyMessage implements CreateTemporaryRootVolumeTemplateMessage {
+public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends NeedReplyMessage
+        implements CreateTemporaryRootVolumeTemplateMessage, CreateTemplateFromSnapshotMessage {
     private String snapshotUuid;
     private String guestOsType;
     private String platform;
@@ -15,10 +16,12 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends Need
     private SessionInventory session;
     private boolean virtio = true;
 
+    @Override
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
     }
 
+    @Override
     public String getSnapshotUuid() {
         return snapshotUuid;
     }

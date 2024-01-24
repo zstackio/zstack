@@ -140,9 +140,9 @@ public class VolumeSnapshotReferenceUtils {
             return null;
         }
 
-        DatabaseFacade dbf = Platform.getComponentLoader().getComponent(DatabaseFacade.class);
         // Deprecated
         if (!PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE) {
+            DatabaseFacade dbf = Platform.getComponentLoader().getComponent(DatabaseFacade.class);
             VolumeSnapshotReferenceVO volRef = templateRef.clone();
             volRef.setReferenceVolumeUuid(volume.getUuid());
             return dbf.persist(volRef);

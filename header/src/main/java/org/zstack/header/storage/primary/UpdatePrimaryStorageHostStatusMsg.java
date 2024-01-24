@@ -3,12 +3,10 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.NeedReplyMessage;
 
-import java.util.List;
-
 /**
  * Created by Administrator on 2017-05-12.
  */
-public class UpdatePrimaryStorageHostStatusMsg extends NeedReplyMessage implements PrimaryStorageMessage{
+public class UpdatePrimaryStorageHostStatusMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String hostUuid;
     private PrimaryStorageHostStatus status;
