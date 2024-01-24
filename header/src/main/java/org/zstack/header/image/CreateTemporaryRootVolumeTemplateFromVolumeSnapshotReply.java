@@ -5,11 +5,12 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by MaJin on 2021/3/18.
  */
-public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotReply extends MessageReply {
+public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotReply extends MessageReply implements ImageReply {
     private ImageInventory inventory;
     private String locateHostUuid;
     private String locatePsUuid;
 
+    @Override
     public ImageInventory getInventory() {
         return inventory;
     }

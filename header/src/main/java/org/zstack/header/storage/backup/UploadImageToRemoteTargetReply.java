@@ -2,7 +2,7 @@ package org.zstack.header.storage.backup;
 
 import org.zstack.header.message.MessageReply;
 
-public class ExportImageToRemoteTargetReply extends MessageReply {
+public class UploadImageToRemoteTargetReply extends MessageReply {
     private String installPath;
     private long size;
 

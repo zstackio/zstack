@@ -36,6 +36,7 @@
         <module>account-import</module>
         <module>vhost</module>
         <module>expon</module>
+        <module>externalStorage</module>
     </modules>
     <dependencies>
         <dependency>

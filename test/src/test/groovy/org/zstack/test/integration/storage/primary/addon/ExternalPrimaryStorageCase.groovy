@@ -15,16 +15,18 @@ import org.zstack.header.host.PingHostMsg
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetMsg
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetReply
-import org.zstack.header.storage.backup.ExportImageToRemoteTargetReply
+import org.zstack.header.storage.backup.UploadImageToRemoteTargetReply
 import org.zstack.header.storage.backup.UploadImageToRemoteTargetMsg
 import org.zstack.header.storage.primary.ImageCacheShadowVO
 import org.zstack.header.storage.primary.ImageCacheShadowVO_
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.vm.VmBootDevice
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.vm.VmStateChangedOnHostMsg
 import org.zstack.header.vm.devices.DeviceAddress
 import org.zstack.header.vm.devices.VirtualDeviceInfo
 import org.zstack.header.volume.VolumeVO
@@ -64,7 +66,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     ExponStorageController controller
     ExponApiHelper apiHelper
 
-    String exponUrl = "https://admin:Admin123@172.25.102.64:443/pool"
+    String exponUrl = "https://admin:Admin123@172.25.101.96:443/pool"
     String exportProtocol = "iscsi://"
 
     @Override
@@ -256,6 +258,13 @@ class ExternalPrimaryStorageCase extends SubCase {
         ExternalPrimaryStorageFactory factory = Platform.getComponentLoader().getComponent(ExternalPrimaryStorageFactory.class)
         controller = factory.getControllerSvc(ps.uuid) as ExponStorageController
         apiHelper = controller.apiHelper
+
+        PingHostMsg pmsg = new PingHostMsg()
+        pmsg.hostUuid = host1.uuid
+        bus.makeTargetServiceIdByResourceUuid(pmsg, HostConstant.SERVICE_ID, host1.uuid)
+        MessageReply r = bus.call(pmsg)
+        assert r.success
+        assert Q.New(PrimaryStorageHostRefVO.class).find().status.toString() == "Connected"
     }
 
     void testSessionExpired() {
@@ -273,7 +282,7 @@ class ExternalPrimaryStorageCase extends SubCase {
         assert result.getRootVolumePrimaryStorages().size() == 1
 
         env.message(UploadImageToRemoteTargetMsg.class){ UploadImageToRemoteTargetMsg msg, CloudBus bus ->
-            ExportImageToRemoteTargetReply r = new  ExportImageToRemoteTargetReply()
+            UploadImageToRemoteTargetReply r = new  UploadImageToRemoteTargetReply()
             assert msg.getRemoteTargetUrl().startsWith(exportProtocol)
             assert msg.getFormat() == "raw"
             bus.reply(msg, r)
@@ -378,12 +387,16 @@ class ExternalPrimaryStorageCase extends SubCase {
         assert !CollectionUtils.isEmpty(controller.apiHelper.getVhostControllerBoundUss(vhost.id))
 
         SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.hostUuid, null).set(VmInstanceVO_.state, VmInstanceState.Starting).update()
+        env.message(VmStateChangedOnHostMsg.class){ VmStateChangedOnHostMsg cmsg, CloudBus bus ->
+            bus.reply(cmsg, new MessageReply())
+        }
         r = bus.call(msg)
         assert r.success
 
         sleep(1000)
         // vm in starting, not deactivate volume
         assert !CollectionUtils.isEmpty(controller.apiHelper.getVhostControllerBoundUss(vhost.id))
+        env.cleanMessageHandlers()
 
         SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.hostUuid, null).set(VmInstanceVO_.state, VmInstanceState.Stopped).update()
         r = bus.call(msg)
