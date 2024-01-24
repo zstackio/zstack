@@ -1113,14 +1113,6 @@
   },
   {
     "category": "VCENTER",
-    "code": "1005",
-    "method": "regex",
-    "regex": "Detected .* MAC address conflict, current mac address conflicting strategy is: strict, .*",
-    "message_cn": "与当前已纳管的 vCenter 环境存在重复的 MAC 地址，当前的 MAC 地址冲突处理策略是“strict”。",
-    "message_en": "Duplicated MAC address with that in the currently managed vCenter environment, and current mac address conflicting strategy is 'strict'."
-  },
-  {
-    "category": "VCENTER",
     "code": "1006",
     "method": "regex",
     "regex": "There are tasks running on the VCenter\\[uuid:.*], please try again later.",
