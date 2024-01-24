@@ -77,6 +77,9 @@ public class HostNetworkInterfaceVO extends ResourceVO implements ToInventory, O
     private String offloadStatus;
 
     @Column
+    private String virtStatus;
+
+    @Column
     private String description;
 
     @Column
@@ -230,6 +233,14 @@ public class HostNetworkInterfaceVO extends ResourceVO implements ToInventory, O
 
     public void setOffloadStatus(String offloadStatus) {
         this.offloadStatus = offloadStatus;
+    }
+
+    public String getVirtStatus() {
+        return virtStatus;
+    }
+
+    public void setVirtStatus(String virtStatus) {
+        this.virtStatus = virtStatus;
     }
 
     public String getDescription() {
