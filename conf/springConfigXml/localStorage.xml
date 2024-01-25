@@ -99,6 +99,7 @@
     <bean id="LocalStorageApiInterceptor" class="org.zstack.storage.primary.local.LocalStorageApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 

@@ -3,14 +3,12 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.IsoOperator;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostInventory;
@@ -23,21 +21,22 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeStatus;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.utils.CollectionDSL;
 
+import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 
 /**
  * Created by frank on 7/1/2015.
  */
-public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
+public class LocalStorageApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -55,6 +54,8 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APILocalStorageMigrateVolumeMsg) msg);
         } else if (msg instanceof APILocalStorageGetVolumeMigratableHostsMsg) {
             validate((APILocalStorageGetVolumeMigratableHostsMsg) msg);
+        } else if (msg instanceof APIAttachDataVolumeToVmMsg) {
+            validate((APIAttachDataVolumeToVmMsg) msg);
         }
 
         return msg;
@@ -192,5 +193,63 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
         if (url.startsWith("/dev") || url.startsWith("/proc") || url.startsWith("/sys")) {
             throw new ApiMessageInterceptionException(argerr(" the url contains an invalid folder[/dev or /proc or /sys]"));
         }
+    }
+
+    private void validate(APIAttachDataVolumeToVmMsg msg) {
+        String volumeHostUuid = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeUuid())
+                .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                .select(LocalStorageResourceRefVO_.hostUuid).findValue();
+        if (volumeHostUuid == null) {
+            return;
+        }
+
+        String vmHostUuid = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                .select(VmInstanceVO_.hostUuid).findValue();
+
+        if (volumeHostUuid.equals(vmHostUuid)) {
+            return;
+        }
+
+        if (vmHostUuid != null && !Objects.equals(vmHostUuid, volumeHostUuid)) {
+            throw new ApiMessageInterceptionException(operr("the host of the vm[hostUuid:%s] is different from " +
+                    "that of the volume[hostUuid:%s]. the volume cannot attach to the vm.", vmHostUuid, volumeHostUuid));
+        }
+
+        String sql = "select ref.resourceUuid,ref.hostUuid from LocalStorageResourceRefVO ref, VolumeVO volume " +
+                "where ref.resourceType = :resourceType " +
+                "and ref.resourceUuid = volume.uuid " +
+                "and volume.vmInstanceUuid = :vmUuid ";
+        List<Tuple> vmVolumeHostUuidTuples = SQL.New(sql, Tuple.class)
+                .param("resourceType", VolumeVO.class.getSimpleName())
+                .param("vmUuid", msg.getVmInstanceUuid())
+                .list();
+
+        List<String> vmVolumeHostUuids = vmVolumeHostUuidTuples.stream().map(t -> t.get(1, String.class)).distinct().collect(Collectors.toList());
+
+        if (vmVolumeHostUuids.isEmpty()) {
+            return;
+        }
+        if (vmVolumeHostUuids.size() >= 2) {
+            List<String> vmVolumes = vmVolumeHostUuidTuples.stream()
+                    .map(t -> String.format("volume[%s] is on host[%s]", t.get(0, String.class), t.get(1, String.class))).collect(Collectors.toList());
+            throw new ApiMessageInterceptionException(
+                    operr("the vm has multiple local volumes on different hosts[%s]. " +
+                            "please check the abnormal vm local volumes", vmVolumes.toString()));
+        }
+        if (!Objects.equals(vmVolumeHostUuids.get(0), volumeHostUuid)) {
+            throw new ApiMessageInterceptionException(operr("the volume on a host[hostUuid:%s] cannot be attached to the vm, " +
+                    "because the vm has local volumes on other host[hostUuid:%s]", volumeHostUuid, vmVolumeHostUuids.get(0)));
+        }
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return CollectionDSL.list(APIAttachDataVolumeToVmMsg.class);
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
     }
 }
