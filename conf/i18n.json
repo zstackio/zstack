@@ -3066,7 +3066,7 @@
   {
     "raw": "cannot find the cluster of baremetal2 chassis[uuid:%s], maybe it doesn\u0027t exist",
     "en_US": "cannot find the cluster of baremetal2 chassis[uuid:{0}], maybe it doesn\u0027t exist",
-    "zh_CN": "找不到BareMetal2机箱[uuid：{0}]的群集，该群集可能不存在",
+    "zh_CN": "找不到BareMetal2机箱[uuid：{0}]的集群，该集群可能不存在",
     "arguments": [
       "chassisUuid"
     ],
@@ -3076,7 +3076,7 @@
   {
     "raw": "there is no baremetal2 gateway found in cluster[uuid:%s]",
     "en_US": "there is no baremetal2 gateway found in cluster[uuid:{0}]",
-    "zh_CN": "在群集[uuid：{0}]中找不到BareMetal2网关",
+    "zh_CN": "在集群[uuid：{0}]中找不到BareMetal2网关",
     "arguments": [
       "clusterUuid"
     ],
@@ -3086,7 +3086,7 @@
   {
     "raw": "there is no usable baremetal2 gateway found in cluster[uuid:%s]",
     "en_US": "there is no usable baremetal2 gateway found in cluster[uuid:{0}]",
-    "zh_CN": "在群集[uuid：{0}]中找不到可用的Baremetal2网关",
+    "zh_CN": "在集群[uuid：{0}]中找不到可用的Baremetal2网关",
     "arguments": [
       "clusterUuid"
     ],
@@ -3096,7 +3096,7 @@
   {
     "raw": "there is no baremetal2 provision network found in cluster[uuid:%s]",
     "en_US": "there is no baremetal2 provision network found in cluster[uuid:{0}]",
-    "zh_CN": "在群集[uuid：{0}]中找不到BareMetal2配置网络",
+    "zh_CN": "在集群[uuid：{0}]中找不到BareMetal2配置网络",
     "arguments": [
       "clusterUuid"
     ],
@@ -3126,7 +3126,7 @@
   {
     "raw": "the cpu architecture of the chassis[arch:%s] and the cluster[arch:%s] don\u0027t match",
     "en_US": "the cpu architecture of the chassis[arch:{0}] and the cluster[arch:{1}] don\u0027t match",
-    "zh_CN": "机箱[arch：{0}]和群集[arch：{1}]的CPU体系结构不匹配",
+    "zh_CN": "机箱[arch：{0}]和集群[arch：{1}]的CPU体系结构不匹配",
     "arguments": [
       "info.architecture",
       "clusterArchitecture"
@@ -3193,7 +3193,7 @@
   {
     "raw": "no available baremetal2 chassis found in baremetal2 clusters[uuids:%s]",
     "en_US": "no available baremetal2 chassis found in baremetal2 clusters[uuids:{0}]",
-    "zh_CN": "在Baremetal2群集中找不到可用的Baremetal2机箱[uuid：{0}]",
+    "zh_CN": "在Baremetal2集群中找不到可用的Baremetal2机箱[uuid：{0}]",
     "arguments": [
       "msg.getRequiredClusterUuids()"
     ],
@@ -3282,7 +3282,7 @@
   {
     "raw": "Cluster[uuid:%s] is not a BareMetal2 Cluster.",
     "en_US": "Cluster[uuid:{0}] is not a BareMetal2 Cluster.",
-    "zh_CN": "群集[uuid：{0}]不是BareMetal2群集。",
+    "zh_CN": "集群[uuid：{0}]不是BareMetal2集群。",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -3292,7 +3292,7 @@
   {
     "raw": "no usable baremetal2 gateway in cluster[uuid:%s]",
     "en_US": "no usable baremetal2 gateway in cluster[uuid:{0}]",
-    "zh_CN": "群集[uuid：{0}]中没有可用的Baremetal2网关",
+    "zh_CN": "集群[uuid：{0}]中没有可用的Baremetal2网关",
     "arguments": [
       "clusterUuid"
     ],
@@ -3371,7 +3371,7 @@
   {
     "raw": "cluster type and hypervisor type should all be baremetal2 or all not",
     "en_US": "cluster type and hypervisor type should all be baremetal2 or all not",
-    "zh_CN": "群集类型和云主机管理程序类型应全部为BareMetal2或全部为非BareMetal2",
+    "zh_CN": "集群类型和云主机管理程序类型应全部为BareMetal2或全部为非BareMetal2",
     "arguments": [],
     "line": 84,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/BareMetal2ClusterFactory.java"
@@ -3379,7 +3379,7 @@
   {
     "raw": "the architecture must be set when create new baremetal2 clusters",
     "en_US": "the architecture must be set when create new baremetal2 clusters",
-    "zh_CN": "创建新的Baremetal2群集时必须设置体系结构",
+    "zh_CN": "创建新的Baremetal2集群时必须设置体系结构",
     "arguments": [],
     "line": 90,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/BareMetal2ClusterFactory.java"
@@ -3387,7 +3387,7 @@
   {
     "raw": "do not add host into baremetal2 cluster",
     "en_US": "do not add host into baremetal2 cluster",
-    "zh_CN": "不要将物理机添加到BareMetal2群集中",
+    "zh_CN": "不要将物理机添加到BareMetal2集群中",
     "arguments": [],
     "line": 101,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/BareMetal2ClusterFactory.java"
@@ -3395,7 +3395,7 @@
   {
     "raw": "l2 network should not have the same interface name with provision network that\u0027s already attached to the cluster",
     "en_US": "l2 network should not have the same interface name with provision network that\u0027s already attached to the cluster",
-    "zh_CN": "二层网络不应与已连接到群集的Provision网络具有相同的接口名称",
+    "zh_CN": "二层网络不应与已连接到集群的Provision网络具有相同的接口名称",
     "arguments": [],
     "line": 123,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/BareMetal2ClusterFactory.java"
@@ -3411,7 +3411,7 @@
   {
     "raw": "Can not attach local storage into baremetal2 cluster.",
     "en_US": "Can not attach local storage into baremetal2 cluster.",
-    "zh_CN": "无法将本地存储连接到BareMetal2群集。",
+    "zh_CN": "无法将本地存储连接到BareMetal2集群。",
     "arguments": [],
     "line": 12,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/LocalStorageAttachBm2ClusterMetric.java"
@@ -3795,7 +3795,7 @@
   {
     "raw": "cannot add baremetal2 gateway in non-baremetal2 cluster[uuid:%s]",
     "en_US": "cannot add baremetal2 gateway in non-baremetal2 cluster[uuid:{0}]",
-    "zh_CN": "无法在非Baremetal2群集[uuid：{0}]中添加Baremetal2网关",
+    "zh_CN": "无法在非Baremetal2集群[uuid：{0}]中添加Baremetal2网关",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -3805,7 +3805,7 @@
   {
     "raw": "cannot attach baremetal2 gateway[uuid:%s] to non-baremetal2 cluster[uuid:%s]",
     "en_US": "cannot attach baremetal2 gateway[uuid:{0}] to non-baremetal2 cluster[uuid:{1}]",
-    "zh_CN": "无法将Baremetal2网关[uuid：{0}]连接到非Baremetal2群集[uuid：{1}]",
+    "zh_CN": "无法将Baremetal2网关[uuid：{0}]连接到非Baremetal2集群[uuid：{1}]",
     "arguments": [
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
@@ -3816,7 +3816,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] already attached to cluster[uuid:%s]",
     "en_US": "baremetal2 gateway[uuid:{0}] already attached to cluster[uuid:{1}]",
-    "zh_CN": "Baremetal2网关[uuid：{0}]已连接到群集[uuid：{1}]",
+    "zh_CN": "Baremetal2网关[uuid：{0}]已连接到集群[uuid：{1}]",
     "arguments": [
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
@@ -3827,7 +3827,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] can only attach to one cluster",
     "en_US": "baremetal2 gateway[uuid:{0}] can only attach to one cluster",
-    "zh_CN": "Baremetal2网关[uuid：{0}]只能连接到一个群集",
+    "zh_CN": "Baremetal2网关[uuid：{0}]只能连接到一个集群",
     "arguments": [
       "msg.getGatewayUuid()"
     ],
@@ -3837,7 +3837,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] not attached to cluster[uuid:%s], no need to detach",
     "en_US": "baremetal2 gateway[uuid:{0}] not attached to cluster[uuid:{1}], no need to detach",
-    "zh_CN": "Baremetal2网关[uuid：{0}]未连接到群集[uuid：{1}]，无需分离",
+    "zh_CN": "Baremetal2网关[uuid：{0}]未连接到集群[uuid：{1}]，无需分离",
     "arguments": [
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
@@ -3848,7 +3848,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] is attached to only one cluster now, do not detach it",
     "en_US": "baremetal2 gateway[uuid:{0}] is attached to only one cluster now, do not detach it",
-    "zh_CN": "BareMetal2网关[uuid：{0}]现在仅连接到一个群集，请不要将其分离",
+    "zh_CN": "BareMetal2网关[uuid：{0}]现在仅连接到一个集群，请不要将其分离",
     "arguments": [
       "msg.getGatewayUuid()"
     ],
@@ -3858,7 +3858,7 @@
   {
     "raw": "cluster[uuid:%s] does not exist",
     "en_US": "cluster[uuid:{0}] does not exist",
-    "zh_CN": "群集[uuid：{0}]不存在",
+    "zh_CN": "集群[uuid：{0}]不存在",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -3868,7 +3868,7 @@
   {
     "raw": "cluster[uuid:%s] is not a baremetal2 cluster",
     "en_US": "cluster[uuid:{0}] is not a baremetal2 cluster",
-    "zh_CN": "群集[uuid：{0}]不是BareMetal2群集",
+    "zh_CN": "集群[uuid：{0}]不是BareMetal2集群",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -3888,7 +3888,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] is already in cluster[uuid:%s]",
     "en_US": "baremetal2 gateway[uuid:{0}] is already in cluster[uuid:{1}]",
-    "zh_CN": "Baremetal2网关[uuid：{0}]已在群集[uuid：{1}]中",
+    "zh_CN": "Baremetal2网关[uuid：{0}]已在集群[uuid：{1}]中",
     "arguments": [
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
@@ -3899,7 +3899,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] is not in the same zone as cluster[uuid:%s]",
     "en_US": "baremetal2 gateway[uuid:{0}] is not in the same zone as cluster[uuid:{1}]",
-    "zh_CN": "Baremetal2网关[uuid：{0}]与群集[uuid：{1}]不在同一个区域中",
+    "zh_CN": "Baremetal2网关[uuid：{0}]与集群[uuid：{1}]不在同一个区域中",
     "arguments": [
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
@@ -3910,7 +3910,7 @@
   {
     "raw": "cannot change the cluster of baremetal2 gateway[uuid:%s] when there are running instances depending on it",
     "en_US": "cannot change the cluster of baremetal2 gateway[uuid:{0}] when there are running instances depending on it",
-    "zh_CN": "存在依赖于Baremetal2网关[uuid：{0}]的正在运行的实例时，无法更改该群集",
+    "zh_CN": "存在依赖于Baremetal2网关[uuid：{0}]的正在运行的实例时，无法更改该集群",
     "arguments": [
       "msg.getGatewayUuid()"
     ],
@@ -3939,7 +3939,7 @@
   {
     "raw": "cluster[%s] is not baremetal2 type",
     "en_US": "cluster[{0}] is not baremetal2 type",
-    "zh_CN": "群集[{0}]不是BareMetal2类型",
+    "zh_CN": "集群[{0}]不是BareMetal2类型",
     "arguments": [
       "resourceUuid"
     ],
@@ -4023,7 +4023,7 @@
   {
     "raw": "not enough information to determine which baremetal2 cluster should be used",
     "en_US": "not enough information to determine which baremetal2 cluster should be used",
-    "zh_CN": "没有足够的信息来确定应使用哪个BareMetal2群集",
+    "zh_CN": "没有足够的信息来确定应使用哪个BareMetal2集群",
     "arguments": [],
     "line": 85,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateClusterFlow.java"
@@ -4031,7 +4031,7 @@
   {
     "raw": "no baremetal2 cluster found",
     "en_US": "no baremetal2 cluster found",
-    "zh_CN": "未找到BareMetal2群集",
+    "zh_CN": "未找到BareMetal2集群",
     "arguments": [],
     "line": 100,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateClusterFlow.java"
@@ -4039,7 +4039,7 @@
   {
     "raw": "failed to allocate primary storage in clusters[uuids:%s] for baremetal2 instance[uuid:%s]",
     "en_US": "failed to allocate primary storage in clusters[uuids:{0}] for baremetal2 instance[uuid:{1}]",
-    "zh_CN": "无法在群集[uuid：{0}]中为Baremetal2实例[uuid：{1}]分配主存储",
+    "zh_CN": "无法在集群[uuid：{0}]中为Baremetal2实例[uuid：{1}]分配主存储",
     "arguments": [
       "spec.getRequiredClusterUuids()",
       "spec.getVmInventory().getUuid()"
@@ -4050,7 +4050,7 @@
   {
     "raw": "failed to allocate gateway in clusters[uuids:%s] for baremetal2 instance[uuid:%s]",
     "en_US": "failed to allocate gateway in clusters[uuids:{0}] for baremetal2 instance[uuid:{1}]",
-    "zh_CN": "无法在群集[uuid：{0}]中为BareMetal2实例[uuid：{1}]分配网关",
+    "zh_CN": "无法在集群[uuid：{0}]中为BareMetal2实例[uuid：{1}]分配网关",
     "arguments": [
       "spec.getRequiredClusterUuids()",
       "spec.getVmInventory().getUuid()"
@@ -4061,7 +4061,7 @@
   {
     "raw": "failed to allocate chassis in clusters[uuids:%s] for baremetal2 instance[uuid:%s]",
     "en_US": "failed to allocate chassis in clusters[uuids:{0}] for baremetal2 instance[uuid:{1}]",
-    "zh_CN": "无法在群集[uuid：{0}]中为Baremetal2实例[uuid：{1}]分配机箱",
+    "zh_CN": "无法在集群[uuid：{0}]中为Baremetal2实例[uuid：{1}]分配机箱",
     "arguments": [
       "spec.getRequiredClusterUuids()",
       "spec.getVmInventory().getUuid()"
@@ -4072,7 +4072,7 @@
   {
     "raw": "only baremetal2 clusters[uuid:%s] meet the needs for chassis and gateway, but they have no provision network attached",
     "en_US": "only baremetal2 clusters[uuid:{0}] meet the needs for chassis and gateway, but they have no provision network attached",
-    "zh_CN": "只有BareMetal2群集[uuid：{0}]满足机箱和网关的需求，但它们没有连接的配置网络",
+    "zh_CN": "只有BareMetal2集群[uuid：{0}]满足机箱和网关的需求，但它们没有连接的配置网络",
     "arguments": [
       "clusterUuids"
     ],
@@ -4082,7 +4082,7 @@
   {
     "raw": "no baremetal2 cluster found in clusters[uuid:%s]",
     "en_US": "no baremetal2 cluster found in clusters[uuid:{0}]",
-    "zh_CN": "在群集[uuid：{0}]中找不到BareMetal2群集",
+    "zh_CN": "在集群[uuid：{0}]中找不到BareMetal2集群",
     "arguments": [
       "spec.getRequiredClusterUuids()"
     ],
@@ -4092,7 +4092,7 @@
   {
     "raw": "the primary storage[%s] of the root volume and the primary storage[%s] of the data volume are not in the same cluster",
     "en_US": "the primary storage[{0}] of the root volume and the primary storage[{1}] of the data volume are not in the same cluster",
-    "zh_CN": "根卷的主存储[{0}]和数据云盘的主存储[{1}]不在同一群集中",
+    "zh_CN": "根卷的主存储[{0}]和数据云盘的主存储[{1}]不在同一集群中",
     "arguments": [
       "msg.getPrimaryStorageUuidForRootVolume()",
       "msg.getPrimaryStorageUuidForDataVolume()"
@@ -4301,7 +4301,7 @@
   {
     "raw": "cluster[uuid:%s] is not an Enabled baremetal2 cluster, cannot start instance[uuid:%s] in it",
     "en_US": "cluster[uuid:{0}] is not an Enabled baremetal2 cluster, cannot start instance[uuid:{1}] in it",
-    "zh_CN": "群集[uuid：{0}]不是已启用的BareMetal2群集，无法在其中启动实例[uuid：{1}]",
+    "zh_CN": "集群[uuid：{0}]不是已启用的BareMetal2集群，无法在其中启动实例[uuid：{1}]",
     "arguments": [
       "msg.getClusterUuid()",
       "msg.getUuid()"
@@ -4322,7 +4322,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] is not in cluster [uuid:%s]",
     "en_US": "baremetal2 gateway[uuid:{0}] is not in cluster [uuid:{1}]",
-    "zh_CN": "Baremetal2网关[uuid：{0}]不在群集[uuid：{1}]中",
+    "zh_CN": "Baremetal2网关[uuid：{0}]不在集群[uuid：{1}]中",
     "arguments": [
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
@@ -4418,7 +4418,7 @@
   {
     "raw": "baremetal2 gateway[uuid:%s] is not in the same cluster with chassis[uuid:%s]",
     "en_US": "baremetal2 gateway[uuid:{0}] is not in the same cluster with chassis[uuid:{1}]",
-    "zh_CN": "Baremetal2网关[uuid：{0}]与机箱[uuid：{1}]不在同一群集中",
+    "zh_CN": "Baremetal2网关[uuid：{0}]与机箱[uuid：{1}]不在同一集群中",
     "arguments": [
       "msg.getGatewayUuid()",
       "msg.getChassisUuid()"
@@ -4439,7 +4439,7 @@
   {
     "raw": "cluster[uuid:%s] is specified but it\u0027s not an Enabled baremetal2 cluster, can not create baremetal2 instance from it",
     "en_US": "cluster[uuid:{0}] is specified but it\u0027s not an Enabled baremetal2 cluster, can not create baremetal2 instance from it",
-    "zh_CN": "指定了群集[uuid：{0}]，但它不是启用的BareMetal2群集，无法从中创建BareMetal2实例",
+    "zh_CN": "指定了集群[uuid：{0}]，但它不是启用的BareMetal2集群，无法从中创建BareMetal2实例",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -4606,7 +4606,7 @@
   {
     "raw": "the architecture of baremetal2 cluster[arch:%s] and image[arch:%s] don\u0027t match",
     "en_US": "the architecture of baremetal2 cluster[arch:{0}] and image[arch:{1}] don\u0027t match",
-    "zh_CN": "BareMetal2群集[arch：{0}]的体系结构与镜像[arch：{1}]不匹配",
+    "zh_CN": "BareMetal2集群[arch：{0}]的体系结构与镜像[arch：{1}]不匹配",
     "arguments": [
       "clusterArchitecture",
       "image.getArchitecture()"
@@ -4718,7 +4718,7 @@
   {
     "raw": "cannot attach baremetal2 provision network[uuid:%s] to non-baremetal2 cluster[uuid:%s]",
     "en_US": "cannot attach baremetal2 provision network[uuid:{0}] to non-baremetal2 cluster[uuid:{1}]",
-    "zh_CN": "无法将BareMetal2设置网络[uuid：{0}]连接到非BareMetal2群集[uuid：{1}]",
+    "zh_CN": "无法将BareMetal2设置网络[uuid：{0}]连接到非BareMetal2集群[uuid：{1}]",
     "arguments": [
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
@@ -4729,7 +4729,7 @@
   {
     "raw": "baremetal2 provision network[uuid:%s] is already attached to cluster[uuid:%s]",
     "en_US": "baremetal2 provision network[uuid:{0}] is already attached to cluster[uuid:{1}]",
-    "zh_CN": "Baremetal2配置网络[uuid：{0}]已连接到群集[uuid：{1}]",
+    "zh_CN": "Baremetal2配置网络[uuid：{0}]已连接到集群[uuid：{1}]",
     "arguments": [
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
@@ -4740,7 +4740,7 @@
   {
     "raw": "cannot attach baremetal2 provision network[uuid:%s] to cluster[uuid:%s] because the cluster already have one",
     "en_US": "cannot attach baremetal2 provision network[uuid:{0}] to cluster[uuid:{1}] because the cluster already have one",
-    "zh_CN": "无法将BareMetal2设置网络[uuid：{0}]附加到群集[uuid：{1}]，因为该群集已有一个网络",
+    "zh_CN": "无法将BareMetal2设置网络[uuid：{0}]附加到集群[uuid：{1}]，因为该集群已有一个网络",
     "arguments": [
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
@@ -4751,7 +4751,7 @@
   {
     "raw": "cannot attach baremetal2 provision network[uuid:%s] to cluster[uuid:%s] because they are not in the same zone",
     "en_US": "cannot attach baremetal2 provision network[uuid:{0}] to cluster[uuid:{1}] because they are not in the same zone",
-    "zh_CN": "无法将BareMetal2配置网络[uuid：{0}]附加到群集[uuid：{1}]，因为它们不在同一区域中",
+    "zh_CN": "无法将BareMetal2配置网络[uuid：{0}]附加到集群[uuid：{1}]，因为它们不在同一区域中",
     "arguments": [
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
@@ -4762,7 +4762,7 @@
   {
     "raw": "cannot attach baremetal2 provision network[uuid:%s] to cluster[uuid:%s], because we need to make sure that every gateway attached to the clusters that have the same provision network attached",
     "en_US": "cannot attach baremetal2 provision network[uuid:{0}] to cluster[uuid:{1}], because we need to make sure that every gateway attached to the clusters that have the same provision network attached",
-    "zh_CN": "无法将BareMetal2配置网络[uuid：{0}]连接到群集[uuid：{1}]，因为我们需要确保连接到具有相同配置网络的群集的每个网关",
+    "zh_CN": "无法将BareMetal2配置网络[uuid：{0}]连接到集群[uuid：{1}]，因为我们需要确保连接到具有相同配置网络的集群的每个网关",
     "arguments": [
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
@@ -4773,7 +4773,7 @@
   {
     "raw": "provision network should not have the same interface name with l2 networks that are already attached to the cluster",
     "en_US": "provision network should not have the same interface name with l2 networks that are already attached to the cluster",
-    "zh_CN": "设置网络不应与已连接到群集的二层网络具有相同的接口名称",
+    "zh_CN": "设置网络不应与已连接到集群的二层网络具有相同的接口名称",
     "arguments": [],
     "line": 241,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
@@ -5789,7 +5789,7 @@
   {
     "raw": "no host found in clusters that has attached to L2Networks which have L3Networks%s",
     "en_US": "no host found in clusters that has attached to L2Networks which have L3Networks{0}",
-    "zh_CN": "在连接到具有L3Networks{0}的L2Networks的群集中找不到物理机",
+    "zh_CN": "在连接到具有L3Networks{0}的L2Networks的集群中找不到物理机",
     "arguments": [
       "spec.getL3NetworkUuids()"
     ],
@@ -5799,7 +5799,7 @@
   {
     "raw": "no host found in clusters that have attached to primary storage %s",
     "en_US": "no host found in clusters that have attached to primary storage {0}",
-    "zh_CN": "在已连接到主存储{0}的群集中找不到物理机",
+    "zh_CN": "在已连接到主存储{0}的集群中找不到物理机",
     "arguments": [
       "psuuids"
     ],
@@ -5819,7 +5819,7 @@
   {
     "raw": "no host found in clusters which have attached to all primary storage %s where vm[uuid:%s]\u0027s volumes locate",
     "en_US": "no host found in clusters which have attached to all primary storage {0} where vm[uuid:{1}]\u0027s volumes locate",
-    "zh_CN": "在已连接到VM[uuid：{1}]的卷所在的所有主存储{0}的群集中找不到物理机",
+    "zh_CN": "在已连接到VM[uuid：{1}]的卷所在的所有主存储{0}的集群中找不到物理机",
     "arguments": [
       "requiredPsUuids",
       "vm.getUuid()"
@@ -5936,7 +5936,7 @@
   {
     "raw": "cannot find available primary storage[state: %s or %s, status: %s]. Check the state/status of primary storage and make sure they have been attached to clusters",
     "en_US": "cannot find available primary storage[state: {0} or {1}, status: {2}]. Check the state/status of primary storage and make sure they have been attached to clusters",
-    "zh_CN": "找不到可用的主存储[状态：{0}或{1}，状态：{2}]。检查主存储的状态，并确保它们已连接到群集",
+    "zh_CN": "找不到可用的主存储[状态：{0}或{1}，状态：{2}]。检查主存储的状态，并确保它们已连接到集群",
     "arguments": [
       "PrimaryStorageState.Enabled",
       "PrimaryStorageState.Disabled",
@@ -5948,7 +5948,7 @@
   {
     "raw": "cannot find available primary storage[state: %s, status: %s, available capacity %s bytes]. Check the state/status of primary storage and make sure they have been attached to clusters",
     "en_US": "cannot find available primary storage[state: {0}, status: {1}, available capacity {2} bytes]. Check the state/status of primary storage and make sure they have been attached to clusters",
-    "zh_CN": "找不到可用的主存储[状态：{0}，状态：{1}，可用容量为{2}字节]。检查主存储的状态，并确保它们已连接到群集",
+    "zh_CN": "找不到可用的主存储[状态：{0}，状态：{1}，可用容量为{2}字节]。检查主存储的状态，并确保它们已连接到集群",
     "arguments": [
       "PrimaryStorageState.Enabled",
       "PrimaryStorageStatus.Connected",
@@ -6273,7 +6273,7 @@
   {
     "raw": "if cluster type is baremetal, then hypervisorType must be baremetal too, or vice versa",
     "en_US": "if cluster type is baremetal, then hypervisorType must be baremetal too, or vice versa",
-    "zh_CN": "如果群集类型为裸机，则hypervisorType也必须为裸机，反之亦然",
+    "zh_CN": "如果集群类型为裸机，则hypervisorType也必须为裸机，反之亦然",
     "arguments": [],
     "line": 55,
     "fileName": "src/main/java/org/zstack/compute/cluster/ClusterApiInterceptor.java"
@@ -6525,7 +6525,7 @@
   {
     "raw": "cluster[uuid:%s] is not existing",
     "en_US": "cluster[uuid:{0}] is not existing",
-    "zh_CN": "群集[uuid：{0}]不存在",
+    "zh_CN": "集群[uuid：{0}]不存在",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -6546,7 +6546,7 @@
   {
     "raw": "cluster[uuid:%s]\u0027s architecture is %s, not match the host[name:%s, ip:%s] architecture %s",
     "en_US": "cluster[uuid:{0}]\u0027s architecture is {1}, not match the host[name:{2}, ip:{3}] architecture {4}",
-    "zh_CN": "群集[uuid：{0}]的体系结构为{1}，与物理机[名称：{2}，IP：{3}]的体系结构{4}不匹配",
+    "zh_CN": "集群[uuid：{0}]的体系结构为{1}，与物理机[名称：{2}，IP：{3}]的体系结构{4}不匹配",
     "arguments": [
       "vo.getClusterUuid()",
       "cluster.getArchitecture()",
@@ -6810,7 +6810,7 @@
   {
     "raw": "cluster[uuids:%s, hypervisorType:%s] are not exist!",
     "en_US": "cluster[uuids:{0}, hypervisorType:{1}] are not exist!",
-    "zh_CN": "群集[uuid：{0}，HypervisorType：{1}]不存在！",
+    "zh_CN": "集群[uuid：{0}，HypervisorType：{1}]不存在！",
     "arguments": [
       "clusterUuids",
       "hypervisorType"
@@ -7023,7 +7023,7 @@
   {
     "raw": "cluster[uuid:%s] do not support ovs-dpdk",
     "en_US": "cluster[uuid:{0}] do not support ovs-dpdk",
-    "zh_CN": "群集[uuid：{0}]不支持OVS-DPDK",
+    "zh_CN": "集群[uuid：{0}]不支持OVS-DPDK",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -7280,7 +7280,7 @@
   {
     "raw": "vm[uuid:%s] cluster uuid is null, cannot change image for it",
     "en_US": "vm[uuid:{0}] cluster uuid is null, cannot change image for it",
-    "zh_CN": "VM[uuid：{0}]群集uuid为空，无法更改其镜像",
+    "zh_CN": "VM[uuid：{0}]集群uuid为空，无法更改其镜像",
     "arguments": [
       "self.getUuid()"
     ],
@@ -7493,7 +7493,7 @@
   {
     "raw": "unable to change to L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
     "en_US": "unable to change to L3 network. The L3 network[uuid:{0}] are belonged to l2 networks [uuids:{1}] that have not been attached to any cluster",
-    "zh_CN": "无法更改为三层网络。三层网络[uuid：{0}]属于尚未连接到任何群集的二层网络[uuid：{1}]",
+    "zh_CN": "无法更改为三层网络。三层网络[uuid：{0}]属于尚未连接到任何集群的二层网络[uuid：{1}]",
     "arguments": [
       "newAddedL3Uuids",
       "l2Uuids"
@@ -7947,7 +7947,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] are belonged to l2 networks [uuids:{1}] that have not been attached to any cluster",
-    "zh_CN": "无法连接三层网络。三层网络[uuid：{0}]属于尚未连接到任何群集的二层网络[uuid：{1}]",
+    "zh_CN": "无法连接三层网络。三层网络[uuid：{0}]属于尚未连接到任何集群的二层网络[uuid：{1}]",
     "arguments": [
       "newAddedL3Uuids",
       "l2Uuids"
@@ -8063,7 +8063,7 @@
   {
     "raw": "unable to attach the nic. Its l2 network [uuid:%s] that have not been attached to any cluster",
     "en_US": "unable to attach the nic. Its l2 network [uuid:{0}] that have not been attached to any cluster",
-    "zh_CN": "无法连接NIC。其二层网络[uuid：{0}]尚未连接到任何群集",
+    "zh_CN": "无法连接NIC。其二层网络[uuid：{0}]尚未连接到任何集群",
     "arguments": [
       "l3NetworkVO.getL2NetworkUuid()"
     ],
@@ -10042,7 +10042,7 @@
   {
     "raw": "the shared mount point primary storage[uuid:%s, name:%s] cannot find any available host in attached clusters",
     "en_US": "the shared mount point primary storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters",
-    "zh_CN": "共享装入点主存储[uuid：{0}，名称：{1}]在连接的群集中找不到任何可用物理机",
+    "zh_CN": "共享装入点主存储[uuid：{0}，名称：{1}]在连接的集群中找不到任何可用物理机",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -10704,7 +10704,7 @@
   {
     "raw": "The cluster[%s] has created DRS",
     "en_US": "The cluster[{0}] has created DRS",
-    "zh_CN": "群集[{0}]已创建DRS",
+    "zh_CN": "集群[{0}]已创建DRS",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -10844,7 +10844,7 @@
   {
     "raw": "The cluster[%s] does not support DRS.",
     "en_US": "The cluster[{0}] does not support DRS.",
-    "zh_CN": "群集[{0}]不支持DRS。",
+    "zh_CN": "集群[{0}]不支持DRS。",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -15308,7 +15308,7 @@
   {
     "raw": "host cpu architecture[%s] is not matched the cluster[%s]",
     "en_US": "host cpu architecture[{0}] is not matched the cluster[{1}]",
-    "zh_CN": "物理机CPU体系结构[{0}]与群集[{1}]不匹配",
+    "zh_CN": "物理机CPU体系结构[{0}]与集群[{1}]不匹配",
     "arguments": [
       "hostArchitecture",
       "cluster.getArchitecture()"
@@ -15426,7 +15426,7 @@
   {
     "raw": "cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has different host os version[%s]",
     "en_US": "cluster[uuid:{0}] already has host with os version[{1}], but new added host[name:{2} ip:{3}] has different host os version[{4}]",
-    "zh_CN": "群集[uuid：{0}]已具有操作系统版本为[{1}]的物理机，但新添加的物理机[名称：{2}IP：{3}]具有不同的物理机操作系统版本[{4}]",
+    "zh_CN": "集群[uuid：{0}]已具有操作系统版本为[{1}]的物理机，但新添加的物理机[名称：{2}IP：{3}]具有不同的物理机操作系统版本[{4}]",
     "arguments": [
       "vo.getClusterUuid()",
       "otherOs",
@@ -26853,7 +26853,7 @@
   {
     "raw": "cannot specify primary storage which attached different cluster.",
     "en_US": "cannot specify primary storage which attached different cluster.",
-    "zh_CN": "无法指定连接到其他群集的主存储。",
+    "zh_CN": "无法指定连接到其他集群的主存储。",
     "arguments": [],
     "line": 348,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
@@ -28424,7 +28424,7 @@
   {
     "raw": "the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster,are you adding a mon not belonging to current cluster mistakenly?",
     "en_US": "the mon[ip:{0}] returns a fsid[{1}] different from the current fsid[{2}] of the cep cluster,are you adding a mon not belonging to current cluster mistakenly?",
-    "zh_CN": "MON[IP：{0}]返回的FSID[{1}]与CEP群集的当前FSID[{2}]不同，您是否错误地添加了不属于当前群集的MON？",
+    "zh_CN": "MON[IP：{0}]返回的FSID[{1}]与CEP集群的当前FSID[{2}]不同，您是否错误地添加了不属于当前集群的MON？",
     "arguments": [
       "base.getSelf().getHostname()",
       "fsid",
@@ -28795,7 +28795,7 @@
   {
     "raw": "iSCSI server[uuid: %s] already attached to cluster[uuid: %s]",
     "en_US": "iSCSI server[uuid: {0}] already attached to cluster[uuid: {1}]",
-    "zh_CN": "iSCSI服务器[uuid：{0}]已连接到群集[uuid：{1}]",
+    "zh_CN": "iSCSI服务器[uuid：{0}]已连接到集群[uuid：{1}]",
     "arguments": [
       "msg.getUuid()",
       "msg.getClusterUuid()"
@@ -28806,7 +28806,7 @@
   {
     "raw": "iSCSI server[uuid: %s] not attached to cluster[uuid: %s]",
     "en_US": "iSCSI server[uuid: {0}] not attached to cluster[uuid: {1}]",
-    "zh_CN": "iSCSI服务器[uuid：{0}]未连接到群集[uuid：{1}]",
+    "zh_CN": "iSCSI服务器[uuid：{0}]未连接到集群[uuid：{1}]",
     "arguments": [
       "msg.getUuid()",
       "msg.getClusterUuid()"
@@ -28817,7 +28817,7 @@
   {
     "raw": "iSCSI server[uuid: %s] still attached to cluster[uuid: %s]",
     "en_US": "iSCSI server[uuid: {0}] still attached to cluster[uuid: {1}]",
-    "zh_CN": "iSCSI服务器[uuid：{0}]仍连接到群集[uuid：{1}]",
+    "zh_CN": "iSCSI服务器[uuid：{0}]仍连接到集群[uuid：{1}]",
     "arguments": [
       "msg.getUuid()",
       "clusterUuid"
@@ -28930,7 +28930,7 @@
   {
     "raw": "different disk types are found in different hosts for lun[serial:%s], unable to attach it to cluster",
     "en_US": "different disk types are found in different hosts for lun[serial:{0}], unable to attach it to cluster",
-    "zh_CN": "在不同的物理机中为Lun[serial：{0}]找到不同的磁盘类型，无法将其连接到群集",
+    "zh_CN": "在不同的物理机中为Lun[serial：{0}]找到不同的磁盘类型，无法将其连接到集群",
     "arguments": [
       "serial"
     ],
@@ -29726,7 +29726,7 @@
   {
     "raw": "the block primary storage[uuid:%s, name:%s] can not find any available host in attached clusters for instantiating the volume",
     "en_US": "the block primary storage[uuid:{0}, name:{1}] can not find any available host in attached clusters for instantiating the volume",
-    "zh_CN": "块主存储[uuid：{0}，名称：{1}]在连接的群集中找不到任何可用于实例化卷的物理机",
+    "zh_CN": "块主存储[uuid：{0}，名称：{1}]在连接的集群中找不到任何可用于实例化卷的物理机",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -29765,7 +29765,7 @@
   {
     "raw": "fail to find cluster for commit volume on ps:%s",
     "en_US": "fail to find cluster for commit volume on ps:{0}",
-    "zh_CN": "在PS：{0}上找不到提交卷的群集",
+    "zh_CN": "在PS：{0}上找不到提交卷的集群",
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
@@ -30063,7 +30063,7 @@
   {
     "raw": "fail to get cluster info, because of %s",
     "en_US": "fail to get cluster info, because of {0}",
-    "zh_CN": "由于{0}，无法获取群集信息",
+    "zh_CN": "由于{0}，无法获取集群信息",
     "arguments": [
       "clusterOverviewRsp.getDetail_err_msg()"
     ],
@@ -30241,7 +30241,7 @@
   {
     "raw": "XStor cluster is unhealthy, cluster info[cluster_ data_ state: %s, cluster_ healthy_ state: %s, cluster_ running_ state: %s]",
     "en_US": "XStor cluster is unhealthy, cluster info[cluster_ data_ state: {0}, cluster_ healthy_ state: {1}, cluster_ running_ state: {2}]",
-    "zh_CN": "xstor群集运行不正常，群集信息[群集_数据_状态：{0}，群集_运行正常_状态：{1}，群集_运行_状态：{2}]",
+    "zh_CN": "xstor集群运行不正常，集群信息[集群_数据_状态：{0}，集群_运行正常_状态：{1}，集群_运行_状态：{2}]",
     "arguments": [
       "clusterOverview.getCluster_data_state()",
       "clusterOverview.getCluster_healthy_state()",
@@ -30990,7 +30990,7 @@
   {
     "raw": "the required host[uuid:%s] cannot satisfy conditions[state: %s, status: %s, size \u003e %s bytes], or doesn\u0027t belong to a local primary storage satisfying conditions[state: %s, status: %s], or its cluster doesn\u0027t attach to any local primary storage",
     "en_US": "the required host[uuid:{0}] cannot satisfy conditions[state: {1}, status: {2}, size \u003e {3} bytes], or doesn\u0027t belong to a local primary storage satisfying conditions[state: {4}, status: {5}], or its cluster doesn\u0027t attach to any local primary storage",
-    "zh_CN": "所需的物理机[uuid：{0}]无法满足条件[状态：{1}，状态：{2}，大小\u003e{3}字节]，或者不属于满足条件[状态：{4}，状态：{5}]的本地主存储，或者其群集未连接到任何本地主存储",
+    "zh_CN": "所需的物理机[uuid：{0}]无法满足条件[状态：{1}，状态：{2}，大小\u003e{3}字节]，或者不属于满足条件[状态：{4}，状态：{5}]的本地主存储，或者其集群未连接到任何本地主存储",
     "arguments": [
       "spec.getRequiredHostUuid()",
       "HostState.Enabled",
@@ -31152,7 +31152,7 @@
   {
     "raw": "the mini storage[uuid:%s, name:%s] cannot find any available host in attached clusters for instantiating the volume",
     "en_US": "the mini storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters for instantiating the volume",
-    "zh_CN": "小型存储[uuid：{0}，名称：{1}]在连接的群集中找不到任何可用于实例化卷的物理机",
+    "zh_CN": "小型存储[uuid：{0}，名称：{1}]在连接的集群中找不到任何可用于实例化卷的物理机",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -31297,7 +31297,7 @@
   {
     "raw": "required cluster %s not attached to primary storage %s for volume %s create",
     "en_US": "required cluster {0} not attached to primary storage {1} for volume {2} create",
-    "zh_CN": "创建卷{2}所需的群集{0}未连接到主存储{1}",
+    "zh_CN": "创建卷{2}所需的集群{0}未连接到主存储{1}",
     "arguments": [
       "clusterUuid",
       "msg.getPrimaryStorageUuid()",
@@ -31309,7 +31309,7 @@
   {
     "raw": "can not find avaliable host on required cluster %s for volume %s create",
     "en_US": "can not find avaliable host on required cluster {0} for volume {1} create",
-    "zh_CN": "在创建卷{1}所需的群集{0}上找不到可用物理机",
+    "zh_CN": "在创建卷{1}所需的集群{0}上找不到可用物理机",
     "arguments": [
       "clusterUuid",
       "volume.getUuid()"
@@ -31996,7 +31996,7 @@
   {
     "raw": "can not get cluster uuid of volume %s",
     "en_US": "can not get cluster uuid of volume {0}",
-    "zh_CN": "无法获取卷{0}的群集uuid",
+    "zh_CN": "无法获取卷{0}的集群uuid",
     "arguments": [
       "volumeUuid"
     ],
@@ -35392,7 +35392,7 @@
   {
     "raw": "get vCenter cluster[%s] name failed",
     "en_US": "get vCenter cluster[{0}] name failed",
-    "zh_CN": "获取vCenter群集[{0}]名称失败",
+    "zh_CN": "获取vCenter集群[{0}]名称失败",
     "arguments": [
       "clusterUuid"
     ],
@@ -36664,7 +36664,7 @@
   {
     "raw": "cluster[uuid:%s] hypervisorType is not %s",
     "en_US": "cluster[uuid:{0}] hypervisorType is not {1}",
-    "zh_CN": "群集[uuid：{0}]管理程序类型不是{1}",
+    "zh_CN": "集群[uuid：{0}]管理程序类型不是{1}",
     "arguments": [
       "msg.getClusterUuid()",
       "XDragonConstant.HYPERVISOR_TYPE"
