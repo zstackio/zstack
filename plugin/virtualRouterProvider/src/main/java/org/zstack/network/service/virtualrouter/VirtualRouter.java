@@ -867,7 +867,7 @@ public class VirtualRouter extends ApplianceVmBase {
         reconnect(false, completion);
     }
 
-    private void reconnect(boolean fromApi, final Completion completion) {
+    private void reconnect(Boolean fromApi, final Completion completion) {
         ApplianceVmStatus oldStatus = getSelf().getStatus();
 
         FlowChain chain = getReconnectChain();
@@ -877,7 +877,7 @@ public class VirtualRouter extends ApplianceVmBase {
         chain.getData().put(Params.isReconnect.toString(), Boolean.TRUE.toString());
         chain.getData().put(Params.managementNicIp.toString(), vr.getManagementNic().getIp());
         chain.getData().put(Params.applianceVmUuid.toString(), self.getUuid());
-        chain.getData().put(Params.fromApi.toString(), fromApi);
+        chain.getData().put(Params.fromApi.toString(), fromApi.toString());
 
         SimpleQuery<ApplianceVmFirewallRuleVO> q = dbf.createQuery(ApplianceVmFirewallRuleVO.class);
         q.add(ApplianceVmFirewallRuleVO_.applianceVmUuid, Op.EQ, getSelf().getUuid());
