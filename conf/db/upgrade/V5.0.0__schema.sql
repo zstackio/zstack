@@ -21,3 +21,12 @@ CREATE TABLE `zstack`.`PoliceVO` (
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkPoliceVOIAM2VirtualIDVO` FOREIGN KEY (`uuid`) REFERENCES `IAM2VirtualIDVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `XgsTokenVO` (
+  `uuid` VARCHAR(32) NOT NULL,
+  `userUuid` VARCHAR(256) NOT NULL,
+  `accessToken` text not null,
+  `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL,
+  PRIMARY KEY (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
