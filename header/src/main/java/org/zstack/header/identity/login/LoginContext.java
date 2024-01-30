@@ -1,6 +1,7 @@
 package org.zstack.header.identity.login;
 
 import org.zstack.header.identity.APISessionMessage;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 
 import java.sql.Timestamp;
@@ -183,6 +184,13 @@ public class LoginContext {
             return Collections.emptySet();
         }
         return this.possibleUsersGetter.apply(this);
+    }
+
+    public boolean isUserExisting() {
+        if (this.userUuid.equals(String.format(AccountConstant.NO_EXIST_ACCOUNT, this.username))) {
+            return false;
+        }
+        return true;
     }
 
     public static LoginContext fromApiLoginMessage(APISessionMessage msg) {
