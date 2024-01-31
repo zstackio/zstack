@@ -91,8 +91,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.*;
 
@@ -901,7 +900,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 //   2. judges no need to start VM.
                 // thus, with monitoring, there might be false records.
                 final VmSchedHistoryRecorder recorder = VmSchedHistoryRecorder.ofHA(msg.getVmInstanceUuid())
-                        .withReason("%s, try to start HA", msg.getHaReason())
+                        .withSchedReason(i18n("%s, try to start HA", msg.getHaReason()))
                         .begin();
                 ErrorCodeList errList = new ErrorCodeList();
                 new While<>(pluginRgty.getExtensionList(BeforeHaStartVmInstanceExtensionPoint.class)).each((ext, whileCompletion) -> {
@@ -923,7 +922,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                         if (!errList.getCauses().isEmpty()) {
                             reply.setError(errList.getCauses().get(0));
                             bus.reply(msg, reply);
-                            recorder.end(null);
+                            recorder.withFailReason(reply.getError().getDetails())
+                                    .end(null);
                             chain.next();
                             return;
                         }
@@ -954,7 +954,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                             public void fail(ErrorCode errorCode) {
                                 reply.setError(errorCode);
                                 bus.reply(msg, reply);
-                                recorder.end(null);
+                                recorder.withFailReason(errorCode.getDetails())
+                                        .end(null);
                                 chain.next();
                             }
                         });

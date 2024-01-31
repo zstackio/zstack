@@ -22,7 +22,8 @@ public class VmSchedHistoryRecorder {
     private final String schedType;
     private final String hostUuid;
     private final String zoneUuid;
-    private String reason;
+    private String schedReason;
+    private String failReason;
     private VmSchedHistoryVO vo;
 
     @Autowired
@@ -77,18 +78,18 @@ public class VmSchedHistoryRecorder {
         vo.setAccountUuid(acntUuid);
         vo.setZoneUuid(zoneUuid);
         vo.setLastHostUuid(hostUuid);
-        vo.setReason(reason);
+        vo.setSchedReason(schedReason);
         vo = dbf.persistAndRefresh(vo);
         return this;
     }
 
-    public VmSchedHistoryRecorder withReason(String reason) {
-        this.reason = reason;
+    public VmSchedHistoryRecorder withSchedReason(String schedReason) {
+        this.schedReason = schedReason;
         return this;
     }
 
-    public VmSchedHistoryRecorder withReason(String format, Object... args) {
-        this.reason = String.format(format, args);
+    public VmSchedHistoryRecorder withFailReason(String failReason) {
+        this.failReason = failReason;
         return this;
     }
 
@@ -100,6 +101,7 @@ public class VmSchedHistoryRecorder {
                 .eq(VmSchedHistoryVO_.vmInstanceUuid, vmInstanceUuid)
                 .set(VmSchedHistoryVO_.destHostUuid, currentHostUuid)
                 .set(VmSchedHistoryVO_.success, currentHostUuid != null)
+                .set(VmSchedHistoryVO_.failReason, failReason)
                 .update();
     }
 }

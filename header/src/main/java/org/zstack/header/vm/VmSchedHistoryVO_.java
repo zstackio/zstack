@@ -11,6 +11,8 @@ public class VmSchedHistoryVO_ {
     public static volatile SingularAttribute<VmSchedHistoryVO, String> zoneUuid;
     public static volatile SingularAttribute<VmSchedHistoryVO, String> accountUuid;
     public static volatile SingularAttribute<VmSchedHistoryVO, String> schedType;
+    public static volatile SingularAttribute<VmSchedHistoryVO, String> schedReason;
+    public static volatile SingularAttribute<VmSchedHistoryVO, String> failReason;
     public static volatile SingularAttribute<VmSchedHistoryVO, Boolean> success;
     public static volatile SingularAttribute<VmSchedHistoryVO, String> lastHostUuid;
     public static volatile SingularAttribute<VmSchedHistoryVO, String> destHostUuid;
