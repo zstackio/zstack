@@ -23,7 +23,8 @@ public class VmSchedHistoryInventory implements Serializable {
     private String vmInstanceUuid;
     private String accountUuid;
     private String schedType;
-    private String reason;
+    private String schedReason;
+    private String failReason;
     private Boolean success;
     private String lastHostUuid;
     private String destHostUuid;
@@ -44,7 +45,8 @@ public class VmSchedHistoryInventory implements Serializable {
         inv.setVmInstanceUuid(vo.getVmInstanceUuid());
         inv.setAccountUuid(vo.getAccountUuid());
         inv.setSchedType(vo.getSchedType());
-        inv.setReason(vo.getReason());
+        inv.setSchedReason(vo.getSchedReason());
+        inv.setFailReason(vo.getFailReason());
         inv.setSuccess(vo.getSuccess());
         inv.setLastHostUuid(vo.getLastHostUuid());
         inv.setDestHostUuid(vo.getDestHostUuid());
@@ -98,12 +100,20 @@ public class VmSchedHistoryInventory implements Serializable {
         this.schedType = schedType;
     }
 
-    public String getReason() {
-        return reason;
+    public String getSchedReason() {
+        return schedReason;
     }
 
-    public void setReason(String reason) {
-        this.reason = reason;
+    public void setSchedReason(String schedReason) {
+        this.schedReason = schedReason;
+    }
+
+    public String getFailReason() {
+        return failReason;
+    }
+
+    public void setFailReason(String failReason) {
+        this.failReason = failReason;
     }
 
     public Boolean getSuccess() {

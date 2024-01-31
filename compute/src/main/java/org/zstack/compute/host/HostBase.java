@@ -427,7 +427,7 @@ public abstract class HostBase extends AbstractHost {
 
                         new While<>(vmUuids).step((vmUuid, compl) -> {
                             VmSchedHistoryRecorder recorder = VmSchedHistoryRecorder.ofHostMaintenance(vmUuid)
-                                    .withReason(i18n("Host[%s] is in maintenance state, VM on this host should be migrated", host.getName()))
+                                    .withSchedReason(i18n("Host[%s] is in maintenance state, VM on this host should be migrated", host.getName()))
                                     .begin();
                             MigrateVmMsg msg = new MigrateVmMsg();
                             msg.setVmInstanceUuid(vmUuid);
@@ -438,7 +438,8 @@ public abstract class HostBase extends AbstractHost {
                                 public void run(MessageReply reply) {
                                     if (!reply.isSuccess()) {
                                         vmFailedToMigrate.put(msg.getVmInstanceUuid(), reply.getError());
-                                        recorder.end(null);
+                                        recorder.withFailReason(reply.getError().getDetails())
+                                                .end(null);
                                     } else {
                                         recorder.end(getVmHostUuid(vmUuid));
                                     }

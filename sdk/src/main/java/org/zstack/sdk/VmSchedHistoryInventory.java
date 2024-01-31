@@ -36,12 +36,20 @@ public class VmSchedHistoryInventory  {
         return this.schedType;
     }
 
-    public java.lang.String reason;
-    public void setReason(java.lang.String reason) {
-        this.reason = reason;
+    public java.lang.String schedReason;
+    public void setSchedReason(java.lang.String schedReason) {
+        this.schedReason = schedReason;
     }
-    public java.lang.String getReason() {
-        return this.reason;
+    public java.lang.String getSchedReason() {
+        return this.schedReason;
+    }
+
+    public java.lang.String failReason;
+    public void setFailReason(java.lang.String failReason) {
+        this.failReason = failReason;
+    }
+    public java.lang.String getFailReason() {
+        return this.failReason;
     }
 
     public java.lang.Boolean success;
