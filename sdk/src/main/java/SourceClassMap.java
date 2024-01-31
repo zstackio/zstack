@@ -100,6 +100,8 @@ public class SourceClassMap {
 			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecretResourcePoolInventory", "org.zstack.sdk.FiSecSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecurityMachineInventory", "org.zstack.sdk.FiSecSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory", "org.zstack.sdk.FlkSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory", "org.zstack.sdk.FlkSecSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory", "org.zstack.sdk.HaiTaiSecretResourcePoolInventory");
@@ -895,6 +897,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ExternalServiceCapabilitiesBuilder", "org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder");
 			put("org.zstack.sdk.ExternalServiceInventory", "org.zstack.header.core.external.service.ExternalServiceInventory");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
+			put("org.zstack.sdk.FiSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecretResourcePoolInventory");
+			put("org.zstack.sdk.FiSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecurityMachineInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
