@@ -12,7 +12,7 @@ public class SyncAllPoliceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddAccessControlListEntryResult value;
+        public org.zstack.sdk.SyncAllPoliceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +60,8 @@ public class SyncAllPoliceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddAccessControlListEntryResult value = res.getResult(org.zstack.sdk.AddAccessControlListEntryResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddAccessControlListEntryResult() : value; 
+        org.zstack.sdk.SyncAllPoliceResult value = res.getResult(org.zstack.sdk.SyncAllPoliceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncAllPoliceResult() : value; 
 
         return ret;
     }
