@@ -40,6 +40,9 @@ public class CreateCSPSecretResourcePoolAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String keyId;
 
+    @Param(required = false, validValues = {"https","http"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String protocol = "https";
+
     @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String userId;
 
