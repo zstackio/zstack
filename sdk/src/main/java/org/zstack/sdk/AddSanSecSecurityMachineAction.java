@@ -43,7 +43,7 @@ public class AddSanSecSecurityMachineAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String model;
 
-    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine","SecureSignVerifyService"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -121,7 +121,7 @@ public class AddSanSecSecurityMachineAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/security-machine/fiSec";
+        info.path = "/security-machine/sanSec";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

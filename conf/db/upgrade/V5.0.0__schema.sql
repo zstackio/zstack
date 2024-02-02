@@ -91,18 +91,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`JitSecurityMachineVO` (
     CONSTRAINT fkJitSecurityMachineVOSecurityMachineVO FOREIGN KEY (uuid) REFERENCES SecurityMachineVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`CSPSecretResourcePoolVO` (
-    `uuid` varchar(32) NOT NULL UNIQUE,
-    `managementIp` varchar(32) NOT NULL,
-    `port` int unsigned NOT NULL,
-    `appId` varchar(128) NOT NULL,
-    `appKey` varchar(128) NOT NULL,
-    `keyId` varchar(128) NOT NULL,
-    `userId` varchar(128) DEFAULT NULL,
-    PRIMARY KEY  (`uuid`),
-    CONSTRAINT fkCSPSecretResourcePoolVOSecretResourcePoolVO FOREIGN KEY (uuid) REFERENCES SecretResourcePoolVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 ALTER TABLE `zstack`.`AgentVersionVO` ADD CONSTRAINT fkAgentVersionVOResourceVO FOREIGN KEY (uuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
 
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `virtStatus` VARCHAR(32) DEFAULT NULL AFTER `offloadStatus`;

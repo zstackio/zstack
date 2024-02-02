@@ -100,9 +100,9 @@ public class SourceClassMap {
 			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.csp.CSPSecretResourcePoolInventory", "org.zstack.sdk.CSPSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecretResourcePoolInventory", "org.zstack.sdk.FiSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecurityMachineInventory", "org.zstack.sdk.FiSecSecurityMachineInventory");
-			put("org.zstack.crypto.securitymachine.thirdparty.csp.CSPSecretResourcePoolInventory", "org.zstack.sdk.CSPSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory", "org.zstack.sdk.FlkSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory", "org.zstack.sdk.FlkSecSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory", "org.zstack.sdk.HaiTaiSecretResourcePoolInventory");
