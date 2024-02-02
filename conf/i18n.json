@@ -12072,7 +12072,7 @@
   {
     "raw": "cannot determine VM[%s] status on host[%s], try to start it",
     "en_US": "cannot determine VM[{0}] status on host[{1}], try to start it",
-    "zh_CN": "无法确定物理机[{1}]上的VM[{0}]状态，请尝试启动它",
+    "zh_CN": "无法确定物理机[{1}]上的VM[{0}]状态，尝试启动虚拟机",
     "arguments": [
       "vmUuid",
       "hostUuid"
@@ -12083,7 +12083,7 @@
   {
     "raw": "vm state is stopped, try to start it",
     "en_US": "vm state is stopped, try to start it",
-    "zh_CN": "云主机状态为“已停止”，请尝试启动它",
+    "zh_CN": "云主机状态为“已停止”，尝试启动虚拟机",
     "arguments": [],
     "line": 1601,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
@@ -12147,7 +12147,7 @@
   {
     "raw": "VM state is not running, try to start it",
     "en_US": "VM state is not running, try to start it",
-    "zh_CN": "云主机状态为未运行，请尝试启动它",
+    "zh_CN": "云主机状态为未运行，尝试启动虚拟机",
     "arguments": [],
     "line": 102,
     "fileName": "src/main/java/org/zstack/ha/NeverStopVmGC.java"

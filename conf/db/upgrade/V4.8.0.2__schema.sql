@@ -7,4 +7,5 @@ ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `vendorName` VARCHAR(64
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `subvendorName` VARCHAR(64) DEFAULT NULL AFTER `subdeviceId`;
 
 -- from issue: (feature) ZSV-4408
-ALTER TABLE `zstack`.`VmSchedHistoryVO` ADD COLUMN `reason` text DEFAULT NULL;
+ALTER TABLE `zstack`.`VmSchedHistoryVO` ADD COLUMN `schedReason` text DEFAULT NULL;
+ALTER TABLE `zstack`.`VmSchedHistoryVO` ADD COLUMN `failReason` text DEFAULT NULL;
