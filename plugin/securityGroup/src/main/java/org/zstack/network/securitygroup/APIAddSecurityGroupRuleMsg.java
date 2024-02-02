@@ -145,7 +145,7 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
         @APIParam(required = false, validValues = {"Enabled", "Disabled"})
         private String state = SecurityGroupRuleState.Enabled.toString();
 
-        @APIParam(required = false)
+        @APIParam(required = false, maxLength = 255)
         private String description;
 
         /**
