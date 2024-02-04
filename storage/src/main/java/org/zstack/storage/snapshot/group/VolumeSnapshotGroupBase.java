@@ -212,7 +212,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             logger.debug(String.format("skip snapshots not belong to origin vm[uuid:%s]", self.getVmInstanceUuid()));
         }
 
-        new While<>(snapshots).all((snapshot, compl) -> {
+        new While<>(snapshots).each((snapshot, compl) -> {
             DeleteVolumeSnapshotMsg rmsg = new DeleteVolumeSnapshotMsg();
             rmsg.setSnapshotUuid(snapshot.getUuid());
             rmsg.setVolumeUuid(snapshot.getVolumeUuid());
