@@ -43,6 +43,9 @@ public class UpdateCSPSecretResourcePoolAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String userId;
 
+    @Param(required = false, validValues = {"https","http"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String protocol = "https";
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
