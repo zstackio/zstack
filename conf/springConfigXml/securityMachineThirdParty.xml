@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+         http://www.springframework.org/schema/aop
+         http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+         http://www.springframework.org/schema/tx
+     	 http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+     	 http://zstack.org/schema/zstack
+         http://zstack.org/schema/zstack/plugin.xsd"
+       default-init-method="init" default-destroy-method="destroy">
+
+    <bean id="WestoneEncryptDriver" class="org.zstack.crypto.securitymachine.thirdparty.westone.WestoneEncryptDriver">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.encrypt.EncryptDriver"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="WestoneClientFactory" class="org.zstack.crypto.securitymachine.thirdparty.westone.WestoneClientFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.securitymachine.SecurityMachineClientFactory"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="WestoneSecretResourcePoolFactory" class="org.zstack.crypto.securitymachine.thirdparty.westone.WestoneSecretResourcePoolFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.securitymachine.secretresourcepool.SecretResourcePoolFactory" />
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="WestoneSecretResourcePoolApiInterceptor" class="org.zstack.crypto.securitymachine.thirdparty.westone.WestoneSecretResourcePoolApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+    <bean id="ZhongfuSecretResourcePoolApiInterceptor" class="org.zstack.crypto.securitymachine.thirdparty.zhongfu.ZhongfuSecretResourcePoolApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ZhongfuSecretResourcePoolFactory" class="org.zstack.crypto.securitymachine.thirdparty.zhongfu.ZhongfuSecretResourcePoolFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.securitymachine.secretresourcepool.SecretResourcePoolFactory" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ZhongfuClientFactory" class="org.zstack.crypto.securitymachine.thirdparty.zhongfu.ZhongfuClientFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.securitymachine.SecurityMachineClientFactory"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ZhongfuEncryptDriver" class="org.zstack.crypto.securitymachine.thirdparty.zhongfu.ZhongfuEncryptDriver">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.encrypt.EncryptDriver"/>
+        </zstack:plugin>
+    </bean>
+</beans>

@@ -179,5 +179,7 @@
         <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
         <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
         <class>org.zstack.authentication.checkfile.FileVerificationVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.westone.WestoneSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.zhongfu.ZhongfuSecretResourcePoolVO</class>
     </persistence-unit>
 </persistence>
