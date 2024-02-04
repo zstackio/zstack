@@ -2,6 +2,7 @@ package org.zstack.crypto.securitymachine.api;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.crypto.securitymachine.secretresourcepool.CreateWestoneSecretResourcePoolMessage;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.securitymachine.api.secretresourcepool.APICreateSecretResourcePoolEvent;
@@ -18,6 +19,7 @@ public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResour
 	private String tenantId;
 	private String appId;
 	private String secret;
+	@NoLogging(type = NoLogging.Type.Uri)
 	private String initParamUrl;
 	private String initParamWorkdId;
 	private String initParamWorkdir;

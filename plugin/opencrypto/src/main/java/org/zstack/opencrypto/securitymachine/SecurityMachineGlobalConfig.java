@@ -19,7 +19,7 @@ public class SecurityMachineGlobalConfig {
     @GlobalConfigDef(defaultValue = "", type = String.class, description = "resource pool uuid used for data protection")
     public static GlobalConfig RESOURCE_POOL_UUID_FOR_DATA_PROTECT =
             new GlobalConfig(CATEGORY, "crypto.dataProtect.resourcePoolUuid");
+    @GlobalConfigDef(defaultValue = "50", type = Integer.class, description = "the number of cipher machines that can perform heartbeat detection at the same time")
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig HEART_BEAT_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "heartbeat.parallelismDegree");
-
 }
