@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 
@@ -22,12 +23,45 @@ public class APIDeleteVolumeSnapshotGroupMsg extends APIDeleteMessage implements
     @APIParam(resourceType = VolumeSnapshotGroupVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
+    @APIParam(required = false, validValues = {"pull", "commit", "auto"})
+    private String direction = "auto";
+
+    @APIParam(required = false, validValues = {"single", "chain", "auto"})
+    private String scope = "chain";
+
+    @APINoSee
+    private String vmUuid;
+
     public String getUuid() {
         return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public String getDirection() {
+        return direction;
+    }
+
+    public void setDirection(String direction) {
+        this.direction = direction;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public void setVmUuid(String vmUuid) {
+        this.vmUuid = vmUuid;
     }
 
     @Override

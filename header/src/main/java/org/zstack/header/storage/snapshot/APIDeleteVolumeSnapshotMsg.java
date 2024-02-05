@@ -62,6 +62,12 @@ public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements Dele
     @APINoSee
     private String treeUuid;
 
+    @APIParam(required = false, validValues = {"pull", "commit", "auto"})
+    private String direction = "auto";
+
+    @APIParam(required = false, validValues = {"single", "chain", "auto"})
+    private String scope = "chain";
+
     @Override
     public String getTreeUuid() {
         return treeUuid;
@@ -83,6 +89,22 @@ public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements Dele
     @Override
     public String getSnapshotUuid() {
         return uuid;
+    }
+
+    public String getDirection() {
+        return direction;
+    }
+
+    public void setDirection(String direction) {
+        this.direction = direction;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 
     @Override
