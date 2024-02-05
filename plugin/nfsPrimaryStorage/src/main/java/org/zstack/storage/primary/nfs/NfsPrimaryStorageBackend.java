@@ -87,8 +87,11 @@ public interface NfsPrimaryStorageBackend {
 
     void remount(PrimaryStorageInventory pinv, String clusterUuid, NfsPrimaryStorage.NfsConnectParam param, Completion completion);
 
-    void updateMountPoint(PrimaryStorageInventory pinv, String clusterUuid, String oldMountPoint, String newMountPoint, Completion completion);
+    void pullSnapshot(PullVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<PullVolumeSnapshotOnPrimaryStorageReply> completion);
 
+    void commitSnapshot(CommitVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CommitVolumeSnapshotOnPrimaryStorageReply> completion);
+
+    void updateMountPoint(PrimaryStorageInventory pinv, String clusterUuid, String oldMountPoint, String newMountPoint, Completion completion);
 
     class BitsInfo {
         private String installPath;

@@ -1,6 +1,7 @@
 package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIParam;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
@@ -11,6 +12,8 @@ public class DeleteVolumeSnapshotMsg extends NeedReplyMessage implements DeleteV
     private String volumeUuid;
     private String treeUuid;
     private String deletionMode;
+    private String direction;
+    private String scope;
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
@@ -48,5 +51,23 @@ public class DeleteVolumeSnapshotMsg extends NeedReplyMessage implements DeleteV
     @Override
     public String getTreeUuid() {
         return treeUuid;
+    }
+
+    @Override
+    public String getDirection() {
+        return direction;
+    }
+
+    public void setDirection(String direction) {
+        this.direction = direction;
+    }
+
+    @Override
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 }
