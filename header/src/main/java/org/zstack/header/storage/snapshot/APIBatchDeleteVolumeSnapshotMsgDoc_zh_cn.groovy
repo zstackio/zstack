@@ -40,6 +40,15 @@ doc {
 					since "3.3"
 				}
 				column {
+					name "onlySelf"
+					enclosedIn "batchDeleteVolumeSnapshot"
+					desc "仅删除当前快照"
+					location "body"
+					type "boolean"
+					optional true
+					since "zsv 4.2.6"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc ""

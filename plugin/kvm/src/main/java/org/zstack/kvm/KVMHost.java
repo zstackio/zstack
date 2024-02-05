@@ -100,9 +100,6 @@ import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -677,8 +674,8 @@ public class KVMHost extends HostBase implements Host {
             handle((GetHostPowerStatusMsg) msg);
         } else if (msg instanceof FstrimVmMsg) {
             handle((FstrimVmMsg) msg);
-        } else if (msg instanceof CommitVolumeOnHypervisorMsg) {
-            handle((CommitVolumeOnHypervisorMsg) msg);
+        } else if (msg instanceof DeleteVolumeSnapshotSelfOnHypervisorMsg) {
+            handle((DeleteVolumeSnapshotSelfOnHypervisorMsg) msg);
         } else if (msg instanceof TakeVmConsoleScreenshotMsg) {
             handle((TakeVmConsoleScreenshotMsg) msg);
         } else if (msg instanceof GetVmUptimeMsg) {
@@ -814,16 +811,16 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(CommitVolumeOnHypervisorMsg msg) {
-        inQueue().name(String.format("block-commit-on-kvm-%s", self.getUuid()))
+    private void handle(DeleteVolumeSnapshotSelfOnHypervisorMsg msg) {
+        inQueue().name(String.format("delete-volume-%s-snapshot-by-block-commit-on-kvm-%s", msg.getVolume().getUuid(), self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> {
-                    commitVolume(msg);
+                    deleteVolumeSnapshotSelf(msg);
                     chain.next();
                 });
     }
 
-    private void commitVolume(final CommitVolumeOnHypervisorMsg msg) {
+    private void deleteVolumeSnapshotSelf(final DeleteVolumeSnapshotSelfOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -832,7 +829,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void run(SyncTaskChain chain) {
-                doCommitVolume(msg, new NoErrorCompletion() {
+                doDeleteVolumeSnapshotSelf(msg, new NoErrorCompletion() {
                     @Override
                     public void done() {
                         chain.next();
@@ -847,14 +844,14 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public String getName() {
-                return String.format("block-commit-volume-on-kvm-%s", self.getUuid());
+                return String.format(String.format("do-delete-volume-%s-snapshot-by-block-commit-on-kvm-%s", msg.getVolume().getUuid(), self.getUuid()));
             }
         });
     }
 
-    private void doCommitVolume(final CommitVolumeOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    private void doDeleteVolumeSnapshotSelf(final DeleteVolumeSnapshotSelfOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
-        final CommitVolumeOnHypervisorReply reply = new CommitVolumeOnHypervisorReply();
+        final DeleteVolumeSnapshotSelfOnHypervisorReply reply = new DeleteVolumeSnapshotSelfOnHypervisorReply();
 
         BlockCommitVolumeCmd cmd = new BlockCommitVolumeCmd();
         if (msg.getVmUuid() != null) {
@@ -872,6 +869,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
         cmd.setTop(msg.getSrcPath());
         cmd.setBase(msg.getDstPath());
+        cmd.setAliveChainInstallPathInDb(msg.getAliveChainInstallPathInDb());
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("block-commit-for-volume-%s", msg.getVolume().getUuid()));

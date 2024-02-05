@@ -68,7 +68,8 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
         try {
             if (VolumeSnapshotVO.class.getSimpleName().equals(action.getParentIssuer())) {
-                List<VolumeSnapshotInventory> sinvs = action.getParentIssuerContext();
+                VolumeSnapshotDeletionStructs structs = action.getParentIssuerContext();
+                List<VolumeSnapshotInventory> sinvs = structs.getSnapshotInventories();
                 sinvs.forEach(s -> dbf.eoCleanup(VolumeSnapshotVO.class, s.getUuid()));
             } else {
                 dbf.eoCleanup(VolumeSnapshotVO.class);
@@ -83,7 +84,7 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         }
     }
 
-    private static VolumeSnapshotDeletionMsg buildMsg(final String suuid, boolean volumeDeletion) {
+    private static VolumeSnapshotDeletionMsg buildMsg(final String suuid, boolean onlySelf, boolean volumeDeletion) {
         Tuple t = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, suuid)
                 .select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid)
                 .findTuple();
@@ -96,11 +97,12 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         msg.setTreeUuid(treeUuid);
         msg.setVolumeUuid(volumeUuid);
         msg.setVolumeDeletion(volumeDeletion);
+        msg.setOnlySelf(onlySelf);
         return msg;
     }
 
-    private VolumeSnapshotDeletionMsg makeMsg(final String suuid, boolean volumeDeletion) {
-        VolumeSnapshotDeletionMsg msg = buildMsg(suuid, volumeDeletion);
+    private VolumeSnapshotDeletionMsg makeMsg(final String suuid, boolean onlySelf, boolean volumeDeletion) {
+        VolumeSnapshotDeletionMsg msg = buildMsg(suuid, onlySelf, volumeDeletion);
         setTargetServiceId(msg);
         return msg;
     }
@@ -118,9 +120,10 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
                 msgs.addAll(handleVolumeDeletion(vol));
             }
         } else if (VolumeSnapshotVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<VolumeSnapshotInventory> sinvs = action.getParentIssuerContext();
+            VolumeSnapshotDeletionStructs struct = action.getParentIssuerContext();
+            List<VolumeSnapshotInventory> sinvs = struct.getSnapshotInventories();
             for (VolumeSnapshotInventory sinv : sinvs) {
-                msgs.add(handleSnapshotDeletion(sinv));
+                msgs.add(handleSnapshotDeletion(sinv, struct.isOnlySelf()));
             }
         }
 
@@ -190,8 +193,8 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         });
     }
 
-    private VolumeSnapshotDeletionMsg handleSnapshotDeletion(VolumeSnapshotInventory sinv) {
-        return makeMsg(sinv.getUuid(), false);
+    private VolumeSnapshotDeletionMsg handleSnapshotDeletion(VolumeSnapshotInventory sinv, boolean onlySelf) {
+        return makeMsg(sinv.getUuid(), onlySelf, false);
     }
 
     private List<VolumeSnapshotDeletionMsg> handleVolumeDeletion(VolumeDeletionStruct vol) {
@@ -213,8 +216,8 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
                 .getDirectReferencedSnapshotUuidsGroupByTree(volumeUuid);
 
         return cuuids.stream().flatMap(it ->
-                        getDeletableSnapshotUuidOnVolumeExpunge(it,  referenceSnapshotTrees.get(it)).stream())
-                .map(it -> buildMsg(it, true))
+                        getDeletableSnapshotUuidOnVolumeExpunge(it, referenceSnapshotTrees.get(it)).stream())
+                .map(it -> buildMsg(it, false, true))
                 .collect(Collectors.toList());
     }
 

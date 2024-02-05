@@ -20,6 +20,7 @@ import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
+import org.zstack.testlib.vfs.Qcow2
 import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.extensions.VFSPrimaryStorageTakeSnapshotBackend
 import org.zstack.testlib.vfs.extensions.VFSSnapshot
@@ -576,10 +577,28 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH)  { HttpEntity<String> e ->
-            KVMAgentCommands.BlockCommitVolumeCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.BlockCommitVolumeCmd.class)
-            def rsp = new KVMAgentCommands.BlockCommitVolumeResponse()
+            BlockCommitVolumeCmd cmd = JSONObjectUtil.toObject(e.body, BlockCommitVolumeCmd.class)
+            def rsp = new BlockCommitVolumeResponse()
             rsp.newVolumeInstallPath = cmd.base
             rsp.size = 1
+            return rsp
+        }
+
+        VFS.vfsHook(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH, spec) { BlockCommitVolumeResponse rsp, HttpEntity<String> e, EnvSpec espec ->
+            BlockCommitVolumeCmd cmd = JSONObjectUtil.toObject(e.body, BlockCommitVolumeCmd.class)
+
+            VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, cmd.volume.getVolumeUuid()).find()
+            assert volume : "cannot find volume[uuid: ${cmd.volumeUuid}]"
+
+            String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
+                    .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid).findValue()
+            assert primaryStorageType : "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
+
+            VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
+            Qcow2 newVolumeInstallPathQcow2 = bkd.blockCommit(e, espec, cmd, volume.toInventory() as VolumeInventory)
+
+            rsp.newVolumeInstallPath = cmd.base
+            rsp.size = newVolumeInstallPathQcow2.actualSize == 0 ? 1 : newVolumeInstallPathQcow2.actualSize
             return rsp
         }
 

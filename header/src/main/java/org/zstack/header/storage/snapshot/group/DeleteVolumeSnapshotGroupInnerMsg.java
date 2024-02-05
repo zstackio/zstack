@@ -10,6 +10,7 @@ import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 public class DeleteVolumeSnapshotGroupInnerMsg extends NeedReplyMessage implements VolumeSnapshotGroupMessage {
     private String uuid;
     private String deletionMode;
+    private boolean onlySelf;
 
     public String getUuid() {
         return uuid;
@@ -35,5 +36,13 @@ public class DeleteVolumeSnapshotGroupInnerMsg extends NeedReplyMessage implemen
 
     public APIDeleteMessage.DeletionMode getDeletionMode() {
         return APIDeleteMessage.DeletionMode.valueOf(deletionMode);
+    }
+
+    public boolean isOnlySelf() {
+        return onlySelf;
+    }
+
+    public void setOnlySelf(boolean onlySelf) {
+        this.onlySelf = onlySelf;
     }
 }

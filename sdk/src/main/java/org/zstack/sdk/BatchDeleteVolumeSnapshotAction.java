@@ -28,6 +28,9 @@ public class BatchDeleteVolumeSnapshotAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
     public java.util.List uuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean onlySelf = false;
+
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";
 
