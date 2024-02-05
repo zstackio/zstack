@@ -43,7 +43,10 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
@@ -58,7 +61,6 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -333,6 +335,36 @@ public class KvmBackend extends HypervisorBackend {
         public boolean fullRebase;
     }
 
+    public static class OfflineMergeSnapshotRsp extends AgentRsp {
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
+    }
+
+    public static class OfflineCommitSnapshotCmd extends AgentCmd implements HasThreadContext {
+        public String top;
+        public String base;
+        public List<String> topChildrenInstallPathInDb = new ArrayList<>();
+    }
+
+    public static class OfflineCommitSnapshotRsp extends AgentRsp {
+        private Long actualSize;
+
+        public Long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(Long actualSize) {
+            this.actualSize = actualSize;
+        }
+    }
+
     public static class CreateEmptyVolumeCmd extends AgentCmd {
         @GrayVersion(value = "5.0.0")
         public String installPath;
@@ -459,6 +491,11 @@ public class KvmBackend extends HypervisorBackend {
         public long totalSize;
     }
 
+    public static class GetBackingFileCmd extends AgentCmd {
+        public String volumeUuid;
+        public String installPath;
+    }
+
     public static final String CONNECT_PATH = "/sharedmountpointprimarystorage/connect";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointprimarystorage/createrootvolume";
     public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/sharedmountpointprimarystorage/createvolumewithbacking";
@@ -470,6 +507,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String REINIT_IMAGE_PATH = "/sharedmountpointprimarystorage/volume/reinitimage";
     public static final String MERGE_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/snapshot/merge";
     public static final String OFFLINE_MERGE_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/snapshot/offlinemerge";
+    public static final String OFFLINE_COMMIT_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/snapshot/offlinecommit";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointprimarystorage/volume/createempty";
     public static final String CREATE_FOLDER_PATH = "/sharedmountpointprimarystorage/volume/createfolder";
     public static final String CHECK_BITS_PATH = "/sharedmountpointprimarystorage/bits/check";
@@ -1864,58 +1902,6 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(UndoSnapshotCreationOnPrimaryStorageMsg msg, ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply> completion) {
-        VolumeInventory vol = msg.getVolume();
-        String hostUuid;
-        String connectedHostUuid = primaryStorageFactory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
-        if (vol.getVmInstanceUuid() != null){
-            Tuple t = Q.New(VmInstanceVO.class)
-                    .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
-                    .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid())
-                    .findTuple();
-            VmInstanceState state = t.get(0, VmInstanceState.class);
-            String vmHostUuid = t.get(1, String.class);
-
-            if (state == VmInstanceState.Running || state == VmInstanceState.Paused){
-                DebugUtils.Assert(vmHostUuid != null,
-                        String.format("vm[uuid:%s] is Running or Paused, but has no hostUuid", vol.getVmInstanceUuid()));
-                hostUuid = vmHostUuid;
-            } else if (state == VmInstanceState.Stopped){
-                hostUuid = connectedHostUuid;
-            } else {
-                completion.fail(operr("vm[uuid:%s] is not Running, Paused or Stopped, current state[%s]",
-                        vol.getVmInstanceUuid(), state));
-                return;
-            }
-        } else {
-            hostUuid = connectedHostUuid;
-        }
-
-        CommitVolumeOnHypervisorMsg hmsg = new CommitVolumeOnHypervisorMsg();
-        hmsg.setHostUuid(hostUuid);
-        hmsg.setVmUuid(msg.getVmUuid());
-        hmsg.setVolume(msg.getVolume());
-        hmsg.setSrcPath(msg.getSrcPath());
-        hmsg.setDstPath(msg.getDstPath());
-        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(hmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                CommitVolumeOnHypervisorReply treply = (CommitVolumeOnHypervisorReply) reply;
-                ret.setSize(treply.getSize());
-                ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
-                completion.success(ret);
-            }
-        });
-    }
-
-    @Override
     void deleteBits(String path, final Completion completion) {
         deleteBits(path, false, completion);
     }
@@ -2546,6 +2532,51 @@ public class KvmBackend extends HypervisorBackend {
             public void success(ResizeVolumeRsp rsp) {
                 volume.setSize(rsp.getSize());
                 reply.setVolume(volume);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(CommitVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<CommitVolumeSnapshotOnPrimaryStorageReply> completion) {
+        OfflineCommitSnapshotCmd cmd = new OfflineCommitSnapshotCmd();
+        cmd.top = msg.getSrcSnapshot().getPrimaryStorageInstallPath();
+        cmd.base = msg.getDstSnapshot().getPrimaryStorageInstallPath();
+        cmd.topChildrenInstallPathInDb = msg.getSrcChildrenInstallPathInDb();
+        new Do().go(OFFLINE_COMMIT_SNAPSHOT_PATH, cmd, OfflineCommitSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp returnValue) {
+                OfflineCommitSnapshotRsp rsp = (OfflineCommitSnapshotRsp) returnValue;
+
+                CommitVolumeSnapshotOnPrimaryStorageReply reply = new CommitVolumeSnapshotOnPrimaryStorageReply();
+                reply.setSize(rsp.getActualSize());
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(PullVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<PullVolumeSnapshotOnPrimaryStorageReply> completion) {
+        PullVolumeSnapshotOnPrimaryStorageReply reply = new PullVolumeSnapshotOnPrimaryStorageReply();
+        OfflineMergeSnapshotCmd cmd = new OfflineMergeSnapshotCmd();
+        cmd.srcPath = msg.getSrcSnapshotParentPath();
+        cmd.destPath = msg.getDstSnapshot().getPrimaryStorageInstallPath();
+        cmd.fullRebase = cmd.srcPath == null;
+        new Do().go(OFFLINE_MERGE_SNAPSHOT_PATH, cmd, OfflineMergeSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp returnValue) {
+                OfflineMergeSnapshotRsp rsp = (OfflineMergeSnapshotRsp) returnValue;
+                reply.setSize(rsp.getActualSize());
                 completion.success(reply);
             }
 

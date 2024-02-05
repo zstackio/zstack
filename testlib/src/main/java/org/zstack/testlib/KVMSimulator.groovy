@@ -20,6 +20,7 @@ import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
+import org.zstack.testlib.vfs.Qcow2
 import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.extensions.VFSPrimaryStorageTakeSnapshotBackend
 import org.zstack.testlib.vfs.extensions.VFSSnapshot
@@ -612,10 +613,48 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH)  { HttpEntity<String> e ->
-            KVMAgentCommands.BlockCommitVolumeCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.BlockCommitVolumeCmd.class)
-            def rsp = new KVMAgentCommands.BlockCommitVolumeResponse()
-            rsp.newVolumeInstallPath = cmd.base
+            def rsp = new BlockCommitResponse()
             rsp.size = 1
+            return rsp
+        }
+
+        VFS.vfsHook(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH, spec) { rsp, HttpEntity<String> e, EnvSpec espec ->
+            BlockCommitCmd cmd = JSONObjectUtil.toObject(e.body, BlockCommitCmd.class)
+
+            VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, cmd.volume.getVolumeUuid()).find()
+            assert volume : "cannot find volume[uuid: ${cmd.volume.getVolumeUuid()}]"
+
+            String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
+                    .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid).findValue()
+            assert primaryStorageType : "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] " +
+                    "from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
+
+            VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
+            bkd.blockCommit(e, espec, cmd, volume.toInventory() as VolumeInventory)
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_BLOCK_PULL_VOLUME_PATH)  { HttpEntity<String> e ->
+            def rsp = new BlockPullResponse()
+            rsp.size = 1
+            return rsp
+        }
+
+        VFS.vfsHook(KVMConstant.KVM_BLOCK_PULL_VOLUME_PATH, spec) { BlockPullResponse rsp, HttpEntity<String> e, EnvSpec espec ->
+            BlockPullCmd cmd = JSONObjectUtil.toObject(e.body, BlockPullCmd.class)
+
+            VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, cmd.volume.getVolumeUuid()).find()
+            assert volume : "cannot find volume[uuid: ${cmd.getVolume().getVolumeUuid()}]"
+
+            String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
+                    .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid).findValue()
+            assert primaryStorageType : "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] " +
+                    "from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
+
+            VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
+
+            Qcow2 newInstallPath = bkd.blockPull(e, espec, cmd, volume.toInventory() as VolumeInventory)
+            rsp.size = newInstallPath.actualSize == 0 ? 1 : newInstallPath.actualSize
             return rsp
         }
 
