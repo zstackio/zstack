@@ -85,7 +85,7 @@
     <bean id="KVMSecurityGroupBackend" class="org.zstack.kvm.KVMSecurityGroupBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.securitygroup.SecurityGroupHypervisorBackend" />
-            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
         </zstack:plugin>
     </bean>	
 

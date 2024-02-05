@@ -10,8 +10,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HypervisorType;
+import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.kvm.KVMAgentCommands.ApplySecurityGroupRuleCmd;
 import org.zstack.kvm.KVMAgentCommands.CheckDefaultSecurityGroupCmd;
@@ -29,7 +28,7 @@ import static org.zstack.core.Platform.operr;
 
 import java.util.Map;
 
-public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, KVMHostConnectExtensionPoint {
+public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, HostAfterConnectedExtensionPoint {
     private static CLogger logger = Utils.getLogger(KVMSecurityGroupBackend.class);
     
     public static final String SECURITY_GROUP_APPLY_RULE_PATH = "/securitygroup/applyrules";
@@ -226,18 +225,18 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
     }
 
     @Override
-    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
-        return new NoRollbackFlow() {
-            String __name__ = "refresh-security-group-on-host";
-
+    public void afterHostConnected(HostInventory host) {
+        RefreshSecurityGroupRulesOnHostMsg msg = new RefreshSecurityGroupRulesOnHostMsg();
+        msg.setHostUuid(host.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, host.getUuid());
+        bus.send(msg, new CloudBusCallBack(msg) {
             @Override
-            public void run(FlowTrigger trigger, Map data) {
-                RefreshSecurityGroupRulesOnHostMsg msg = new RefreshSecurityGroupRulesOnHostMsg();
-                msg.setHostUuid(context.getInventory().getUuid());
-                bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
-                bus.send(msg);
-                trigger.next();
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    logger.warn(String.format("refresh seruity group on host[uuid:%s] failed: %s",
+                            host.getUuid(), r.getError().toString()));
+                }
             }
-        };
+        });
     }
 }
