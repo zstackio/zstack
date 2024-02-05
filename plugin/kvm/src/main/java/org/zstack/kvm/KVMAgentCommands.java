@@ -3570,6 +3570,7 @@ public class KVMAgentCommands {
         private VolumeTO volume;
         private String top;
         private String base;
+        private List<String> aliveChainInstallPathInDb;
 
         public String getVmUuid() {
             return vmUuid;
@@ -3610,6 +3611,14 @@ public class KVMAgentCommands {
         public void setBase(String base) {
             this.base = base;
         }
+
+        public List<String> getAliveChainInstallPathInDb() {
+            return aliveChainInstallPathInDb;
+        }
+
+        public void setAliveChainInstallPathInDb(List<String> aliveChainInstallPathInDb) {
+            this.aliveChainInstallPathInDb = aliveChainInstallPathInDb;
+        }
     }
 
     public static class BlockCommitVolumeResponse extends AgentResponse {
@@ -3632,6 +3641,57 @@ public class KVMAgentCommands {
 
         public void setNewVolumeInstallPath(String newVolumeInstallPath) {
             this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+    }
+
+    public static class CheckVolumeAliveChainConsistencyCmd extends AgentCommand implements HasThreadContext {
+        private String vmUuid;
+        private String volumeUuid;
+        private String volumeInstallPath;
+        private List<String> aliveChainInstallPath;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public String getVolumeInstallPath() {
+            return volumeInstallPath;
+        }
+
+        public void setVolumeInstallPath(String volumeInstallPath) {
+            this.volumeInstallPath = volumeInstallPath;
+        }
+
+        public List<String> getAliveChainInstallPath() {
+            return aliveChainInstallPath;
+        }
+
+        public void setAliveChainInstallPath(List<String> aliveChainInstallPath) {
+            this.aliveChainInstallPath = aliveChainInstallPath;
+        }
+    }
+
+    public static class CheckVolumeAliveChainConsistencyResponse extends AgentResponse {
+        private boolean consistency = true;
+
+        public boolean isConsistency() {
+            return consistency;
+        }
+
+        public void setConsistency(boolean consistency) {
+            this.consistency = consistency;
         }
     }
 

@@ -11,6 +11,7 @@ public class DeleteVolumeSnapshotMsg extends NeedReplyMessage implements DeleteV
     private String volumeUuid;
     private String treeUuid;
     private String deletionMode;
+    private boolean onlySelf;
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
@@ -48,5 +49,13 @@ public class DeleteVolumeSnapshotMsg extends NeedReplyMessage implements DeleteV
     @Override
     public String getTreeUuid() {
         return treeUuid;
+    }
+
+    public boolean isOnlySelf() {
+        return onlySelf;
+    }
+
+    public void setOnlySelf(boolean onlySelf) {
+        this.onlySelf = onlySelf;
     }
 }

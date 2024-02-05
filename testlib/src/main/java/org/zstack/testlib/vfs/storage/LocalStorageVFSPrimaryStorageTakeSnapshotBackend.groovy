@@ -11,10 +11,13 @@ import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.volume.VolumeInventory
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.storage.primary.local.LocalStorageConstants
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.LocalStorageSpec
+import org.zstack.testlib.NfsPrimaryStorageSpec
 import org.zstack.testlib.vfs.Qcow2
 import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.extensions.VFSPrimaryStorageTakeSnapshotBackend
@@ -117,6 +120,24 @@ class LocalStorageVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSy
                 .find()
 
         VFS vfs = LocalStorageSpec.vfs(LocalStorageSpec.hostUuidFromHTTPHeaders(e), storagePath, spec)
+        if (vfs.exists(volume.getInstallPath())) {
+            vfs.delete(volume.getInstallPath())
+        }
         blockStream(vfs, volume)
+    }
+
+    @Override
+    Qcow2 blockCommit(HttpEntity<String> e, EnvSpec spec, KVMAgentCommands.BlockCommitVolumeCmd cmd, VolumeInventory volume) {
+        String storagePath = Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.mountPath)
+                .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid)
+                .findValue()
+        VFS vfs = LocalStorageSpec.vfs(LocalStorageSpec.hostUuidFromHTTPHeaders(e), storagePath, spec)
+
+        Qcow2 top = vfs.getFile(cmd.top, true)
+        Qcow2 base = vfs.getFile(cmd.base, true)
+
+        Qcow2.commit(vfs, top, base)
+        return vfs.getFile(cmd.base, true)
     }
 }

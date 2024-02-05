@@ -844,8 +844,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
         } else if (msg instanceof GetPrimaryStorageUsageReportMsg) {
             handle((GetPrimaryStorageUsageReportMsg) msg);
-        } else if (msg instanceof UndoSnapshotCreationOnPrimaryStorageMsg) {
-            handle((UndoSnapshotCreationOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeSnapshotSelfOnPrimaryStorageMsg) {
+            handle((DeleteVolumeSnapshotSelfOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -1542,20 +1542,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
+    private void handle(final DeleteVolumeSnapshotSelfOnPrimaryStorageMsg msg) {
         final String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
 
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, hostUuid, new ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply>(msg) {
+        bkd.handle(msg, hostUuid, new ReturnValueCompletion<DeleteVolumeSnapshotSelfOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(UndoSnapshotCreationOnPrimaryStorageReply returnValue) {
+            public void success(DeleteVolumeSnapshotSelfOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                UndoSnapshotCreationOnPrimaryStorageReply reply = new UndoSnapshotCreationOnPrimaryStorageReply();
+                DeleteVolumeSnapshotSelfOnPrimaryStorageReply reply = new DeleteVolumeSnapshotSelfOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

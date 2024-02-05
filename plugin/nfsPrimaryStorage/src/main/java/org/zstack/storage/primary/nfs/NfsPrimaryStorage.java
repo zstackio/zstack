@@ -129,14 +129,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
-        } else if (msg instanceof UndoSnapshotCreationOnPrimaryStorageMsg) {
-            handle((UndoSnapshotCreationOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeSnapshotSelfOnPrimaryStorageMsg) {
+            handle((DeleteVolumeSnapshotSelfOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
 
-    private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
+    private void handle(final DeleteVolumeSnapshotSelfOnPrimaryStorageMsg msg) {
         final TakeSnapshotReply reply = new TakeSnapshotReply();
 
         String volumeUuid = msg.getVolume().getUuid();
@@ -167,24 +167,26 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         } else {
             huuid = connectedHostUuid;
         }
-        CommitVolumeOnHypervisorMsg hmsg = new CommitVolumeOnHypervisorMsg();
+
+        DeleteVolumeSnapshotSelfOnHypervisorMsg hmsg = new DeleteVolumeSnapshotSelfOnHypervisorMsg();
         hmsg.setHostUuid(huuid);
         hmsg.setVmUuid(msg.getVmUuid());
         hmsg.setVolume(msg.getVolume());
         hmsg.setSrcPath(msg.getSrcPath());
         hmsg.setDstPath(msg.getDstPath());
+        hmsg.setAliveChainInstallPathInDb(msg.getAliveChainInstallPathInDb());
         bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, huuid);
         bus.send(hmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
+                DeleteVolumeSnapshotSelfOnPrimaryStorageReply ret = new DeleteVolumeSnapshotSelfOnPrimaryStorageReply();
                 if (!reply.isSuccess()) {
                     ret.setError(reply.getError());
                     bus.reply(msg, ret);
                     return;
                 }
 
-                CommitVolumeOnHypervisorReply treply = (CommitVolumeOnHypervisorReply) reply;
+                DeleteVolumeSnapshotSelfOnHypervisorReply treply = reply.castReply();
                 ret.setSize(treply.getSize());
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 bus.reply(msg, ret);

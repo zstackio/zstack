@@ -663,8 +663,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase implements KVMTake
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
         } else if (msg instanceof ResizeVolumeOnPrimaryStorageMsg) {
             handle((ResizeVolumeOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof UndoSnapshotCreationOnPrimaryStorageMsg) {
-            handle((UndoSnapshotCreationOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeSnapshotSelfOnPrimaryStorageMsg) {
+            handle((DeleteVolumeSnapshotSelfOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -1052,17 +1052,17 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase implements KVMTake
         });
     }
 
-    private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
+    private void handle(final DeleteVolumeSnapshotSelfOnPrimaryStorageMsg msg) {
         HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
-        bkd.handle(msg, new ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply>(msg) {
+        bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeSnapshotSelfOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(UndoSnapshotCreationOnPrimaryStorageReply returnValue) {
+            public void success(DeleteVolumeSnapshotSelfOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                UndoSnapshotCreationOnPrimaryStorageReply reply = new UndoSnapshotCreationOnPrimaryStorageReply();
+                DeleteVolumeSnapshotSelfOnPrimaryStorageReply reply = new DeleteVolumeSnapshotSelfOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

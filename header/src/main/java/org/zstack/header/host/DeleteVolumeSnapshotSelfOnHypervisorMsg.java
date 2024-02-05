@@ -1,28 +1,17 @@
-package org.zstack.header.storage.primary;
+package org.zstack.header.host;
 
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
 
-/**
- * @ Author : yh.w
- * @ Date   : Created in 11:47 2023/8/21
- */
-public class UndoSnapshotCreationOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+import java.util.List;
+
+public class DeleteVolumeSnapshotSelfOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
+    private String hostUuid;
     private String vmUuid;
     private VolumeInventory volume;
-    private VolumeSnapshotInventory snapshot;
     private String srcPath;
     private String dstPath;
-    private String primaryStorageUuid;
-
-    public VolumeSnapshotInventory getSnapshot() {
-        return snapshot;
-    }
-
-    public void setSnapshot(VolumeSnapshotInventory snapshot) {
-        this.snapshot = snapshot;
-    }
+    private List<String> aliveChainInstallPathInDb;
 
     public VolumeInventory getVolume() {
         return volume;
@@ -30,6 +19,15 @@ public class UndoSnapshotCreationOnPrimaryStorageMsg extends NeedReplyMessage im
 
     public void setVolume(VolumeInventory volume) {
         this.volume = volume;
+    }
+
+    @Override
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 
     public String getVmUuid() {
@@ -56,12 +54,11 @@ public class UndoSnapshotCreationOnPrimaryStorageMsg extends NeedReplyMessage im
         this.dstPath = dstPath;
     }
 
-    public void setPrimaryStorageUuid(String primaryStorageUuid) {
-        this.primaryStorageUuid = primaryStorageUuid;
+    public List<String> getAliveChainInstallPathInDb() {
+        return aliveChainInstallPathInDb;
     }
 
-    @Override
-    public String getPrimaryStorageUuid() {
-        return primaryStorageUuid;
+    public void setAliveChainInstallPathInDb(List<String> aliveChainInstallPathInDb) {
+        this.aliveChainInstallPathInDb = aliveChainInstallPathInDb;
     }
 }
