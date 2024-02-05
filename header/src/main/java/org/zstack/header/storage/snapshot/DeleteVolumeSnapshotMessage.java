@@ -7,4 +7,8 @@ import org.zstack.header.message.APIDeleteMessage.DeletionMode;
  */
 public interface DeleteVolumeSnapshotMessage extends VolumeSnapshotMessage {
     DeletionMode getDeletionMode();
+
+    String getDirection();
+
+    String getScope();
 }

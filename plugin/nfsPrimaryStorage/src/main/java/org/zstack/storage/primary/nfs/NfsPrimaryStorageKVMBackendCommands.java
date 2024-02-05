@@ -6,6 +6,7 @@ import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -783,6 +784,33 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class OfflineMergeSnapshotRsp extends NfsPrimaryStorageAgentResponse {
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
+    }
+
+    public static class OfflineCommitSnapshotCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
+        public String top;
+        public String base;
+        public List<String> topChildrenInstallPathInDb = new ArrayList<>();
+    }
+
+    public static class OfflineCommitSnapshotRsp extends NfsPrimaryStorageAgentResponse {
+        private Long size;
+
+        public Long getSize() {
+            return size;
+        }
+
+        public void setSize(Long size) {
+            this.size = size;
+        }
     }
 
     public static class RemountCmd extends NfsPrimaryStorageAgentCommand {
