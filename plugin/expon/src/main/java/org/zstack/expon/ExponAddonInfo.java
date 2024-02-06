@@ -12,7 +12,7 @@ public class ExponAddonInfo {
     private List<Pool> pools;
 
     private String currentIscsiTargetId;
-    private String currentIscsiTargetIndex;
+    private int currentIscsiTargetIndex;
 
     public List<Pool> getPools() {
         return pools;
@@ -38,11 +38,11 @@ public class ExponAddonInfo {
         this.currentIscsiTargetId = currentIscsiTargetId;
     }
 
-    public String getCurrentIscsiTargetIndex() {
+    public int getCurrentIscsiTargetIndex() {
         return currentIscsiTargetIndex;
     }
 
-    public void setCurrentIscsiTargetIndex(String currentIscsiTargetIndex) {
+    public void setCurrentIscsiTargetIndex(int currentIscsiTargetIndex) {
         this.currentIscsiTargetIndex = currentIscsiTargetIndex;
     }
 

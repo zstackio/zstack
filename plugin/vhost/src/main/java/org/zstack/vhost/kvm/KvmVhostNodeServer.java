@@ -1,38 +1,29 @@
 package org.zstack.vhost.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeProtocol;
+import org.zstack.header.volume.VolumeProtocolCapability;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 
 public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
-        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
-        KvmVmActiveVolumeSyncExtensionPoint {
+        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
@@ -149,95 +140,4 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
     public void afterAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd) {}
     @Override
     public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd, ErrorCode err, Map data) {}
-
-    @Override
-    public List<String> getStoragePathsForVolumeSync(HostInventory host, PrimaryStorageInventory attachedPs) {
-        if (!PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE.equals(attachedPs.getType())) {
-            return null;
-        }
-
-        PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(attachedPs.getUuid());
-        if (nodeSvc == null) {
-            return null;
-        }
-
-        return nodeSvc.getActiveVolumesLocation(host);
-    }
-
-    @Override
-    public void handleInactiveVolume(HostInventory host, Map<PrimaryStorageInventory, List<String>> inactiveVolumePaths, Completion completion) {
-        if (inactiveVolumePaths.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        new While<>(inactiveVolumePaths.entrySet()).all((entry, compl) -> {
-            PrimaryStorageInventory ps = entry.getKey();
-            List<String> paths = entry.getValue();
-
-            PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(ps.getUuid());
-            if (nodeSvc == null) {
-                compl.done();
-                return;
-            }
-
-            List<BaseVolumeInfo> infos = paths.stream()
-                    .map(path -> nodeSvc.getActiveVolumeInfo(path, host, false))
-                    .collect(Collectors.toList());
-            if (infos.isEmpty()) {
-                compl.done();
-                return;
-            }
-
-            // TODO: move to pre-check
-            List<String> vmInUseVolUuids = SQL.New("select vol.uuid from VolumeVO vol, VmInstanceVO vm" +
-                            " where vol.uuid in :volUuids" +
-                            " and vol.vmInstanceUuid = vm.uuid" +
-                            " and (vm.state = :vmState or vm.hostUuid = :huuid)", String.class)
-                    .param("vmState", VmInstanceState.Starting)
-                    .param("huuid", host.getUuid())
-                    .param("volUuids", infos.stream().map(BaseVolumeInfo::getUuid).collect(Collectors.toList()))
-                    .list();
-            infos.removeIf(info -> vmInUseVolUuids.contains(info.getUuid()));
-
-            new While<>(infos).each((info, c) -> {
-                if (info.getInstallPath() == null) {
-                    VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, info.getUuid()).find();
-                    if (volume == null) {
-                        c.done();
-                        return;
-                    }
-
-                    info.setInstallPath(volume.getInstallPath());
-                    info.setProtocol(volume.getProtocol());
-                }
-
-                nodeSvc.deactivate(info.getInstallPath(), info.getProtocol(), host, new Completion(c) {
-                    @Override
-                    public void success() {
-                        c.done();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        c.addError(errorCode);
-                        c.done();
-                    }
-                });
-            }).run(new WhileDoneCompletion(compl) {
-                @Override
-                public void done(ErrorCodeList errorCodeList) {
-                    if (!errorCodeList.getCauses().isEmpty()) {
-                        compl.addError(errorCodeList.getCauses().get(0));
-                    }
-                    compl.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(completion) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                completion.success();
-            }
-        });
-    }
 }

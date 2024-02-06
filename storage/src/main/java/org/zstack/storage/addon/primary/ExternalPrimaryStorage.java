@@ -62,8 +62,8 @@ import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.
 public class ExternalPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(ExternalPrimaryStorage.class);
 
-    private final PrimaryStorageNodeSvc node;
-    private final PrimaryStorageControllerSvc controller;
+    protected final PrimaryStorageNodeSvc node;
+    protected final PrimaryStorageControllerSvc controller;
 
     private ExternalPrimaryStorageVO externalVO;
     private LinkedHashMap selfConfig;
@@ -85,6 +85,14 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 .eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                 .find();
         this.selfConfig = JSONObjectUtil.toObject(externalVO.getConfig(), LinkedHashMap.class);
+    }
+
+    public ExternalPrimaryStorage(ExternalPrimaryStorage other) {
+        super(other.externalVO);
+        this.controller = other.controller;
+        this.node = other.node;
+        this.externalVO = other.externalVO;
+        this.selfConfig = other.selfConfig;
     }
 
     @Override
@@ -242,7 +250,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         downloadImageCache(msg.getTemplateSpec().getInventory(), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
                             @Override
                             public void success(ImageCacheInventory returnValue) {
-                                pathInCache = returnValue.getInstallUrl();
+                                pathInCache = ImageCacheUtil.getImageCachePath(returnValue);
                                 trigger.next();
                             }
 
@@ -451,6 +459,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    // TODO
     @Override
     protected void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -545,20 +554,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new Flow() {
-
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-
-                    }
-                });
-
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -590,7 +585,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
             dbf.persist(cache);
             reply.setInventory(cache.toInventory());
-            reply.setIncremental(true);
+            // TODO hardcode for expon
+            reply.setIncremental(false);
             bus.reply(msg, reply);
             return;
         }
