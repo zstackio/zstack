@@ -63,13 +63,14 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
 
     private Map<String, PrimaryStorageHostStatus> getHostStatus(List<ExternalPrimaryStorageVO> extPss) {
         return Q.New(PrimaryStorageHostRefVO.class)
-                .select(PrimaryStorageHostRefVO_.primaryStorageUuid, PrimaryStorageHostRefVO_.status)
+                .select(PrimaryStorageHostRefVO_.hostUuid, PrimaryStorageHostRefVO_.status)
                 .in(PrimaryStorageHostRefVO_.primaryStorageUuid,
                         extPss.stream().map(ExternalPrimaryStorageVO::getUuid).collect(Collectors.toList()))
                 .listTuple().stream()
                 .collect(Collectors.toMap(
                         t -> t.get(0, String.class),
-                        t -> t.get(1, PrimaryStorageHostStatus.class)
+                        t -> t.get(1, PrimaryStorageHostStatus.class),
+                        (o, n) -> n
                 ));
     }
 
