@@ -152,7 +152,7 @@ public class ExponApiHelper {
         return rsp.getUssGateways().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
     }
 
-    public VhostControllerModule getVhostController(String name) {
+    public VhostControllerModule queryVhostController(String name) {
         QueryVhostControllerRequest q = new QueryVhostControllerRequest();
         q.addCond("name", name);
         QueryVhostControllerResponse rsp = queryErrorOut(q, QueryVhostControllerResponse.class);

@@ -143,7 +143,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     private VhostControllerModule getOrCreateVhostController(String name) {
-        VhostControllerModule vhost = apiHelper.getVhostController(name);
+        VhostControllerModule vhost = apiHelper.queryVhostController(name);
         if (vhost == null) {
             vhost = apiHelper.createVhostController(name);
         }
@@ -408,7 +408,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String volUuid = getVolumeInfo(vol.getName()).getUuid();
         if (VolumeProtocol.Vhost.toString().equals(protocol)) {
             String vhostName = buildVhostControllerName(volUuid);
-            VhostControllerModule vhost = apiHelper.getVhostController(vhostName);
+            VhostControllerModule vhost = apiHelper.queryVhostController(vhostName);
+            if (vhost == null) {
+                return Collections.emptyList();
+            }
+
             List<UssGatewayModule> uss = apiHelper.getVhostControllerBoundUss(vhost.getId());
             return uss.stream().map(it -> {
                 ActiveVolumeClient client = new ActiveVolumeClient();
@@ -418,6 +422,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         } else if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
             String iscsiClientName = buildIscsiVolumeClientName(volUuid);
             IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+            if (client == null) {
+                return Collections.emptyList();
+            }
+
             return client.getHosts().stream().map(it -> {
                 ActiveVolumeClient c = new ActiveVolumeClient();
                 if (it.contains("iqn")) {
@@ -568,7 +576,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String vhostName = buildVhostControllerName(volUuid);
 
         UssGatewayModule uss = getUssGateway(VolumeProtocol.Vhost, h.getManagementIp());
-        VhostControllerModule vhost = apiHelper.getVhostController(vhostName);
+        VhostControllerModule vhost = apiHelper.queryVhostController(vhostName);
         if (vhost == null) {
             return;
         }
