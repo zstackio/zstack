@@ -22,6 +22,7 @@ import org.zstack.header.storage.primary.ImageCacheShadowVO_
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.vm.VmBootDevice
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -130,14 +131,12 @@ class ExternalPrimaryStorageCase extends SubCase {
                         username = "root"
                         password = "password"
                     }
-/*
                     kvm {
                         name = "kvm2"
                         managementIp = "127.0.0.3"
                         username = "root"
                         password = "password"
                     }
- */
 
                     attachL2Network("l2")
                 }
@@ -174,7 +173,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             l3 = env.inventoryByName("l3") as L3NetworkInventory
             bs = env.inventoryByName("sftp") as BackupStorageInventory
             host1 = env.inventoryByName("kvm") as HostInventory
-            // host2 = env.inventoryByName("kvm2") as HostInventory
+            host2 = env.inventoryByName("kvm2") as HostInventory
             bus = bean(CloudBus.class)
 
             KVMGlobalConfig.VM_SYNC_ON_HOST_PING.updateValue(true)
@@ -264,7 +263,22 @@ class ExternalPrimaryStorageCase extends SubCase {
         bus.makeTargetServiceIdByResourceUuid(pmsg, HostConstant.SERVICE_ID, host1.uuid)
         MessageReply r = bus.call(pmsg)
         assert r.success
-        assert Q.New(PrimaryStorageHostRefVO.class).find().status.toString() == "Connected"
+        assert Q.New(PrimaryStorageHostRefVO.class).eq(PrimaryStorageHostRefVO_.hostUuid, host1.uuid).find().status.toString() == "Connected"
+
+        pmsg = new PingHostMsg()
+        pmsg.hostUuid = host2.uuid
+        bus.makeTargetServiceIdByResourceUuid(pmsg, HostConstant.SERVICE_ID, host2.uuid)
+        r = bus.call(pmsg)
+        assert r.success
+        assert Q.New(PrimaryStorageHostRefVO.class).eq(PrimaryStorageHostRefVO_.hostUuid, host2.uuid).find().status.toString() == "Disconnected"
+
+        // ping again
+        pmsg = new PingHostMsg()
+        pmsg.hostUuid = host1.uuid
+        bus.makeTargetServiceIdByResourceUuid(pmsg, HostConstant.SERVICE_ID, host1.uuid)
+        r = bus.call(pmsg)
+        assert r.success
+        assert Q.New(PrimaryStorageHostRefVO.class).eq(PrimaryStorageHostRefVO_.hostUuid, host1.uuid).find().status.toString() == "Connected"
     }
 
     void testSessionExpired() {
@@ -519,7 +533,7 @@ class ExternalPrimaryStorageCase extends SubCase {
         apiHelper.addVolumeToIscsiClientGroup(exponVol.id, client.id, iscsi.id, false)
         apiHelper.addVolumeToIscsiClientGroup(exponVol.id, client.id, iscsi.id, false)
 
-        def snapshot = apiHelper.createVolumeSnapshot(exponVol.id, "test-snap", "todo")
+        def snapshot = apiHelper.createVolumeSnapshot(exponVol.id, "test-" + Platform.uuid, "todo")
 
         apiHelper.addSnapshotToIscsiClientGroup(snapshot.id, client.id, iscsi.id)
         apiHelper.addSnapshotToIscsiClientGroup(snapshot.id, client.id, iscsi.id)
