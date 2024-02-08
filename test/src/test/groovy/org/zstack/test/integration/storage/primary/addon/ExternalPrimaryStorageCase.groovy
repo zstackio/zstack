@@ -377,7 +377,7 @@ class ExternalPrimaryStorageCase extends SubCase {
 
     void testHandleInactiveVolume() {
 
-        VhostControllerModule vhost = apiHelper.getVhostController("volume-" + vm.rootVolumeUuid)
+        VhostControllerModule vhost = apiHelper.queryVhostController("volume-" + vm.rootVolumeUuid)
 
         assert !CollectionUtils.isEmpty(controller.apiHelper.getVhostControllerBoundUss(vhost.id))
 
@@ -545,6 +545,14 @@ class ExternalPrimaryStorageCase extends SubCase {
     }
 
     void testCreateDataVolume() {
+        vol = createDataVolume {
+            name = "test"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+
+        deleleVolume(vol.uuid)
+
         vol = createDataVolume {
             name = "test"
             diskOfferingUuid = diskOffering.uuid
