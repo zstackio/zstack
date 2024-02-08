@@ -39,6 +39,8 @@ public class ExponApiHelper {
     ExponApiHelper(AccountInfo accountInfo, ExponClient client) {
         this.accountInfo = accountInfo;
         this.client = client;
+        this.client.setSessionRefresher(this::refreshSession);
+        this.client.setSessionGetter(() -> sessionId);
     }
 
     private <T extends ExponResponse> T callWithExpiredSessionRetry(ExponRequest req, Class<T> clz) {
@@ -53,10 +55,11 @@ public class ExponApiHelper {
         return rsp;
     }
 
-    private synchronized void refreshSession() {
+    private synchronized String refreshSession() {
         if (sessionExpired()) {
             login();
         }
+        return sessionId;
     }
 
     private boolean sessionExpired() {
