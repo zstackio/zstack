@@ -210,6 +210,8 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
+                    final String __name__ = "activate-iscsi-heartbeat-volume";
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(trigger) {
@@ -228,6 +230,8 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
                 });
 
                 flow(new NoRollbackFlow() {
+                    final String __name__ = "setup-iscsi-self-fencer-on-kvm";
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
@@ -278,7 +282,7 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
     public void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion) {
         PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(param.getPrimaryStorage().getUuid());
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("setup-self-fencer-for-external-primary-storage-%s", param.getPrimaryStorage().getUuid()));
+        chain.setName(String.format("cancel-self-fencer-for-external-primary-storage-%s", param.getPrimaryStorage().getUuid()));
         chain.then(new ShareFlow() {
             HostInventory host = HostInventory.valueOf(dbf.findByUuid(param.getHostUuid(), HostVO.class));
             HeartbeatVolumeTO heartbeatVol;
