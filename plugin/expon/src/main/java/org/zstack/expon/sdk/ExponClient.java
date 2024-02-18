@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,6 +48,10 @@ public class ExponClient {
     }
 
     private ExponConfig config;
+
+    private Supplier<String> sessionRefresher;
+
+    private Supplier<String> sessionGetter;
 
     public ExponConfig getConfig() {
         return config;
@@ -80,21 +85,12 @@ public class ExponClient {
         }
     }
 
+    public void setSessionRefresher(Supplier<String> sessionRefresher) {
+        this.sessionRefresher = sessionRefresher;
+    }
 
-    static String join(Collection lst, String sep) {
-        StringBuilder ret = new StringBuilder();
-        boolean first = true;
-        for (Object s : lst) {
-            if (first) {
-                ret = new StringBuilder(s.toString());
-                first = false;
-                continue;
-            }
-
-            ret.append(sep).append(s.toString());
-        }
-
-        return ret.toString();
+    public void setSessionGetter(Supplier<String> sessionGetter) {
+        this.sessionGetter = sessionGetter;
     }
 
     public <T extends ExponResponse> T call(ExponRequest req, Class<T> clz) {
@@ -112,9 +108,7 @@ public class ExponClient {
     }
 
     public void call(ExponRequest req, InternalCompletion completion) {
-        String taskId = Platform.getUuid();
         errorIfNotConfigured();
-        logger.debug(String.format("async call request[%s]: %s", taskId, gson.toJson(req)));
         new Api(req).call(completion);
     }
 
@@ -124,7 +118,7 @@ public class ExponClient {
 
         InternalCompletion completion;
 
-        final String taskId = Platform.getUuid(); // for log
+        final String taskIdForLog = Platform.getUuid();
         String reqBody; // for log
 
         Api(ExponRequest action) {
@@ -181,7 +175,7 @@ public class ExponClient {
 
             Request request = reqBuilder.build();
 
-            logger.debug(String.format("call request[%s: %s]: %s, body: %s", action.getClass().getSimpleName(), taskId,
+            logger.debug(String.format("call request[%s: %s]: %s, body: %s", action.getClass().getSimpleName(), taskIdForLog,
                     request.toString(), reqBody));
 
             try {
@@ -200,9 +194,6 @@ public class ExponClient {
 
                     ApiResult res = writeApiResult(response);
                     if (res.error != null) {
-                        if (completion != null) {
-                            completion.complete(res);
-                        }
                         return res;
                     }
 
@@ -210,6 +201,8 @@ public class ExponClient {
                     Map rsp = res.getResult(LinkedHashMap.class);
                     Object taskId = rsp.getOrDefault("task_id", null);
                     if (async && taskId != null) {
+                        logger.debug(String.format("request[%s: %s] async result: %s", action.getClass().getSimpleName(),
+                                taskIdForLog, res.getResultString()));
                         return pollResult(taskId.toString());
                     } else {
                         return res;
@@ -371,6 +364,7 @@ public class ExponClient {
             final long timeout = this.getTimeout();
             final long expiredTime = current + timeout;
             final long i = this.getInterval();
+            final int[] pollTimes = {0};
 
             final Timer timer = new Timer();
 
@@ -379,6 +373,8 @@ public class ExponClient {
                 final long interval = i;
 
                 private void done(ApiResult res) {
+                    logger.debug(String.format("request[%s: %s] result: %s", action.getClass().getSimpleName(),
+                            taskIdForLog, res.getResultString()));
                     completion.complete(res);
                     timer.cancel();
                 }
@@ -387,6 +383,11 @@ public class ExponClient {
                 public void run() {
                     try {
                         ExponTask trsp = getTaskStatus(taskId);
+                        // TODO: remove this when the expon server is ready for zero copy
+                        if (CoreGlobalProperty.UNIT_TEST_ON && pollTimes[0]++ > 2) {
+                            trsp.setStatus(TaskStatus.SUCCESS.name());
+                        }
+
                         if (TaskStatus.SUCCESS.name().equals(trsp.getStatus()) || TaskStatus.FAILED.name().equals(trsp.getStatus())) {
 
                             ApiResult ret = new ApiResult();
@@ -426,7 +427,7 @@ public class ExponClient {
         }
 
         private ExponTask getTaskStatus(String taskId) {
-            ExponTask task = null;
+            ExponTask task;
             if (NumberUtils.isNumber(taskId)) {
                 GetVolumeTaskProgressResponse rsp = getVolumeTaskProgress(Float.valueOf(taskId).intValue());
                 if (!rsp.isSuccess()) {
@@ -443,26 +444,31 @@ public class ExponClient {
                 task = ExponTask.valueOf(rsp);
             }
 
-            // TODO: remove this when the expon server is ready for zero copy
-            if (CoreGlobalProperty.UNIT_TEST_ON) {
-                task.setStatus(TaskStatus.SUCCESS.name());
-            }
-
             return task;
         }
 
         private GetTaskStatusResponse getTaskDetail(String taskId) {
             GetTaskStatusRequest req = new GetTaskStatusRequest();
             req.setId(taskId);
-            req.setSessionId(this.action.sessionId);
-            return ExponClient.this.call(req, GetTaskStatusResponse.class);
+            req.setSessionId(sessionGetter.get());
+            return retrySessionGetResult(req, GetTaskStatusResponse.class);
         }
 
         private GetVolumeTaskProgressResponse getVolumeTaskProgress(int taskId) {
             GetVolumeTaskProgressRequest req = new GetVolumeTaskProgressRequest();
             req.setTaskId(taskId);
-            req.setSessionId(this.action.sessionId);
-            return ExponClient.this.call(req, GetVolumeTaskProgressResponse.class);
+            req.setSessionId(sessionGetter.get());
+            return retrySessionGetResult(req, GetVolumeTaskProgressResponse.class);
+        }
+
+        private <T extends ExponResponse> T retrySessionGetResult(ExponRequest req, Class<T> clz) {
+            T rsp = ExponClient.this.call(req, clz);
+            if (rsp.sessionExpired()) {
+                logger.debug(String.format("session[%s] expired, login again", req.sessionId));
+                this.action.sessionId = sessionRefresher.get();
+                req.setSessionId(sessionGetter.get());
+            }
+            return ExponClient.this.call(req, clz);
         }
 
         private ApiResult writeApiResult(Response response) throws IOException {
@@ -506,17 +512,20 @@ public class ExponClient {
             ApiResult ret = doCall();
             if (ret.error != null) {
                 logger.debug(String.format("request[%s: %s] error: %s result: %s", action.getClass().getSimpleName(),
-                        taskId, gson.toJson(ret.error), ret.getResultString()));
+                        taskIdForLog, gson.toJson(ret.error), ret.getResultString()));
             } else {
                 logger.debug(String.format("request[%s: %s] result: %s", action.getClass().getSimpleName(),
-                        taskId, ret.getResultString()));
+                        taskIdForLog, ret.getResultString()));
             }
             return ret;
         }
 
         void call(InternalCompletion completion) {
             this.completion = completion;
-            doCall();
+            ApiResult res = doCall();
+            if (res != null) {
+                completion.complete(res);
+            }
         }
 
         private long getTimeout(){
