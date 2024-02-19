@@ -12,4 +12,5 @@ public @interface ExponRestRequest {
     Class responseClass();
     String version() default "v2";
     boolean sync() default true;
+    boolean hasBody() default false;
 }

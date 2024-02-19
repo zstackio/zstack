@@ -11,6 +11,8 @@ public interface PrimaryStorageNodeSvc {
 
     void deactivate(String installPath, String protocol, HostInventory h, Completion comp);
 
+    void blacklist(String installPath, String protocol, HostInventory h, Completion comp);
+
     String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable);
     BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable);
 
