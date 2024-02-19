@@ -18,6 +18,7 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.network.l3.L3NetworkGlobalConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -156,6 +157,20 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         return struct;
     }
 
+    private boolean isEnableRa(String l3Uuid) {
+        String l3Type = Q.New(L3NetworkVO.class)
+                .select(L3NetworkVO_.type)
+                .eq(L3NetworkVO_.uuid, l3Uuid)
+                .findValue();
+        // vpc network does not need to enable ra
+        boolean isBasicNetwork = L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(l3Type);
+        if (!isBasicNetwork) {
+            return false;
+        }
+
+        return L3NetworkGlobalConfig.BASIC_NETWORK_ENABLE_RA.value(Boolean.class);
+    }
+
     private void setDualStackNicOfSingleL3Network(DhcpStruct struct, VmNicVO nic) {
         struct.setIpVersion(IPv6Constants.DUAL_STACK);
         List<UsedIpVO> sortedIps = nic.getUsedIps().stream().sorted(Comparator.comparingLong(UsedIpVO::getIpVersionl)).collect(Collectors.toList());
@@ -176,6 +191,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 struct.setGateway6(ip.getGateway());
                 struct.setIp6(ip.getIp());
                 struct.setRaMode(iprs.get(0).getAddressMode());
+                struct.setEnableRa(isEnableRa(ip.getL3NetworkUuid()));
                 struct.setPrefixLength(iprs.get(0).getPrefixLen());
                 struct.setFirstIp(NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeVO::getStartIp).collect(Collectors.toList())));
                 struct.setEndIP(NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeVO::getEndIp).collect(Collectors.toList())));
@@ -197,6 +213,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             struct.setGateway6(ip.getGateway());
             struct.setIp6(ip.getIp());
             struct.setRaMode(iprs.get(0).getAddressMode());
+            struct.setEnableRa(isEnableRa(ip.getL3NetworkUuid()));
             struct.setPrefixLength(iprs.get(0).getPrefixLen());
             struct.setFirstIp(NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeVO::getStartIp).collect(Collectors.toList())));
             struct.setEndIP(NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeVO::getEndIp).collect(Collectors.toList())));
