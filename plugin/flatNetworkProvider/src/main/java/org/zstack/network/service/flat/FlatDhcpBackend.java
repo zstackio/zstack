@@ -1317,6 +1317,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static class DhcpInfo {
         public int ipVersion;
         public String raMode;
+        public boolean enableRa;
         public String ip;
         public String ip6;
         public String mac;
@@ -1486,6 +1487,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 DhcpInfo info = new DhcpInfo();
                 info.ipVersion = arg.getIpVersion();
                 info.raMode = arg.getRaMode();
+                info.enableRa = arg.isEnableRa();
                 info.dnsDomain = arg.getDnsDomain();
                 info.gateway = arg.getGateway();
                 info.hostname = arg.getHostname();
