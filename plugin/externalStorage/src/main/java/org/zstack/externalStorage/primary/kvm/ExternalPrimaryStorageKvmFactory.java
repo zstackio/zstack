@@ -8,10 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -26,7 +23,9 @@ import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.*;
@@ -34,6 +33,7 @@ import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.operr;
 
 public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtensionPoint, KVMPingAgentNoFailureExtensionPoint,
-        KvmVmActiveVolumeSyncExtensionPoint {
+        KvmVmActiveVolumeSyncExtensionPoint, KVMStartVmExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalPrimaryStorageKvmFactory.class);
     @Autowired
     private DatabaseFacade dbf;
@@ -260,4 +260,57 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
             }
         });
     }
+
+    @Override
+    public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {
+        List<VolumeInventory> vols = getManagerExclusiveVolume(spec);
+
+        for (VolumeInventory vol : vols) {
+            PrimaryStorageNodeSvc nodeSvc = getNodeService(vol);
+            if (nodeSvc == null) {
+                continue;
+            }
+
+            nodeSvc.getActiveClients(vol.getInstallPath(), vol.getProtocol()).forEach(client -> {
+                if (!client.getManagerIp().equals(host.getManagementIp()) && !client.isInBlacklist()) {
+                    // TODO use async call
+                    nodeSvc.blacklist(vol.getInstallPath(), vol.getProtocol(), host, new NopeCompletion());
+                }
+            });
+        }
+    }
+
+    @Override
+    public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec spec) {
+    }
+
+    @Override
+    public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
+    }
+
+    private PrimaryStorageNodeSvc getNodeService(VolumeInventory volumeInventory) {
+        String identity = volumeInventory.getInstallPath().split("://")[0];
+        if (!extPsFactory.support(identity)) {
+            return null;
+        }
+
+        return extPsFactory.getNodeSvc(volumeInventory.getPrimaryStorageUuid());
+    }
+
+    private List<VolumeInventory> getManagerExclusiveVolume(VmInstanceSpec spec) {
+        List<VolumeInventory> vols = new ArrayList<>();
+        vols.add(spec.getDestRootVolume());
+        vols.addAll(spec.getDestDataVolumes());
+
+        vols.removeIf(info -> {
+            if (info.getInstallPath() == null || info.isShareable()) {
+                return true;
+            }
+            String identity = info.getInstallPath().split("://")[0];
+            return !extPsFactory.support(identity);
+        });
+
+        return vols;
+    }
+
 }

@@ -34,6 +34,7 @@ import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
 import org.zstack.iscsi.IscsiUtils;
@@ -133,6 +134,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
     }
 
+    // TODO cache uss
     private UssGatewayModule getUssGateway(VolumeProtocol protocol, String managerIp) {
         UssGatewayModule uss = apiHelper.queryUssGateway(buildUssGwName(protocolToString(protocol), managerIp));
         if (uss == null) {
@@ -183,6 +185,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         if (boundUss.stream().noneMatch(it -> it.getId().equals(uss.getId()))) {
             apiHelper.addVhostVolumeToUss(exponVol.getId(), vhost.getId(), uss.getId());
         }
+
+        // TODO not remove every time
+        apiHelper.removeVolumePathFromBlacklist(buildExponVolumeBoundPath(uss, exponVol.getVolumeName()));
 
         VhostVolumeTO to = new VhostVolumeTO();
         to.setInstallPath(vhost.getPath());
@@ -437,7 +442,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
                 return c;
             }).collect(Collectors.toList());
         } else {
-            throw new OperationFailureException(operr("not supported protocol[%s]", protocol));
+            throw new OperationFailureException(operr("not supported protocol[%s] for active", protocol));
         }
     }
 
@@ -455,7 +460,34 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             return;
         }
 
-        comp.fail(operr("not supported protocol[%s]", protocol));
+        comp.fail(operr("not supported protocol[%s] for deactivate", protocol));
+    }
+
+    public void cleanActiveRecord(VolumeInventory vol) {
+        if (vol.getProtocol().equals(VolumeProtocol.Vhost.toString())) {
+            String vhostName = buildVhostControllerName(vol.getUuid());
+            VhostControllerModule vhost = apiHelper.queryVhostController(vhostName);
+            if (vhost != null) {
+                apiHelper.deleteVhostController(vhost.getId());
+            }
+        } else if (vol.getProtocol().equals(VolumeProtocol.iSCSI.toString())) {
+            String iscsiClientName = buildIscsiVolumeClientName(vol.getUuid());
+            IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+            if (client != null) {
+                apiHelper.deleteIscsiClient(client.getId());
+            }
+        }
+    }
+
+    @Override
+    public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
+        logger.debug(String.format("blacklisting volume[path: %s, protocol:%s] on host[uuid:%s, ip:%s]",
+                installPath, protocol, h.getUuid(), h.getManagementIp()));
+
+        UssGatewayModule uss = getUssGateway(VolumeProtocol.valueOf(protocol), h.getManagementIp());
+        VolumeModule exponVol = apiHelper.getVolume(getVolIdFromPath(installPath));
+        apiHelper.addVolumePathToBlacklist(buildExponVolumeBoundPath(uss, exponVol.getVolumeName()));
+        comp.success();
     }
 
     @Override

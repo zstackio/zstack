@@ -304,7 +304,7 @@ public class ExponClient {
 
             if (restInfo.method().equals(HttpMethod.GET)) {
                 reqBuilder.url(builder.build()).get();
-            } else if (restInfo.method().equals(HttpMethod.DELETE)) {
+            } else if (restInfo.method().equals(HttpMethod.DELETE) && !restInfo.hasBody()) {
                 params.forEach((k, v) -> builder.addQueryParameter(k, v.toString()));
                 reqBuilder.url(builder.build()).delete();
             } else {
