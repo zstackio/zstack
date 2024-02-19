@@ -21,4 +21,7 @@ public class L3NetworkGlobalConfig {
     @GlobalConfigValidation(validValues = {L3NetworkConstant.FIRST_AVAILABLE_IPV6_ALLOCATOR_STRATEGY, L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY})
     @BindResourceConfig({L3NetworkVO.class})
     public static GlobalConfig IPV6_ALLOCATE_STRATEGY = new GlobalConfig(CATEGORY, "ipv6AllocateStrategy");
+
+    @GlobalConfigValidation
+    public static GlobalConfig BASIC_NETWORK_ENABLE_RA = new GlobalConfig(CATEGORY, "basic.network.enable.ra");
 }
