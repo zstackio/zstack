@@ -12,6 +12,7 @@ import org.zstack.header.network.l3.AllocateIpReply
 import org.zstack.header.network.l3.L3NetworkConstant
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
+import org.zstack.network.l3.L3NetworkGlobalConfig
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
@@ -64,6 +65,12 @@ class IPv6DhcpCase extends SubCase {
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
+        updateGlobalConfig {
+            name = L3NetworkGlobalConfig.BASIC_NETWORK_ENABLE_RA.name
+            category = L3NetworkGlobalConfig.CATEGORY
+            value = true
+        }
+
         List<FlatDhcpBackend.PrepareDhcpCmd> pcmds = new ArrayList<>()
         env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
             FlatDhcpBackend.BatchPrepareDhcpCmd pcmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchPrepareDhcpCmd.class)
@@ -104,6 +111,7 @@ class IPv6DhcpCase extends SubCase {
         assert dhcpInfo.firstIp == ipr.getStartIp()
         assert dhcpInfo.endIp == ipr.getEndIp()
         assert dhcpInfo.ipVersion == IPv6Constants.IPv6
+        assert dhcpInfo.enableRa
         assert pcmds.size() == 1
         FlatDhcpBackend.PrepareDhcpCmd pcmd = pcmds.get(0)
         assert pcmd.ipVersion == IPv6Constants.IPv6
