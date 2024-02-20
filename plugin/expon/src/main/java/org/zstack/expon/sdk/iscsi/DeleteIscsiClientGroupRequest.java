@@ -19,12 +19,23 @@ public class DeleteIscsiClientGroupRequest extends ExponRequest {
     @Param
     private String id;
 
+    @Param
+    private boolean force;
+
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public boolean isForce() {
+        return force;
+    }
+
+    public void setForce(boolean force) {
+        this.force = force;
     }
 
     @Override

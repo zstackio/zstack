@@ -623,6 +623,7 @@ public class ExponApiHelper {
     public void deleteIscsiClient(String id) {
         DeleteIscsiClientGroupRequest req = new DeleteIscsiClientGroupRequest();
         req.setId(id);
+        req.setForce(true);
         callErrorOut(req, DeleteIscsiClientGroupResponse.class);
     }
 
