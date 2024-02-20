@@ -16,6 +16,8 @@ import org.zstack.header.core.workflow.NopeFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.NodeHealthy;
 import org.zstack.header.storage.addon.StorageHealthy;
@@ -274,7 +276,16 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
             nodeSvc.getActiveClients(vol.getInstallPath(), vol.getProtocol()).forEach(client -> {
                 if (!client.getManagerIp().equals(host.getManagementIp()) && !client.isInBlacklist()) {
                     // TODO use async call
-                    nodeSvc.blacklist(vol.getInstallPath(), vol.getProtocol(), host, new NopeCompletion());
+                    HostVO clientHost = Q.New(HostVO.class).eq(HostVO_.managementIp, client.getManagerIp()).find();
+                    if (clientHost != null) {
+                        logger.debug(String.format("because volume[uuid:%s, installPath:%s] is in use by other KVM " +
+                                        "host[uuid:%s, ip:%s], but to start on host[uuid:%s, ip:%s], " +
+                                        "add it to blacklist",
+                                vol.getUuid(), vol.getInstallPath(),
+                                clientHost.getUuid(), clientHost.getManagementIp(),
+                                host.getUuid(), host.getManagementIp()));
+                        nodeSvc.blacklist(vol.getInstallPath(), vol.getProtocol(), HostInventory.valueOf(clientHost), new NopeCompletion());;
+                    }
                 }
             });
         }

@@ -31,6 +31,7 @@ import org.zstack.header.expon.HealthStatus;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
+import org.zstack.header.storage.primary.ImageCacheInventory;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeConstant;
@@ -478,6 +479,15 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             }
         }
     }
+
+    public void cleanActiveRecord(ImageCacheInventory cache) {
+        String iscsiClientName = buildIscsiVolumeClientName(cache.getImageUuid());
+        IscsiClientGroupModule client = apiHelper.queryIscsiClient(iscsiClientName);
+        if (client != null) {
+            apiHelper.deleteIscsiClient(client.getId());
+        }
+    }
+
 
     @Override
     public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
