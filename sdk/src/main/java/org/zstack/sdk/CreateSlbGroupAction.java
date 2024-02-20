@@ -40,11 +40,14 @@ public class CreateSlbGroupAction extends AbstractAction {
     @Param(required = false, validValues = {"VYOS"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String backendType;
 
-    @Param(required = false, validValues = {"Direct"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"NoHA","HA"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String deployType;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List monitorIps;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

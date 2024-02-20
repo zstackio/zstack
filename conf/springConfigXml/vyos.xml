@@ -195,6 +195,7 @@
     <bean id="VyosVipBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosVipBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.vip.VipBackend" />
+            <zstack:extension interface="org.zstack.network.service.virtualrouter.vip.VirtualRouterVipConfigFactory" />
         </zstack:plugin>
     </bean>
 

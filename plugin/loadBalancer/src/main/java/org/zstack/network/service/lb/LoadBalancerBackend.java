@@ -29,7 +29,7 @@ public interface LoadBalancerBackend {
 
     String getNetworkServiceProviderType();
 
-    List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO);
+    List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO, int ipVersion);
 
     void detachVipFromLoadBalancer(LoadBalancerStruct struct, VipVO vip, Completion completion);
 

@@ -133,6 +133,10 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
                 return new VirtualRouterLoadBalancerBackend.CertificateRsp()
             }
 
+            simulator(VirtualRouterLoadBalancerBackend.CREATE_CERTIFICATES_PATH) {
+                return new VirtualRouterLoadBalancerBackend.CertificateRsp()
+            }
+
             simulator(VirtualRouterConstant.VR_SET_SNAT_PATH) {
                 return new VirtualRouterCommands.SetSNATRsp()
             }

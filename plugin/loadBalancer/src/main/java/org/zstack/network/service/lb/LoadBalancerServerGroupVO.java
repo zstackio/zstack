@@ -11,6 +11,7 @@ import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,6 +40,9 @@ public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAcc
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.RESTRICT)
     private String loadBalancerUuid;
+
+    @Column
+    private Integer ipVersion;
 
     @Column
     private Timestamp createDate;
@@ -143,6 +147,14 @@ public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAcc
 
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }
     

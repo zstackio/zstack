@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateVipAction extends AbstractAction {
+public class GetLoadBalancerOwnerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateVipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateVipResult value;
+        public org.zstack.sdk.GetLoadBalancerOwnerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,8 @@ public class CreateVipAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
-
-    @Param(required = false)
-    public java.lang.String allocatorStrategy;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ipRangeUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String requiredIp;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer ipVersion;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String loadBalancerUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -70,12 +46,6 @@ public class CreateVipAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -84,8 +54,8 @@ public class CreateVipAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateVipResult value = res.getResult(org.zstack.sdk.CreateVipResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateVipResult() : value; 
+        org.zstack.sdk.GetLoadBalancerOwnerResult value = res.getResult(org.zstack.sdk.GetLoadBalancerOwnerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetLoadBalancerOwnerResult() : value; 
 
         return ret;
     }
@@ -114,11 +84,11 @@ public class CreateVipAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vips";
+        info.httpMethod = "GET";
+        info.path = "/load-balancers/{loadBalancerUuid}/owner";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

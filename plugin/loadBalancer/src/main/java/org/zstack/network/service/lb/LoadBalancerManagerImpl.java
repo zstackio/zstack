@@ -53,6 +53,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.Tuple;
 import java.util.*;
@@ -211,6 +212,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         groupVO.setDescription(String.format("default server group for load balancer %s", msg.getName()));
                         groupVO.setLoadBalancerUuid(vo.getUuid());
                         groupVO.setName(String.format("default-server-group-%s", msg.getName()));
+                        groupVO.setIpVersion(IPv6Constants.IPv4);
                         dbf.persist(groupVO);
 
                         vo = dbf.reload(vo);
@@ -896,10 +898,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     @Override
     public ServiceReference getServicePeerL3Reference(String vipUuid, String peerL3Uuid) {
         long count = 0;
-        List<String> l3Uuids = SQL.New("select nic.l3NetworkUuid" +
+        List<String> l3Uuids = SQL.New("select distinct nic.l3NetworkUuid" +
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
-                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
+                " where (lb.vipUuid = :vipUuid or lb.ipv6VipUuid = :vipUuid) and lb.uuid = listener.loadBalancerUuid" +
                 " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
                 " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
                 " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
@@ -910,7 +912,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         List<String> uuids = SQL.New("select distinct lb.uuid" +
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
-                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
+                " where (lb.vipUuid = :vipUuid or lb.ipv6VipUuid = :vipUuid) and lb.uuid = listener.loadBalancerUuid" +
                 " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
                 " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
                 " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
@@ -1017,7 +1019,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                                 .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList()));
                     }
 
-                    if (!uuids.containsAll(nicUuids)) {
+                    if (!new HashSet<>(uuids).containsAll(nicUuids)) {
                         throw new CloudRuntimeException(String.format("load balancer listener [uuid:%s] upgraded failed," +
                                 "vmnics directly attached are [%s], vmnic attached to its serverGroup are %s",
                                 vo.getUuid(), nicUuids, uuids));
@@ -1042,6 +1044,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             groupVO.setDescription(String.format("default server group for load balancer %s", vo.getName()));
             groupVO.setLoadBalancerUuid(vo.getUuid());
             groupVO.setName(String.format("default-server-group-%s", vo.getName()));
+            groupVO.setIpVersion(IPv6Constants.IPv4);
             dbf.persist(groupVO);
 
             vo.setServerGroupUuid(groupVO.getUuid());
@@ -1063,6 +1066,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             groupVO.setAccountUuid(Account.getAccountUuidOfResource(vo.getUuid()));
             groupVO.setDescription(String.format("default server group for load balancer listener %s", vo.getName()));
             groupVO.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+            groupVO.setIpVersion(IPv6Constants.IPv4);
             groupVO.setName(String.format("default-server-group-%s-%s", vo.getName(), vo.getUuid().substring(0, 5)));
             dbf.persist(groupVO);
 

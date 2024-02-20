@@ -12,4 +12,20 @@ public class SlbVmInstanceInventory extends org.zstack.sdk.VirtualRouterVmInvent
         return this.slbGroupUuid;
     }
 
+    public java.util.List configTasks;
+    public void setConfigTasks(java.util.List configTasks) {
+        this.configTasks = configTasks;
+    }
+    public java.util.List getConfigTasks() {
+        return this.configTasks;
+    }
+
+    public long configVersion;
+    public void setConfigVersion(long configVersion) {
+        this.configVersion = configVersion;
+    }
+    public long getConfigVersion() {
+        return this.configVersion;
+    }
+
 }

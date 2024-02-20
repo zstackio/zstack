@@ -26,6 +26,8 @@ public class APICreateLoadBalancerServerGroupMsg extends APICreateMessage implem
     private String description;
     @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
     private String loadBalancerUuid;
+    @APIParam(required = false)
+    private Integer ipVersion;
 
     public String getName() {
         return name;
@@ -51,11 +53,20 @@ public class APICreateLoadBalancerServerGroupMsg extends APICreateMessage implem
         this.loadBalancerUuid = loadBalancerUuid;
     }
 
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
 
     public static APICreateLoadBalancerServerGroupMsg __example__() {
         APICreateLoadBalancerServerGroupMsg msg = new APICreateLoadBalancerServerGroupMsg();
         msg.setName("create-Lb");
         msg.setLoadBalancerUuid(uuid());
+        msg.setIpVersion(4);
 
         return msg;
     }

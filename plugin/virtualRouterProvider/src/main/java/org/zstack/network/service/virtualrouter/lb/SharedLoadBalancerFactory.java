@@ -83,14 +83,15 @@ public class SharedLoadBalancerFactory implements LoadBalancerFactory {
     }
 
     @Override
-    public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO) {
+    public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO,
+                                                           LoadBalancerServerGroupVO groupVO, int ipVersion) {
         String providerType = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE;
         if (lbVO.getProviderType() != null) {
             providerType = lbVO.getProviderType();
         }
 
         LoadBalancerBackend backend = lbMgr.getBackend(providerType);
-        return backend.getAttachableVmNicsForServerGroup(lbVO, groupVO);
+        return backend.getAttachableVmNicsForServerGroup(lbVO, groupVO, ipVersion);
     }
 
     @Override

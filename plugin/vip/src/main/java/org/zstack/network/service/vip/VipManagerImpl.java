@@ -106,7 +106,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             VipBackend old = vipBackends.get(extp.getServiceProviderTypeForVip());
             if (old != null) {
                 throw new CloudRuntimeException(
-                        String.format("duplicate VipBackend[%s, %s] for provider type[%s]", old.getClass().getName(), extp.getClass().getName(), extp.getServiceProviderTypeForVip())
+                        String.format("duplicate VipBackend[%s, %s] for provider type[%s]",
+                                old.getClass().getName(), extp.getClass().getName(), extp.getServiceProviderTypeForVip())
                 );
             }
             vipBackends.put(extp.getServiceProviderTypeForVip(), extp);
