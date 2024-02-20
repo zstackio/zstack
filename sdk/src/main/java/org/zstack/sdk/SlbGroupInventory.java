@@ -92,4 +92,12 @@ public class SlbGroupInventory  {
         return this.networks;
     }
 
+    public java.util.List configTasks;
+    public void setConfigTasks(java.util.List configTasks) {
+        this.configTasks = configTasks;
+    }
+    public java.util.List getConfigTasks() {
+        return this.configTasks;
+    }
+
 }

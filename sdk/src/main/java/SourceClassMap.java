@@ -471,6 +471,9 @@ public class SourceClassMap {
 			put("org.zstack.network.service.slb.SlbLoadBalancerInventory", "org.zstack.sdk.SlbLoadBalancerInventory");
 			put("org.zstack.network.service.slb.SlbOfferingInventory", "org.zstack.sdk.SlbOfferingInventory");
 			put("org.zstack.network.service.slb.SlbVmInstanceInventory", "org.zstack.sdk.SlbVmInstanceInventory");
+			put("org.zstack.network.service.slb.configManager.SlbGroupConfigTaskInventory", "org.zstack.sdk.SlbGroupConfigTaskInventory");
+			put("org.zstack.network.service.slb.configManager.SlbVmInstanceConfigTaskInventory", "org.zstack.sdk.SlbVmInstanceConfigTaskInventory");
+			put("org.zstack.network.service.slb.configManager.SlbVmInstanceConfigTaskStatus", "org.zstack.sdk.SlbVmInstanceConfigTaskStatus");
 			put("org.zstack.network.service.vip.VipInventory", "org.zstack.sdk.VipInventory");
 			put("org.zstack.network.service.vip.VipNetworkServicesRefInventory", "org.zstack.sdk.VipNetworkServicesRefInventory");
 			put("org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory", "org.zstack.sdk.VipPortRangeInventory");
@@ -1178,10 +1181,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.ShrinkResult", "org.zstack.header.storage.snapshot.ShrinkResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
+			put("org.zstack.sdk.SlbGroupConfigTaskInventory", "org.zstack.network.service.slb.configManager.SlbGroupConfigTaskInventory");
 			put("org.zstack.sdk.SlbGroupInventory", "org.zstack.network.service.slb.SlbGroupInventory");
 			put("org.zstack.sdk.SlbGroupL3NetworkRefInventory", "org.zstack.network.service.slb.SlbGroupL3NetworkRefInventory");
 			put("org.zstack.sdk.SlbLoadBalancerInventory", "org.zstack.network.service.slb.SlbLoadBalancerInventory");
 			put("org.zstack.sdk.SlbOfferingInventory", "org.zstack.network.service.slb.SlbOfferingInventory");
+			put("org.zstack.sdk.SlbVmInstanceConfigTaskInventory", "org.zstack.network.service.slb.configManager.SlbVmInstanceConfigTaskInventory");
+			put("org.zstack.sdk.SlbVmInstanceConfigTaskStatus", "org.zstack.network.service.slb.configManager.SlbVmInstanceConfigTaskStatus");
 			put("org.zstack.sdk.SlbVmInstanceInventory", "org.zstack.network.service.slb.SlbVmInstanceInventory");
 			put("org.zstack.sdk.SmartDataStruct", "org.zstack.storage.device.localRaid.SmartDataStruct");
 			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.spendingcalculator.snapshot.SnapShotSpendingInventory");
