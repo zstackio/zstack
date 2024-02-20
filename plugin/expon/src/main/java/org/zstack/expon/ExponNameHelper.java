@@ -1,5 +1,7 @@
 package org.zstack.expon;
 
+import org.zstack.expon.sdk.uss.UssGatewayModule;
+
 public class ExponNameHelper {
 
     public static String buildVhostControllerName(String zsVolumeUuid) {
@@ -47,5 +49,16 @@ public class ExponNameHelper {
 
     public static String getExponId(String uuid) {
         return uuid.substring(0, 8) + "-" + uuid.substring(8, 12) + "-" + uuid.substring(12, 16) + "-" + uuid.substring(16, 20) + "-" + uuid.substring(20);
+    }
+
+    /**
+     * @see org.zstack.expon.sdk.pool.BlacklistModule
+     */
+    public static String buildExponVolumeBoundPath(UssGatewayModule uss, String volumeName) {
+        return String.format("%s:%s/%s/VOLUME/%s",
+                uss.getBusinessNetwork().split("/")[0],
+                uss.getBusinessPort(),
+                uss.getUssId(),
+                volumeName);
     }
 }

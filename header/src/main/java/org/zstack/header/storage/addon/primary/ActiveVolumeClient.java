@@ -3,6 +3,8 @@ package org.zstack.header.storage.addon.primary;
 public class ActiveVolumeClient {
     protected String managerIp;
     protected String qualifiedName;
+    protected boolean inBlacklist;
+    protected String path;
 
     public void setManagerIp(String managerIp) {
         this.managerIp = managerIp;
@@ -18,5 +20,21 @@ public class ActiveVolumeClient {
 
     public String getQualifiedName() {
         return qualifiedName;
+    }
+
+    public void setInBlacklist(boolean inBlacklist) {
+        this.inBlacklist = inBlacklist;
+    }
+
+    public boolean isInBlacklist() {
+        return inBlacklist;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getPath() {
+        return path;
     }
 }

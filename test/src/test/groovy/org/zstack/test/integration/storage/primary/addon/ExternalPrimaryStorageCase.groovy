@@ -660,9 +660,12 @@ class ExternalPrimaryStorageCase extends SubCase {
             uuid = vol.uuid
         }
 
+        assert apiHelper.queryVhostController("volume-" + vol.uuid) != null
         expungeDataVolume {
             uuid = vol.uuid
         }
+
+        assert apiHelper.queryVhostController("volume-" + vol.uuid) == null
     }
 
     void testImageCacheClean() {

@@ -178,6 +178,12 @@ public class ExponApiHelper {
         return inv;
     }
 
+    public void deleteVhostController(String id) {
+        DeleteVhostControllerRequest req = new DeleteVhostControllerRequest();
+        req.setId(id);
+        callErrorOut(req, DeleteVhostControllerResponse.class);
+    }
+
     public VolumeModule queryVolume(String name) {
         QueryVolumeRequest req = new QueryVolumeRequest();
         req.addCond("name", name);
@@ -731,6 +737,43 @@ public class ExponApiHelper {
         }
 
         errorOut(rsp);
+    }
+
+    public List<String> getVolumeBoundPath(String volId) {
+        GetVolumeBoundPathRequest req = new GetVolumeBoundPathRequest();
+        req.setVolId(volId);
+        GetVolumeBoundPathResponse rsp = callErrorOut(req, GetVolumeBoundPathResponse.class);
+        return rsp.getPath();
+    }
+
+    public void addVolumePathToBlacklist(String path) {
+        AddVolumePathToBlacklistRequest req = new AddVolumePathToBlacklistRequest();
+        req.setPath(path);
+        callErrorOut(req, AddVolumePathToBlacklistResponse.class);
+    }
+
+    public void removeVolumePathFromBlacklist(String path) {
+        RemoveVolumePathFromBlacklistRequest req = new RemoveVolumePathFromBlacklistRequest();
+        req.setPath(path);
+
+        RemoveVolumePathFromBlacklistResponse rsp = call(req, RemoveVolumePathFromBlacklistResponse.class);
+        // {\"code\":200502,\"msg\":\"Black list not exist\"}
+        if (rsp.isError(ExponError.BLACK_LIST_OPERATION_FAILED) && rsp.getMessage().contains("list not exist")) {
+            return;
+        }
+
+        errorOut(rsp);
+    }
+
+    public List<BlacklistModule> getFailureDomainBlacklist() {
+        GetFailureDomainBlacklistRequest req = new GetFailureDomainBlacklistRequest();
+        GetFailureDomainBlacklistResponse rsp = callErrorOut(req, GetFailureDomainBlacklistResponse.class);
+        return rsp.getEntries();
+    }
+
+    public void clearFailureDomainBlacklist() {
+        ClearFailureDomainBlacklistRequest req = new ClearFailureDomainBlacklistRequest();
+        callErrorOut(req, ClearFailureDomainBlacklistResponse.class);
     }
 
     public void setTrashExpireTime(int days) {
