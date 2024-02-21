@@ -49,6 +49,15 @@ doc {
 					since "0.6"
 				}
 				column {
+					name "permission"
+					enclosedIn "shareResource"
+					desc "共享的权限, WRITE 表示写权限, READ 表示读权限"
+					location "body"
+					type "String"
+					optional true
+					since "zsv 4.2.0"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

@@ -25,7 +25,10 @@ public class APIShareResourceMsg extends APIMessage implements AccountMessage {
     private List<String> resourceUuids;
     @APIParam(resourceType = AccountVO.class, required = false)
     private List<String> accountUuids;
+    @APIParam(required = false)
     private boolean toPublic;
+    @APIParam(required = false, validEnums = {ShareResourcePermission.class})
+    private String permission;
 
     public List<String> getResourceUuids() {
         return resourceUuids;
@@ -49,6 +52,14 @@ public class APIShareResourceMsg extends APIMessage implements AccountMessage {
 
     public void setToPublic(boolean toPublic) {
         this.toPublic = toPublic;
+    }
+
+    public String getPermission() {
+        return permission;
+    }
+
+    public void setPermission(String permission) {
+        this.permission = permission;
     }
 
     @Override
