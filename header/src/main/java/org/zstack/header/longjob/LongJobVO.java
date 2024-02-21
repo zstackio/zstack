@@ -1,6 +1,5 @@
 package org.zstack.header.longjob;
 
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.vo.ForeignKey;
@@ -43,6 +42,9 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
     @Column
     @ForeignKey(parentEntityClass = ManagementNodeVO.class, onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
     private String managementNodeUuid;
+
+    @Column
+    private String parentUuid;
 
     @Column
     private Timestamp createDate;
@@ -141,6 +143,17 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
 
     public void setManagementNodeUuid(String managementNodeUuid) {
         this.managementNodeUuid = managementNodeUuid;
+    }
+
+    public String getParentUuid() {
+        return parentUuid;
+    }
+
+    /**
+     * @see LongJobVO#getUuid()
+     */
+    public void setParentUuid(String parentUuid) {
+        this.parentUuid = parentUuid;
     }
 
     public Timestamp getCreateDate() {

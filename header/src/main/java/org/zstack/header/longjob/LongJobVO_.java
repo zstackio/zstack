@@ -22,4 +22,5 @@ public class LongJobVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LongJobVO, String> managementNodeUuid;
     public static volatile SingularAttribute<LongJobVO, Timestamp> createDate;
     public static volatile SingularAttribute<LongJobVO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<LongJobVO, String> parentUuid;
 }

@@ -27,6 +27,7 @@ public class LongJobInventory implements Serializable {
     private LongJobState state;
     private String targetResourceUuid;
     private String managementNodeUuid;
+    private String parentUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private Long executeTime;
@@ -48,6 +49,7 @@ public class LongJobInventory implements Serializable {
         this.setDescription(vo.getDescription());
         this.setTargetResourceUuid(vo.getTargetResourceUuid());
         this.setManagementNodeUuid(vo.getManagementNodeUuid());
+        this.setParentUuid(vo.getParentUuid());
     }
 
     public static LongJobInventory valueOf(LongJobVO vo) {
@@ -140,6 +142,14 @@ public class LongJobInventory implements Serializable {
 
     public void setManagementNodeUuid(String managementNodeUuid) {
         this.managementNodeUuid = managementNodeUuid;
+    }
+
+    public String getParentUuid() {
+        return parentUuid;
+    }
+
+    public void setParentUuid(String parentUuid) {
+        this.parentUuid = parentUuid;
     }
 
     public Timestamp getCreateDate() {
