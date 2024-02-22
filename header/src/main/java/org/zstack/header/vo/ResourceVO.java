@@ -38,6 +38,7 @@ public class ResourceVO {
         uuid = (String) objs[0];
         resourceName = (String) objs[1];
         resourceType = (String) objs[2];
+	concreteResourceType = objs.length == 4 ? (String) objs[3] : "";
     }
 
     private Field getNameField() {
