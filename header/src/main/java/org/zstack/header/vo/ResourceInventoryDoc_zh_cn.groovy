@@ -24,4 +24,10 @@ doc {
 		type "String"
 		since "2.0"
 	}
+	field {
+		name "concreteResourceType"
+		desc "资源具体类型，例如VPC为org.zstack.header.vpc.VpcRouterVmVO"
+		type "String"
+		since "5.0.0"
+	}
 }

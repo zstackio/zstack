@@ -266,7 +266,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         List<ResourceInventory> invs = new SQLBatchWithReturn<List<ResourceInventory>>() {
             @Override
             protected List<ResourceInventory> scripts() {
-                Query q = dbf.getEntityManager().createNativeQuery("select uuid, resourceName, resourceType from ResourceVO where uuid in (:uuids)");
+                Query q = dbf.getEntityManager().createNativeQuery("select uuid, resourceName, resourceType, concreteResourceType from ResourceVO where uuid in (:uuids)");
                 q.setParameter("uuids", msg.getUuids());
                 List<Object[]> objs = q.getResultList();
 
