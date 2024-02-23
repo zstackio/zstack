@@ -28,4 +28,12 @@ public class ResourceInventory  {
         return this.resourceType;
     }
 
+    public java.lang.String concreteResourceType;
+    public void setConcreteResourceType(java.lang.String concreteResourceType) {
+        this.concreteResourceType = concreteResourceType;
+    }
+    public java.lang.String getConcreteResourceType() {
+        return this.concreteResourceType;
+    }
+
 }
