@@ -2102,7 +2102,7 @@ ${txt}
 \t\tname "${n}"
 \t\tdesc "${desc == null ? "" : desc}"
 \t\ttype "${type}"
-\t\tsince "${projectVersion != null ? projectVersion : "0.6"}"
+\t\tsince "${projectVersion != null ? projectVersion : "zsv 4.2.0 (please update it)"}"
 \t}"""
         }
 
@@ -2118,7 +2118,7 @@ ${txt}
 \t\tpath "${path}"
 \t\tdesc "${desc}"${overrideDesc != null ? ",${overrideDesc}" : ""}
 \t\ttype "${type}"
-\t\tsince "${projectVersion != null ? projectVersion : "0.6"}"
+\t\tsince "${projectVersion != null ? projectVersion : "zsv 4.2.0 (please update it)"}"
 \t\tclz ${clz.simpleName}.class
 \t}"""
         }
@@ -2301,7 +2301,7 @@ ${fieldStr}
 \t\t\t\t\tlocation "${location}"
 \t\t\t\t\ttype "${af.type.simpleName}"
 \t\t\t\t\toptional ${ap == null ? true : !ap.required()}
-\t\t\t\t\tsince "${projectVersion != null ? projectVersion : "0.6"}"
+\t\t\t\t\tsince "${projectVersion != null ? projectVersion : "zsv 4.2.0 (please update it)"}"
 """)
                 if (values != null) {
                     cols.add("\t\t\t\t\t${values}")
