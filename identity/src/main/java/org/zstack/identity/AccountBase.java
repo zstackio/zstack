@@ -539,6 +539,9 @@ public class AccountBase extends AbstractAccount {
             }
         }
 
+        final ShareResourcePermission permission = msg.getPermission() == null ?
+                ShareResourcePermission.READ : ShareResourcePermission.valueOf(msg.getPermission());
+
         new SQLBatch(){
             @Override
             protected void scripts() {
@@ -558,6 +561,7 @@ public class AccountBase extends AbstractAccount {
                         svo.setResourceType(resourceType);
                         svo.setResourceUuid(ruuid);
                         svo.setToPublic(true);
+                        svo.setPermission(permission.code);
                         dbf.persist(svo);
                         logger.debug(String.format("Shared resource[uuid:%s type:%s] to public", ruuid, resourceType));
                     }
@@ -575,6 +579,7 @@ public class AccountBase extends AbstractAccount {
                                 svo.setResourceType(resourceType);
                                 svo.setResourceUuid(ruuid);
                                 svo.setReceiverAccountUuid(auuid);
+                                svo.setPermission(permission.code);
                                 dbf.persist(svo);
                                 logger.debug(String.format("Shared resource[uuid:%s type:%s] to account[uuid:%s]", ruuid, resourceType, auuid));
                             }

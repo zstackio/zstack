@@ -17,7 +17,8 @@ import javax.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
+import static org.zstack.header.errorcode.SysErrors.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class OperationTargetAPIRequestChecker implements APIRequestChecker {
@@ -161,26 +162,43 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 String accountUuid = rbacEntity.getApiMessage().getSession().getAccountUuid();
 
                 if (uuids.isEmpty()) {
-                    throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
+                    throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
+                            "permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
                             accountUuid, accountUuid, resourceType.getSimpleName()));
                 }
             }
 
             private void checkIfTheAccountOwnTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = getResourceUuids(param);
+                removeSharedToPublicResources(uuids);
                 if (uuids.isEmpty()) {
                     return;
                 }
 
-                Class resourceType = param.param.resourceType();
                 Collection<AccountResourceBundle> bundles = getAccountResourceBundles(uuids);
                 uuids.forEach(uuid -> {
                     Optional<AccountResourceBundle> opt = bundles.stream().filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid)).findFirst();
                     if (!opt.isPresent()) {
-                        throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
-                                rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));
+                        String resourceType = param.param.resourceType().getSimpleName();
+                        throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
+                                "%s resource[uuid:%s] is not accessible for account[uuid:%s]",
+                                resourceType, uuid, rbacEntity.getApiMessage().getSession().getAccountUuid()));
                     }
                 });
+            }
+
+            private void removeSharedToPublicResources(List<String> uuids) {
+                if (uuids.isEmpty()) {
+                    return;
+                }
+
+                final List<String> sharedResourceUuidList = q(SharedResourceVO.class)
+                        .in(SharedResourceVO_.resourceUuid, uuids)
+                        .eq(SharedResourceVO_.toPublic, true)
+                        .eq(SharedResourceVO_.permission, SharedResourceVO.PERMISSION_WRITE)
+                        .select(SharedResourceVO_.resourceUuid)
+                        .listValues();
+                uuids.removeAll(sharedResourceUuidList);
             }
 
             private Collection<AccountResourceBundle> getAccountResourceBundles(List<String> uuids) {
@@ -225,7 +243,8 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                             .filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid))
                             .findFirst();
                     if (!opt.isPresent()) {
-                        throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the tagged resource[uuid:%s, type:%s]",
+                        throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
+                                "permission denied, the account[uuid:%s] is not the owner of the tagged resource[uuid:%s, type:%s]",
                                 rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, type));
                     }
                 });
@@ -248,7 +267,8 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
                 List<String> resourceWithNoAccess = CheckIfAccountCanAccessResource.check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
                 if (!resourceWithNoAccess.isEmpty()) {
-                    throw new OperationFailureException(operr("the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
+                    throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
+                            "the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
                             rbacEntity.getApiMessage().getSession().getAccountUuid(), resourceWithNoAccess, resourceType.getSimpleName()));
                 }
 

@@ -90,5 +90,10 @@
         <id>1017</id>
         <description>A message or a operation cancelled</description>
     </code>
+
+    <code>
+        <id>1018</id>
+        <description>Resources are not accessible. Please contact the owner of the resources to grant access to these resources</description>
+    </code>
 </error>
 

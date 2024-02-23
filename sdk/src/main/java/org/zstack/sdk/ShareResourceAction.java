@@ -31,8 +31,11 @@ public class ShareResourceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List accountUuids;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean toPublic = false;
+
+    @Param(required = false, validValues = {"READ","WRITE"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String permission;
 
     @Param(required = false)
     public java.util.List systemTags;
