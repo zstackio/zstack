@@ -84,6 +84,14 @@ public class LongJobInventory  {
         return this.managementNodeUuid;
     }
 
+    public java.lang.String parentUuid;
+    public void setParentUuid(java.lang.String parentUuid) {
+        this.parentUuid = parentUuid;
+    }
+    public java.lang.String getParentUuid() {
+        return this.parentUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

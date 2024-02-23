@@ -15,6 +15,7 @@ public class SubmitLongJobMsg extends NeedReplyMessage {
     private String resourceUuid;
     private String accountUuid;
     private String jobRequestUuid;
+    private String parentUuid;
 
     public String getName() {
         return name;
@@ -100,5 +101,16 @@ public class SubmitLongJobMsg extends NeedReplyMessage {
 
     public void setJobRequestUuid(String jobRequestUuid) {
         this.jobRequestUuid = jobRequestUuid;
+    }
+
+    public String getParentUuid() {
+        return parentUuid;
+    }
+
+    /**
+     * @see LongJobVO#getUuid()
+     */
+    public void setParentUuid(String parentUuid) {
+        this.parentUuid = parentUuid;
     }
 }

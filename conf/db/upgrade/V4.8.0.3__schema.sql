@@ -6,3 +6,7 @@ insert into AccountResourceRefVO (`accountUuid`,`ownerAccountUuid`,`resourceUuid
 select '36c27e8ff05c4780bf6d2fa65700f22e', '36c27e8ff05c4780bf6d2fa65700f22e', uuid, resourceType, 2, false, NOW(), NOW(), 'org.zstack.usbDevice.UsbDeviceVO'
     from ResourceVO where resourceType = 'UsbDeviceVO';
 
+-- Feature: support OVF uploading breakpoint continuation | ZSV-4467
+alter table `zstack`.`LongJobVO` modify `uuid` char(32) not null;
+alter table `zstack`.`LongJobVO` add column `parentUuid` char(32) default null;
+
