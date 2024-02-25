@@ -652,6 +652,8 @@ abstract class Test extends ApiHelper implements Retry {
             return
         }
 
+        System.setProperty("inTestSuite", "true")
+
         if (caseTypes.isEmpty()) {
             return
         }

@@ -72,6 +72,7 @@ class ExternalPrimaryStorageCase extends SubCase {
 
     @Override
     void clean() {
+        System.setProperty("useImageSpecSize", "false")
         env.delete()
     }
 
@@ -164,7 +165,13 @@ class ExternalPrimaryStorageCase extends SubCase {
 
     @Override
     void test() {
+        System.setProperty("useImageSpecSize", "true")
         env.create {
+            if (System.getProperty("inTestSuite") != null) {
+                logger.debug("skip expon case in test suite")
+                return
+            }
+
             cluster = env.inventoryByName("cluster") as ClusterInventory
             instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory

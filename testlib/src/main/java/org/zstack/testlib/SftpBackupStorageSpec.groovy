@@ -49,9 +49,11 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
                 BackupStorageSpec bsSpec = spec.specByUuid(cmd.uuid)
                 ImageSpec imageSpec = spec.specByUuid(cmd.imageUuid)
 
+                boolean useSpecSize = Boolean.valueOf(System.getProperty("useImageSpecSize"))
+
                 def rsp = new SftpBackupStorageCommands.DownloadResponse()
-                rsp.size = imageSpec.size
-                rsp.actualSize = imageSpec.actualSize
+                rsp.size = useSpecSize ? imageSpec.size : 0L
+                rsp.actualSize = useSpecSize ? imageSpec.actualSize : 0L
                 rsp.availableCapacity = bsSpec.availableCapacity
                 rsp.totalCapacity = bsSpec.totalCapacity
                 return rsp
@@ -61,8 +63,10 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
                 def cmd = JSONObjectUtil.toObject(e.getBody(), SftpBackupStorageCommands.GetImageSizeCmd.class)
                 def rsp = new SftpBackupStorageCommands.GetImageSizeRsp()
                 ImageSpec imageSpec = spec.specByUuid(cmd.imageUuid)
-                rsp.size = imageSpec.size
-                rsp.actualSize = imageSpec.actualSize
+
+                boolean useSpecSize = Boolean.valueOf(System.getProperty("useImageSpecSize"))
+                rsp.size = useSpecSize ? imageSpec.size : 0L
+                rsp.actualSize = useSpecSize ? imageSpec.actualSize : 0L
                 return rsp
             }
 
