@@ -88,7 +88,9 @@ public abstract class VmTracer {
                 logger.debug(String.format("[Vm Tracer] detects stranger vm[identity:%s, state:%s]", vmUuid, actualState));
                 String cachedHostUuid = strangeVms.get(vmUuid);
 
-                if (cachedHostUuid != null) {
+                // only report stranger vm once for each host
+                // but if hostUuid changed, report it again
+                if (cachedHostUuid != null && cachedHostUuid.equals(hostUuid)) {
                     logger.debug(String.format("[Vm Tracer] detects stranger vm[identity:%s, state:%s] but it's already in cache, skip firing event", vmUuid, actualState));
                     return;
                 }
