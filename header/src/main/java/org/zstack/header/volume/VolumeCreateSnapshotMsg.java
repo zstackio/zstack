@@ -15,6 +15,15 @@ public class VolumeCreateSnapshotMsg extends NeedReplyMessage implements VolumeM
     private String description;
     private String volumeUuid;
     private SnapshotMode requiredSnapshotMode = SnapshotMode.AUTO;
+    private boolean queuedInVolume = true;
+
+    public boolean isQueuedInVolume() {
+        return queuedInVolume;
+    }
+
+    public void setQueuedInVolume(boolean queuedInVolume) {
+        this.queuedInVolume = queuedInVolume;
+    }
 
     public SnapshotMode getRequiredSnapshotMode() {
         return requiredSnapshotMode;

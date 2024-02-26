@@ -47,6 +47,7 @@ import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupOperationValidator;
 import org.zstack.tag.SystemTagCreator;
@@ -718,8 +719,16 @@ public class VolumeBase extends AbstractVolume implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return msg instanceof VolumeTemplateOverlayMsg ?
-                        String.format("create-volume-template-%s", self.getUuid()) : syncThreadId;
+                if (msg instanceof VolumeTemplateOverlayMsg) {
+                    if (PrimaryStorageGlobalConfig.UNDO_TEMP_SNAPSHOT.value(Boolean.class) &&
+                            !msg.getMessage().hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat())) {
+                        return syncThreadId;
+                    }
+
+                    return String.format("create-volume-template-%s", self.getUuid());
+                }
+
+                return syncThreadId;
             }
 
             @Override
@@ -1065,7 +1074,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadId;
+                return msg.isQueuedInVolume() ? syncThreadId : String.format("create-date-volume-template-%s", self.getUuid());
             }
 
             @Override
@@ -2671,7 +2680,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadId;
+                return msg.isQueuedInVolume() ? syncThreadId : String.format("volume-%s-create-snapshot", msg.getVolumeUuid());
             }
 
             @Override
