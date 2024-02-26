@@ -16,6 +16,8 @@ public interface AccountManager {
 
     List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType);
 
+    List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType, ShareResourcePermission permission);
+
     Map<Class, List<Quota>> getMessageQuotaMap();
 
     Map<Class, List<QuotaMessageHandler<? extends Message>>> getQuotaMessageHandlerMap();
