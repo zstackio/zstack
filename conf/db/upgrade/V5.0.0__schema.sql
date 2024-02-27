@@ -55,7 +55,8 @@ alter table SNSDingTalkAtPersonVO
     add lastOpDate timestamp ON UPDATE CURRENT_TIMESTAMP;
 
 alter table SNSDingTalkAtPersonVO
-    add createDate timestamp NOT NULL DEFAULT '0000-00-00 00:00:00';
+    add createDate timestamp NULL DEFAULT '0000-00-00 00:00:00';
+update SNSDingTalkAtPersonVO set createDate = CURRENT_TIMESTAMP where createDate is null;
 
 alter table SNSDingTalkAtPersonVO
     add remark varchar(128) default '' null;
