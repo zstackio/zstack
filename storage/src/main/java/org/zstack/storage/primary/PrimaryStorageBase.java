@@ -27,7 +27,9 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.*;
-import org.zstack.header.core.trash.*;
+import org.zstack.header.core.trash.CleanTrashResult;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
+import org.zstack.header.core.trash.TrashCleanupResult;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -417,12 +419,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected void handle(DeleteVolumeChainOnPrimaryStorageMsg msg) {
         DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
+        HypervisorType hvType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getVolumeFormat());
         new While<>(msg.getInstallPaths()).each((path, c) -> {
-            DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
+            DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
             dmsg.setInstallPath(path);
             dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
             dmsg.setHostUuid(msg.getHostUuid());
-            dmsg.setFormat(msg.getVolumeFormat());
+            dmsg.setHypervisorType(hvType.toString());
             bus.makeLocalServiceId(dmsg, PrimaryStorageConstant.SERVICE_ID);
             bus.send(dmsg, new CloudBusCallBack(c) {
                 @Override
@@ -511,6 +514,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected void handle(UpdatePrimaryStorageHostStatusMsg msg) {
         updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), msg.getStatus(), msg.getReason());
+        bus.reply(msg, new UpdatePrimaryStorageHostStatusReply());
     }
 
     protected void updatePrimaryStorageHostStatus(String psUuid, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){

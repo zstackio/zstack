@@ -130,6 +130,7 @@ abstract class Test extends ApiHelper implements Retry {
             ceph()
             lb()
             nfsPrimaryStorage()
+            externalPrimaryStorage()
             eip()
             portForwarding()
             smp()
@@ -650,6 +651,8 @@ abstract class Test extends ApiHelper implements Retry {
         if (System.getProperty("list") != null) {
             return
         }
+
+        System.setProperty("inTestSuite", "true")
 
         if (caseTypes.isEmpty()) {
             return

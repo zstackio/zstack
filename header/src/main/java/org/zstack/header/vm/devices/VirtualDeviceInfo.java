@@ -27,4 +27,8 @@ public class VirtualDeviceInfo {
     public void setDeviceAddress(DeviceAddress deviceAddress) {
         this.deviceAddress = deviceAddress;
     }
+
+    public boolean isValid() {
+        return resourceUuid != null && deviceAddress != null;
+    }
 }

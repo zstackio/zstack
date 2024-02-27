@@ -82,6 +82,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmVmActiveVolumeSyncPingTask" class="org.zstack.kvm.KvmVmActiveVolumeSyncPingTask">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KVMSecurityGroupBackend" class="org.zstack.kvm.KVMSecurityGroupBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.securitygroup.SecurityGroupHypervisorBackend" />

@@ -505,6 +505,7 @@ public class KVMAgentCommands {
         private List<String> libvirtCapabilities;
         @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO virtualizerInfo;
+        private String iscsiInitiatorName;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -741,6 +742,14 @@ public class KVMAgentCommands {
 
         public void setMemorySlotsMaximum(String memorySlotsMaximum) {
             this.memorySlotsMaximum = memorySlotsMaximum;
+        }
+
+        public String getIscsiInitiatorName() {
+            return iscsiInitiatorName;
+        }
+
+        public void setIscsiInitiatorName(String iscsiInitiatorName) {
+            this.iscsiInitiatorName = iscsiInitiatorName;
         }
     }
 
@@ -1421,18 +1430,23 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class IsoTO {
-        private String path;
-        private String imageUuid;
-        private int deviceId;
+    public static class IsoTO extends BaseVirtualDeviceTO {
+        protected String path;
+        protected String imageUuid;
+        protected String primaryStorageUuid;
+        protected String protocol;
+        protected int deviceId;
 
         public IsoTO() {
         }
 
         public IsoTO(IsoTO other) {
+            this.resourceUuid = other.resourceUuid;
             this.path = other.path;
             this.imageUuid = other.imageUuid;
             this.deviceId = other.deviceId;
+            this.primaryStorageUuid = other.primaryStorageUuid;
+            this.protocol = other.protocol;
         }
 
         public String getImageUuid() {
@@ -1458,12 +1472,25 @@ public class KVMAgentCommands {
         public void setDeviceId(int deviceId) {
             this.deviceId = deviceId;
         }
+
+        public void setPrimaryStorageUuid(String primaryStorageUuid) {
+            this.primaryStorageUuid = primaryStorageUuid;
+        }
+
+        public String getPrimaryStorageUuid() {
+            return primaryStorageUuid;
+        }
+
+        public void setProtocol(String protocol) {
+            this.protocol = protocol;
+        }
+
+        public String getProtocol() {
+            return protocol;
+        }
     }
 
-    public static class CdRomTO extends BaseVirtualDeviceTO {
-        private String path;
-        private String imageUuid;
-        private int deviceId;
+    public static class CdRomTO extends IsoTO {
         // unmounted iso
         private boolean isEmpty;
         private int bootOrder;
@@ -1477,30 +1504,6 @@ public class KVMAgentCommands {
             this.imageUuid = other.imageUuid;
             this.deviceId = other.deviceId;
             this.bootOrder = other.bootOrder;
-        }
-
-        public String getImageUuid() {
-            return imageUuid;
-        }
-
-        public void setImageUuid(String imageUuid) {
-            this.imageUuid = imageUuid;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        public int getDeviceId() {
-            return deviceId;
-        }
-
-        public void setDeviceId(int deviceId) {
-            this.deviceId = deviceId;
         }
 
         public boolean isEmpty() {
@@ -2066,16 +2069,11 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private VirtualDeviceInfo memBalloon;
         @GrayVersion(value = "5.0.0")
-        private List<IsoTO> bootIso = new ArrayList<>();
-        @GrayVersion(value = "5.0.0")
         private List<CdRomTO> cdRoms = new ArrayList<>();
         @GrayVersion(value = "5.0.0")
         private List<VolumeTO> dataVolumes;
         @GrayVersion(value = "5.0.0")
         private List<VolumeTO> cacheVolumes;
-        @GrayVersion(value = "5.0.0")
-        private List<VolumeTO> Volumes;
-        @GrayVersion(value = "5.0.0")
         private List<NicTO> nics;
         @GrayVersion(value = "5.0.0")
         private long timeout;
@@ -2504,16 +2502,6 @@ public class KVMAgentCommands {
 
         public void setInstanceOfferingOnlineChange(boolean instanceOfferingOnlineChange) {
             this.instanceOfferingOnlineChange = instanceOfferingOnlineChange;
-        }
-
-        @Deprecated
-        public List<IsoTO> getBootIso() {
-            return bootIso;
-        }
-
-        @Deprecated
-        public void setBootIso(List<IsoTO> bootIso) {
-            this.bootIso = bootIso;
         }
 
         public List<CdRomTO> getCdRoms() {
@@ -3426,6 +3414,30 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class VolumeSyncCmd extends AgentCommand {
+        private List<String> storagePaths;
+
+        public void setStoragePaths(List<String> storagePaths) {
+            this.storagePaths = storagePaths;
+        }
+
+        public List<String> getStoragePaths() {
+            return storagePaths;
+        }
+    }
+
+    public static class VolumeSyncRsp extends AgentResponse {
+        private Map<String, List<String>> inactiveVolumePaths;
+
+        public void setInactiveVolumePaths(Map<String, List<String>> inactiveVolumePaths) {
+            this.inactiveVolumePaths = inactiveVolumePaths;
+        }
+
+        public Map<String, List<String>> getInactiveVolumePaths() {
+            return inactiveVolumePaths;
+        }
+    }
+
     public static class RefreshAllRulesOnHostCmd extends AgentCommand {
         @GrayVersion(value = "5.0.0")
         private List<VmNicSecurityTO> vmNicTOs;
@@ -4121,6 +4133,8 @@ public class KVMAgentCommands {
 
     public static class LoginIscsiTargetCmd extends AgentCommand implements Serializable {
         @GrayVersion(value = "5.0.0")
+        private String url;
+        @GrayVersion(value = "5.0.0")
         private String hostname;
         @GrayVersion(value = "5.0.0")
         private int port;
@@ -4170,6 +4184,14 @@ public class KVMAgentCommands {
 
         public void setTarget(String target) {
             this.target = target;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
         }
     }
 

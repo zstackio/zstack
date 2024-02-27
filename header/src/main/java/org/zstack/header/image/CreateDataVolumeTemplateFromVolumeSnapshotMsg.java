@@ -8,7 +8,8 @@ import java.util.List;
 /**
  * Created by MaJin on 2021/3/16.
  */
-public class CreateDataVolumeTemplateFromVolumeSnapshotMsg extends NeedReplyMessage implements CreateDataVolumeTemplateMessage{
+public class CreateDataVolumeTemplateFromVolumeSnapshotMsg extends NeedReplyMessage
+        implements CreateDataVolumeTemplateMessage, CreateTemplateFromSnapshotMessage {
     private String resourceUuid;
     private String snapshotUuid;
     private String name;

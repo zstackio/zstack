@@ -3,8 +3,8 @@ package org.zstack.kvm;
 import org.zstack.header.vm.devices.DeviceAddress;
 
 public class BaseVirtualDeviceTO {
-    private String resourceUuid;
-    private DeviceAddress deviceAddress;
+    protected String resourceUuid;
+    protected DeviceAddress deviceAddress;
 
     public String getResourceUuid() {
         return resourceUuid;

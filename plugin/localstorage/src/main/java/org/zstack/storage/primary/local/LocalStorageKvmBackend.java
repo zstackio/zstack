@@ -1305,9 +1305,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     private void createEmptyVolume(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
-        createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<VolumeInfo>(completion) {
+        createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<VolumeStats>(completion) {
             @Override
-            public void success(VolumeInfo returnValue) {
+            public void success(VolumeStats returnValue) {
                 InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
                 VolumeInventory vol = msg.getVolume();
                 vol.setInstallPath(returnValue.getInstallPath());
@@ -1328,11 +1328,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
-    public void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<VolumeInfo> completion) {
+    public void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<VolumeStats> completion) {
         createEmptyVolumeWithBackingFile(volume, hostUuid, null, completion);
     }
 
-    public void createEmptyVolumeWithBackingFile(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<VolumeInfo> completion) {
+    public void createEmptyVolumeWithBackingFile(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<VolumeStats> completion) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(volume.getUuid()));
         if (volume.getInstallPath() != null && !volume.getInstallPath().equals("")) {
@@ -1356,7 +1356,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
             @Override
             public void success(CreateEmptyVolumeRsp returnValue) {
-                completion.success(new VolumeInfo(cmd.getInstallUrl(), returnValue.actualSize, returnValue.size));
+                completion.success(new VolumeStats(cmd.getInstallUrl(), returnValue.actualSize, returnValue.size));
             }
 
             @Override
@@ -1685,9 +1685,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         final ImageInventory image = ispec.getInventory();
 
         if (!ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
-            createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<VolumeInfo>(completion) {
+            createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<VolumeStats>(completion) {
                 @Override
-                public void success(VolumeInfo returnValue) {
+                public void success(VolumeStats returnValue) {
                     InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
                     VolumeInventory vol = msg.getVolume();
                     vol.setInstallPath(returnValue.getInstallPath());
@@ -2358,9 +2358,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(LocalStorageCreateEmptyVolumeMsg msg, final ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply> completion) {
-        createEmptyVolumeWithBackingFile(msg.getVolume(), msg.getHostUuid(), msg.getBackingFile(), new ReturnValueCompletion<VolumeInfo>(completion) {
+        createEmptyVolumeWithBackingFile(msg.getVolume(), msg.getHostUuid(), msg.getBackingFile(), new ReturnValueCompletion<VolumeStats>(completion) {
             @Override
-            public void success(VolumeInfo returnValue) {
+            public void success(VolumeStats returnValue) {
                 LocalStorageCreateEmptyVolumeReply reply = new LocalStorageCreateEmptyVolumeReply();
                 completion.success(reply);
             }

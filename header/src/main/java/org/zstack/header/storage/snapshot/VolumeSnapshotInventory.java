@@ -195,6 +195,18 @@ public class VolumeSnapshotInventory {
         return inv;
     }
 
+    public static VolumeSnapshotInventory valueOf(VolumeSnapshotGroupRefInventory ref) {
+        VolumeSnapshotInventory inv = new VolumeSnapshotInventory();
+        inv.setCreateDate(ref.getCreateDate());
+        inv.setLastOpDate(ref.getLastOpDate());
+        inv.setName(ref.getVolumeSnapshotName());
+        inv.setVolumeUuid(ref.getVolumeUuid());
+        inv.setUuid(ref.getVolumeSnapshotUuid());
+        inv.setVolumeType(ref.getVolumeType());
+        inv.setGroupUuid(ref.getVolumeSnapshotGroupUuid());
+        return inv;
+
+    }
     public static List<VolumeSnapshotInventory> valueOf(Collection<VolumeSnapshotVO> vos) {
         List<VolumeSnapshotInventory> invs = new ArrayList<VolumeSnapshotInventory>();
         for (VolumeSnapshotVO vo : vos) {
