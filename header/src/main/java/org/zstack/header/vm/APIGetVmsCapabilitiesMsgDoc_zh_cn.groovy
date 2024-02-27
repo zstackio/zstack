@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-import org.zstack.header.vm.APIGetVmsCapabilitiesEvent
+import org.zstack.header.vm.APIGetVmsCapabilitiesReply
 
 doc {
     title "GetVmsCapabilities"
@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "POST /v1/vm-instances/capabilities"
+			url "GET /v1/vm-instances/capabilities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -23,9 +23,9 @@ doc {
 
 				column {
 					name "vmUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional false
 					since "4.0"
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "4.0"
@@ -43,7 +43,7 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "4.0"
@@ -52,7 +52,7 @@ doc {
         }
 
         response {
-            clz APIGetVmsCapabilitiesEvent.class
+            clz APIGetVmsCapabilitiesReply.class
         }
     }
 }

@@ -1,8 +1,9 @@
 package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.message.APIMessage;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.Arrays;
@@ -12,13 +13,13 @@ import java.util.List;
  * @ Author : yh.w
  * @ Date   : Created in 21:33 2021/2/2
  */
+@Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/capabilities",
-        method = HttpMethod.POST,
-        responseClass = APIGetVmsCapabilitiesEvent.class,
-        parameterName = "params"
+        responseClass = APIGetVmsCapabilitiesReply.class,
+        method = HttpMethod.GET
 )
-public class APIGetVmsCapabilitiesMsg extends APIMessage {
+public class APIGetVmsCapabilitiesMsg extends APISyncCallMessage {
     @APIParam(nonempty = true)
     private List<String> vmUuids;
 
