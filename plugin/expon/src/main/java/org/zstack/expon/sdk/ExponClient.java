@@ -463,11 +463,13 @@ public class ExponClient {
 
         private <T extends ExponResponse> T retrySessionGetResult(ExponRequest req, Class<T> clz) {
             T rsp = ExponClient.this.call(req, clz);
-            if (rsp.sessionExpired()) {
-                logger.debug(String.format("session[%s] expired, login again", req.sessionId));
-                this.action.sessionId = sessionRefresher.get();
-                req.setSessionId(sessionGetter.get());
+            if (!rsp.sessionExpired()) {
+                return rsp;
             }
+
+            logger.debug(String.format("session[%s] expired, login again", req.sessionId));
+            this.action.sessionId = sessionRefresher.get();
+            req.setSessionId(sessionGetter.get());
             return ExponClient.this.call(req, clz);
         }
 
