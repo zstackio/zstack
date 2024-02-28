@@ -5,14 +5,16 @@ import org.sugon.westone.WcspContext;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.crypto.securitymachine.secretresourcepool.CreateWestoneSecretResourcePoolMessage;
+import org.zstack.crypto.securitymachine.api.APICreateWestoneSecretResourcePoolMsg;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.securitymachine.secretresourcepool.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class WestoneSecretResourcePoolFactory implements SecretResourcePoolFactory , Component {
 	private static final CLogger logger = Utils.getLogger(WestoneSecretResourcePoolFactory.class);
@@ -20,7 +22,7 @@ public class WestoneSecretResourcePoolFactory implements SecretResourcePoolFacto
 	@Autowired
 	private DatabaseFacade dbf;
 
-	private WcspContext wcspContext;
+	private static Map<String, WcspContext> wcspContextMaps = new HashMap<String, WcspContext>();
 
 	@Override
 	public String getSecretResourcePoolModel() {
@@ -29,10 +31,10 @@ public class WestoneSecretResourcePoolFactory implements SecretResourcePoolFacto
 
 	@Override
 	public SecretResourcePoolVO createSecretResourcePool(SecretResourcePoolVO vo, CreateSecretResourcePoolMessage msg) {
-		if (!(msg instanceof CreateWestoneSecretResourcePoolMessage)) {
+		if (!(msg instanceof APICreateWestoneSecretResourcePoolMsg)) {
 			throw new OperationFailureException(Platform.operr("secretResourcePool[uuid:%s] model is not %s", msg.getResourceUuid(), vo.getModel()));
 		}
-		CreateWestoneSecretResourcePoolMessage createWestoneSecretResourcePoolMessage = (CreateWestoneSecretResourcePoolMessage)msg;
+		APICreateWestoneSecretResourcePoolMsg createWestoneSecretResourcePoolMessage = (APICreateWestoneSecretResourcePoolMsg)msg;
 		WestoneSecretResourcePoolVO ivo = new WestoneSecretResourcePoolVO(vo);
 		ivo.setAppId(createWestoneSecretResourcePoolMessage.getAppId());
 		ivo.setSecret(createWestoneSecretResourcePoolMessage.getSecret());
@@ -54,6 +56,7 @@ public class WestoneSecretResourcePoolFactory implements SecretResourcePoolFacto
 	public SecretResourcePool getSecretResourcePool(SecretResourcePoolVO vo) {
 		WestoneSecretResourcePoolVO westoneSRP = dbf.findByUuid(vo.getUuid(), WestoneSecretResourcePoolVO.class);
 		WestoneSecretResourcePoolBase westoneSecretResourcePoolBase = new WestoneSecretResourcePoolBase(westoneSRP);
+		WcspContext wcspContext = wcspContextMaps.get(westoneSRP.getAppId());
 		westoneSecretResourcePoolBase.setWcspContext(wcspContext);
 		return westoneSecretResourcePoolBase;
 	}
@@ -75,7 +78,7 @@ public class WestoneSecretResourcePoolFactory implements SecretResourcePoolFacto
 			String secret = westoneSRP.getSecret();
 			//卫士通需要的目录
 			String initParamWorkdir = westoneSRP.getInitParamWorkdir();
-			wcspContext = new WcspContext();
+			WcspContext wcspContext = new WcspContext();
 			wcspContext.setTenantId(tenantId);
 			wcspContext.setAppSecret(secret);
 			wcspContext.setUrl(url);
@@ -83,6 +86,7 @@ public class WestoneSecretResourcePoolFactory implements SecretResourcePoolFacto
 			wcspContext.setAppId(appId);
 			wcspContext.setMaxPoolSize(200);
 			wcspContext.initCoServicePool();
+			wcspContextMaps.put(appId, wcspContext);
 		}
 		return true;
 	}

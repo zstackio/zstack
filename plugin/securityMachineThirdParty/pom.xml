@@ -38,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>org.sugon</groupId>
-            <artifactId>sugonwestone</artifactId>
+            <artifactId>westone</artifactId>
             <version>4.4.0</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/ext-libs/sugonwestone-4.4.0.jar</systemPath>

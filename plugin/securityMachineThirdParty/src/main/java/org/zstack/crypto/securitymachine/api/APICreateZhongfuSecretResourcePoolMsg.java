@@ -1,7 +1,6 @@
 package org.zstack.crypto.securitymachine.api;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.crypto.securitymachine.secretresourcepool.CreateZhongfuSecretResourcePoolMessage;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.securitymachine.api.secretresourcepool.APICreateSecretResourcePoolEvent;
@@ -14,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(path = "/secret-resource-pool/zhongfu", method = HttpMethod.POST, parameterName = "params", responseClass = APICreateSecretResourcePoolEvent.class)
 @TagResourceType(SecretResourcePoolVO.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APICreateZhongfuSecretResourcePoolMsg extends APICreateSecretResourcePoolMsg implements CreateZhongfuSecretResourcePoolMessage {
+public class APICreateZhongfuSecretResourcePoolMsg extends APICreateSecretResourcePoolMsg {
 	private String snNum;
 
 	public String getSnNum() {

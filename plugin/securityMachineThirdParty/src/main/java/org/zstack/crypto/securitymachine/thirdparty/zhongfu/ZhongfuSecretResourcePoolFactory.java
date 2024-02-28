@@ -3,7 +3,7 @@ package org.zstack.crypto.securitymachine.thirdparty.zhongfu;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.crypto.securitymachine.secretresourcepool.CreateZhongfuSecretResourcePoolMessage;
+import org.zstack.crypto.securitymachine.api.APICreateZhongfuSecretResourcePoolMsg;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.securitymachine.secretresourcepool.*;
 import org.zstack.utils.Utils;
@@ -22,10 +22,10 @@ public class ZhongfuSecretResourcePoolFactory implements SecretResourcePoolFacto
 
 	@Override
 	public SecretResourcePoolVO createSecretResourcePool(SecretResourcePoolVO vo, CreateSecretResourcePoolMessage msg) {
-		if (!(msg instanceof CreateZhongfuSecretResourcePoolMessage)) {
+		if (!(msg instanceof APICreateZhongfuSecretResourcePoolMsg)) {
 			throw new OperationFailureException(Platform.operr("secretResourcePool[uuid:%s] model is not %s", msg.getResourceUuid(), vo.getModel()));
 		}
-		CreateZhongfuSecretResourcePoolMessage createZhongfuSecretResourcePoolMessage = (CreateZhongfuSecretResourcePoolMessage)msg;
+		APICreateZhongfuSecretResourcePoolMsg createZhongfuSecretResourcePoolMessage = (APICreateZhongfuSecretResourcePoolMsg) msg;
 		ZhongfuSecretResourcePoolVO ivo = new ZhongfuSecretResourcePoolVO(vo);
 		ivo = dbf.persistAndRefresh(ivo);
 		return ivo;
