@@ -234,12 +234,18 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         events.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_REBOOT, new EventCallback<Object>() {
             @Override
             protected void run(Map<String, String> tokens, Object data) {
-                onVmReboot(data.toString());
+                onVmStart(data.toString());
+            }
+        });
+        events.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_START, new EventCallback<Object>() {
+            @Override
+            protected void run(Map<String, String> tokens, Object data) {
+                onVmStart(data.toString());
             }
         });
     }
 
-    private void onVmReboot(String vmUuid) {
+    private void onVmStart(String vmUuid) {
         final String hostUuid = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, vmUuid)
                 .eq(VmInstanceVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
