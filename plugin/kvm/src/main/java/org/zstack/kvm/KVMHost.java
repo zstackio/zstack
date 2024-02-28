@@ -5612,11 +5612,23 @@ public class KVMHost extends HostBase implements Host {
                             deployArguments.setSkipIpv6("true");
                         }
 
-                        for (KvmHostGetExtraPackagesExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostGetExtraPackagesExtensionPoint.class)) {
-                            String extraPackagesFromExt = ext.getExtraPackages(getSelfInventory());
-                            if (extraPackagesFromExt != null) {
-                                String extraPackages = extraPackagesFromExt + " " + StringUtils.trimToEmpty(deployArguments.getExtraPackages());
-                                deployArguments.setExtraPackages(extraPackages);
+                        for (KvmHostAgentDeploymentExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostAgentDeploymentExtensionPoint.class)) {
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(String.format("Arguments before KvmHostAgentDeploymentExtensionPoint: %s", JSONObjectUtil.toJsonString(deployArguments)));
+                            }
+
+                            List<String> extraPackagesFromExt = ext.appendExtraPackages(getSelfInventory());
+                            if (extraPackagesFromExt != null && !extraPackagesFromExt.isEmpty()) {
+                                if (deployArguments.getExtraPackages() != null)
+                                    deployArguments.setExtraPackages(deployArguments.getExtraPackages() + "," + String.join(",", extraPackagesFromExt));
+                                else
+                                    deployArguments.setExtraPackages(String.join(",", extraPackagesFromExt));
+                            }
+
+                            ext.modifyDeploymentArguments(getSelfInventory(), deployArguments);
+
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(String.format("Arguments after KvmHostAgentDeploymentExtensionPoint: %s", JSONObjectUtil.toJsonString(deployArguments)));
                             }
                         }
 
