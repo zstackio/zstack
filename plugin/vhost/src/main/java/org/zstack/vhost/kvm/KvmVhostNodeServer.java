@@ -54,8 +54,11 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
         }
 
         cmd.setDataVolumes(dtos);
-        cmd.setUseHugePage(true);
-        cmd.setMemAccess("shared");
+        if (VolumeProtocol.Vhost.name().equals(spec.getDestRootVolume().getProtocol()) ||
+                spec.getDestDataVolumes().stream().anyMatch(v -> VolumeProtocol.Vhost.name().equals(v.getProtocol()))) {
+            cmd.setUseHugePage(true);
+            cmd.setMemAccess("shared");
+        }
 
         // vhostuser disk not support readonly mode, so no iso.
     }
