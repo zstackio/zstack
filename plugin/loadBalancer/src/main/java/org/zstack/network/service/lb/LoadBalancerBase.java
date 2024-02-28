@@ -1034,6 +1034,11 @@ public class LoadBalancerBase {
                             .list();
                 }
 
+                /* filter out nics already attached to listener */
+                LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+                nics = nics.stream()
+                        .filter(nic -> !listenerVO.getAttachedVmNics().contains(nic.getUuid()))
+                        .collect(Collectors.toList());
 
                 reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
             }
@@ -1320,7 +1325,7 @@ public class LoadBalancerBase {
                     public void handle(ErrorCode errCode, Map data) {
                         // if release vip, it will delete the vip ref vo
                         List<String> releasedVipUuids = (List<String>) data.get("releasedVipUuids");
-                        if (!releasedVipUuids.isEmpty()) {
+                        if (releasedVipUuids != null && !releasedVipUuids.isEmpty()) {
                             for (String vip : releasedVipUuids) {
                                 self.deleteVip(vip);
                             }
