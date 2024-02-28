@@ -10081,7 +10081,7 @@
   {
     "raw": "the security machine [%s] does not exist",
     "en_US": "the security machine [{0}] does not exist",
-    "zh_CN": "安全计算机[{0}]不存在",
+    "zh_CN": "密码机[{0}]不存在",
     "arguments": [
       "msg.getSecurityMachineUuid()"
     ],
@@ -10101,7 +10101,7 @@
   {
     "raw": "failed to connect to the security machine %s[%s], because %s",
     "en_US": "failed to connect to the security machine {0}[{1}], because {2}",
-    "zh_CN": "无法连接到安全性计算机{0}[{1}]，因为{2}",
+    "zh_CN": "无法连接到密码机{0}[{1}]，因为{2}",
     "arguments": [
       "msg.getName()",
       "msg.getManagementIp()",
@@ -10113,7 +10113,7 @@
   {
     "raw": "after the crypto function is enabled, at least one security machine should be reserved in the corresponding resource pool",
     "en_US": "after the crypto function is enabled, at least one security machine should be reserved in the corresponding resource pool",
-    "zh_CN": "启用加密功能后，应在相应的资源池中至少保留一台安全机",
+    "zh_CN": "启用加密功能后，应在相应的资源池中至少保留一台密码机",
     "arguments": [
       "msg.getSecurityMachineUuid()"
     ],
@@ -10144,7 +10144,7 @@
   {
     "raw": "cannot be deleted. after the encryption function is enabled, the number of synced security machines in the resource pool that provides the service is at least 1",
     "en_US": "cannot be deleted. after the encryption function is enabled, the number of synced security machines in the resource pool that provides the service is at least 1",
-    "zh_CN": "无法删除。启用加密功能后，提供该服务的资源池中同步的安全机器至少为1台",
+    "zh_CN": "无法删除。启用加密功能后，提供该服务的资源池中同步的密码机至少为1台",
     "arguments": [],
     "line": 145,
     "fileName": "src/main/java/org/zstack/crypto/securitymachine/SecurityMachineBase.java"
@@ -10160,7 +10160,7 @@
   {
     "raw": "an other connect security machine task is running, cancel the new task and wait return",
     "en_US": "an other connect security machine task is running, cancel the new task and wait return",
-    "zh_CN": "其他连接安全性计算机任务正在运行，请取消新任务并等待返回",
+    "zh_CN": "其他连接密码机任务正在运行，请取消新任务并等待返回",
     "arguments": [],
     "line": 584,
     "fileName": "src/main/java/org/zstack/crypto/securitymachine/SecurityMachineBase.java"
@@ -10219,7 +10219,7 @@
   {
     "raw": "cannot disable all security machines when the crypto function is enabled",
     "en_US": "cannot disable all security machines when the crypto function is enabled",
-    "zh_CN": "启用加密功能时，无法禁用所有安全计算机",
+    "zh_CN": "启用加密功能时，无法禁用所有密码机",
     "arguments": [],
     "line": 149,
     "fileName": "src/main/java/org/zstack/crypto/securitymachine/SecurityMachineHelper.java"
@@ -10266,7 +10266,7 @@
   {
     "raw": "there has been a security machine having managementIp[%s]",
     "en_US": "there has been a security machine having managementIp[{0}]",
-    "zh_CN": "已存在具有ManagementIP[{0}]的安全计算机",
+    "zh_CN": "已存在具有ManagementIP[{0}]的密码机",
     "arguments": [
       "msg.getManagementIp()"
     ],
@@ -10276,7 +10276,7 @@
   {
     "raw": "no client for security machine[type\u003d%s]",
     "en_US": "no client for security machine[type\u003d{0}]",
-    "zh_CN": "安全计算机[类型\u003d{0}]没有客户端",
+    "zh_CN": "密码机[类型\u003d{0}]没有客户端",
     "arguments": [
       "securityMachineType"
     ],
@@ -10286,7 +10286,7 @@
   {
     "raw": "no security machine client factory for security machine[type\u003d%s]",
     "en_US": "no security machine client factory for security machine[type\u003d{0}]",
-    "zh_CN": "安全计算机[类型\u003d{0}]没有安全计算机客户端工厂",
+    "zh_CN": "密码机[类型\u003d{0}]没有密码机客户端工厂",
     "arguments": [
       "securityMachineType"
     ],
@@ -10296,7 +10296,7 @@
   {
     "raw": "there is no security machine that can be activated",
     "en_US": "there is no security machine that can be activated",
-    "zh_CN": "没有可以激活的安全机器。",
+    "zh_CN": "没有可以激活的密码机。",
     "arguments": [],
     "line": 50,
     "fileName": "src/main/java/org/zstack/crypto/securitymachine/secretresourcepool/SecretResourcePoolApiInterceptor.java"
@@ -10364,7 +10364,7 @@
   {
     "raw": "the connection to the security machine %s failed during the process of generating the test key because %s",
     "en_US": "the connection to the security machine {0} failed during the process of generating the test key because {1}",
-    "zh_CN": "在生成测试密钥的过程中，与安全计算机{0}的连接失败，原因是{1}",
+    "zh_CN": "在生成测试密钥的过程中，与密码机{0}的连接失败，原因是{1}",
     "arguments": [
       "vo.getUuid()",
       "response.error"
@@ -10375,7 +10375,7 @@
   {
     "raw": "failed to generate dataProtect token for the security machine %s because %s",
     "en_US": "failed to generate dataProtect token for the security machine {0} because {1}",
-    "zh_CN": "无法为安全计算机{0}生成DataProtect令牌，因为{1}",
+    "zh_CN": "无法为密码机{0}生成DataProtect令牌，因为{1}",
     "arguments": [
       "vo.getUuid()",
       "dataProtectTokenRes.error"
@@ -10386,7 +10386,7 @@
   {
     "raw": "failed to generate hmac token for the security machine %s because %s",
     "en_US": "failed to generate hmac token for the security machine {0} because {1}",
-    "zh_CN": "无法为安全计算机{0}生成HMAC令牌，因为{1}",
+    "zh_CN": "无法为密码机{0}生成HMAC令牌，因为{1}",
     "arguments": [
       "vo.getUuid()",
       "hmacTokenTokenRes.error"
@@ -10397,7 +10397,7 @@
   {
     "raw": "failed to get encrypt result for the security machine %s because %s",
     "en_US": "failed to get encrypt result for the security machine {0} because {1}",
-    "zh_CN": "无法获取安全性计算机{0}的加密结果，因为{1}",
+    "zh_CN": "无法获取密码机{0}的加密结果，因为{1}",
     "arguments": [
       "vo.getUuid()",
       "encryptRes.error"
@@ -10408,7 +10408,7 @@
   {
     "raw": "the security machine [%s] failed to manually detect synchronization, please confirm whether the security machine has synchronized the key!",
     "en_US": "the security machine [{0}] failed to manually detect synchronization, please confirm whether the security machine has synchronized the key!",
-    "zh_CN": "安全计算机[{0}]手动检测同步失败，请确认安全计算机是否已同步密钥！",
+    "zh_CN": "密码机[{0}]手动检测同步失败，请确认密码机是否已同步密钥！",
     "arguments": [
       "self.getManagementIp()"
     ],
@@ -10418,7 +10418,7 @@
   {
     "raw": "security machine[uuid:%s] model is not %s",
     "en_US": "security machine[uuid:{0}] model is not {1}",
-    "zh_CN": "安全计算机[uuid：{0}]型号不是{1}",
+    "zh_CN": "密码机[uuid：{0}]型号不是{1}",
     "arguments": [
       "msg.getName()",
       "vo.getModel()"
@@ -10519,7 +10519,7 @@
   {
     "raw": "failed to generate activated token for the security machine %s because %s",
     "en_US": "failed to generate activated token for the security machine {0} because {1}",
-    "zh_CN": "无法为安全计算机{0}生成激活的令牌，因为{1}",
+    "zh_CN": "无法为密码机{0}生成激活的令牌，因为{1}",
     "arguments": [
       "vo.getUuid()",
       "activateTokenRes.error"
@@ -10530,7 +10530,7 @@
   {
     "raw": "failed to generate dataProtect token %s for the security machine %s because %s",
     "en_US": "failed to generate dataProtect token {0} for the security machine {1} because {2}",
-    "zh_CN": "无法为安全计算机{1}生成DataProtect令牌{0}，因为{2}",
+    "zh_CN": "无法为密码机{1}生成DataProtect令牌{0}，因为{2}",
     "arguments": [
       "dataProtectTokenName",
       "vo.getUuid()",
@@ -10542,7 +10542,7 @@
   {
     "raw": "failed to generate hmac token %s for the security machine %s because %s",
     "en_US": "failed to generate hmac token {0} for the security machine {1} because {2}",
-    "zh_CN": "无法为安全计算机{1}生成HMAC令牌{0}，因为{2}",
+    "zh_CN": "无法为密码机{1}生成HMAC令牌{0}，因为{2}",
     "arguments": [
       "hmacTokenName",
       "vo.getUuid()",
