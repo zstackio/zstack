@@ -1,3 +1,5 @@
+UPDATE ResourceConfigVO SET createDate = CURRENT_TIMESTAMP where name='iam2.force.enable.securityGroup' and createDate='0000-00-00 00:00:00';
+
 DROP PROCEDURE IF EXISTS AddFkPciDeviceVOVmInstanceEO;
 DELIMITER $$
 CREATE PROCEDURE AddFkPciDeviceVOVmInstanceEO()
