@@ -100,6 +100,7 @@ public interface KVMConstant {
     String KVM_REPORT_VM_SHUTDOWN_EVENT = "/kvm/reportvmshutdown";
     String KVM_REPORT_VM_REBOOT_EVENT = "/kvm/reportvmreboot";
     String KVM_REPORT_VM_CRASH_EVENT = "/kvm/reportvmcrash";
+    String KVM_REPORT_VM_START_EVENT = "/kvm/reportvmstart";
     String KVM_REPORT_HOST_STOP_EVENT = "/kvm/reporthoststop";
 
     String KVM_TRANSMIT_VM_OPERATION_TO_MN = "/host/transmitvmoperation";
