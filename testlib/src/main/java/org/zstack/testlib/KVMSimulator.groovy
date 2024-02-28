@@ -3,12 +3,12 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
@@ -31,7 +31,6 @@ import javax.persistence.Tuple
 import java.util.concurrent.ConcurrentHashMap
 
 import static org.zstack.kvm.KVMAgentCommands.*
-
 /**
  * Created by xing5 on 2017/6/6.
  */
