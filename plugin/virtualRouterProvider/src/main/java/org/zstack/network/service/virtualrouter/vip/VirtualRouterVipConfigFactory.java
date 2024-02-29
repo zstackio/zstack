@@ -9,5 +9,6 @@ public interface VirtualRouterVipConfigFactory {
     void attachNetworkService(String vrUuid, List<String> vipUuids);
     void detachNetworkService(String vrUuid, List<String> vipUuids);
     List<String> getVrUuidsByNetworkService(String vipUuid);
+    List<String> getAllVrUuidsByNetworkService(String vipUuid);
     List<String> getVipUuidsByRouterUuid(String vrUuid);
 }

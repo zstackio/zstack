@@ -256,7 +256,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                             @Override
                             public void run(AfterAcquireVipExtensionPoint ext) {
                                 logger.debug(String.format("execute after acquire vip extension point %s", ext));
-                                ext.afterAcquireVip(VipInventory.valueOf(getSelf()));
+                                ext.afterAcquireVip(asList(VipInventory.valueOf(getSelf())));
                             }
                         });
 
@@ -342,7 +342,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                             @Override
                             public void run(AfterAcquireVipExtensionPoint ext) {
                                 logger.debug(String.format("execute after acquire vip extension point %s", ext));
-                                ext.afterAcquireVip(VipInventory.valueOf(getSelf()));
+                                ext.afterAcquireVip(asList(VipInventory.valueOf(getSelf())));
                             }
                         });
 
