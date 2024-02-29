@@ -334,6 +334,8 @@ public class SourceClassMap {
 			put("org.zstack.header.tag.TagPatternType", "org.zstack.sdk.TagPatternType");
 			put("org.zstack.header.tag.UserTagInventory", "org.zstack.sdk.UserTagInventory");
 			put("org.zstack.header.vdpa.VmVdpaNicInventory", "org.zstack.sdk.VmVdpaNicInventory");
+			put("org.zstack.header.vipQos.SharedQosInventory", "org.zstack.sdk.SharedQosInventory");
+			put("org.zstack.header.vipQos.SharedQosRefVipInventory", "org.zstack.sdk.SharedQosRefVipInventory");
 			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
@@ -1174,6 +1176,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SharedBlockState", "org.zstack.storage.primary.sharedblock.SharedBlockState");
 			put("org.zstack.sdk.SharedBlockStatus", "org.zstack.storage.primary.sharedblock.SharedBlockStatus");
 			put("org.zstack.sdk.SharedBlockType", "org.zstack.storage.primary.sharedblock.SharedBlockType");
+			put("org.zstack.sdk.SharedQosInventory", "org.zstack.header.vipQos.SharedQosInventory");
+			put("org.zstack.sdk.SharedQosRefVipInventory", "org.zstack.header.vipQos.SharedQosRefVipInventory");
 			put("org.zstack.sdk.SharedResourceInventory", "org.zstack.header.identity.SharedResourceInventory");
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.ShrinkResult", "org.zstack.header.storage.snapshot.ShrinkResult");
