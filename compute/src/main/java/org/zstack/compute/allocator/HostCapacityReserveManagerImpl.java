@@ -164,6 +164,8 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.zoneUuid, Op.IN, zoneUuids);
+        q.add(HostVO_.state, Op.EQ, HostState.Enabled);
+        q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         List<String> huuids = q.listValue();
         if (huuids.isEmpty()) {
             return ret;
@@ -189,6 +191,8 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.IN, clusterUuids);
+        q.add(HostVO_.state, Op.EQ, HostState.Enabled);
+        q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         List<String> huuids = q.listValue();
         if (huuids.isEmpty()) {
             return ret;
