@@ -58,6 +58,13 @@
                                     </excludes>
                                 </resource>
                                 <resource>
+                                    <directory>../plugin/securityMachineThirdParty/ext-libs</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <includes>
+                                        <include>*.jar</include>
+                                    </includes>
+                                </resource>
+                                <resource>
                                     <directory>../conf</directory>
                                     <targetPath>WEB-INF/</targetPath>
                                     <includes>
@@ -589,6 +596,11 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>storage-encrypt-gateway</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>securityMachineThirdParty</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

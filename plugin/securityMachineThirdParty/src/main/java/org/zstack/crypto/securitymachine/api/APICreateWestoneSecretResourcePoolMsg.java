@@ -1,7 +1,6 @@
 package org.zstack.crypto.securitymachine.api;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.crypto.securitymachine.secretresourcepool.CreateWestoneSecretResourcePoolMessage;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
@@ -15,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(path = "/secret-resource-pool/westone", method = HttpMethod.POST, parameterName = "params", responseClass = APICreateSecretResourcePoolEvent.class)
 @TagResourceType(SecretResourcePoolVO.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResourcePoolMsg implements CreateWestoneSecretResourcePoolMessage {
+public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResourcePoolMsg {
 	private String tenantId;
 	private String appId;
 	private String secret;
@@ -24,7 +23,6 @@ public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResour
 	private String initParamWorkdId;
 	private String initParamWorkdir;
 
-	@Override
 	public String getInitParamWorkdir() {
 		return initParamWorkdir;
 	}
@@ -33,7 +31,6 @@ public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResour
 		this.initParamWorkdir = initParamWorkdir;
 	}
 
-	@Override
 	public String getInitParamUrl() {
 		return initParamUrl;
 	}
@@ -42,7 +39,6 @@ public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResour
 		this.initParamUrl = initParamUrl;
 	}
 
-	@Override
 	public String getInitParamWorkdId() {
 		return initParamWorkdId;
 	}
@@ -51,7 +47,6 @@ public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResour
 		this.initParamWorkdId = initParamWorkdId;
 	}
 
-	@Override
 	public String getTenantId() {
 		return tenantId;
 	}
@@ -60,7 +55,6 @@ public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResour
 		this.tenantId = tenantId;
 	}
 
-	@Override
 	public String getAppId() {
 		return appId;
 	}
@@ -69,7 +63,6 @@ public class APICreateWestoneSecretResourcePoolMsg extends APICreateSecretResour
 		this.appId = appId;
 	}
 
-	@Override
 	public String getSecret() {
 		return secret;
 	}
