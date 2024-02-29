@@ -28,7 +28,8 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String isEnableKsm;
     @SerializedName("enable_spice_tls")
     private String enableSpiceTls;
-
+    @SerializedName("restart_libvirtd")
+    private String restartLibvirtd;
     @SerializedName("extra_packages")
     private String extraPackages;
 
@@ -131,5 +132,13 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setEnableSpiceTls(String enableSpiceTls) {
         this.enableSpiceTls = enableSpiceTls;
+    }
+
+    public String getRestartLibvirtd() {
+        return restartLibvirtd;
+    }
+
+    public void setRestartLibvirtd(String restartLibvirtd) {
+        this.restartLibvirtd = restartLibvirtd;
     }
 }
