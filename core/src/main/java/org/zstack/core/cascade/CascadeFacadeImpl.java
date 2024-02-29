@@ -136,7 +136,8 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         }
     }
 
-    private void collectPathsForAsyncCascade(TreeNode treeNode, boolean init, boolean fullTraverse, CascadeAction action, List<Bucket> result) {
+    //cascade builds paths one by one, there will be duplicate paths, add mergePaths to merge duplicate paths.
+    private void collectPathsForAsyncCascade(TreeNode treeNode, boolean init, boolean fullTraverse, CascadeAction action, List<Bucket> result, HashSet<String> mergePaths) {
         CascadeAction currentAction;
         Node node = treeNode.node;
         if (!init) {
@@ -156,19 +157,27 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             }
 
             for (TreeNode tn : treeNode.leafs) {
-                collectPathsForAsyncCascade(tn, false, true, currentAction, result);
+                collectPathsForAsyncCascade(tn, false, true, currentAction, result, mergePaths);
             }
         } else {
             if (currentAction != null) {
                 checkForNullElement(node, currentAction);
 
                 for (TreeNode tn : treeNode.leafs) {
-                    collectPathsForAsyncCascade(tn, false, false, currentAction, result);
+                    collectPathsForAsyncCascade(tn, false, false, currentAction, result, mergePaths);
                 }
             }
         }
 
-        result.add(Bucket.newBucket(node, action));
+        String cascadePath = getCascadePath(action.getParentIssuer(), node.getName());
+        if (!mergePaths.contains(cascadePath)) {
+            mergePaths.add(cascadePath);
+            result.add(Bucket.newBucket(node, action));
+        }
+    }
+
+    private String getCascadePath(String cactionParentIssuer, String nodeName) {
+        return String.format("%s_%s", cactionParentIssuer, nodeName);
     }
 
     @Override
@@ -204,12 +213,13 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         TreeNode root = cascadeTree.get(action.getRootIssuer());
         DebugUtils.Assert(root != null, String.format("found no CascadeExtension for %s", action.getRootIssuer()));
         List<Bucket> paths = new ArrayList<>();
-        collectPathsForAsyncCascade(root, true, action.isFullTraverse(), action, paths);
+        collectPathsForAsyncCascade(root, true, action.isFullTraverse(), action, paths, new HashSet<>());
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         for (Bucket path : paths) {
             final Node node = path.get(0);
             final CascadeAction caction = path.get(1);
             chain.then(new NoRollbackFlow() {
+                String __name__ = String.format("async-cascade(%s)[%s --> %s]", caction.getActionCode(), caction.getParentIssuer(), node.getName());
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     logger.debug(String.format("[Async cascade (%s)]: %s --> %s",
@@ -267,6 +277,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("branch-cascade-extension-points-for-%s", node.getName()));
         branches.forEach(b -> chain.then(new NoRollbackFlow() {
+            String __name__ = String.format("branch-asycascade-extension-points-for-%s", b.getCascadeResourceName());
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 b.asyncCascade(caction, new Completion(trigger) {
