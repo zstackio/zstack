@@ -99,4 +99,9 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable install host shutdown hook")
     public static GlobalConfig INSTALL_HOST_SHUTDOWN_HOOK = new GlobalConfig(CATEGORY, "install.host.shutdown.hook");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", description = "restart kvm host libvirtd service or not")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE = new GlobalConfig(CATEGORY, "reconnect.host.restart.libvirtd.service");
 }

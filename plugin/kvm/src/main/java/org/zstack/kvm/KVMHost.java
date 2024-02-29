@@ -4344,6 +4344,7 @@ public class KVMHost extends HostBase implements Host {
                             }
                             runner.putArgument("skip_packages", info.getSkipPackages());
                             runner.putArgument("update_packages", String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
+                            runner.putArgument("restart_libvirtd", rcf.getResourceConfigValue(KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE, self.getUuid(), String.class));
 
                             UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
                             ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
