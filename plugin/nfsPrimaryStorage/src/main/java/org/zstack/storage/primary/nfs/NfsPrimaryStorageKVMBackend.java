@@ -20,9 +20,10 @@ import org.zstack.core.step.StepRun;
 import org.zstack.core.step.StepRunCondition;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.trash.StorageTrash;
-import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -62,12 +63,11 @@ import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.min;
-import static java.lang.Integer.remainderUnsigned;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.touterr;
 
@@ -798,27 +798,23 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
         cmd.volumeUuid = msg.getVolume().getUuid();
         cmd.volumeInstallDir = NfsPrimaryStorageKvmHelper.makeVolumeInstallDir(inv, msg.getVolume());
+        cmd.volumeInstallPath = msg.getVolume().getInstallPath();
         cmd.imageCacheDir = NfsPrimaryStorageKvmHelper.getCachedImageDir(inv);
         cmd.setUuid(inv.getUuid());
 
         final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
-        new KvmCommandSender(host.getUuid()).send(cmd, GET_VOLUME_BASE_IMAGE_PATH, new KvmCommandFailureChecker() {
+        asyncHttpCall(GET_VOLUME_BASE_IMAGE_PATH, host.getUuid(), cmd, GetVolumeBaseImagePathRsp.class, inv, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(completion) {
             @Override
-            public ErrorCode getError(KvmResponseWrapper wrapper) {
-                GetVolumeBaseImagePathRsp rsp = wrapper.getResponse(GetVolumeBaseImagePathRsp.class);
-                if (rsp.isSuccess() && StringUtils.isEmpty(rsp.path)) {
-                    return operr("cannot get root image of volume[uuid:%s], may be it create from iso", msg.getVolume().getUuid());
-                }
-                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
-            }
-        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-            @Override
-            public void success(KvmResponseWrapper w) {
-                GetVolumeBaseImagePathRsp rsp = w.getResponse(GetVolumeBaseImagePathRsp.class);
-                File f = new File(rsp.path);
-                String rootImageUuid = f.getName().split("\\.")[0];
+            public void success(GetVolumeBaseImagePathRsp rsp) {
                 GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
-                reply.setImageUuid(rootImageUuid);
+                if (rsp.path != null) {
+                    String rootImageUuid = new File(rsp.path).getName().split("\\.")[0];
+                    reply.setImageUuid(rootImageUuid);
+                }
+
+                if (!CollectionUtils.isEmpty(rsp.otherPaths)) {
+                    reply.setOtherImageUuids(rsp.otherPaths.stream().map(p -> new File(p).getName().split("\\.")[0]).collect(Collectors.toList()));
+                }
                 completion.success(reply);
             }
 

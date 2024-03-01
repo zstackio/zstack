@@ -74,31 +74,40 @@ class LocalStorageSpec extends PrimaryStorageSpec {
 
             simulator(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH) {
                 def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
-                rsp.path = "/some/patch"
                 return rsp
             }
 
             VFS.vfsHook(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH, espec) { LocalStorageKvmBackend.GetVolumeBaseImagePathRsp rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetVolumeBaseImagePathCmd.class)
 
-                Qcow2 file = vfs(e, cmd, spec).findFile { it.pathString().contains(cmd.volumeInstallDir) }
+                VFS vfs = vfs(e, cmd, spec)
 
-                if (file == null) {
-                    rsp.path = null
-                    rsp.size = 0
-                } else {
-                    Qcow2 baseImage = file.getBaseImage(file)
+                Qcow2 qfile = vfs.getFile(cmd.volumeInstallPath)
+                if (qfile == null) {
+                    logger.debug("Dump of whole VFS:\\n${vfs.dumpAsString()}")
+                }
+                assert qfile != null : "cannot find file[${cmd.volumeInstallPath}]"
+                while (qfile.backingFile != null) {
+                    if (qfile.backingFile.toAbsolutePath().toString().startsWith(cmd.imageCacheDir)) {
+                        rsp.path = qfile.backingFile.toAbsolutePath().toString()
+                        rsp.size = qfile.backingQcow2().actualSize
+                        break
+                    }
 
-                    if (baseImage == null) {
-                        rsp.path = null
-                        rsp.size = 0
-                    } else {
-                        assert baseImage.pathString().contains(cmd.imageCacheDir)
-                        rsp.path = baseImage.pathString()
-                        rsp.size = baseImage.actualSize
+                    qfile = qfile.backingQcow2()
+                }
+
+                rsp.otherPaths = []
+                vfs.walkFileSystem { vfile ->
+                    if (vfile.pathString().contains(cmd.volumeInstallDir)) {
+                        qfile = vfile as Qcow2
+                        if (qfile.backingFile != null && qfile.backingFile.toAbsolutePath().toString().startsWith(cmd.imageCacheDir)) {
+                            rsp.otherPaths.add(qfile.backingFile.toAbsolutePath().toString())
+                        }
                     }
                 }
 
+                rsp.otherPaths.remove(rsp.path)
                 return rsp
             }
 
@@ -554,14 +563,14 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.OfflineMergeSnapshotCmd.class)
                 VFS vfs = vfs(e, cmd, spec)
 
-                Qcow2 src = vfs.getFile(cmd.srcPath)
-                assert src : "cannot find source file[${cmd.srcPath}]"
 
                 Qcow2 dst = vfs.getFile(cmd.destPath)
                 assert dst : "cannot find destination file[${cmd.destPath}]"
                 if (cmd.fullRebase) {
                     dst.rebase((String) null)
                 } else {
+                    Qcow2 src = vfs.getFile(cmd.srcPath)
+                    assert src : "cannot find source file[${cmd.srcPath}]"
                     dst.rebase(cmd.srcPath)
                 }
                 return rsp
