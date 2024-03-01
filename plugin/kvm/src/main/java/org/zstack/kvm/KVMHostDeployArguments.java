@@ -26,7 +26,10 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String isInstallHostShutdownHook;
     @SerializedName("isEnableKsm")
     private String isEnableKsm;
-
+    @SerializedName("enable_spice_tls")
+    private String enableSpiceTls;
+    @SerializedName("restart_libvirtd")
+    private String restartLibvirtd;
     @SerializedName("extra_packages")
     private String extraPackages;
 
@@ -121,5 +124,21 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setExtraPackages(String extraPackages) {
         this.extraPackages = extraPackages;
+    }
+
+    public String getEnableSpiceTls() {
+        return enableSpiceTls;
+    }
+
+    public void setEnableSpiceTls(String enableSpiceTls) {
+        this.enableSpiceTls = enableSpiceTls;
+    }
+
+    public String getRestartLibvirtd() {
+        return restartLibvirtd;
+    }
+
+    public void setRestartLibvirtd(String restartLibvirtd) {
+        this.restartLibvirtd = restartLibvirtd;
     }
 }

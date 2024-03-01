@@ -1,7 +1,6 @@
 package org.zstack.kvm;
 
 import okhttp3.Response;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +20,6 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.ansible.*;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -100,11 +98,7 @@ import org.zstack.utils.ssh.SshShell;
 import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
-import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -5370,11 +5364,23 @@ public class KVMHost extends HostBase implements Host {
                             deployArguments.setSkipIpv6("true");
                         }
 
-                        for (KvmHostGetExtraPackagesExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostGetExtraPackagesExtensionPoint.class)) {
-                            String extraPackagesFromExt = ext.getExtraPackages(getSelfInventory());
-                            if (extraPackagesFromExt != null) {
-                                String extraPackages = extraPackagesFromExt + " " + StringUtils.trimToEmpty(deployArguments.getExtraPackages());
-                                deployArguments.setExtraPackages(extraPackages);
+                        for (KvmHostAgentDeploymentExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostAgentDeploymentExtensionPoint.class)) {
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(String.format("Arguments before KvmHostAgentDeploymentExtensionPoint: %s", JSONObjectUtil.toJsonString(deployArguments)));
+                            }
+
+                            List<String> extraPackagesFromExt = ext.appendExtraPackages(getSelfInventory());
+                            if (extraPackagesFromExt != null && !extraPackagesFromExt.isEmpty()) {
+                                if (deployArguments.getExtraPackages() != null)
+                                    deployArguments.setExtraPackages(deployArguments.getExtraPackages() + "," + String.join(",", extraPackagesFromExt));
+                                else
+                                    deployArguments.setExtraPackages(String.join(",", extraPackagesFromExt));
+                            }
+
+                            ext.modifyDeploymentArguments(getSelfInventory(), deployArguments);
+
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(String.format("Arguments after KvmHostAgentDeploymentExtensionPoint: %s", JSONObjectUtil.toJsonString(deployArguments)));
                             }
                         }
 
@@ -5394,6 +5400,7 @@ public class KVMHost extends HostBase implements Host {
                             deployArguments.setBridgeDisableIptables("true");
                         }
 
+                        deployArguments.setRestartLibvirtd(rcf.getResourceConfigValue(KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE, self.getUuid(), String.class));
                         deployArguments.setHostname(String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
                         deployArguments.setSkipPackages(info.getSkipPackages());
                         deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
