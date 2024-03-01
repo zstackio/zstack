@@ -937,11 +937,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String volumeInstallDir;
         @GrayVersion(value = "5.0.0")
         public String imageCacheDir;
+        @GrayVersion(value = "5.0.0")
+        public String volumeInstallPath;
     }
 
     public static class GetVolumeBaseImagePathRsp extends NfsPrimaryStorageAgentResponse {
         @GrayVersion(value = "5.0.0")
         public String path;
+        @GrayVersion(value = "5.0.0")
+        public List<String> otherPaths;
     }
 
     public static class GetBackingChainCmd extends NfsPrimaryStorageAgentCommand {
