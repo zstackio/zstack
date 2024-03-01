@@ -3441,6 +3441,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(APISetVmBootModeMsg msg) {
+        final boolean[] bootModeChanged = {false};
+
         FlowChain chain = new SimpleFlowChain();
         chain.then(new Flow() {
             String __name__ = "set-vm-boot-mode";
@@ -3457,6 +3459,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 creator.create();
 
                 originLevel = msg.getBootMode();
+
+                bootModeChanged[0] = true;
+
                 trigger.next();
             }
 
@@ -3493,6 +3498,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(Map data) {
                 APISetVmBootModeEvent evt = new APISetVmBootModeEvent(msg.getId());
                 bus.publish(evt);
+
+                if (bootModeChanged[0]) {
+                    vidm.deleteAllDeviceAddressesByVm(self.getUuid());
+                }
             }
         }).start();
     }
