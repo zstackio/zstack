@@ -832,10 +832,12 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String volumeUuid;
         public String volumeInstallDir;
         public String imageCacheDir;
+        public String volumeInstallPath;
     }
 
     public static class GetVolumeBaseImagePathRsp extends NfsPrimaryStorageAgentResponse {
         public String path;
+        public List<String> otherPaths;
     }
 
     public static class GetBackingChainCmd extends NfsPrimaryStorageAgentCommand {
