@@ -11,10 +11,8 @@ import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.testlib.vfs.VFS
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by xing5 on 2017/2/20.
  */
@@ -223,8 +221,13 @@ class CephBackupStorageSpec extends BackupStorageSpec {
             }
 
             simulator(CephBackupStorageMonBase.ECHO_PATH) { HttpEntity<String> entity ->
-                Spec.checkHttpCallType(entity, true)
+                checkHttpCallType(entity, true)
                 return [:]
+            }
+
+            simulator(CephBackupStorageMonBase.CONNECT_PATH) { HttpEntity<String> entity ->
+                checkHttpCallType(entity, false)
+                return new CephBackupStorageMonBase.ConnectRsp()
             }
 
             simulator(CephBackupStorageBase.CEPH_TO_CEPH_MIGRATE_IMAGE_PATH) { HttpEntity<String> entity ->

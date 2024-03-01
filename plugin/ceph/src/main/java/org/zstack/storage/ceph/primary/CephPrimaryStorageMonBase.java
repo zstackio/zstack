@@ -57,6 +57,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
     public static final String ECHO_PATH = "/ceph/primarystorage/echo";
     public static final String PING_PATH = "/ceph/primarystorage/ping";
+    public static final String CONNECT_PATH = "/ceph/primarystorage/connect";
 
     public enum PingOperationFailure {
         UnableToCreateFile,
@@ -80,6 +81,12 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
     public static class PingRsp extends AgentRsp {
         public boolean operationFailure;
         public PingOperationFailure failure;
+    }
+
+    public static class ConnectCmd extends AgentCmd {
+    }
+
+    public static class ConnectRsp extends AgentRsp {
     }
 
     public CephPrimaryStorageMonVO getSelf() {
@@ -315,6 +322,28 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         });
                     }
                 });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "connect-agent";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        ConnectCmd cmd = new ConnectCmd();
+                        cmd.monUuid = getSelf().getUuid();
+                        httpCall(CONNECT_PATH, cmd, new ReturnValueCompletion<AgentRsp>(trigger) {
+                            @Override
+                            public void success(AgentRsp rsp) {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
 
                 done(new FlowDoneHandler(completion) {
                     @Override

@@ -26,7 +26,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.storage.backup.BackupStorageGlobalConfig;
 import org.zstack.storage.ceph.*;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -61,6 +60,8 @@ public class CephBackupStorageMonBase extends CephMonBase {
 
     public static final String ECHO_PATH = "/ceph/backupstorage/echo";
     public static final String PING_PATH = "/ceph/backupstorage/ping";
+    public static final String CONNECT_PATH = "/ceph/backupstorage/connect";
+
     public static final String EXPORT = "/ceph/export";
 
     public static class AgentCmd {
@@ -78,6 +79,12 @@ public class CephBackupStorageMonBase extends CephMonBase {
 
     public static class PingRsp extends AgentRsp {
         public CephBackupStorageBase.PingOperationFailure failure;
+    }
+
+    public static class ConnectCmd extends AgentCmd {
+    }
+
+    public static class ConnectRsp extends AgentRsp {
     }
 
     public CephBackupStorageMonBase(CephMonAO self) {
@@ -302,6 +309,27 @@ public class CephBackupStorageMonBase extends CephMonBase {
                             restf.echo(CephAgentUrl.backupStorageUrl(getSelf().getHostname(), ECHO_PATH), new Completion(trigger) {
                                 @Override
                                 public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "connect-agent";
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            ConnectCmd cmd = new ConnectCmd();
+                            cmd.monUuid = self.getUuid();
+                            cmd.backupStorageUuid = getSelf().getBackupStorageUuid();
+                            httpCall(CONNECT_PATH, cmd, ConnectRsp.class, new ReturnValueCompletion<ConnectRsp>(trigger) {
+                                @Override
+                                public void success(ConnectRsp returnValue) {
                                     trigger.next();
                                 }
 
