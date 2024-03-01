@@ -290,8 +290,13 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageMonBase.ECHO_PATH) { HttpEntity<String> entity ->
-                Spec.checkHttpCallType(entity, true)
+                checkHttpCallType(entity, true)
                 return [:]
+            }
+
+            simulator(CephPrimaryStorageMonBase.CONNECT_PATH) { HttpEntity<String> entity ->
+                checkHttpCallType(entity, false)
+                return new CephPrimaryStorageMonBase.ConnectRsp()
             }
 
             simulator(CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
