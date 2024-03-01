@@ -3549,17 +3549,29 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                SystemTagCreator creator = VmSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
-                creator.setTagByTokens(map(
-                        e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode())
-                ));
-                creator.recreate = true;
-                creator.create();
+                String bootMode = VmSystemTags.BOOT_MODE
+                        .getTokenByResourceUuid(self.getUuid(),
+                                VmSystemTags.BOOT_MODE_TOKEN);
 
-                originLevel = msg.getBootMode();
+                originLevel = bootMode;
+
+                if (bootMode != null && bootMode.equals(msg.getBootMode())) {
+                    trigger.next();
+                    return;
+                }
+
+                if (msg.getBootMode() == null) {
+                    VmSystemTags.BOOT_MODE.delete(self.getUuid());
+                } else {
+                    SystemTagCreator creator = VmSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
+                    creator.tag = VmSystemTags.BOOT_MODE.instantiateTag(map(
+                            e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode())
+                    ));
+                    creator.recreate = true;
+                    creator.create();
+                }
 
                 bootModeChanged[0] = true;
-
                 trigger.next();
             }
 
