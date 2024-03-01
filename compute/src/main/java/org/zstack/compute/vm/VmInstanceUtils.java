@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -30,7 +31,7 @@ public class VmInstanceUtils {
 
         cmsg.setImageUuid(msg.getImageUuid());
         // create vm without image is supported
-        if (msg.getImageUuid() != null) {
+        if (!StringUtils.isEmpty(msg.getImageUuid())) {
             ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
             cmsg.setPlatform(msg.getPlatform() == null ? image.getPlatform().toString() : msg.getPlatform());
             cmsg.setGuestOsType(msg.getGuestOsType() == null ? image.getGuestOsType() : msg.getGuestOsType());
