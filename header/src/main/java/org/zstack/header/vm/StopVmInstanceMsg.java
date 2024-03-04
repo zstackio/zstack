@@ -15,6 +15,7 @@ public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMes
     private String type = StopVmType.grace.toString();
     private boolean ignoreResourceReleaseFailure;
     private boolean debug;
+    private boolean stopHA;
 
     public boolean isGcOnFailure() {
         return gcOnFailure;
@@ -57,5 +58,14 @@ public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMes
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+
+    public boolean isStopHA() {
+        return stopHA;
+    }
+
+    public void setStopHA(boolean stopHA) {
+        this.stopHA = stopHA;
     }
 }
