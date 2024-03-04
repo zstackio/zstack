@@ -11,7 +11,8 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/iscsi/clients/{id}",
         method = HttpMethod.DELETE,
-        responseClass = CreateIscsiClientGroupResponse.class
+        responseClass = CreateIscsiClientGroupResponse.class,
+        sync = false
 )
 public class DeleteIscsiClientGroupRequest extends ExponRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

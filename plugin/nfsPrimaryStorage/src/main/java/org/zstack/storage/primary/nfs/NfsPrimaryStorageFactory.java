@@ -154,6 +154,11 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         return PrimaryStorageInventory.valueOf(vo);
     }
 
+    @Override
+    public void validateStorageProtocol(String protocol) {
+
+    }
+
     private void populateExtensions() {
         for (NfsPrimaryStorageBackend extp : pluginRgty.getExtensionList(NfsPrimaryStorageBackend.class)) {
             NfsPrimaryStorageBackend old = backends.get(extp.getHypervisorType().toString());
