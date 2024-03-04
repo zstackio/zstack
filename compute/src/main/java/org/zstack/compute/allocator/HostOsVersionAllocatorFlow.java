@@ -8,11 +8,17 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.*;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.*;
 
 /**
  * Filter out hosts that do not match the operating system of the specific host
@@ -21,17 +27,20 @@ import java.util.stream.Collectors;
 public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
     @Autowired
     private HostManager manager;
+    private static CLogger logger = Utils.getLogger(HostOsVersionAllocatorFlow.class);
 
     @Override
     public void allocate() {
         throwExceptionIfIAmTheFirstFlow();
 
-        Map<String, HostVO> hostMap = new HashMap<>();
-        for (HostVO h : candidates) {
-            hostMap.put(h.getUuid(), h);
+        Map<String, HostVO> hostMap = toMap(candidates, HostVO::getUuid, Function.identity());
+        final VmInstanceInventory vm = spec.getVmInstance();
+        String currentHostUuid = vm.getHostUuid() == null ? vm.getLastHostUuid() : vm.getHostUuid();
+        if (currentHostUuid == null) {
+            logger.debug(String.format("VM[uuid:%s] never started on any host, skip host OS checker", vm.getUuid()));
+            return;
         }
 
-        final String currentHostUuid = spec.getVmInstance().getHostUuid();
         List<HostVO> allHostList = new ArrayList<>(candidates);
         final HostVO currentHost = Q.New(HostVO.class)
                 .eq(HostVO_.uuid, currentHostUuid)
