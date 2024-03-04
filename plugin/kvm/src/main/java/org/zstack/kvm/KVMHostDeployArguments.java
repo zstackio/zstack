@@ -33,6 +33,8 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     @SerializedName("extra_packages")
     private String extraPackages;
 
+    private transient boolean forceRun = false;
+
     public String getInit() {
         return init;
     }
@@ -140,5 +142,13 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setRestartLibvirtd(String restartLibvirtd) {
         this.restartLibvirtd = restartLibvirtd;
+    }
+
+    public boolean isForceRun() {
+        return forceRun;
+    }
+
+    public void setForceRun(boolean forceRun) {
+        this.forceRun = forceRun;
     }
 }
