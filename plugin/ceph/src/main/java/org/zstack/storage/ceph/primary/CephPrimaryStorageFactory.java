@@ -280,6 +280,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
+    public void validateStorageProtocol(String protocol) {
+
+    }
+
+    @Override
     public void update(CephCapacity cephCapacity) {
         DebugUtils.Assert(cephCapacity.getCephManufacturer() != null,
                 "ceph manufacturer is null");

@@ -8,9 +8,11 @@ import org.zstack.header.volume.VolumeInventory;
  * Created by frank on 6/10/2015.
  */
 public interface VmDetachVolumeExtensionPoint {
-    void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume);
+    default void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
+        completion.success();
+    }
 
-    void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume);
+    default void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume){}
 
     void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion);
 

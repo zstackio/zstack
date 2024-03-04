@@ -1,6 +1,7 @@
 package org.zstack.storage.addon.primary;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -39,6 +40,10 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
+import org.zstack.header.volume.block.BlockVolumeVO;
+import org.zstack.header.volume.block.BlockVolumeVO_;
+import org.zstack.header.volume.block.GetAccessPathMsg;
+import org.zstack.header.volume.block.GetAccessPathReply;
 import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.backup.BackupStorageSystemTags;
@@ -76,6 +81,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     protected ResourceConfigFacade rcf;
     @Autowired
     private ExternalPrimaryStorageImageCacheCleaner imageCacheCleaner;
+    @Autowired
+    protected ExternalPrimaryStorageFactory factory;
 
     public ExternalPrimaryStorage(PrimaryStorageVO self, PrimaryStorageControllerSvc controller, PrimaryStorageNodeSvc node) {
         super(self);
@@ -111,9 +118,23 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof SetTrashExpirationTimeMsg) {
             handle((SetTrashExpirationTimeMsg) msg);
+        } else if (msg instanceof GetAccessPathMsg) {
+            handle((GetAccessPathMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetAccessPathMsg msg) {
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class)
+                .eq(BlockVolumeVO_.uuid, msg.getVolumeUuid()).find();
+        if (blockVolumeVO == null) {
+            GetAccessPathReply reply = new GetAccessPathReply();
+            reply.setError(operr("can not found block volume, access path only for block volume"));
+            return;
+        }
+        BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+        backend.handle(msg);
     }
 
     @Override
@@ -158,6 +179,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
         VolumeInventory volume = msg.getVolume();
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class).eq(BlockVolumeVO_.uuid, volume.getUuid()).find();
+        if (blockVolumeVO != null) {
+            BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+            backend.handle(msg);
+            return;
+        }
+
         CreateVolumeSpec spec = new CreateVolumeSpec();
         spec.setUuid(volume.getUuid());
         spec.setSize(volume.getSize());
@@ -291,7 +319,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         volume.setInstallPath(installPath);
                         volume.setActualSize(actualSize);
                         volume.setFormat(format);
-                        volume.setProtocol(externalVO.getDefaultProtocol());
+                        if (StringUtils.isEmpty(volume.getProtocol())) {
+                            volume.setProtocol(externalVO.getDefaultProtocol());
+                        }
                         reply.setVolume(volume);
                         bus.reply(msg, reply);
                     }
@@ -320,7 +350,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 volume.setSize(stats.getSize());
                 volume.setFormat(stats.getFormat());
                 volume.setInstallPath(stats.getInstallPath());
-                volume.setProtocol(externalVO.getDefaultProtocol());
+                if (StringUtils.isEmpty(volume.getProtocol())) {
+                    volume.setProtocol(externalVO.getDefaultProtocol());
+                }
                 reply.setVolume(volume);
                 bus.reply(msg, reply);
             }
@@ -413,7 +445,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(ResizeVolumeOnPrimaryStorageMsg msg) {
+    protected void handle(ResizeVolumeOnPrimaryStorageMsg msg) {
         controller.expandVolume(msg.getVolume().getInstallPath(), msg.getSize(), new ReturnValueCompletion<VolumeStats>(msg) {
             final ResizeVolumeOnPrimaryStorageReply reply = new ResizeVolumeOnPrimaryStorageReply();
 
@@ -432,9 +464,15 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(TakeSnapshotMsg msg) {
+    protected void handle(TakeSnapshotMsg msg) {
         TakeSnapshotReply reply = new TakeSnapshotReply();
         VolumeSnapshotInventory sp = msg.getStruct().getCurrent();
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class).eq(BlockVolumeVO_.uuid, sp.getVolumeUuid()).find();
+        if (blockVolumeVO != null) {
+            BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+            backend.handle(msg);
+            return;
+        }
 
         VolumeInventory vol = VolumeInventory.valueOf(dbf.findByUuid(sp.getVolumeUuid(), VolumeVO.class));
         CreateVolumeSnapshotSpec sspec = new CreateVolumeSnapshotSpec();
@@ -457,6 +495,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private BlockExternalPrimaryStorageBackend getBlockBackend(String vendor) {
+        BlockExternalPrimaryStorageFactory blockFactory = factory.blockExternalPrimaryStorageFactories.get(vendor);
+        return blockFactory.getBlockExternalPrimaryStorageBackend(externalVO);
     }
 
     // TODO
@@ -1261,11 +1304,16 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg) {
         String protocol = null;
+        boolean force = false;
         if (VolumeVO.class.getSimpleName().equals(msg.getBitsType()) && msg.getBitsUuid() != null) {
-            protocol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getBitsUuid()).select(VolumeVO_.protocol).findValue();
+            VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getBitsUuid()).find();
+            protocol = volume.getProtocol();
+            if (VolumeType.Root.equals(volume.getType()) && VolumeProtocol.iSCSI.toString().equals(protocol)) {
+                force = true;
+            }
         }
 
-        trashVolume(msg.getInstallPath(), protocol, new Completion(msg) {
+        trashVolume(msg.getInstallPath(), protocol, force, new Completion(msg) {
             @Override
             public void success() {
                 DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
@@ -1283,8 +1331,17 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(DeleteVolumeOnPrimaryStorageMsg msg) {
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class)
+                .eq(BlockVolumeVO_.uuid, msg.getVolume().getUuid()).find();
+        if (blockVolumeVO != null) {
+            BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+            backend.handle(msg);
+            return;
+        }
         DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
-        trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), new Completion(msg) {
+        boolean force = VolumeType.Root.toString().equals(msg.getVolume().getType()) &&
+                VolumeProtocol.iSCSI.toString().equals(msg.getVolume().getProtocol());
+        trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), force, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -1301,7 +1358,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(DeleteBitsOnPrimaryStorageMsg msg) {
         // only consider volume bits because Deprecated, will be removed in future
-        trashVolume(msg.getInstallPath(), null, new Completion(msg) {
+        trashVolume(msg.getInstallPath(), null, false, new Completion(msg) {
             @Override
             public void success() {
                 DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
@@ -1481,6 +1538,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(DeleteSnapshotOnPrimaryStorageMsg msg) {
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class)
+                .eq(BlockVolumeVO_.uuid, msg.getSnapshot().getVolumeUuid()).find();
+        if (blockVolumeVO != null) {
+            BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+            backend.handle(msg);
+            return;
+        }
         DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         controller.deleteSnapshot(msg.getSnapshot().getPrimaryStorageInstallPath(), new Completion(msg) {
             @Override
@@ -1582,7 +1646,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                                 .like(VolumeSnapshotVO_.primaryStorageInstallPath, String.format("%s%%", msg.getVolume().getInstallPath()))
                                 .isExists();
                         if (!hasSnapshot) {
-                            trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), new Completion(trigger) {
+                            trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), false, new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     trigger.next();
@@ -1719,11 +1783,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         controller.deleteVolume(installPath, completion);
     }
 
-    private void trashVolume(String installPath, String protocol, Completion completion) {
-        deactivateAndDeleteVolume(installPath, protocol, false, completion);
+    protected void trashVolume(String installPath, String protocol, boolean force, Completion completion) {
+        deactivateAndDeleteVolume(installPath, protocol, force, completion);
     }
 
-    private void deactivateAndDeleteVolume(String installPath, String protocol, boolean force, Completion completion) {
+    protected void deactivateAndDeleteVolume(String installPath, String protocol, boolean force, Completion completion) {
         if (protocol == null) {
             doDeleteBits(installPath, force, completion);
             return;
@@ -1744,8 +1808,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(clients).each((client, c) -> {
-                    HostVO host = Q.New(HostVO.class).eq(HostVO_.managementIp, client.getManagerIp()).find();
-                    node.deactivate(installPath, protocol, HostInventory.valueOf(host), new Completion(c) {
+                    node.deactivate(installPath, protocol, client, new Completion(c) {
                         @Override
                         public void success() {
                             c.done();
@@ -1798,11 +1861,27 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }).start();
     }
 
-    private void doDeleteBits(String installPath, boolean force, Completion completion) {
+    protected void doDeleteBits(String installPath, boolean force, Completion completion) {
         if (force) {
             controller.deleteVolume(installPath, completion);
         } else {
             controller.trashVolume(installPath, completion);
         }
+    }
+
+    @Override
+    protected void doAddProtocol(APIAddStorageProtocolMsg msg, Completion completion) {
+        ExternalPrimaryStorageVO storageVO = Q.New(ExternalPrimaryStorageVO.class)
+                .eq(ExternalPrimaryStorageVO_.uuid, msg.getUuid())
+                .find();
+        if (storageVO != null) {
+            PrimaryStorageOutputProtocolRefVO ref = Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                    .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, msg.getUuid())
+                    .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, msg.getOutputProtocol())
+                    .find();
+            storageVO.getOutputProtocols().add(ref);
+            dbf.updateAndRefresh(storageVO);
+        }
+        super.doAddProtocol(msg, completion);
     }
 }

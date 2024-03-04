@@ -361,6 +361,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                 vo.setTargetPort(ret.getTargetPort());
                 vo.setStatus(ConsoleProxyStatus.Active);
                 vo.setExpiredDate(ret.getExpiredDate());
+                vo.setProxyPort(ret.getProxyPort());
                 dbf.updateAndRefresh(vo);
 
                 completion.success(ConsoleInventory.valueOf(vo));

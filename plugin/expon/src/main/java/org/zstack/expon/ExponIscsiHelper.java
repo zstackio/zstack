@@ -14,11 +14,13 @@ public class ExponIscsiHelper {
 
     static String iscsiHeartbeatVolumeName = "iscsi_zstack_heartbeat";
 
+    static String iscsiPrefix = "iscsi_zstack";
+
     static String buildIscsiExportClientName(String clientIp) {
         return "iscsi_" + clientIp.replace(".", "_");
     }
 
-    static String buildIscsiVolumeClientName(String volumeUuid) {
+    public static String buildIscsiVolumeClientName(String volumeUuid) {
         return "volume_" + volumeUuid;
     }
 

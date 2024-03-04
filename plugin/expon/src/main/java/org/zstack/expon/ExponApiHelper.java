@@ -19,6 +19,8 @@ import org.zstack.expon.sdk.volume.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.expon.ExponError;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -115,7 +117,7 @@ public class ExponApiHelper {
 
     public void errorOut(ExponResponse rsp) {
         if (!rsp.isSuccess()) {
-            throw new RuntimeException(String.format("expon request failed, code %s, message: %s.", rsp.getRetCode(), rsp.getMessage()));
+            throw new OperationFailureException(operr("expon request failed, code %s, message: %s.", rsp.getRetCode(), rsp.getMessage()));
         }
     }
 
@@ -346,9 +348,10 @@ public class ExponApiHelper {
     }
 
     // TODO change to async
-    public void deleteVolumeSnapshot(String snapId) {
+    public void deleteVolumeSnapshot(String snapId, boolean force) {
         DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
         req.setSnapshotId(snapId);
+        req.setForce(force);
         callErrorOut(req, DeleteVolumeSnapshotResponse.class);
     }
 
@@ -835,5 +838,28 @@ public class ExponApiHelper {
         SetTrashExpireTimeRequest req = new SetTrashExpireTimeRequest();
         req.setTrashRecycle(days);
         callErrorOut(req, SetTrashExpireTimeResponse.class);
+    }
+
+    public VolumeModule updateVolume(String volId, String name) {
+        UpdateVolumeRequest req = new UpdateVolumeRequest();
+        req.setSessionId(sessionId);
+        req.setId(volId);
+        req.setName(name);
+        UpdateVolumeResponse rsp = callErrorOut(req, UpdateVolumeResponse.class);
+
+        return getVolume(volId);
+    }
+
+    public VolumeSnapshotModule updateVolumeSnapshot(String snapshotId, String name, String description) {
+        UpdateVolumeSnapshotRequest req = new UpdateVolumeSnapshotRequest();
+        req.setSessionId(sessionId);
+        req.setDescription(description);
+        req.setId(snapshotId);
+        if (queryVolumeSnapshot(name) == null) {
+            req.setName(name);
+        }
+        UpdateVolumeSnapshotResponse rsp = callErrorOut(req, UpdateVolumeSnapshotResponse.class);
+
+        return queryVolumeSnapshot(name);
     }
 }
