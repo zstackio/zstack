@@ -3950,6 +3950,10 @@ public class KVMAgentCommands {
         public String vmUuid;
     }
 
+    public static class ReportVmStartEventCmd {
+        public String vmUuid;
+    }
+
     public static class ReportVmCrashEventCmd {
         public String vmUuid;
     }

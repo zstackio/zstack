@@ -453,13 +453,15 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         });
 
-        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_REBOOT_EVENT, KVMAgentCommands.ReportVmRebootEventCmd.class, new SyncHttpCallHandler<KVMAgentCommands.ReportVmRebootEventCmd>() {
-            @Override
-            public String handleSyncHttpCall(KVMAgentCommands.ReportVmRebootEventCmd cmd) {
-                evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_REBOOT, cmd.vmUuid);
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_REBOOT_EVENT, KVMAgentCommands.ReportVmRebootEventCmd.class, cmd -> {
+            evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_REBOOT, cmd.vmUuid);
 
-                return null;
-            }
+            return null;
+        });
+
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_START_EVENT, KVMAgentCommands.ReportVmStartEventCmd.class, cmd -> {
+            evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_START, cmd.vmUuid);
+            return null;
         });
 
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_CRASH_EVENT, KVMAgentCommands.ReportVmCrashEventCmd.class, cmd -> {

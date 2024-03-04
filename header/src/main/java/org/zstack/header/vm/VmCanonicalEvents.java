@@ -14,6 +14,7 @@ public class VmCanonicalEvents {
     public static final String VM_INSTANCE_OFFERING_CHANGED_PATH = "/vm/instanceoffering/change";
     public static final String VM_CONFIG_CHANGED_PATH = "/vm/config/change";
     public static final String VM_LIBVIRT_REPORT_REBOOT = "/vm/libvirtReportReboot";
+    public static final String VM_LIBVIRT_REPORT_START = "/vm/libvirtReportStart";
     public static final String VM_LIBVIRT_REPORT_CRASH = "/vm/libvirtReportCrash";
     public static final String VM_NIC_INFO_CHANGED_PATH = "/vm/nicinfo/change";
     public static final String VM_NIC_INFO_DUPLICATE_PATH = "/vm/nicinfo/duplicate";
