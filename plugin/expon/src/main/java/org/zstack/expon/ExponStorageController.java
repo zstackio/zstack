@@ -1,5 +1,6 @@
 package org.zstack.expon;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -71,7 +72,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private ExternalPrimaryStorageVO self;
     private ExponAddonInfo addonInfo;
 
-    private final ExponApiHelper apiHelper;
+    public final ExponApiHelper apiHelper;
 
     // TODO static nqn
     private final static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
@@ -422,6 +423,19 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         String volUuid = getVolumeInfo(vol.getName()).getUuid();
+        return getActiveVolumeClients(protocol, volUuid);
+    }
+
+    public List<ActiveVolumeClient> getActiveClients(String installPath, String protocol, String volUuid) {
+        VolumeModule vol = apiHelper.getVolume(getVolIdFromPath(installPath));
+        if (vol == null) {
+            return Collections.emptyList();
+        }
+        return getActiveVolumeClients(protocol, volUuid);
+    }
+
+    @NotNull
+    private List<ActiveVolumeClient> getActiveVolumeClients(String protocol, String volUuid) {
         if (VolumeProtocol.Vhost.toString().equals(protocol)) {
             String vhostName = buildVhostControllerName(volUuid);
             VhostControllerModule vhost = apiHelper.queryVhostController(vhostName);
@@ -854,6 +868,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         stats.setSize(exponVol.getVolumeSize());
         stats.setActualSize(exponVol.getDataSize());
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+        stats.setRunStatus(exponVol.getRunStatus());
         comp.success(stats);
     }
 

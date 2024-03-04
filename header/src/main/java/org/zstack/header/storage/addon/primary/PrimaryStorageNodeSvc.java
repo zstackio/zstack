@@ -3,6 +3,7 @@ package org.zstack.header.storage.addon.primary;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
 
@@ -18,6 +19,8 @@ public interface PrimaryStorageNodeSvc {
 
     // TODO use HostInventory
     List<ActiveVolumeClient> getActiveClients(String installPath, String protocol);
+
+    List<ActiveVolumeClient> getActiveClients(String installPath, String protocol, String volUuid);
 
     List<String> getActiveVolumesLocation(HostInventory h);
 

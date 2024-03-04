@@ -175,7 +175,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         } else if (msg instanceof InstantiateMemoryVolumeOnPrimaryStorageMsg) {
             throw new UnsupportedOperationException();
         } else {
-            spec.setName(buildVolumeName(volume.getUuid()));
+            spec.setName(volume.getName());
             createEmptyVolume(msg, spec);
         }
     }
@@ -413,7 +413,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(ResizeVolumeOnPrimaryStorageMsg msg) {
+    protected void handle(ResizeVolumeOnPrimaryStorageMsg msg) {
         controller.expandVolume(msg.getVolume().getInstallPath(), msg.getSize(), new ReturnValueCompletion<VolumeStats>(msg) {
             final ResizeVolumeOnPrimaryStorageReply reply = new ResizeVolumeOnPrimaryStorageReply();
 
@@ -432,7 +432,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(TakeSnapshotMsg msg) {
+    protected void handle(TakeSnapshotMsg msg) {
         TakeSnapshotReply reply = new TakeSnapshotReply();
         VolumeSnapshotInventory sp = msg.getStruct().getCurrent();
 
@@ -1798,7 +1798,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }).start();
     }
 
-    private void doDeleteBits(String installPath, boolean force, Completion completion) {
+    protected void doDeleteBits(String installPath, boolean force, Completion completion) {
         if (force) {
             controller.deleteVolume(installPath, completion);
         } else {

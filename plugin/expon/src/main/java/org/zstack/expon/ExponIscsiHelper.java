@@ -15,7 +15,7 @@ public class ExponIscsiHelper {
         return "iscsi_" + clientIp.replace(".", "_");
     }
 
-    static String buildIscsiVolumeClientName(String volUuid) {
+    public static String buildIscsiVolumeClientName(String volUuid) {
         return "volume_" + volUuid;
     }
 
