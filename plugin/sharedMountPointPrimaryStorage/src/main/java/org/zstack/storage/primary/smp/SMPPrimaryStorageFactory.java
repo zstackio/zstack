@@ -86,6 +86,11 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
         return PrimaryStorageInventory.valueOf(dbf.findByUuid(uuid, PrimaryStorageVO.class));
     }
 
+    @Override
+    public void validateStorageProtocol(String protocol) {
+
+    }
+
     @VmExpungeRootVolumeValidator.VmExpungeRootVolumeValidatorMethod
     static void vmExpungeRootVolumeValidator(String vmUuid, String volumeUuid) {
         new SQLBatch() {

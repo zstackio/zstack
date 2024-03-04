@@ -5,10 +5,14 @@ import org.zstack.console.ConsoleGlobalConfig
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
 import org.zstack.core.gc.GCStatus
 import org.zstack.header.console.ConsoleConstants
 import org.zstack.header.console.ConsoleProxyAgentVO
 import org.zstack.header.console.ConsoleProxyCommands
+import org.zstack.header.console.ConsoleProxyVO
+import org.zstack.header.console.ConsoleProxyVO_
+import org.zstack.sdk.ConsoleInventory
 import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -141,9 +145,26 @@ class ConsoleProxyCase extends SubCase {
         ConsoleGlobalConfig.DELETE_CONSOLE_PROXY_RETRY_DELAY.updateValue(100)
         VmInstanceInventory vm = env.inventoryByName("vm")
 
-        requestConsoleAccess {
+        ConsoleInventory console = requestConsoleAccess {
             vmInstanceUuid = vm.uuid
-        }
+        } as ConsoleInventory
+
+        assert console.port == 5900
+
+        ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class)
+                .eq(ConsoleProxyVO_.vmInstanceUuid, console.getToken().split("_")[-1]).find()
+        assert vo.proxyPort == 5900
+
+        vo.setProxyPort(5901)
+        dbf.update(vo)
+        assert vo.proxyPort == 5901
+
+        // request again
+        console = requestConsoleAccess {
+            vmInstanceUuid = vm.uuid
+        } as ConsoleInventory
+
+        assert console.port == 5900
 
         destroyVmInstance {
             uuid = vm.uuid

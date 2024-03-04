@@ -1,6 +1,7 @@
 package org.zstack.externalStorage.primary.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;

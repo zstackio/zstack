@@ -5,6 +5,7 @@ public class VolumeStats {
     protected Long actualSize;
     protected String format;
     protected Long size;
+    protected String runStatus;
 
     public VolumeStats(String installPath, Long actualSize) {
         this.installPath = installPath;
@@ -51,5 +52,13 @@ public class VolumeStats {
 
     public String getFormat() {
         return format;
+    }
+
+    public String getRunStatus() {
+        return runStatus;
+    }
+
+    public void setRunStatus(String runStatus) {
+        this.runStatus = runStatus;
     }
 }

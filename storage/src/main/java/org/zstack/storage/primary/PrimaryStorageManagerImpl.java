@@ -100,7 +100,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     @Autowired
     protected PrimaryStorageUsageReport primaryStorageUsageForecaster;
 
-    private final Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
+    public final Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private final Map<String, AutoDeleteTrashTask> autoDeleteTrashTask = new HashMap<>();

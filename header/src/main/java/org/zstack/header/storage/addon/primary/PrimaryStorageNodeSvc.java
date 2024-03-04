@@ -3,6 +3,7 @@ package org.zstack.header.storage.addon.primary;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
 
@@ -10,6 +11,8 @@ public interface PrimaryStorageNodeSvc {
     void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp);
 
     void deactivate(String installPath, String protocol, HostInventory h, Completion comp);
+
+    void deactivate(String installPath, String protocol, ActiveVolumeClient client, Completion comp);
 
     void blacklist(String installPath, String protocol, HostInventory h, Completion comp);
 
