@@ -10,11 +10,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
@@ -34,12 +36,11 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Component, PSCapacityExtensionPoint,
@@ -51,6 +52,13 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
     protected static Map<String, PrimaryStorageControllerSvc> controllers = new HashMap<>();
     protected static Map<String, PrimaryStorageNodeSvc> nodes = new HashMap<>();
+    private static final List<String> SUPPORT_PROTOCOL = Arrays.asList("Vhost", "iSCSI", "NVMEoF", "Curve", "file");
+
+    public Map<String, NodeHealthyCheckProtocolExtensionPoint> nodeHealthyCheckProtocolExtensions = Collections.synchronizedMap(
+            new HashMap<String, NodeHealthyCheckProtocolExtensionPoint>());
+
+    public Map<String, BlockExternalPrimaryStorageFactory> blockExternalPrimaryStorageFactories = Collections.synchronizedMap(
+            new HashMap<String, BlockExternalPrimaryStorageFactory>());
 
     @Autowired
     protected PluginRegistry pluginRgty;
@@ -71,7 +79,28 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         for (ExternalPrimaryStorageVO vo : extPs) {
             saveController(vo);
         }
+        populateExtensions();
         return true;
+    }
+
+    private void populateExtensions() {
+        for (NodeHealthyCheckProtocolExtensionPoint ext : pluginRgty.getExtensionList(NodeHealthyCheckProtocolExtensionPoint.class)) {
+            NodeHealthyCheckProtocolExtensionPoint old = nodeHealthyCheckProtocolExtensions.get(ext.getHypervisorType().toString());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate NodeHealthyCheckProtocolExtensionPoint[%s, %s] for hypervisor type[%s]",
+                        old.getClass().getName(), ext.getClass().getName(), ext.getHypervisorType()));
+            }
+            nodeHealthyCheckProtocolExtensions.put(ext.getHypervisorType().toString(), ext);
+        }
+
+        for (BlockExternalPrimaryStorageFactory factory : pluginRgty.getExtensionList(BlockExternalPrimaryStorageFactory.class)) {
+            BlockExternalPrimaryStorageFactory old = blockExternalPrimaryStorageFactories.get(factory.getType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate BlockExternalPrimaryStorageFactory[%s, %s] for type[%s]",
+                        old.getClass().getName(), factory.getClass().getName(), factory.getType()));
+            }
+            blockExternalPrimaryStorageFactories.put(factory.getType(), factory);
+        }
     }
 
     @Override
@@ -134,7 +163,12 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         lvo.setDefaultProtocol(amsg.getDefaultOutputProtocol());
         lvo.setConfig(amsg.getConfig());
         lvo.setMountPath(identity);
+        PrimaryStorageOutputProtocolRefVO ref = new PrimaryStorageOutputProtocolRefVO();
+        ref.setPrimaryStorageUuid(lvo.getUuid());
+        ref.setOutputProtocol(amsg.getDefaultOutputProtocol());
+        lvo.getOutputProtocols().add(ref);
         dbf.persist(lvo);
+        dbf.persist(ref);
 
         saveController(lvo);
         return lvo.toInventory();
@@ -159,6 +193,14 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     @Override
     public PrimaryStorageInventory getInventory(String uuid) {
         return ExternalPrimaryStorageInventory.valueOf(dbf.findByUuid(uuid, ExternalPrimaryStorageVO.class));
+    }
+
+    @Override
+    public void validateStorageProtocol(String protocol) {
+        if (!SUPPORT_PROTOCOL.contains(protocol)) {
+            throw new ApiMessageInterceptionException(argerr("not support protocol[%s] " +
+                    "on type[%s] primary storage", protocol, getPrimaryStorageType()));
+        }
     }
 
     public PrimaryStorageControllerSvc getControllerSvc(String primaryStorageUuid) {
@@ -398,12 +440,6 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode, Map data) {
         deactivateVolumeIfNeed(vm, volume, new NopeCompletion());
     }
-
-    @Override
-    public void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {}
-
-    @Override
-    public void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {}
 
     @Override
     public void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {

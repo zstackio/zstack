@@ -291,6 +291,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         return PrimaryStorageInventory.valueOf(dbf.findByUuid(uuid, PrimaryStorageVO.class));
     }
 
+    @Override
+    public void validateStorageProtocol(String protocol) {
+
+    }
+
     private String makeMediatorKey(String hvType, String bsType) {
         return hvType + "-" + bsType;
     }
