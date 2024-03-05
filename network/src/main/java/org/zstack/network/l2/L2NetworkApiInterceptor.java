@@ -104,7 +104,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAttachL2NetworkToHostMsg msg) {
-        boolean ifL2AttachedCluster = SQL.New("select l2.uuid from L2VirtualSwitchNetworkVO l2, L2NetworkClusterRefVO ref, HostVO host" +
+        boolean ifL2AttachedCluster = SQL.New("select l2.uuid from L2NetworkVO l2, L2NetworkClusterRefVO ref, HostVO host" +
                         " where l2.uuid = ref.l2NetworkUuid" +
                         " and ref.clusterUuid = host.clusterUuid" +
                         " and l2.uuid = :l2Uuid" +
@@ -129,7 +129,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDetachL2NetworkFromHostMsg msg) {
-        boolean ifL2AttachedCluster = SQL.New("select l2.uuid from L2VirtualSwitchNetworkVO l2, L2NetworkClusterRefVO ref, HostVO host" +
+        boolean ifL2AttachedCluster = SQL.New("select l2.uuid from L2NetworkVO l2, L2NetworkClusterRefVO ref, HostVO host" +
                         " where l2.uuid = ref.l2NetworkUuid" +
                         " and ref.clusterUuid = host.clusterUuid" +
                         " and l2.uuid = :l2Uuid" +

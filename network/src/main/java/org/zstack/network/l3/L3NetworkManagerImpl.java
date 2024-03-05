@@ -11,6 +11,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -427,11 +428,10 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private void handle(APICreateL3NetworkMsg msg) {
-        SimpleQuery<L2NetworkVO> query = dbf.createQuery(L2NetworkVO.class);
-        query.select(L2NetworkVO_.zoneUuid);
-        query.add(L2NetworkVO_.uuid, Op.EQ, msg.getL2NetworkUuid());
-        String zoneUuid = query.findValue();
-        assert zoneUuid != null;
+        String zoneUuid = null;
+        if (msg.getL2NetworkUuid() != null) {
+            zoneUuid = Q.New(L2NetworkVO.class).select(L2NetworkVO_.zoneUuid).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
+        }
 
         L3NetworkVO vo = new L3NetworkVO();
         if (msg.getResourceUuid() != null) {
@@ -453,37 +453,42 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         } else {
             vo.setIpVersion(IPv6Constants.IPv4);
         }
-
-        L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(msg.getType()));
-        L3NetworkInventory inv = new SQLBatchWithReturn<L3NetworkInventory>() {
-            @Override
-            protected L3NetworkInventory scripts() {
-                vo.setAccountUuid(msg.getSession().getAccountUuid());
-                L3NetworkInventory inv = factory.createL3Network(vo, msg);
-                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), L3NetworkVO.class.getSimpleName());
-                return inv;
-            }
-        }.execute();
-
-        if (msg.isSystem()) {
-            L2NetworkVO l2NetworkVO = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
-            List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
-                    .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
-            if (clusterUuids != null && !clusterUuids.isEmpty()) {
-                List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
-                        .in(HostVO_.clusterUuid, clusterUuids).listValues();
-                for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
-                    syncManagementServiceTypeWhileCreate(ext, l2NetworkVO, hostUuids);
-                }
-            }
-        }
-
-        extpEmitter.afterCreate(inv);
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
 
         APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
-        evt.setInventory(inv);
-        logger.debug(String.format("Successfully created L3Network[name:%s, uuid:%s]", inv.getName(), inv.getUuid()));
-        bus.publish(evt);
+        L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(msg.getType()));
+        factory.createL3Network(vo, msg, new ReturnValueCompletion<L3NetworkInventory>(msg) {
+            @Override
+            public void success(L3NetworkInventory returnValue) {
+                tagMgr.createTagsFromAPICreateMessage(msg, returnValue.getUuid(), L3NetworkVO.class.getSimpleName());
+
+                if (msg.isSystem()) {
+                    L2NetworkVO l2NetworkVO = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
+                    List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
+                            .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
+                    if (clusterUuids != null && !clusterUuids.isEmpty()) {
+                        List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                                .in(HostVO_.clusterUuid, clusterUuids).listValues();
+                        for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                            syncManagementServiceTypeWhileCreate(ext, l2NetworkVO, hostUuids);
+                        }
+                    }
+                }
+
+                extpEmitter.afterCreate(evt.getInventory());
+
+                evt.setInventory(returnValue);
+                logger.debug(String.format("Successfully created L3Network[name:%s, uuid:%s]",
+                        returnValue.getName(), returnValue.getUuid()));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     @Override
