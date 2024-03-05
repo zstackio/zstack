@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateL2PortGroupAction extends AbstractAction {
+public class CreatePortGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateL2PortGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateL2PortGroupResult value;
+        public org.zstack.sdk.CreatePortGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,17 +43,26 @@ public class CreateL2PortGroupAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    @Param(required = false)
+    public java.lang.String type = "L3BasicNetwork";
 
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String physicalInterface;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String l2NetworkUuid;
+
+    @Param(required = false, validValues = {"Public","Private","System"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String category = "Private";
+
+    @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer ipVersion;
 
     @Param(required = false)
-    public java.lang.String type;
+    public boolean system = false;
 
-    @Param(required = false, validValues = {"LinuxBridge","OvsDpdk","MacVlan"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vSwitchType = "LinuxBridge";
+    @Param(required = false)
+    public java.lang.String dnsDomain;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean enableIPAM = true;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -93,8 +102,8 @@ public class CreateL2PortGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateL2PortGroupResult value = res.getResult(org.zstack.sdk.CreateL2PortGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateL2PortGroupResult() : value; 
+        org.zstack.sdk.CreatePortGroupResult value = res.getResult(org.zstack.sdk.CreatePortGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreatePortGroupResult() : value; 
 
         return ret;
     }
@@ -124,7 +133,7 @@ public class CreateL2PortGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l2-networks/port-group";
+        info.path = "/l3-networks/port-group";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

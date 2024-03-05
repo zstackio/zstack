@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.PortGroupVlanMode;
 
-public class L2PortGroupNetworkInventory extends org.zstack.sdk.L2NetworkInventory {
+public class PortGroupInventory extends org.zstack.sdk.L3NetworkInventory {
 
     public java.lang.String vSwitchUuid;
     public void setVSwitchUuid(java.lang.String vSwitchUuid) {

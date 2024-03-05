@@ -3,13 +3,14 @@ package org.zstack.network.l3;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l3.*;
 
 public class L3BasicNetworkFactory implements L3NetworkFactory {
     private static final L3NetworkType type = new L3NetworkType(L3NetworkConstant.L3_BASIC_NETWORK_TYPE);
     
     @Autowired
-    private DatabaseFacade dbf;
+    protected DatabaseFacade dbf;
 
     @Override
     public L3NetworkType getType() {
@@ -18,12 +19,12 @@ public class L3BasicNetworkFactory implements L3NetworkFactory {
 
     @Override
     @Transactional
-    public L3NetworkInventory createL3Network(L3NetworkVO l3vo, APICreateL3NetworkMsg msg) {
-        l3vo.setType(type.toString());
+    public void createL3Network(L3NetworkVO l3vo, APICreateL3NetworkMsg msg, ReturnValueCompletion<L3NetworkInventory> completion) {
+        l3vo.setType(getType().toString());
         dbf.getEntityManager().persist(l3vo);
         dbf.getEntityManager().flush();
         dbf.getEntityManager().refresh(l3vo);
-        return L3NetworkInventory.valueOf(l3vo);
+        completion.success(L3NetworkInventory.valueOf(l3vo));
     }
 
     @Override

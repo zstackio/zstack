@@ -18,13 +18,10 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.ResourceBindingStrategy;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.SharedResourceVO;
@@ -44,7 +41,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -52,7 +48,6 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.e;
@@ -82,11 +77,11 @@ public class L3BasicNetwork implements L3Network {
     @Autowired
     protected PluginRegistry pluginRgty;
     @Autowired
-    private ThreadFacade thdf;
+    protected ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
 
-    private L3NetworkVO self;
+    protected L3NetworkVO self;
 
     public L3BasicNetwork(L3NetworkVO vo) {
         this.self = vo;
@@ -101,7 +96,11 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private String getSyncId() {
-        return String.format("operate-l3-%s", self.getUuid());
+        return String.format("operate-%s", generateChainName());
+    }
+
+    protected String generateChainName() {
+        return String.format("l3-network-%s", self.getUuid());
     }
 
     @Override
@@ -171,6 +170,8 @@ public class L3BasicNetwork implements L3Network {
             handle((CheckIpAvailabilityMsg) msg);
         } else if (msg instanceof AttachNetworkServiceToL3Msg) {
             handle((AttachNetworkServiceToL3Msg) msg);
+        } else if (msg instanceof DeleteL3NetworkMsg) {
+            handle((DeleteL3NetworkMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -990,14 +991,14 @@ public class L3BasicNetwork implements L3Network {
         );
     }
 
-    private void doDeleteL3Network(APIDeleteL3NetworkMsg msg, Completion completion) {
+    protected void doDeleteL3Network(DeleteL3NetworkMsg msg, Completion completion) {
         final String issuer = L3NetworkVO.class.getSimpleName();
         final List<L3NetworkInventory> ctx = L3NetworkInventory.valueOf(Arrays.asList(self));
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
-        chain.setName(String.format("delete-l3-network-%s", msg.getUuid()));
-        if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+        chain.setName(String.format("delete-%s", generateChainName()));
+        if (!msg.isForceDelete()) {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1080,7 +1081,10 @@ public class L3BasicNetwork implements L3Network {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public void run(SyncTaskChain chain) {
-                doDeleteL3Network(msg, new Completion(msg) {
+                DeleteL3NetworkMsg dmsg = new DeleteL3NetworkMsg();
+                dmsg.setUuid(msg.getUuid());
+                dmsg.setForceDelete(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing);
+                doDeleteL3Network(dmsg, new Completion(msg) {
                     @Override
                     public void success() {
                         bus.publish(evt);
@@ -1103,7 +1107,41 @@ public class L3BasicNetwork implements L3Network {
 
             @Override
             public String getName() {
-                return "delete-l3-network-" + msg.getL3NetworkUuid();
+                return String.format("delete-%s", generateChainName());
+            }
+        });
+    }
+
+    private void handle(DeleteL3NetworkMsg msg) {
+        final DeleteL3NetworkReply reply = new DeleteL3NetworkReply();
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                doDeleteL3Network(msg, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-%s", generateChainName());
             }
         });
     }

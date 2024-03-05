@@ -10,3 +10,13 @@ select '36c27e8ff05c4780bf6d2fa65700f22e', '36c27e8ff05c4780bf6d2fa65700f22e', u
 alter table `zstack`.`LongJobVO` modify `uuid` char(32) not null;
 alter table `zstack`.`LongJobVO` add column `parentUuid` char(32) default null;
 
+-- Feature: port group improvement | ZSV-4933
+CREATE TABLE IF NOT EXISTS `zstack`.`PortGroupVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `vSwitchUuid` varchar(32) NOT NULL,
+    `vlanMode` varchar(32) NOT NULL default 'ACCESS',
+    `vlanId` int unsigned NOT NULL,
+    `vlanRanges` varchar(256) default NULL,
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkPortGroupVOL2VirtualSwitchNetworkVO` FOREIGN KEY (`vSwitchUuid`) REFERENCES L2VirtualSwitchNetworkVO (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
