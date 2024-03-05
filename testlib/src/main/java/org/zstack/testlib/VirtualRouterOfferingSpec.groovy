@@ -121,6 +121,10 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
                 return new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
             }
 
+            simulator(VirtualRouterLoadBalancerBackend.REFRESH_LISTENERS_PATH) {
+                return new VirtualRouterLoadBalancerBackend.RefreshListenersRsp()
+            }
+
             simulator(VirtualRouterLoadBalancerBackend.DELETE_LB_PATH) {
                 return new VirtualRouterLoadBalancerBackend.DeleteLbRsp()
             }

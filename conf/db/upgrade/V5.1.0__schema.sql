@@ -1,9 +1,7 @@
-CREATE TABLE IF NOT EXISTS `zstack`.`SlbGroupConfigTaskVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`SlbGroupMonitorIpVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `slbGroupUuid` varchar(32) NOT NULL,
-    `configVersion` bigint unsigned DEFAULT 0 UNIQUE,
-    `taskName` varchar(32) DEFAULT NULL,
-    `taskData` text NOT NULL,
+    `monitorIp` varchar(128) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`id`),
@@ -27,3 +25,4 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SlbVmInstanceConfigTaskVO` (
 
 ALTER TABLE `zstack`.`SlbGroupVO` ADD COLUMN `configVersion` bigint unsigned DEFAULT 0;
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD COLUMN `configVersion` bigint unsigned DEFAULT 0;
+UPDATE `zstack`.`SlbGroupVO` SET deployType = "NoHA";

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSlbGroupAction extends AbstractAction {
+public class ChangeSlbGroupDeployTypeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSlbGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSlbGroupResult value;
+        public org.zstack.sdk.ChangeSlbGroupDeployTypeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,11 @@ public class CreateSlbGroupAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String slbOfferingUuid;
+    public java.lang.String slbGroupUuid;
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String frontEndL3NetworkUuid;
-
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List backendL3NetworkUuids;
-
-    @Param(required = false, validValues = {"VYOS"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backendType;
-
-    @Param(required = false, validValues = {"NoHA","HA"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String deployType;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List monitorIps;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -87,8 +63,8 @@ public class CreateSlbGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSlbGroupResult value = res.getResult(org.zstack.sdk.CreateSlbGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSlbGroupResult() : value; 
+        org.zstack.sdk.ChangeSlbGroupDeployTypeResult value = res.getResult(org.zstack.sdk.ChangeSlbGroupDeployTypeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeSlbGroupDeployTypeResult() : value; 
 
         return ret;
     }
@@ -117,11 +93,11 @@ public class CreateSlbGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/load-balancers/slb/groups";
+        info.httpMethod = "PUT";
+        info.path = "/load-balancers/slb/groups/{uuid}/deployType";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "changeSlbGroupDeployType";
         return info;
     }
 

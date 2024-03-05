@@ -1,7 +1,8 @@
 package org.zstack.sdk;
 
 public enum SlbVmInstanceConfigTaskStatus {
+	Pending,
 	Starting,
-	Successfully,
+	Success,
 	Failed,
 }

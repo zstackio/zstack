@@ -52,6 +52,14 @@ public class SlbGroupInventory  {
         return this.description;
     }
 
+    public java.lang.Long configVersion;
+    public void setConfigVersion(java.lang.Long configVersion) {
+        this.configVersion = configVersion;
+    }
+    public java.lang.Long getConfigVersion() {
+        return this.configVersion;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -92,12 +100,12 @@ public class SlbGroupInventory  {
         return this.networks;
     }
 
-    public java.util.List configTasks;
-    public void setConfigTasks(java.util.List configTasks) {
-        this.configTasks = configTasks;
+    public java.util.List monitorIps;
+    public void setMonitorIps(java.util.List monitorIps) {
+        this.monitorIps = monitorIps;
     }
-    public java.util.List getConfigTasks() {
-        return this.configTasks;
+    public java.util.List getMonitorIps() {
+        return this.monitorIps;
     }
 
 }

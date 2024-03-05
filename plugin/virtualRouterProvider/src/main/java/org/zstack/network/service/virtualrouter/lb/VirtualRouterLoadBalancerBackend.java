@@ -64,6 +64,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -270,6 +271,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         String securityPolicyType;
         List<ServerGroup> serverGroups;
         List<RedirectRule> redirectRules;
+        String vipL3Uuid;
 
         boolean enableFullLog;
 
@@ -496,6 +498,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         public void setEnableFullLog(boolean enableFullLog) {
             this.enableFullLog = enableFullLog;
         }
+
+        public String getVipL3Uuid() {
+            return vipL3Uuid;
+        }
+
+        public void setVipL3Uuid(String vipL3Uuid) {
+            this.vipL3Uuid = vipL3Uuid;
+        }
     }
 
     public static class RefreshLbCmd extends AgentCommand {
@@ -574,24 +584,99 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public static class DeleteLbRsp extends AgentResponse {
     }
 
+    public static class RefreshListenersCmd extends AgentCommand implements Serializable {
+        @GrayVersion(value = "5.1.0")
+        List<LbTO> lbs;
+        @GrayVersion(value = "5.1.0")
+        public Boolean enableHaproxyLog;
+        @GrayVersion(value = "5.1.0")
+        public HashMap<String, String> certificate;
+
+        public List<LbTO> getLbs() {
+            return lbs;
+        }
+
+        public void setLbs(List<LbTO> lbs) {
+            this.lbs = lbs;
+        }
+
+        public Boolean getEnableHaproxyLog() {
+            return enableHaproxyLog;
+        }
+
+        public void setEnableHaproxyLog(Boolean enableHaproxyLog) {
+            this.enableHaproxyLog = enableHaproxyLog;
+        }
+
+        public HashMap<String, String> getCertificate() {
+            return certificate;
+        }
+
+        public void setCertificate(HashMap<String, String> certificate) {
+            this.certificate = certificate;
+        }
+    }
+
+    public static class RefreshListenersRsp extends AgentResponse {
+    }
+
+
     public static final String REFRESH_LB_PATH = "/lb/refresh";
     public static final String DELETE_LB_PATH = "/lb/delete";
     public static final String REFRESH_LB_LOG_LEVEL_PATH = "/lb/log/level";
     public static final String CREATE_CERTIFICATE_PATH = "/certificate/create";
     public static final String DELETE_CERTIFICATE_PATH = "/certificate/delete";
+    public static final String REFRESH_LISTENERS_PATH = "/listeners/refresh";
+
+    private String getOnlyResourceConfig(String resourceUuid) {
+        String value = Q.New(ResourceConfigVO.class).select(ResourceConfigVO_.value)
+                .eq(ResourceConfigVO_.name, VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.getName())
+                .eq(ResourceConfigVO_.category, VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.getCategory())
+                .eq(ResourceConfigVO_.resourceUuid, resourceUuid)
+                .findValue();
+        return value;
+
+    }
+
+    public boolean enableFullLog(LbTO to, VirtualRouterVmInventory vr) {
+        String enableLbListenerFullLog = getOnlyResourceConfig(to.getListenerUuid());
+        if (!StringUtils.isEmpty(enableLbListenerFullLog)) {
+            return TypeUtils.stringToValue(enableLbListenerFullLog, boolean.class);
+        }
+
+        String enableLbFullLog = getOnlyResourceConfig(to.getLbUuid());
+        if (!StringUtils.isEmpty(enableLbFullLog)) {
+            return TypeUtils.stringToValue(enableLbFullLog, boolean.class);
+        }
+
+        String enableVpcFullLog = getOnlyResourceConfig(vr.getUuid());
+        if (!StringUtils.isEmpty(enableVpcFullLog)) {
+            return TypeUtils.stringToValue(enableVpcFullLog, boolean.class);
+        } else {
+            return VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.value(boolean.class);
+        }
+    }
+
+    public List<LbTO> makeCommonLbTOs(final LoadBalancerStruct struct) {
+        return makeLbTOs(struct, null);
+    }
 
     private List<LbTO> makeLbTOs(final LoadBalancerStruct struct, VirtualRouterVmInventory vr) {
         VipInventory vip = struct.getVip();
         VipInventory vip6 = struct.getIpv6Vip();
         VipInventory vipInUsed = vip == null ? vip6 : vip;
+        VmNicInventory publicNic = null;
 
-        Optional<VmNicInventory> publicNic = vr.getVmNics().stream()
-                .filter(n -> StringUtils.equals(n.getL3NetworkUuid(), vipInUsed.getL3NetworkUuid()))
-                 .findFirst();
-        if (!publicNic.isPresent()) {
-            return new ArrayList<>();
+        if (vr != null) {
+            List<VmNicInventory> nics = vr.getVmNics().stream()
+                    .filter(n -> StringUtils.equals(n.getL3NetworkUuid(), vipInUsed.getL3NetworkUuid()))
+                    .collect(Collectors.toList());
+            if (!nics.isEmpty()) {
+                publicNic = nics.get(0);
+            }
         }
 
+        VmNicInventory finalPublicNic = publicNic;
         return CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
             private List<String> makeAcl(LoadBalancerListenerInventory listenerInv) {
                 String aclEntry = "";
@@ -799,35 +884,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 redirectRule.setRedirectRule(rule.toString());
             }
 
-            private String getOnlyResourceConfig(String resourceUuid) {
-                String value = Q.New(ResourceConfigVO.class).select(ResourceConfigVO_.value)
-                        .eq(ResourceConfigVO_.name, VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.getName())
-                        .eq(ResourceConfigVO_.category, VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.getCategory())
-                        .eq(ResourceConfigVO_.resourceUuid, resourceUuid)
-                        .findValue();
-                return value;
-
-            }
-
-            private boolean enableFullLog(LbTO to, VirtualRouterVmInventory vr) {
-                String enableLbListenerFullLog = getOnlyResourceConfig(to.getListenerUuid());
-                if (!StringUtils.isEmpty(enableLbListenerFullLog)) {
-                    return TypeUtils.stringToValue(enableLbListenerFullLog, boolean.class);
-                }
-
-                String enableLbFullLog = getOnlyResourceConfig(to.getLbUuid());
-                if (!StringUtils.isEmpty(enableLbFullLog)) {
-                    return TypeUtils.stringToValue(enableLbFullLog, boolean.class);
-                }
-
-                String enableVpcFullLog = getOnlyResourceConfig(vr.getUuid());
-                if (!StringUtils.isEmpty(enableVpcFullLog)) {
-                    return TypeUtils.stringToValue(enableVpcFullLog, boolean.class);
-                } else {
-                    return VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.value(boolean.class);
-                }
-            }
-
             @Override
             public LbTO call(LoadBalancerListenerInventory l) {
                 LbTO to = new LbTO();
@@ -929,7 +985,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 }
                 to.setNicIps(ips.stream().sorted().collect(Collectors.toList()));
-                to.setPublicNic(publicNic.get().getMac());
+                if (finalPublicNic != null) {
+                    to.setPublicNic(finalPublicNic.getMac());
+                }
                 to.setServerGroups(serverGroups);
                 params.addAll(CollectionUtils.transformToList(struct.getTags().get(l.getUuid()), new Function<String, String>() {
                     // vnicUuid::weight
@@ -947,13 +1005,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 to.setRedirectRules(makeRedirectAcl(l, to));
                 params.addAll(makeAcl(l));
                 to.setParameters(params);
-                to.setEnableFullLog(enableFullLog(to, vr));
+                if (vr != null) {
+                    to.setEnableFullLog(enableFullLog(to, vr));
+                }
                 return to;
             }
         });
     }
 
-    private List<String> getCertificates(List<LoadBalancerStruct> structs) {
+    public List<String> getCertificates(List<LoadBalancerStruct> structs) {
         List<String> certificateUuids = new ArrayList<>();
         for (LoadBalancerStruct struct : structs) {
             for (LoadBalancerListenerInventory listenerInv : struct.getListeners()) {
@@ -983,6 +1043,17 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }
 
         return certificateUuids;
+    }
+
+    public HashMap<String, String> getListenerCertificates(LoadBalancerStruct struct) {
+        HashMap<String, String> certs = new HashMap<>();
+        List<String> certificateUuids = getCertificates(Collections.singletonList(struct));
+        for (String uuid : certificateUuids) {
+            CertificateVO vo = dbf.findByUuid(uuid, CertificateVO.class);
+            certs.put(uuid, vo.getCertificate());
+        }
+
+        return certs;
     }
 
     private void refreshCertificate(VirtualRouterVmInventory vr, boolean checkVrState, List<LoadBalancerStruct> struct, final Completion completion) {
@@ -1192,6 +1263,36 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 });
             }
         }).start();
+    }
+
+    public void refreshListeners(VirtualRouterVmInventory vr, RefreshListenersCmd cmd, boolean statusCheck, Completion completion) {
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setVmInstanceUuid(vr.getUuid());
+        msg.setPath(REFRESH_LISTENERS_PATH);
+        msg.setCheckStatus(statusCheck);
+        for (VirtualRouterLoadBalancerBackend.LbTO to: cmd.getLbs()) {
+            to.setEnableFullLog(enableFullLog(to, vr));
+        }
+        cmd.enableHaproxyLog = rcf.getResourceConfigValue(VyosGlobalConfig.ENABLE_HAPROXY_LOG, vr.getUuid(), Boolean.class);
+
+        msg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    RefreshLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(RefreshLbRsp.class);
+                    if (rsp.isSuccess()) {
+                        new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
+                        completion.success();
+                    } else {
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+                    }
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
     }
 
     private void stopVip(final LoadBalancerStruct struct, final List<VmNicInventory> nics, final Completion completion) {

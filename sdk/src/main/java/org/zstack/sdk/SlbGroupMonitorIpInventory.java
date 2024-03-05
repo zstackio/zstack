@@ -2,7 +2,15 @@ package org.zstack.sdk;
 
 
 
-public class SlbGroupConfigTaskInventory  {
+public class SlbGroupMonitorIpInventory  {
+
+    public java.lang.Long id;
+    public void setId(java.lang.Long id) {
+        this.id = id;
+    }
+    public java.lang.Long getId() {
+        return this.id;
+    }
 
     public java.lang.String slbGroupUuid;
     public void setSlbGroupUuid(java.lang.String slbGroupUuid) {
@@ -12,28 +20,12 @@ public class SlbGroupConfigTaskInventory  {
         return this.slbGroupUuid;
     }
 
-    public long configVersion;
-    public void setConfigVersion(long configVersion) {
-        this.configVersion = configVersion;
+    public java.lang.String monitorIp;
+    public void setMonitorIp(java.lang.String monitorIp) {
+        this.monitorIp = monitorIp;
     }
-    public long getConfigVersion() {
-        return this.configVersion;
-    }
-
-    public java.lang.String taskName;
-    public void setTaskName(java.lang.String taskName) {
-        this.taskName = taskName;
-    }
-    public java.lang.String getTaskName() {
-        return this.taskName;
-    }
-
-    public java.lang.String taskData;
-    public void setTaskData(java.lang.String taskData) {
-        this.taskData = taskData;
-    }
-    public java.lang.String getTaskData() {
-        return this.taskData;
+    public java.lang.String getMonitorIp() {
+        return this.monitorIp;
     }
 
     public java.sql.Timestamp createDate;
