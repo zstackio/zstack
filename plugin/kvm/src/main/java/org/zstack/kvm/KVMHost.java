@@ -5405,6 +5405,10 @@ public class KVMHost extends HostBase implements Host {
                         deployArguments.setSkipPackages(info.getSkipPackages());
                         deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
 
+                        if (deployArguments.isForceRun()) {
+                            runner.setForceRun(true);
+                        }
+
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
                         ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
                         String postUrl = ub.build().toString();
