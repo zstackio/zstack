@@ -203,15 +203,23 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         List<UssGatewayModule> uss = apiHelper.listUssGateway();
-        Set<String> ussIds = uss.stream()
+        Map<String, String> ussIdAndNetwork = uss.stream()
                 .filter(it -> !it.getStatus().equals(HealthStatus.error.name()))
-                .map(UssGatewayModule::getId)
-                .collect(Collectors.toSet());
-        nodes.removeIf(it -> !ussIds.contains(it.getUssGwId()));
+                .collect(Collectors.toMap(UssGatewayModule::getId, UssGatewayModule::getBusinessNetwork));
+        nodes.removeIf(it -> !ussIdAndNetwork.containsKey(it.getUssGwId()));
+
         if (nodes.isEmpty()) {
             throw new RuntimeException("no healthy uss server found");
         }
-        return nodes;
+
+        // deduplicate same uss iscsi server.
+        return nodes.stream().collect(Collectors.groupingBy(IscsiSeverNode::getUssGwId))
+                .entrySet().stream().map(it -> {
+                    String businessIp = ussIdAndNetwork.get(it.getKey()).split("/")[0];
+                    List<IscsiSeverNode> ns = it.getValue();
+                    // prefer business network
+                    return ns.stream().filter(n -> n.getGatewayIp().equals(businessIp)).findFirst().orElse(ns.get(0));
+                }).collect(Collectors.toList());
     }
 
     private synchronized ActiveVolumeTO activeIscsiVolume(HostInventory h, BaseVolumeInfo vol, boolean shareable) {
