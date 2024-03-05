@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public enum L2PortGroupVlanMode {
+public enum PortGroupVlanMode {
 	ACCESS,
 	TRUNK,
 	PVLAN,

@@ -1,14 +1,12 @@
 package org.zstack.compute;
 
-import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang.StringUtils;
-import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.vm.VmNicParm;
 import org.zstack.header.vm.VmNicState;
 import org.zstack.utils.CollectionUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,7 +20,7 @@ public class VmNicUtils {
         }
 
         List<String> l3UuidsInParms = vmNicParms.stream().map(VmNicParm::getL3NetworkUuid).distinct().collect(Collectors.toList());
-        if (l3UuidsInParms.size() != vmNicParms.size()) {
+        if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class) && l3UuidsInParms.size() != vmNicParms.size()) {
             throw new ApiMessageInterceptionException(argerr("duplicate nic params"));
         }
 

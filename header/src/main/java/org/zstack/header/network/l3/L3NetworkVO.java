@@ -1,11 +1,11 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.network.IPv6Constants;
@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Entity
 @Table
@@ -50,6 +49,31 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
 
     @Transient
     private String accountUuid;
+
+    public L3NetworkVO() {
+    }
+
+    public L3NetworkVO(L3NetworkVO vo) {
+        this.setUuid(vo.getUuid());
+        this.setName(vo.getName());
+        this.setDescription(vo.getDescription());
+        this.setState(vo.getState());
+        this.setType(vo.getType());
+        this.setZoneUuid(vo.getZoneUuid());
+        this.setL2NetworkUuid(vo.getL2NetworkUuid());
+        this.setSystem(vo.isSystem());
+        this.setDnsDomain(vo.getDnsDomain());
+        this.setIpVersion(vo.getIpVersion());
+        this.setEnableIPAM(vo.getEnableIPAM());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
+        this.setCategory(vo.getCategory());
+        this.setDns(vo.getDns());
+        this.setIpRanges(vo.getIpRanges());
+        this.setNetworkServices(vo.getNetworkServices());
+        this.setHostRoutes(vo.getHostRoutes());
+        this.setAccountUuid(vo.getAccountUuid());
+    }
 
     @Override
     public String getAccountUuid() {

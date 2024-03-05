@@ -886,7 +886,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     newAddedL3Uuids, l2Uuids));
         }
 
-        String sql = "select ip.l3NetworkUuid from UsedIpVO ip, VmNicVO nic where ip.vmNicUuid = nic.uuid and nic.vmInstanceUuid = :vmUuid and ip.l3NetworkUuid in (:l3Uuids)";
+        String sql = "select nic.l3NetworkUuid from VmNicVO nic where nic.vmInstanceUuid = :vmUuid and nic.l3NetworkUuid in (:l3Uuids)";
         List<String> attachedL3Uuids = SQL.New(sql, String.class)
                 .param("vmUuid", msg.getVmInstanceUuid())
                 .param("l3Uuids", newAddedL3Uuids)
@@ -1437,7 +1437,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state, L3NetworkVO_.l2NetworkUuid);
             List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
             List<String> duplicateElements = getDuplicateElementsOfList(uuids);
-            if (duplicateElements.size() > 0) {
+            if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class) && !duplicateElements.isEmpty()) {
                 throw new ApiMessageInterceptionException(operr("Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
             }
 
