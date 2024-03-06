@@ -3360,6 +3360,15 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateHostOSRsp extends AgentResponse {
+        public String libvirtVersion;
+
+        public String getLibvirtVersion() {
+            return libvirtVersion;
+        }
+
+        public void setLibvirtVersion(String libvirtVersion) {
+            this.libvirtVersion = libvirtVersion;
+        }
     }
 
     public static class UpdateDependencyCmd extends AgentCommand {
