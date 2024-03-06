@@ -108,6 +108,7 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
+import static org.zstack.kvm.KvmHostUpdateOsExtensionPoint.UPDATE_OS_RSP;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -6125,6 +6126,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(UpdateHostOSRsp ret) {
                                 if (ret.isSuccess()) {
+                                    data.put(UPDATE_OS_RSP, ret);
                                     trigger.next();
                                 } else {
                                     trigger.fail(Platform.operr("%s", ret.getError()));
@@ -6136,6 +6138,19 @@ public class KVMHost extends HostBase implements Host {
                                 trigger.fail(errorCode);
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "after-update-kvm-host-os";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (KvmHostUpdateOsExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostUpdateOsExtensionPoint.class)) {
+                            ext.afterUpdateOs(data, getSelfInventory());
+                        }
+
+                        trigger.next();
                     }
                 });
 
