@@ -401,6 +401,11 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
 
         if (volumeVO.getFormat() != null && hvType != null) {
             List<String> hvTypes = VolumeFormat.valueOf(volumeVO.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
+
+            if (hvTypes.isEmpty()) {
+                return operr("data volume[uuid:%s] of format[%s] is not supported for attach to any hypervisor.", volumeVO.getUuid(), volumeVO.getFormat());
+            }
+
             if (!hvTypes.contains(hvType)) {
                 return operr("data volume[uuid:%s] has format[%s] that can only be attached to hypervisor[%s], " +
                         "but vm has hypervisor type[%s]. Can't attach", volumeVO.getUuid(), volumeVO.getFormat(), hvTypes, hvType);
