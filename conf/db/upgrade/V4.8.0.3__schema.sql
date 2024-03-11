@@ -10,3 +10,22 @@ select '36c27e8ff05c4780bf6d2fa65700f22e', '36c27e8ff05c4780bf6d2fa65700f22e', u
 alter table `zstack`.`LongJobVO` modify `uuid` char(32) not null;
 alter table `zstack`.`LongJobVO` add column `parentUuid` char(32) default null;
 
+-- Feature: support vm and vm template conversion
+CREATE TABLE `zstack`.`VmTemplateVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `name` varchar(255) NOT NULL,
+    `vmInstanceUuid` char(32) DEFAULT NULL,
+    `originalType` varchar(64) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`VolumeTemplateVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `volumeUuid` char(32) DEFAULT NULL,
+    `originalType` varchar(64) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

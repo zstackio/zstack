@@ -342,6 +342,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.VmPriorityConfigInventory", "org.zstack.sdk.VmPriorityConfigInventory");
 			put("org.zstack.header.vm.VmPriorityLevel", "org.zstack.sdk.VmPriorityLevel");
 			put("org.zstack.header.vm.VmSchedHistoryInventory", "org.zstack.sdk.VmSchedHistoryInventory");
+			put("org.zstack.header.vm.VmTemplateInventory", "org.zstack.sdk.VmTemplateInventory");
 			put("org.zstack.header.vm.cdrom.VmCdRomInventory", "org.zstack.sdk.VmCdRomInventory");
 			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory", "org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory");
 			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory", "org.zstack.sdk.VmInstanceDeviceAddressGroupInventory");
@@ -352,6 +353,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vo.ResourceInventory", "org.zstack.sdk.ResourceInventory");
 			put("org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct", "org.zstack.sdk.VolumeFormatReplyStruct");
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
+			put("org.zstack.header.volume.VolumeTemplateInventory", "org.zstack.sdk.VolumeTemplateInventory");
 			put("org.zstack.header.volume.block.BlockVolumeInventory", "org.zstack.sdk.BlockVolumeInventory");
 			put("org.zstack.header.volume.block.XskyBlockVolumeInventory", "org.zstack.sdk.XskyBlockVolumeInventory");
 			put("org.zstack.header.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
@@ -1264,6 +1266,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmSchedulingRuleInventory", "org.zstack.header.vmscheduling.VmSchedulingRuleInventory");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.spendingcalculator.vm.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmSpendingDetails");
+			put("org.zstack.sdk.VmTemplateInventory", "org.zstack.header.vm.VmTemplateInventory");
 			put("org.zstack.sdk.VmVdpaNicInventory", "org.zstack.header.vdpa.VmVdpaNicInventory");
 			put("org.zstack.sdk.VmVfNicInventory", "org.zstack.header.sriov.VmVfNicInventory");
 			put("org.zstack.sdk.VniRangeInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory");
@@ -1279,6 +1282,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VolumeSnapshotInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotInventory");
 			put("org.zstack.sdk.VolumeSnapshotReferenceTreeInventory", "org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceTreeInventory");
 			put("org.zstack.sdk.VolumeSnapshotTreeInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory");
+			put("org.zstack.sdk.VolumeTemplateInventory", "org.zstack.header.volume.VolumeTemplateInventory");
 			put("org.zstack.sdk.VpcFirewallInventory", "org.zstack.vpcfirewall.entity.VpcFirewallInventory");
 			put("org.zstack.sdk.VpcFirewallIpSetTemplateInventory", "org.zstack.vpcfirewall.entity.VpcFirewallIpSetTemplateInventory");
 			put("org.zstack.sdk.VpcFirewallRuleInventory", "org.zstack.vpcfirewall.entity.VpcFirewallRuleInventory");
