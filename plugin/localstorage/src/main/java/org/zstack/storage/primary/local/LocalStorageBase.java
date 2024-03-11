@@ -2929,15 +2929,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
             if (hostHasInitializedTag(host.getUuid())) {
                 LocalStorageHypervisorFactory f = getHypervisorBackendFactory(host.getHypervisorType());
                 LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-                bkd.checkHostAttachedPSMountPath(host.getUuid(), new Completion(com) {
+                bkd.checkHostAttachedPSMountPath(host.getUuid(), new ReturnValueCompletion<LocalStorageKvmBackend.CheckInitializedFileRsp>(com) {
                     @Override
-                    public void success() {
+                    public void success(LocalStorageKvmBackend.CheckInitializedFileRsp rsp) {
+                        if (!rsp.existed) {
+                            sendWarnning(host.getUuid(), rsp.getError(), getSelfInventory());
+                        }
                         com.done();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        sendWarnning(host.getUuid(), errorCode.getDetails(), getSelfInventory());
                         com.done();
                     }
                 });
