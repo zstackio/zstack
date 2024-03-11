@@ -554,12 +554,15 @@ class VirtualrouterMultiNicCase extends SubCase {
             vmInstanceUuid = vm.uuid
         }
 
-        expect(AssertionError.class) {
-            attachL3NetworkToVm {
-                l3NetworkUuid = l3.uuid
-                vmInstanceUuid = vm.uuid
+        if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)) {
+            expect(AssertionError.class) {
+                attachL3NetworkToVm {
+                    l3NetworkUuid = l3.uuid
+                    vmInstanceUuid = vm.uuid
+                }
             }
         }
+
         updateGlobalConfig {
             category = VmGlobalConfig.CATEGORY
             name = VmGlobalConfig.MULTI_VNIC_SUPPORT.name

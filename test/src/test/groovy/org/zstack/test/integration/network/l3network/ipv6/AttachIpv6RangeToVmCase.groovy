@@ -1,5 +1,6 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
@@ -83,10 +84,12 @@ class AttachIpv6RangeToVmCase extends SubCase {
         l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
         assert !l3s.contains(l3_1.uuid)
 
-        expect(AssertionError.class) {
-            attachL3NetworkToVm {
-                l3NetworkUuid = l3_statefull.uuid
-                vmInstanceUuid = vm.uuid
+        if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)) {
+            expect(AssertionError.class) {
+                attachL3NetworkToVm {
+                    l3NetworkUuid = l3_statefull.uuid
+                    vmInstanceUuid = vm.uuid
+                }
             }
         }
 

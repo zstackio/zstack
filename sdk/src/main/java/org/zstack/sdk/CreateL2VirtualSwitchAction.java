@@ -26,7 +26,7 @@ public class CreateL2VirtualSwitchAction extends AbstractAction {
     }
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean isDistributed;
+    public java.lang.Boolean isDistributed = true;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;

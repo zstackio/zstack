@@ -20,3 +20,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PortGroupVO` (
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkPortGroupVOL2VirtualSwitchNetworkVO` FOREIGN KEY (`vSwitchUuid`) REFERENCES L2VirtualSwitchNetworkVO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE FROM `zstack`.`HostKernelInterfaceVO` WHERE `l3NetworkUuid` IS NULL;
+ALTER TABLE `zstack`.`HostKernelInterfaceVO` DROP FOREIGN KEY `fkHostKernelInterfaceVOL3NetworkVO`;
+ALTER TABLE `zstack`.`HostKernelInterfaceVO` MODIFY `l3NetworkUuid` varchar(32) NOT NULL;
+ALTER TABLE `zstack`.`HostKernelInterfaceVO` ADD CONSTRAINT `fkHostKernelInterfaceVOL3NetworkVO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES L3NetworkEO (`uuid`) ON DELETE CASCADE;
