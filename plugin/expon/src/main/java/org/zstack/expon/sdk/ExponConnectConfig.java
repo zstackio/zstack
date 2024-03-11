@@ -2,7 +2,7 @@ package org.zstack.expon.sdk;
 
 import java.util.concurrent.TimeUnit;
 
-public class ExponConfig {
+public class ExponConnectConfig {
     public String hostname = "localhost";
     public int port = 443;
     long defaultPollingTimeout = TimeUnit.HOURS.toMillis(3);
@@ -27,7 +27,7 @@ public class ExponConfig {
     }
 
     public static class Builder {
-        ExponConfig config = new ExponConfig();
+        ExponConnectConfig config = new ExponConnectConfig();
 
         public Builder setHostname(String hostname) {
             config.hostname = hostname;
@@ -60,7 +60,7 @@ public class ExponConfig {
         }
 
 
-        public ExponConfig build() {
+        public ExponConnectConfig build() {
             return config;
         }
     }
