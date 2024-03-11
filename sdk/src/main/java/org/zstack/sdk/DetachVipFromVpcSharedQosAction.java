@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachVipToSharedQosAction extends AbstractAction {
+public class DetachVipFromVpcSharedQosAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachVipToSharedQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachVipToSharedQosResult value;
+        public org.zstack.sdk.DetachVipFromVpcSharedQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class AttachVipToSharedQosAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachVipToSharedQosResult value = res.getResult(org.zstack.sdk.AttachVipToSharedQosResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachVipToSharedQosResult() : value; 
+        org.zstack.sdk.DetachVipFromVpcSharedQosResult value = res.getResult(org.zstack.sdk.DetachVipFromVpcSharedQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachVipFromVpcSharedQosResult() : value; 
 
         return ret;
     }
@@ -93,11 +93,11 @@ public class AttachVipToSharedQosAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vips/sharedqos/{sharedQosUuid}/vipref";
+        info.httpMethod = "DELETE";
+        info.path = "/vips/sharedqos/{sharedQosUuid}/vips";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

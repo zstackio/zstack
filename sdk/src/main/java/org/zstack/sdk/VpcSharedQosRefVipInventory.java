@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class SharedQosRefVipInventory  {
+public class VpcSharedQosRefVipInventory  {
 
     public java.lang.Long id;
     public void setId(java.lang.Long id) {

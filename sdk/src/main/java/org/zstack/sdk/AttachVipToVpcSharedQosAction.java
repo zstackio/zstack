@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeSharedQosBandwidthAction extends AbstractAction {
+public class AttachVipToVpcSharedQosAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeSharedQosBandwidthAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ChangeSharedQosBandwidthResult value;
+        public org.zstack.sdk.AttachVipToVpcSharedQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,8 @@ public class ChangeSharedQosBandwidthAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String sharedQosUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long bandwidth;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List vipLists;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +63,8 @@ public class ChangeSharedQosBandwidthAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ChangeSharedQosBandwidthResult value = res.getResult(org.zstack.sdk.ChangeSharedQosBandwidthResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ChangeSharedQosBandwidthResult() : value; 
+        org.zstack.sdk.AttachVipToVpcSharedQosResult value = res.getResult(org.zstack.sdk.AttachVipToVpcSharedQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachVipToVpcSharedQosResult() : value; 
 
         return ret;
     }
@@ -94,7 +94,7 @@ public class ChangeSharedQosBandwidthAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vips/sharedqos/{sharedQosUuid}/bandwidth/actions";
+        info.path = "/vips/sharedqos/{sharedQosUuid}/vips";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

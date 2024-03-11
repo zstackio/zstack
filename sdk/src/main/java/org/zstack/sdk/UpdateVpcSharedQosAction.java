@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSharedQosAction extends AbstractAction {
+public class UpdateVpcSharedQosAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSharedQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateSharedQosResult value;
+        public org.zstack.sdk.UpdateVpcSharedQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +66,8 @@ public class UpdateSharedQosAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateSharedQosResult value = res.getResult(org.zstack.sdk.UpdateSharedQosResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateSharedQosResult() : value; 
+        org.zstack.sdk.UpdateVpcSharedQosResult value = res.getResult(org.zstack.sdk.UpdateVpcSharedQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVpcSharedQosResult() : value; 
 
         return ret;
     }
@@ -100,7 +100,7 @@ public class UpdateSharedQosAction extends AbstractAction {
         info.path = "/vips/sharedqos/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSharedQos";
+        info.parameterName = "updateVpcSharedQos";
         return info;
     }
 

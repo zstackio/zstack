@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class SharedQosInventory  {
+public class VpcSharedQosInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -50,6 +50,14 @@ public class SharedQosInventory  {
     }
     public java.lang.Long getBandwidth() {
         return this.bandwidth;
+    }
+
+    public java.util.List vips;
+    public void setVips(java.util.List vips) {
+        this.vips = vips;
+    }
+    public java.util.List getVips() {
+        return this.vips;
     }
 
     public java.sql.Timestamp createDate;

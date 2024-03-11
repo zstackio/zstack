@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DetachVipFromSharedQosAction extends AbstractAction {
+public class DeleteVpcSharedQosAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DetachVipFromSharedQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachVipFromSharedQosResult value;
+        public org.zstack.sdk.DeleteVpcSharedQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class DetachVipFromSharedQosAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sharedQosUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vipLists;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +63,8 @@ public class DetachVipFromSharedQosAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachVipFromSharedQosResult value = res.getResult(org.zstack.sdk.DetachVipFromSharedQosResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachVipFromSharedQosResult() : value; 
+        org.zstack.sdk.DeleteVpcSharedQosResult value = res.getResult(org.zstack.sdk.DeleteVpcSharedQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVpcSharedQosResult() : value; 
 
         return ret;
     }
@@ -94,7 +94,7 @@ public class DetachVipFromSharedQosAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/vips/sharedqos/{sharedQosUuid}/vipref";
+        info.path = "/vips/sharedqos/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

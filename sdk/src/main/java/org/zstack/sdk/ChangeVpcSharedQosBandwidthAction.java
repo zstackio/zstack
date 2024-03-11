@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QuerySharedQosRefVipAction extends QueryAction {
+public class ChangeVpcSharedQosBandwidthAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QuerySharedQosRefVipAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QuerySharedQosRefVipResult value;
+        public org.zstack.sdk.ChangeVpcSharedQosBandwidthResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,35 @@ public class QuerySharedQosRefVipAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sharedQosUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long bandwidth;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +63,8 @@ public class QuerySharedQosRefVipAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QuerySharedQosRefVipResult value = res.getResult(org.zstack.sdk.QuerySharedQosRefVipResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QuerySharedQosRefVipResult() : value; 
+        org.zstack.sdk.ChangeVpcSharedQosBandwidthResult value = res.getResult(org.zstack.sdk.ChangeVpcSharedQosBandwidthResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeVpcSharedQosBandwidthResult() : value; 
 
         return ret;
     }
@@ -64,11 +93,11 @@ public class QuerySharedQosRefVipAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vips/sharedqos/ref";
+        info.httpMethod = "POST";
+        info.path = "/vips/sharedqos/{sharedQosUuid}/bandwidth/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

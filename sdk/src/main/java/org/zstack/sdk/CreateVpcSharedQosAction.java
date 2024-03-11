@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSharedQosAction extends AbstractAction {
+public class CreateVpcSharedQosAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSharedQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSharedQosResult value;
+        public org.zstack.sdk.CreateVpcSharedQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -78,8 +78,8 @@ public class CreateSharedQosAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSharedQosResult value = res.getResult(org.zstack.sdk.CreateSharedQosResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSharedQosResult() : value; 
+        org.zstack.sdk.CreateVpcSharedQosResult value = res.getResult(org.zstack.sdk.CreateVpcSharedQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateVpcSharedQosResult() : value; 
 
         return ret;
     }
