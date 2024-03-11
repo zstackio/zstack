@@ -198,6 +198,10 @@ class ExternalPrimaryStorageCase extends SubCase {
             testCreateTemplate()
             testClean()
             testImageCacheClean()
+
+            reconnectPrimaryStorage {
+                uuid = ps.uuid
+            }
         }
     }
 
@@ -286,6 +290,10 @@ class ExternalPrimaryStorageCase extends SubCase {
         r = bus.call(pmsg)
         assert r.success
         assert Q.New(PrimaryStorageHostRefVO.class).eq(PrimaryStorageHostRefVO_.hostUuid, host1.uuid).find().status.toString() == "Connected"
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
     }
 
     void testSessionExpired() {

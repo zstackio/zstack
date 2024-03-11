@@ -47,17 +47,17 @@ public class ExponClient {
                 .toFormatter(Locale.ENGLISH);
     }
 
-    private ExponConfig config;
+    private ExponConnectConfig config;
 
     private Supplier<String> sessionRefresher;
 
     private Supplier<String> sessionGetter;
 
-    public ExponConfig getConfig() {
+    public ExponConnectConfig getConfig() {
         return config;
     }
 
-    public void configure(ExponConfig c) {
+    public void configure(ExponConnectConfig c) {
         config = c;
 
         if (c.readTimeout != null || c.writeTimeout != null) {
