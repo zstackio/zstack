@@ -5,5 +5,5 @@ public enum VolumeType {
     Data,
     Memory,
     Cache,
-    TemplateVolume
+    Template
 }
