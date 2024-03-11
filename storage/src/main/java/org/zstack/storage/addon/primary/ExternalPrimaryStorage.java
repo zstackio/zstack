@@ -1723,7 +1723,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         deactivateAndDeleteVolume(installPath, protocol, false, completion);
     }
 
-    private void deactivateAndDeleteVolume(String installPath, String protocol, boolean force, Completion completion) {
+    protected void deactivateAndDeleteVolume(String installPath, String protocol, boolean force, Completion completion) {
         if (protocol == null) {
             doDeleteBits(installPath, force, completion);
             return;

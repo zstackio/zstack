@@ -1,5 +1,7 @@
 package org.zstack.expon;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.zstack.expon.sdk.*;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterRequest;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterResponse;
@@ -25,6 +27,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -35,6 +38,10 @@ public class ExponApiHelper {
     ExponClient client;
     String sessionId;
     String refreshToken;
+
+    private static final Cache<String, String> snapshotClientCache = CacheBuilder.newBuilder()
+            .maximumSize(1000)
+            .build();
 
     ExponApiHelper(AccountInfo accountInfo, ExponClient client) {
         this.accountInfo = accountInfo;
@@ -610,6 +617,14 @@ public class ExponApiHelper {
         return rsp.getClients().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
     }
 
+    public IscsiClientGroupModule getIscsiClient(String id) {
+        GetIscsiClientGroupRequest req = new GetIscsiClientGroupRequest();
+        req.setId(id);
+        GetIscsiClientGroupResponse rsp = callErrorOut(req, GetIscsiClientGroupResponse.class);
+
+        return JSONObjectUtil.rehashObject(rsp, IscsiClientGroupModule.class);
+    }
+
     public IscsiClientGroupModule createIscsiClient(String name, String tianshuId, List<String> clients) {
         CreateIscsiClientGroupRequest req = new CreateIscsiClientGroupRequest();
         req.setName(name);
@@ -708,18 +723,50 @@ public class ExponApiHelper {
         errorOut(rsp);
     }
 
-    public List<String> getIscsiClientGroupAttachedVolumes(String clientId) {
+    public Set<String> getIscsiClientGroupAttachedVolumes(String clientId) {
         GetVolumesInIscsiClientGroupRequest req = new GetVolumesInIscsiClientGroupRequest();
         req.setId(clientId);
         GetVolumesInIscsiClientGroupResponse rsp = callErrorOut(req, GetVolumesInIscsiClientGroupResponse.class);
-        return rsp.getLuns().stream().map(IscsiClientMappedLunModule::getId).collect(Collectors.toList());
+        return rsp.getLuns().stream().map(IscsiClientMappedLunModule::getId).collect(Collectors.toSet());
     }
 
-    public List<String> getIscsiClientGroupAttachedSnapshots(String clientId) {
+    public Set<String> getIscsiClientGroupAttachedSnapshots(String clientId) {
         GetSnapshotsInIscsiClientGroupRequest req = new GetSnapshotsInIscsiClientGroupRequest();
         req.setId(clientId);
         GetSnapshotsInIscsiClientGroupResponse rsp = callErrorOut(req, GetSnapshotsInIscsiClientGroupResponse.class);
-        return rsp.getLuns().stream().map(IscsiClientMappedLunModule::getId).collect(Collectors.toList());
+        return rsp.getLuns().stream().map(IscsiClientMappedLunModule::getId).collect(Collectors.toSet());
+    }
+
+    public List<String> getVolumeAttachedIscsiClientGroups(String volId) {
+        GetVolumeBoundIscsiClientGroupRequest req = new GetVolumeBoundIscsiClientGroupRequest();
+        req.setVolumeId(volId);
+        GetVolumeBoundIscsiClientGroupResponse rsp = callErrorOut(req, GetVolumeBoundIscsiClientGroupResponse.class);
+        return rsp.getClients().stream().map(LunBoundIscsiClientGroupModule::getId).collect(Collectors.toList());
+    }
+
+    public List<String> getSnapshotAttachedIscsiClientGroups(String snapId) {
+        String cacheClientId = snapshotClientCache.getIfPresent(snapId);
+        if (cacheClientId != null) {
+            if (getIscsiClientGroupAttachedSnapshots(cacheClientId).contains(snapId)) {
+                return Collections.singletonList(cacheClientId);
+            } else {
+                snapshotClientCache.invalidate(snapId);
+            }
+        }
+
+        // TODO
+        QueryIscsiClientGroupRequest req = new QueryIscsiClientGroupRequest();
+        QueryIscsiClientGroupResponse rsp = queryErrorOut(req, QueryIscsiClientGroupResponse.class);
+        for (IscsiClientGroupModule client : rsp.getClients()) {
+            if (client.getSnapNum() > 0) {
+                if (getIscsiClientGroupAttachedSnapshots(client.getId()).contains(snapId)) {
+                    snapshotClientCache.put(snapId, client.getId());
+                    return Collections.singletonList(client.getId());
+                }
+            }
+        }
+
+        return Collections.emptyList();
     }
 
     public void removeVolumeFromIscsiClientGroup(String volId, String clientId) {
