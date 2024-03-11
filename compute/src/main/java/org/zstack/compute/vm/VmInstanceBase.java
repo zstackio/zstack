@@ -3608,6 +3608,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(APISetVmBootModeMsg msg) {
+        final boolean[] bootModeChanged = {false};
+
         FlowChain chain = new SimpleFlowChain();
         chain.then(new Flow() {
             String __name__ = "set-vm-boot-mode";
@@ -3616,14 +3618,29 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                SystemTagCreator creator = VmSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
-                creator.setTagByTokens(map(
-                        e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode())
-                ));
-                creator.recreate = true;
-                creator.create();
+                String bootMode = VmSystemTags.BOOT_MODE
+                        .getTokenByResourceUuid(self.getUuid(),
+                                VmSystemTags.BOOT_MODE_TOKEN);
 
-                originLevel = msg.getBootMode();
+                originLevel = bootMode;
+
+                if (bootMode != null && bootMode.equals(msg.getBootMode())) {
+                    trigger.next();
+                    return;
+                }
+
+                if (msg.getBootMode() == null) {
+                    VmSystemTags.BOOT_MODE.delete(self.getUuid());
+                } else {
+                    SystemTagCreator creator = VmSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
+                    creator.tag = VmSystemTags.BOOT_MODE.instantiateTag(map(
+                            e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode())
+                    ));
+                    creator.recreate = true;
+                    creator.create();
+                }
+
+                bootModeChanged[0] = true;
                 trigger.next();
             }
 
@@ -3660,6 +3677,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(Map data) {
                 APISetVmBootModeEvent evt = new APISetVmBootModeEvent(msg.getId());
                 bus.publish(evt);
+
+                if (bootModeChanged[0]) {
+                    vidm.deleteAllDeviceAddressesByVm(self.getUuid());
+                }
             }
         }).start();
     }
