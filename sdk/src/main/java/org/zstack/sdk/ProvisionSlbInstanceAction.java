@@ -26,7 +26,7 @@ public class ProvisionSlbInstanceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String slbInstanceUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;

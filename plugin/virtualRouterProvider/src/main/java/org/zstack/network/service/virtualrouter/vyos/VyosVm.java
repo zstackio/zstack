@@ -107,7 +107,7 @@ public class VyosVm extends VirtualRouter {
         throw new CloudRuntimeException("should not be called");
     }
 
-    protected void configureKeepalived(VyosKeepalivedCommands.VyosHaEnableCmd cmd,
+    public void configureKeepalived(VyosKeepalivedCommands.VyosHaEnableCmd cmd,
                                        Completion completion) {
         if (!vr.isHaEnabled()) {
             completion.success();
