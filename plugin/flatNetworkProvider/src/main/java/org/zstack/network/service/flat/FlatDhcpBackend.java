@@ -152,7 +152,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             }
 
             List<DhcpStruct> structs = dhcpExtension.makeDhcpStruct(VmInstanceInventory.valueOf(vm), hostNames, dhcpNics);
-            dhcpInfoList.addAll(toDhcpInfo(structs));
+            dhcpInfoList.addAll(toDhcpInfo(structs, context.getInventory().getUuid()));
         }
 
         return dhcpInfoList;
@@ -946,13 +946,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        String brName = new BridgeNameFinder().findByL3Uuid(inventory.getUuid());
-        DeleteNamespaceCmd cmd = new DeleteNamespaceCmd();
-        cmd.bridgeName = brName;
-        cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
-
-        new While<>(huuids).all((huuid, comp) -> {
-            new KvmCommandSender(huuid).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
+        new While<>(huuids).all((hostUuid, comp) -> {
+            String brName = new BridgeNameFinder().findByL3UuidOnHost(inventory.getUuid(), hostUuid);
+            DeleteNamespaceCmd cmd = new DeleteNamespaceCmd();
+            cmd.bridgeName = brName;
+            cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
+            new KvmCommandSender(hostUuid).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
                 DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
                 return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }, new SteppingSendCallback<KvmResponseWrapper>() {
@@ -1034,7 +1033,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             dhcpNics.add(nic);
         }
         List<DhcpStruct> structs = dhcpExtension.makeDhcpStruct(vm, hostNames, dhcpNics);
-        dhcpInfoList.addAll(toDhcpInfo(structs));
+        dhcpInfoList.addAll(toDhcpInfo(structs, vm.getHostUuid() != null ? vm.getHostUuid() : vm.getLastHostUuid()));
 
         return dhcpInfoList;
     }
@@ -1377,6 +1376,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public boolean vmMultiGateway;
         public List<HostRouteInfo> hostRoutes;
         public String nicType;
+        public String virtualNetworkId;
     }
 
     public static class ApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
@@ -1401,6 +1401,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     public static class PrepareDhcpCmd extends KVMAgentCommands.AgentCommand {
         public String bridgeName;
+        public String virtualNetworkId;
         public String dhcpServerIp;
         public String dhcpNetmask;
         public String namespaceName;
@@ -1470,14 +1471,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return dns;
     }
 
-    private List<DhcpInfo> toDhcpInfo(List<DhcpStruct> structs) {
-        final Map<String, String> l3Bridges = new HashMap<String, String>();
-        for (DhcpStruct s : structs) {
-            if (!l3Bridges.containsKey(s.getL3Network().getUuid())) {
-                l3Bridges.put(s.getL3Network().getUuid(),
-                        KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(s.getL3Network().getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN));
-            }
-        }
+    private List<DhcpInfo> toDhcpInfo(List<DhcpStruct> structs, String hostUuid) {
+        final List<String> l3Uuids = structs.stream().map(DhcpStruct::getL3Network)
+                .map(L3NetworkInventory::getUuid).distinct().collect(Collectors.toList());
+        final List<String> l2Uuids = structs.stream().map(DhcpStruct::getL3Network)
+                .map(L3NetworkInventory::getL2NetworkUuid).distinct().collect(Collectors.toList());
+        final Map<String, String> l3BridgeNameMap = new BridgeNameFinder().findByL3UuidsOnHost(l3Uuids, hostUuid);
+        final Map<String, String> virtualNetworkIdMap = new BridgeVirtualNetworkIdFinder().findByL2Uuids(l2Uuids, hostUuid);
 
         return CollectionUtils.transformToList(structs, new Function<DhcpInfo, DhcpStruct>() {
             @Override
@@ -1486,7 +1486,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     return null;
                 }
 
-                if (l3Bridges.get(arg.getL3Network().getUuid()) == null) {
+                if (l3BridgeNameMap.get(arg.getL3Network().getUuid()) == null) {
                     return null;
                 }
 
@@ -1536,7 +1536,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.mac = arg.getMac();
                 info.dns = dns;
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
-                info.bridgeName = l3Bridges.get(arg.getL3Network().getUuid());
+                info.bridgeName = l3BridgeNameMap.get(arg.getL3Network().getUuid());
+                info.virtualNetworkId = virtualNetworkIdMap.get(info.bridgeName);
                 info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
                 info.mtu = arg.getMtu();
                 info.hostRoutes = getL3NetworkHostRoute(arg.getL3Network().getUuid());
@@ -1595,7 +1596,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        applyDhcpToHosts(toDhcpInfo(dhcpStructList), spec.getDestHost().getUuid(), false, completion);
+        applyDhcpToHosts(toDhcpInfo(dhcpStructList, spec.getDestHost().getUuid()),
+                spec.getDestHost().getUuid(), false, completion);
     }
 
     private void releaseDhcpService(List<DhcpInfo> info, final String vmUuid, final String hostUuid, final NoErrorCompletion completion) {
@@ -1645,7 +1647,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        releaseDhcpService(toDhcpInfo(dhcpStructsList), spec.getVmInventory().getUuid(), spec.getDestHost().getUuid(), completion);
+        releaseDhcpService(toDhcpInfo(dhcpStructsList, spec.getVmInventory().getUuid()),
+                spec.getVmInventory().getUuid(), spec.getDestHost().getUuid(), completion);
     }
 
     @Override
@@ -1684,20 +1687,21 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         ResetDefaultGatewayCmd cmd = new ResetDefaultGatewayCmd();
+        String hostUuid = vm.getHostUuid();
         if (pnic != null) {
             cmd.gatewayToRemove = pnic.getGateway();
             cmd.macOfGatewayToRemove = pnic.getMac();
-            cmd.bridgeNameOfGatewayToRemove = new BridgeNameFinder().findByL3Uuid(previousL3);
+            cmd.bridgeNameOfGatewayToRemove = new BridgeNameFinder().findByL3UuidOnHost(previousL3, hostUuid);
             cmd.namespaceNameOfGatewayToRemove = makeNamespaceName(cmd.bridgeNameOfGatewayToRemove, previousL3);
         }
         if (nnic != null) {
             cmd.gatewayToAdd = nnic.getGateway();
             cmd.macOfGatewayToAdd = nnic.getMac();
-            cmd.bridgeNameOfGatewayToAdd = new BridgeNameFinder().findByL3Uuid(nowL3);
+            cmd.bridgeNameOfGatewayToAdd = new BridgeNameFinder().findByL3UuidOnHost(nowL3, hostUuid);
             cmd.namespaceNameOfGatewayToAdd = makeNamespaceName(cmd.bridgeNameOfGatewayToAdd, nowL3);
         }
 
-        KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
+        KvmCommandSender sender = new KvmCommandSender(hostUuid);
         sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, wrapper -> {
             ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
             return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());

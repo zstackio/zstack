@@ -1,7 +1,8 @@
 package org.zstack.header.network.l2
 
+import java.lang.Integer
 import java.sql.Timestamp
-import java.sql.Timestamp
+import org.zstack.header.network.l2.L2NetworkHostRefInventory
 
 doc {
 
@@ -60,5 +61,13 @@ doc {
 		desc "挂载集群的UUID列表"
 		type "List"
 		since "0.6"
+	}
+	ref {
+		name "attachedHostRefs"
+		path "org.zstack.header.network.l2.L2NetworkInventory.attachedHostRefs"
+		desc "null"
+		type "List"
+		since "4.1.0"
+		clz L2NetworkHostRefInventory.class
 	}
 }

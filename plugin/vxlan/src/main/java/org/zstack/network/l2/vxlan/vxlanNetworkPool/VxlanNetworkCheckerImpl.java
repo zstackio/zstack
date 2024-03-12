@@ -1,10 +1,14 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Arrays;
@@ -22,9 +26,31 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
             validate((APIAttachL2NetworkToClusterMsg) msg);
         } else if (msg instanceof APICreateL3NetworkMsg) {
             validate((APICreateL3NetworkMsg) msg);
+        } else if (msg instanceof APIUpdateL2NetworkVirtualNetworkIdMsg) {
+            validate((APIUpdateL2NetworkVirtualNetworkIdMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIUpdateL2NetworkVirtualNetworkIdMsg msg) {
+        VxlanNetworkVO vxlanVO = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, msg.getL2NetworkUuid()).find();
+        if (vxlanVO == null) {
+            return;
+        }
+        if (!NetworkUtils.isValidVni(msg.getVirtualNetworkId())) {
+            throw new ApiMessageInterceptionException(argerr("vni[%s] for vxlan is invalid", msg.getVirtualNetworkId()));
+        }
+
+        boolean duplicated = Q.New(VxlanNetworkVO.class)
+                .eq(VxlanNetworkVO_.vni, msg.getVirtualNetworkId())
+                .notEq(VxlanNetworkVO_.uuid, vxlanVO.getUuid())
+                .eq(VxlanNetworkVO_.poolUuid, vxlanVO.getPoolUuid()).isExists();
+        if (duplicated) {
+            throw new OperationFailureException(Platform.err(L2Errors.ALLOCATE_VNI_ERROR,
+                    "cannot allocate vni[%s] in vxlan network[uuid:%s] which is already allocated",
+                    msg.getVirtualNetworkId(), msg.getL2NetworkUuid()));
+        }
     }
 
     private void validate(APIAttachL2NetworkToClusterMsg msg) {

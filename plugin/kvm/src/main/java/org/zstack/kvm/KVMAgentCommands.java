@@ -873,6 +873,66 @@ public class KVMAgentCommands {
     public static class CreateBridgeResponse extends AgentResponse {
     }
 
+    public static class UpdateBridgeCmd extends AgentCommand {
+        private String physicalInterfaceName;
+        private String bridgeName;
+        private Integer oldVirtualNetworkId;
+        private Integer newVirtualNetworkId;
+        private String l2NetworkUuid;
+        private List<String> peers;
+
+        public String getPhysicalInterfaceName() {
+            return physicalInterfaceName;
+        }
+
+        public void setPhysicalInterfaceName(String physicalInterfaceName) {
+            this.physicalInterfaceName = physicalInterfaceName;
+        }
+
+        public String getBridgeName() {
+            return bridgeName;
+        }
+
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+
+        public Integer getOldVirtualNetworkId() {
+            return oldVirtualNetworkId;
+        }
+
+        public void setOldVirtualNetworkId(Integer oldVirtualNetworkId) {
+            this.oldVirtualNetworkId = oldVirtualNetworkId;
+        }
+
+        public Integer getNewVirtualNetworkId() {
+            return newVirtualNetworkId;
+        }
+
+        public void setNewVirtualNetworkId(Integer newVirtualNetworkId) {
+            this.newVirtualNetworkId = newVirtualNetworkId;
+        }
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
+
+        public List<String> getPeers() {
+            return peers;
+        }
+
+        public void setPeers(List<String> peers) {
+            this.peers = peers;
+        }
+    }
+
+    public static class UpdateL2NetworkResponse extends AgentResponse {
+    }
+
     public static class DeleteBridgeResponse extends AgentResponse {
     }
     public static class CheckBridgeCmd extends AgentCommand {

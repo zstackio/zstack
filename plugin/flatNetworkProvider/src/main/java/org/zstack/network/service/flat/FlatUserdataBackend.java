@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.UserdataBuilder;
 import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -18,14 +19,18 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkUpdateExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -34,6 +39,7 @@ import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.network.l2.L2NetworkHostUtils;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.NetworkServiceManager;
@@ -57,7 +63,7 @@ import static org.zstack.core.Platform.operr;
  * Created by frank on 10/13/2015.
  */
 public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExtensionPoint,
-        L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint {
+        L3NetworkDeleteExtensionPoint, L2NetworkUpdateExtensionPoint, VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatUserdataBackend.class);
 
     @Autowired
@@ -80,6 +86,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return createHostPrepareUserdataFlow(context.getInventory().getUuid());
+    }
+
+    private Flow createHostPrepareUserdataFlow(final String hostUuid) {
         return new NoRollbackFlow() {
             String __name__ = "prepare-userdata";
 
@@ -88,7 +98,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 String sql = "select vm.uuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state = :state and vm.type = :type";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                 q.setParameter("state", VmInstanceState.Running);
-                q.setParameter("huuid", context.getInventory().getUuid());
+                q.setParameter("huuid", hostUuid);
                 q.setParameter("type", VmInstanceConstant.USER_VM_TYPE);
                 List<String> vmUuids = q.getResultList();
                 if (vmUuids.isEmpty()) {
@@ -168,10 +178,15 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     }
                     l3Uuids.add(l.l3Uuid);
                 }
+                List<UserdataTO> tos = new ArrayList<>();
+                if (l3Uuids.isEmpty()) {
+                    return tos;
+                }
+                Map<String, String> bridgeNames = new BridgeNameFinder().findByL3UuidsOnHost(l3Uuids, hostUuid);
+                List<String> l2Uuids = Q.New(L3NetworkVO.class)
+                        .select(L3NetworkVO_.l2NetworkUuid).in(L3NetworkVO_.uuid, l3Uuids).listValues();
+                Map<String, String> virtualNetworkIdMap = new BridgeVirtualNetworkIdFinder().findByL2Uuids(l2Uuids, hostUuid);
 
-                Map<String, String> bridgeNames = new BridgeNameFinder().findByL3Uuids(l3Uuids);
-
-                List<UserdataTO> tos = new ArrayList<UserdataTO>();
                 for (String vmuuid : vmUuids) {
                     UserdataTO to = new UserdataTO();
                     MetadataTO mto = new MetadataTO();
@@ -192,6 +207,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     to.vmIp = l.vmIp;
                     to.netmask = l.netmask;
                     to.bridgeName = bridgeNames.get(l.l3Uuid);
+                    to.virtualNetworkId = virtualNetworkIdMap.get(to.bridgeName);
                     to.namespaceName = FlatDhcpBackend.makeNamespaceName(to.bridgeName, l.l3Uuid);
                     if (userdata.get(vmuuid) != null) {
                         to.userdataList.addAll(userdata.get(vmuuid));
@@ -220,7 +236,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 cmd.userdata = tos;
                 cmd.rebuild = true;
 
-                new KvmCommandSender(context.getInventory().getUuid(), true).send(cmd, BATCH_APPLY_USER_DATA, new KvmCommandFailureChecker() {
+                new KvmCommandSender(hostUuid, true).send(cmd, BATCH_APPLY_USER_DATA, new KvmCommandFailureChecker() {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
@@ -279,13 +295,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             return;
         }
 
-        CleanupUserdataCmd cmd = new CleanupUserdataCmd();
-        cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
-        cmd.l3NetworkUuid = l3.getUuid();
-        cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, cmd.l3NetworkUuid);
-
-        for (String huuid : hostUuids) {
-            new KvmCommandSender(huuid).send(cmd, CLEANUP_USER_DATA, new KvmCommandFailureChecker() {
+        for (String hostUuid : hostUuids) {
+            CleanupUserdataCmd cmd = new CleanupUserdataCmd();
+            cmd.bridgeName = new BridgeNameFinder().findByL3UuidOnHost(l3.getUuid(), hostUuid);
+            cmd.l3NetworkUuid = l3.getUuid();
+            cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, cmd.l3NetworkUuid);
+            new KvmCommandSender(hostUuid).send(cmd, CLEANUP_USER_DATA, new KvmCommandFailureChecker() {
                 @Override
                 public ErrorCode getError(KvmResponseWrapper w) {
                     CleanupUserdataRsp rsp = w.getResponse(CleanupUserdataRsp.class);
@@ -295,7 +310,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 @Override
                 public void success(KvmResponseWrapper w) {
                     logger.debug(String.format("successfully cleanup userdata service on the host[uuid:%s] for the deleted L3 network[uuid:%s, name:%s]",
-                            huuid, l3.getUuid(), l3.getName()));
+                            hostUuid, l3.getUuid(), l3.getName()));
                 }
 
                 @Override
@@ -383,7 +398,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
             ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
             cmd.hostUuid = struct.getHostUuid();
-            cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
+            cmd.bridgeName = new BridgeNameFinder().findByL3UuidOnHost(struct.getL3NetworkUuid(), struct.getHostUuid());
             cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
             cmd.vmIp = vmIp;
 
@@ -471,6 +486,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public String netmask;
         public String dhcpServerIp;
         public String bridgeName;
+        public String virtualNetworkId;
         public String namespaceName;
         public String l3NetworkUuid;
         public Map<String, String> agentConfig;
@@ -556,13 +572,18 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
 
         L3NetworkVO defaultL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, struct.getL3NetworkUuid()).find();
-        if (defaultL3 != null && defaultL3.getNetworkServices().stream().noneMatch(
-                service -> Objects.equals(UserdataConstant.USERDATA_TYPE_STRING, service.getNetworkServiceType()))) {
+        if (defaultL3 == null) {
             completion.success();
             return;
         }
 
-        if (defaultL3 != null && !defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
+        if (defaultL3.getNetworkServices().stream().noneMatch(
+                        service -> Objects.equals(UserdataConstant.USERDATA_TYPE_STRING, service.getNetworkServiceType()))) {
+            completion.success();
+            return;
+        }
+
+        if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
             // userdata depends on the ipv4 address
             completion.success();
             return;
@@ -621,7 +642,9 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.dhcpServerIp = dhcpServerIp;
                         uto.vmIp = destNic.getIp();
                         uto.netmask = destNic.getNetmask();
-                        uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
+                        uto.bridgeName = new BridgeNameFinder().findByL3UuidOnHost(struct.getL3NetworkUuid(), struct.getHostUuid());
+                        uto.virtualNetworkId = new BridgeVirtualNetworkIdFinder()
+                                .findByL2Uuid(defaultL3.getL2NetworkUuid(), struct.getHostUuid(),false);
                         uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
                         uto.l3NetworkUuid = struct.getL3NetworkUuid();
@@ -706,7 +729,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     public void run(final FlowTrigger trigger, Map data) {
                         ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
                         cmd.hostUuid = struct.getHostUuid();
-                        cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
+                        cmd.bridgeName = new BridgeNameFinder().findByL3UuidOnHost(struct.getL3NetworkUuid(), struct.getHostUuid());
                         cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
                         cmd.vmIp = destNic.getIp();
 
@@ -751,5 +774,42 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void beforeUpdateL2NetworkVirtualNetworkId(L2NetworkInventory l2Inv) {
+
+    }
+
+    @Override
+    public void afterUpdateL2NetworkVirtualNetworkId(L2NetworkInventory l2Inv) {
+        new While<>(L2NetworkHostUtils.getHostsByAttachedL2Network(l2Inv)).step((host, whileCompletion) -> {
+            FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+            chain.setName(String.format("after-l2-%s-updated-flat-network-userdata-apply-in-host-%s",
+                    l2Inv.getUuid(), host.getUuid()));
+            chain.then(createHostPrepareUserdataFlow(host.getUuid()));
+            chain.done(new FlowDoneHandler(whileCompletion) {
+                @Override
+                public void handle(Map data) {
+                    whileCompletion.done();
+                }
+            }).error(new FlowErrorHandler(whileCompletion) {
+                @Override
+                public void handle(ErrorCode errCode, Map data) {
+                    whileCompletion.addError(errCode);
+                    whileCompletion.allDone();
+                }
+            }).start();
+        },10).run(new WhileDoneCompletion(null) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    logger.error(String.format("apply userdata failed after L2Network updated, because:%s",
+                            errorCodeList.getCauses().get(0)));
+                } else {
+                    logger.debug("apply userdata successful after L2Network updated");
+                }
+            }
+        });
     }
 }
