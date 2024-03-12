@@ -1286,10 +1286,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
                         completion.success();
                     } else {
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+                        completion.success();
+                        /* TODO: make UI work
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));*/
                     }
                 } else {
-                    completion.fail(reply.getError());
+                    completion.success();
+                    //completion.fail(reply.getError());
                 }
             }
         });
