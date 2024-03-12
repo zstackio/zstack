@@ -4,16 +4,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -49,6 +55,8 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachL2NetworkFromClusterMsg)msg);
         } else if (msg instanceof APIAttachL2NetworkToClusterMsg) {
             validate((APIAttachL2NetworkToClusterMsg) msg);
+        } else if (msg instanceof APIChangeL2NetworkVlanIdMsg) {
+            validate((APIChangeL2NetworkVlanIdMsg) msg);
         }
 
         setServiceId(msg);
@@ -103,6 +111,62 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (!VSwitchType.hasType(msg.getvSwitchType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported vSwitch type[%s]", msg.getvSwitchType()));
+        }
+    }
+
+    private void validate(APIChangeL2NetworkVlanIdMsg msg) {
+        L2NetworkVO l2 = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
+        l2.getAttachedClusterRefs().forEach(ref -> {
+            if (Q.New(HostVO.class).eq(HostVO_.clusterUuid, ref.getClusterUuid())
+                    .notEq(HostVO_.status, HostStatus.Connected).isExists()) {
+                throw new ApiMessageInterceptionException(operr("cannot change vlan for l2Network[uuid:%s]" +
+                        " because there are hosts status in Connecting or Disconnected", l2.getUuid()));
+            }
+        });
+        if (msg.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+            if (msg.getVlan() == null) {
+                throw new ApiMessageInterceptionException(argerr("vlan is required for " +
+                        "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
+            }
+            if (!NetworkUtils.isValidVlan(msg.getVlan())) {
+                throw new ApiMessageInterceptionException(argerr("vlan[%s] is invalid", msg.getVlan()));
+            }
+            List<String> attachedClusters = l2.getAttachedClusterRefs().stream()
+                    .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
+            List<L2NetworkVO> l2s = SQL.New("select l2" +
+                            " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
+                            " where l2.virtualNetworkId = :virtualNetworkId" +
+                            " and l2.physicalInterface = :physicalInterface" +
+                            " and ref.clusterUuid in (:clusterUuids)" +
+                            " and l2.type = 'L2VlanNetwork'")
+                    .param("virtualNetworkId", msg.getVlan())
+                    .param("physicalInterface", l2.getPhysicalInterface())
+                    .param("clusterUuids", attachedClusters).list();
+            l2s = l2s.stream().filter(l -> !l.getUuid().equals(msg.getUuid())).collect(Collectors.toList());
+            if (!l2s.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("There has been a l2Network attached to cluster with virtual network id[%s] and physical interface[%s]. Failed to change L2 network[uuid:%s]",
+                        msg.getVlan(), l2.getPhysicalInterface(), l2.getUuid()));
+            }
+        } else if (msg.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
+            if (msg.getVlan() != null) {
+                throw new ApiMessageInterceptionException(argerr("vlan is not allowed for " +
+                        "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
+            }
+            List<String> attachedClusters = l2.getAttachedClusterRefs().stream()
+                    .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
+            List<L2NetworkVO> l2s = SQL.New("select l2" +
+                            " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
+                            " where l2.uuid = ref.l2NetworkUuid" +
+                            " and l2.physicalInterface = :physicalInterface" +
+                            " and ref.clusterUuid in (:clusterUuids)" +
+                            " and type = 'L2NoVlanNetwork'")
+                    .param("physicalInterface", l2.getPhysicalInterface())
+                    .param("clusterUuids", attachedClusters).list();
+            l2s = l2s.stream().filter(l -> !l.getUuid().equals(msg.getUuid())).collect(Collectors.toList());
+            if (!l2s.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("There has been a l2Network attached to cluster that has physical interface[%s]. Failed to change l2Network[uuid:%s]",
+                        l2.getPhysicalInterface(), l2.getUuid()));
+            }
         }
     }
 }

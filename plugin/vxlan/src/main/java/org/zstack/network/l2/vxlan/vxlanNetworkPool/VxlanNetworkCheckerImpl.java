@@ -5,6 +5,9 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Arrays;
@@ -22,9 +25,30 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
             validate((APIAttachL2NetworkToClusterMsg) msg);
         } else if (msg instanceof APICreateL3NetworkMsg) {
             validate((APICreateL3NetworkMsg) msg);
+        } else if (msg instanceof APIChangeL2NetworkVlanIdMsg) {
+            validate((APIChangeL2NetworkVlanIdMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIChangeL2NetworkVlanIdMsg msg) {
+        if (!msg.getType().equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)){
+            return;
+        }
+        if (!NetworkUtils.isValidVni(msg.getVlan())) {
+            throw new ApiMessageInterceptionException(argerr("vlan[%s] is not a valid vni", msg.getVlan()));
+        }
+        VxlanNetworkVO vxlanVO = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, msg.getL2NetworkUuid()).find();
+        if (vxlanVO == null || !vxlanVO.getType().equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)) {
+            throw new ApiMessageInterceptionException(argerr("L2Network[uuid:%s] is not L2VxlanNetwork type",
+                    msg.getL2NetworkUuid()));
+        }
+        L2VxlanNetworkInventory vxlanInv = L2VxlanNetworkInventory.valueOf(vxlanVO);
+        vxlanInv.setVni(msg.getVlan());
+        vxlanInv.getAttachedClusterUuids().forEach( clusterUuid -> {
+            validateVniRangeOverlap(vxlanInv, clusterUuid);
+        });
     }
 
     private void validate(APIAttachL2NetworkToClusterMsg msg) {

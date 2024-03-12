@@ -17,9 +17,9 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
@@ -41,7 +41,9 @@ import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.transaction.Transactional;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
@@ -364,9 +366,62 @@ public class L2NoVlanNetwork implements L2Network {
             handle((APIDetachL2NetworkFromClusterMsg) msg);
         } else if (msg instanceof APIUpdateL2NetworkMsg) {
             handle((APIUpdateL2NetworkMsg) msg);
+        } else if (msg instanceof APIChangeL2NetworkVlanIdMsg) {
+            handle((APIChangeL2NetworkVlanIdMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+
+    private void handle(APIChangeL2NetworkVlanIdMsg msg){
+        APIChangeL2NetworkVlanIdEvent event = new APIChangeL2NetworkVlanIdEvent(msg.getId());
+        if (msg.getVlan() == null
+                && msg.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)
+                && self.getVirtualNetworkId().equals(0)) {
+            event.setInventory(getSelfInventory());
+            bus.publish(event);
+            return;
+        }
+        if (msg.getVlan() != null
+                && msg.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)
+                && self.getVirtualNetworkId().equals(msg.getVlan())) {
+            event.setInventory(getSelfInventory());
+            bus.publish(event);
+            return;
+        }
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("change-l2-network-%s-vlan", msg.getL2NetworkUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                changeL2NetworkVlanId(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        changeL2NetworkVlanIdInDb(msg);
+                        extpEmitter.afterUpdate(getSelfInventory());
+                        event.setInventory(getSelfInventory());
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
     }
 
     private void handle(APIUpdateL2NetworkMsg msg) {
@@ -414,6 +469,13 @@ public class L2NoVlanNetwork implements L2Network {
         });
     }
 
+    protected void updateVlanNetwork(L2NetworkInventory oldl2, L2NetworkInventory newl2, String hostUuid, String htype, Completion completion) {
+        final HypervisorType hvType = HypervisorType.valueOf(htype);
+        final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+        final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
+        ext.update(oldl2, newl2, hostUuid, completion);
+    }
     protected void realizeNetwork(String hostUuid, String htype, String providerType, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
@@ -432,6 +494,130 @@ public class L2NoVlanNetwork implements L2Network {
         } else {
             ext.afterAttach(getSelfInventory(), hostUuid, completion);
         }
+    }
+
+    @Transactional
+    private void changeL2NetworkVlanIdInDb(final APIChangeL2NetworkVlanIdMsg msg) {
+        String currentType = self.getType();
+        String targetType = msg.getType();
+        int targetVlan = msg.getVlan() == null ? 0 : msg.getVlan();
+
+        if (!currentType.equals(targetType)) {
+            // change to L2VlanNetwork or L2NoVlanNetwork
+            L2NetworkVO l2Vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, self.getUuid()).find();
+            l2Vo.setType(targetType);
+            l2Vo.setVirtualNetworkId(targetVlan);
+            self = dbf.updateAndRefresh(l2Vo);
+            // can not operate L2VlanNetworkVO directly due to it extends from L2NetworkVO
+            // use native sql to insert or delete
+            if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(targetType)) {
+                // L2VlanNetwork change to L2NoVlanNetwork
+                dbf.getEntityManager().createNativeQuery(
+                        String.format("insert into L2VlanNetworkVO (uuid, vlan) " +
+                                "values ('%s', %d)", l2Vo.getUuid(), targetVlan)
+                ).executeUpdate();
+            } else if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(targetType)) {
+                // L2NoVlanNetwork change to L2VlanNetwork
+                dbf.getEntityManager().createNativeQuery(
+                        String.format("delete from L2VlanNetworkVO where uuid = '%s'", l2Vo.getUuid())
+                ).executeUpdate();
+            }
+        } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(currentType)) {
+            // update L2VlanNetwork vlan id
+            L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, self.getUuid()).find();
+            l2VlanNetworkVO.setVirtualNetworkId(targetVlan);
+            l2VlanNetworkVO.setVlan(targetVlan);
+            self = dbf.updateAndRefresh(l2VlanNetworkVO);
+        }
+    }
+
+    private void changeL2NetworkVlanId(final APIChangeL2NetworkVlanIdMsg msg, final Completion completion) {
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("change-l2-%s-vlan-on-hosts", self.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                final List<HostVO> updatedHosts = new ArrayList<>();
+                L2NetworkInventory oldInv = self.toInventory();
+                L2NetworkInventory newInv = self.toInventory();
+                if (msg.getType() != null) {
+                    newInv.setType(msg.getType());
+                }
+                if (msg.getVlan() != null) {
+                    newInv.setVirtualNetworkId(msg.getVlan());
+                }
+
+                flow(new Flow() {
+                    String __name__ = "update-l2-network-vlan";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(newInv)).step((host, whileCompletion) -> {
+                            updateVlanNetwork(oldInv, newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    updatedHosts.add(host);
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.error(String.format("update l2 network in host:[%s] failed", host.getUuid()));
+                                    whileCompletion.addError(errorCode);
+                                    whileCompletion.allDone();
+                                }
+                            });
+                        }, 10).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        new While<>(updatedHosts).step((host, whileCompletion) -> {
+                            updateVlanNetwork(newInv, oldInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.error(String.format("rollback l2 network in host:[%s] failed", host.getUuid()));
+                                    whileCompletion.done();
+                                }
+                            });
+                        }, updatedHosts.size()).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void prepareL2NetworkOnHosts(final List<HostInventory> hosts, String providerType, final Completion completion) {
