@@ -20,6 +20,8 @@ public class KVMHostUtils {
     /**
      * Get normalized bridge name for l2 network, which at most has 15 chars.
      * - if l2 network has L2_BRIDGE_NAME tag, then return it's value directly;
+     * - if l2Uuid does not have an L2_BRIDGE_NAME tag, use the new naming convention:
+     *   prefix 'l2_' plus the last 12 characters of l2Uuid;
      * - if l2 physical interface name is short, then no need for truncation;
      * - otherwise, get md5sum of interface name and use the top chars.
      * @param l2Uuid l2 network uuid
@@ -30,6 +32,7 @@ public class KVMHostUtils {
         if (KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Uuid, L2NetworkVO.class)) {
             return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Uuid, KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
         }
+        String newBridgeName = "l2_" + l2Uuid.substring(Math.max(0, l2Uuid.length() - 12));
 
         if (!format.contains("%s") || format.indexOf("%s") != format.lastIndexOf("%s")) {
             throw new OperationFailureException(operr("invalid format string %s", format));
@@ -46,6 +49,6 @@ public class KVMHostUtils {
             physicalInterface = DigestUtils.md5Hex(physicalInterface).substring(0, allowedLen);
         }
 
-        return String.format(format, physicalInterface);
+        return newBridgeName;
     }
 }

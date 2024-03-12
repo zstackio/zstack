@@ -171,6 +171,9 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 }
 
                 Map<String, String> bridgeNames = new BridgeNameFinder().findByL3Uuids(l3Uuids);
+                List<String> l2Uuids = Q.New(L3NetworkVO.class)
+                        .select(L3NetworkVO_.l2NetworkUuid).in(L3NetworkVO_.uuid, l3Uuids).listValues();
+                Map<String, String> bridgesVlan = new BridgeVlanIdFinder().findByL2Uuids(l2Uuids);
 
                 List<UserdataTO> tos = new ArrayList<UserdataTO>();
                 for (String vmuuid : vmUuids) {
@@ -193,6 +196,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     to.vmIp = l.vmIp;
                     to.netmask = l.netmask;
                     to.bridgeName = bridgeNames.get(l.l3Uuid);
+                    to.vlanId = bridgesVlan.get(to.bridgeName);
                     to.namespaceName = FlatDhcpBackend.makeNamespaceName(to.bridgeName, l.l3Uuid);
                     if (userdata.get(vmuuid) != null) {
                         to.userdataList.addAll(userdata.get(vmuuid));
@@ -472,6 +476,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public String netmask;
         public String dhcpServerIp;
         public String bridgeName;
+        public String vlanId;
         public String namespaceName;
         public String l3NetworkUuid;
         public Map<String, String> agentConfig;
@@ -634,6 +639,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.vmIp = destNic.getIp();
                         uto.netmask = destNic.getNetmask();
                         uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
+                        uto.vlanId = new BridgeVlanIdFinder().findByL2Uuid(defaultL3.getL2NetworkUuid(), false);
                         uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
                         uto.l3NetworkUuid = struct.getL3NetworkUuid();
