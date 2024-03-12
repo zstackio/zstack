@@ -1017,7 +1017,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                                 .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList()));
                     }
 
-                    if (!uuids.containsAll(nicUuids)) {
+                    if (!new HashSet<>(uuids).containsAll(nicUuids)) {
                         throw new CloudRuntimeException(String.format("load balancer listener [uuid:%s] upgraded failed," +
                                 "vmnics directly attached are [%s], vmnic attached to its serverGroup are %s",
                                 vo.getUuid(), nicUuids, uuids));

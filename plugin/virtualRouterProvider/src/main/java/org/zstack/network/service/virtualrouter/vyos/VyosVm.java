@@ -5,20 +5,35 @@ import org.zstack.appliancevm.ApplianceVmAsyncHttpCallMsg;
 import org.zstack.appliancevm.ApplianceVmRefreshFirewallMsg;
 import org.zstack.appliancevm.ApplianceVmRefreshFirewallReply;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.Q;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.network.service.virtualrouter.VirtualRouter;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
+import org.zstack.network.service.virtualrouter.*;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/10/31.
  */
 public class VyosVm extends VirtualRouter {
+    private static final CLogger logger = Utils.getLogger(VyosVm.class);
+
     @Autowired
     private VyosVmFactory vyosf;
 
@@ -90,5 +105,38 @@ public class VyosVm extends VirtualRouter {
     protected void handle(final ApplianceVmAsyncHttpCallMsg msg) {
         // vyos doesn't need appliance vm
         throw new CloudRuntimeException("should not be called");
+    }
+
+    protected void configureKeepalived(VyosKeepalivedCommands.VyosHaEnableCmd cmd,
+                                       Completion completion) {
+        if (!vr.isHaEnabled()) {
+            completion.success();
+        }
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setPath(VyosKeepalivedCommands.VYOS_HA_ENABLE_PATH);
+        msg.setCommand(cmd);
+        msg.setVmInstanceUuid(vr.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                VyosKeepalivedCommands.VyosHaEnableRsp ret = re.toResponse(VyosKeepalivedCommands.VyosHaEnableRsp.class);
+                if (!ret.isSuccess()) {
+                    ErrorCode err = operr("failed to enable ha on virtual router[uuid:%s], %s",
+                            vr.getUuid(), ret.getError());
+                    completion.fail(err);
+                } else {
+                    logger.debug(String.format("enable ha on virtual router[uuid:%s] successfully", vr));
+                    completion.success();
+                }
+            }
+        });
     }
 }
