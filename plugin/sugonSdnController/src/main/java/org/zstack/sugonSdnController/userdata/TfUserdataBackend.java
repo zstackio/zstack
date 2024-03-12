@@ -15,11 +15,9 @@ import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -234,29 +232,18 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
 
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
         UserdataStruct struct = makeUserdataStructForMigratingVm(inv, destHostUuid);
         if (struct == null) {
+            completion.success();
             return;
         }
 
-        FutureCompletion completion = new FutureCompletion(null);
         applyUserdata(struct, completion);
-        completion.await();
-
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(completion.getErrorCode());
-        }
-    }
-
-    @Override
-    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
     }
 
     @Override
     public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
     }
 
     public static class UserdataReleseGC extends TimeBasedGarbageCollector {

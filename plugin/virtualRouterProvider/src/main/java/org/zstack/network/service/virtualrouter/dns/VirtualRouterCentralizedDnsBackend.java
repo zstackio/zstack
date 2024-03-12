@@ -11,22 +11,27 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.*;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.vm.*;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.service.*;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosOfferingSelector;
@@ -36,7 +41,6 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -279,17 +283,7 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
     }
 
     @Override
-    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
     public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
-    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
 
     }
 

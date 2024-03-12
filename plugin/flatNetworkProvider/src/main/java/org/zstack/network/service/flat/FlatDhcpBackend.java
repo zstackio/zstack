@@ -1324,24 +1324,25 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
         List<DhcpInfo> info = getVmDhcpInfo(inv);
         if (info == null || info.isEmpty()) {
+            completion.success();
             return;
         }
 
-        FutureCompletion completion = new FutureCompletion(null);
-        applyDhcpToHosts(info, destHostUuid, false, completion);
-        completion.await(TimeUnit.MINUTES.toMillis(30));
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(operr("cannot configure DHCP for vm[uuid:%s] on the destination host[uuid:%s]",
-                            inv.getUuid(), destHostUuid).causedBy(completion.getErrorCode()));
-        }
-    }
+        applyDhcpToHosts(info, destHostUuid, false, new Completion(completion) {
+            @Override
+            public void success() {
+                completion.success();
+            }
 
-    @Override
-    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(operr("cannot configure DHCP for vm[uuid:%s] on the destination host[uuid:%s]",
+                        inv.getUuid(), destHostUuid).causedBy(errorCode));
+            }
+        });
     }
 
     @Override
@@ -1349,18 +1350,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     @Override
-    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid, NoErrorCompletion completion) {
         List<DhcpInfo> info = getVmDhcpInfo(inv);
         if (info == null || info.isEmpty()) {
+            completion.done();
             return;
         }
 
-        releaseDhcpService(info, inv.getUuid(), srcHostUuid, new NoErrorCompletion() {
-            @Override
-            public void done() {
-                // ignore
-            }
-        });
+        releaseDhcpService(info, inv.getUuid(), srcHostUuid, completion);
     }
 
     @Override

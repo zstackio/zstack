@@ -12,18 +12,20 @@ import org.zstack.header.host.GetVirtualizerInfoMsg;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
-import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.DestroyVmCmd;
 import org.zstack.kvm.KVMAgentCommands.RebootVmResponse;
 import org.zstack.kvm.KVMAgentCommands.StopVmCmd;
 import org.zstack.kvm.KVMAgentCommands.VmDevicesInfoResponse;
+import org.zstack.kvm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.kvm.KVMAgentCommands.*;
 
 /**
  * Created by Wenhao.Zhang on 23/02/27
@@ -125,14 +127,6 @@ public class KvmHypervisorInfoExtensions implements
                 });
             }
         };
-    }
-
-    @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {}
-
-    @Override
-    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
     }
 
     @Override

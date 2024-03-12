@@ -13,22 +13,19 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
-import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -45,17 +42,13 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -184,7 +177,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
 
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
         List<VmNicInventory> nics = inv.getVmNics();
         List<L3NetworkVO> l3vos = new ArrayList<>();
         /* FIXME: shixin need add ipv6 on vlxan network */
@@ -199,11 +192,11 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
         }
 
         if (vxlanUuids.isEmpty()) {
+            completion.success();
             return;
         }
 
         ErrorCodeList errList = new ErrorCodeList();
-        FutureCompletion completion = new FutureCompletion(null);
 
         new While<>(vxlanUuids).all((uuid, completion1) -> {
             PrepareL2NetworkOnHostMsg msg = new PrepareL2NetworkOnHostMsg();
@@ -227,31 +220,18 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
-                    completion.fail(errList.getCauses().get(0));
+                    completion.fail(operr("cannot configure vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
+                            inv.getUuid(), destHostUuid).causedBy(errList.getCauses()));
                     return;
                 }
                 logger.info(String.format("check and realize vxlan networks[uuid: %s] for vm[uuid: %s] done", vxlanUuids, inv.getUuid()));
                 completion.success();
             }
         });
-
-        completion.await(TimeUnit.MINUTES.toMillis(30));
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(operr("cannot configure vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
-                    inv.getUuid(), destHostUuid).causedBy(completion.getErrorCode()));
-        }
     }
 
     @Override
-    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-    }
-
-    @Override
-    public void  afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
-    }
-
-    @Override
-    public void  failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
     }
 
     @Override

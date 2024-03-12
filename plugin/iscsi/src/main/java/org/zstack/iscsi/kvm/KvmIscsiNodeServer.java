@@ -1,7 +1,6 @@
 package org.zstack.iscsi.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -421,13 +420,7 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
     }
 
     @Override
-    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
     public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
     }
 
     private List<BaseVolumeInfo> getIscsiVolume(VmInstanceInventory vm) {
