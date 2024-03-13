@@ -8,6 +8,7 @@ import org.zstack.core.db.SimpleQuery
 import org.zstack.header.network.service.NetworkServiceProviderVO
 import org.zstack.header.network.service.NetworkServiceProviderVO_
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmNicParm
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
@@ -526,6 +527,8 @@ class VirtualrouterMultiNicCase extends SubCase {
     void prepareTestBed() {
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
         def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def image = env.inventoryByName("image") as ImageInventory
+        def offering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         updateGlobalConfig {
             category = VmGlobalConfig.CATEGORY
             name = VmGlobalConfig.MULTI_VNIC_SUPPORT.name
@@ -541,6 +544,37 @@ class VirtualrouterMultiNicCase extends SubCase {
 
         assert vm.vmNics.size() == MAX_NIC_COUNT
 
+        List<VmNicParm> nicParms = new ArrayList<>()
+        VmNicParm nicParm = new VmNicParm()
+        nicParm.setL3NetworkUuid(l3.uuid)
+        nicParm.setDriverType("virtio")
+        nicParm.setMultiQueueNum(4)
+        nicParms.add(nicParm)
+        nicParms.add(nicParm)
+        nicParms.add(nicParm)
+
+        def vm2 = createVmInstance {
+            name = "vm2"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid, l3.uuid, l3.uuid]
+            defaultL3NetworkUuid = l3.uuid
+            instanceOfferingUuid = offering.uuid
+            vmNicParams = JSONObjectUtil.toJsonString(nicParms)
+        } as VmInstanceInventory
+
+        assert vm2.vmNics.size() == 3
+        assert vm2.vmNics.stream().allMatch {VmNicInventory nic -> nic.ip != null}
+
+        vm2 = attachL3NetworkToVm {
+            vmInstanceUuid = vm2.uuid
+            l3NetworkUuid = l3.uuid
+        } as VmInstanceInventory
+
+        assert vm2.vmNics.size() == 4
+
+        destroyVmInstance {
+            uuid = vm2.uuid
+        }
     }
 
     void testMultiNicConfig() {
@@ -554,12 +588,16 @@ class VirtualrouterMultiNicCase extends SubCase {
             vmInstanceUuid = vm.uuid
         }
 
-        if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)) {
-            expect(AssertionError.class) {
-                attachL3NetworkToVm {
-                    l3NetworkUuid = l3.uuid
-                    vmInstanceUuid = vm.uuid
-                }
+        updateGlobalConfig {
+            category = VmGlobalConfig.CATEGORY
+            name = VmGlobalConfig.MULTI_VNIC_SUPPORT.name
+            value = "false"
+        }
+
+        expect(AssertionError.class) {
+            attachL3NetworkToVm {
+                l3NetworkUuid = l3.uuid
+                vmInstanceUuid = vm.uuid
             }
         }
 
