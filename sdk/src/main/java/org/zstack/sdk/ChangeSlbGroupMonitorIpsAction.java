@@ -94,7 +94,7 @@ public class ChangeSlbGroupMonitorIpsAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/load-balancers/slb/groups/{uuid}/monitorIps";
+        info.path = "/load-balancers/slb/groups/{slbGroupUuid}/monitorIps";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "changeSlbGroupMonitorIps";

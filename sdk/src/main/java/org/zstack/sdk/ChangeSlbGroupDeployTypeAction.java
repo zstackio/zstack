@@ -94,7 +94,7 @@ public class ChangeSlbGroupDeployTypeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/load-balancers/slb/groups/{uuid}/deployType";
+        info.path = "/load-balancers/slb/groups/{slbGroupUuid}/deployType";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "changeSlbGroupDeployType";
