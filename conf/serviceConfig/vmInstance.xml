@@ -242,4 +242,14 @@
     <message>
         <name>org.zstack.header.vm.APIGetVmUptimeMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIConvertVmInstanceToVmTemplateMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIConvertVmTemplateToVmInstanceMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIQueryVmTemplateMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

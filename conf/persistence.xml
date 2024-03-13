@@ -202,5 +202,7 @@
         <class>org.zstack.storage.primary.local.LocalStorageHostHistoricalUsageVO</class>
         <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpVO </class>
         <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefVO</class>
+        <class>org.zstack.header.vm.VmTemplateVO</class>
+        <class>org.zstack.header.volume.VolumeTemplateVO</class>
     </persistence-unit>
 </persistence>

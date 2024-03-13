@@ -167,10 +167,38 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APITakeVmConsoleScreenshotMsg) msg);
         } else if (msg instanceof APIGetVmUptimeMsg) {
             validate((APIGetVmUptimeMsg) msg);
+        } else if (msg instanceof APIConvertVmInstanceToVmTemplateMsg) {
+            validate((APIConvertVmInstanceToVmTemplateMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIConvertVmInstanceToVmTemplateMsg msg) {
+        VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
+        if (!vm.getState().equals(VmInstanceState.Stopped)) {
+            throw new ApiMessageInterceptionException(operr(
+                    "failed to convert vm[uuid:%s, name:%s, state:%s] to vm template",
+                    msg.getVmInstanceUuid(), vm.getName(), vm.getState()));
+        }
+
+        List<String> sharedVolumeUuids = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .eq(VolumeVO_.isShareable, true)
+                .select(VolumeVO_.uuid)
+                .listValues();
+        if (!sharedVolumeUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr(
+                    "vm[uuid:%s] cannot be convert to vm template while shared volume[uuids:%s] attached",
+                    msg.getVmInstanceUuid(), sharedVolumeUuids));
+        }
+
+        if (VmInstanceConstant.TEMPLATE_VM_TYPE.equals(vm.getType())) {
+            throw new ApiMessageInterceptionException(operr(
+                    "failed to convert vm[uuid:%s, name:%s, type:%s] to vm template",
+                    msg.getVmInstanceUuid(), vm.getName(), VmInstanceConstant.TEMPLATE_VM_TYPE));
+        }
     }
 
     private void validate(APIGetVmUptimeMsg msg) {

@@ -241,11 +241,96 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIGetSpiceCertificatesMsg) msg);
         } else if (msg instanceof APIGetVmsCapabilitiesMsg) {
             handle((APIGetVmsCapabilitiesMsg) msg);
+        } else if (msg instanceof APIConvertVmInstanceToVmTemplateMsg) {
+            handle((APIConvertVmInstanceToVmTemplateMsg) msg);
+        } else if (msg instanceof APIConvertVmTemplateToVmInstanceMsg) {
+            handle((APIConvertVmTemplateToVmInstanceMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIConvertVmTemplateToVmInstanceMsg msg) {
+        APIConvertVmTemplateToVmInstanceEvent event = new APIConvertVmTemplateToVmInstanceEvent(msg.getId());
+        VmTemplateVO vmTemplate = Q.New(VmTemplateVO.class)
+                .eq(VmTemplateVO_.uuid, msg.getVmTemplateUuid())
+                .find();
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmTemplate.getVmInstanceUuid())
+                        .set(VmInstanceVO_.type, vmTemplate.getOriginalType())
+                        .update();
+                List<String> volumeUuids = Q.New(VolumeVO.class)
+                        .eq(VolumeVO_.vmInstanceUuid, vmTemplate.getVmInstanceUuid())
+                        .select(VolumeVO_.uuid)
+                        .listValues();
+                List<VolumeTemplateVO> volumeTemplates = Q.New(VolumeTemplateVO.class)
+                        .in(VolumeTemplateVO_.volumeUuid, volumeUuids)
+                        .list();
+                for (VolumeTemplateVO vo : volumeTemplates) {
+                    sql(VolumeVO.class)
+                            .eq(VolumeVO_.uuid, vo.getVolumeUuid())
+                            .set(VolumeVO_.type, vo.getOriginalType())
+                            .update();
+                }
+
+                sql(VmTemplateVO.class)
+                        .eq(VmTemplateVO_.uuid, msg.getVmTemplateUuid())
+                        .hardDelete();
+                sql(VolumeTemplateVO.class)
+                        .in(VolumeTemplateVO_.volumeUuid, volumeUuids)
+                        .hardDelete();
+            }
+        }.execute();
+
+        VmInstanceVO vm = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vmTemplate.getVmInstanceUuid())
+                .find();
+        event.setInventory(vm.toInventory());
+        bus.publish(event);
+    }
+
+    private void handle(APIConvertVmInstanceToVmTemplateMsg msg) {
+        APIConvertVmInstanceToVmTemplateEvent event = new APIConvertVmInstanceToVmTemplateEvent(msg.getId());
+        VmTemplateVO vmTemplate = new VmTemplateVO();
+        List<VolumeTemplateVO> volumeTemplates = new ArrayList<>();
+        VmInstanceVO vm = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                .find();
+        List<VolumeVO> volumes = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .list();
+
+        vmTemplate.setUuid(Platform.getUuid());
+        vmTemplate.setName(vm.getName());
+        vmTemplate.setVmInstanceUuid(vm.getUuid());
+        vmTemplate.setOriginalType(vm.getType());
+        vmTemplate.setCreateDate(vm.getCreateDate());
+        vmTemplate.setLastOpDate(vm.getLastOpDate());
+        dbf.persistAndRefresh(vmTemplate);
+
+        vm.setType(VmInstanceConstant.TEMPLATE_VM_TYPE);
+        dbf.update(vm);
+
+        volumes.forEach(volume -> {
+            VolumeTemplateVO volumeTemplate = new VolumeTemplateVO();
+            volumeTemplate.setUuid(Platform.getUuid());
+            volumeTemplate.setVolumeUuid(volume.getUuid());
+            volumeTemplate.setOriginalType(volume.getType());
+            volumeTemplate.setCreateDate(volume.getCreateDate());
+            volumeTemplate.setLastOpDate(volume.getLastOpDate());
+            dbf.persistAndRefresh(volumeTemplate);
+            volumeTemplates.add(volumeTemplate);
+
+            volume.setType(VolumeType.Template);
+            dbf.update(volume);
+        });
+        event.setInventory(VmTemplateInventory.valueOf(vmTemplate));
+        bus.publish(event);
     }
 
     private void handle(APIGetInterdependentL3NetworksBackupStoragesMsg msg) {

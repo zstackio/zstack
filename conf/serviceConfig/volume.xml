@@ -93,4 +93,9 @@
     <message>
         <name>org.zstack.header.volume.APIUndoSnapshotCreationMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIQueryVolumeTemplateMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

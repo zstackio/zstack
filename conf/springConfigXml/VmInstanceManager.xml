@@ -168,6 +168,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="TemplateVmFactory" class="org.zstack.compute.vm.TemplateVmFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceFactory" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="VmInstanceExtensionPointEmitter" class="org.zstack.compute.vm.VmInstanceExtensionPointEmitter">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
