@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter.vip;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.appliancevm.ApplianceVmType;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -25,7 +26,6 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.NetworkUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,7 +36,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements VirtualRouterHaGetCallbackExtensionPoint,
         VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint, PreVipReleaseExtensionPoint,
-        ReleaseNetworkServiceOnDetachingNicExtensionPoint {
+        ReleaseNetworkServiceOnDetachingNicExtensionPoint, VirtualRouterVipConfigFactory {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
     @Autowired
@@ -51,6 +51,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     private VipConfigProxy proxy;
     @Autowired
     VirtualRouterManager vrMgr;
+    @Autowired
+    VirtualRouterVipConfigManager vipConfigMgr;
 
     public static String RELEASE_VIP_TASK = "releaseVip";
     public static String APPLY_VIP_TASK = "applyVip";
@@ -455,5 +457,51 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         }
 
         completion.done();
+    }
+
+    @Override
+    public ApplianceVmType getApplianceVmType() {
+        return ApplianceVmType.valueOf(VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE);
+    }
+
+    @Override
+    public void attachNetworkService(String vrUuid, List<String> vipUuids) {
+        List<VirtualRouterVipVO> refs = new ArrayList<>();
+        for (String uuid : vipUuids) {
+            if (dbf.isExist(uuid, VirtualRouterVipVO.class)) {
+                continue;
+            }
+
+            VirtualRouterVipVO ref = new VirtualRouterVipVO();
+            ref.setUuid(uuid);
+            ref.setVirtualRouterVmUuid(vrUuid);
+            refs.add(ref);
+        }
+
+        if (!refs.isEmpty()) {
+            dbf.persistCollection(refs);
+        }
+    }
+
+    @Override
+    public void detachNetworkService(String vrUuid, List<String> vipUuids) {
+        SQL.New(VirtualRouterVipVO.class).in(VirtualRouterVipVO_.uuid, vipUuids)
+                .eq(VirtualRouterVipVO_.virtualRouterVmUuid, vrUuid).delete();
+    }
+
+    @Override
+    public List<String> getVrUuidsByNetworkService(String vipUuid) {
+        VirtualRouterVipVO vipVo = dbf.findByUuid(vipUuid, VirtualRouterVipVO.class);
+        if (vipVo == null) {
+            return null;
+        }
+        return Collections.singletonList(vipVo.getVirtualRouterVmUuid());
+    }
+
+    @Override
+    public List<String> getVipUuidsByRouterUuid(String vrUuid) {
+        return Q.New(VirtualRouterVipVO.class)
+                .eq(VirtualRouterVipVO_.virtualRouterVmUuid, vrUuid)
+                .select(VirtualRouterVipVO_.uuid).listValues();
     }
 }

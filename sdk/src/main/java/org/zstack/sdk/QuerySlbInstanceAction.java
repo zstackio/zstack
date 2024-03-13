@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ProvisionSlbInstanceAction extends AbstractAction {
+public class QuerySlbInstanceAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ProvisionSlbInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ProvisionSlbGroupInstanceResult value;
+        public org.zstack.sdk.QuerySlbInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,6 @@ public class ProvisionSlbInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -60,8 +34,8 @@ public class ProvisionSlbInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ProvisionSlbGroupInstanceResult value = res.getResult(org.zstack.sdk.ProvisionSlbGroupInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ProvisionSlbGroupInstanceResult() : value; 
+        org.zstack.sdk.QuerySlbInstanceResult value = res.getResult(org.zstack.sdk.QuerySlbInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySlbInstanceResult() : value; 
 
         return ret;
     }
@@ -90,11 +64,11 @@ public class ProvisionSlbInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/load-balancers/slb/instances/{uuid}/provision";
+        info.httpMethod = "GET";
+        info.path = "/load-balancers/slb/instances";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "provisionSlbInstance";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
