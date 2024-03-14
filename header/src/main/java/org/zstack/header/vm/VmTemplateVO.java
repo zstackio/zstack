@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.vo.*;
+import org.zstack.header.zone.ZoneEO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -18,6 +19,9 @@ public class VmTemplateVO extends ResourceVO implements ToInventory {
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String vmInstanceUuid;
 
+    @Column
+    @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    private String zoneUuid;
     @Column
     private String originalType;
 
@@ -41,6 +45,14 @@ public class VmTemplateVO extends ResourceVO implements ToInventory {
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
+    }
+
+    public String getZoneUuid() {
+        return zoneUuid;
+    }
+
+    public void setZoneUuid(String zoneUuid) {
+        this.zoneUuid = zoneUuid;
     }
 
     public String getOriginalType() {

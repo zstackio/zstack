@@ -25,6 +25,12 @@ doc {
 		since "zsv 4.2.0"
 	}
 	field {
+		name "zoneUuid"
+		desc "数据中心UUID"
+		type "String"
+		since "zsv 4.2.0"
+	}
+	field {
 		name "originalType"
 		desc "原来的虚拟机类型"
 		type "String"
