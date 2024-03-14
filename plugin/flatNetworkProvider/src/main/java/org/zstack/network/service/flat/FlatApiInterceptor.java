@@ -6,10 +6,9 @@ import org.zstack.core.Platform;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
-
-import java.util.Collections;
+import org.zstack.identity.rbac.AccessibleResourceChecker;
 
 import static org.zstack.core.Platform.operr;
 
@@ -38,7 +37,13 @@ public class FlatApiInterceptor implements ApiMessageInterceptor {
         if (StringUtils.isBlank(accountUuid)) {
             throw new ApiMessageInterceptionException(Platform.argerr("Session/account uuid is not valid."));
         }
-        if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getL3NetworkUuid()), accountUuid).isEmpty()) {
+
+        final boolean accessible = AccessibleResourceChecker.forAccount(accountUuid)
+                .checkReadOnlyPermission()
+                .withResourceType(L3NetworkVO.class)
+                .isAccessible(msg.getL3NetworkUuid());
+
+        if (!accessible) {
             throw new ApiMessageInterceptionException(
                     operr("the account[uuid:%s] has no access to the resource[uuid:%s, type:L3NetworkVO]",
                     accountUuid, msg.getL3NetworkUuid()));

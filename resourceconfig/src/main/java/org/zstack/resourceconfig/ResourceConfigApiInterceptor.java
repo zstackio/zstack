@@ -7,18 +7,12 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.tag.APIUpdateSystemTagEvent;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
+import org.zstack.identity.rbac.AccessibleResourceChecker;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -99,7 +93,10 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
             return;
         }
 
-        if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getResourceUuid()), msg.getSession().getAccountUuid()).isEmpty()) {
+        boolean accessible = AccessibleResourceChecker.forAccount(msg.getSession().getAccountUuid())
+                .checkReadOnlyPermission()
+                .isAccessible(msg.getResourceUuid());
+        if (!accessible) {
             throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
                     msg.getResourceUuid()));
         }
@@ -110,7 +107,10 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
             return;
         }
 
-        if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getResourceUuid()), msg.getSession().getAccountUuid()).isEmpty()) {
+        boolean accessible = AccessibleResourceChecker.forAccount(msg.getSession().getAccountUuid())
+                .checkReadOnlyPermission()
+                .isAccessible(msg.getResourceUuid());
+        if (!accessible) {
             throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
                     msg.getResourceUuid()));
         }
