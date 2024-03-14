@@ -4,15 +4,19 @@ import org.zstack.expon.sdk.cluster.TianshuClusterModule;
 import org.zstack.expon.sdk.pool.FailureDomainModule;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ExponAddonInfo {
-    private List<TianshuCluster> clusters;
+    private List<TianshuCluster> clusters = new ArrayList<>();
 
-    private List<Pool> pools;
+    private List<Pool> pools = new ArrayList<>();
 
     private String currentIscsiTargetId;
     private int currentIscsiTargetIndex;
+
+    private String currentImageIscsiTargetId;
+    private int currentImageIscsiTargetIndex;
 
     public List<Pool> getPools() {
         return pools;
@@ -44,6 +48,22 @@ public class ExponAddonInfo {
 
     public void setCurrentIscsiTargetIndex(int currentIscsiTargetIndex) {
         this.currentIscsiTargetIndex = currentIscsiTargetIndex;
+    }
+
+    public String getCurrentImageIscsiTargetId() {
+        return currentImageIscsiTargetId;
+    }
+
+    public void setCurrentImageIscsiTargetId(String currentImageIscsiTargetId) {
+        this.currentImageIscsiTargetId = currentImageIscsiTargetId;
+    }
+
+    public int getCurrentImageIscsiTargetIndex() {
+        return currentImageIscsiTargetIndex;
+    }
+
+    public void setCurrentImageIscsiTargetIndex(int currentImageIscsiTargetIndex) {
+        this.currentImageIscsiTargetIndex = currentImageIscsiTargetIndex;
     }
 
     public static class Pool {
