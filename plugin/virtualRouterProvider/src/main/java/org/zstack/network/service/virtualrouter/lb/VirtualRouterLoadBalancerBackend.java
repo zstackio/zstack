@@ -1283,16 +1283,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 if (reply.isSuccess()) {
                     RefreshLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(RefreshLbRsp.class);
                     if (rsp.isSuccess()) {
-                        new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
                         completion.success();
                     } else {
-                        completion.success();
-                        /* TODO: make UI work
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));*/
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
                     }
                 } else {
-                    completion.success();
-                    //completion.fail(reply.getError());
+                    completion.fail(reply.getError());
                 }
             }
         });
