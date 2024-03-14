@@ -14,10 +14,21 @@ import java.util.Map;
 public class ApplianceVmType implements Serializable {
     private static Map<String, ApplianceVmType> types = Collections.synchronizedMap(new HashMap<String, ApplianceVmType>());
     private final String typeName;
+    private  boolean needOverlay = false;
 
     public ApplianceVmType(String typeName) {
         this.typeName = typeName;
         types.put(typeName, this);
+    }
+
+    public ApplianceVmType(String typeName, boolean needOverlay) {
+        this.typeName = typeName;
+        this.needOverlay = needOverlay;
+        types.put(typeName, this);
+    }
+
+    public boolean isNeedOverlay() {
+        return needOverlay;
     }
 
     public static ApplianceVmType valueOf(String typeName) {
