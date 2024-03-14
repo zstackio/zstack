@@ -357,6 +357,7 @@ public class SourceClassMap {
 			put("org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct", "org.zstack.sdk.VolumeFormatReplyStruct");
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
 			put("org.zstack.header.volume.block.BlockVolumeInventory", "org.zstack.sdk.BlockVolumeInventory");
+			put("org.zstack.header.volume.block.ExponBlockVolumeInventory", "org.zstack.sdk.ExponBlockVolumeInventory");
 			put("org.zstack.header.volume.block.XskyBlockVolumeInventory", "org.zstack.sdk.XskyBlockVolumeInventory");
 			put("org.zstack.header.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
 			put("org.zstack.header.vpc.VpcRouterVmInventory", "org.zstack.sdk.VpcRouterVmInventory");
@@ -878,6 +879,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EthernetVfPciDeviceInventory", "org.zstack.header.sriov.EthernetVfPciDeviceInventory");
 			put("org.zstack.sdk.EthernetVfStatus", "org.zstack.header.sriov.EthernetVfStatus");
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
+			put("org.zstack.sdk.ExponBlockVolumeInventory", "org.zstack.header.volume.block.ExponBlockVolumeInventory");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
 			put("org.zstack.sdk.ExternalBackupStorageInventory", "org.zstack.header.storage.addon.backup.ExternalBackupStorageInventory");

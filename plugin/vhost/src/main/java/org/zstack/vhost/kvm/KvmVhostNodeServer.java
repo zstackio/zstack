@@ -1,6 +1,7 @@
 package org.zstack.vhost.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
