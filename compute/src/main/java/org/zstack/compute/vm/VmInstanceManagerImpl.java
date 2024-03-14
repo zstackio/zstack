@@ -254,9 +254,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private void handle(APIConvertVmTemplateToVmInstanceMsg msg) {
         APIConvertVmTemplateToVmInstanceEvent event = new APIConvertVmTemplateToVmInstanceEvent(msg.getId());
-        VmTemplateVO vmTemplate = Q.New(VmTemplateVO.class)
-                .eq(VmTemplateVO_.uuid, msg.getVmTemplateUuid())
-                .find();
+        VmTemplateVO vmTemplate = dbf.findByUuid(msg.getVmTemplateUuid(), VmTemplateVO.class);
 
         new SQLBatch() {
             @Override
@@ -287,9 +285,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }.execute();
 
-        VmInstanceVO vm = Q.New(VmInstanceVO.class)
-                .eq(VmInstanceVO_.uuid, vmTemplate.getVmInstanceUuid())
-                .find();
+        VmInstanceVO vm = dbf.findByUuid(vmTemplate.getVmInstanceUuid(), VmInstanceVO.class);
         event.setInventory(vm.toInventory());
         bus.publish(event);
     }
@@ -298,9 +294,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         APIConvertVmInstanceToVmTemplateEvent event = new APIConvertVmInstanceToVmTemplateEvent(msg.getId());
         VmTemplateVO vmTemplate = new VmTemplateVO();
         List<VolumeTemplateVO> volumeTemplates = new ArrayList<>();
-        VmInstanceVO vm = Q.New(VmInstanceVO.class)
-                .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
-                .find();
+        VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         List<VolumeVO> volumes = Q.New(VolumeVO.class)
                 .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid())
                 .list();
@@ -308,6 +302,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vmTemplate.setUuid(Platform.getUuid());
         vmTemplate.setName(vm.getName());
         vmTemplate.setVmInstanceUuid(vm.getUuid());
+        vmTemplate.setZoneUuid(vm.getZoneUuid());
         vmTemplate.setOriginalType(vm.getType());
         vmTemplate.setCreateDate(vm.getCreateDate());
         vmTemplate.setLastOpDate(vm.getLastOpDate());

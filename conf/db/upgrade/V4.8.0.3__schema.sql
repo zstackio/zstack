@@ -14,18 +14,22 @@ alter table `zstack`.`LongJobVO` add column `parentUuid` char(32) default null;
 CREATE TABLE `zstack`.`VmTemplateVO` (
     `uuid` char(32) NOT NULL UNIQUE,
     `name` varchar(255) NOT NULL,
-    `vmInstanceUuid` char(32) DEFAULT NULL,
+    `vmInstanceUuid` char(32) NOT NULL,
+    `zoneUuid` char(32) NOT NULL,
     `originalType` varchar(64) NOT NULL,
-    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp,
-    PRIMARY KEY  (`uuid`)
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkVmTemplateVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES VmInstanceEO (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkVmTemplateVOZoneEO` FOREIGN KEY (`zoneUuid`) REFERENCES ZoneEO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `zstack`.`VolumeTemplateVO` (
     `uuid` char(32) NOT NULL UNIQUE,
-    `volumeUuid` char(32) DEFAULT NULL,
+    `volumeUuid` char(32) NOT NULL,
     `originalType` varchar(64) NOT NULL,
-    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp,
-    PRIMARY KEY  (`uuid`)
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkVolumeTemplateVOVolumeEO` FOREIGN KEY (`volumeUuid`) REFERENCES VolumeEO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

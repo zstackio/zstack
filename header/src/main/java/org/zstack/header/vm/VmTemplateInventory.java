@@ -15,6 +15,7 @@ public class VmTemplateInventory implements Serializable {
     private String uuid;
     private String name;
     private String vmInstanceUuid;
+    private String zoneUuid;
     private String originalType;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -26,6 +27,7 @@ public class VmTemplateInventory implements Serializable {
         this.uuid = other.getUuid();
         this.name = other.getName();
         this.vmInstanceUuid = other.getVmInstanceUuid();
+        this.zoneUuid = other.getZoneUuid();
         this.originalType = other.getOriginalType();
         this.createDate = other.getCreateDate();
         this.lastOpDate = other.getLastOpDate();
@@ -36,6 +38,7 @@ public class VmTemplateInventory implements Serializable {
         inventory.setUuid(vo.getUuid());
         inventory.setName(vo.getName());
         inventory.setVmInstanceUuid(vo.getVmInstanceUuid());
+        inventory.setZoneUuid(vo.getZoneUuid());
         inventory.setOriginalType(vo.getOriginalType());
         inventory.setCreateDate(vo.getCreateDate());
         inventory.setLastOpDate(vo.getLastOpDate());
@@ -68,6 +71,14 @@ public class VmTemplateInventory implements Serializable {
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
+    }
+
+    public String getZoneUuid() {
+        return zoneUuid;
+    }
+
+    public void setZoneUuid(String zoneUuid) {
+        this.zoneUuid = zoneUuid;
     }
 
     public String getOriginalType() {

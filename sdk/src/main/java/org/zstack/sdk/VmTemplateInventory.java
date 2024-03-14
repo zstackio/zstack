@@ -28,6 +28,14 @@ public class VmTemplateInventory  {
         return this.vmInstanceUuid;
     }
 
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
     public java.lang.String originalType;
     public void setOriginalType(java.lang.String originalType) {
         this.originalType = originalType;
