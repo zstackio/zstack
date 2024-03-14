@@ -23,7 +23,7 @@ import java.util.List;
 
 public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFactory, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
     private static CLogger logger = Utils.getLogger(L2VlanNetworkFactory.class);
-    static L2NetworkType type = new L2NetworkType(L2NetworkConstant.L2_VLAN_NETWORK_TYPE);
+    static L2NetworkType type = new L2NetworkType(L2NetworkConstant.L2_VLAN_NETWORK_TYPE, true, true);
     
     @Autowired
     private DatabaseFacade dbf;
