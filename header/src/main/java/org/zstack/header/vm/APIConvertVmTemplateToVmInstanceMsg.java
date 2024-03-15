@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -15,6 +16,12 @@ public class APIConvertVmTemplateToVmInstanceMsg extends APICreateMessage {
     @APIParam(resourceType = VmTemplateVO.class, checkAccount = true)
     private String vmTemplateUuid;
 
+    @APIParam(required = false, validValues = { "InstantStart", "JustConvert" })
+    private String strategy = VmTemplateConversionStrategy.InstantStart.toString();
+
+    @APIParam(required = false, resourceType = HostVO.class)
+    private String hostUuid;
+
     public String getVmTemplateUuid() {
         return vmTemplateUuid;
     }
@@ -23,9 +30,27 @@ public class APIConvertVmTemplateToVmInstanceMsg extends APICreateMessage {
         this.vmTemplateUuid = vmTemplateUuid;
     }
 
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+
     public static APIConvertVmTemplateToVmInstanceMsg __example__() {
         APIConvertVmTemplateToVmInstanceMsg msg = new APIConvertVmTemplateToVmInstanceMsg();
         msg.setVmTemplateUuid(uuid());
+        msg.setHostUuid(uuid());
+        msg.setStrategy(VmTemplateConversionStrategy.InstantStart.toString());
         return msg;
     }
 }

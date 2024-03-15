@@ -38,11 +38,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
-import org.zstack.header.host.CpuArchitecture;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.*;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
@@ -62,7 +58,6 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
-import org.zstack.header.vm.cdrom.VmCdRomInventory;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.*;
@@ -286,8 +281,29 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }.execute();
 
         VmInstanceVO vm = dbf.findByUuid(vmTemplate.getVmInstanceUuid(), VmInstanceVO.class);
-        event.setInventory(vm.toInventory());
-        bus.publish(event);
+        VmTemplateConversionStrategy strategy = VmTemplateConversionStrategy.valueOf(msg.getStrategy());
+        if (strategy == VmTemplateConversionStrategy.InstantStart) {
+            StartVmInstanceMsg smsg = new StartVmInstanceMsg();
+            smsg.setVmInstanceUuid(vm.getUuid());
+            smsg.setHostUuid(msg.getHostUuid());
+            bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vm.getUuid());
+            bus.send(smsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    StartVmInstanceReply r = reply.castReply();
+                    if (!r.isSuccess()) {
+                        event.setSuccess(false);
+                        event.setError(r.getError());
+                    } else {
+                        event.setInventory(r.getInventory());
+                    }
+                    bus.publish(event);
+                }
+            });
+        } else {
+            event.setInventory(VmInstanceInventory.valueOf(dbf.reload(vm)));
+            bus.publish(event);
+        }
     }
 
     private void handle(APIConvertVmInstanceToVmTemplateMsg msg) {
