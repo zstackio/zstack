@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
@@ -14,13 +15,16 @@ import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.VSwitchType;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
-import org.zstack.header.tag.SystemTagInventory;
-import org.zstack.header.tag.SystemTagLifeCycleListener;
-import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -39,6 +43,8 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     private VmInstanceDeviceManager vidm;
     @Autowired
     private PluginRegistry pluginRegistry;
+    @Autowired
+    private DatabaseFacade dbf;
 
     private List<String> supportNicDriverTypes;
     private String defaultPVNicDriver;
@@ -265,6 +271,29 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         } else {
             nic.setDriverType(getDefaultNicDriver());
         }
+    }
+
+    @Override
+    public VmNicType getVmNicType(String vmUuid, L3NetworkInventory l3nw) {
+        boolean enableSriov = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                .eq(SystemTagVO_.resourceUuid, vmUuid)
+                .eq(SystemTagVO_.tag, String.format("enableSRIOV::%s", l3nw.getUuid()))
+                .isExists();
+        logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
+                enableSriov ? "vf nic" : "vnic", l3nw.getUuid()));
+        boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
+
+        L2NetworkVO l2nw =  dbf.findByUuid(l3nw.getL2NetworkUuid(), L2NetworkVO.class);
+        VmNicType type;
+        if (l2nw.getType().equals(L2NetworkConstant.L2_TF_NETWORK_TYPE)) {
+            type = VmNicType.valueOf(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE);
+        } else {
+            VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
+            type = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+        }
+
+        return type;
     }
 
     @Override
