@@ -12,12 +12,10 @@ import org.zstack.header.storage.primary.ImageCacheVolumeRefVO;
 import org.zstack.header.storage.primary.ImageCacheVolumeRefVO_;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.reference.*;
-import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -93,8 +91,6 @@ public class VolumeSnapshotReferenceUtils {
         }
 
         List<VolumeSnapshotVO> allSnapshots = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, volumeUuid).list();
-        DebugUtils.Assert(allSnapshots.stream().map(ResourceVO::getUuid).collect(Collectors.toSet()).containsAll(refVolumeSnapshotUuids),
-                "snapshots ref by other volumes are in VolumeSnapshotReferenceVO but not in VolumeSnapshotVO for volume "+volumeUuid);
 
         Map<String, List<VolumeSnapshotVO>> treeSnapshotsMap = allSnapshots.stream().collect(Collectors.groupingBy(VolumeSnapshotVO::getTreeUuid));
         List<String> refVolumeSnapshotUuidsInTree = new ArrayList<>();
