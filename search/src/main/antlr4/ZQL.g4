@@ -88,10 +88,16 @@ expr
     : field operator complexValue?
     ;
 
+joinExpr
+    : left=queryTarget operator right=queryTarget
+    ;
+
 exprAtom
-    : ID    #columnNameExprAtom
-    | '(' exprAtom (',' exprAtom)* ')'  #nestedExprAtom
-    | left=exprAtom mathOperator right=exprAtom #mathExprAtom
+    : ID                                            #columnNameExprAtom
+    | queryTarget                                   #relationshipEntityExprAtom
+    | function '(' queryTarget ')'                  #functionCallExpressionAtom
+    | '(' exprAtom (',' exprAtom)* ')'              #nestedExprAtom
+    | left=exprAtom mathOperator right=exprAtom     #mathExprAtom
     ;
 
 equal
@@ -102,6 +108,7 @@ condition
     : '(' condition ')' #parenthesisCondition
     | left=condition (op=logicalOperator right=condition)+ #nestCondition
     | expr #simpleCondition
+    | joinExpr #joinCondition
     ;
 
 queryTarget
@@ -111,12 +118,12 @@ queryTarget
     ;
 
 function
-    : DISTINCT
+    : ID
     ;
 
 queryTargetWithFunction
-    : queryTarget #withoutFunction
-    | function '(' queryTargetWithFunction ')' #withFunction
+    : queryTarget joinClause*                                   #withoutFunction
+    | function '(' queryTargetWithFunction ')' joinClause*      #withFunction
     ;
 
 orderByExpr
@@ -197,6 +204,10 @@ namedAs
     : NAMED_AS namedAsValue
     ;
 
+joinClause
+	: (INNER|LEFT|RIGHT) JOIN queryTarget ON condition+       #joinTable
+	;
+
 query
     : QUERY queryTargetWithFunction (WHERE condition+)? restrictBy? returnWith? groupBy? orderBy? limit? offset? filterBy? namedAs?
     ;
@@ -234,6 +245,15 @@ mathOperator
     : '*' | '/' | '%' | '+' | '-' | '--'
     ;
 
+INNER: 'inner';
+
+LEFT: 'left';
+
+RIGHT: 'right';
+
+JOIN: 'join';
+
+ON: 'on';
 
 FILTER_BY: 'filter by';
 
@@ -250,8 +270,6 @@ COUNT: 'count';
 SUM: 'sum';
 
 SEARCH: 'search';
-
-DISTINCT: 'distinct';
 
 ORDER_BY: 'order by';
 

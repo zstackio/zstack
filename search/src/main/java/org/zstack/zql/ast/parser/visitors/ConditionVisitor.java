@@ -23,4 +23,9 @@ public class ConditionVisitor extends ZQLBaseVisitor<ASTNode.Condition> {
     public ASTNode.Condition visitParenthesisCondition(ZQLParser.ParenthesisConditionContext ctx) {
         return ctx.condition().accept(new ConditionVisitor());
     }
+
+    @Override
+    public ASTNode.Condition visitJoinCondition(ZQLParser.JoinConditionContext ctx) {
+        return ctx.joinExpr().accept(new JoinExprVisitor());
+    }
 }

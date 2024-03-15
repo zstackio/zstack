@@ -12,7 +12,7 @@ public class OrderByExprVisitor extends ZQLBaseVisitor<ASTNode.OrderByExpr> {
     public ASTNode.OrderByExpr visitOrderByExpr(ZQLParser.OrderByExprContext ctx) {
         ASTNode.OrderByExpr o = new ASTNode.OrderByExpr();
         o.setDirection(ctx.ORDER_BY_VALUE().getText());
-        o.setTarget(ctx.exprAtom().accept(new ExprAtomVisitor()));
+        o.setExpr(ctx.exprAtom().accept(new ExprAtomVisitor()));
         return o;
     }
 }

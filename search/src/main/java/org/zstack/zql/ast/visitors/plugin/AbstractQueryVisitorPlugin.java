@@ -57,7 +57,7 @@ public abstract class AbstractQueryVisitorPlugin extends QueryVisitorPlugin {
             return "";
         }
 
-        List<String> conds = node.getConditions().stream().map(it->(String)((ASTNode)it).accept(new ConditionVisitor())).collect(Collectors.toList());
+        List<String> conds = node.getConditions().stream().map(it -> (String) ((ASTNode) it).accept(new ConditionVisitor())).collect(Collectors.toList());
         return StringUtils.join(conds, " ");
     }
 
@@ -91,5 +91,19 @@ public abstract class AbstractQueryVisitorPlugin extends QueryVisitorPlugin {
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.getTarget().getEntity());
         fs.forEach(inventory::errorIfNoField);
         return node.getGroupBy() == null ? null : (String) node.getGroupBy().accept(new GroupByVisitor());
+    }
+
+    @Override
+    public String joinTables() {
+        if (node.getTarget().getJoinClauseList() == null
+                || node.getTarget().getJoinClauseList().isEmpty()) {
+            return null;
+        }
+
+        List<String> joinTables = node.getTarget().getJoinClauseList().stream()
+                .map(it -> (String) it.accept(new JoinClauseVisitor()))
+                .collect(Collectors.toList());
+
+        return StringUtils.join(joinTables, " ");
     }
 }

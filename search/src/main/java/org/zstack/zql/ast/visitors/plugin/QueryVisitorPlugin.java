@@ -32,4 +32,5 @@ public abstract class QueryVisitorPlugin {
     public abstract Integer limit();
     public abstract Integer offset();
     public abstract String groupBy();
+    public abstract String joinTables();
 }
