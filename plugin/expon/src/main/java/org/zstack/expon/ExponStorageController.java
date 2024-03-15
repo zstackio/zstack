@@ -1101,7 +1101,13 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void deleteSnapshot(String installPath, Completion comp) {
-        apiHelper.deleteVolumeSnapshot(getSnapIdFromPath(installPath));
+        apiHelper.deleteVolumeSnapshot(getSnapIdFromPath(installPath), false);
+        comp.success();
+    }
+
+    @Override
+    public void expungeSnapshot(String installPath, Completion comp) {
+        apiHelper.deleteVolumeSnapshot(getSnapIdFromPath(installPath), true);
         comp.success();
     }
 
