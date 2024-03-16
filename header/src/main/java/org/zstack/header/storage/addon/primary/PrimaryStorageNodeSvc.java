@@ -20,8 +20,6 @@ public interface PrimaryStorageNodeSvc {
     // TODO use HostInventory
     List<ActiveVolumeClient> getActiveClients(String installPath, String protocol);
 
-    List<ActiveVolumeClient> getActiveClients(String installPath, String protocol, String volUuid);
-
     List<String> getActiveVolumesLocation(HostInventory h);
 
     void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp);
