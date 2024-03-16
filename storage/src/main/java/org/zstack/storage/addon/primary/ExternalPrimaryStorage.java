@@ -1805,4 +1805,20 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             controller.trashVolume(installPath, completion);
         }
     }
+
+    @Override
+    protected void doAddProtocol(APIAddStorageProtocolMsg msg, Completion completion) {
+        ExternalPrimaryStorageVO storageVO = Q.New(ExternalPrimaryStorageVO.class)
+                .eq(ExternalPrimaryStorageVO_.uuid, msg.getUuid())
+                .find();
+        if (storageVO != null) {
+            PrimaryStorageOutputProtocolRefVO ref = Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                    .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, msg.getUuid())
+                    .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, msg.getOutputProtocol())
+                    .find();
+            storageVO.getOutputProtocols().add(ref);
+            dbf.updateAndRefresh(storageVO);
+        }
+        super.doAddProtocol(msg, completion);
+    }
 }
