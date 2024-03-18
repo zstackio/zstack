@@ -5776,6 +5776,8 @@ public class KVMHost extends HostBase implements Host {
                 .run(chain -> handleShutdownHost(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
+                        new HostBase.HostDisconnectedCanonicalEvent(msg.getHostUuid(), operr("host[uuid:%s] becomes power off, send notify",
+                                msg.getHostUuid())).fire();
                         chain.next();
                     }
                 }));
