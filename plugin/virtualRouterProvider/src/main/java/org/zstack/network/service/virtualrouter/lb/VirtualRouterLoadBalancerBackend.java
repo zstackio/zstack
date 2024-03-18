@@ -568,6 +568,19 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public static class CertificateRsp extends AgentResponse {
     }
 
+    public static class CertificatesCmd extends AgentCommand {
+        @GrayVersion(value = "5.1.0")
+        Map<String, String> certs;//uuid:cert map
+
+        public Map<String, String> getCerts() {
+            return certs;
+        }
+
+        public void setCerts(Map<String, String> certs) {
+            this.certs = certs;
+        }
+    }
+
     public static class DeleteLbCmd extends AgentCommand {
         @GrayVersion(value = "5.0.0")
         List<LbTO> lbs;
@@ -584,49 +597,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public static class DeleteLbRsp extends AgentResponse {
     }
 
-    public static class RefreshListenersCmd extends AgentCommand implements Serializable {
-        @GrayVersion(value = "5.1.0")
-        List<LbTO> lbs;
-        @GrayVersion(value = "5.1.0")
-        public Boolean enableHaproxyLog;
-        @GrayVersion(value = "5.1.0")
-        public HashMap<String, String> certificate;
-
-        public List<LbTO> getLbs() {
-            return lbs;
-        }
-
-        public void setLbs(List<LbTO> lbs) {
-            this.lbs = lbs;
-        }
-
-        public Boolean getEnableHaproxyLog() {
-            return enableHaproxyLog;
-        }
-
-        public void setEnableHaproxyLog(Boolean enableHaproxyLog) {
-            this.enableHaproxyLog = enableHaproxyLog;
-        }
-
-        public HashMap<String, String> getCertificate() {
-            return certificate;
-        }
-
-        public void setCertificate(HashMap<String, String> certificate) {
-            this.certificate = certificate;
-        }
-    }
-
-    public static class RefreshListenersRsp extends AgentResponse {
-    }
-
-
     public static final String REFRESH_LB_PATH = "/lb/refresh";
     public static final String DELETE_LB_PATH = "/lb/delete";
     public static final String REFRESH_LB_LOG_LEVEL_PATH = "/lb/log/level";
     public static final String CREATE_CERTIFICATE_PATH = "/certificate/create";
     public static final String DELETE_CERTIFICATE_PATH = "/certificate/delete";
-    public static final String REFRESH_LISTENERS_PATH = "/listeners/refresh";
+    public static final String CREATE_CERTIFICATES_PATH = "/certificates/create";
 
     private String getOnlyResourceConfig(String resourceUuid) {
         String value = Q.New(ResourceConfigVO.class).select(ResourceConfigVO_.value)
@@ -1013,7 +989,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         });
     }
 
-    public List<String> getCertificates(List<LoadBalancerStruct> structs) {
+    public List<String> getCertificateUuids(List<LoadBalancerStruct> structs) {
         List<String> certificateUuids = new ArrayList<>();
         for (LoadBalancerStruct struct : structs) {
             for (LoadBalancerListenerInventory listenerInv : struct.getListeners()) {
@@ -1047,7 +1023,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     public HashMap<String, String> getListenerCertificates(LoadBalancerStruct struct) {
         HashMap<String, String> certs = new HashMap<>();
-        List<String> certificateUuids = getCertificates(Collections.singletonList(struct));
+        List<String> certificateUuids = getCertificateUuids(Collections.singletonList(struct));
         for (String uuid : certificateUuids) {
             CertificateVO vo = dbf.findByUuid(uuid, CertificateVO.class);
             certs.put(uuid, vo.getCertificate());
@@ -1057,7 +1033,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     private void refreshCertificate(VirtualRouterVmInventory vr, boolean checkVrState, List<LoadBalancerStruct> struct, final Completion completion) {
-        List<String> certificateUuids = getCertificates(struct);
+        List<String> certificateUuids = getCertificateUuids(struct);
 
         List<ErrorCode> errors = new ArrayList<>();
         new While<>(certificateUuids).each((uuid, wcmpl) -> {
@@ -1103,7 +1079,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     private void rollbackCertificate(VirtualRouterVmInventory vr, boolean checkVrState, List<LoadBalancerStruct> struct, final NoErrorCompletion completion) {
-        List<String> certificateUuids = getCertificates(struct);
+        List<String> certificateUuids = getCertificateUuids(struct);
 
         new While<>(certificateUuids).each((uuid, wcmpl) -> {
             VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
@@ -1265,33 +1241,93 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }).start();
     }
 
-    public void refreshListeners(VirtualRouterVmInventory vr, RefreshListenersCmd cmd, boolean statusCheck, Completion completion) {
-        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-        msg.setVmInstanceUuid(vr.getUuid());
-        msg.setPath(REFRESH_LISTENERS_PATH);
-        msg.setCheckStatus(statusCheck);
-        for (VirtualRouterLoadBalancerBackend.LbTO to: cmd.getLbs()) {
-            to.setEnableFullLog(enableFullLog(to, vr));
-        }
-        cmd.enableHaproxyLog = rcf.getResourceConfigValue(VyosGlobalConfig.ENABLE_HAPROXY_LOG, vr.getUuid(), Boolean.class);
+    public void refreshCertsAndListeners(VirtualRouterVmInventory vr,
+                                         Map<String, String> certs,
+                                 List<VirtualRouterLoadBalancerBackend.LbTO> listeners,
+                                 boolean statusCheck, Completion completion) {
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName("refresh-lb-certs-listeners");
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "refresh-lb-certs";
 
-        msg.setCommand(cmd);
-        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    RefreshLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(RefreshLbRsp.class);
-                    if (rsp.isSuccess()) {
-                        completion.success();
-                    } else {
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));
-                    }
-                } else {
-                    completion.fail(reply.getError());
+            public void run(FlowTrigger trigger, Map data) {
+                if (certs.isEmpty()) {
+                    trigger.next();
+                    return;
                 }
+
+                VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+                msg.setVmInstanceUuid(vr.getUuid());
+                msg.setPath(CREATE_CERTIFICATES_PATH);
+                msg.setCheckStatus(statusCheck);
+
+                CertificatesCmd cmd = new CertificatesCmd();
+                cmd.setCerts(certs);
+
+                msg.setCommand(cmd);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            CertificateRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(CertificateRsp.class);
+                            if (rsp.isSuccess()) {
+                                trigger.next();
+                            } else {
+                                trigger.fail(operr("refresh load balancer certificate, because:%s", rsp.getError()));
+                            }
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
+                    }
+                });
             }
-        });
+        }).then(new NoRollbackFlow() {
+            String __name__ = "refresh-lb-listeners";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                RefreshLbCmd cmd = new RefreshLbCmd();
+                VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+                msg.setVmInstanceUuid(vr.getUuid());
+                msg.setPath(REFRESH_LB_PATH);
+                msg.setCheckStatus(statusCheck);
+                for (VirtualRouterLoadBalancerBackend.LbTO to: listeners) {
+                    to.setEnableFullLog(enableFullLog(to, vr));
+                }
+                cmd.setLbs(listeners);
+                cmd.enableHaproxyLog = rcf.getResourceConfigValue(VyosGlobalConfig.ENABLE_HAPROXY_LOG, vr.getUuid(), Boolean.class);
+
+                msg.setCommand(cmd);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+                bus.send(msg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            RefreshLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(RefreshLbRsp.class);
+                            if (rsp.isSuccess()) {
+                                trigger.next();
+                            } else {
+                                trigger.fail(operr("refresh load balancer listener, because:%s", rsp.getError()));
+                            }
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void stopVip(final LoadBalancerStruct struct, final List<VmNicInventory> nics, final Completion completion) {

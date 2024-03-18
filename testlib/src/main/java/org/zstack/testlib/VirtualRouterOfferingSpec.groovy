@@ -121,10 +121,6 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
                 return new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
             }
 
-            simulator(VirtualRouterLoadBalancerBackend.REFRESH_LISTENERS_PATH) {
-                return new VirtualRouterLoadBalancerBackend.RefreshListenersRsp()
-            }
-
             simulator(VirtualRouterLoadBalancerBackend.DELETE_LB_PATH) {
                 return new VirtualRouterLoadBalancerBackend.DeleteLbRsp()
             }
@@ -134,6 +130,10 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
             }
 
             simulator(VirtualRouterLoadBalancerBackend.DELETE_CERTIFICATE_PATH) {
+                return new VirtualRouterLoadBalancerBackend.CertificateRsp()
+            }
+
+            simulator(VirtualRouterLoadBalancerBackend.CREATE_CERTIFICATES_PATH) {
                 return new VirtualRouterLoadBalancerBackend.CertificateRsp()
             }
 
