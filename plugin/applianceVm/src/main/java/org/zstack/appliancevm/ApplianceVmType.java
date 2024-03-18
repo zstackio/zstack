@@ -1,9 +1,8 @@
 package org.zstack.appliancevm;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -37,6 +36,10 @@ public class ApplianceVmType implements Serializable {
             throw new IllegalArgumentException("ApplianceVmType type: " + typeName + " was not registered by any one component");
         }
         return type;
+    }
+
+    public static List<ApplianceVmType> values() {
+        return new ArrayList<>(types.values());
     }
 
     @Override
