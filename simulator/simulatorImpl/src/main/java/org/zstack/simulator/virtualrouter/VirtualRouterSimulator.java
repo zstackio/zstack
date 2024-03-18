@@ -23,6 +23,7 @@ import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBack
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbRsp;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificateCmd;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificateRsp;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificatesCmd;
 import org.zstack.simulator.AsyncRESTReplyer;
 import org.zstack.simulator.SimulatorGlobalProperty;
 import org.zstack.utils.Utils;
@@ -360,6 +361,24 @@ public class VirtualRouterSimulator {
             rsp.setSuccess(false);
         } else {
             config.certificateCmd = cmd;
+        }
+
+        replyer.reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value = VirtualRouterLoadBalancerBackend.CREATE_CERTIFICATES_PATH, method = RequestMethod.POST)
+    private @ResponseBody
+    String createCertificates(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        CertificatesCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CertificatesCmd.class);
+        CertificateRsp rsp = new CertificateRsp();
+
+        if (!config.refreshLbSuccess) {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        } else {
+            config.certificatesCmd = cmd;
         }
 
         replyer.reply(entity, rsp);
