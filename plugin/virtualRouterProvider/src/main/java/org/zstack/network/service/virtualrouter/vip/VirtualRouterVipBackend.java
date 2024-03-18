@@ -493,7 +493,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     public List<String> getVrUuidsByNetworkService(String vipUuid) {
         VirtualRouterVipVO vipVo = dbf.findByUuid(vipUuid, VirtualRouterVipVO.class);
         if (vipVo == null) {
-            return null;
+            return new ArrayList<>();
         }
         return Collections.singletonList(vipVo.getVirtualRouterVmUuid());
     }
