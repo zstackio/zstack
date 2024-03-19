@@ -57,15 +57,22 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
     }
 
     private class ReservedCapacityFinder {
+        String hypervisorType;
         List<String> hostUuids;
         Map<String, ReservedHostCapacity> result = new HashMap<>();
 
         private void findReservedCapacityByHypervisorType() {
+            if (hypervisorType != null && !exts.containsKey(hypervisorType)) {
+                logger.debug(String.format("cannot find HostReservedCapacityExtensionPoint for hypervisor type[%s], skip to find reserved capacity", hypervisorType));
+                return;
+            }
+
             SimpleQuery<HostVO> hq = dbf.createQuery(HostVO.class);
             hq.select(HostVO_.uuid, HostVO_.hypervisorType);
             hq.add(HostVO_.uuid, Op.IN, hostUuids);
             hq.add(HostVO_.state,Op.EQ, HostState.Enabled);
             hq.add(HostVO_.status,Op.EQ, HostStatus.Connected);
+
             List<Tuple> tuples = hq.listTuple();
 
             tuples.parallelStream().forEach(t -> {
@@ -202,6 +209,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
 
         ReservedCapacityFinder finder = new ReservedCapacityFinder();
         finder.hostUuids = huuids;
+        finder.hypervisorType = hypervisorType;
         Collection<ReservedHostCapacity> col = finder.find().values();
         for (ReservedHostCapacity rc : col) {
             ret.setReservedMemoryCapacity(ret.getReservedMemoryCapacity() + rc.getReservedMemoryCapacity());
