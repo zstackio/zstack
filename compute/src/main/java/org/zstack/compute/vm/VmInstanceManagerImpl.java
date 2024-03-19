@@ -2665,6 +2665,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Override
+    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
+
+    @Override
     public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
         if (!inv.getHypervisorType().equals(VmInstanceConstant.KVM_HYPERVISOR_TYPE)) {
             return;
