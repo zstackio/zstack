@@ -46,6 +46,8 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -6836,6 +6838,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
             }
         });
+
+        chain.then(new VmMigratePostCallExtensionFlow());
 
         chain.done(new FlowDoneHandler(completion) {
             @Override
