@@ -49,6 +49,9 @@ public class CreateVpcVRouterAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List rootVolumeSystemTags;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmNicParams;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

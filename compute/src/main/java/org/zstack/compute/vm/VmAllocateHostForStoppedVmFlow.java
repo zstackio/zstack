@@ -76,6 +76,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
                 return arg.getUuid();
             }
         }));
+        msg.setVmNicParams(VmNicSpec.getVmNicParamsOfSpec(spec.getL3Networks()));
         if (spec.getRequiredClusterUuid() == null) {
             if (CollectionUtils.isEmpty(spec.getVmInventory().getVmNics())) {
                 msg.setClusterUuid(spec.getVmInventory().getClusterUuid());

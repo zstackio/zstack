@@ -107,4 +107,19 @@ public class VmNicHelper {
     public static String getPrimaryL3Uuid(VmNicInventory nic) {
         return nic.getL3NetworkUuid();
     }
+
+    public static List<VmNicParam> getVmNicParamsWithVfNic(VmInstanceVO vmVo) {
+        List<VmNicParam> ret = new ArrayList<>();
+        for (VmNicVO nic : vmVo.getVmNics()) {
+            VmNicType nicType = VmNicType.valueOf(nic.getType());
+            if (nicType.isUseSRIOV()) {
+                VmNicParam param = new VmNicParam();
+                param.setL3NetworkUuid(nic.getL3NetworkUuid());
+                param.setDriverType(nic.getDriverType());
+                ret.add(param);
+            }
+        }
+
+        return ret;
+    }
 }

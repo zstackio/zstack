@@ -1,14 +1,12 @@
 package org.zstack.compute;
 
-import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang.StringUtils;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.vm.VmNicParm;
+import org.zstack.header.vm.VmInstanceType;
+import org.zstack.header.vm.VmNicParam;
 import org.zstack.header.vm.VmNicState;
 import org.zstack.utils.CollectionUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,17 +14,17 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 
 public class VmNicUtils {
-    public static void validateVmParms(List<VmNicParm> vmNicParms, List<String> l3Uuids, List<String> supportNicDriverTypes) {
-        if (CollectionUtils.isEmpty(vmNicParms)) {
+    public static void validateVmParams(List<VmNicParam> vmNicParams, List<String> l3Uuids, List<String> supportNicDriverTypes, String vmType) {
+        if (CollectionUtils.isEmpty(vmNicParams)) {
             return;
         }
 
-        List<String> l3UuidsInParms = vmNicParms.stream().map(VmNicParm::getL3NetworkUuid).distinct().collect(Collectors.toList());
-        if (l3UuidsInParms.size() != vmNicParms.size()) {
+        List<String> l3UuidsInParams = vmNicParams.stream().map(VmNicParam::getL3NetworkUuid).distinct().collect(Collectors.toList());
+        if (l3UuidsInParams.size() != vmNicParams.size()) {
             throw new ApiMessageInterceptionException(argerr("duplicate nic params"));
         }
 
-        for (VmNicParm nic : vmNicParms) {
+        for (VmNicParam nic : vmNicParams) {
             String l3 = nic.getL3NetworkUuid();
             if (StringUtils.isEmpty(l3)) {
                 throw new ApiMessageInterceptionException(argerr("l3NetworkUuid of vm nic can not be null"));
@@ -62,6 +60,14 @@ public class VmNicUtils {
             String driverType = nic.getDriverType();
             if (!StringUtils.isEmpty(driverType) && !CollectionUtils.isEmpty(supportNicDriverTypes) && !supportNicDriverTypes.contains(driverType)){
                 throw new ApiMessageInterceptionException(argerr("vm nic driver %s not support yet", driverType));
+            }
+
+            if (nic.isSriovEnabled() && vmType != null && !VmInstanceType.valueOf(vmType).isSriovSupported()) {
+                throw new ApiMessageInterceptionException(argerr("vm type[%s] is not supported SR-IOV", vmType));
+            }
+
+            if (!nic.isSriovEnabled() && nic.getVfParentUuid() != null) {
+                throw new ApiMessageInterceptionException(argerr("vm nic with vf parent uuid[%s] should be SR-IOV enabled", nic.getVfParentUuid()));
             }
         }
     }

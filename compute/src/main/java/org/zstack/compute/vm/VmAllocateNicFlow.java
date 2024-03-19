@@ -9,7 +9,6 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -19,18 +18,11 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -114,8 +106,9 @@ public class VmAllocateNicFlow implements Flow {
             CustomNicOperator nicOperator = new CustomNicOperator(spec.getVmInventory().getUuid(),nw.getUuid());
             final String customNicUuid = nicOperator.getCustomNicId();
 
-            // choose vnic factory based on enableSRIOV system tag & enableVhostUser globalConfig
-            VmNicType type = nicManager.getVmNicType(spec.getVmInventory().getUuid(), nw);
+            // choose vnic factory based on nicParams of nicSpec & enableVhostUser globalConfig
+            VmNicParam nicParam = nicSpec.getVmNicParam();
+            VmNicType type = nicManager.getVmNicType(spec.getVmInventory().getUuid(), nw, nicParam.isSriovEnabled());
             if (type == null) {
                 errs.add(Platform.operr("there is no available nicType on L3 network [%s]", nw.getUuid()));
                 wcomp.allDone();
@@ -219,13 +212,7 @@ public class VmAllocateNicFlow implements Flow {
             return;
         }
 
-        List<VmNicParm> vmNicParms = nicSpec.getVmNicParms();
-        if (CollectionUtils.isEmpty(vmNicParms)) {
-            return;
-        }
-
-        VmNicParm vmNicParm = vmNicParms.get(0);
-
+        VmNicParam vmNicParm = nicSpec.getVmNicParam();
         // add vmnic bandwidth systemtag
         if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {
             VmNicQosConfigBackend backend = vmMgr.getVmNicQosConfigBackend(vmSpec.getVmInventory().getType());

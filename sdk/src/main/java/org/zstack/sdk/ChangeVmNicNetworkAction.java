@@ -31,6 +31,9 @@ public class ChangeVmNicNetworkAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String destL3NetworkUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmNicParams;
+
     @Param(required = false)
     public java.lang.String staticIp;
 
