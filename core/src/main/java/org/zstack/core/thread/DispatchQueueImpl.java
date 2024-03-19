@@ -406,7 +406,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void startThreadIfNeeded() {
             if (counter.get() >= maxThreadNum) {
-                int pendingTaskSize = queue.size() - counter.get();
+                int pendingTaskSize = counter.get() - queue.size();
                 logger.debug(String.format("Sync task syncSignature: %s reached maxThreadNum: %s, current: %d, pending queue size: %d",
                         syncSignature, maxThreadNum, counter.get(), pendingTaskSize));
                 dumpTaskQueueIfNeeded(pendingTaskSize);
