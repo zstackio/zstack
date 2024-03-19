@@ -12,4 +12,12 @@ public class VmVfNicInventory extends org.zstack.sdk.VmNicInventory {
         return this.pciDeviceUuid;
     }
 
+    public java.lang.String haState;
+    public void setHaState(java.lang.String haState) {
+        this.haState = haState;
+    }
+    public java.lang.String getHaState() {
+        return this.haState;
+    }
+
 }

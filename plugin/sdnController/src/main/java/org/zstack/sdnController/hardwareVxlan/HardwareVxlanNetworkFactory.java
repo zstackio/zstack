@@ -413,18 +413,6 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
     }
 
     @Override
-    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-    }
-
-    @Override
-    public void  afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
-    }
-
-    @Override
-    public void  failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
-    }
-
-    @Override
     public String getL2NetworkType() {
         return type.toString();
     }

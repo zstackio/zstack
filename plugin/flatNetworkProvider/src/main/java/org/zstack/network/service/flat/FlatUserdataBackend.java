@@ -349,11 +349,6 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
     }
 
-    @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
     public static class UserdataReleseGC extends TimeBasedGarbageCollector {
         public static long INTERVAL = 300;
 

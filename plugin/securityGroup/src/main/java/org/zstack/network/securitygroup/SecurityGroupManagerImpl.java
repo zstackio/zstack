@@ -2449,15 +2449,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-    }
-
-    @Override
     public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid) {
         RuleCalculator cal = new RuleCalculator();
         cal.vmNicUuids = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {

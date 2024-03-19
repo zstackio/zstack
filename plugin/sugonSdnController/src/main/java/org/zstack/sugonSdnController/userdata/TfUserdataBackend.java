@@ -248,11 +248,6 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
         }
     }
 
-    @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
     public static class UserdataReleseGC extends TimeBasedGarbageCollector {
         public static long INTERVAL = 300;
 
