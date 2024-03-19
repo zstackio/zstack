@@ -2398,6 +2398,36 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         return Q.New(VirtualRouterVmVO.class).in(VirtualRouterVmVO_.uuid, vrUuids).list();
     }
 
+    public void destroyLoadBalancer(VirtualRouterVmInventory vr, List<LbTO> listeners, Completion completion) {
+        DeleteLbCmd cmd = new DeleteLbCmd();
+        cmd.setLbs(listeners);
+        if (cmd.lbs.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setVmInstanceUuid(vr.getUuid());
+        msg.setPath(DELETE_LB_PATH);
+        msg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    DeleteLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(DeleteLbRsp.class);
+                    if (rsp.isSuccess()) {
+                        completion.success();
+                    } else {
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+                    }
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
+    }
+
     public void destroyLoadBalancerOnVirtualRouter(VirtualRouterVmInventory vr, LoadBalancerStruct struct, Completion completion) {
         DeleteLbCmd cmd = new DeleteLbCmd();
         cmd.setLbs(makeLbTOs(struct, vr));
