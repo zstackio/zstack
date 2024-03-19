@@ -9,4 +9,6 @@ public interface PrimaryStorageFactory {
     PrimaryStorage getPrimaryStorage(PrimaryStorageVO vo);
 
     PrimaryStorageInventory getInventory(String uuid);
+
+    void validateStorageProtocol(String protocol);
 }

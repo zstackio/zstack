@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateBlockVolumeAction extends AbstractAction {
+public class AddStorageProtocolAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateBlockVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateBlockVolumeResult value;
+        public org.zstack.sdk.AddStorageProtocolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,43 +26,10 @@ public class CreateBlockVolumeAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long size;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer accessPathId;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String accessPathIqn;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long burstTotalBw;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long burstTotalIops;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long maxTotalBw;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long maxTotalIops;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String protocol;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String outputProtocol;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -96,8 +63,8 @@ public class CreateBlockVolumeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateBlockVolumeResult value = res.getResult(org.zstack.sdk.CreateBlockVolumeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateBlockVolumeResult() : value; 
+        org.zstack.sdk.AddStorageProtocolResult value = res.getResult(org.zstack.sdk.AddStorageProtocolResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddStorageProtocolResult() : value; 
 
         return ret;
     }
@@ -127,10 +94,10 @@ public class CreateBlockVolumeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/block-volumes";
+        info.path = "/primary-storage/protocol";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -3,6 +3,9 @@ package org.zstack.expon;
 public class ExponIscsiHelper {
 
     static String iscsiTargetPrefix = "iscsi_zstack_active";
+
+    static String iscsiTargetImagePrefix = "iscsi_zstack_image_active";
+
     static String iscsiExportTargetName = "iscsi_zstack_export";
 
     static String iscsiHeartbeatTargetName = "iscsi_zstack_heartbeat";
@@ -15,11 +18,16 @@ public class ExponIscsiHelper {
         return "iscsi_" + clientIp.replace(".", "_");
     }
 
-    public static String buildIscsiVolumeClientName(String volUuid) {
-        return "volume_" + volUuid;
+
+    public static String buildIscsiVolumeClientName(String volumeUuid) {
+        return "volume_" + volumeUuid;
     }
 
     static String buildVolumeIscsiTargetName(int index) {
         return String.format("%s_%d", iscsiTargetPrefix, index);
+    }
+
+    static String buildImageIscsiTargetName(int index) {
+        return String.format("%s_%d", iscsiTargetImagePrefix, index);
     }
 }

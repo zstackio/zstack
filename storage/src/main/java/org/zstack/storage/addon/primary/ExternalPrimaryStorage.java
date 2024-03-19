@@ -1723,7 +1723,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         deactivateAndDeleteVolume(installPath, protocol, false, completion);
     }
 
-    private void deactivateAndDeleteVolume(String installPath, String protocol, boolean force, Completion completion) {
+    protected void deactivateAndDeleteVolume(String installPath, String protocol, boolean force, Completion completion) {
         if (protocol == null) {
             doDeleteBits(installPath, force, completion);
             return;
@@ -1804,5 +1804,21 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         } else {
             controller.trashVolume(installPath, completion);
         }
+    }
+
+    @Override
+    protected void doAddProtocol(APIAddStorageProtocolMsg msg, Completion completion) {
+        ExternalPrimaryStorageVO storageVO = Q.New(ExternalPrimaryStorageVO.class)
+                .eq(ExternalPrimaryStorageVO_.uuid, msg.getUuid())
+                .find();
+        if (storageVO != null) {
+            PrimaryStorageOutputProtocolRefVO ref = Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                    .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, msg.getUuid())
+                    .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, msg.getOutputProtocol())
+                    .find();
+            storageVO.getOutputProtocols().add(ref);
+            dbf.updateAndRefresh(storageVO);
+        }
+        super.doAddProtocol(msg, completion);
     }
 }

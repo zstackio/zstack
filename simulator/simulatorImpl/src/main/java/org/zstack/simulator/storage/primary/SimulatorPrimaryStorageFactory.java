@@ -44,6 +44,11 @@ public class SimulatorPrimaryStorageFactory implements PrimaryStorageFactory {
     }
 
     @Override
+    public void validateStorageProtocol(String protocol) {
+
+    }
+
+    @Override
     public PrimaryStorage getPrimaryStorage(PrimaryStorageVO vo) {
         return new SimulatorPrimaryStorage(vo);
     }

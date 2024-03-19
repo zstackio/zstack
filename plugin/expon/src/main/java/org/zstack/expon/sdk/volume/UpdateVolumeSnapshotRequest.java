@@ -23,7 +23,7 @@ public class UpdateVolumeSnapshotRequest extends ExponRequest {
     @Param
     private String name;
 
-    @Param
+    @Param(required = false)
     private String description;
 
     @Override
