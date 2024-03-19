@@ -27,6 +27,18 @@ doc {
 		since "4.4.24"
 	}
 	field {
+		name "schedReason"
+		desc "调度的详情，具体说明为什么进行虚拟机的调度"
+		type "String"
+		since "zsv 4.1.6"
+	}
+	field {
+		name "failReason"
+		desc "调度失败的原因"
+		type "String"
+		since "zsv 4.1.6"
+	}
+	field {
 		name "success"
 		desc "是否成功"
 		type "Boolean"
@@ -34,8 +46,8 @@ doc {
 	}
 	field {
 		name "lastHostUuid"
-		desc ""
-		type "上次所在物理机UUID"
+		desc "上次所在物理机UUID"
+		type "String"
 		since "4.4.24"
 	}
 	field {

@@ -15,10 +15,15 @@ import javax.persistence.Tuple;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmSchedHistoryRecorder {
+    public static final String TYPE_HA = "VMHA";
+    public static final String TYPE_HOST_MAINTENANCE = "HMT";
+
     private final String vmInstanceUuid;
     private final String schedType;
     private final String hostUuid;
     private final String zoneUuid;
+    private String schedReason;
+    private String failReason;
     private VmSchedHistoryVO vo;
 
     @Autowired
@@ -26,7 +31,19 @@ public class VmSchedHistoryRecorder {
     @Autowired
     private DatabaseFacade dbf;
 
-    public VmSchedHistoryRecorder(String schedType, String vmUuid) {
+    public static VmSchedHistoryRecorder ofHostMaintenance(String vmUuid) {
+        return new VmSchedHistoryRecorder(TYPE_HOST_MAINTENANCE, vmUuid);
+    }
+
+    public static VmSchedHistoryRecorder ofHA(String vmUuid) {
+        return new VmSchedHistoryRecorder(TYPE_HA, vmUuid);
+    }
+
+    public static VmSchedHistoryRecorder ofHA(VmInstanceInventory vmInv) {
+        return new VmSchedHistoryRecorder(TYPE_HA, vmInv);
+    }
+
+    private VmSchedHistoryRecorder(String schedType, String vmUuid) {
         this.schedType = schedType;
         this.vmInstanceUuid = vmUuid;
         final Pair<String, String> p = new SQLBatchWithReturn<Pair<String, String>>() {
@@ -46,7 +63,7 @@ public class VmSchedHistoryRecorder {
         this.zoneUuid = p.second();
     }
 
-    public VmSchedHistoryRecorder(String schedType, VmInstanceInventory vmInv) {
+    private VmSchedHistoryRecorder(String schedType, VmInstanceInventory vmInv) {
         this.schedType = schedType;
         this.vmInstanceUuid = vmInv.getUuid();
         this.hostUuid = vmInv.getHostUuid() == null ? vmInv.getLastHostUuid() : vmInv.getHostUuid();
@@ -61,7 +78,18 @@ public class VmSchedHistoryRecorder {
         vo.setAccountUuid(acntUuid);
         vo.setZoneUuid(zoneUuid);
         vo.setLastHostUuid(hostUuid);
+        vo.setSchedReason(schedReason);
         vo = dbf.persistAndRefresh(vo);
+        return this;
+    }
+
+    public VmSchedHistoryRecorder withSchedReason(String schedReason) {
+        this.schedReason = schedReason;
+        return this;
+    }
+
+    public VmSchedHistoryRecorder withFailReason(String failReason) {
+        this.failReason = failReason;
         return this;
     }
 
@@ -73,6 +101,7 @@ public class VmSchedHistoryRecorder {
                 .eq(VmSchedHistoryVO_.vmInstanceUuid, vmInstanceUuid)
                 .set(VmSchedHistoryVO_.destHostUuid, currentHostUuid)
                 .set(VmSchedHistoryVO_.success, currentHostUuid != null)
+                .set(VmSchedHistoryVO_.failReason, failReason)
                 .update();
     }
 }

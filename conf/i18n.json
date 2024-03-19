@@ -12092,7 +12092,7 @@
   {
     "raw": "cannot determine VM[%s] status on host[%s], try to start it",
     "en_US": "cannot determine VM[{0}] status on host[{1}], try to start it",
-    "zh_CN": "无法确定物理机[{1}]上的VM[{0}]状态，请尝试启动它",
+    "zh_CN": "无法确定物理机[{1}]上的VM[{0}]状态，尝试启动虚拟机",
     "arguments": [
       "vmUuid",
       "hostUuid"
@@ -12103,7 +12103,7 @@
   {
     "raw": "vm state is stopped, try to start it",
     "en_US": "vm state is stopped, try to start it",
-    "zh_CN": "云主机状态为“已停止”，请尝试启动它",
+    "zh_CN": "云主机状态为“已停止”，尝试启动虚拟机",
     "arguments": [],
     "line": 1601,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
@@ -12141,33 +12141,30 @@
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
-    "raw": "[HA Worker]: the success ratio[%s] below the threshold[%s], the host[uuid:%s] is judged as dead, errors are %s. Start HA all the vms on this host before",
-    "en_US": "[HA Worker]: the success ratio[{0}] below the threshold[{1}], the host[uuid:{2}] is judged as dead, errors are {3}. Start HA all the vms on this host before",
-    "zh_CN": "[HA Worker]：成功率[{0}]低于阈值[{1}]，物理机[uuid：{2}]被判断为死，错误为{3}。之前在此物理机上启动所有云主机的HA",
+    "raw": "the host[uuid:%s] is alive, no HA required. The host will be reconnected soon",
+    "en_US": "the host[uuid:{0}] is alive, no HA required. The host will be reconnected soon",
+    "zh_CN": "UUID为{0}的主机将被重连，其上的虚拟机暂时不触发高可用",
     "arguments": [
-      "ratio",
-      "threshold",
-      "hostUuid",
-      "errors"
+      "hostUuid"
     ],
-    "line": 59,
+    "line": 89,
     "fileName": "src/main/java/org/zstack/ha/HostCheckResult.java"
   },
   {
-    "raw": "[HA worker]: all host checkers are finished and the success ratio is %s that is greater than the threshold[%s]; no HA need for the vms on this host before. Please wait for the host reconnected",
-    "en_US": "[HA worker]: all host checkers are finished and the success ratio is {0} that is greater than the threshold[{1}]; no HA need for the vms on this host before. Please wait for the host reconnected",
-    "zh_CN": "[HA Worker]：所有物理机检查器都已完成，成功率为{0}，大于阈值[{1}]。以前，此物理机上的云主机不需要HA。请等待物理机重新连接",
+    "raw": "the host[uuid:%s] is dead. (%s) The vm on this host start HA",
+    "en_US": "the host[uuid:{0}] is dead. error is {1}. The vm on this host start HA",
+    "zh_CN": "UUID为{0}的主机短时间无法重连上，错误是{1}。现在上面的虚拟机触发高可用",
     "arguments": [
-      "ratio",
-      "threshold"
+      "hostUuid",
+      "errors"
     ],
-    "line": 56,
+    "line": 92,
     "fileName": "src/main/java/org/zstack/ha/HostCheckResult.java"
   },
   {
     "raw": "VM state is not running, try to start it",
     "en_US": "VM state is not running, try to start it",
-    "zh_CN": "云主机状态为未运行，请尝试启动它",
+    "zh_CN": "云主机状态为未运行，尝试启动虚拟机",
     "arguments": [],
     "line": 102,
     "fileName": "src/main/java/org/zstack/ha/NeverStopVmGC.java"

@@ -3,7 +3,6 @@ package org.zstack.header.vm;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
-import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.zone.ZoneInventory;
 
@@ -24,6 +23,8 @@ public class VmSchedHistoryInventory implements Serializable {
     private String vmInstanceUuid;
     private String accountUuid;
     private String schedType;
+    private String schedReason;
+    private String failReason;
     private Boolean success;
     private String lastHostUuid;
     private String destHostUuid;
@@ -31,7 +32,7 @@ public class VmSchedHistoryInventory implements Serializable {
     private Timestamp lastOpDate;
 
     /**
-     * @desc uuid of zone this vm is in. See :ref:`ZoneInventory`
+     * uuid of zone this vm is in. See :ref:`ZoneInventory`
      */
     private String zoneUuid;
 
@@ -44,6 +45,8 @@ public class VmSchedHistoryInventory implements Serializable {
         inv.setVmInstanceUuid(vo.getVmInstanceUuid());
         inv.setAccountUuid(vo.getAccountUuid());
         inv.setSchedType(vo.getSchedType());
+        inv.setSchedReason(vo.getSchedReason());
+        inv.setFailReason(vo.getFailReason());
         inv.setSuccess(vo.getSuccess());
         inv.setLastHostUuid(vo.getLastHostUuid());
         inv.setDestHostUuid(vo.getDestHostUuid());
@@ -95,6 +98,22 @@ public class VmSchedHistoryInventory implements Serializable {
 
     public void setSchedType(String schedType) {
         this.schedType = schedType;
+    }
+
+    public String getSchedReason() {
+        return schedReason;
+    }
+
+    public void setSchedReason(String schedReason) {
+        this.schedReason = schedReason;
+    }
+
+    public String getFailReason() {
+        return failReason;
+    }
+
+    public void setFailReason(String failReason) {
+        this.failReason = failReason;
     }
 
     public Boolean getSuccess() {
