@@ -60,3 +60,5 @@ delete from `ResourceVO` where `resourceType` = 'UserGroupVO';
 alter table `HybridAccountVO` drop foreign key `fkHybridAccountVOUserVO`;
 drop table if exists `UserVO`;
 delete from `ResourceVO` where `resourceType` = 'UserVO';
+
+CALL INSERT_COLUMN('VmVfNicVO', 'haState', 'varchar(32)', 0, 'Disabled', 'pciDeviceUuid');
