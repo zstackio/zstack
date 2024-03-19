@@ -9,7 +9,8 @@ CREATE TABLE `zstack`.`VpcSharedQosVO`
     `lastOpDate`    timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate`    timestamp    NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`),
-    CONSTRAINT fkVpcSharedQosVOL3NetworkEO FOREIGN KEY (l3NetworkUuid) REFERENCES L3NetworkEO (uuid) ON DELETE CASCADE
+    CONSTRAINT fkVpcSharedQosVOL3NetworkEO FOREIGN KEY (l3NetworkUuid) REFERENCES L3NetworkEO (uuid) ON DELETE CASCADE,
+    CONSTRAINT fkVpcSharedQosVOApplianceVmVO FOREIGN KEY (vpcUuid) REFERENCES ApplianceVmVO (uuid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `zstack`.`VpcSharedQosRefVipVO`
