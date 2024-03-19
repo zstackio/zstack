@@ -28,7 +28,7 @@ public class ChangeVpcSharedQosBandwidthAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String sharedQosUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {131072L,32212254720L}, noTrim = false)
     public java.lang.Long bandwidth;
 
     @Param(required = false)
