@@ -2760,7 +2760,7 @@ ${additionalRemark}
     }
 
     def scanJavaSourceFiles() {
-        ShellResult res = ShellUtils.runAndReturn("find ${rootPath} -name '*.java' -not -path '${rootPath}/sdk/*'")
+        ShellResult res = ShellUtils.runAndReturn("find ${rootPath} -name '*.java' -not -path '${rootPath}/sdk/*' -not -path '${rootPath}/plugin/expon/*'")
         List<String> paths = res.stdout.split("\n")
         paths = paths.findAll { !(it - "\n" - "\r" - "\t").trim().isEmpty()}
 

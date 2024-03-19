@@ -1,11 +1,10 @@
 package org.zstack.header.image
 
 import java.lang.Long
-import java.lang.Long
 import java.lang.Boolean
 import java.sql.Timestamp
-import java.sql.Timestamp
 import org.zstack.header.image.ImageBackupStorageRefInventory
+import org.zstack.header.tag.SystemTagInventory
 
 doc {
 
@@ -87,7 +86,13 @@ doc {
 		name "platform"
 		desc "镜像的系统平台"
 		type "String"
-		since "0.6"
+		since "4.1.0"
+	}
+	field {
+		name "architecture"
+		desc "镜像CPU架构"
+		type "String"
+		since "4.1.0"
 	}
 	field {
 		name "format"
@@ -98,6 +103,12 @@ doc {
 	field {
 		name "system"
 		desc "标识是否为系统镜像"
+		type "Boolean"
+		since "0.6"
+	}
+	field {
+		name "virtio"
+		desc "是否支持virtio"
 		type "Boolean"
 		since "0.6"
 	}
