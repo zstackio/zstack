@@ -6,7 +6,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.Component;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
+import org.zstack.header.allocator.HostReservedCapacityExtensionPoint;
+import org.zstack.header.allocator.ReservedHostCapacity;
+import org.zstack.header.allocator.UnableToReserveHostCapacityException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
@@ -16,7 +19,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -59,7 +67,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
     private class ReservedCapacityFinder {
         String hypervisorType;
         List<String> hostUuids;
-        Map<String, ReservedHostCapacity> result = new HashMap<>();
+        Map<String, ReservedHostCapacity> result = new ConcurrentHashMap<>();
 
         private void findReservedCapacityByHypervisorType() {
             if (hypervisorType != null && !exts.containsKey(hypervisorType)) {
@@ -74,24 +82,30 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             hq.add(HostVO_.status,Op.EQ, HostStatus.Connected);
 
             List<Tuple> tuples = hq.listTuple();
-
-            tuples.parallelStream().forEach(t -> {
+            Map<String, List<String>> hypervisorTypeMap = new HashMap<>();
+            for (Tuple t : tuples) {
                 String huuid = t.get(0, String.class);
-                String hvType = t.get(1, String.class);
+                String htype = t.get(1, String.class);
+                List<String> lst = hypervisorTypeMap.computeIfAbsent(htype, k -> new ArrayList<>());
+                lst.add(huuid);
+            }
 
-                HostReservedCapacityExtensionPoint ext = exts.get(hvType);
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("find reserved capacity for hypervisor type[%s], hosts: %s", hypervisorType, hypervisorTypeMap));
+            }
+
+            hypervisorTypeMap.keySet().forEach(key -> {
+                HostReservedCapacityExtensionPoint ext = exts.get(key);
                 if (ext == null) {
                     return;
                 }
 
-                ReservedHostCapacity hc = result.get(huuid);
-                ReservedHostCapacity extHc = ext.getReservedHostCapacity(huuid);
-                if (hc.getReservedMemoryCapacity() == -1) {
-                    hc.setReservedMemoryCapacity(extHc.getReservedMemoryCapacity());
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("find reserved capacity for hypervisor type[%s], hosts: %s", key, hypervisorTypeMap.get(key)));
                 }
-                if (hc.getReservedCpuCapacity() == -1) {
-                    hc.setReservedCpuCapacity(extHc.getReservedCpuCapacity());
-                }
+
+                Map<String, ReservedHostCapacity> results = ext.getReservedHostsCapacity(hypervisorTypeMap.get(key));
+                result.putAll(results);
             });
         }
 
