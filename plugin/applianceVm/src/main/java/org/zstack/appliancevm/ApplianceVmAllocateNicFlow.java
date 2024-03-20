@@ -3,7 +3,6 @@ package org.zstack.appliancevm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmInstanceManager;
 import org.zstack.compute.vm.VmNicManager;
 import org.zstack.core.Platform;
@@ -11,7 +10,6 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -23,14 +21,9 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -92,20 +85,13 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                 nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
 
         L3NetworkVO l3NetworkVO = dbf.findByUuid(nicSpec.getL3NetworkUuid(), L3NetworkVO.class);
-        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
+        VmNicParam nicParam = VmNicSpec.getVmNicParamsOfSpec(vmSpec.getL3Networks())
+                .stream().filter(nic -> nicSpec.getL3NetworkUuid().equals(nic.getL3NetworkUuid()))
+                .findFirst().orElse(new VmNicParam());
 
-        // set vnic type based on enableSRIOV system tag & enableVhostUser globalConfig
-        boolean enableSriov = Q.New(SystemTagVO.class)
-                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
-                .eq(SystemTagVO_.resourceUuid, vmSpec.getVmInventory().getUuid())
-                .eq(SystemTagVO_.tag, String.format("enableSRIOV::%s", nicSpec.getL3NetworkUuid()))
-                .isExists();
-        boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
-
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
-        VmNicType vmNicType = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+        VmNicType vmNicType = nicManager.getVmNicType(vmSpec.getVmInventory().getUuid(), L3NetworkInventory.valueOf(l3NetworkVO), nicParam.isSriovEnabled());
         if (vmNicType == null) {
-            throw new OperationFailureException(Platform.operr("there is no available nicType on L2 network [%s]", l2NetworkVO.getUuid()));
+            throw new OperationFailureException(Platform.operr("there is no available nicType on L3 network [%s]", l3NetworkVO.getUuid()));
         }
         inv.setType(vmNicType.toString());
         inv.setUsedIps(new ArrayList<>());

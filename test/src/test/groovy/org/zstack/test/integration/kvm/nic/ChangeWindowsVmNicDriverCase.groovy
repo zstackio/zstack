@@ -1,15 +1,13 @@
 package org.zstack.test.integration.kvm.nic
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.header.image.ImagePlatform
 import org.zstack.header.tag.SystemTagVO
 import org.zstack.header.tag.SystemTagVO_
+import org.zstack.header.vm.VmNicConstant
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.header.vm.VmNicVO
 import org.zstack.header.vm.VmNicVO_
-import org.zstack.tag.SystemTag
-import org.zstack.tag.TagManager
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
@@ -45,7 +43,7 @@ class ChangeWindowsVmNicDriverCase extends SubCase {
     void testChangeWindowsVmNicDriver() {
         VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
         assert VmSystemTags.VIRTIO.hasTag(vm.uuid)
-        assert vm.vmNics[0].driverType == "virtio"
+        assert vm.vmNics[0].driverType == VmNicConstant.NIC_DRIVER_TYPE_VIRTIO
 
         updateVmInstance {
             platform = ImagePlatform.Windows.toString()
@@ -59,7 +57,7 @@ class ChangeWindowsVmNicDriverCase extends SubCase {
                     .findValue().toString()
         }
         assert !VmSystemTags.VIRTIO.hasTag(vm.uuid)
-        assert Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vm.uuid).select(VmNicVO_.driverType).findValue() == "e1000"
+        assert Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vm.uuid).select(VmNicVO_.driverType).findValue() == VmNicConstant.NIC_DRIVER_TYPE_E1000
 
         if (vm.state.equals(VmInstanceState.Running.toString())) {
             expect(AssertionError.class) {
@@ -86,6 +84,6 @@ class ChangeWindowsVmNicDriverCase extends SubCase {
         }
 
         assert VmSystemTags.VIRTIO.hasTag(vm.uuid)
-        assert Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vm.uuid).select(VmNicVO_.driverType).findValue().equals("virtio")
+        assert Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vm.uuid).select(VmNicVO_.driverType).findValue() == VmNicConstant.NIC_DRIVER_TYPE_VIRTIO
     }
 }

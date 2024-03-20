@@ -274,12 +274,7 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     }
 
     @Override
-    public VmNicType getVmNicType(String vmUuid, L3NetworkInventory l3nw) {
-        boolean enableSriov = Q.New(SystemTagVO.class)
-                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
-                .eq(SystemTagVO_.resourceUuid, vmUuid)
-                .eq(SystemTagVO_.tag, String.format("enableSRIOV::%s", l3nw.getUuid()))
-                .isExists();
+    public VmNicType getVmNicType(String vmUuid, L3NetworkInventory l3nw, boolean enableSriov) {
         logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
                 enableSriov ? "vf nic" : "vnic", l3nw.getUuid()));
         boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);

@@ -66,6 +66,15 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "vmNicParams"
+					enclosedIn "params"
+					desc "网卡信息"
+					location "body"
+					type "String"
+					optional true
+					since "4.2.0"
+				}
 			}
         }
 

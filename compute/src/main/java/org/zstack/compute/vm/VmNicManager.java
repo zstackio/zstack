@@ -19,5 +19,5 @@ public interface VmNicManager {
 
     void setNicDriverType(VmNicInventory nic, boolean isImageSupportVirtIo, boolean isParaVirtualization, VmInstanceInventory vm);
 
-    VmNicType getVmNicType(String vmUuid, L3NetworkInventory l3nw);
+    VmNicType getVmNicType(String vmUuid, L3NetworkInventory l3nw, boolean enableSriov);
 }
