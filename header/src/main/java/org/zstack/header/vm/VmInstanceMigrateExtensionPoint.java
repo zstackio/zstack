@@ -14,6 +14,13 @@ public interface VmInstanceMigrateExtensionPoint {
 
     void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid);
 
+    default void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {};
+
+    default void postMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
+        postMigrateVm(inv, destHostUuid);
+        completion.success();
+    }
+
     default void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {};
 
     default void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid, NoErrorCompletion completion) {

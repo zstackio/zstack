@@ -352,6 +352,30 @@ public class VmInstanceExtensionPointEmitter implements Component {
         CollectionUtils.safeForEach(migrateVmExtensions, arg -> arg.beforeMigrateVm(inv, dstHostUuid));
     }
 
+    public void postMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, Completion completion) {
+        new While<>(migrateVmExtensions).each((ext, comp) -> ext.postMigrateVm(inv, dstHostUuid, new Completion(comp) {
+            @Override
+            public void success() {
+                comp.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.addError(errorCode);
+                comp.allDone();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().size() > 0) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                } else {
+                    completion.success();
+                }
+            }
+        });
+    }
+
     public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid, NoErrorCompletion completion) {
         new While<>(migrateVmExtensions).each((ext, comp) -> ext.afterMigrateVm(inv, srcHostUuid, new NoErrorCompletion(comp) {
             @Override

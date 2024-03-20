@@ -709,6 +709,10 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         }).start();
     }
 
+    @Override
+    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
 
     @Override
     public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {}
