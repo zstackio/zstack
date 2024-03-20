@@ -1373,7 +1373,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static class PrepareDhcpCmd extends KVMAgentCommands.AgentCommand {
         @GrayVersion(value = "5.0.0")
         public String bridgeName;
-        @GrayVersion(value = "5.0.0")
+        @GrayVersion(value = "5.1.0")
         public String vlanId;
         @GrayVersion(value = "5.0.0")
         public String dhcpServerIp;
@@ -1471,6 +1471,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 l3Bridges.put(s.getL3Network().getUuid(),
                         KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(s.getL3Network().getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN));
             }
+        }
+        if (l2Uuids.isEmpty()) {
+            return new ArrayList<>();
         }
         Map<String, String> bridgesVlan = new BridgeVlanIdFinder().findByL2Uuids(l2Uuids);
 

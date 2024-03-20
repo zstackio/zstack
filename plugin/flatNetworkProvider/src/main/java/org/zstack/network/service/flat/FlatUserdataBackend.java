@@ -169,13 +169,15 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     }
                     l3Uuids.add(l.l3Uuid);
                 }
-
+                List<UserdataTO> tos = new ArrayList<>();
+                if (l3Uuids.isEmpty()) {
+                    return tos;
+                }
                 Map<String, String> bridgeNames = new BridgeNameFinder().findByL3Uuids(l3Uuids);
                 List<String> l2Uuids = Q.New(L3NetworkVO.class)
                         .select(L3NetworkVO_.l2NetworkUuid).in(L3NetworkVO_.uuid, l3Uuids).listValues();
                 Map<String, String> bridgesVlan = new BridgeVlanIdFinder().findByL2Uuids(l2Uuids);
 
-                List<UserdataTO> tos = new ArrayList<UserdataTO>();
                 for (String vmuuid : vmUuids) {
                     UserdataTO to = new UserdataTO();
                     MetadataTO mto = new MetadataTO();
