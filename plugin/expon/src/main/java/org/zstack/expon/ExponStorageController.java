@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.expon.sdk.ExponClient;
@@ -30,6 +31,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.expon.HealthStatus;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.ImageCacheInventory;
@@ -71,7 +74,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Autowired
     private ThreadFacade thdf;
     private ExternalPrimaryStorageVO self;
-    private ExponAddonInfo addonInfo;
+    public ExponAddonInfo addonInfo;
     private ExponConfig config;
 
     public final ExponApiHelper apiHelper;
@@ -198,7 +201,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         return to;
     }
 
-    private List<IscsiSeverNode> getIscsiServers(String tianshuId) {
+    public List<IscsiSeverNode> getIscsiServers(String tianshuId) {
         List<IscsiSeverNode> nodes = apiHelper.getIscsiTargetServer(tianshuId);
         nodes.removeIf(it -> !it.getUssName().startsWith("iscsi_zstack"));
         if (nodes.isEmpty()) {
@@ -540,6 +543,18 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         comp.fail(operr("not supported protocol[%s] for deactivate", protocol));
+    }
+
+    @Override
+    public void deactivate(String installPath, String protocol, ActiveVolumeClient client, Completion comp) {
+        HostVO host = Q.New(HostVO.class).eq(HostVO_.managementIp, client.getManagerIp()).find();
+        if (host != null) {
+            deactivate(installPath, protocol, HostInventory.valueOf(host), comp);
+        } else {
+            // bm instance InitiatorName
+            deactivateIscsi(installPath, client.getQualifiedName());
+            comp.success();
+        }
     }
 
     public void cleanActiveRecord(VolumeInventory vol) {
