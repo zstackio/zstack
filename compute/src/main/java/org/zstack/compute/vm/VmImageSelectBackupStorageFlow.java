@@ -54,7 +54,8 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
             return spec.getImageSpec().getInventory().getBackupStorageRefs().iterator().next().getBackupStorageUuid();
         }
 
-        DebugUtils.Assert(spec.getVmInventory().getZoneUuid() != null, "zone uuid must be set if the image is on multiple backup storage");
+        DebugUtils.Assert(spec.getVmInventory().getZoneUuid() != null, String.format("image[uuid:%s] is on multiple backup storages, " +
+                "zoneUuid must be set to select backup storage for downloading the image", imageUuid));
 
         ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
         selector.setZoneUuid(spec.getVmInventory().getZoneUuid());
