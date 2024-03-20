@@ -169,10 +169,35 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetVmUptimeMsg) msg);
         } else if (msg instanceof APIConvertVmInstanceToVmTemplateMsg) {
             validate((APIConvertVmInstanceToVmTemplateMsg) msg);
+        } else if (msg instanceof APIConvertVmTemplateToVmInstanceMsg) {
+            validate((APIConvertVmTemplateToVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIConvertVmTemplateToVmInstanceMsg msg) {
+        if (msg.getHostUuid() != null) {
+            if (VmTemplateConversionStrategy.JustConvert.toString().equals(msg.getStrategy())) {
+                throw new ApiMessageInterceptionException(argerr("hostUuid cannot be specified, " +
+                        "when vm is not started immediately after vm template is converted to vm"));
+            }
+
+            Tuple t = Q.New(HostVO.class)
+                    .select(HostVO_.state, HostVO_.status)
+                    .eq(HostVO_.uuid, msg.getHostUuid())
+                    .findTuple();
+            HostState hostState = t.get(0, HostState.class);
+            if (hostState == HostState.Disabled) {
+                throw new ApiMessageInterceptionException(argerr("host[uuid:%s] is specified but it's Disabled, can not convert vm template to vm from it", msg.getHostUuid()));
+            }
+
+            HostStatus connectionState = t.get(1, HostStatus.class);
+            if (connectionState != HostStatus.Connected) {
+                throw new ApiMessageInterceptionException(argerr("host[uuid:%s] is specified but it's connection status is %s, can not convert vm template to vm from it", msg.getHostUuid(), connectionState));
+            }
+        }
     }
 
     private void validate(APIConvertVmInstanceToVmTemplateMsg msg) {
