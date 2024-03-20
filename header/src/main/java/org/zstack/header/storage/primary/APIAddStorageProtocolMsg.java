@@ -9,7 +9,8 @@ import org.zstack.header.volume.VolumeProtocol;
 @RestRequest(
         path = "/primary-storage/protocol",
         responseClass = APIAddStorageProtocolEvent.class,
-        method = HttpMethod.POST
+        method = HttpMethod.POST,
+        parameterName = "params"
 )
 public class APIAddStorageProtocolMsg extends APIMessage implements PrimaryStorageMessage {
     /**

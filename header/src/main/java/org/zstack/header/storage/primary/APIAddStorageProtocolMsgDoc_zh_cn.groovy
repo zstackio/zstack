@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源的UUID，唯一标示该资源"
 					location "body"
 					type "String"
@@ -32,7 +32,7 @@ doc {
 				}
 				column {
 					name "outputProtocol"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "输出协议"
 					location "body"
 					type "String"
