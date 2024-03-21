@@ -428,6 +428,7 @@ public class KVMAgentCommands {
         private String osRelease;
         private String qemuImgVersion;
         private String libvirtVersion;
+        private String libvirtPackageVersion;
         private String hvmCpuFlag;
         private String eptFlag;
         private String cpuArchitecture;
@@ -689,6 +690,14 @@ public class KVMAgentCommands {
 
         public void setMemorySlotsMaximum(String memorySlotsMaximum) {
             this.memorySlotsMaximum = memorySlotsMaximum;
+        }
+
+        public String getLibvirtPackageVersion() {
+            return libvirtPackageVersion;
+        }
+
+        public void setLibvirtPackageVersion(String libvirtPackageVersion) {
+            this.libvirtPackageVersion = libvirtPackageVersion;
         }
     }
 
