@@ -523,6 +523,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((FlattenVmInstanceMsg) msg);
         } else if (msg instanceof CancelFlattenVmInstanceMsg) {
             handle((CancelFlattenVmInstanceMsg) msg);
+        } else if (msg instanceof KvmReportVmShutdownEventMsg) {
+            handle((KvmReportVmShutdownEventMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -532,6 +534,30 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(KvmReportVmShutdownEventMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                KvmReportVmShutdownEventReply reply = new KvmReportVmShutdownEventReply();
+                for (KvmReportVmShutdownEventExtensionPoint ext : pluginRgty.getExtensionList(KvmReportVmShutdownEventExtensionPoint.class)) {
+                    ext.kvmReportVmShutdownEvent(msg.getVmInstanceUuid());
+                }
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return syncThreadName;
+            }
+        });
     }
 
     private void handle(ExecuteCrashStrategyMsg msg) {
@@ -7063,6 +7089,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setRequiredHostUuid(struct.getRequiredHostUuid());
         spec.setDataVolumeSystemTagsOnIndex(struct.getDataVolumeSystemTagsOnIndex());
         spec.setDisableL3Networks(struct.getDisableL3Networks());
+        spec.setStrategy(struct.getStrategy());
 
         spec.setVmInventory(getSelfInventory());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
