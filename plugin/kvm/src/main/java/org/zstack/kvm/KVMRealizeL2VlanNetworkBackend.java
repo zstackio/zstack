@@ -155,6 +155,58 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         });
     }
 
+    @Override
+    public void update(L2NetworkInventory newL2, String hostUuid, Completion completion) {
+        L2NetworkVO oldL2 = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, newL2.getUuid()).find();
+        final KVMAgentCommands.UpdateL2NetworkCmd cmd = new KVMAgentCommands.UpdateL2NetworkCmd();
+
+        cmd.setL2NetworkUuid(newL2.getUuid());
+        cmd.setBridgeName(makeBridgeName(newL2.getUuid(), oldL2.getVirtualNetworkId()));
+        cmd.setPhysicalInterfaceName(newL2.getPhysicalInterface());
+
+        if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(oldL2.getType()) &&
+                L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(newL2.getType())) {
+            cmd.setNewVlan(newL2.getVirtualNetworkId().toString());
+        } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(oldL2.getType()) &&
+                L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(newL2.getType())) {
+            cmd.setOldVlan(oldL2.getVirtualNetworkId().toString());
+        } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(oldL2.getType()) &&
+                L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(newL2.getType())) {
+            cmd.setNewVlan(newL2.getVirtualNetworkId().toString());
+            cmd.setOldVlan(oldL2.getVirtualNetworkId().toString());
+        }
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setNoStatusCheck(false);
+        msg.setCommand(cmd);
+        msg.setHostUuid(hostUuid);
+        msg.setPath(KVMConstant.KVM_UPDATE_L2_NETWORK_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                KVMAgentCommands.UpdateL2NetworkResponse rsp = hreply.toResponse(KVMAgentCommands.UpdateL2NetworkResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("failed to update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+                            cmd.getBridgeName(), newL2.getUuid(), newL2.getName(), hostUuid, rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                String info = String.format("successfully update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s]",
+                        cmd.getBridgeName(), newL2.getUuid(), newL2.getName(), hostUuid);
+                logger.debug(info);
+                completion.success();
+            }
+        });
+    }
+
     public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         if (l2Network.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
             realize(l2Network, hostUuid, false, completion, KVMConstant.KVM_CHECK_OVSDPDK_NETWORK_PATH);
