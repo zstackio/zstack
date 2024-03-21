@@ -4333,6 +4333,11 @@ public class KVMHost extends HostBase implements Host {
                                 runner.setForceRun(true);
                             }
 
+                            if (KVMSystemTags.FORCE_DEPLOYMENT_ONCE.hasTag(self.getUuid())) {
+                                runner.setForceRun(true);
+                                KVMSystemTags.FORCE_DEPLOYMENT_ONCE.delete(self.getUuid());
+                            }
+
                             runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
                             if (CoreGlobalProperty.SYNC_NODE_TIME) {
