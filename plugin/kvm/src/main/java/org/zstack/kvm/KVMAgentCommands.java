@@ -453,6 +453,7 @@ public class KVMAgentCommands {
         private String osRelease;
         private String qemuImgVersion;
         private String libvirtVersion;
+        private String libvirtPackageVersion;
         private String hvmCpuFlag;
         private String eptFlag;
         private String cpuArchitecture;
@@ -508,6 +509,30 @@ public class KVMAgentCommands {
             this.osRelease = osRelease;
         }
 
+        public String getQemuImgVersion() {
+            return qemuImgVersion;
+        }
+
+        public void setQemuImgVersion(String qemuImgVersion) {
+            this.qemuImgVersion = qemuImgVersion;
+        }
+
+        public String getLibvirtVersion() {
+            return libvirtVersion;
+        }
+
+        public void setLibvirtVersion(String libvirtVersion) {
+            this.libvirtVersion = libvirtVersion;
+        }
+
+        public String getLibvirtPackageVersion() {
+            return libvirtPackageVersion;
+        }
+
+        public void setLibvirtPackageVersion(String libvirtPackageVersion) {
+            this.libvirtPackageVersion = libvirtPackageVersion;
+        }
+
         public String getHvmCpuFlag() {
             return hvmCpuFlag;
         }
@@ -524,28 +549,12 @@ public class KVMAgentCommands {
             this.eptFlag = eptFlag;
         }
 
-        public String getLibvirtVersion() {
-            return libvirtVersion;
+        public String getCpuArchitecture() {
+            return cpuArchitecture;
         }
 
-        public void setLibvirtVersion(String libvirtVersion) {
-            this.libvirtVersion = libvirtVersion;
-        }
-
-        public String getQemuImgVersion() {
-            return qemuImgVersion;
-        }
-
-        public void setQemuImgVersion(String qemuImgVersion) {
-            this.qemuImgVersion = qemuImgVersion;
-        }
-
-        public List<String> getIpAddresses() {
-            return ipAddresses;
-        }
-
-        public void setIpAddresses(List<String> ipAddresses) {
-            this.ipAddresses = ipAddresses;
+        public void setCpuArchitecture(String cpuArchitecture) {
+            this.cpuArchitecture = cpuArchitecture;
         }
 
         public String getCpuModelName() {
@@ -596,15 +605,6 @@ public class KVMAgentCommands {
             this.cpuThreadsPerCore = cpuThreadsPerCore;
         }
 
-        public String getCpuCache() {
-            return cpuCache;
-        }
-
-        public void setCpuCache (String cpuCache) {
-            this.cpuCache = cpuCache;
-        }
-
-
         public String getPowerSupplyModelName() {
             return powerSupplyModelName;
         }
@@ -612,7 +612,6 @@ public class KVMAgentCommands {
         public void setPowerSupplyModelName(String powerSupplyModelName) {
             this.powerSupplyModelName = powerSupplyModelName;
         }
-
 
         public String getPowerSupplyManufacturer() {
             return powerSupplyManufacturer;
@@ -622,7 +621,9 @@ public class KVMAgentCommands {
             this.powerSupplyManufacturer = powerSupplyManufacturer;
         }
 
-        public String getIpmiAddress() {return ipmiAddress;}
+        public String getIpmiAddress() {
+            return ipmiAddress;
+        }
 
         public void setIpmiAddress(String ipmiAddress) {
             this.ipmiAddress = ipmiAddress;
@@ -636,19 +637,11 @@ public class KVMAgentCommands {
             this.powerSupplyMaxPowerCapacity = powerSupplyMaxPowerCapacity;
         }
 
-        public String getCpuArchitecture() {
-            return cpuArchitecture;
-        }
-
-        public void setCpuArchitecture(String cpuArchitecture) {
-            this.cpuArchitecture = cpuArchitecture;
-        }
-
         public String getHostCpuModelName() {
             return hostCpuModelName;
         }
 
-        public void setHostCpuModelName (String hostCpuModelName) {
+        public void setHostCpuModelName(String hostCpuModelName) {
             this.hostCpuModelName = hostCpuModelName;
         }
 
@@ -666,23 +659,6 @@ public class KVMAgentCommands {
 
         public void setSystemSerialNumber(String systemSerialNumber) {
             this.systemSerialNumber = systemSerialNumber;
-        }
-
-        public List<String> getLibvirtCapabilities() {
-            return libvirtCapabilities;
-        }
-
-        public void setLibvirtCapabilities(List<String> libvirtCapabilities) {
-            this.libvirtCapabilities = libvirtCapabilities;
-        }
-
-        public VirtualizerInfoTO getVirtualizerInfo() {
-            return virtualizerInfo;
-        }
-
-        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
-            this.virtualizerInfo = virtualizerInfo;
-
         }
 
         public String getSystemManufacturer() {
@@ -747,6 +723,38 @@ public class KVMAgentCommands {
 
         public void setMemorySlotsMaximum(String memorySlotsMaximum) {
             this.memorySlotsMaximum = memorySlotsMaximum;
+        }
+
+        public String getCpuCache() {
+            return cpuCache;
+        }
+
+        public void setCpuCache(String cpuCache) {
+            this.cpuCache = cpuCache;
+        }
+
+        public List<String> getIpAddresses() {
+            return ipAddresses;
+        }
+
+        public void setIpAddresses(List<String> ipAddresses) {
+            this.ipAddresses = ipAddresses;
+        }
+
+        public List<String> getLibvirtCapabilities() {
+            return libvirtCapabilities;
+        }
+
+        public void setLibvirtCapabilities(List<String> libvirtCapabilities) {
+            this.libvirtCapabilities = libvirtCapabilities;
+        }
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
         }
 
         public String getIscsiInitiatorName() {
