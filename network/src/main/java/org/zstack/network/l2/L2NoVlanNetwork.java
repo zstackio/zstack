@@ -486,28 +486,31 @@ public class L2NoVlanNetwork implements L2Network {
         int targetVlan = msg.getVlan() == null ? 0 : msg.getVlan();
 
         if (!currentType.equals(targetType)) {
-            // change L2VlanNetwork to L2NoVlanNetwork
-            self.setType(targetType);
-            self.setVirtualNetworkId(targetVlan);
-            dbf.updateAndRefresh(self);
+            // change to L2VlanNetwork or L2NoVlanNetwork
+            L2NetworkVO l2Vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, self.getUuid()).find();
+            l2Vo.setType(targetType);
+            l2Vo.setVirtualNetworkId(targetVlan);
+            dbf.updateAndRefresh(l2Vo);
             // can not operate L2VlanNetworkVO directly due to it extends from L2NetworkVO
             // use native sql to insert or delete
             if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(targetType)) {
+                // L2VlanNetwork change to L2NoVlanNetwork
                 dbf.getEntityManager().createNativeQuery(
                         String.format("insert into L2VlanNetworkVO (uuid, vlan) " +
-                                "values ('%s', %d)", self.getUuid(), targetVlan)
+                                "values ('%s', %d)", l2Vo.getUuid(), targetVlan)
                 ).executeUpdate();
             } else if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(targetType)) {
+                // L2NoVlanNetwork change to L2VlanNetwork
                 dbf.getEntityManager().createNativeQuery(
-                        String.format("delete from L2VlanNetworkVO where uuid = '%s'", self.getUuid())
+                        String.format("delete from L2VlanNetworkVO where uuid = '%s'", l2Vo.getUuid())
                 ).executeUpdate();
             }
         } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(currentType)) {
             // update L2VlanNetwork vlan id
-            L2VlanNetworkVO vlanNetworkVO = new L2VlanNetworkVO(self);
-            vlanNetworkVO.setVirtualNetworkId(targetVlan);
-            vlanNetworkVO.setVlan(targetVlan);
-            dbf.updateAndRefresh(vlanNetworkVO);
+            L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, self.getUuid()).find();
+            l2VlanNetworkVO.setVirtualNetworkId(targetVlan);
+            l2VlanNetworkVO.setVlan(targetVlan);
+            dbf.updateAndRefresh(l2VlanNetworkVO);
         }
     }
 
