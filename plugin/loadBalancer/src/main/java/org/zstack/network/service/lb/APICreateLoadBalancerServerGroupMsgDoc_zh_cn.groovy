@@ -84,6 +84,15 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "ipVersion"
+					enclosedIn "params"
+					desc "IP版本"
+					location "body"
+					type "Integer"
+					optional true
+					since "5.0.0"
+				}
 			}
         }
 

@@ -26,3 +26,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SlbVmInstanceConfigTaskVO` (
 ALTER TABLE `zstack`.`SlbGroupVO` ADD COLUMN `configVersion` bigint unsigned DEFAULT 0;
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD COLUMN `configVersion` bigint unsigned DEFAULT 0;
 UPDATE `zstack`.`SlbGroupVO` SET deployType = "NoHA";
+
+ALTER TABLE `zstack`.`LoadBalancerServerGroupVO` ADD COLUMN `ipVersion` int(10) unsigned DEFAULT 4 AFTER `loadBalancerUuid`;

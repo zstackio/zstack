@@ -34,6 +34,9 @@ public class CreateLoadBalancerServerGroupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String loadBalancerUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer ipVersion;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
