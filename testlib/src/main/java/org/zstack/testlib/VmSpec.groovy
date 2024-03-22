@@ -20,6 +20,12 @@ class VmSpec extends Spec implements HasSession {
     String name
     @SpecParam
     String description
+    @SpecParam
+    List<String> rootVolumeSystemTags = []
+    @SpecParam
+    List<String> dataVolumeSystemTags = []
+    @SpecParam
+    Map<String, List<String>> dataVolumeSystemTagsOnIndex = [:]
     private List<String> volumeToAttach = []
 
     VmInstanceInventory inventory
@@ -169,6 +175,9 @@ class VmSpec extends Spec implements HasSession {
             delegate.l3NetworkUuids = l3Networks()
             delegate.defaultL3NetworkUuid = defaultL3Network()
             delegate.systemTags = systemTags
+            delegate.rootVolumeSystemTags = rootVolumeSystemTags
+            delegate.dataVolumeSystemTags = dataVolumeSystemTags
+            delegate.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex
         }
 
         postCreate {
