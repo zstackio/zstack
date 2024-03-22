@@ -4333,6 +4333,11 @@ public class KVMHost extends HostBase implements Host {
                                 runner.setForceRun(true);
                             }
 
+                            if (KVMSystemTags.FORCE_DEPLOYMENT_ONCE.hasTag(self.getUuid())) {
+                                runner.setForceRun(true);
+                                KVMSystemTags.FORCE_DEPLOYMENT_ONCE.delete(self.getUuid());
+                            }
+
                             runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
                             if (CoreGlobalProperty.SYNC_NODE_TIME) {
@@ -4528,6 +4533,11 @@ public class KVMHost extends HostBase implements Host {
 
                                     createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
                                     createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
+
+                                    if (ret.getLibvirtPackageVersion() != null) {
+                                        createTagWithoutNonValue(KVMSystemTags.LIBVIRT_PACKAGE_VERSION, KVMSystemTags.LIBVIRT_PACKAGE_VERSION_TOKEN, ret.getLibvirtPackageVersion().trim(), false);
+                                    }
+
                                     createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
