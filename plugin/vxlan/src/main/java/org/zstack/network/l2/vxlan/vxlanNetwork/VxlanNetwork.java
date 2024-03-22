@@ -3,6 +3,7 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -13,8 +14,10 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.identity.Quota;
@@ -31,8 +34,11 @@ import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.transaction.Transactional;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -113,7 +119,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
         final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
-        prepareL2NetworkOnHosts(Arrays.asList(msg.getHost()), new Completion(msg) {
+        prepareL2NetworkOnHosts(asList(msg.getHost()), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -144,63 +150,69 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
         });
     }
 
-    private void changeL2NetworkVlanId(final APIChangeL2NetworkVlanIdMsg msg, final Completion completion) {
-        completion.success();
-        //TODO updateNetwork vxlan vni
-//        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-//        chain.setName(String.format("change-l2-%s-vlan-on-hosts", self.getUuid()));
-//        chain.then(new NoRollbackFlow() {
-//            @Override
-//            public void run(final FlowTrigger trigger, Map data) {
-//                Set<String> clusterList = self.getAttachedClusterRefs().stream()
-//                        .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toSet());
-//                Set<HostVO> hosts = new HashSet<>(Q.New(HostVO.class).in(HostVO_.clusterUuid, clusterList)
-//                        .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
-//                        .eq(HostVO_.status,HostStatus.Connected).list());
-//                L2NetworkInventory newInv = self.toInventory();
-//                if (msg.getType() != null) {
-//                    newInv.setType(msg.getType());
-//                }
-//                if (msg.getUuid() != null) {
-//                    newInv.setVirtualNetworkId(msg.getVlan());
-//                }
-//                new While<>(hosts).step((host, whileCompletion) -> {
-//                    updateNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
-//                        @Override
-//                        public void success() {
-//                            whileCompletion.done();
-//                        }
-//
-//                        @Override
-//                        public void fail(ErrorCode errorCode) {
-//                            logger.error(String.format("attach l2 network to host:[%s] failed", host.getUuid()));
-//                            whileCompletion.addError(errorCode);
-//                            whileCompletion.allDone();
-//                        }
-//                    });
-//                },10).run(new WhileDoneCompletion(trigger) {
-//                    @Override
-//                    public void done(ErrorCodeList errorCodeList) {
-//                        if (!errorCodeList.getCauses().isEmpty()) {
-//                            trigger.fail(errorCodeList.getCauses().get(0));
-//                        } else {
-//                            trigger.next();
-//                        }
-//                    }
-//
-//                });
-//            }
-//        }).done(new FlowDoneHandler(completion) {
-//            @Override
-//            public void handle(Map data) {
-//                completion.success();
-//            }
-//        }).error(new FlowErrorHandler(completion) {
-//            @Override
-//            public void handle(ErrorCode errCode, Map data) {
-//                completion.fail(errCode);
-//            }
-//        }).start();
+
+    @Transactional
+    private void changeL2NetworkVniInDb(final APIChangeL2NetworkVlanIdMsg msg) {
+        if (!self.getVirtualNetworkId().equals(msg.getVlan())) {
+            VxlanNetworkVO vo = getSelf();
+            vo.setVirtualNetworkId(msg.getVlan());
+            vo.setVni(msg.getVlan());
+            dbf.updateAndRefresh(vo);
+        }
+    }
+
+    private void changeL2NetworkVni(final APIChangeL2NetworkVlanIdMsg msg, final Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("change-l2-%s-vlan-on-hosts", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                Set<String> clusterList = self.getAttachedClusterRefs().stream()
+                        .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toSet());
+                Set<HostVO> hosts = new HashSet<>(Q.New(HostVO.class).in(HostVO_.clusterUuid, clusterList)
+                        .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
+                        .eq(HostVO_.status,HostStatus.Connected).list());
+                L2NetworkInventory newInv = self.toInventory();
+                if (msg.getVlan() != null) {
+                    newInv.setVirtualNetworkId(msg.getVlan());
+                }
+                new While<>(hosts).step((host, whileCompletion) -> {
+                    updateVxlanNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.error(String.format("update l2 network in host:[%s] failed", host.getUuid()));
+                            whileCompletion.addError(errorCode);
+                            whileCompletion.allDone();
+                        }
+                    });
+                },10).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
 
@@ -276,6 +288,14 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
         }).start();
     }
 
+    protected void updateVxlanNetwork(L2NetworkInventory l2Inv, String hostUuid, String htype, Completion completion) {
+        final HypervisorType hvType = HypervisorType.valueOf(htype);
+        final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+        final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
+        ext.update(l2Inv, hostUuid, completion);
+    }
+
     protected void realizeNetwork(String hostUuid, String htype, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
@@ -334,10 +354,10 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
             @Override
             public void run(SyncTaskChain chain) {
-                changeL2NetworkVlanId(msg, new Completion(chain) {
+                changeL2NetworkVni(msg, new Completion(chain) {
                     @Override
                     public void success() {
-                        //change L2VxlanNetwork vni
+                        changeL2NetworkVniInDb(msg);
                         chain.next();
                     }
 

@@ -452,7 +452,7 @@ public class L2NoVlanNetwork implements L2Network {
         });
     }
 
-    protected void updateNetwork(L2NetworkInventory l2Inv, String hostUuid, String htype, Completion completion) {
+    protected void updateVlanNetwork(L2NetworkInventory l2Inv, String hostUuid, String htype, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
         final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
@@ -526,11 +526,11 @@ public class L2NoVlanNetwork implements L2Network {
                 if (msg.getType() != null) {
                     newInv.setType(msg.getType());
                 }
-                if (msg.getUuid() != null) {
+                if (msg.getVlan() != null) {
                     newInv.setVirtualNetworkId(msg.getVlan());
                 }
                 new While<>(hosts).step((host, whileCompletion) -> {
-                    updateNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                    updateVlanNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
                         @Override
                         public void success() {
                             whileCompletion.done();
@@ -538,7 +538,7 @@ public class L2NoVlanNetwork implements L2Network {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            logger.error(String.format("attach l2 network to host:[%s] failed", host.getUuid()));
+                            logger.error(String.format("update l2 network in host:[%s] failed", host.getUuid()));
                             whileCompletion.addError(errorCode);
                             whileCompletion.allDone();
                         }

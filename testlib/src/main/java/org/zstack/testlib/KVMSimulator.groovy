@@ -383,7 +383,11 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.VmCompareCpuFunctionResponse()
         }
 
-        spec.simulator(KVMConstant.KVM_UPDATE_L2_NETWORK_PATH) {
+        spec.simulator(KVMConstant.KVM_UPDATE_L2VLAN_NETWORK_PATH) {
+            return new KVMAgentCommands.UpdateL2NetworkResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_UPDATE_L2VXLAN_NETWORK_PATH) {
             return new KVMAgentCommands.UpdateL2NetworkResponse()
         }
 

@@ -21,7 +21,8 @@ public interface KVMConstant {
     String KVM_HOST_CHECK_FILE_PATH = "/host/checkfile";
     String KVM_HOST_REPORT_DEVICE_EVENT_PATH = "/host/reportdeviceevent";
     String KVM_HOST_NUMA_PATH = "/numa/topology";
-    String KVM_UPDATE_L2_NETWORK_PATH = "/network/l2/updatebridge";
+    String KVM_UPDATE_L2VLAN_NETWORK_PATH = "/network/l2vlan/updatebridge";
+    String KVM_UPDATE_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/updatebridge";
     String KVM_REALIZE_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/createbridge";
     String KVM_CHECK_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/checkbridge";
     String KVM_REALIZE_L2VLAN_NETWORK_PATH = "/network/l2vlan/createbridge";

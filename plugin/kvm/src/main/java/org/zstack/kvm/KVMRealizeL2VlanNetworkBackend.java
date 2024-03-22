@@ -180,7 +180,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         msg.setNoStatusCheck(false);
         msg.setCommand(cmd);
         msg.setHostUuid(hostUuid);
-        msg.setPath(KVMConstant.KVM_UPDATE_L2_NETWORK_PATH);
+        msg.setPath(KVMConstant.KVM_UPDATE_L2VLAN_NETWORK_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
