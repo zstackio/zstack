@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.dingtalk;
+package org.zstack.sdk.sns.platform.microsoftteams;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSNSDingTalkAtPersonAction extends AbstractAction {
+public class SNSMicrosoftTeamsTestConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult value;
+        public org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsTestConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,14 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String url;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endpointUuid;
-
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String remark;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String testMsg;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String endpointUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +66,8 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult value = res.getResult(org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult() : value; 
+        org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsTestConnectionResult value = res.getResult(org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsTestConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsTestConnectionResult() : value; 
 
         return ret;
     }
@@ -103,7 +97,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/ding-talk/at-persons";
+        info.path = "/sns/application-endpoints/microsoft-teams/test-connection";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

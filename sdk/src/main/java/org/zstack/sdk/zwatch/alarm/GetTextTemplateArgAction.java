@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.dingtalk;
+package org.zstack.sdk.zwatch.alarm;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSNSDingTalkAtPersonAction extends AbstractAction {
+public class GetTextTemplateArgAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult value;
+        public org.zstack.sdk.zwatch.alarm.GetTextTemplateArgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,21 +24,6 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
             return this;
         }
     }
-
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endpointUuid;
-
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String remark;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -58,12 +43,6 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -72,8 +51,8 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult value = res.getResult(org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.dingtalk.AddSNSDingTalkAtPersonResult() : value; 
+        org.zstack.sdk.zwatch.alarm.GetTextTemplateArgResult value = res.getResult(org.zstack.sdk.zwatch.alarm.GetTextTemplateArgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.GetTextTemplateArgResult() : value; 
 
         return ret;
     }
@@ -102,11 +81,11 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/ding-talk/at-persons";
+        info.httpMethod = "GET";
+        info.path = "/zwatch/textTemplateArg";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

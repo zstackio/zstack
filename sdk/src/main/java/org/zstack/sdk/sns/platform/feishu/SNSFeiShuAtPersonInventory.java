@@ -1,8 +1,8 @@
-package org.zstack.sdk.sns.platform.dingtalk;
+package org.zstack.sdk.sns.platform.feishu;
 
 
 
-public class SNSDingTalkAtPersonInventory  {
+public class SNSFeiShuAtPersonInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -12,12 +12,12 @@ public class SNSDingTalkAtPersonInventory  {
         return this.uuid;
     }
 
-    public java.lang.String phoneNumber;
-    public void setPhoneNumber(java.lang.String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+    public java.lang.String userId;
+    public void setUserId(java.lang.String userId) {
+        this.userId = userId;
     }
-    public java.lang.String getPhoneNumber() {
-        return this.phoneNumber;
+    public java.lang.String getUserId() {
+        return this.userId;
     }
 
     public java.lang.String endpointUuid;
