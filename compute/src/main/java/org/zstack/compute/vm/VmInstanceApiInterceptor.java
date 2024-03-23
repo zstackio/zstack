@@ -1016,6 +1016,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             VmNicParam vmNicParam;
             try {
                 vmNicParam = JSONObjectUtil.toObject(msg.getVmNicParams(), VmNicParam.class);
+                if (msg.getDriverType() == null) {
+                    msg.setDriverType(vmNicParam.getDriverType());
+                } else if (vmNicParam.getDriverType() == null) {
+                    vmNicParam.setDriverType(msg.getDriverType());
+                    msg.setVmNicParams(JSONObjectUtil.toJsonString(vmNicParam));
+                }
             } catch (JsonSyntaxException e) {
                 throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
             }
