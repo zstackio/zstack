@@ -94,7 +94,7 @@ public class FstrimVmAction extends AbstractAction {
         info.path = "/vm-instances/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "fstrimVm";
         return info;
     }
 

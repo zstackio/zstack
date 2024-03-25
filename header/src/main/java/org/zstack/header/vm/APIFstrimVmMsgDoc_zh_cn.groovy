@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn "fstrimVm"
 					desc "云主机UUID"
 					location "url"
 					type "String"
