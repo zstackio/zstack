@@ -49,6 +49,8 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachL2NetworkFromClusterMsg)msg);
         } else if (msg instanceof APIAttachL2NetworkToClusterMsg) {
             validate((APIAttachL2NetworkToClusterMsg) msg);
+        } else if (msg instanceof APIChangeL2NetworkVlanIdMsg) {
+            validate((APIChangeL2NetworkVlanIdMsg) msg);
         }
 
         setServiceId(msg);
@@ -103,6 +105,21 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (!VSwitchType.hasType(msg.getvSwitchType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported vSwitch type[%s]", msg.getvSwitchType()));
+        }
+    }
+
+    private void validate(APIChangeL2NetworkVlanIdMsg msg) {
+        L2NetworkVO l2 = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
+        if (msg.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+            if (msg.getVlan() == null) {
+                throw new ApiMessageInterceptionException(argerr("vlan is required for " +
+                        "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
+            }
+        } else if (msg.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
+            if (msg.getVlan() != null) {
+                throw new ApiMessageInterceptionException(argerr("vlan is not allowed for " +
+                        "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
+            }
         }
     }
 }

@@ -791,7 +791,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     @Override
     public void afterChangeL2NetworkVlanId(L2NetworkInventory l2Inv) {
         new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(l2Inv)).step((host, whileCompletion) -> {
-            FlowChain chain = FlowChainBuilder.newShareFlowChain();
+            FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
             chain.setName(String.format("after-l2-%s-changed-flat-network-userdata-apply-in-host-%s",
                     l2Inv.getUuid(), host.getUuid()));
             chain.then(createHostPrepareUserdataFlow(host.getUuid()));
