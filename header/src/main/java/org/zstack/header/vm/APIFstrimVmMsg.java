@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/vm-instances/{uuid}/actions",
         responseClass = APIFstrimVmEvent.class,
         method = HttpMethod.PUT,
-        parameterName = "params"
+        isAction = true
 )
 public class APIFstrimVmMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)
