@@ -47,8 +47,9 @@ public class BridgeVlanIdFinder {
         List<L2NetworkVO> l2Vos = Q.New(L2NetworkVO.class).in(L2NetworkVO_.uuid, asList(l2Uuids)).list();
         l2Vos.forEach(l2 -> {
             String bridge = KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
-            if (bridge.contains("l2_")) {
-                if (l2.getVirtualNetworkId() != null && !l2.getVirtualNetworkId().equals(0)) {
+            if (l2.getVirtualNetworkId() != null && !l2.getVirtualNetworkId().equals(0)) {
+                // ugly if condition due to history vlan usage which embed in the legacy bridge name
+                if (!bridge.contains(l2.getVirtualNetworkId().toString())) {
                     String vlanId = "";
                     if (l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
                         vlanId = "vlan" + l2.getVirtualNetworkId();
