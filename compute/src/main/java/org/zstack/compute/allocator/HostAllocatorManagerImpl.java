@@ -568,8 +568,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     rmsg.setCpuCapacity(spec.getCpuCapacity());
                     bus.makeTargetServiceIdByResourceUuid(rmsg, HostAllocatorConstant.SERVICE_ID, rmsg.getHostUuid());
                     bus.send(rmsg);
-                    trigger.rollback();
-                }
+                    trigger.rollback();               
+ 		}
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {

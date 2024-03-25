@@ -39,7 +39,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private String id;
     private List<Flow> flows = new ArrayList<>();
-    private Stack<Flow> rollBackFlows = new Stack<>();
+    private final Stack<Flow> rollBackFlows = new Stack<>();
+    private final List<Flow> skippedFlows = new ArrayList<>();
     private Map data = new HashMap();
     private int currentLoop = 0;
     private Iterator<Flow> it;
@@ -359,6 +360,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             }
 
             if (isSkipFlow(toRun)) {
+                printDebugLog(String.format("[FlowChain(%s): %s] skip flow[%s] because it's skip() returns true", id, name, flowName));
+                skippedFlows.add(toRun);
                 this.next();
             } else {
                 if (contextHandler != null) {
@@ -400,7 +403,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 }
             }
 
-            flow.rollback(this, data);
+
+            if (skippedFlows.contains(flow)) {
+                printDebugLog(String.format("[FlowChain(%s): %s] skip rollback flow[%s] because it's skip() returns true", id, name, getFlowName(flow)));
+                rollback();
+            } else {
+                flow.rollback(this, data);
+            }
         } catch (Throwable t) {
             logger.warn(String.format("unhandled exception when rollback, call backtrace %s", DebugUtils.getStackTrace(t)));
             logger.warn(String.format("[FlowChain(%s): %s] unhandled exception when rollback flow[%s]," +
@@ -602,10 +611,6 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         boolean skip = flow.skip(data);
         if (!skip && contextHandler != null) {
             skip = contextHandler.skipFlow(flow);
-        }
-        if (skip) {
-            printDebugLog(String.format("[FlowChain: %s] skip flow[%s] because it's skip() returns true",
-                    name, getFlowName(flow)));
         }
         return skip;
     }
