@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "POST /v1/vm-instances/{uuid}/actions"
+			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 

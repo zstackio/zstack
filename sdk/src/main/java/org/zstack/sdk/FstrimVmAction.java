@@ -90,7 +90,7 @@ public class FstrimVmAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "PUT";
         info.path = "/vm-instances/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
