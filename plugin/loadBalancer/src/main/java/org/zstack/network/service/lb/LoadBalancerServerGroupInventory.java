@@ -34,6 +34,7 @@ public class LoadBalancerServerGroupInventory implements Serializable {
     private String description;
 
     private String loadBalancerUuid;
+    private Integer ipVersion;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<LoadBalancerListenerServerGroupRefInventory> listenerServerGroupRefs;
@@ -46,6 +47,7 @@ public class LoadBalancerServerGroupInventory implements Serializable {
         this.setUuid(vo.getUuid());
         this.setDescription(vo.getDescription());
         this.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+        this.setIpVersion(vo.getIpVersion());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
         this.setListenerServerGroupRefs(LoadBalancerListenerServerGroupRefInventory.valueOf(vo.getLoadBalancerListenerServerGroupRefs()));
@@ -63,6 +65,7 @@ public class LoadBalancerServerGroupInventory implements Serializable {
         inv.setUuid(vo.getUuid());
         inv.setDescription(vo.getDescription());
         inv.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+        inv.setIpVersion(vo.getIpVersion());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setListenerServerGroupRefs(LoadBalancerListenerServerGroupRefInventory.valueOf(vo.getLoadBalancerListenerServerGroupRefs()));
@@ -164,5 +167,13 @@ public class LoadBalancerServerGroupInventory implements Serializable {
         List<String> l3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid)
                 .in(VmNicVO_.uuid, attachedVmNics).listValues();
         return l3Uuids.stream().distinct().collect(Collectors.toList());
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

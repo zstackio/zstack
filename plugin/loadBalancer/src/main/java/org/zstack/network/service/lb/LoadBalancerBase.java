@@ -2577,6 +2577,7 @@ public class LoadBalancerBase {
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        vo.setIpVersion(msg.getIpVersion());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vo = dbf.persistAndRefresh(vo);
