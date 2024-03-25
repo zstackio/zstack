@@ -387,6 +387,7 @@ public class L2NoVlanNetwork implements L2Network {
                     @Override
                     public void success() {
                         changeL2NetworkVlanIdInDb(msg);
+                        extpEmitter.afterUpdate(getSelfInventory());
                         chain.next();
                     }
 
@@ -520,11 +521,6 @@ public class L2NoVlanNetwork implements L2Network {
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                Set<String> clusterList = self.getAttachedClusterRefs().stream()
-                        .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toSet());
-                Set<HostVO> hosts = new HashSet<>(Q.New(HostVO.class).in(HostVO_.clusterUuid, clusterList)
-                        .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
-                        .eq(HostVO_.status,HostStatus.Connected).list());
                 L2NetworkInventory newInv = self.toInventory();
                 if (msg.getType() != null) {
                     newInv.setType(msg.getType());
@@ -532,7 +528,7 @@ public class L2NoVlanNetwork implements L2Network {
                 if (msg.getVlan() != null) {
                     newInv.setVirtualNetworkId(msg.getVlan());
                 }
-                new While<>(hosts).step((host, whileCompletion) -> {
+                new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(newInv)).step((host, whileCompletion) -> {
                     updateVlanNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
                         @Override
                         public void success() {

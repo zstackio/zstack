@@ -27,10 +27,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
-import org.zstack.network.l2.L2NetworkGlobalConfig;
-import org.zstack.network.l2.L2NetworkManager;
-import org.zstack.network.l2.L2NoVlanNetwork;
+import org.zstack.network.l2.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -167,16 +164,11 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                Set<String> clusterList = self.getAttachedClusterRefs().stream()
-                        .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toSet());
-                Set<HostVO> hosts = new HashSet<>(Q.New(HostVO.class).in(HostVO_.clusterUuid, clusterList)
-                        .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
-                        .eq(HostVO_.status,HostStatus.Connected).list());
                 L2NetworkInventory newInv = self.toInventory();
                 if (msg.getVlan() != null) {
                     newInv.setVirtualNetworkId(msg.getVlan());
                 }
-                new While<>(hosts).step((host, whileCompletion) -> {
+                new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(newInv)).step((host, whileCompletion) -> {
                     updateVxlanNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
                         @Override
                         public void success() {
@@ -358,6 +350,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
                     @Override
                     public void success() {
                         changeL2NetworkVniInDb(msg);
+                        extpEmitter.afterUpdate(getSelfInventory());
                         chain.next();
                     }
 

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.UserdataBuilder;
 import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -19,14 +20,18 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkUpdateExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -35,6 +40,7 @@ import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.network.l2.L2NetworkHostHelper;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.NetworkServiceManager;
@@ -58,7 +64,7 @@ import static org.zstack.core.Platform.operr;
  * Created by frank on 10/13/2015.
  */
 public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExtensionPoint,
-        L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint {
+        L3NetworkDeleteExtensionPoint, L2NetworkUpdateExtensionPoint, VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatUserdataBackend.class);
 
     @Autowired
@@ -81,6 +87,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return createHostPrepareUserdataFlow(context.getInventory().getUuid());
+    }
+
+    private Flow createHostPrepareUserdataFlow(final String hostUuid) {
         return new NoRollbackFlow() {
             String __name__ = "prepare-userdata";
 
@@ -89,7 +99,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 String sql = "select vm.uuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state = :state and vm.type = :type";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                 q.setParameter("state", VmInstanceState.Running);
-                q.setParameter("huuid", context.getInventory().getUuid());
+                q.setParameter("huuid", hostUuid);
                 q.setParameter("type", VmInstanceConstant.USER_VM_TYPE);
                 List<String> vmUuids = q.getResultList();
                 if (vmUuids.isEmpty()) {
@@ -227,7 +237,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 cmd.userdata = tos;
                 cmd.rebuild = true;
 
-                new KvmCommandSender(context.getInventory().getUuid(), true).send(cmd, BATCH_APPLY_USER_DATA, new KvmCommandFailureChecker() {
+                new KvmCommandSender(hostUuid, true).send(cmd, BATCH_APPLY_USER_DATA, new KvmCommandFailureChecker() {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
@@ -771,5 +781,42 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void beforeChangeL2NetworkVlanId(L2NetworkInventory l2Inv) {
+
+    }
+
+    @Override
+    public void afterChangeL2NetworkVlanId(L2NetworkInventory l2Inv) {
+        new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(l2Inv)).step((host, whileCompletion) -> {
+            FlowChain chain = FlowChainBuilder.newShareFlowChain();
+            chain.setName(String.format("after-l2-%s-changed-flat-network-userdata-apply-in-host-%s",
+                    l2Inv.getUuid(), host.getUuid()));
+            chain.then(createHostPrepareUserdataFlow(host.getUuid()));
+            chain.done(new FlowDoneHandler(whileCompletion) {
+                @Override
+                public void handle(Map data) {
+                    whileCompletion.done();
+                }
+            }).error(new FlowErrorHandler(whileCompletion) {
+                @Override
+                public void handle(ErrorCode errCode, Map data) {
+                    whileCompletion.addError(errCode);
+                    whileCompletion.allDone();
+                }
+            }).start();
+        },10).run(new WhileDoneCompletion(null) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    logger.error(String.format("apply userdata failed after L2Network changed, because:%s",
+                            errorCodeList.getCauses().get(0)));
+                } else {
+                    logger.debug("apply userdata successful after L2Network changed");
+                }
+            }
+        });
     }
 }
