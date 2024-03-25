@@ -56,4 +56,6 @@ public class PrimaryStorageGlobalConfig {
     @GlobalConfigDef(defaultValue = "1", type = Long.class)
     public static GlobalConfig COLLECT_AND_FORECAST_INTERVAL = new GlobalConfig(CATEGORY, "collect.forecast.interval");
 
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig PRIMARY_STORAGE_HOST_STATUS_REFRESH_INTERVAL = new GlobalConfig(CATEGORY, "primarystorage.host.status.refresh.interval");
 }
