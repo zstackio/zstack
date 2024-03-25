@@ -94,6 +94,10 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
     }
 
     private void validate(APICreateL3NetworkMsg msg) {
+        if (msg.getL2NetworkUuid() == null) {
+            return;
+        }
+
         String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
         if (type.equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)) {
             throw new ApiMessageInterceptionException(argerr("vxlan network pool doesn't support create l3 network"));

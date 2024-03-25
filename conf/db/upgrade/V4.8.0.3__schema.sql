@@ -52,3 +52,19 @@ alter table SNSDingTalkAtPersonVO
 alter table SNSDingTalkAtPersonVO
     add remark varchar(128) default '' null;
 UPDATE SNSDingTalkAtPersonVO SET createDate = CURRENT_TIMESTAMP, lastOpDate = CURRENT_TIMESTAMP;
+
+-- Feature: port group improvement | ZSV-4933
+CREATE TABLE IF NOT EXISTS `zstack`.`PortGroupVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `vSwitchUuid` varchar(32) NOT NULL,
+    `vlanMode` varchar(32) NOT NULL default 'ACCESS',
+    `vlanId` int unsigned NOT NULL,
+    `vlanRanges` varchar(256) default NULL,
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkPortGroupVOL2VirtualSwitchNetworkVO` FOREIGN KEY (`vSwitchUuid`) REFERENCES L2VirtualSwitchNetworkVO (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE FROM `zstack`.`HostKernelInterfaceVO` WHERE `l3NetworkUuid` IS NULL;
+ALTER TABLE `zstack`.`HostKernelInterfaceVO` DROP FOREIGN KEY `fkHostKernelInterfaceVOL3NetworkVO`;
+ALTER TABLE `zstack`.`HostKernelInterfaceVO` MODIFY `l3NetworkUuid` varchar(32) NOT NULL;
+ALTER TABLE `zstack`.`HostKernelInterfaceVO` ADD CONSTRAINT `fkHostKernelInterfaceVOL3NetworkVO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES L3NetworkEO (`uuid`) ON DELETE CASCADE;

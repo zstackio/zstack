@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateL2VirtualSwitchAction extends AbstractAction {
+public class DeletePortGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateL2VirtualSwitchAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateL2VirtualSwitchResult value;
+        public org.zstack.sdk.DeletePortGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,11 @@ public class CreateL2VirtualSwitchAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean isDistributed = true;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String physicalInterface;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String type;
-
-    @Param(required = false, validValues = {"LinuxBridge","OvsDpdk","MacVlan"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vSwitchType = "LinuxBridge";
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -84,8 +63,8 @@ public class CreateL2VirtualSwitchAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateL2VirtualSwitchResult value = res.getResult(org.zstack.sdk.CreateL2VirtualSwitchResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateL2VirtualSwitchResult() : value; 
+        org.zstack.sdk.DeletePortGroupResult value = res.getResult(org.zstack.sdk.DeletePortGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePortGroupResult() : value; 
 
         return ret;
     }
@@ -114,11 +93,11 @@ public class CreateL2VirtualSwitchAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/l2-networks/virtual-switch";
+        info.httpMethod = "DELETE";
+        info.path = "/l3-networks/port-group/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -2064,7 +2064,7 @@ ${txt}
             }
 
             if (at.allTo() != "") {
-                fsToAdd[at.allTo()] = responseClass.getDeclaredField(at.allTo())
+                fsToAdd[at.allTo()] = getFieldRecursively(responseClass, at.allTo())
                 supplementFields('success', responseClass, at)
                 supplementFields('error', responseClass, at)
             } else if (at.fieldsTo().length == 1 && at.fieldsTo()[0] == "all") {
@@ -2085,6 +2085,20 @@ ${txt}
                 }
             }
 
+        }
+
+        static Field getFieldRecursively(Class<?> clazz, String fieldName) {
+            try {
+                return clazz.getDeclaredField(fieldName)
+            } catch (NoSuchFieldException e) {
+                Class<?> superClass = clazz.getSuperclass()
+
+                if (superClass != null && superClass != Object.class) {
+                    return getFieldRecursively(superClass, fieldName)
+                } else {
+                    throw e
+                }
+            }
         }
 
         void supplementFields(String fieldName, Class clz, RestResponse at){

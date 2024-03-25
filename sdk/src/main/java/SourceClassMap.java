@@ -438,8 +438,9 @@ public class SourceClassMap {
 			put("org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceInventory", "org.zstack.sdk.HostKernelInterfaceInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceUsedIpInventory", "org.zstack.sdk.HostKernelInterfaceUsedIpInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory", "org.zstack.sdk.L2PortGroupNetworkInventory");
-			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupVlanMode", "org.zstack.sdk.L2PortGroupVlanMode");
 			put("org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory", "org.zstack.sdk.L2VirtualSwitchNetworkInventory");
+			put("org.zstack.network.l2.virtualSwitch.header.PortGroupInventory", "org.zstack.sdk.PortGroupInventory");
+			put("org.zstack.network.l2.virtualSwitch.header.PortGroupVlanMode", "org.zstack.sdk.PortGroupVlanMode");
 			put("org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory", "org.zstack.sdk.RemoteVtepInventory");
 			put("org.zstack.network.l2.vxlan.vtep.VtepInventory", "org.zstack.sdk.VtepInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory", "org.zstack.sdk.L2VxlanNetworkInventory");
@@ -967,7 +968,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.L2NetworkHostRefInventory", "org.zstack.header.network.l2.L2NetworkHostRefInventory");
 			put("org.zstack.sdk.L2NetworkInventory", "org.zstack.header.network.l2.L2NetworkInventory");
 			put("org.zstack.sdk.L2PortGroupNetworkInventory", "org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory");
-			put("org.zstack.sdk.L2PortGroupVlanMode", "org.zstack.network.l2.virtualSwitch.header.L2PortGroupVlanMode");
 			put("org.zstack.sdk.L2VirtualSwitchNetworkInventory", "org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory");
 			put("org.zstack.sdk.L2VlanNetworkInventory", "org.zstack.header.network.l2.L2VlanNetworkInventory");
 			put("org.zstack.sdk.L2VxlanNetworkInventory", "org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory");
@@ -1088,6 +1088,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PolicyStatement", "org.zstack.header.identity.PolicyStatement");
 			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.StatementEffect");
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
+			put("org.zstack.sdk.PortGroupInventory", "org.zstack.network.l2.virtualSwitch.header.PortGroupInventory");
+			put("org.zstack.sdk.PortGroupVlanMode", "org.zstack.network.l2.virtualSwitch.header.PortGroupVlanMode");
 			put("org.zstack.sdk.PortMirrorInventory", "org.zstack.header.portMirror.PortMirrorInventory");
 			put("org.zstack.sdk.PortMirrorSessionInventory", "org.zstack.header.portMirror.PortMirrorSessionInventory");
 			put("org.zstack.sdk.PortMirrorState", "org.zstack.header.portMirror.PortMirrorState");

@@ -21,8 +21,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
@@ -135,15 +133,13 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
                     final UsedIpInventory ip = ar.getIpInventory();
                     allocatedIPs.add(ip);
 
-                    String nicUuid = CollectionUtils.find(nicsNeedNewIp, new Function<String, VmNicInventory>() {
-                        @Override
-                        public String call(VmNicInventory arg) {
-                            return arg.getL3NetworkUuid().equals(ip.getL3NetworkUuid()) ? arg.getUuid() : null;
-                        }
-                    });
+                    VmNicInventory nic = nicsNeedNewIp.stream()
+                            .filter(n -> n.getL3NetworkUuid().equals(ip.getL3NetworkUuid()))
+                            .findFirst().orElse(new VmNicInventory());
+                    nicsNeedNewIp.remove(nic);
 
                     for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
-                        ext.afterAddIpAddress(nicUuid, ip.getUuid());
+                        ext.afterAddIpAddress(nic.getUuid(), ip.getUuid());
                     }
                     wcompl.done();
                 }

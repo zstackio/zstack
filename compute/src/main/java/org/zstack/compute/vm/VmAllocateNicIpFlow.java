@@ -29,7 +29,6 @@ import org.zstack.utils.network.IPv6Constants;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -63,9 +62,9 @@ public class VmAllocateNicIpFlow implements Flow {
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nicsWithIp);
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), ips);
 
-        final Map<String, VmNicInventory> nicsL3 = new HashMap<>();
+        final Map<String, LinkedList<VmNicInventory>> nicsL3s = new HashMap<>();
         nics.forEach(nic -> {
-            nicsL3.put(nic.getL3NetworkUuid(), nic);
+            nicsL3s.computeIfAbsent(nic.getL3NetworkUuid(), k -> new LinkedList<>()).add(nic);
         });
         if (spec.isSkipIpAllocation()) {
             trigger.next();
@@ -85,7 +84,13 @@ public class VmAllocateNicIpFlow implements Flow {
 
         new While<>(firstL3s).each((nicSpec, wcomp) -> {
             L3NetworkInventory nw = nicSpec.getL3Invs().get(0);
-            VmNicInventory nicUuid = nicsL3.get(nw.getUuid());
+            VmNicInventory nicUuid = nicsL3s.getOrDefault(nw.getUuid(), new LinkedList<>()).poll();
+            if (nicUuid == null) {
+                wcomp.done();
+                logger.warn(String.format("no nic for l3Network[uuid:%s] to allocate ip", nw.getUuid()));
+                return;
+            }
+
             VmNicVO nic = dbf.findByUuid(nicUuid.getUuid(), VmNicVO.class);
             List<Integer> ipVersions = nw.getIpVersions();
             Map<Integer, String> nicStaticIpMap = new StaticIpOperator().getNicStaticIpMap(vmStaticIps.get(nw.getUuid()));

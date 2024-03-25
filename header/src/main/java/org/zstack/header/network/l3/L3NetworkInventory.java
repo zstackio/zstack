@@ -152,28 +152,33 @@ public class L3NetworkInventory implements Serializable {
             joinColumn = @JoinColumn(name = "l3NetworkUuid"))
     private List<L3NetworkHostRouteInventory> hostRoute;
 
-    public static L3NetworkInventory valueOf(L3NetworkVO vo) {
-        L3NetworkInventory inv = new L3NetworkInventory();
-        inv.setUuid(vo.getUuid());
-        inv.setCreateDate(vo.getCreateDate());
-        inv.setDescription(vo.getDescription());
-        inv.setL2NetworkUuid(vo.getL2NetworkUuid());
-        inv.setName(vo.getName());
-        inv.setType(vo.getType());
-        inv.setDnsDomain(vo.getDnsDomain());
-        inv.setZoneUuid(vo.getZoneUuid());
-        inv.setState(vo.getState().toString());
+    public L3NetworkInventory() {
+    }
+
+    protected L3NetworkInventory(L3NetworkVO vo) {
+        this.setUuid(vo.getUuid());
+        this.setCreateDate(vo.getCreateDate());
+        this.setDescription(vo.getDescription());
+        this.setL2NetworkUuid(vo.getL2NetworkUuid());
+        this.setName(vo.getName());
+        this.setType(vo.getType());
+        this.setDnsDomain(vo.getDnsDomain());
+        this.setZoneUuid(vo.getZoneUuid());
+        this.setState(vo.getState().toString());
         vo.getDns().stream().sorted(Comparator.comparingLong(L3NetworkDnsVO::getId)).collect(Collectors.toList())
-                .forEach(dnsVo -> inv.getDns().add(dnsVo.getDns()));
-        inv.setSystem(vo.isSystem());
-        inv.setIpRanges(IpRangeInventory.valueOf(vo.getIpRanges()));
-        inv.setLastOpDate(vo.getLastOpDate());
-        inv.setNetworkServices(NetworkServiceL3NetworkRefInventory.valueOf(vo.getNetworkServices()));
-        inv.setCategory(vo.getCategory().toString());
-        inv.setHostRoute(L3NetworkHostRouteInventory.valueOf(vo.getHostRoutes()));
-        inv.setIpVersion(vo.getIpVersion());
-        inv.setEnableIPAM(vo.getEnableIPAM());
-        return inv;
+                .forEach(dnsVo -> this.getDns().add(dnsVo.getDns()));
+        this.setSystem(vo.isSystem());
+        this.setIpRanges(IpRangeInventory.valueOf(vo.getIpRanges()));
+        this.setLastOpDate(vo.getLastOpDate());
+        this.setNetworkServices(NetworkServiceL3NetworkRefInventory.valueOf(vo.getNetworkServices()));
+        this.setCategory(vo.getCategory().toString());
+        this.setHostRoute(L3NetworkHostRouteInventory.valueOf(vo.getHostRoutes()));
+        this.setIpVersion(vo.getIpVersion());
+        this.setEnableIPAM(vo.getEnableIPAM());
+    }
+
+    public static L3NetworkInventory valueOf(L3NetworkVO vo) {
+        return new L3NetworkInventory(vo);
     }
 
     public static List<L3NetworkInventory> valueOf(Collection<L3NetworkVO> vos) {

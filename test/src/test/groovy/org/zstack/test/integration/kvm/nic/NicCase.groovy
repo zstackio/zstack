@@ -54,10 +54,10 @@ class NicCase extends SubCase {
 
     void testDetachNicConcurrently() {
         VmInstanceInventory vm = env.inventoryByName("vm")
-        L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3-1")
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
 
         GetIpAddressCapacityResult result = getIpAddressCapacity {
-            l3NetworkUuids = [l3NetworkInventory.uuid]
+            l3NetworkUuids = [pubL3.uuid]
         }
 
         int num = 0
@@ -72,7 +72,7 @@ class NicCase extends SubCase {
                     try {
                         AttachL3NetworkToVmAction action = new AttachL3NetworkToVmAction()
                         action.vmInstanceUuid = vm.uuid
-                        action.l3NetworkUuid = l3NetworkInventory.uuid
+                        action.l3NetworkUuid = pubL3.uuid
                         action.sessionId = adminSession()
 
                         AttachL3NetworkToVmAction.Result ret = action.call()
@@ -99,7 +99,7 @@ class NicCase extends SubCase {
                 void run() {
                     try {
                         DetachL3NetworkFromVmAction action = new DetachL3NetworkFromVmAction()
-                        action.vmNicUuid = l3NetworkInventory.uuid
+                        action.vmNicUuid = nic.uuid
                         action.sessionId = adminSession()
 
                         DetachL3NetworkFromVmAction.Result ret = action.call()
@@ -118,7 +118,7 @@ class NicCase extends SubCase {
         latch1.await(120, TimeUnit.SECONDS)
 
         GetIpAddressCapacityResult result2 = getIpAddressCapacity {
-            l3NetworkUuids = [l3NetworkInventory.uuid]
+            l3NetworkUuids = [pubL3.uuid]
         }
 
         assert result.availableCapacity == result2.availableCapacity
