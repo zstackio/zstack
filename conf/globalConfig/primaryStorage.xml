@@ -71,4 +71,12 @@
         <type>java.lang.Integer</type>
         <category>primaryStorage</category>
     </config>
+
+    <config>
+        <name>primarystorage.host.status.refresh.interval</name>
+        <category>primaryStorage</category>
+        <description>The interval to refresh ps and host connection status, in seconds</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
