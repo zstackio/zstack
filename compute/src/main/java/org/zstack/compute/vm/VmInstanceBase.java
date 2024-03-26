@@ -6504,8 +6504,17 @@ public class VmInstanceBase extends AbstractVmInstance {
             String __name__ = "before-detaching-volume";
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                extEmitter.preDetachVolume(getSelfInventory(), volume);
-                trigger.next();
+                extEmitter.preDetachVolume(getSelfInventory(), volume, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
             }
         }).then(new Flow() {
             String __name__ = "detach-volume-from-vm-on-hypervisor";

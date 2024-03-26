@@ -1315,14 +1315,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     }
 
     @Override
-    public void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {
-    }
-
-    @Override
-    public void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {
-    }
-
-    @Override
     public void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
         // update Volumevo before exit message queue
         SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
