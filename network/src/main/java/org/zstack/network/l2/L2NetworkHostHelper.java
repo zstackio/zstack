@@ -5,13 +5,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.header.network.l2.L2NetworkAttachStatus;
-import org.zstack.header.network.l2.L2NetworkHostRefInventory;
-import org.zstack.header.network.l2.L2NetworkHostRefVO;
-import org.zstack.header.network.l2.L2NetworkHostRefVO_;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.network.l2.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -78,5 +84,12 @@ public class L2NetworkHostHelper {
         } else {
             return L2NetworkHostRefInventory.valueOf(ref);
         }
+    }
+
+    public static Set<HostVO> getHostsByL2NetworkAttachedCluster(L2NetworkInventory l2NetworkInventory) {
+        return new HashSet<>(Q.New(HostVO.class)
+                .in(HostVO_.clusterUuid, l2NetworkInventory.getAttachedClusterUuids())
+                .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
+                .eq(HostVO_.status, HostStatus.Connected).list());
     }
 }

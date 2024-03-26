@@ -165,6 +165,49 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     }
 
     @Override
+    public void update(L2NetworkInventory newL2, String hostUuid, Completion completion) {
+        VxlanNetworkVO oldL2 = Q.New(VxlanNetworkVO.class).eq(L2NetworkVO_.uuid, newL2.getUuid()).find();
+        final KVMAgentCommands.UpdateL2NetworkCmd cmd = new KVMAgentCommands.UpdateL2NetworkCmd();
+
+        cmd.setL2NetworkUuid(newL2.getUuid());
+        cmd.setBridgeName(makeBridgeName(oldL2.getVni()));
+        cmd.setPhysicalInterfaceName(newL2.getPhysicalInterface());
+        cmd.setOldVlan(String.valueOf(oldL2.getVni()));
+        cmd.setNewVlan(newL2.getVirtualNetworkId().toString());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setNoStatusCheck(false);
+        msg.setCommand(cmd);
+        msg.setHostUuid(hostUuid);
+        msg.setPath(KVMConstant.KVM_UPDATE_L2VXLAN_NETWORK_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                KVMAgentCommands.UpdateL2NetworkResponse rsp = hreply.toResponse(KVMAgentCommands.UpdateL2NetworkResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("failed to update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+                            cmd.getBridgeName(), newL2.getUuid(), newL2.getName(), hostUuid, rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                String info = String.format("successfully update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s]",
+                        cmd.getBridgeName(), newL2.getUuid(), newL2.getName(), hostUuid);
+                logger.debug(info);
+                completion.success();
+            }
+        });
+
+    }
+
+    @Override
     public void check(final L2NetworkInventory l2Network, final String hostUuid, final Completion completion) {
         check(l2Network, hostUuid, false, completion);
     }

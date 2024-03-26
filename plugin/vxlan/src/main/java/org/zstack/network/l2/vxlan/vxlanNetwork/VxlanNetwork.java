@@ -3,21 +3,23 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
-import org.zstack.header.host.HypervisorType;
+import org.zstack.header.host.*;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
@@ -25,15 +27,15 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
-import org.zstack.network.l2.L2NetworkGlobalConfig;
-import org.zstack.network.l2.L2NetworkManager;
-import org.zstack.network.l2.L2NoVlanNetwork;
+import org.zstack.network.l2.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.transaction.Transactional;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -114,7 +116,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
         final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
-        prepareL2NetworkOnHosts(Arrays.asList(msg.getHost()), new Completion(msg) {
+        prepareL2NetworkOnHosts(asList(msg.getHost()), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -144,6 +146,67 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
             }
         });
     }
+
+
+    @Transactional
+    private void changeL2NetworkVniInDb(final APIChangeL2NetworkVlanIdMsg msg) {
+        if (!self.getVirtualNetworkId().equals(msg.getVlan())) {
+            VxlanNetworkVO vo = getSelf();
+            vo.setVirtualNetworkId(msg.getVlan());
+            vo.setVni(msg.getVlan());
+            dbf.updateAndRefresh(vo);
+        }
+    }
+
+    private void changeL2NetworkVni(final APIChangeL2NetworkVlanIdMsg msg, final Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("change-l2-%s-vlan-on-hosts", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                L2NetworkInventory newInv = self.toInventory();
+                if (msg.getVlan() != null) {
+                    newInv.setVirtualNetworkId(msg.getVlan());
+                }
+                new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(newInv)).step((host, whileCompletion) -> {
+                    updateVxlanNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.error(String.format("update l2 network in host:[%s] failed", host.getUuid()));
+                            whileCompletion.addError(errorCode);
+                            whileCompletion.allDone();
+                        }
+                    });
+                },10).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
 
     private void prepareL2NetworkOnHosts(final List<HostInventory> hosts, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -217,6 +280,14 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
         }).start();
     }
 
+    protected void updateVxlanNetwork(L2NetworkInventory l2Inv, String hostUuid, String htype, Completion completion) {
+        final HypervisorType hvType = HypervisorType.valueOf(htype);
+        final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+        final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
+        ext.update(l2Inv, hostUuid, completion);
+    }
+
     protected void realizeNetwork(String hostUuid, String htype, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
@@ -256,11 +327,48 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
             handle((APIAttachL2NetworkToClusterMsg) msg);
         } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
             handle((APIDetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof APIChangeL2NetworkVlanIdMsg) {
+            handle((APIChangeL2NetworkVlanIdMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected void handle(final APIChangeL2NetworkVlanIdMsg msg) {
+        APIChangeL2NetworkVlanIdEvent event = new APIChangeL2NetworkVlanIdEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("change-l2-network-%s-vlan", msg.getL2NetworkUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                changeL2NetworkVni(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        changeL2NetworkVniInDb(msg);
+                        extpEmitter.afterUpdate(getSelfInventory());
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+        event.setInventory(getSelfInventory());
+        bus.publish(event);
     }
 
     protected void handle(final APIDetachL2NetworkFromClusterMsg msg) {
