@@ -732,6 +732,7 @@ public class ExponApiHelper {
     public Set<String> getIscsiClientGroupAttachedSnapshots(String clientId) {
         GetSnapshotsInIscsiClientGroupRequest req = new GetSnapshotsInIscsiClientGroupRequest();
         req.setId(clientId);
+        req.limit = 100L; // iscsi client group lun limit is 64
         GetSnapshotsInIscsiClientGroupResponse rsp = callErrorOut(req, GetSnapshotsInIscsiClientGroupResponse.class);
         return rsp.getLuns().stream().map(IscsiClientMappedLunModule::getId).collect(Collectors.toSet());
     }

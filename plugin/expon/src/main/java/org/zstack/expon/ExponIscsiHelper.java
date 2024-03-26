@@ -29,4 +29,8 @@ public class ExponIscsiHelper {
     static String buildImageIscsiTargetName(int index) {
         return String.format("%s_%d", iscsiTargetImagePrefix, index);
     }
+
+    static int getIndexFromIscsiTargetName(String name) {
+        return Integer.parseInt(name.substring(name.lastIndexOf("_") + 1));
+    }
 }

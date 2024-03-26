@@ -231,7 +231,24 @@ public class ExponClient {
 
             urlBuilder.addPathSegment("api");
             urlBuilder.addPathSegment(restInfo.version());
-            urlBuilder.addPathSegments(restInfo.path().replaceFirst("/", ""));
+
+            List<String> varNames = getVarNamesFromUrl(restInfo.path());
+            String path = restInfo.path();
+            if (!varNames.isEmpty()) {
+                Map<String, Object> vars = new HashMap<>();
+                for (String vname : varNames) {
+                    Object value = action.getParameterValue(vname);
+
+                    if (value == null) {
+                        throw new ExponApiException(String.format("missing required field[%s]", vname));
+                    }
+
+                    vars.put(vname, value);
+                }
+
+                path = substituteUrl(path, vars);
+            }
+            urlBuilder.addPathSegments(path.replaceFirst("/", ""));
 
             if (!qaction.conditions.isEmpty()) {
                 for (String cond : qaction.conditions) {
