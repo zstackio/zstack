@@ -1,6 +1,5 @@
 package org.zstack.expon;
 
-import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -227,6 +226,14 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     private synchronized ActiveVolumeTO activeIscsiVolume(HostInventory h, BaseVolumeInfo vol, boolean shareable) {
+        String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (clientIqn == null) {
+            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
+        }
+        return activeIscsiVolume(clientIqn, vol, shareable);
+    }
+
+    public synchronized ActiveVolumeTO activeIscsiVolume(String clientIqn, BaseVolumeInfo vol, boolean shareable) {
         String lunId;
         LunType lunType;
         String source = vol.getInstallPath();
@@ -236,11 +243,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         } else {
             lunId = getVolIdFromPath(source);
             lunType = LunType.Volume;
-        }
-
-        String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
-        if (clientIqn == null) {
-            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
         }
 
         String tianshuId = addonInfo.getClusters().get(0).getId();
@@ -698,6 +700,14 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     private void deactivateIscsi(String installPath, HostInventory h) {
+        String iqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (iqn == null) {
+            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
+        }
+        deactivateIscsi(installPath, iqn);
+    }
+
+    public void deactivateIscsi(String installPath, String iqn) {
         IscsiClientGroupModule client = getLunAttachedIscsiClient(installPath);
         if (client == null) {
             return;
@@ -709,14 +719,16 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             return;
         }
 
-        String iqn = IscsiUtils.getHostInitiatorName(h.getUuid());
-        if (iqn == null) {
-            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
+        if (!client.getHosts().contains(iqn)) {
+            return;
         }
 
-        if (client.getHosts().contains(iqn)) {
-            apiHelper.removeHostFromIscsiClient(iqn, client.getId());
+        if (client.getHosts().size() == 1) {
+            apiHelper.deleteIscsiClient(client.getId());
+            return;
         }
+
+        apiHelper.removeHostFromIscsiClient(iqn, client.getId());
     }
 
     private synchronized void unexportIscsi(String source, String clientIp) {
