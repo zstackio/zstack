@@ -88,7 +88,7 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
     @APINoSee
     private boolean system;
 
-    @APINoSee
+    @APIParam(required = false)
     private Integer ipVersion;
 
     public String getRequiredIp() {
