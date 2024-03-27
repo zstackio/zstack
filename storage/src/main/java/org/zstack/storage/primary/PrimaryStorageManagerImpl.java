@@ -9,6 +9,7 @@ import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -35,6 +36,7 @@ import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidato
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeWhileDoneCompletion;
 import org.zstack.header.core.trash.InstallPathRecycleVO;
 import org.zstack.header.core.trash.InstallPathRecycleVO_;
 import org.zstack.header.errorcode.ErrorCode;
@@ -106,6 +108,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private final Map<String, AutoDeleteTrashTask> autoDeleteTrashTask = new HashMap<>();
     private static final Map<String, List<PrimaryStorageExtensionFactory>> extensionFactories = Maps.newConcurrentMap();
     private AutoDeleteTrashTask globalTrashTask;
+
+    private Future refreshPrimaryStorageHostStatusTask;
 
     static {
         allowedMessageAfterSoftDeletion.add(PrimaryStorageDeletionMsg.class);
@@ -1139,6 +1143,78 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         return true;
     }
 
+    private void startPeriodTasks() {
+        PrimaryStorageGlobalConfig.PRIMARY_STORAGE_HOST_STATUS_REFRESH_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startRefreshPrimaryStorageHostStatusTask());
+        startRefreshPrimaryStorageHostStatusTask();
+    }
+
+    private synchronized void startRefreshPrimaryStorageHostStatusTask() {
+        if (refreshPrimaryStorageHostStatusTask != null) {
+            refreshPrimaryStorageHostStatusTask.cancel(true);
+        }
+
+        refreshPrimaryStorageHostStatusTask = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return PrimaryStorageGlobalConfig.PRIMARY_STORAGE_HOST_STATUS_REFRESH_INTERVAL.value(Integer.class).longValue();
+            }
+
+            @Override
+            public String getName() {
+                return "update-host-storage-connection-status";
+            }
+
+            @Override
+            public void run() {
+                Map<String, List<String>> disconnectedHostsByPsUuid = new HashMap<>();
+
+                List<PrimaryStorageHostRefVO> refs = Q.New(PrimaryStorageHostRefVO.class)
+                        .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                        .list();
+
+                refs.forEach(ref -> {
+                    disconnectedHostsByPsUuid.computeIfAbsent(ref.getPrimaryStorageUuid(), key -> new ArrayList<>()).add(ref.getHostUuid());
+                });
+
+
+                List<CheckHostStorageConnectionMsg> msgs = new ArrayList<>();
+                for (Map.Entry<String, List<String>> entry : disconnectedHostsByPsUuid.entrySet()) {
+                    PrimaryStorageVO storageVO = dbf.findByUuid(entry.getKey(), PrimaryStorageVO.class);
+                    if (!PrimaryStorageType.valueOf(storageVO.getType()).isSupportCheckHostStatus()){
+                        continue;
+                    }
+                    CheckHostStorageConnectionMsg msg = new CheckHostStorageConnectionMsg();
+                    msg.setPrimaryStorageUuid(entry.getKey());
+                    msg.setHostUuids(entry.getValue());
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, entry.getKey());
+                    msgs.add(msg);
+                }
+
+                new While<>(msgs).step((msg, comp) -> {
+                    bus.send(msg, new CloudBusCallBack(comp) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.error(String.format("Failed to check host storage connection for primary storage %s and host %s due to: %s",
+                                        msg.getPrimaryStorageUuid(), msg.getHostUuids().get(0), reply.getError()));
+                            }
+                            comp.done();
+                        }
+                    });
+                }, 10).run(new NopeWhileDoneCompletion());
+            }
+
+
+        });
+
+    }
+
+
     private void populateExtensions() {
         for (PrimaryStorageAllocatorStrategyFactory f : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyFactory.class)) {
             PrimaryStorageAllocatorStrategyFactory old = allocatorFactories.get(f.getPrimaryStorageAllocatorStrategyType().toString());
@@ -1248,6 +1324,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 Platform.getManagementServerId()));
         loadPrimaryStorage(false);
         initResourcePrimaryStorageAutoDeleteTrash();
+        startPeriodTasks();
     }
 
     private void checkVmAllVolumePrimaryStorageState(String vmUuid) {
