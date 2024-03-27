@@ -207,6 +207,7 @@
         <value>e1000</value>
         <value>rtl8139</value>
         <value>pcnet</value>
+        <value>SR-IOV</value>
     </util:list>
 
     <bean id="VmNicManager" class="org.zstack.compute.vm.VmNicManagerImpl">

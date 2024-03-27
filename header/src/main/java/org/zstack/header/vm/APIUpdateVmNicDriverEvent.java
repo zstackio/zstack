@@ -38,7 +38,7 @@ public class APIUpdateVmNicDriverEvent extends APIEvent {
         nic.setMac("00:0c:29:bd:99:fc");
         nic.setUsedIpUuid(uuid());
         nic.setUuid(uuid());
-        nic.setDriverType("e1000");
+        nic.setDriverType(VmNicConstant.NIC_DRIVER_TYPE_E1000);
 
         event.setInventory(nic);
 

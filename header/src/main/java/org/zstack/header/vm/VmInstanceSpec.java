@@ -294,7 +294,7 @@ public class VmInstanceSpec implements Serializable {
     }
 
     private VmInstanceInventory vmInventory;
-    private List<VmNicSpec> l3Networks;
+    private List<VmNicSpec> l3Networks = new ArrayList<>();
     private List<DiskOfferingInventory> dataDiskOfferings;
     private List<String> dataVolumeTemplateUuids;
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags = new HashMap<>();
@@ -712,7 +712,7 @@ public class VmInstanceSpec implements Serializable {
         List<String> nsTypes = new ArrayList<>();
         if (getL3Networks() != null) {
             for (VmNicSpec nicSpec : getL3Networks()) {
-                for (L3NetworkInventory l3: nicSpec.l3Invs) {
+                for (L3NetworkInventory l3: nicSpec.getL3Invs()) {
                     nsTypes.addAll(l3.getNetworkServiceTypes());
                 }
             }

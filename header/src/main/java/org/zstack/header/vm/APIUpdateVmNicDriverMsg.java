@@ -56,7 +56,7 @@ public class APIUpdateVmNicDriverMsg extends APIMessage implements VmInstanceMes
         APIUpdateVmNicDriverMsg msg = new APIUpdateVmNicDriverMsg();
         msg.vmInstanceUuid = uuid();
         msg.vmNicUuid = uuid();
-        msg.driverType = "e1000";
+        msg.driverType = VmNicConstant.NIC_DRIVER_TYPE_E1000;
         return msg;
     }
 }

@@ -9,6 +9,7 @@ public class VmInstanceType {
     private final String typeName;
 
     private boolean supportUpdateOnHypervisor = true;
+    private boolean sriovSupported = false;
 
     public VmInstanceType(String typeName) {
         this.typeName = typeName;
@@ -49,5 +50,13 @@ public class VmInstanceType {
 
     public void setSupportUpdateOnHypervisor(boolean supportUpdateOnHypervisor) {
         this.supportUpdateOnHypervisor = supportUpdateOnHypervisor;
+    }
+
+    public boolean isSriovSupported() {
+        return sriovSupported;
+    }
+
+    public void setSriovSupported(boolean sriovSupported) {
+        this.sriovSupported = sriovSupported;
     }
 }

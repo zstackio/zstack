@@ -8,7 +8,7 @@ import org.zstack.core.db.SimpleQuery
 import org.zstack.header.network.service.NetworkServiceProviderVO
 import org.zstack.header.network.service.NetworkServiceProviderVO_
 import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.header.vm.VmNicParm
+import org.zstack.header.vm.VmNicParam
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
@@ -544,14 +544,14 @@ class VirtualrouterMultiNicCase extends SubCase {
 
         assert vm.vmNics.size() == MAX_NIC_COUNT
 
-        List<VmNicParm> nicParms = new ArrayList<>()
-        VmNicParm nicParm = new VmNicParm()
-        nicParm.setL3NetworkUuid(l3.uuid)
-        nicParm.setDriverType("virtio")
-        nicParm.setMultiQueueNum(4)
-        nicParms.add(nicParm)
-        nicParms.add(nicParm)
-        nicParms.add(nicParm)
+        List<VmNicParam> nicParams = new ArrayList<>()
+        VmNicParam nicParam = new VmNicParam()
+        nicParam.setL3NetworkUuid(l3.uuid)
+        nicParam.setDriverType("virtio")
+        nicParam.setMultiQueueNum(4)
+        nicParams.add(nicParam)
+        nicParams.add(nicParam)
+        nicParams.add(nicParam)
 
         def vm2 = createVmInstance {
             name = "vm2"
@@ -559,7 +559,7 @@ class VirtualrouterMultiNicCase extends SubCase {
             l3NetworkUuids = [l3.uuid, l3.uuid, l3.uuid]
             defaultL3NetworkUuid = l3.uuid
             instanceOfferingUuid = offering.uuid
-            vmNicParams = JSONObjectUtil.toJsonString(nicParms)
+            vmNicParams = JSONObjectUtil.toJsonString(nicParams)
         } as VmInstanceInventory
 
         assert vm2.vmNics.size() == 3

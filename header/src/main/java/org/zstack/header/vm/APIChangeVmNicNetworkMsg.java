@@ -25,6 +25,9 @@ public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMe
     @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String destL3NetworkUuid;
 
+    @APIParam(required = false)
+    private String vmNicParams;
+
     @APINoSee
     private String vmInstanceUuid;
 
@@ -47,6 +50,14 @@ public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMe
 
     public void setDestL3NetworkUuid(String destL3NetworkUuid) {
         this.destL3NetworkUuid = destL3NetworkUuid;
+    }
+
+    public String getVmNicParams() {
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(String vmNicParams) {
+        this.vmNicParams = vmNicParams;
     }
 
     public Map<String, List<String>> getRequiredIpMap() {

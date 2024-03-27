@@ -75,6 +75,7 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
                 return arg.getUuid();
             }
         }));
+        msg.setVmNicParams(VmNicSpec.getVmNicParamsOfSpec(spec.getL3Networks()));
         msg.setAllowNoL3Networks(true);
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

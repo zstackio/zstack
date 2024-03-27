@@ -3,6 +3,7 @@ package org.zstack.header.allocator;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmNicParam;
 
 import java.util.*;
 
@@ -14,6 +15,7 @@ public class HostAllocatorSpec {
     private long cpuCapacity;
     private long memoryCapacity;
     private List<String> l3NetworkUuids;
+    private List<VmNicParam> vmNicParams = new ArrayList<>();
     private long diskSize;
     private String hypervisorType;
     private String allocatorStrategy;
@@ -166,6 +168,14 @@ public class HostAllocatorSpec {
         this.l3NetworkUuids = l3NetworkUuids;
     }
 
+    public List<VmNicParam> getVmNicParams() {
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(List<VmNicParam> vmNicParams) {
+        this.vmNicParams = vmNicParams;
+    }
+
     public long getDiskSize() {
         return diskSize;
     }
@@ -241,6 +251,7 @@ public class HostAllocatorSpec {
         spec.setMemoryCapacity(msg.getMemoryCapacity());
         spec.setVmInstance(msg.getVmInstance());
         spec.setL3NetworkUuids(msg.getL3NetworkUuids());
+        spec.setVmNicParams(msg.getVmNicParams());
         spec.setImage(msg.getImage());
         spec.setVmOperation(msg.getVmOperation());
         spec.setDiskOfferings(msg.getDiskOfferings());

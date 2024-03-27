@@ -2,7 +2,7 @@ package org.zstack.header.vm;
 
 import java.io.Serializable;
 
-public class VmNicParm implements Serializable {
+public class VmNicParam implements Serializable {
     private String l3NetworkUuid;
 
     private String ip;
@@ -26,6 +26,8 @@ public class VmNicParm implements Serializable {
     private Long inboundBandwidth;
 
     private Integer multiQueueNum;
+
+    private String vfParentUuid;
 
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
@@ -121,5 +123,17 @@ public class VmNicParm implements Serializable {
 
     public void setMultiQueueNum(Integer multiQueueNum) {
         this.multiQueueNum = multiQueueNum;
+    }
+
+    public Boolean isSriovEnabled() {
+        return VmNicConstant.NIC_DRIVER_TYPE_SR_IOV.equals(driverType);
+    }
+
+    public String getVfParentUuid() {
+        return vfParentUuid;
+    }
+
+    public void setVfParentUuid(String vfParentUuid) {
+        this.vfParentUuid = vfParentUuid;
     }
 }

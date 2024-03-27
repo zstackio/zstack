@@ -3,7 +3,6 @@ package org.zstack.appliancevm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmInstanceManager;
 import org.zstack.compute.vm.VmNicManager;
 import org.zstack.core.Platform;
@@ -11,7 +10,6 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -23,14 +21,9 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -92,20 +85,13 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                 nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
 
         L3NetworkVO l3NetworkVO = dbf.findByUuid(nicSpec.getL3NetworkUuid(), L3NetworkVO.class);
-        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
+        VmNicParam nicParam = VmNicSpec.getVmNicParamsOfSpec(vmSpec.getL3Networks())
+                .stream().filter(nic -> nicSpec.getL3NetworkUuid().equals(nic.getL3NetworkUuid()))
+                .findFirst().orElse(new VmNicParam());
 
-        // set vnic type based on enableSRIOV system tag & enableVhostUser globalConfig
-        boolean enableSriov = Q.New(SystemTagVO.class)
-                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
-                .eq(SystemTagVO_.resourceUuid, vmSpec.getVmInventory().getUuid())
-                .eq(SystemTagVO_.tag, String.format("enableSRIOV::%s", nicSpec.getL3NetworkUuid()))
-                .isExists();
-        boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
-
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
-        VmNicType vmNicType = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+        VmNicType vmNicType = nicManager.getVmNicType(vmSpec.getVmInventory().getUuid(), L3NetworkInventory.valueOf(l3NetworkVO), nicParam.isSriovEnabled());
         if (vmNicType == null) {
-            throw new OperationFailureException(Platform.operr("there is no available nicType on L2 network [%s]", l2NetworkVO.getUuid()));
+            throw new OperationFailureException(Platform.operr("there is no available nicType on L3 network [%s]", l3NetworkVO.getUuid()));
         }
         inv.setType(vmNicType.toString());
         inv.setUsedIps(new ArrayList<>());
@@ -146,8 +132,13 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         return inv;
     }
 
-    @Transactional
     private void removeNicFromDb(List<VmNicInventory> nics) {
+        for (VmNicInventory vmNic : nics) {
+            VmNicType type = VmNicType.valueOf(vmNic.getType());
+            VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
+            vnicFactory.releaseVmNic(vmNic);
+        }
+
         SQL.New(VmNicVO.class).in(VmNicVO_.uuid, nics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList())).delete();
     }
 
@@ -170,7 +161,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
             protected void scripts() {
                 Set<UsedIpVO> ipVOS = new HashSet<>();
                 nics.forEach(nic -> {
-                    VmNicType vmNicType = new VmNicType(nic.getType());
+                    VmNicType vmNicType = VmNicType.valueOf(nic.getType());
                     VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(vmNicType);
                     vnicFactory.createVmNic(nic, spec);
                     List<UsedIpInventory> ipInvList = new ArrayList<>();
@@ -194,47 +185,47 @@ public class ApplianceVmAllocateNicFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
-        try {
-            VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-            List<VmNicInventory> nics = spec.getDestNics();
-            if (nics.isEmpty()) {
-                return;
-            }
-
-            List<ReturnIpMsg> rmsgs = new ArrayList<>();
-            for (VmNicInventory nic : nics) {
-                if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
-                    continue;
-                }
-
-                for (UsedIpInventory ip : nic.getUsedIps()) {
-                    ReturnIpMsg msg = new ReturnIpMsg();
-                    msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-                    msg.setUsedIpUuid(ip.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-                    rmsgs.add(msg);
-                }
-            }
-
-            if (!rmsgs.isEmpty()) {
-                new While<>(rmsgs).each((msg, compl) -> {
-                    bus.send(msg, new CloudBusCallBack(compl) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            compl.done();
-                        }
-                    });
-                }).run(new WhileDoneCompletion(null) {
-                    @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        removeNicFromDb(nics);
-                    }
-                });
-            } else {
-                removeNicFromDb(nics);
-            }
-        } finally {
+        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        List<VmNicInventory> nics = spec.getDestNics();
+        if (nics.isEmpty()) {
             chain.rollback();
+            return;
         }
+
+        List<ReturnIpMsg> rmsgs = new ArrayList<>();
+        for (VmNicInventory nic : nics) {
+            if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
+                continue;
+            }
+
+            for (UsedIpInventory ip : nic.getUsedIps()) {
+                ReturnIpMsg msg = new ReturnIpMsg();
+                msg.setL3NetworkUuid(nic.getL3NetworkUuid());
+                msg.setUsedIpUuid(ip.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                rmsgs.add(msg);
+            }
+        }
+
+        if (rmsgs.isEmpty()) {
+            removeNicFromDb(nics);
+            chain.rollback();
+            return;
+        }
+
+        new While<>(rmsgs).each((msg, compl) -> {
+            bus.send(msg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(chain) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                removeNicFromDb(nics);
+                chain.rollback();
+            }
+        });
     }
 }

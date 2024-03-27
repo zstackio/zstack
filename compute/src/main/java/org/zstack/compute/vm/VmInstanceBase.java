@@ -850,6 +850,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             amsg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
         }
         amsg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
+        amsg.setVmNicParams(VmNicHelper.getVmNicParamsWithVfNic(self));
         amsg.setDryRun(true);
         amsg.setListAllHosts(true);
 
@@ -1885,6 +1886,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setAllocatorStrategy(HostAllocatorConstant.MIGRATE_VM_ALLOCATOR_TYPE);
         amsg.setVmOperation(VmOperation.Migrate.toString());
         amsg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
+        amsg.setVmNicParams(VmNicHelper.getVmNicParamsWithVfNic(self));
         amsg.setDryRun(true);
         amsg.setAllowNoL3Networks(true);
 
@@ -2174,8 +2176,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             String vmNicParams = msg1.getVmNicParams();
             if (!StringUtils.isEmpty(vmNicParams)) {
-                VmNicParm nicParams = JSONObjectUtil.toObject(vmNicParams, VmNicParm.class);
-                nicSpec.setVmNicParms(Arrays.asList(nicParams));
+                VmNicParam nicParams = JSONObjectUtil.toObject(vmNicParams, VmNicParam.class);
+                nicSpec.setVmNicParams(Arrays.asList(nicParams));
                 if (VmNicState.disable.toString().equals(nicParams.getState())) {
                     spec.getDisableL3Networks().add(nicParams.getL3NetworkUuid());
                 }
@@ -2194,6 +2196,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString(), setStaticIp.nicNetworkInfo);
+        for (VmNicPrepareResourceExtensionPoint exp : pluginRgty.getExtensionList(VmNicPrepareResourceExtensionPoint.class)) {
+            flowChain.then(exp.getPreparationFlow());
+        }
+
         flowChain.then(new VmAllocateNicFlow());
         flowChain.then(new VmAllocateNicIpFlow());
         flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
@@ -2426,6 +2432,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void rollback(FlowRollback trigger, Map data) {
                         refreshVO();
                         VmNicInventory nic = (VmNicInventory) data.get(vmNicInvKey);
+                        if (nic == null) {
+                            trigger.rollback();
+                            return;
+                        }
+
                         doDetachNic(nic, true, true, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -6946,7 +6957,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             List<VmNicSpec> nicSpecs = new ArrayList<>();
             for (VmNicSpec nicSpec : struct.getL3NetworkUuids()) {
                 List<L3NetworkInventory> l3s = new ArrayList<>();
-                for (L3NetworkInventory inv : nicSpec.l3Invs) {
+                for (L3NetworkInventory inv : nicSpec.getL3Invs()) {
                     L3NetworkInventory l3 = CollectionUtils.find(nws, new Function<L3NetworkInventory, L3NetworkInventory>() {
                         @Override
                         public L3NetworkInventory call(L3NetworkInventory arg) {
@@ -6964,7 +6975,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!l3s.isEmpty()) {
                     VmNicSpec nicSpec1 = new VmNicSpec(l3s);
                     nicSpec1.setNicDriverType(nicSpec.getNicDriverType());
-                    nicSpec1.setVmNicParms(nicSpec.getVmNicParms());
+                    nicSpec1.setVmNicParams(nicSpec.getVmNicParams());
                     nicSpecs.add(nicSpec1);
                 }
             }
