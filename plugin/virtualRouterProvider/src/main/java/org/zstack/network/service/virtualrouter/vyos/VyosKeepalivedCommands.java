@@ -30,8 +30,12 @@ public class VyosKeepalivedCommands {
         public String heartbeatNic;
         @GrayVersion(value = "5.0.0")
         public String peerIp;
+        @GrayVersion(value = "5.1.0")
+        public String peerIpV6;
         @GrayVersion(value = "5.0.0")
         public String localIp;
+        @GrayVersion(value = "5.1.0")
+        public String localIpV6;
         @GrayVersion(value = "5.0.0")
         public List<String> monitors;
         @GrayVersion(value = "5.0.0")
@@ -63,6 +67,14 @@ public class VyosKeepalivedCommands {
             this.peerIp = peerIp;
         }
 
+        public String getPeerIpV6 () {
+            return peerIpV6;
+        }
+
+        public void setPeerIpV6(String peerIpV6) {
+            this.peerIpV6 = peerIpV6;
+        }
+
         public List<String> getMonitors() {
             return monitors;
         }
@@ -85,6 +97,14 @@ public class VyosKeepalivedCommands {
 
         public void setLocalIp(String localIp) {
             this.localIp = localIp;
+        }
+
+        public String getLocalIpV6() {
+            return localIpV6;
+        }
+
+        public void setLocalIpV6(String localIpV6) {
+            this.localIpV6 = localIpV6;
         }
 
         public String getCallbackUrl() {
