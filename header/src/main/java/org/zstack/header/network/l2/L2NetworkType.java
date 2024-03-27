@@ -6,6 +6,7 @@ public class L2NetworkType {
     private static Map<String, L2NetworkType> types = Collections.synchronizedMap(new HashMap<String, L2NetworkType>());
     private final String typeName;
     private boolean exposed = true;
+    private boolean sriovSupported = false;
 
     public static boolean hasType(String typeName) {
         return types.containsKey(typeName);
@@ -21,12 +22,25 @@ public class L2NetworkType {
         this.exposed = exposed;
     }
 
+    public L2NetworkType(String typeName, boolean exposed, boolean sriovSupported) {
+        this(typeName, exposed);
+        this.sriovSupported = sriovSupported;
+    }
+
     public boolean isExposed() {
         return exposed;
     }
 
     public void setExposed(boolean exposed) {
         this.exposed = exposed;
+    }
+
+    public boolean isSriovSupported() {
+        return sriovSupported;
+    }
+
+    public void setSriovSupported(boolean isSupportSriov) {
+        this.sriovSupported = isSupportSriov;
     }
 
     public static L2NetworkType valueOf(String typeName) {
@@ -65,5 +79,15 @@ public class L2NetworkType {
             }
         }
         return exposedTypes;
+    }
+
+    public static Set<String> getSriovSupportedTypeName() {
+        HashSet<String> supportedTypes = new HashSet<String>();
+        for (L2NetworkType type : types.values()) {
+            if (type.isSriovSupported()) {
+                supportedTypes.add(type.toString());
+            }
+        }
+        return supportedTypes;
     }
 }

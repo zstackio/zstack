@@ -68,3 +68,20 @@ DELETE FROM `zstack`.`HostKernelInterfaceVO` WHERE `l3NetworkUuid` IS NULL;
 ALTER TABLE `zstack`.`HostKernelInterfaceVO` DROP FOREIGN KEY `fkHostKernelInterfaceVOL3NetworkVO`;
 ALTER TABLE `zstack`.`HostKernelInterfaceVO` MODIFY `l3NetworkUuid` varchar(32) NOT NULL;
 ALTER TABLE `zstack`.`HostKernelInterfaceVO` ADD CONSTRAINT `fkHostKernelInterfaceVOL3NetworkVO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES L3NetworkEO (`uuid`) ON DELETE CASCADE;
+
+-- Feature: support SR-IOV | ZSV-5082
+CREATE TABLE IF NOT EXISTS `zstack`.`EthernetVfPciDeviceVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `hostDevUuid` varchar(32) DEFAULT NULL,
+    `interfaceName` varchar(32) DEFAULT NULL,
+    `vmUuid` varchar(32) DEFAULT NULL,
+    `l3NetworkUuid` varchar(32) DEFAULT NULL,
+    `vfStatus` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkEthernetVfPciDeviceVOVmInstanceEO` FOREIGN KEY (`vmUuid`) REFERENCES `VmInstanceEO` (`uuid`) ON DELETE SET NULL,
+    CONSTRAINT `fkEthernetVfPciDeviceVOHostEO` FOREIGN KEY (`hostDevUuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkEthernetVfPciDeviceVO` FOREIGN KEY (`uuid`) REFERENCES `PciDeviceVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkEthernetVfPciDeviceVOL3NetworkEO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `virtStatus` VARCHAR(32) DEFAULT NULL AFTER `offloadStatus`;

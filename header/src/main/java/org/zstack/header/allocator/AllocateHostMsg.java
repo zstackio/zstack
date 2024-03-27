@@ -4,6 +4,7 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmNicParam;
 
 import java.util.*;
 
@@ -15,6 +16,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private List<String> avoidHostUuids;
     private List<String> softAvoidHostUuids;
     private List<String> l3NetworkUuids;
+    private List<VmNicParam> vmNicParams = new ArrayList<>();
     private VmInstanceInventory vmInstance;
     private ImageInventory image;
     private String vmOperation;
@@ -178,6 +180,14 @@ public class AllocateHostMsg extends NeedReplyMessage {
 
     public void setL3NetworkUuids(List<String> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
+    }
+
+    public List<VmNicParam> getVmNicParams() {
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(List<VmNicParam> vmNicParams) {
+        this.vmNicParams = vmNicParams;
     }
 
     public VmInstanceInventory getVmInstance() {

@@ -11,12 +11,12 @@ import static org.zstack.utils.CollectionDSL.list;
 
 public class VmNicSpec implements Serializable {
     /* due to the design changed, single nic will only has 1 l3 network */
-    public List<L3NetworkInventory> l3Invs;
-    public String nicDriverType;
+    private List<L3NetworkInventory> l3Invs;
+    private String nicDriverType;
 
     //from api msg
     /* due to the design changed, single nic will only has 1 l3 network */
-    public List<VmNicParm> vmNicParms;
+    private List<VmNicParam> vmNicParams;
 
     public VmNicSpec(List<L3NetworkInventory> l3Invs) {
         this.l3Invs = l3Invs;
@@ -85,11 +85,29 @@ public class VmNicSpec implements Serializable {
         return res;
     }
 
-    public List<VmNicParm> getVmNicParms() {
-        return vmNicParms;
+    public static List<VmNicParam> getVmNicParamsOfSpec(List<VmNicSpec> specs) {
+        List<VmNicParam> vmNicParams = new ArrayList<>();
+        for (VmNicSpec spec: specs) {
+            if (spec.vmNicParams != null) {
+                vmNicParams.addAll(spec.vmNicParams);
+            }
+        }
+        return vmNicParams;
     }
 
-    public void setVmNicParms(List<VmNicParm> vmNicParms) {
-        this.vmNicParms = vmNicParms;
+    public List<VmNicParam> getVmNicParams() {
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(List<VmNicParam> vmNicParams) {
+        this.vmNicParams = vmNicParams;
+    }
+
+    public VmNicParam getVmNicParam() {
+        if (CollectionUtils.isEmpty(this.vmNicParams)) {
+            return new VmNicParam();
+        }
+
+        return this.vmNicParams.get(0);
     }
 }

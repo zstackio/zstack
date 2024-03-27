@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeVmNicNetworkAction extends AbstractAction {
+public class QueryEthernetVFAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeVmNicNetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ChangeVmNicNetworkResult value;
+        public org.zstack.sdk.QueryEthernetVFResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,41 +25,6 @@ public class ChangeVmNicNetworkAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmNicUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String destL3NetworkUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmNicParams;
-
-    @Param(required = false)
-    public java.lang.String staticIp;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -69,8 +34,8 @@ public class ChangeVmNicNetworkAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ChangeVmNicNetworkResult value = res.getResult(org.zstack.sdk.ChangeVmNicNetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ChangeVmNicNetworkResult() : value; 
+        org.zstack.sdk.QueryEthernetVFResult value = res.getResult(org.zstack.sdk.QueryEthernetVFResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEthernetVFResult() : value; 
 
         return ret;
     }
@@ -99,11 +64,11 @@ public class ChangeVmNicNetworkAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vm-instances/nics/{vmNicUuid}/l3-networks/{destL3NetworkUuid}";
+        info.httpMethod = "GET";
+        info.path = "/pci-device/ethernet-vfs";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

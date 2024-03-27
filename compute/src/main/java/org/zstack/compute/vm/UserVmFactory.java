@@ -7,7 +7,11 @@ import org.zstack.header.vm.*;
 
 public class UserVmFactory implements VmInstanceFactory {
     private static final VmInstanceType type = new VmInstanceType(VmInstanceConstant.USER_VM_TYPE);
-    
+
+    static {
+        type.setSriovSupported(true);
+    }
+
     @Autowired
     private DatabaseFacade dbf;
     

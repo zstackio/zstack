@@ -168,7 +168,7 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
         APIAttachL3NetworkToVmMsg msg = new APIAttachL3NetworkToVmMsg();
         msg.vmInstanceUuid = uuid();
         msg.l3NetworkUuid = uuid();
-        msg.driverType = "e1000";
+        msg.driverType = VmNicConstant.NIC_DRIVER_TYPE_E1000;
         return msg;
     }
 }

@@ -16,13 +16,11 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.VmNicSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -58,6 +56,7 @@ public class VmAllocateHostForAbnormallyStartedVmFlow implements Flow {
                 return arg.getUuid();
             }
         }));
+        msg.setVmNicParams(VmNicSpec.getVmNicParamsOfSpec(spec.getL3Networks()));
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

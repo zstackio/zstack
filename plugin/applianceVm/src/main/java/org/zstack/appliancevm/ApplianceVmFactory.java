@@ -21,6 +21,10 @@ import java.util.Map;
 public class ApplianceVmFactory implements VmInstanceFactory, Component {
     public static VmInstanceType type = new VmInstanceType(ApplianceVmConstant.APPLIANCE_VM_TYPE);
 
+    static {
+        type.setSriovSupported(true);
+    }
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired

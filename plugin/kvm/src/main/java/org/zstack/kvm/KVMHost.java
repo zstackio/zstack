@@ -100,9 +100,6 @@ import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -3770,6 +3767,7 @@ public class KVMHost extends HostBase implements Host {
                 msg.setHostUuid(self.getUuid());
                 msg.setFullAllocate(false);
                 msg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(vm.getVmNics())));
+                msg.setVmNicParams(VmNicHelper.getVmNicParamsWithVfNic(vm));
                 msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
                 bus.send(msg, new CloudBusCallBack(chain) {
                     @Override
