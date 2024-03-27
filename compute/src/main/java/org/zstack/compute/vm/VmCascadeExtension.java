@@ -311,6 +311,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 /* both ipv4 and ipv6 has been deleted or deleting, then delete nic */
                 if ((ip4 == null || uuids.contains(ip4.getIpRangeUuid()))
                         && (ip6 == null || uuids.contains(ip6.getIpRangeUuid()))) {
+                    Boolean enableIPAM = Q.New(L3NetworkVO.class).
+                            eq(L3NetworkVO_.uuid, nic.getL3NetworkUuid())
+                            .select(L3NetworkVO_.enableIPAM).findValue();
+                    if (enableIPAM != null && !enableIPAM) {
+                        continue;
+                    }
+
                     DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
                     msg.setVmInstanceUuid(nic.getVmInstanceUuid());
                     msg.setVmNicUuid(nic.getUuid());
