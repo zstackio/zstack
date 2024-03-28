@@ -414,12 +414,6 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     }
 
     @Override
-    public void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {}
-
-    @Override
-    public void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {}
-
-    @Override
     public void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
         deactivateVolumeIfNeed(vm, volume, completion);
     }
