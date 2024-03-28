@@ -37953,59 +37953,6 @@
     "fileName": "src/main/java/org/zstack/zwatch/function/SortFunction.java"
   },
   {
-    "raw": "unable to query influxdb, %s",
-    "en_US": "unable to query influxdb, {0}",
-    "zh_CN": "无法查询InfluxDB，{0}",
-    "arguments": [
-      "ret.getError()"
-    ],
-    "line": 62,
-    "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDatabaseCreator.java"
-  },
-  {
-    "raw": "invalid influxdb response: %s, no name found in columns",
-    "en_US": "invalid influxdb response: {0}, no name found in columns",
-    "zh_CN": "InfluxDB响应无效：{0}，在列中找不到名称",
-    "arguments": [
-      "JSONObjectUtil.toJsonString(ret)"
-    ],
-    "line": 106,
-    "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDatabaseCreator.java"
-  },
-  {
-    "raw": "failed to create influxdb retention \u0027%s\u0027, %s",
-    "en_US": "failed to create influxdb retention \u0027{0}\u0027, {1}",
-    "zh_CN": "无法创建InfluxDB保留“{0}”，{1}",
-    "arguments": [
-      "retention",
-      "res.getError()"
-    ],
-    "line": 92,
-    "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDatabaseCreator.java"
-  },
-  {
-    "raw": "failed to alter influxdb retention \u0027%s\u0027, %s",
-    "en_US": "failed to alter influxdb retention \u0027{0}\u0027, {1}",
-    "zh_CN": "无法更改InfluxDB保留“{0}”，{1}",
-    "arguments": [
-      "retention",
-      "res.getError()"
-    ],
-    "line": 85,
-    "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDatabaseCreator.java"
-  },
-  {
-    "raw": "failed to create influxdb default user \u0027%s\u0027, %s",
-    "en_US": "failed to create influxdb default user \u0027{0}\u0027, {1}",
-    "zh_CN": "无法创建InfluxDB默认用户“{0}”，{1}",
-    "arguments": [
-      "defaultUserName",
-      "res.getError()"
-    ],
-    "line": 124,
-    "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDatabaseCreator.java"
-  },
-  {
     "raw": "cannot find EventFamily[name:%s]",
     "en_US": "cannot find EventFamily[name:{0}]",
     "zh_CN": "找不到事件族[name:{0}]",
