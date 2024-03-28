@@ -16,6 +16,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
@@ -53,6 +54,9 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     protected static Map<String, PrimaryStorageNodeSvc> nodes = new HashMap<>();
     private static final List<String> SUPPORT_PROTOCOL = Arrays.asList("Vhost", "iSCSI", "NVMEoF", "Curve", "file");
 
+    public Map<String, NodeHealthyCheckProtocolExtensionPoint> nodeHealthyCheckProtocolExtensions = Collections.synchronizedMap(
+            new HashMap<String, NodeHealthyCheckProtocolExtensionPoint>());
+
     @Autowired
     protected PluginRegistry pluginRgty;
     @Autowired
@@ -72,7 +76,19 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         for (ExternalPrimaryStorageVO vo : extPs) {
             saveController(vo);
         }
+        populateExtensions();
         return true;
+    }
+
+    private void populateExtensions() {
+        for (NodeHealthyCheckProtocolExtensionPoint ext : pluginRgty.getExtensionList(NodeHealthyCheckProtocolExtensionPoint.class)) {
+            NodeHealthyCheckProtocolExtensionPoint old = nodeHealthyCheckProtocolExtensions.get(ext.getHypervisorType().toString());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate NodeHealthyCheckProtocolExtensionPoint[%s, %s] for hypervisor type[%s]",
+                        old.getClass().getName(), ext.getClass().getName(), ext.getHypervisorType()));
+            }
+            nodeHealthyCheckProtocolExtensions.put(ext.getHypervisorType().toString(), ext);
+        }
     }
 
     @Override

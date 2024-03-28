@@ -176,7 +176,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         } else if (msg instanceof InstantiateMemoryVolumeOnPrimaryStorageMsg) {
             throw new UnsupportedOperationException();
         } else {
-            spec.setName(volume.getName());
+            spec.setName(buildVolumeName(volume.getUuid()));
             createEmptyVolume(msg, spec);
         }
     }
