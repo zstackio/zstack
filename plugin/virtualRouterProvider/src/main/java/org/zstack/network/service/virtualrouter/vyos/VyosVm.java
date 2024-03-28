@@ -109,9 +109,10 @@ public class VyosVm extends VirtualRouter {
 
     public void configureKeepalived(VyosKeepalivedCommands.VyosHaEnableCmd cmd,
                                        Completion completion) {
-        if (!vr.isHaEnabled()) {
-            completion.success();
-        }
+        //if (!vr.isHaEnabled()) {
+        //    completion.success();
+        //    return;
+        //}
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VyosKeepalivedCommands.VYOS_HA_ENABLE_PATH);
