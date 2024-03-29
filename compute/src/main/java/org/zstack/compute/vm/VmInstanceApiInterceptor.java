@@ -1027,14 +1027,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             List<VmNicParam> vmNicParams = new ArrayList<>(Collections.singletonList(vmNicParam));
-            VmNicVO attachedNic = Q.New(VmNicVO.class)
+            List<VmNicVO> attachedNics = Q.New(VmNicVO.class)
                     .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                    .eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).find();
-            if (attachedNic != null && VmNicType.valueOf(attachedNic.getType()).isUseSRIOV()) {
-                VmNicParam attachedNicParam = new VmNicParam();
-                attachedNicParam.setL3NetworkUuid(msg.getL3NetworkUuid());
-                attachedNicParam.setDriverType(attachedNic.getDriverType());
-                vmNicParams.add(attachedNicParam);
+                    .eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+            for (VmNicVO nic : attachedNics) {
+                if (VmNicType.valueOf(nic.getType()).isUseSRIOV()){
+                    VmNicParam attachedNicParam = new VmNicParam();
+                    attachedNicParam.setL3NetworkUuid(msg.getL3NetworkUuid());
+                    attachedNicParam.setDriverType(nic.getDriverType());
+                    vmNicParams.add(attachedNicParam);
+                }
             }
 
             VmNicUtils.validateVmParams(vmNicParams, Arrays.asList(msg.getL3NetworkUuid()), supportNicDriverTypes, type);
