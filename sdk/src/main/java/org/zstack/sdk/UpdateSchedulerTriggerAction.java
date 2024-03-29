@@ -44,6 +44,9 @@ public class UpdateSchedulerTriggerAction extends AbstractAction {
     public java.lang.Long startTime;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long stopTime;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String cron;
 
     @Param(required = false, validValues = {"cron","simple"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
