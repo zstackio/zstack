@@ -18,6 +18,7 @@ public class TaskProgressVO_ {
     public static volatile SingularAttribute<TaskProgressVO, String> content;
     public static volatile SingularAttribute<TaskProgressVO, String> arguments;
     public static volatile SingularAttribute<TaskProgressVO, String> managementUuid;
+    public static volatile SingularAttribute<TaskProgressVO, String> opaque;
     public static volatile SingularAttribute<TaskProgressVO, Long> timeToDelete;
     public static volatile SingularAttribute<TaskProgressVO, Long> time;
 }
