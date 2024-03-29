@@ -28,7 +28,7 @@ public class ChangeL2NetworkVlanIdAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4094L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer vlan;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

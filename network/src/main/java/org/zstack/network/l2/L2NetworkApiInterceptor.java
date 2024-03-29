@@ -13,6 +13,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -116,6 +117,9 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             if (msg.getVlan() == null) {
                 throw new ApiMessageInterceptionException(argerr("vlan is required for " +
                         "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
+            }
+            if (!NetworkUtils.isValidVlan(msg.getVlan())) {
+                throw new ApiMessageInterceptionException(argerr("vlan[%s] is invalid", msg.getVlan()));
             }
             List<String> attachedClusters = l2.getAttachedClusterRefs().stream()
                     .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());

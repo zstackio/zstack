@@ -36,6 +36,9 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
         if (!msg.getType().equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)){
             return;
         }
+        if (!NetworkUtils.isValidVni(msg.getVlan())) {
+            throw new ApiMessageInterceptionException(argerr("vlan[%s] is not a valid vni", msg.getVlan()));
+        }
         VxlanNetworkVO vxlanVO = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, msg.getL2NetworkUuid()).find();
         if (vxlanVO == null || !vxlanVO.getType().equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)) {
             throw new ApiMessageInterceptionException(argerr("L2Network[uuid:%s] is not L2VxlanNetwork type",
