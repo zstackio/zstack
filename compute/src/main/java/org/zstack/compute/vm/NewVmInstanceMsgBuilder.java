@@ -43,6 +43,7 @@ public class NewVmInstanceMsgBuilder {
                 if (!nicParamOfL3.isEmpty()) {
                     vmNicSpec.setVmNicParams(nicParamOfL3);
                     vmNicSpec.setNicDriverType(nicParamOfL3.get(0).getDriverType());
+                    vmNicParams.removeAll(nicParamOfL3);
                 }
             }
             nicSpecs.add(vmNicSpec);

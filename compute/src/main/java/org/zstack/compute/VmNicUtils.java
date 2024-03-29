@@ -21,8 +21,15 @@ public class VmNicUtils {
         }
 
         List<String> l3UuidsInParams = vmNicParams.stream().map(VmNicParam::getL3NetworkUuid).distinct().collect(Collectors.toList());
-        if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class) && l3UuidsInParams.size() != vmNicParams.size()) {
-            throw new ApiMessageInterceptionException(argerr("duplicate nic params"));
+        if (l3UuidsInParams.size() != vmNicParams.size()) {
+            if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)) {
+                throw new ApiMessageInterceptionException(argerr("duplicate nic params"));
+            }
+
+            List<VmNicParam> sriovEnabledNics = vmNicParams.stream().filter(VmNicParam::isSriovEnabled).collect(Collectors.toList());
+            if (sriovEnabledNics.stream().map(VmNicParam::getL3NetworkUuid).distinct().count() != sriovEnabledNics.size()) {
+                throw new ApiMessageInterceptionException(argerr("could not create multi SR-IOV enabled nics on the same l3 network"));
+            }
         }
 
         for (VmNicParam nic : vmNicParams) {
