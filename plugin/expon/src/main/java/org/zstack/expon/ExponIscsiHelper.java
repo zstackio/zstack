@@ -14,6 +14,8 @@ public class ExponIscsiHelper {
 
     static String iscsiHeartbeatVolumeName = "iscsi_zstack_heartbeat";
 
+    static String iscsiPrefix = "iscsi_zstack";
+
     static String buildIscsiExportClientName(String clientIp) {
         return "iscsi_" + clientIp.replace(".", "_");
     }

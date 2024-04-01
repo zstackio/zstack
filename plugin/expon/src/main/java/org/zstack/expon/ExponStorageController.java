@@ -45,6 +45,7 @@ import org.zstack.header.volume.VolumeStats;
 import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -76,8 +77,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private ExternalPrimaryStorageVO self;
     public ExponAddonInfo addonInfo;
     private ExponConfig config;
-
     public final ExponApiHelper apiHelper;
+    @Autowired
+    private ExternalPrimaryStorageFactory extPsFactory;
 
     // TODO static nqn
     private final static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
@@ -873,24 +875,54 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void reportNodeHealthy(HostInventory host, ReturnValueCompletion<NodeHealthy> comp) {
+        String hostProtocol = getProtocolByHypervisorType(host.getHypervisorType());
         NodeHealthy healthy = new NodeHealthy();
-        Arrays.asList(VolumeProtocol.Vhost).forEach(it -> {
-            String ussName = buildUssGwName(protocolToString(it), host.getManagementIp());
-            UssGatewayModule uss = apiHelper.queryUssGateway(ussName);
-            if (uss == null) {
-                healthy.setHealthy(it, StorageHealthy.Failed);
-            } else if (uss.getStatus().equals(HealthStatus.health.name())) {
-                healthy.setHealthy(it, StorageHealthy.Ok);
-            } else if (uss.getStatus().equals(HealthStatus.error.name())) {
-                healthy.setHealthy(it, StorageHealthy.Failed);
-            } else if (uss.getStatus().equals(HealthStatus.warning.name())){
-                healthy.setHealthy(it, StorageHealthy.Warn);
-            } else {
-                healthy.setHealthy(it, StorageHealthy.Unknown);
-            }
-        });
+        if (VolumeProtocol.Vhost.toString().equals(hostProtocol)) {
+            setNodeHealthyByVhost(host, healthy);
+        }
 
+        if (VolumeProtocol.iSCSI.toString().equals(hostProtocol)) {
+            setNodeHealthyByIscsi(host, healthy);
+        }
         comp.success(healthy);
+    }
+
+    private void setNodeHealthyByIscsi(HostInventory host, NodeHealthy healthy) {
+        // for iscsi protocol , just judge exist or not
+        VolumeProtocol protocol = VolumeProtocol.iSCSI;
+        String tianshuId = addonInfo.getClusters().get(0).getId();
+        List<IscsiSeverNode> nodes = apiHelper.getIscsiTargetServer(tianshuId);
+        if (nodes.stream().anyMatch(it -> it.getUssName().startsWith(iscsiPrefix)
+                && it.getManagerIp().equals(host.getManagementIp()))) {
+            healthy.setHealthy(protocol, StorageHealthy.Ok);
+        } else {
+            healthy.setHealthy(protocol, StorageHealthy.Unknown);
+        }
+    }
+
+    private void setNodeHealthyByVhost(HostInventory host, NodeHealthy healthy) {
+        VolumeProtocol protocol = VolumeProtocol.Vhost;
+        String ussName = buildUssGwName(protocolToString(protocol), host.getManagementIp());
+        UssGatewayModule uss = apiHelper.queryUssGateway(ussName);
+        if (uss == null) {
+            healthy.setHealthy(protocol, StorageHealthy.Failed);
+        } else if (uss.getStatus().equals(HealthStatus.health.name())) {
+            healthy.setHealthy(protocol, StorageHealthy.Ok);
+        } else if (uss.getStatus().equals(HealthStatus.error.name())) {
+            healthy.setHealthy(protocol, StorageHealthy.Failed);
+        } else if (uss.getStatus().equals(HealthStatus.warning.name())){
+            healthy.setHealthy(protocol, StorageHealthy.Warn);
+        } else {
+            healthy.setHealthy(protocol, StorageHealthy.Unknown);
+        }
+    }
+
+    private String getProtocolByHypervisorType(String type) {
+        NodeHealthyCheckProtocolExtensionPoint point = extPsFactory.nodeHealthyCheckProtocolExtensions.get(type);
+        if (point != null) {
+            return point.getHealthyProtocol();
+        }
+        return VolumeProtocol.Vhost.toString();
     }
 
     private List<FailureDomainModule> getSelfPools() {
