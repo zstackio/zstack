@@ -21,7 +21,7 @@ import org.zstack.header.rest.RestRequest;
 public class APIChangeL2NetworkVlanIdMsg extends APIMessage implements L2NetworkMessage, APIAuditor {
     @APIParam(resourceType = L2NetworkVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-    @APIParam(numberRange = {1, 4094}, required = false)
+    @APIParam(required = false)
     private Integer vlan;
     @APIParam(required = false)
     private String type;

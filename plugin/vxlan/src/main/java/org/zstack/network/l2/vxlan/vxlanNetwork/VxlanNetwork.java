@@ -351,12 +351,16 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
                     public void success() {
                         changeL2NetworkVniInDb(msg);
                         extpEmitter.afterUpdate(getSelfInventory());
+                        event.setInventory(getSelfInventory());
+                        bus.publish(event);
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         event.setError(errorCode);
+                        event.setInventory(getSelfInventory());
+                        bus.publish(event);
                         chain.next();
                     }
                 });
@@ -367,8 +371,6 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
                 return getSyncSignature();
             }
         });
-        event.setInventory(getSelfInventory());
-        bus.publish(event);
     }
 
     protected void handle(final APIDetachL2NetworkFromClusterMsg msg) {

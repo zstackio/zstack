@@ -388,12 +388,15 @@ public class L2NoVlanNetwork implements L2Network {
                     public void success() {
                         changeL2NetworkVlanIdInDb(msg);
                         extpEmitter.afterUpdate(getSelfInventory());
+                        event.setInventory(getSelfInventory());
+                        bus.publish(event);
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         event.setError(errorCode);
+                        bus.publish(event);
                         chain.next();
                     }
                 });
@@ -404,8 +407,6 @@ public class L2NoVlanNetwork implements L2Network {
                 return getSyncSignature();
             }
         });
-        event.setInventory(getSelfInventory());
-        bus.publish(event);
     }
 
     private void handle(APIUpdateL2NetworkMsg msg) {
@@ -491,7 +492,7 @@ public class L2NoVlanNetwork implements L2Network {
             L2NetworkVO l2Vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, self.getUuid()).find();
             l2Vo.setType(targetType);
             l2Vo.setVirtualNetworkId(targetVlan);
-            dbf.updateAndRefresh(l2Vo);
+            self = dbf.updateAndRefresh(l2Vo);
             // can not operate L2VlanNetworkVO directly due to it extends from L2NetworkVO
             // use native sql to insert or delete
             if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(targetType)) {
@@ -511,7 +512,7 @@ public class L2NoVlanNetwork implements L2Network {
             L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, self.getUuid()).find();
             l2VlanNetworkVO.setVirtualNetworkId(targetVlan);
             l2VlanNetworkVO.setVlan(targetVlan);
-            dbf.updateAndRefresh(l2VlanNetworkVO);
+            self = dbf.updateAndRefresh(l2VlanNetworkVO);
         }
     }
 
