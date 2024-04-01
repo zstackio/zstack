@@ -7,7 +7,7 @@ doc {
 
     category "loadBalancer"
 
-    desc """在这里填写API描述"""
+    desc """查询负载均衡后端服务器组可以添加网卡列表"""
 
     rest {
         request {
@@ -56,6 +56,16 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
+				}
+				column {
+					name "ipVersion"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "Integer"
+					optional true
+					since "5.1.0"
+					values ("4","6")
 				}
 			}
         }

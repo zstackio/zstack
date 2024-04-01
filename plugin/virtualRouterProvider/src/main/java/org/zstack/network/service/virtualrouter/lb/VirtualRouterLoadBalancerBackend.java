@@ -2731,7 +2731,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     @Override
-    public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO) {
+    public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO,
+                                                           LoadBalancerServerGroupVO groupVO, int ipVersion) {
         List<String> attachedL3Uuids = new ArrayList<>();
         if (groupVO != null) {
             attachedL3Uuids = LoadBalancerServerGroupInventory.valueOf(groupVO).getAttachedL3Uuids();
@@ -2790,7 +2791,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 .param("l3NetworkUuids", l3NetworkUuids)
                 .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
                 .list();
-        nicVOS = nicVOS.stream().filter(n -> !VmNicInventory.valueOf(n).isIpv6OnlyNic()).collect(Collectors.toList());
+
+        if (ipVersion == IPv6Constants.IPv4) {
+            nicVOS = nicVOS.stream().filter(n -> !VmNicInventory.valueOf(n).isIpv6OnlyNic()).collect(Collectors.toList());
+        } else {
+            nicVOS = nicVOS.stream().filter(n -> !VmNicInventory.valueOf(n).isIpv4OnlyNic()).collect(Collectors.toList());
+        }
 
         if (groupVO != null) {
             List<String> attachedNicUuids = groupVO.getLoadBalancerServerGroupVmNicRefs().stream()

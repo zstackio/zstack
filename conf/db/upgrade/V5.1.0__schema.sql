@@ -27,4 +27,4 @@ ALTER TABLE `zstack`.`SlbGroupVO` ADD COLUMN `configVersion` bigint unsigned DEF
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD COLUMN `configVersion` bigint unsigned DEFAULT 0;
 UPDATE `zstack`.`SlbGroupVO` SET deployType = "NoHA";
 
-ALTER TABLE `zstack`.`LoadBalancerServerGroupVO` ADD COLUMN `ipVersion` int(10) unsigned DEFAULT 4 AFTER `loadBalancerUuid`;
+ALTER TABLE `zstack`.`LoadBalancerServerGroupVO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL DEFAULT 4 AFTER `loadBalancerUuid`;

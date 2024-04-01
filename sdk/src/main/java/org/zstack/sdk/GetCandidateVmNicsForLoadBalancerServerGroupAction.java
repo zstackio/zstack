@@ -31,6 +31,9 @@ public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends Abstract
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String loadBalancerUuid;
 
+    @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer ipVersion;
+
     @Param(required = false)
     public java.util.List systemTags;
 

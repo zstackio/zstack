@@ -624,11 +624,13 @@ public class LoadBalancerBase {
     private void handle(APIGetCandidateVmNicsForLoadBalancerServerGroupMsg msg) {
         APIGetCandidateVmNicsForLoadBalancerServerGroupReply reply = new APIGetCandidateVmNicsForLoadBalancerServerGroupReply();
         LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
+        int ipVersion = msg.getIpVersion();
         LoadBalancerServerGroupVO groupVO = null;
         if (msg.getServergroupUuid() != null) {
             groupVO = dbf.findByUuid(msg.getServergroupUuid(), LoadBalancerServerGroupVO.class);
+            ipVersion = groupVO.getIpVersion();
         }
-        List<VmNicVO> nicVOS = f.getAttachableVmNicsForServerGroup(self, groupVO);
+        List<VmNicVO> nicVOS = f.getAttachableVmNicsForServerGroup(self, groupVO, ipVersion);
         reply.setInventories(VmNicInventory.valueOf(nicVOS));
         bus.reply(msg, reply);
     }
@@ -1567,6 +1569,7 @@ public class LoadBalancerBase {
                     groupVO.setDescription(String.format("default server group for load balancer listener %s", listenerVO.getName()));
                     groupVO.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
                     groupVO.setName(String.format("default-server-group-%s-%s", listenerVO.getName(), listenerVO.getUuid().substring(0, 5)));
+                    groupVO.setIpVersion(IPv6Constants.IPv4);
                     dbf.persist(groupVO);
 
                     listenerVO.setServerGroupUuid(groupVO.getUuid());

@@ -53,6 +53,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.Tuple;
 import java.util.*;
@@ -211,6 +212,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         groupVO.setDescription(String.format("default server group for load balancer %s", msg.getName()));
                         groupVO.setLoadBalancerUuid(vo.getUuid());
                         groupVO.setName(String.format("default-server-group-%s", msg.getName()));
+                        groupVO.setIpVersion(IPv6Constants.IPv4);
                         dbf.persist(groupVO);
 
                         vo = dbf.reload(vo);
@@ -1042,6 +1044,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             groupVO.setDescription(String.format("default server group for load balancer %s", vo.getName()));
             groupVO.setLoadBalancerUuid(vo.getUuid());
             groupVO.setName(String.format("default-server-group-%s", vo.getName()));
+            groupVO.setIpVersion(IPv6Constants.IPv4);
             dbf.persist(groupVO);
 
             vo.setServerGroupUuid(groupVO.getUuid());
@@ -1063,6 +1066,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             groupVO.setAccountUuid(Account.getAccountUuidOfResource(vo.getUuid()));
             groupVO.setDescription(String.format("default server group for load balancer listener %s", vo.getName()));
             groupVO.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+            groupVO.setIpVersion(IPv6Constants.IPv4);
             groupVO.setName(String.format("default-server-group-%s-%s", vo.getName(), vo.getUuid().substring(0, 5)));
             dbf.persist(groupVO);
 

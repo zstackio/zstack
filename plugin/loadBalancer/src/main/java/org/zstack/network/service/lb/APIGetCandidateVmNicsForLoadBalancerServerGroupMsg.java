@@ -21,6 +21,8 @@ public class APIGetCandidateVmNicsForLoadBalancerServerGroupMsg extends APISyncC
     private String servergroupUuid;
     @APIParam(resourceType = LoadBalancerVO.class, required = false)
     private String loadBalancerUuid;
+    @APIParam(required = false, validValues = {"4", "6"})
+    private Integer ipVersion;
 
     public String getServergroupUuid() {
         return servergroupUuid;
@@ -37,7 +39,15 @@ public class APIGetCandidateVmNicsForLoadBalancerServerGroupMsg extends APISyncC
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
     }
- 
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
     public static APIGetCandidateVmNicsForLoadBalancerServerGroupMsg __example__() {
         APIGetCandidateVmNicsForLoadBalancerServerGroupMsg msg = new APIGetCandidateVmNicsForLoadBalancerServerGroupMsg();
 
