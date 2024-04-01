@@ -694,12 +694,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         for (String uuid : imageUuids) {
-            /* there are 2 kinds of system image, appcenter image, vyos router image */
-            String appId = ImageSystemTags.APPCENTER_BUILD.getTokenByResourceUuid(uuid,
-                    ImageSystemTags.APPCENTER_BUILD_TOKEN);
+            /* there are 1 kinds of system image, vyos router image */
             String applianceType = ImageSystemTags.APPLIANCE_IMAGE_TYPE.getTokenByResourceUuid(uuid,
                     ImageSystemTags.APPLIANCE_IMAGE_TYPE_TOKEN);
-            if (appId == null && applianceType == null) {
+            if (applianceType == null) {
                 SystemTagCreator creator = ImageSystemTags.APPLIANCE_IMAGE_TYPE.newSystemTagCreator(uuid);
                 creator.setTagByTokens(map(e(ImageSystemTags.APPLIANCE_IMAGE_TYPE_TOKEN, VYOS_VM_TYPE)));
                 creator.inherent = true;
