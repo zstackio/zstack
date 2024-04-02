@@ -3,7 +3,6 @@ package org.zstack.header.storage.addon.primary;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
 

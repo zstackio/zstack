@@ -28,6 +28,8 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String isEnableKsm;
     @SerializedName("enable_spice_tls")
     private String enableSpiceTls;
+    @SerializedName("enable_cgroup_device_acl")
+    private String enableCgroupDeviceAcl;
     @SerializedName("restart_libvirtd")
     private String restartLibvirtd;
     @SerializedName("extra_packages")
@@ -134,6 +136,14 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setEnableSpiceTls(String enableSpiceTls) {
         this.enableSpiceTls = enableSpiceTls;
+    }
+
+    public String getEnableCgroupDeviceAcl() {
+        return enableCgroupDeviceAcl;
+    }
+
+    public void setEnableCgroupDeviceAcl(String enableCgroupDeviceAcl) {
+        this.enableCgroupDeviceAcl = enableCgroupDeviceAcl;
     }
 
     public String getRestartLibvirtd() {

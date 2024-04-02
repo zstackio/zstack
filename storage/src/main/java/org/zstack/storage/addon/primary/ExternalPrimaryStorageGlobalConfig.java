@@ -11,7 +11,7 @@ import org.zstack.resourceconfig.BindResourceConfig;
 public class ExternalPrimaryStorageGlobalConfig {
     public static final String CATEGORY = "externalPrimaryStorage";
 
-    @GlobalConfigValidation(validValues = {"iSCSI", "NVMEoF"})
+    @GlobalConfigValidation(validValues = {"iSCSI", "NVMEoF", "CBD"})
     @GlobalConfigDef(defaultValue = "iSCSI", description = "image export protocol of external primary storage")
     @BindResourceConfig({PrimaryStorageVO.class})
     public static GlobalConfig IMAGE_EXPORT_PROTOCOL = new GlobalConfig(CATEGORY, "image.export.protocol");

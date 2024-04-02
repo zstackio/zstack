@@ -22,9 +22,8 @@ class StorageTest extends Test {
         eip()
         lb()
         portForwarding()
-        include("expon.xml")
-        include("vhost.xml")
-        include("iscsi.xml")
+        expon()
+        zbs()
     }
 
     @Override

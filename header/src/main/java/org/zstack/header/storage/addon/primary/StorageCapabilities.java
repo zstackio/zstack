@@ -1,6 +1,7 @@
 package org.zstack.header.storage.addon.primary;
 
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
+import org.zstack.header.volume.VolumeProtocol;
 
 import java.util.List;
 
@@ -13,6 +14,24 @@ public class StorageCapabilities {
 
     private boolean supportLiveExpandVolume;
     public List<String> supportedImageFormats;
+    private VolumeProtocol defaultIsoActiveProtocol;
+    private VolumeProtocol defaultImageExportProtocol;
+
+    public VolumeProtocol getDefaultIsoActiveProtocol() {
+        return defaultIsoActiveProtocol;
+    }
+
+    public void setDefaultIsoActiveProtocol(VolumeProtocol defaultIsoActiveProtocol) {
+        this.defaultIsoActiveProtocol = defaultIsoActiveProtocol;
+    }
+
+    public VolumeProtocol getDefaultImageExportProtocol() {
+        return defaultImageExportProtocol;
+    }
+
+    public void setDefaultImageExportProtocol(VolumeProtocol defaultImageExportProtocol) {
+        this.defaultImageExportProtocol = defaultImageExportProtocol;
+    }
 
     public VolumeSnapshotCapability getSnapshotCapability() {
         return snapshotCapability;
