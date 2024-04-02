@@ -241,7 +241,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                             bus.send(msg);
                         }
 
-                        extEmitter.cleanUpAfterVmFailedToStart(spec.getVmInventory());
+                        extEmitter.cleanUpAfterVmFailedToStart(spec.getVmInventory(), spec.getCurrentVmOperation());
                         trigger.next();
                     }
                 });
