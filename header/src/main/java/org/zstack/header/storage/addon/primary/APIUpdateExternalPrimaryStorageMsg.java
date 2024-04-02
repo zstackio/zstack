@@ -16,7 +16,7 @@ public class APIUpdateExternalPrimaryStorageMsg extends APIUpdatePrimaryStorageM
     @APIParam(required = false)
     private String config;
 
-    @APIParam(required = false, maxLength = 255, validValues = {"Vhost", "Scsi", "Nvme", "Curve", "file"})
+    @APIParam(required = false, maxLength = 255, validValues = {"Vhost", "Scsi", "Nvme", "CBD", "file"})
     private String defaultProtocol;
 
     public String getConfig() {
