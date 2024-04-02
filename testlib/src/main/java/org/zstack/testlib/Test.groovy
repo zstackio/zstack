@@ -131,6 +131,7 @@ abstract class Test extends ApiHelper implements Retry {
             lb()
             nfsPrimaryStorage()
             externalPrimaryStorage()
+            zbs()
             eip()
             portForwarding()
             smp()

@@ -32,6 +32,7 @@ import org.zstack.header.expon.HealthStatus;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.ImageCacheInventory;
@@ -98,7 +99,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(true);
         capabilities.setSupportLiveExpandVolume(false);
-        capabilities.setSupportedImageFormats(Collections.singletonList("raw"));
+        capabilities.setSupportedImageFormats(Collections.singletonList(ImageConstant.RAW_FORMAT_STRING));
     }
 
     enum LunType {
@@ -851,6 +852,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         comp.success(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
     }
 
+    @Override
+    public void ping(Completion completion) {
+        completion.success();
+    }
+
     private void reloadDbInfo() {
         self = dbf.reload(self);
         addonInfo = StringUtils.isEmpty(self.getAddonInfo()) ? new ExponAddonInfo() : JSONObjectUtil.toObject(self.getAddonInfo(), ExponAddonInfo.class);
@@ -1186,7 +1192,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public void unexport(ExportSpec espec, VolumeProtocol protocol, Completion comp) {
+    public void unexport(ExportSpec espec, RemoteTarget remoteTarget, VolumeProtocol protocol, Completion comp) {
         if (protocol == VolumeProtocol.NVMEoF) {
             unexportNvmf(espec.getInstallPath());
         } else if (protocol == VolumeProtocol.iSCSI) {

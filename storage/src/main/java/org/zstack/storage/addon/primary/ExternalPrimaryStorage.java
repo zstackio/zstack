@@ -5,6 +5,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
@@ -282,6 +283,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             String pathInCache;
             String installPath;
             String format;
+            Long size;
             Long actualSize;
 
             @Override
@@ -314,6 +316,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         controller.cloneVolume(pathInCache, spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats returnValue) {
+                                size = returnValue.getSize();
                                 actualSize = returnValue.getActualSize();
                                 installPath = returnValue.getInstallPath();
                                 format = returnValue.getFormat();
@@ -333,6 +336,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     public void handle(Map data) {
                         InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                         volume.setInstallPath(installPath);
+                        volume.setSize(size);
                         volume.setActualSize(actualSize);
                         volume.setFormat(format);
                         if (StringUtils.isEmpty(volume.getProtocol())) {
@@ -837,8 +841,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             RemoteTarget remoteTarget;
             ExportSpec espec = new ExportSpec();
-            final String exportProtocol = rcf.getResourceConfigValue(
-                    ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+            final String exportProtocol = controller.reportCapabilities().getDefaultImageExportProtocol() != null
+                    ? controller.reportCapabilities().getDefaultImageExportProtocol().toString()
+                    : rcf.getResourceConfigValue(ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
 
             String snapshotPath;
             String bsInstallPath;
@@ -936,7 +941,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             return;
                         }
 
-                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
+                        controller.unexport(espec, remoteTarget, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -982,7 +987,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
+                        controller.unexport(espec, remoteTarget, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 // prevent to rollback again.
@@ -1143,9 +1148,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             VolumeStats volume;
 
             final String bsUuid = image.getBackupStorageRefs().get(0).getBackupStorageUuid();
-
-            final String exportProtocol = rcf.getResourceConfigValue(
-                    ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+            final String exportProtocol = controller.reportCapabilities().getDefaultImageExportProtocol() != null
+                    ? controller.reportCapabilities().getDefaultImageExportProtocol().toString()
+                    : rcf.getResourceConfigValue(ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -1217,7 +1222,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             return;
                         }
 
-                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
+                        controller.unexport(espec, remoteTarget, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -1262,7 +1267,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
+                        controller.unexport(espec, remoteTarget, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 // prevent to rollback again.
@@ -1432,7 +1437,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         downloadImageCache(msg.getIsoSpec().getInventory(), new ReturnValueCompletion<ImageCacheInventory>(msg) {
             @Override
             public void success(ImageCacheInventory cache) {
-                String isoProtocol = ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL.value(String.class);
+                String isoProtocol = controller.reportCapabilities().getDefaultIsoActiveProtocol() != null
+                        ? controller.reportCapabilities().getDefaultIsoActiveProtocol().toString()
+                        : ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL.value(String.class);
 
                 HostInventory host = HostInventory.valueOf(dbf.findByUuid(msg.getDestHostUuid(), HostVO.class));
                 node.activate(BaseVolumeInfo.valueOf(cache, isoProtocol), host, true, new ReturnValueCompletion<ActiveVolumeTO>(msg) {
@@ -1738,17 +1745,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(ConnectParam param, Completion completion) {
-
         controller.connect(externalVO.getConfig(), self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
             @Override
             public void success(LinkedHashMap addonInfo) {
                 SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                         .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
                         .update();
-
-
                 controller.setTrashExpireTime(PrimaryStorageGlobalConfig.TRASH_EXPIRATION_TIME.value(Integer.class), new NopeCompletion());
-                // to update capacity
                 pingHook(completion);
             }
 
@@ -1761,32 +1764,81 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void pingHook(Completion completion) {
-        controller.reportCapacity(new ReturnValueCompletion<StorageCapacity>(completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("ping-external-primary-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public void success(StorageCapacity capacity) {
-                if (capacity.getHealthy() == StorageHealthy.Ok || capacity.getHealthy() == StorageHealthy.Warn) {
-                    new PrimaryStorageCapacityUpdater(self.getUuid()).run(cap -> {
-                        if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
-                            cap.setAvailableCapacity(capacity.getAvailableCapacity());
+            public void setup() {
+                if (!CoreGlobalProperty.UNIT_TEST_ON) {
+                    flow(new NoRollbackFlow() {
+                        final String __name__ = "ping-storage";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            controller.ping(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
                         }
-
-                        cap.setTotalCapacity(capacity.getTotalCapacity());
-                        cap.setTotalPhysicalCapacity(capacity.getTotalCapacity());
-                        cap.setAvailablePhysicalCapacity(capacity.getAvailableCapacity());
-
-                        return cap;
                     });
-                    completion.success();
-                } else {
-                    completion.fail(operr("storage is not healthy:%s", capacity.getHealthy().toString()));
                 }
-            }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                flow(new NoRollbackFlow() {
+                    final String __name__ = "report-capacity";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        controller.reportCapacity(new ReturnValueCompletion<StorageCapacity>(trigger) {
+                            @Override
+                            public void success(StorageCapacity capacity) {
+                                if (capacity.getHealthy() == StorageHealthy.Ok || capacity.getHealthy() == StorageHealthy.Warn) {
+                                    new PrimaryStorageCapacityUpdater(self.getUuid()).run(cap -> {
+                                        if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
+                                            cap.setAvailableCapacity(capacity.getAvailableCapacity());
+                                        }
+
+                                        cap.setTotalCapacity(capacity.getTotalCapacity());
+                                        cap.setTotalPhysicalCapacity(capacity.getTotalCapacity());
+                                        cap.setAvailablePhysicalCapacity(capacity.getAvailableCapacity());
+
+                                        return cap;
+                                    });
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(operr("storage is not healthy:%s", capacity.getHealthy().toString()));
+                                }
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override
