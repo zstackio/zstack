@@ -17,6 +17,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -454,12 +455,12 @@ public class L2NoVlanNetwork implements L2Network {
         });
     }
 
-    protected void updateVlanNetwork(L2NetworkInventory l2Inv, String hostUuid, String htype, Completion completion) {
+    protected void updateVlanNetwork(L2NetworkInventory oldl2, L2NetworkInventory newl2, String hostUuid, String htype, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
         final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
         L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
-        ext.update(l2Inv, hostUuid, completion);
+        ext.update(oldl2, newl2, hostUuid, completion);
     }
     protected void realizeNetwork(String hostUuid, String htype, String providerType, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
@@ -517,11 +518,13 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     private void changeL2NetworkVlanId(final APIChangeL2NetworkVlanIdMsg msg, final Completion completion) {
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("change-l2-%s-vlan-on-hosts", self.getUuid()));
-        chain.then(new NoRollbackFlow() {
+        chain.then(new ShareFlow() {
             @Override
-            public void run(final FlowTrigger trigger, Map data) {
+            public void setup() {
+                final List<HostVO> updatedHosts = new ArrayList<>();
+                L2NetworkInventory oldInv = self.toInventory();
                 L2NetworkInventory newInv = self.toInventory();
                 if (msg.getType() != null) {
                     newInv.setType(msg.getType());
@@ -529,41 +532,76 @@ public class L2NoVlanNetwork implements L2Network {
                 if (msg.getVlan() != null) {
                     newInv.setVirtualNetworkId(msg.getVlan());
                 }
-                new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(newInv)).step((host, whileCompletion) -> {
-                    updateVlanNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
-                        @Override
-                        public void success() {
-                            whileCompletion.done();
-                        }
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            logger.error(String.format("update l2 network in host:[%s] failed", host.getUuid()));
-                            whileCompletion.addError(errorCode);
-                            whileCompletion.allDone();
-                        }
-                    });
-                },10).run(new WhileDoneCompletion(trigger) {
+                flow(new Flow() {
+                    String __name__ = "update-l2-network-vlan";
+
                     @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        if (!errorCodeList.getCauses().isEmpty()) {
-                            trigger.fail(errorCodeList.getCauses().get(0));
-                        } else {
-                            trigger.next();
-                        }
+                    public void run(final FlowTrigger trigger, Map data) {
+                        new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(newInv)).step((host, whileCompletion) -> {
+                            updateVlanNetwork(oldInv, newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    updatedHosts.add(host);
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.error(String.format("update l2 network in host:[%s] failed", host.getUuid()));
+                                    whileCompletion.addError(errorCode);
+                                    whileCompletion.allDone();
+                                }
+                            });
+                        }, 10).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
                     }
 
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        new While<>(updatedHosts).step((host, whileCompletion) -> {
+                            updateVlanNetwork(newInv, oldInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.error(String.format("rollback l2 network in host:[%s] failed", host.getUuid()));
+                                    whileCompletion.done();
+                                }
+                            });
+                        }, updatedHosts.size()).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                trigger.rollback();
+                            }
+                        });
+                    }
                 });
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
-                completion.success();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
         }).start();
     }

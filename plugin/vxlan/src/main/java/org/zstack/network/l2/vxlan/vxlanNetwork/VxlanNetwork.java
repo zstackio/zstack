@@ -13,6 +13,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
@@ -159,50 +160,87 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     }
 
     private void changeL2NetworkVni(final APIChangeL2NetworkVlanIdMsg msg, final Completion completion) {
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("change-l2-%s-vlan-on-hosts", self.getUuid()));
-        chain.then(new NoRollbackFlow() {
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("change-l2-%s-vni-on-hosts", self.getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public void run(final FlowTrigger trigger, Map data) {
+            public void setup() {
+                final List<HostVO> updatedHosts = new ArrayList<>();
+                L2NetworkInventory oldInv = self.toInventory();
                 L2NetworkInventory newInv = self.toInventory();
                 if (msg.getVlan() != null) {
                     newInv.setVirtualNetworkId(msg.getVlan());
                 }
-                new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(newInv)).step((host, whileCompletion) -> {
-                    updateVxlanNetwork(newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
-                        @Override
-                        public void success() {
-                            whileCompletion.done();
-                        }
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            logger.error(String.format("update l2 network in host:[%s] failed", host.getUuid()));
-                            whileCompletion.addError(errorCode);
-                            whileCompletion.allDone();
-                        }
-                    });
-                },10).run(new WhileDoneCompletion(trigger) {
+                flow(new Flow() {
+                    String __name__ = "update-l2-network-vni";
+
                     @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        if (!errorCodeList.getCauses().isEmpty()) {
-                            trigger.fail(errorCodeList.getCauses().get(0));
-                        } else {
-                            trigger.next();
-                        }
+                    public void run(final FlowTrigger trigger, Map data) {
+                        new While<>(L2NetworkHostHelper.getHostsByL2NetworkAttachedCluster(newInv)).step((host, whileCompletion) -> {
+                            updateVxlanNetwork(oldInv, newInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    updatedHosts.add(host);
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.error(String.format("update VXLAN network in host:[%s] failed", host.getUuid()));
+                                    whileCompletion.addError(errorCode);
+                                    whileCompletion.allDone();
+                                }
+                            });
+                        }, 10).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
                     }
 
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        new While<>(updatedHosts).step((host, whileCompletion) -> {
+                            updateVxlanNetwork(newInv, oldInv, host.getUuid(), host.getHypervisorType(), new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.error(String.format("rollback VXLAN network in host:[%s] failed", host.getUuid()));
+                                    whileCompletion.done();
+                                }
+                            });
+                        }, updatedHosts.size()).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                trigger.rollback();
+                            }
+                        });
+                    }
                 });
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
-                completion.success();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
         }).start();
     }
@@ -280,12 +318,12 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
         }).start();
     }
 
-    protected void updateVxlanNetwork(L2NetworkInventory l2Inv, String hostUuid, String htype, Completion completion) {
+    protected void updateVxlanNetwork(L2NetworkInventory oldInv, L2NetworkInventory newInv, String hostUuid, String htype, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
         final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
         L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
-        ext.update(l2Inv, hostUuid, completion);
+        ext.update(oldInv, newInv, hostUuid, completion);
     }
 
     protected void realizeNetwork(String hostUuid, String htype, Completion completion) {

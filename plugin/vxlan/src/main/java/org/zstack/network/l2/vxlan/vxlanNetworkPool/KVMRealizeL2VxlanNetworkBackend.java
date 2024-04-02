@@ -165,14 +165,13 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     }
 
     @Override
-    public void update(L2NetworkInventory newL2, String hostUuid, Completion completion) {
-        VxlanNetworkVO oldL2 = Q.New(VxlanNetworkVO.class).eq(L2NetworkVO_.uuid, newL2.getUuid()).find();
+    public void update(L2NetworkInventory oldL2, L2NetworkInventory newL2, String hostUuid, Completion completion) {
         final KVMAgentCommands.UpdateL2NetworkCmd cmd = new KVMAgentCommands.UpdateL2NetworkCmd();
 
         cmd.setL2NetworkUuid(newL2.getUuid());
-        cmd.setBridgeName(makeBridgeName(oldL2.getVni()));
+        cmd.setBridgeName(getBridgeName(oldL2));
         cmd.setPhysicalInterfaceName(newL2.getPhysicalInterface());
-        cmd.setOldVlan(String.valueOf(oldL2.getVni()));
+        cmd.setOldVlan(String.valueOf(oldL2.getVirtualNetworkId()));
         cmd.setNewVlan(newL2.getVirtualNetworkId().toString());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -423,6 +422,9 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
+        if (KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid(), L2NetworkVO.class)) {
+            return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Network.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+        }
         final Integer vni = getVni(l2Network.getUuid());
         return makeBridgeName(vni);
     }

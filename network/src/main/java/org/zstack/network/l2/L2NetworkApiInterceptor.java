@@ -11,6 +11,9 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.utils.network.NetworkUtils;
@@ -113,6 +116,13 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIChangeL2NetworkVlanIdMsg msg) {
         L2NetworkVO l2 = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
+        l2.getAttachedClusterRefs().forEach(ref -> {
+            if (Q.New(HostVO.class).eq(HostVO_.clusterUuid, ref.getClusterUuid())
+                    .notEq(HostVO_.status, HostStatus.Connected).isExists()) {
+                throw new ApiMessageInterceptionException(operr("cannot change vlan for l2Network[uuid:%s]" +
+                        " because there are hosts status in Connecting or Disconnected", l2.getUuid()));
+            }
+        });
         if (msg.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
             if (msg.getVlan() == null) {
                 throw new ApiMessageInterceptionException(argerr("vlan is required for " +
