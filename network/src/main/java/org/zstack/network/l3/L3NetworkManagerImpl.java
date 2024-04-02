@@ -4,14 +4,20 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
@@ -21,6 +27,7 @@ import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.datatypes.IpCapacityData;
@@ -30,7 +37,6 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.ResourceSharingExtensionPoint;
-import org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -53,7 +59,6 @@ import javax.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
@@ -786,5 +791,119 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public void afterResourceSharingExtensionPoint(Map<String, String> uuidType, List<String> accountUuids, boolean isToPublic) {
+    }
+
+    @Override
+    public void reAllocateNicIp(VmNicVO nicVO, ReturnValueCompletion<List<UsedIpInventory>> completion) {
+        List<UsedIpVO> oldIps = new ArrayList<>(nicVO.getUsedIps());
+        List<UsedIpInventory> newIps = new ArrayList<>();
+        L3NetworkVO l3VO = dbf.findByUuid(nicVO.getL3NetworkUuid(), L3NetworkVO.class);
+
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName("reallocate-nic-ip");
+
+        chain.then(new Flow() {
+            String __name__ = "allocate-new-nic-ip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<AllocateIpMsg> msgs = new ArrayList<>();
+                for (int ipversion : l3VO.getIpVersions()) {
+                    AllocateIpMsg msg = new AllocateIpMsg();
+                    msg.setL3NetworkUuid(l3VO.getUuid());
+                    if (ipversion == IPv6Constants.IPv6) {
+                        updateIpAllocationMsg(msg, nicVO.getMac());
+                    }
+                    msg.setIpVersion(ipversion);
+                    bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3VO.getUuid());
+                    msgs.add(msg);
+                }
+                List<ErrorCode> errs = new ArrayList<>();
+                new While<>(msgs).each((msg, wcompl) -> {
+                    bus.send(msg, new CloudBusCallBack(wcompl) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                AllocateIpReply areply = reply.castReply();
+                                newIps.add(areply.getIpInventory());
+                                wcompl.done();
+                            } else {
+                                errs.add(reply.getError());
+                                wcompl.allDone();
+                            }
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errs.isEmpty()) {
+                            trigger.fail(errs.get(0));
+                        } else {
+                            UsedIpInventory ip = newIps.get(0);
+                            SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, nicVO.getUuid())
+                                    .set(VmNicVO_.ip, ip.getIp())
+                                    .set(VmNicVO_.usedIpUuid, ip.getUuid())
+                                    .set(VmNicVO_.netmask, ip.getNetmask())
+                                    .set(VmNicVO_.gateway, ip.getGateway())
+                                    .update();
+                            for (UsedIpInventory usedIp : newIps) {
+                                /* update usedIpVo */
+                                SQL.New(UsedIpVO.class)
+                                        .eq(UsedIpVO_.uuid, usedIp.getUuid())
+                                        .set(UsedIpVO_.vmNicUuid, nicVO.getUuid())
+                                        .update();
+                            }
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                for (UsedIpInventory ip : newIps) {
+                    ReturnIpMsg rmsg = new ReturnIpMsg();
+                    rmsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                    rmsg.setUsedIpUuid(ip.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                    bus.call(rmsg);
+                }
+
+                trigger.rollback();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "release-old-nic-ip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(oldIps).each((ip, wcomp) -> {
+                    ReturnIpMsg rmsg = new ReturnIpMsg();
+                    rmsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                    rmsg.setUsedIpUuid(ip.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                    bus.send(rmsg, new CloudBusCallBack(wcomp) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            wcomp.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success(newIps);
+            }
+        }).start();
     }
 }
