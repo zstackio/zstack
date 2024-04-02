@@ -10,6 +10,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -455,8 +456,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
-    public void cleanUpAfterVmFailedToStart(final VmInstanceInventory vm) {
-        CollectionUtils.safeForEach(cleanUpAfterVmFailedToStartExtensionPoints, arg -> arg.cleanUpAfterVmFailedToStart(vm));
+    public void cleanUpAfterVmFailedToStart(final VmInstanceInventory vm, VmOperation op) {
+        CollectionUtils.safeForEach(cleanUpAfterVmFailedToStartExtensionPoints, arg -> arg.cleanUpAfterVmFailedToStart(vm, op));
     }
 
     public void cleanUpAfterVmChangeImage(final VmInstanceInventory vm) {
