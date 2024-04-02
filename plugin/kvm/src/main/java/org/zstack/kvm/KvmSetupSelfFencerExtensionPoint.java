@@ -98,6 +98,10 @@ public interface KvmSetupSelfFencerExtensionPoint {
 
     String kvmSetupSelfFencerStorageType();
 
+    default boolean isMatch(PrimaryStorageInventory ps) {
+        return kvmSetupSelfFencerStorageType().equals(ps.getType());
+    }
+
     default boolean storageConsistencySupported() {
         return false;
     }

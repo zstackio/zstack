@@ -189,6 +189,16 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>zbs</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>cbd</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>expon</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -755,6 +765,16 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>externalStorage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>zbs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>cbd</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
