@@ -7,6 +7,7 @@ import javax.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(ExternalPrimaryStorageVO.class)
 public class ExternalPrimaryStorageVO_ extends PrimaryStorageVO_ {
+    public static volatile SingularAttribute<ExternalPrimaryStorageVO, String> identity;
     public static volatile SingularAttribute<ExternalPrimaryStorageVO, String> config;
     public static volatile SingularAttribute<ExternalPrimaryStorageVO, String> addonInfo;
 }
