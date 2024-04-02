@@ -169,7 +169,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         final KVMAgentCommands.UpdateL2NetworkCmd cmd = new KVMAgentCommands.UpdateL2NetworkCmd();
 
         cmd.setL2NetworkUuid(newL2.getUuid());
-        cmd.setBridgeName(makeBridgeName(oldL2.getVirtualNetworkId()));
+        cmd.setBridgeName(getBridgeName(oldL2));
         cmd.setPhysicalInterfaceName(newL2.getPhysicalInterface());
         cmd.setOldVlan(String.valueOf(oldL2.getVirtualNetworkId()));
         cmd.setNewVlan(newL2.getVirtualNetworkId().toString());
@@ -422,6 +422,9 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
+        if (KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid(), L2NetworkVO.class)) {
+            return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Network.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+        }
         final Integer vni = getVni(l2Network.getUuid());
         return makeBridgeName(vni);
     }
