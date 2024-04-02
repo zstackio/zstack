@@ -156,8 +156,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
     }
 
     @Override
-    public void update(L2NetworkInventory newL2, String hostUuid, Completion completion) {
-        L2NetworkVO oldL2 = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, newL2.getUuid()).find();
+    public void update(L2NetworkInventory oldL2, L2NetworkInventory newL2, String hostUuid, Completion completion) {
         final KVMAgentCommands.UpdateL2NetworkCmd cmd = new KVMAgentCommands.UpdateL2NetworkCmd();
 
         cmd.setL2NetworkUuid(newL2.getUuid());
