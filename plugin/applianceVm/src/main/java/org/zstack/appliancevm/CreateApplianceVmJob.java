@@ -134,16 +134,20 @@ public class CreateApplianceVmJob implements Job {
                 ApplianceVmSubTypeFactory factory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
 
                 ApplianceVmVO finalAvo1 = avo;
+                avo = new SQLBatchWithReturn<ApplianceVmVO>() {
+                    @Override
+                    protected ApplianceVmVO scripts() {
+                        finalAvo1.setAccountUuid(spec.getAccountUuid());
+                        ApplianceVmVO vo = factory.persistApplianceVm(spec, finalAvo1);
 
-                finalAvo1.setAccountUuid(spec.getAccountUuid());
-                ApplianceVmVO vo = factory.persistApplianceVm(spec, finalAvo1);
+                        if (ApplianceVmGlobalConfig.APPLIANCENUMA.value(Boolean.class)) {
+                            ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.NUMA.getIdentity());
+                            rc.updateValue(finalAvo1.getUuid(), Boolean.TRUE.toString());
+                        }
 
-                if (ApplianceVmGlobalConfig.APPLIANCENUMA.value(Boolean.class)) {
-                    ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.NUMA.getIdentity());
-                    rc.updateValue(finalAvo1.getUuid(), Boolean.TRUE.toString());
-                }
-
-                avo = dbf.reload(vo);
+                        return reload(vo);
+                    }
+                }.execute();
 
                 data.put(ApplianceVmVO.class.getSimpleName(), avo);
 

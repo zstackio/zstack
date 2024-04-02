@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SlbVmInstanceConfigTaskVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`SlbGroupVO` ADD COLUMN `configVersion` bigint unsigned DEFAULT 0;
-ALTER TABLE `zstack`.`SlbGroupVO` ADD COLUMN `numOfCreatingVm` bigint unsigned DEFAULT 0;
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD COLUMN `configVersion` bigint unsigned DEFAULT 0;
 UPDATE `zstack`.`SlbGroupVO` SET deployType = "NoHA";
 
