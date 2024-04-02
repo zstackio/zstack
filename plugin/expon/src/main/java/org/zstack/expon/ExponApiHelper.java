@@ -851,9 +851,11 @@ public class ExponApiHelper {
     public VolumeSnapshotModule updateVolumeSnapshot(String snapshotId, String name, String description) {
         UpdateVolumeSnapshotRequest req = new UpdateVolumeSnapshotRequest();
         req.setSessionId(sessionId);
-        req.setName(name);
         req.setDescription(description);
         req.setId(snapshotId);
+        if (queryVolumeSnapshot(name) == null) {
+            req.setName(name);
+        }
         UpdateVolumeSnapshotResponse rsp = callErrorOut(req, UpdateVolumeSnapshotResponse.class);
 
         return queryVolumeSnapshot(name);
