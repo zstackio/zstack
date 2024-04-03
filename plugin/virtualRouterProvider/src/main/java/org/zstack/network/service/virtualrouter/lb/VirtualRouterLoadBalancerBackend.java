@@ -178,9 +178,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), vrUuids));
         }
 
-        List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
+        List<String> peerL3NetworkUuids = SQL.New("select distinct peer.l3NetworkUuid " +
                         "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
-                        "where lb.vipUuid = vip.uuid " +
+                        "where (lb.vipUuid = vip.uuid or lb.ipv6VipUuid = vip.uuid)" +
                         "and vip.uuid = peer.vipUuid " +
                         "and lb.uuid = :lbUuid")
                 .param("lbUuid", msg.getLoadBalancerUuid())

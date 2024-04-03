@@ -898,10 +898,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     @Override
     public ServiceReference getServicePeerL3Reference(String vipUuid, String peerL3Uuid) {
         long count = 0;
-        List<String> l3Uuids = SQL.New("select nic.l3NetworkUuid" +
+        List<String> l3Uuids = SQL.New("select distinct nic.l3NetworkUuid" +
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
-                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
+                " where (lb.vipUuid = :vipUuid or lb.ipv6VipUuid = :vipUuid) and lb.uuid = listener.loadBalancerUuid" +
                 " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
                 " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
                 " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
@@ -912,7 +912,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         List<String> uuids = SQL.New("select distinct lb.uuid" +
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
-                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
+                " where (lb.vipUuid = :vipUuid or lb.ipv6VipUuid = :vipUuid) and lb.uuid = listener.loadBalancerUuid" +
                 " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
                 " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
                 " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
