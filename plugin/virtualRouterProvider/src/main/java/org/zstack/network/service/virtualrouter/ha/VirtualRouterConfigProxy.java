@@ -59,6 +59,18 @@ public abstract class VirtualRouterConfigProxy {
         return vrUuids;
     }
 
+    final public List<String> getAllVrUuidsByNetworkService(String type, String serviceUuid) {
+        List<String> vrUuids = getNoHaVirtualRouterUuidsByNetworkService(serviceUuid);
+        if (vrUuids != null && vrUuids.size() == 1) {
+            return vrUuids;
+        }
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps != null && !exps.isEmpty()) {
+            vrUuids = exps.get(0).getAllVrUuidsFromNetworkService(type, serviceUuid);
+        }
+        return vrUuids;
+    }
+
     final public List<String> getVrUuidsByNetworkService(String type) {
         List<String> vrUuids  = Q.New(VirtualRouterLoadBalancerRefVO.class).select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues();
 
