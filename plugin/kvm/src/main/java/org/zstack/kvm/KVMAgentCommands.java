@@ -2093,6 +2093,8 @@ public class KVMAgentCommands {
         private boolean useNuma;
         @GrayVersion(value = "5.0.0")
         private String MemAccess;
+        @GrayVersion(value = "5.1.0")
+        private boolean noSharePages;
         @GrayVersion(value = "5.0.0")
         private boolean usbRedirect;
         @GrayVersion(value = "5.0.0")
@@ -2382,6 +2384,14 @@ public class KVMAgentCommands {
 
         public void setMemAccess(String memAccess) {
             MemAccess = memAccess;
+        }
+
+        public boolean isNoSharePages() {
+            return noSharePages;
+        }
+
+        public void setNoSharePages(boolean noSharePages) {
+            this.noSharePages = noSharePages;
         }
 
         public long getMaxMemory() {
