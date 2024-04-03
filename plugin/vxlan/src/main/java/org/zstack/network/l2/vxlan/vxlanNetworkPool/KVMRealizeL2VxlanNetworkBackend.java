@@ -118,7 +118,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
         final VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
         cmd.setVtepIp(vtepIp);
-        cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
+        cmd.setBridgeName(getBridgeName(l2vxlan));
         cmd.setVni(l2vxlan.getVni());
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setPeers(peers);
@@ -168,11 +168,16 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     public void update(L2NetworkInventory oldL2, L2NetworkInventory newL2, String hostUuid, Completion completion) {
         final KVMAgentCommands.UpdateL2NetworkCmd cmd = new KVMAgentCommands.UpdateL2NetworkCmd();
 
+        String vxlanPoolUuid = Q.New(VxlanNetworkVO.class).select(VxlanNetworkVO_.poolUuid)
+                .eq(VxlanNetworkVO_.uuid, oldL2.getUuid()).findValue();
+        List<String> peers = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.poolUuid, vxlanPoolUuid).listValues();
+
         cmd.setL2NetworkUuid(newL2.getUuid());
         cmd.setBridgeName(getBridgeName(oldL2));
         cmd.setPhysicalInterfaceName(newL2.getPhysicalInterface());
         cmd.setOldVlan(String.valueOf(oldL2.getVirtualNetworkId()));
         cmd.setNewVlan(newL2.getVirtualNetworkId().toString());
+        cmd.setPeers(peers);
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setNoStatusCheck(false);
@@ -414,7 +419,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         final Integer vni = getVni(l2Network.getUuid());
         KVMAgentCommands.NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
-        to.setBridgeName(makeBridgeName(vni));
+        to.setBridgeName(getBridgeName(l2Network));
         to.setMetaData(String.valueOf(vni));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
@@ -512,7 +517,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
 
         final VxlanKvmAgentCommands.DeleteVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.DeleteVxlanBridgeCmd();
-        cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
+        cmd.setBridgeName(getBridgeName(l2vxlan));
         cmd.setVni(l2vxlan.getVni());
         cmd.setL2NetworkUuid(l2Network.getUuid());
 

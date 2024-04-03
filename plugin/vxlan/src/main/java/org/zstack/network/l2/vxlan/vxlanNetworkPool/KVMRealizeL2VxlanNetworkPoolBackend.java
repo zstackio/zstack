@@ -234,7 +234,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                 for (VxlanNetworkVO vo : vxlanNetworkVOS) {
                     VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
                     bridgeCmd.setVtepIp((String) data.get(VTEP_IP));
-                    bridgeCmd.setBridgeName(KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni()));
+                    bridgeCmd.setBridgeName(getBridgeName(vo.toInventory()));
                     bridgeCmd.setVni(vo.getVni());
                     bridgeCmd.setDstport(dstport);
                     bridgeCmd.setL2NetworkUuid(vo.getUuid());
@@ -275,7 +275,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                             creator.inherent = true;
                             creator.ignoreIfExisting = true;
                             creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN,
-                                    KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni()))));
+                                    getBridgeName(vo.toInventory()))));
                             creator.create();
                         }
                         trigger.next();
@@ -324,7 +324,11 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
-        return null;
+        VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
+        if (KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid(), L2NetworkVO.class)) {
+            return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Network.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+        }
+        return KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni());
     }
 
     public Map<String, String> getAttachedCidrs(String l2NetworkUuid) {
