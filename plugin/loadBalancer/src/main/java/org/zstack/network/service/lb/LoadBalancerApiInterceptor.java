@@ -179,6 +179,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             throw new ApiMessageInterceptionException(
                     operr("could not get candidate vmnic, because both load balancer uuid and server group uuid are not specified"));
         }
+
+        if (msg.getIpVersion() == null) {
+            msg.setIpVersion(4);
+        }
     }
 
     private void validate(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {
