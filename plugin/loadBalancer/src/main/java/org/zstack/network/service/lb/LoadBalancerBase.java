@@ -676,7 +676,7 @@ public class LoadBalancerBase {
         List<L3NetworkVO> guestNetworks = q.getResultList();
 
         List<L3NetworkInventory> ret = L3NetworkInventory.valueOf(guestNetworks);
-        if (ret != null && !ret.isEmpty()) {
+        if (!ret.isEmpty()) {
             for (GetPeerL3NetworksForLoadBalancerExtensionPoint extp : pluginRgty.getExtensionList(GetPeerL3NetworksForLoadBalancerExtensionPoint.class)) {
                 ret = extp.getPeerL3NetworksForLoadBalancer(self.getUuid(), ret);
             }
