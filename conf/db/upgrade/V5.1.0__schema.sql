@@ -28,3 +28,5 @@ ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD COLUMN `configVersion` bigint unsigne
 UPDATE `zstack`.`SlbGroupVO` SET deployType = "NoHA";
 
 ALTER TABLE `zstack`.`LoadBalancerServerGroupVO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL DEFAULT 4 AFTER `loadBalancerUuid`;
+UPDATE `zstack`.`VipVO` set serviceProvider='SLB' where uuid in (select vipUuid from LoadBalancerVO where type='SLB');
+UPDATE `zstack`.`VipVO` set serviceProvider='SLB' where uuid in (select ipv6VipUuid from LoadBalancerVO where type='SLB');
