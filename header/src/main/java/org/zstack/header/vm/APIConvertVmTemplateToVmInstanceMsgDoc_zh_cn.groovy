@@ -31,6 +31,15 @@ doc {
 					since "zsv 4.2.0"
 				}
 				column {
+					name "name"
+					enclosedIn "params"
+					desc "虚拟机名称"
+					location "body"
+					type "String"
+					optional false
+					since "zsv 4.2.6"
+				}
+				column {
 					name "strategy"
 					enclosedIn "params"
 					desc "模板转换为虚拟机的策略，转换后立即启动或仅转换"

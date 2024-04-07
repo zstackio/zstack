@@ -16,6 +16,9 @@ public class APIConvertVmTemplateToVmInstanceMsg extends APICreateMessage {
     @APIParam(resourceType = VmTemplateVO.class, checkAccount = true)
     private String vmTemplateUuid;
 
+    @APIParam(maxLength = 255, required = true)
+    private String name;
+
     @APIParam(required = false, validValues = { "InstantStart", "JustConvert" })
     private String strategy = VmTemplateConversionStrategy.InstantStart.toString();
 
@@ -28,6 +31,14 @@ public class APIConvertVmTemplateToVmInstanceMsg extends APICreateMessage {
 
     public void setVmTemplateUuid(String vmTemplateUuid) {
         this.vmTemplateUuid = vmTemplateUuid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getStrategy() {
@@ -49,6 +60,7 @@ public class APIConvertVmTemplateToVmInstanceMsg extends APICreateMessage {
     public static APIConvertVmTemplateToVmInstanceMsg __example__() {
         APIConvertVmTemplateToVmInstanceMsg msg = new APIConvertVmTemplateToVmInstanceMsg();
         msg.setVmTemplateUuid(uuid());
+        msg.setName("test-vm");
         msg.setHostUuid(uuid());
         msg.setStrategy(VmTemplateConversionStrategy.InstantStart.toString());
         return msg;
