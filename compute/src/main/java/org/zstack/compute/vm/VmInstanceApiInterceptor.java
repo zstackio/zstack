@@ -178,6 +178,17 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIConvertVmTemplateToVmInstanceMsg msg) {
+        if (VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class)) {
+            VmTemplateVO vmTemplate = dbf.findByUuid(msg.getVmTemplateUuid(), VmTemplateVO.class);
+            boolean exists = Q.New(VmInstanceVO.class)
+                    .eq(VmInstanceVO_.name, msg.getName())
+                    .notEq(VmInstanceVO_.uuid, vmTemplate.getVmInstanceUuid())
+                    .isExists();
+            if (exists) {
+                throw new ApiMessageInterceptionException(argerr("there already exists a vm with the name [%s]", msg.getName()));
+            }
+        }
+
         if (msg.getHostUuid() != null) {
             if (VmTemplateConversionStrategy.JustConvert.toString().equals(msg.getStrategy())) {
                 throw new ApiMessageInterceptionException(argerr("hostUuid cannot be specified, " +

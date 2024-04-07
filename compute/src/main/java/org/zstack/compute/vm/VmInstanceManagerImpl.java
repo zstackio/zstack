@@ -256,6 +256,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             protected void scripts() {
                 sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmTemplate.getVmInstanceUuid())
                         .set(VmInstanceVO_.type, vmTemplate.getOriginalType())
+                        .set(VmInstanceVO_.name, msg.getName())
                         .update();
                 List<String> volumeUuids = Q.New(VolumeVO.class)
                         .eq(VolumeVO_.vmInstanceUuid, vmTemplate.getVmInstanceUuid())
