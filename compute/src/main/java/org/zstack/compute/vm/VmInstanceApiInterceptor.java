@@ -430,6 +430,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr(
                     "Nic driver %s not support yet", msg.getDriverType()));
         }
+
+        if (vo.getState() != VmInstanceState.Stopped) {
+            throw new ApiMessageInterceptionException(argerr("vm nic driver type can be updated only when the vm is stopped"));
+        }
     }
 
     private void validate(final APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
@@ -1375,7 +1379,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (count > 1) {
-            throw new ApiMessageInterceptionException(operr("Cannot set the following properties at the same time : " + errorMsg));
+            throw new ApiMessageInterceptionException(operr("Cannot set the following properties at the same time: %s", errorMsg));
         }
 
         if (count == 0) {
@@ -1383,7 +1387,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             for (String key : map.keySet()) {
                 properties.add(key);
             }
-            throw new ApiMessageInterceptionException(operr("Need to set one of the following properties, and can only be one of them: " + properties));
+            throw new ApiMessageInterceptionException(operr("Need to set one of the following properties, and can only be one of them: %s", properties));
         }
     }
 
@@ -1567,7 +1571,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         for (String cdRomIsoUuid : cdRoms) {
             ImageVO imageVO = dbf.findByUuid(cdRomIsoUuid, ImageVO.class);
             if (imageVO == null) {
-                throw new ApiMessageInterceptionException(argerr("The image[uuid=%s] does not exist", cdRomIsoUuid));
+                throw new ApiMessageInterceptionException(argerr("The image[uuid:%s] does not exist", cdRomIsoUuid));
             }
         }
 
