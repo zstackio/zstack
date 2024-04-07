@@ -13,7 +13,6 @@ alter table `zstack`.`LongJobVO` add column `parentUuid` char(32) default null;
 -- Feature: support vm and vm template conversion
 CREATE TABLE `zstack`.`VmTemplateVO` (
     `uuid` char(32) NOT NULL UNIQUE,
-    `name` varchar(255) NOT NULL,
     `vmInstanceUuid` char(32) NOT NULL,
     `zoneUuid` char(32) NOT NULL,
     `originalType` varchar(64) NOT NULL,

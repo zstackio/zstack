@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 @Inventory(mappingVOClass = VmTemplateVO.class)
 public class VmTemplateInventory implements Serializable {
     private String uuid;
-    private String name;
     private String vmInstanceUuid;
     private String zoneUuid;
     private String originalType;
@@ -25,7 +24,6 @@ public class VmTemplateInventory implements Serializable {
 
     public VmTemplateInventory(VmTemplateInventory other) {
         this.uuid = other.getUuid();
-        this.name = other.getName();
         this.vmInstanceUuid = other.getVmInstanceUuid();
         this.zoneUuid = other.getZoneUuid();
         this.originalType = other.getOriginalType();
@@ -36,7 +34,6 @@ public class VmTemplateInventory implements Serializable {
     public static VmTemplateInventory valueOf(VmTemplateVO vo) {
         VmTemplateInventory inventory = new VmTemplateInventory();
         inventory.setUuid(vo.getUuid());
-        inventory.setName(vo.getName());
         inventory.setVmInstanceUuid(vo.getVmInstanceUuid());
         inventory.setZoneUuid(vo.getZoneUuid());
         inventory.setOriginalType(vo.getOriginalType());
@@ -55,14 +52,6 @@ public class VmTemplateInventory implements Serializable {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getVmInstanceUuid() {

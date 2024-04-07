@@ -31,7 +31,6 @@ public class APIConvertVmInstanceToVmTemplateEvent extends APIEvent {
 
         VmTemplateInventory vmTemplate = new VmTemplateInventory();
         vmTemplate.setUuid(uuid());
-        vmTemplate.setName("test-vm-template");
         vmTemplate.setVmInstanceUuid(uuid());
         vmTemplate.setOriginalType(VmInstanceConstant.USER_VM_TYPE);
         vmTemplate.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));

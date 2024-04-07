@@ -13,12 +13,6 @@ doc {
 		since "zsv 4.2.0"
 	}
 	field {
-		name "name"
-		desc "资源名称"
-		type "String"
-		since "zsv 4.2.0"
-	}
-	field {
 		name "vmInstanceUuid"
 		desc "云主机UUID"
 		type "String"

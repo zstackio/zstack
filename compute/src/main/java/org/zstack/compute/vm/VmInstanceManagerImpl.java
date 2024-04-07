@@ -317,7 +317,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 .list();
 
         vmTemplate.setUuid(Platform.getUuid());
-        vmTemplate.setName(vm.getName());
         vmTemplate.setVmInstanceUuid(vm.getUuid());
         vmTemplate.setZoneUuid(vm.getZoneUuid());
         vmTemplate.setOriginalType(vm.getType());

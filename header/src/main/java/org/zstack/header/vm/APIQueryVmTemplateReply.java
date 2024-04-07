@@ -24,7 +24,6 @@ public class APIQueryVmTemplateReply extends APIQueryReply {
         APIQueryVmTemplateReply reply = new APIQueryVmTemplateReply();
         VmTemplateInventory inventory = new VmTemplateInventory();
         inventory.setUuid(uuid());
-        inventory.setName("test-vm-template");
         inventory.setVmInstanceUuid(uuid());
         inventory.setOriginalType(VmInstanceConstant.USER_VM_TYPE);
         inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
