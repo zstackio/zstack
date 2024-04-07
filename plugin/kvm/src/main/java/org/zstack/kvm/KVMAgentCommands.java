@@ -938,6 +938,7 @@ public class KVMAgentCommands {
         private String newVlan;
         private String oldVlan;
         private String l2NetworkUuid;
+        private List<String> peers;
 
         public String getPhysicalInterfaceName() {
             return physicalInterfaceName;
@@ -977,6 +978,14 @@ public class KVMAgentCommands {
 
         public void setL2NetworkUuid(String l2NetworkUuid) {
             this.l2NetworkUuid = l2NetworkUuid;
+        }
+
+        public List<String> getPeers() {
+            return peers;
+        }
+
+        public void setPeers(List<String> peers) {
+            this.peers = peers;
         }
     }
 
