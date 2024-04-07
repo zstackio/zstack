@@ -130,6 +130,10 @@
             <artifactId>retree</artifactId>
             <version>1.0.4</version>
         </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

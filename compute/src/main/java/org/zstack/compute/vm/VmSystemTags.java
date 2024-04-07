@@ -9,6 +9,7 @@ import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SensitiveTagOutputHandler;
 import org.zstack.tag.SensitiveTag;
 import org.zstack.tag.SystemTag;
+import org.zstack.utils.YamlUtils;
 
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -249,9 +250,8 @@ public class VmSystemTags {
                 if (Pattern.matches(base64Pattern, userdata)) {
                     userdata = new String(Base64.getDecoder().decode(userdata.getBytes()));
                 }
-
-                Yaml yaml = new Yaml();
-                Object obj = yaml.load(userdata);
+                
+                Object obj = YamlUtils.load(userdata);
                 if (!(obj instanceof LinkedHashMap)) {
                     return tag;
                 }
@@ -279,12 +279,7 @@ public class VmSystemTags {
                  * */
                 chpasswdMap.replace(list, "*****:*****\n");
 
-                DumperOptions options = new DumperOptions();
-                options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-                options.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN);
-
-                yaml = new Yaml(options);
-                String maskedUserdata = yaml.dump(userdataMap);
+                String maskedUserdata = YamlUtils.dump(userdataMap);
                 maskedUserdata = "#cloud-config\n" + maskedUserdata;
                 tokens.put(t, new String(Base64.getEncoder().encode(maskedUserdata.getBytes())));
             }
