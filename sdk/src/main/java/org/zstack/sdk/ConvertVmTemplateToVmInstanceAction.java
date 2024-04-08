@@ -28,6 +28,9 @@ public class ConvertVmTemplateToVmInstanceAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmTemplateUuid;
 
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
     @Param(required = false, validValues = {"InstantStart","JustConvert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy = "InstantStart";
 

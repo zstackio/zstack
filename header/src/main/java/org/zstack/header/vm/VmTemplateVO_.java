@@ -6,7 +6,6 @@ import javax.persistence.metamodel.SingularAttribute;
 import java.sql.Timestamp;
 
 public class VmTemplateVO_ extends ResourceVO_ {
-    public static volatile SingularAttribute<VmTemplateVO, String> name;
     public static volatile SingularAttribute<VmTemplateVO, String> vmInstanceUuid;
     public static volatile SingularAttribute<VmTemplateVO, String> zoneUuid;
     public static volatile SingularAttribute<VmTemplateVO, String> originalType;

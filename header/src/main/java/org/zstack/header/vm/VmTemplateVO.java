@@ -13,9 +13,6 @@ import java.sql.Timestamp;
 @BaseResource
 public class VmTemplateVO extends ResourceVO implements ToInventory {
     @Column
-    private String name;
-
-    @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String vmInstanceUuid;
 
@@ -30,14 +27,6 @@ public class VmTemplateVO extends ResourceVO implements ToInventory {
 
     @Column
     private Timestamp lastOpDate;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getVmInstanceUuid() {
         return vmInstanceUuid;

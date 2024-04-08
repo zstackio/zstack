@@ -12,14 +12,6 @@ public class VmTemplateInventory  {
         return this.uuid;
     }
 
-    public java.lang.String name;
-    public void setName(java.lang.String name) {
-        this.name = name;
-    }
-    public java.lang.String getName() {
-        return this.name;
-    }
-
     public java.lang.String vmInstanceUuid;
     public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
