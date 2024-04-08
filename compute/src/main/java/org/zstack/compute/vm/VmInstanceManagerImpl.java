@@ -2715,6 +2715,34 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public ErrorCode handleSystemTag(String vmUuid, List<String> tags) {
+        ErrorCode errorCode = handleResourceDirectorySystemTag(vmUuid, tags);
+        if (errorCode != null) {
+            return errorCode;
+        }
+
+        errorCode = handleNumaSystemTag(vmUuid, tags);
+
+        if (errorCode != null) {
+            return errorCode;
+        }
+
+        return null;
+    }
+
+    private ErrorCode handleNumaSystemTag(String vmUuid, List<String> tags) {
+        if (!VmSystemTags.NUMA.hasTag(vmUuid)) {
+            return null;
+        }
+        ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.NUMA.getIdentity());
+        rc.updateValue(vmUuid, Boolean.TRUE.toString());
+        VmSystemTags.NUMA.delete(vmUuid);
+        
+        return null;
+
+    }
+
+    //todo move to directory
+    private ErrorCode handleResourceDirectorySystemTag(String vmUuid, List<String> tags) {
         PatternedSystemTag tag = VmSystemTags.DIRECTORY_UUID;
         String token = VmSystemTags.DIRECTORY_UUID_TOKEN;
 
@@ -2731,7 +2759,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         dbf.persist(refVO);
         return null;
     }
-
+    
     public void deleteMigrateSystemTagWhenVmStateChangedToRunning() {
         evtf.onLocal(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, new EventCallback() {
             @Override

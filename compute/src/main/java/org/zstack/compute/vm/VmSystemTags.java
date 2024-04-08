@@ -205,6 +205,8 @@ public class VmSystemTags {
 
     public static SystemTag VIRTIO = new SystemTag("driver::virtio", VmInstanceVO.class);
 
+    public static SystemTag NUMA = new SystemTag("numa", VmInstanceVO.class);
+
     public static String VM_IP_CHANGED_TOKEN = "ipChanged";
     public static PatternedSystemTag VM_IP_CHANGED =
             new PatternedSystemTag(String.format("ipChanged::{%s}", VM_IP_CHANGED_TOKEN), VmInstanceVO.class);
