@@ -93,6 +93,11 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         sqlClauses.add(String.format("SELECT %s FROM", plugin.selectTarget()));
         sqlClauses.add(plugin.tableName());
 
+        String joinTable = plugin.joinTables();
+        if (joinTable != null && !joinTable.isEmpty()) {
+            sqlClauses.add(joinTable);
+        }
+
         List<String> where = new ArrayList<>();
         String conditionWhere = plugin.conditions();
         if (conditionWhere != null && !conditionWhere.isEmpty()) {

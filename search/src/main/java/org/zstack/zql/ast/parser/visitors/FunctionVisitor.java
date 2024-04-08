@@ -7,13 +7,11 @@ import org.zstack.zql.antlr4.ZQLParser;
 /**
  * Created by MaJin on 2019/6/3.
  */
-public class FunctionVistor extends ZQLBaseVisitor<ASTNode.Function> {
+public class FunctionVisitor extends ZQLBaseVisitor<ASTNode.Function> {
     @Override
     public ASTNode.Function visitFunction(ZQLParser.FunctionContext ctx) {
-        if (ctx.DISTINCT() != null) {
-            return new ASTNode.Distinct();
-        }
-
-        return null;
+        ASTNode.Function f = new ASTNode.Function();
+        f.setFunctionName(ctx.ID().getText());
+        return f;
     }
 }

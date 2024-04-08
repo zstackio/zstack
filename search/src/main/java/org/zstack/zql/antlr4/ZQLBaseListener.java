@@ -258,6 +258,30 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterJoinExpr(ZQLParser.JoinExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitJoinExpr(ZQLParser.JoinExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterFunctionCallExpressionAtom(ZQLParser.FunctionCallExpressionAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFunctionCallExpressionAtom(ZQLParser.FunctionCallExpressionAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterColumnNameExprAtom(ZQLParser.ColumnNameExprAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -277,6 +301,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitMathExprAtom(ZQLParser.MathExprAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterRelationshipEntityExprAtom(ZQLParser.RelationshipEntityExprAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitRelationshipEntityExprAtom(ZQLParser.RelationshipEntityExprAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -342,6 +378,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterJoinCondition(ZQLParser.JoinConditionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitJoinCondition(ZQLParser.JoinConditionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterOnlyEntity(ZQLParser.OnlyEntityContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -373,6 +421,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -649,6 +709,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitNamedAs(ZQLParser.NamedAsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterJoinTable(ZQLParser.JoinTableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitJoinTable(ZQLParser.JoinTableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

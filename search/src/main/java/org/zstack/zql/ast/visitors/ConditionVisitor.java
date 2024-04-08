@@ -14,6 +14,8 @@ public class ConditionVisitor implements ASTVisitor<String, ASTNode> {
             return (String) node.accept(new ExprVisitor());
         } else if (node instanceof ASTNode.LogicalOperator) {
             return (String) node.accept(new LogicalOperatorVisitor());
+        } else if (node instanceof ASTNode.JoinExpr) {
+            return (String) node.accept(new JoinExprVisitor());
         } else {
             throw new CloudRuntimeException("should not be here");
         }

@@ -224,6 +224,28 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitExpr(ZQLParser.ExprContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#joinExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterJoinExpr(ZQLParser.JoinExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#joinExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitJoinExpr(ZQLParser.JoinExprContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code functionCallExpressionAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunctionCallExpressionAtom(ZQLParser.FunctionCallExpressionAtomContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code functionCallExpressionAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunctionCallExpressionAtom(ZQLParser.FunctionCallExpressionAtomContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code columnNameExprAtom}
 	 * labeled alternative in {@link ZQLParser#exprAtom}.
 	 * @param ctx the parse tree
@@ -247,6 +269,18 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitMathExprAtom(ZQLParser.MathExprAtomContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code relationshipEntityExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void enterRelationshipEntityExprAtom(ZQLParser.RelationshipEntityExprAtomContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code relationshipEntityExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void exitRelationshipEntityExprAtom(ZQLParser.RelationshipEntityExprAtomContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code nestedExprAtom}
 	 * labeled alternative in {@link ZQLParser#exprAtom}.
@@ -306,6 +340,18 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitParenthesisCondition(ZQLParser.ParenthesisConditionContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code joinCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
+	 * @param ctx the parse tree
+	 */
+	void enterJoinCondition(ZQLParser.JoinConditionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code joinCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
+	 * @param ctx the parse tree
+	 */
+	void exitJoinCondition(ZQLParser.JoinConditionContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code onlyEntity}
 	 * labeled alternative in {@link ZQLParser#queryTarget}.
 	 * @param ctx the parse tree
@@ -341,6 +387,18 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code withMultiTableFields}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
+	 * @param ctx the parse tree
+	 */
+	void enterWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code withMultiTableFields}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
+	 * @param ctx the parse tree
+	 */
+	void exitWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#function}.
 	 * @param ctx the parse tree
@@ -579,6 +637,18 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitNamedAs(ZQLParser.NamedAsContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code joinTable}
+	 * labeled alternative in {@link ZQLParser#joinClause}.
+	 * @param ctx the parse tree
+	 */
+	void enterJoinTable(ZQLParser.JoinTableContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code joinTable}
+	 * labeled alternative in {@link ZQLParser#joinClause}.
+	 * @param ctx the parse tree
+	 */
+	void exitJoinTable(ZQLParser.JoinTableContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree
