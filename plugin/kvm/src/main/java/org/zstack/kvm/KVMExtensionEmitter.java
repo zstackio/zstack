@@ -182,7 +182,7 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void doBeforeTakeSnapshot(final Iterator<KVMTakeSnapshotExtensionPoint> it, KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg,
+    private void doBeforeTakeSnapshot(final Iterator<KVMTakeSnapshotExtensionPoint> it, KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg,
                                      KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
         if (!it.hasNext()) {
             completion.success();
@@ -231,7 +231,7 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void doBeforeCommitVolume(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion) {
+    private void doBeforeCommitVolume(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
@@ -256,7 +256,7 @@ public class KVMExtensionEmitter implements Component {
         doBeforeCommitVolume(it, host, msg, cmd, completion);
     }
 
-    public void doAfterCommitVolume(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, CommitVolumeOnHypervisorReply reply, Completion completion) {
+    private void doAfterCommitVolume(Iterator<KVMBlockCommitExtensionPoint> it, KVMHostInventory host, CommitVolumeOnHypervisorMsg msg, KVMAgentCommands.BlockCommitVolumeCmd cmd, CommitVolumeOnHypervisorReply reply, Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
