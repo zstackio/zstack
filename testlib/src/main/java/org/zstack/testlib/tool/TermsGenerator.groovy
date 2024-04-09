@@ -93,7 +93,7 @@ class TermsGenerator {
         replaceI18nProperties(outputDir, '../../conf/i18n', propertyFileName, "../conf/i18n", outputFileName, replaceList)
         propertyFileName = "Elaboration.json"
         outputFileName = "Elaboration_${replaceTo == "cloud" ? "zsv" : "cloud"}.json"
-        replaceI18nProperties(outputDir, '../../conf/errorElaborations', propertyFileName, "../conf/errorElaborations", outputFileName, replaceList)
+        replaceI18nProperties(outputDir, '../../conf/errorElaborations', propertyFileName, "../conf/zsvErrorElaborations", outputFileName, replaceList)
     }
 
     static void replaceI18nProperties(String workDir, String sourceDir, String fileName, String destDir, String destFileName, List<TermTranslatePropertyLine> replaceList) {
