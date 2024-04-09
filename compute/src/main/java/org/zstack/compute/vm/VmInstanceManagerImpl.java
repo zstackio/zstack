@@ -1834,6 +1834,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 Base64.getDecoder().decode(userdata.getBytes());
             }
 
+            private void validUserdataFormat(String systemTag) {
+                VmSystemTags.UserdataTagOutputHandler handler = new VmSystemTags.UserdataTagOutputHandler();
+                handler.desensitizeTag(VmSystemTags.USERDATA, systemTag);
+            }
+
+
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
                 if (!VmSystemTags.USERDATA.isMatch(systemTag)) {
@@ -1841,6 +1847,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
                 check(resourceUuid, resourceType);
                 checkUserdataDecode(systemTag);
+                validUserdataFormat(systemTag);
             }
 
             @Override
@@ -1856,6 +1863,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                         check(msg.getResourceUuid(), VmInstanceVO.class);
                         checkUserdataDecode(sysTag);
+                        String tagValue = SystemTagUtils.findTagValue(msg.getSystemTags(), VmSystemTags.USERDATA);
+                        if (tagValue == null) {
+                            return;
+                        }
+
+                        validUserdataFormat(tagValue);
+
                     }
                 }
             }
