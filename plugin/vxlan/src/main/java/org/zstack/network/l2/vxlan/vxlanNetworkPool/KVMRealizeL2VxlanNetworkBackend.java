@@ -170,8 +170,11 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
         String vxlanPoolUuid = Q.New(VxlanNetworkVO.class).select(VxlanNetworkVO_.poolUuid)
                 .eq(VxlanNetworkVO_.uuid, oldL2.getUuid()).findValue();
-        List<String> peers = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.poolUuid, vxlanPoolUuid).listValues();
-
+        List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, vxlanPoolUuid).list();
+        List<String> peers = vteps.stream()
+                .filter(v -> !v.getHostUuid().equals(hostUuid))
+                .map(VtepVO::getVtepIp)
+                .collect(Collectors.toList());
         cmd.setL2NetworkUuid(newL2.getUuid());
         cmd.setBridgeName(getBridgeName(oldL2));
         cmd.setPhysicalInterfaceName(newL2.getPhysicalInterface());
