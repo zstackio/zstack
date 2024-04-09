@@ -54,7 +54,7 @@ public class BridgeVlanIdFinder {
                     if (l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
                         vlanId = "vlan" + l2.getVirtualNetworkId();
                     } else if (l2.getType().equals(L2NetworkConstant.VXLAN_NETWORK_POOL_TYPE) ||
-                            l2.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)) {
+                            l2.getType().equals(L2NetworkConstant.VXLAN_NETWORK_TYPE)) {
                         vlanId = "vxlan" + l2.getVirtualNetworkId();
                     }
                     if (!vlanId.isEmpty()) {
