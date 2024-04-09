@@ -40,6 +40,10 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
+import org.zstack.header.volume.block.BlockVolumeVO;
+import org.zstack.header.volume.block.BlockVolumeVO_;
+import org.zstack.header.volume.block.GetAccessPathMsg;
+import org.zstack.header.volume.block.GetAccessPathReply;
 import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.backup.BackupStorageSystemTags;
@@ -77,6 +81,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     protected ResourceConfigFacade rcf;
     @Autowired
     private ExternalPrimaryStorageImageCacheCleaner imageCacheCleaner;
+    @Autowired
+    protected ExternalPrimaryStorageFactory factory;
 
     public ExternalPrimaryStorage(PrimaryStorageVO self, PrimaryStorageControllerSvc controller, PrimaryStorageNodeSvc node) {
         super(self);
@@ -112,9 +118,23 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof SetTrashExpirationTimeMsg) {
             handle((SetTrashExpirationTimeMsg) msg);
+        } else if (msg instanceof GetAccessPathMsg) {
+            handle((GetAccessPathMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetAccessPathMsg msg) {
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class)
+                .eq(BlockVolumeVO_.uuid, msg.getVolumeUuid()).find();
+        if (blockVolumeVO == null) {
+            GetAccessPathReply reply = new GetAccessPathReply();
+            reply.setError(operr("can not found block volume, access path only for block volume"));
+            return;
+        }
+        BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+        backend.handle(msg);
     }
 
     @Override
@@ -159,6 +179,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
         VolumeInventory volume = msg.getVolume();
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class).eq(BlockVolumeVO_.uuid, volume.getUuid()).find();
+        if (blockVolumeVO != null) {
+            BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+            backend.handle(msg);
+            return;
+        }
+
         CreateVolumeSpec spec = new CreateVolumeSpec();
         spec.setUuid(volume.getUuid());
         spec.setSize(volume.getSize());
@@ -440,6 +467,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     protected void handle(TakeSnapshotMsg msg) {
         TakeSnapshotReply reply = new TakeSnapshotReply();
         VolumeSnapshotInventory sp = msg.getStruct().getCurrent();
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class).eq(BlockVolumeVO_.uuid, sp.getVolumeUuid()).find();
+        if (blockVolumeVO != null) {
+            BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+            backend.handle(msg);
+            return;
+        }
 
         VolumeInventory vol = VolumeInventory.valueOf(dbf.findByUuid(sp.getVolumeUuid(), VolumeVO.class));
         CreateVolumeSnapshotSpec sspec = new CreateVolumeSnapshotSpec();
@@ -462,6 +495,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private BlockExternalPrimaryStorageBackend getBlockBackend(String vendor) {
+        BlockExternalPrimaryStorageFactory blockFactory = factory.blockExternalPrimaryStorageFactories.get(vendor);
+        return blockFactory.getBlockExternalPrimaryStorageBackend(externalVO);
     }
 
     // TODO
@@ -1293,6 +1331,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(DeleteVolumeOnPrimaryStorageMsg msg) {
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class)
+                .eq(BlockVolumeVO_.uuid, msg.getVolume().getUuid()).find();
+        if (blockVolumeVO != null) {
+            BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+            backend.handle(msg);
+            return;
+        }
         DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
         boolean force = VolumeType.Root.toString().equals(msg.getVolume().getType()) &&
                 VolumeProtocol.iSCSI.toString().equals(msg.getVolume().getProtocol());
@@ -1493,6 +1538,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(DeleteSnapshotOnPrimaryStorageMsg msg) {
+        BlockVolumeVO blockVolumeVO = Q.New(BlockVolumeVO.class)
+                .eq(BlockVolumeVO_.uuid, msg.getSnapshot().getVolumeUuid()).find();
+        if (blockVolumeVO != null) {
+            BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
+            backend.handle(msg);
+            return;
+        }
         DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         controller.deleteSnapshot(msg.getSnapshot().getPrimaryStorageInstallPath(), new Completion(msg) {
             @Override

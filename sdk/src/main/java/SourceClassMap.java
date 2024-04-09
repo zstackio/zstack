@@ -356,6 +356,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vo.ResourceInventory", "org.zstack.sdk.ResourceInventory");
 			put("org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct", "org.zstack.sdk.VolumeFormatReplyStruct");
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
+			put("org.zstack.header.volume.block.AccessPathInfo", "org.zstack.sdk.AccessPathInfo");
 			put("org.zstack.header.volume.block.BlockVolumeInventory", "org.zstack.sdk.BlockVolumeInventory");
 			put("org.zstack.header.volume.block.ExponBlockVolumeInventory", "org.zstack.sdk.ExponBlockVolumeInventory");
 			put("org.zstack.header.volume.block.XskyBlockVolumeInventory", "org.zstack.sdk.XskyBlockVolumeInventory");
@@ -606,7 +607,6 @@ public class SourceClassMap {
 			put("org.zstack.storage.primary.sharedblock.SharedBlockState", "org.zstack.sdk.SharedBlockState");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockStatus", "org.zstack.sdk.SharedBlockStatus");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockType", "org.zstack.sdk.SharedBlockType");
-			put("org.zstack.storage.volume.block.AccessPathInfo", "org.zstack.sdk.AccessPathInfo");
 			put("org.zstack.tag2.AttachTagResult", "org.zstack.sdk.AttachTagResult");
 			put("org.zstack.templateConfig.GlobalConfigTemplateInventory", "org.zstack.sdk.GlobalConfigTemplateInventory");
 			put("org.zstack.templateConfig.TemplateConfigInventory", "org.zstack.sdk.TemplateConfigInventory");
@@ -732,7 +732,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccessControlRuleInventory", "org.zstack.loginControl.entity.AccessControlRuleInventory");
 			put("org.zstack.sdk.AccessKeyInventory", "org.zstack.accessKey.AccessKeyInventory");
 			put("org.zstack.sdk.AccessKeyState", "org.zstack.accessKey.AccessKeyState");
-			put("org.zstack.sdk.AccessPathInfo", "org.zstack.storage.volume.block.AccessPathInfo");
+			put("org.zstack.sdk.AccessPathInfo", "org.zstack.header.volume.block.AccessPathInfo");
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountPriceTableRefInventory", "org.zstack.billing.table.AccountPriceTableRefInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");

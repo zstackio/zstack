@@ -57,6 +57,9 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     public Map<String, NodeHealthyCheckProtocolExtensionPoint> nodeHealthyCheckProtocolExtensions = Collections.synchronizedMap(
             new HashMap<String, NodeHealthyCheckProtocolExtensionPoint>());
 
+    public Map<String, BlockExternalPrimaryStorageFactory> blockExternalPrimaryStorageFactories = Collections.synchronizedMap(
+            new HashMap<String, BlockExternalPrimaryStorageFactory>());
+
     @Autowired
     protected PluginRegistry pluginRgty;
     @Autowired
@@ -88,6 +91,15 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
                         old.getClass().getName(), ext.getClass().getName(), ext.getHypervisorType()));
             }
             nodeHealthyCheckProtocolExtensions.put(ext.getHypervisorType().toString(), ext);
+        }
+
+        for (BlockExternalPrimaryStorageFactory factory : pluginRgty.getExtensionList(BlockExternalPrimaryStorageFactory.class)) {
+            BlockExternalPrimaryStorageFactory old = blockExternalPrimaryStorageFactories.get(factory.getType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate BlockExternalPrimaryStorageFactory[%s, %s] for type[%s]",
+                        old.getClass().getName(), factory.getClass().getName(), factory.getType()));
+            }
+            blockExternalPrimaryStorageFactories.put(factory.getType(), factory);
         }
     }
 

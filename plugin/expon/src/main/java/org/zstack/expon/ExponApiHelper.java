@@ -19,6 +19,8 @@ import org.zstack.expon.sdk.volume.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.expon.ExponError;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -115,7 +117,7 @@ public class ExponApiHelper {
 
     public void errorOut(ExponResponse rsp) {
         if (!rsp.isSuccess()) {
-            throw new RuntimeException(String.format("expon request failed, code %s, message: %s.", rsp.getRetCode(), rsp.getMessage()));
+            throw new OperationFailureException(operr("expon request failed, code %s, message: %s.", rsp.getRetCode(), rsp.getMessage()));
         }
     }
 
