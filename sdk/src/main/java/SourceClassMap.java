@@ -616,6 +616,7 @@ public class SourceClassMap {
 			put("org.zstack.sns.platform.universalsms.supplier.emay.SNSEmaySmsEndpointInventory", "org.zstack.sdk.sns.platform.universalsms.supplier.emay.SNSEmaySmsEndpointInventory");
 			put("org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory");
 			put("org.zstack.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory");
+			put("org.zstack.sns.platform.plugin.SNSPluginEndpointInventory", "org.zstack.sdk.sns.platform.plugin.SNSPluginEndpointInventory");
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
 			put("org.zstack.sso.header.CasState", "org.zstack.sdk.CasState");
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
@@ -1509,6 +1510,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.universalsms.supplier.emay.SNSEmaySmsEndpointInventory", "org.zstack.sns.platform.universalsms.supplier.emay.SNSEmaySmsEndpointInventory");
 			put("org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory");
 			put("org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sns.platform.wecom.SNSWeComEndpointInventory");
+			put("org.zstack.sdk.sns.platform.plugin.SNSPluginEndpointInventory", "org.zstack.sns.platform.plugin.SNSPluginEndpointInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketInventory", "org.zstack.ticket.entity.ArchiveTicketInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketStatusHistoryInventory", "org.zstack.ticket.entity.ArchiveTicketStatusHistoryInventory");
 			put("org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory", "org.zstack.ticket.entity.TicketFlowCollectionInventory");
