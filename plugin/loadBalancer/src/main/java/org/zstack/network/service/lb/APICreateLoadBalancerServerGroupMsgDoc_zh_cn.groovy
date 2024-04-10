@@ -91,7 +91,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "5.0.0"
+					since "5.1.0"
 				}
 			}
         }

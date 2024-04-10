@@ -30936,8 +30936,8 @@ abstract class ApiHelper {
     }
 
 
-    def querySlbInstance(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QuerySlbInstanceAction.class) Closure c) {
-        def a = new org.zstack.sdk.QuerySlbInstanceAction()
+    def querySlbOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QuerySlbOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.QuerySlbOfferingAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -30965,8 +30965,8 @@ abstract class ApiHelper {
     }
 
 
-    def querySlbOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QuerySlbOfferingAction.class) Closure c) {
-        def a = new org.zstack.sdk.QuerySlbOfferingAction()
+    def querySlbVmInstance(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QuerySlbVmInstanceAction.class) Closure c) {
+        def a = new org.zstack.sdk.QuerySlbVmInstanceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

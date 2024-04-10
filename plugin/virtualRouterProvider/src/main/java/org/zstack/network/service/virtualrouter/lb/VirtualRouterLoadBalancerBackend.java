@@ -64,7 +64,6 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -604,7 +603,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public static final String DELETE_CERTIFICATE_PATH = "/certificate/delete";
     public static final String CREATE_CERTIFICATES_PATH = "/certificates/create";
 
-    private String getOnlyResourceConfig(String resourceUuid) {
+    private String getListenerLogFlagValue(String resourceUuid) {
         String value = Q.New(ResourceConfigVO.class).select(ResourceConfigVO_.value)
                 .eq(ResourceConfigVO_.name, VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.getName())
                 .eq(ResourceConfigVO_.category, VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.getCategory())
@@ -615,19 +614,19 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public boolean enableFullLog(LbTO to, VirtualRouterVmInventory vr) {
-        String enableLbListenerFullLog = getOnlyResourceConfig(to.getListenerUuid());
+        String enableLbListenerFullLog = getListenerLogFlagValue(to.getListenerUuid());
         if (!StringUtils.isEmpty(enableLbListenerFullLog)) {
-            return TypeUtils.stringToValue(enableLbListenerFullLog, boolean.class);
+            return Boolean.TRUE.equals(TypeUtils.stringToValue(enableLbListenerFullLog, boolean.class));
         }
 
-        String enableLbFullLog = getOnlyResourceConfig(to.getLbUuid());
+        String enableLbFullLog = getListenerLogFlagValue(to.getLbUuid());
         if (!StringUtils.isEmpty(enableLbFullLog)) {
-            return TypeUtils.stringToValue(enableLbFullLog, boolean.class);
+            return Boolean.TRUE.equals(TypeUtils.stringToValue(enableLbFullLog, boolean.class));
         }
 
-        String enableVpcFullLog = getOnlyResourceConfig(vr.getUuid());
+        String enableVpcFullLog = getListenerLogFlagValue(vr.getUuid());
         if (!StringUtils.isEmpty(enableVpcFullLog)) {
-            return TypeUtils.stringToValue(enableVpcFullLog, boolean.class);
+            return Boolean.TRUE.equals(TypeUtils.stringToValue(enableVpcFullLog, boolean.class));
         } else {
             return VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.value(boolean.class);
         }

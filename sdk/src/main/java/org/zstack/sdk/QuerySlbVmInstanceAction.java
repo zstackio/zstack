@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QuerySlbInstanceAction extends QueryAction {
+public class QuerySlbVmInstanceAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QuerySlbInstanceAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QuerySlbInstanceResult value;
+        public org.zstack.sdk.QuerySlbVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QuerySlbInstanceAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QuerySlbInstanceResult value = res.getResult(org.zstack.sdk.QuerySlbInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QuerySlbInstanceResult() : value; 
+        org.zstack.sdk.QuerySlbVmInstanceResult value = res.getResult(org.zstack.sdk.QuerySlbVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySlbVmInstanceResult() : value; 
 
         return ret;
     }
