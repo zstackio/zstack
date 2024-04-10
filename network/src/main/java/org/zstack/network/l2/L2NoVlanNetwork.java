@@ -376,6 +376,20 @@ public class L2NoVlanNetwork implements L2Network {
 
     private void handle(APIChangeL2NetworkVlanIdMsg msg){
         APIChangeL2NetworkVlanIdEvent event = new APIChangeL2NetworkVlanIdEvent(msg.getId());
+        if (msg.getVlan() == null
+                && msg.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)
+                && self.getVirtualNetworkId().equals(0)) {
+            event.setInventory(getSelfInventory());
+            bus.publish(event);
+            return;
+        }
+        if (msg.getVlan() != null
+                && msg.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)
+                && self.getVirtualNetworkId().equals(msg.getVlan())) {
+            event.setInventory(getSelfInventory());
+            bus.publish(event);
+            return;
+        }
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {

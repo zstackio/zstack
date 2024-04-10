@@ -142,6 +142,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
                     .param("virtualNetworkId", msg.getVlan())
                     .param("physicalInterface", l2.getPhysicalInterface())
                     .param("clusterUuids", attachedClusters).list();
+            l2s = l2s.stream().filter(l -> !l.getUuid().equals(msg.getUuid())).collect(Collectors.toList());
             if (!l2s.isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr("There has been a l2Network attached to cluster with virtual network id[%s] and physical interface[%s]. Failed to change L2 network[uuid:%s]",
                         msg.getVlan(), l2.getPhysicalInterface(), l2.getUuid()));
@@ -161,6 +162,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
                             " and type = 'L2NoVlanNetwork'")
                     .param("physicalInterface", l2.getPhysicalInterface())
                     .param("clusterUuids", attachedClusters).list();
+            l2s = l2s.stream().filter(l -> !l.getUuid().equals(msg.getUuid())).collect(Collectors.toList());
             if (!l2s.isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr("There has been a l2Network attached to cluster that has physical interface[%s]. Failed to change l2Network[uuid:%s]",
                         l2.getPhysicalInterface(), l2.getUuid()));
