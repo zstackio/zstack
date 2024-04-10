@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "0.6"
+					since "5.1"
 				}
 				column {
 					name "requiredIp"
