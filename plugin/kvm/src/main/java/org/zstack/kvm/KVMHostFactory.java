@@ -459,6 +459,14 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return null;
         });
 
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_SHUTDOWN_EVENT, KVMAgentCommands.ReportVmShutdownEventCmd.class, cmd -> {
+            KvmReportVmShutdownEventMsg msg = new KvmReportVmShutdownEventMsg();
+            msg.setVmInstanceUuid(cmd.vmUuid);
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, cmd.vmUuid);
+            bus.send(msg);
+            return null;
+        });
+
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_START_EVENT, KVMAgentCommands.ReportVmStartEventCmd.class, cmd -> {
             evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_START, cmd.vmUuid);
             return null;
