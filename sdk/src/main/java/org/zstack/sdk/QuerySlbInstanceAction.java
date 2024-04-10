@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends AbstractAction {
+public class QuerySlbInstanceAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends Abstract
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateVmNicsForLoadBalancerServerGroupResult value;
+        public org.zstack.sdk.QuerySlbInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,6 @@ public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends Abstract
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String servergroupUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String loadBalancerUuid;
-
-    @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer ipVersion;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -60,8 +34,8 @@ public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends Abstract
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateVmNicsForLoadBalancerServerGroupResult value = res.getResult(org.zstack.sdk.GetCandidateVmNicsForLoadBalancerServerGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateVmNicsForLoadBalancerServerGroupResult() : value; 
+        org.zstack.sdk.QuerySlbInstanceResult value = res.getResult(org.zstack.sdk.QuerySlbInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySlbInstanceResult() : value; 
 
         return ret;
     }
@@ -91,7 +65,7 @@ public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends Abstract
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/load-balancers/servergroups/candidate-nics";
+        info.path = "/load-balancers/slb/instances";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

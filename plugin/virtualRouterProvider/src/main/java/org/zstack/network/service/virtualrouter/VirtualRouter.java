@@ -305,7 +305,10 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     private void handle(final APIAttachL3NetworkToVmMsg msg) {
-        if (vr.getHaStatus().equals(ApplianceVmHaStatus.NoHa.toString())) {
+        ApplianceVmType aType = ApplianceVmType.valueOf(vr.getApplianceVmType());
+
+        if (!aType.isNeedOverlay() ||
+                vr.getHaStatus().equals(ApplianceVmHaStatus.NoHa.toString())) {
             super.handleApiMessage(msg);
             return;
         }

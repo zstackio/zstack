@@ -161,6 +161,7 @@
             <zstack:extension interface="org.zstack.network.service.vip.PreVipReleaseExtensionPoint" order="-1"/>
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterHaGetCallbackExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.network.service.virtualrouter.vip.VirtualRouterVipConfigFactory" />
         </zstack:plugin>
     </bean>
 
@@ -291,6 +292,13 @@
     <bean id="SharedLoadBalancerFactory" class="org.zstack.network.service.virtualrouter.lb.SharedLoadBalancerFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerFactory" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VirtualRouterVipConfigManager" class="org.zstack.network.service.virtualrouter.vip.VirtualRouterVipConfigManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.network.service.virtualrouter.vip.VirtualRouterVipConfigManager" />
         </zstack:plugin>
     </bean>
 </beans>

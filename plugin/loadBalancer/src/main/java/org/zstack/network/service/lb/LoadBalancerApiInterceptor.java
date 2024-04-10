@@ -179,6 +179,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             throw new ApiMessageInterceptionException(
                     operr("could not get candidate vmnic, because both load balancer uuid and server group uuid are not specified"));
         }
+
+        if (msg.getIpVersion() == null) {
+            msg.setIpVersion(4);
+        }
     }
 
     private void validate(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {
@@ -1422,6 +1426,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
     private void validate(APICreateLoadBalancerServerGroupMsg msg){
         isExist(msg.getLoadBalancerUuid());
+        if (msg.getIpVersion() == null) {
+            msg.setIpVersion(IPv6Constants.IPv4);
+        } else if (!msg.getIpVersion().equals(IPv6Constants.IPv4) && !msg.getIpVersion().equals(IPv6Constants.IPv6)) {
+            throw new ApiMessageInterceptionException(argerr("invalid ip version[%s], it must be %s or %s", msg.getIpVersion(), IPv6Constants.IPv4, IPv6Constants.IPv6));
+        }
     }
 
     private void validate(APIDeleteLoadBalancerServerGroupMsg msg){

@@ -1,18 +1,22 @@
 package org.zstack.network.service.virtualrouter.vip;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
+import org.zstack.appliancevm.ApplianceVmType;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.network.service.virtualrouter.ha.VirtualRouterConfigProxy;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Arrays.asList;
+public class VipConfigProxy implements ApplianceVmSyncConfigToHaGroupExtensionPoint {
+    @Autowired
+    DatabaseFacade dbf;
+    @Autowired
+    private VirtualRouterVipConfigManager vrVipConfigMgr;
 
-public class VipConfigProxy extends VirtualRouterConfigProxy implements ApplianceVmSyncConfigToHaGroupExtensionPoint {
     @Override
     public void applianceVmSyncConfigToHa(ApplianceVmInventory inv, String haUuid) {
 
@@ -28,42 +32,36 @@ public class VipConfigProxy extends VirtualRouterConfigProxy implements Applianc
         completion.done();
     }
 
-    @Override
-    protected void attachNetworkServiceToNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
-        List<VirtualRouterVipVO> refs = new ArrayList<>();
-        for (String uuid : serviceUuids) {
-            if (dbf.isExist(uuid, VirtualRouterVipVO.class)) {
-                continue;
+    public void attachNetworkService(String vrUuid, String type, List<String> serviceUuids) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        VirtualRouterVipConfigFactory factory = vrVipConfigMgr.getVirtualRouterVipConfigFactory(vrVo.getApplianceVmType());
+        factory.attachNetworkService(vrUuid, serviceUuids);
+    }
+
+    final public void detachNetworkService(String vrUuid, String type, List<String> serviceUuids) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        VirtualRouterVipConfigFactory factory = vrVipConfigMgr.getVirtualRouterVipConfigFactory(vrVo.getApplianceVmType());
+        factory.detachNetworkService(vrUuid, serviceUuids);
+    }
+
+    final public List<String> getVrUuidsByNetworkService(String type, String serviceUuid) {
+        for (ApplianceVmType atype : ApplianceVmType.values()) {
+            VirtualRouterVipConfigFactory factory = vrVipConfigMgr.getVirtualRouterVipConfigFactory(atype.toString());
+            if (factory != null) {
+                List<String> vrUuids = factory.getVrUuidsByNetworkService(serviceUuid);
+                if (!vrUuids.isEmpty()) {
+                    return vrUuids;
+                }
             }
-
-            VirtualRouterVipVO ref = new VirtualRouterVipVO();
-            ref.setUuid(uuid);
-            ref.setVirtualRouterVmUuid(vrUuid);
-            refs.add(ref);
         }
 
-        if (!refs.isEmpty()) {
-            dbf.persistCollection(refs);
-        }
+        return new ArrayList<>();
     }
 
-    @Override
-    protected void detachNetworkServiceFromNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
-        SQL.New(VirtualRouterVipVO.class).in(VirtualRouterVipVO_.uuid, serviceUuids)
-                .eq(VirtualRouterVipVO_.virtualRouterVmUuid, vrUuid).delete();
-    }
 
-    @Override
-    protected List<String> getNoHaVirtualRouterUuidsByNetworkService(String serviceUuid) {
-        VirtualRouterVipVO vipVo = dbf.findByUuid(serviceUuid, VirtualRouterVipVO.class);
-        if (vipVo == null) {
-            return null;
-        }
-        return asList(vipVo.getVirtualRouterVmUuid());
-    }
-
-    @Override
-    protected List<String> getServiceUuidsByNoHaVirtualRouter(String vrUuid) {
-        return Q.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.virtualRouterVmUuid, vrUuid).select(VirtualRouterVipVO_.uuid).listValues();
+    final public List<String> getServiceUuidsByRouterUuid(String vrUuid, String type) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        VirtualRouterVipConfigFactory factory = vrVipConfigMgr.getVirtualRouterVipConfigFactory(vrVo.getApplianceVmType());
+        return factory.getVipUuidsByRouterUuid(vrUuid);
     }
 }

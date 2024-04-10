@@ -624,11 +624,13 @@ public class LoadBalancerBase {
     private void handle(APIGetCandidateVmNicsForLoadBalancerServerGroupMsg msg) {
         APIGetCandidateVmNicsForLoadBalancerServerGroupReply reply = new APIGetCandidateVmNicsForLoadBalancerServerGroupReply();
         LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
+        int ipVersion = msg.getIpVersion();
         LoadBalancerServerGroupVO groupVO = null;
         if (msg.getServergroupUuid() != null) {
             groupVO = dbf.findByUuid(msg.getServergroupUuid(), LoadBalancerServerGroupVO.class);
+            ipVersion = groupVO.getIpVersion();
         }
-        List<VmNicVO> nicVOS = f.getAttachableVmNicsForServerGroup(self, groupVO);
+        List<VmNicVO> nicVOS = f.getAttachableVmNicsForServerGroup(self, groupVO, ipVersion);
         reply.setInventories(VmNicInventory.valueOf(nicVOS));
         bus.reply(msg, reply);
     }
@@ -674,7 +676,7 @@ public class LoadBalancerBase {
         List<L3NetworkVO> guestNetworks = q.getResultList();
 
         List<L3NetworkInventory> ret = L3NetworkInventory.valueOf(guestNetworks);
-        if (ret != null && !ret.isEmpty()) {
+        if (!ret.isEmpty()) {
             for (GetPeerL3NetworksForLoadBalancerExtensionPoint extp : pluginRgty.getExtensionList(GetPeerL3NetworksForLoadBalancerExtensionPoint.class)) {
                 ret = extp.getPeerL3NetworksForLoadBalancer(self.getUuid(), ret);
             }
@@ -1034,6 +1036,11 @@ public class LoadBalancerBase {
                             .list();
                 }
 
+                /* filter out nics already attached to listener */
+                LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+                nics = nics.stream()
+                        .filter(nic -> !listenerVO.getAttachedVmNics().contains(nic.getUuid()))
+                        .collect(Collectors.toList());
 
                 reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
             }
@@ -1320,7 +1327,7 @@ public class LoadBalancerBase {
                     public void handle(ErrorCode errCode, Map data) {
                         // if release vip, it will delete the vip ref vo
                         List<String> releasedVipUuids = (List<String>) data.get("releasedVipUuids");
-                        if (!releasedVipUuids.isEmpty()) {
+                        if (releasedVipUuids != null && !releasedVipUuids.isEmpty()) {
                             for (String vip : releasedVipUuids) {
                                 self.deleteVip(vip);
                             }
@@ -1562,6 +1569,7 @@ public class LoadBalancerBase {
                     groupVO.setDescription(String.format("default server group for load balancer listener %s", listenerVO.getName()));
                     groupVO.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
                     groupVO.setName(String.format("default-server-group-%s-%s", listenerVO.getName(), listenerVO.getUuid().substring(0, 5)));
+                    groupVO.setIpVersion(IPv6Constants.IPv4);
                     dbf.persist(groupVO);
 
                     listenerVO.setServerGroupUuid(groupVO.getUuid());
@@ -2572,6 +2580,7 @@ public class LoadBalancerBase {
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        vo.setIpVersion(msg.getIpVersion());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vo = dbf.persistAndRefresh(vo);

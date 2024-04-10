@@ -6,6 +6,7 @@ import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBack
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.DeleteLbCmd;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificateCmd;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificatesCmd;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificateRsp;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 
@@ -45,5 +46,6 @@ public class VirtualRouterSimulatorConfig {
 	public volatile List<RemoveDnsCmd> removeDnsCmds = new ArrayList<RemoveDnsCmd>();
 	public volatile CertificateCmd certificateCmd;
 	public volatile CertificateRsp certificateRsp;
+	public volatile CertificatesCmd certificatesCmd;
 
 }

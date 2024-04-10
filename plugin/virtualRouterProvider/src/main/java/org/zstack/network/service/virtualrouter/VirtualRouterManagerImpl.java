@@ -1771,9 +1771,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
-                "where lb.vipUuid = vip.uuid " +
+                "where (lb.vipUuid = vip.uuid or lb.ipv6VipUuid = vip.uuid) " +
                 "and lb.uuid = :lbUuid")
-                           .param("lbUuid", lbUuid).find();
+                           .param("lbUuid", lbUuid).limit(1).find();
 
         if (lbVipVO != null) {
             List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, lbVipVO.getUuid()).listValues();
@@ -1813,9 +1813,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         /*get peer network of vip, vr has been deleted, so just return these peer networks*/
-        final List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
+        final List<String> peerL3NetworkUuids = SQL.New("select distinct peer.l3NetworkUuid " +
                 "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
-                "where lb.vipUuid = vip.uuid " +
+                "where (lb.vipUuid = vip.uuid or lb.vipUuid = vip.uuid)" +
                 "and vip.uuid = peer.vipUuid " +
                 "and lb.uuid = :lbUuid").param("lbUuid", lbUuid).list();
 
@@ -1843,9 +1843,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
 
                 VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
-                        "where lb.vipUuid = vip.uuid " +
+                        "where (lb.vipUuid = vip.uuid or lb.ipv6VipUuid = vip.uuid) " +
                         "and lb.uuid = :lbUuid")
-                                   .param("lbUuid", lbUuid).find();
+                                   .param("lbUuid", lbUuid).limit(1).find();
 
                 //2.check the l3 is peer l3 of the loadbalancer
                 L3NetworkVO vipNetwork = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, lbVipVO.getL3NetworkUuid()).find();

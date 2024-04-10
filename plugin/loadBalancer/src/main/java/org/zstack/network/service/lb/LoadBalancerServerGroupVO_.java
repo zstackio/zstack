@@ -12,6 +12,7 @@ public class LoadBalancerServerGroupVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LoadBalancerServerGroupVO, String> name;
     public static volatile SingularAttribute<LoadBalancerServerGroupVO, String> description;
     public static volatile SingularAttribute<LoadBalancerServerGroupVO, String> loadBalancerUuid;
+    public static volatile SingularAttribute<LoadBalancerServerGroupVO, Integer> ipVersion;
     public static volatile SingularAttribute<LoadBalancerServerGroupVO, Timestamp> createDate;
     public static volatile SingularAttribute<LoadBalancerServerGroupVO, Timestamp> lastOpDate;
 }

@@ -67,6 +67,15 @@ doc {
 					since "0.6"
 				}
 				column {
+					name "ipVersion"
+					enclosedIn "params"
+					desc "IP版本"
+					location "body"
+					type "Integer"
+					optional true
+					since "0.6"
+				}
+				column {
 					name "requiredIp"
 					enclosedIn "params"
 					desc "请求的IP"
