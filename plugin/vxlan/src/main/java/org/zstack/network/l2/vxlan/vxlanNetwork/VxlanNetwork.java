@@ -376,6 +376,11 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
     protected void handle(final APIChangeL2NetworkVlanIdMsg msg) {
         APIChangeL2NetworkVlanIdEvent event = new APIChangeL2NetworkVlanIdEvent(msg.getId());
+        if (self.getVirtualNetworkId().equals(msg.getVlan())) {
+            event.setInventory(getSelfInventory());
+            bus.publish(event);
+            return;
+        }
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
