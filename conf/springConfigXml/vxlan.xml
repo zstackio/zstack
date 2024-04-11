@@ -29,6 +29,7 @@
             <zstack:extension interface="org.zstack.network.l2.L2NetworkDefaultMtu"/>
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint" />
             <zstack:extension interface="org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 

@@ -1,17 +1,21 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 
@@ -33,22 +37,26 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
     }
 
     private void validate(APIChangeL2NetworkVlanIdMsg msg) {
-        if (!msg.getType().equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)){
+        if (!msg.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)){
             return;
         }
         if (!NetworkUtils.isValidVni(msg.getVlan())) {
             throw new ApiMessageInterceptionException(argerr("vlan[%s] is not a valid vni", msg.getVlan()));
         }
         VxlanNetworkVO vxlanVO = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, msg.getL2NetworkUuid()).find();
-        if (vxlanVO == null || !vxlanVO.getType().equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)) {
+        if (vxlanVO == null || !vxlanVO.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
             throw new ApiMessageInterceptionException(argerr("L2Network[uuid:%s] is not L2VxlanNetwork type",
                     msg.getL2NetworkUuid()));
         }
-        L2VxlanNetworkInventory vxlanInv = L2VxlanNetworkInventory.valueOf(vxlanVO);
-        vxlanInv.setVni(msg.getVlan());
-        vxlanInv.getAttachedClusterUuids().forEach( clusterUuid -> {
-            validateVniRangeOverlap(vxlanInv, clusterUuid);
-        });
+
+        List<String> duplicate = Q.New(VxlanNetworkVO.class).select(VxlanNetworkVO_.uuid)
+                .eq(VxlanNetworkVO_.vni, msg.getVlan()).eq(VxlanNetworkVO_.poolUuid, vxlanVO.getPoolUuid()).listValues();
+        duplicate = duplicate.stream().filter(d -> !d.equals(msg.getL2NetworkUuid())).collect(Collectors.toList());
+        if (!duplicate.isEmpty()) {
+            throw new OperationFailureException(Platform.err(L2Errors.ALLOCATE_VNI_ERROR,
+                    "cannot allocate vni[%s] in l2Network[uuid:%s], duplicate with l2Network[uuid:%s]",
+                    msg.getVlan(), msg.getL2NetworkUuid(), duplicate.get(0)));
+        }
     }
 
     private void validate(APIAttachL2NetworkToClusterMsg msg) {
