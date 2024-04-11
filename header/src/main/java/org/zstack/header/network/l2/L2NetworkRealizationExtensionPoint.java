@@ -23,4 +23,8 @@ public interface L2NetworkRealizationExtensionPoint {
     };
 
     void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion);
+    default void update(L2NetworkInventory oldL2Network, L2NetworkInventory newl2Network, String hostUuid, Completion completion) {
+        completion.success();
+    }
+
 }

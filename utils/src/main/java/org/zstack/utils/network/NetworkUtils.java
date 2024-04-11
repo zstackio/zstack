@@ -965,5 +965,13 @@ public class NetworkUtils {
             return Boolean.FALSE;
         }
     }
+
+    public static Boolean isValidVlan(Integer vlanId) {
+        return vlanId != null && vlanId >= 1 && vlanId <= 4094;
+    }
+
+    public static Boolean isValidVni(Integer vni){
+        return vni != null && vni >= 1 && vni <= 16777214;
+    }
 }
 

@@ -32,6 +32,9 @@ import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
@@ -1339,6 +1342,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public boolean vmMultiGateway;
         public List<HostRouteInfo> hostRoutes;
         public String nicType;
+        public String vlanId;
     }
 
     public static class ApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
@@ -1369,6 +1373,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static class PrepareDhcpCmd extends KVMAgentCommands.AgentCommand {
         @GrayVersion(value = "5.0.0")
         public String bridgeName;
+        @GrayVersion(value = "5.1.0")
+        public String vlanId;
         @GrayVersion(value = "5.0.0")
         public String dhcpServerIp;
         @GrayVersion(value = "5.0.0")
@@ -1458,12 +1464,18 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     private List<DhcpInfo> toDhcpInfo(List<DhcpStruct> structs) {
         final Map<String, String> l3Bridges = new HashMap<String, String>();
+        final List<String> l2Uuids = new ArrayList<>();
         for (DhcpStruct s : structs) {
             if (!l3Bridges.containsKey(s.getL3Network().getUuid())) {
+                l2Uuids.add(s.getL3Network().getL2NetworkUuid());
                 l3Bridges.put(s.getL3Network().getUuid(),
                         KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(s.getL3Network().getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN));
             }
         }
+        if (l2Uuids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Map<String, String> bridgesVlan = new BridgeVlanIdFinder().findByL2Uuids(l2Uuids);
 
         return CollectionUtils.transformToList(structs, new Function<DhcpInfo, DhcpStruct>() {
             @Override
@@ -1523,6 +1535,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.dns = dns;
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
                 info.bridgeName = l3Bridges.get(arg.getL3Network().getUuid());
+                if (bridgesVlan.containsKey(info.bridgeName)) {
+                    info.vlanId = bridgesVlan.get(info.bridgeName);
+                }
                 info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
                 info.mtu = arg.getMtu();
                 info.hostRoutes = getL3NetworkHostRoute(arg.getL3Network().getUuid());
