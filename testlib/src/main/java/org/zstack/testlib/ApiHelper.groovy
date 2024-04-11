@@ -9953,6 +9953,33 @@ abstract class ApiHelper {
     }
 
 
+    def createTemplatedVmInstanceFromVmInstance(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateTemplatedVmInstanceFromVmInstanceAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateTemplatedVmInstanceFromVmInstanceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createUser(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateUserAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateUserAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -10243,6 +10270,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createVmInstanceFromTemplatedVmInstance(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateVmInstanceFromTemplatedVmInstanceAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateVmInstanceFromTemplatedVmInstanceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())

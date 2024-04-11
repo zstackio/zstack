@@ -92,6 +92,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof NewVmInstanceMessage2) {
+            validate((NewVmInstanceMessage2) msg);
+        }
+
         if (msg instanceof APIDestroyVmInstanceMsg) {
             validate((APIDestroyVmInstanceMsg) msg);
         } else if (msg instanceof APICreateVmInstanceMsg) {
@@ -1183,8 +1187,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVmInstanceMsg msg) {
-        validate((NewVmInstanceMessage2) msg);
-
         if (CollectionUtils.isNotEmpty(msg.getDiskAOs())) {
             APICreateVmInstanceMsg.DiskAO rootDiskAO = msg.getDiskAOs().stream()
                     .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
@@ -1335,8 +1337,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVmInstanceFromVolumeMsg msg) {
-        validate((NewVmInstanceMessage2) msg);
-
         VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
         if (volume.isShareable()) {
             throw new ApiMessageInterceptionException(operr("cannot create vm instance from a shareable volume."));
@@ -1352,11 +1352,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVmInstanceFromVolumeSnapshotMsg msg) {
-        validate((NewVmInstanceMessage2) msg);
     }
 
     private void validate(APICreateVmInstanceFromVolumeSnapshotGroupMsg msg) {
-        validate((NewVmInstanceMessage2) msg);
     }
 
     private void validate(NewVmInstanceMessage2 msg) {
