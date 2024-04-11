@@ -1,4 +1,4 @@
-package org.zstack.core.plugin;
+package org.zstack.header.core.external.plugin;
 
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;

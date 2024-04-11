@@ -4,10 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.abstraction.PluginDriver;
 import org.zstack.abstraction.PluginValidator;
 import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.Component;
+import org.zstack.header.AbstractService;
+import org.zstack.header.core.external.plugin.PluginDriverVO;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.Message;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -24,11 +27,13 @@ import static org.zstack.core.Platform.operr;
 /**
  * PluginManagerImpl implementation of PluginManager.
  */
-public class PluginManagerImpl implements PluginManager, Component {
+public class PluginManagerImpl extends AbstractService implements PluginManager {
     private static final CLogger logger = Utils.getLogger(PluginManagerImpl.class);
 
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private CloudBus bus;
 
     private final Set<Class<? extends PluginDriver>> pluginMetadata = new HashSet<>();
     private final Map<String, PluginDriver> pluginInstances = new HashMap<>();
@@ -250,5 +255,15 @@ public class PluginManagerImpl implements PluginManager, Component {
                 .filter(plugin -> plugin.type().equals(type))
                 .findFirst()
                 .orElse(null);
+    }
+
+    @Override
+    public void handleMessage(Message msg) {
+
+    }
+
+    @Override
+    public String getId() {
+        return bus.makeLocalServiceId(SERVICE_ID);
     }
 }
