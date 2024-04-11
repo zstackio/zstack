@@ -44,6 +44,20 @@ public class VipConfigProxy implements ApplianceVmSyncConfigToHaGroupExtensionPo
         factory.detachNetworkService(vrUuid, serviceUuids);
     }
 
+    final public List<String> getAllVrUuidsByNetworkService(String type, String serviceUuid) {
+        for (ApplianceVmType atype : ApplianceVmType.values()) {
+            VirtualRouterVipConfigFactory factory = vrVipConfigMgr.getVirtualRouterVipConfigFactory(atype.toString());
+            if (factory != null) {
+                List<String> vrUuids = factory.getAllVrUuidsByNetworkService(serviceUuid);
+                if (!vrUuids.isEmpty()) {
+                    return vrUuids;
+                }
+            }
+        }
+
+        return new ArrayList<>();
+    }
+
     final public List<String> getVrUuidsByNetworkService(String type, String serviceUuid) {
         for (ApplianceVmType atype : ApplianceVmType.values()) {
             VirtualRouterVipConfigFactory factory = vrVipConfigMgr.getVirtualRouterVipConfigFactory(atype.toString());

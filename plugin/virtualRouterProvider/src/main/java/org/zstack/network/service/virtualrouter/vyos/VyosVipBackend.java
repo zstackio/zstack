@@ -50,6 +50,11 @@ public class VyosVipBackend extends VirtualRouterVipBackend implements VirtualRo
     }
 
     @Override
+    public List<String> getAllVrUuidsByNetworkService(String vipUuid) {
+        return super.getAllVrUuidsByNetworkService(vipUuid);
+    }
+
+    @Override
     public List<String> getVipUuidsByRouterUuid(String vrUuid) {
         return super.getVipUuidsByRouterUuid(vrUuid);
     }

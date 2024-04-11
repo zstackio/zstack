@@ -23,7 +23,9 @@ import org.zstack.header.vo.ResourceVO;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -240,6 +242,11 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 } else {
                     List<String> vipUuids = vips.stream().map(VipTO::getVipUuid).distinct().collect(Collectors.toList());
                     proxy.attachNetworkService(nic.getVmInstanceUuid(), VipVO.class.getSimpleName(), vipUuids);
+                    List<VipVO> vips = Q.New(VipVO.class).in(VipVO_.uuid, vipUuids).list();
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAcquireVipExtensionPoint.class), ext -> {
+                        logger.debug(String.format("execute after acquire vip extension point %s", ext));
+                        ext.afterAcquireVip(VipInventory.valueOf(vips));
+                    });
                     completion.success();
                 }
             }
@@ -487,6 +494,11 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     public void detachNetworkService(String vrUuid, List<String> vipUuids) {
         SQL.New(VirtualRouterVipVO.class).in(VirtualRouterVipVO_.uuid, vipUuids)
                 .eq(VirtualRouterVipVO_.virtualRouterVmUuid, vrUuid).delete();
+    }
+
+    @Override
+    public List<String> getAllVrUuidsByNetworkService(String vipUuid) {
+        return getVrUuidsByNetworkService(vipUuid);
     }
 
     @Override
