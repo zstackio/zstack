@@ -1,13 +1,13 @@
 package org.zstack.header.core.external.plugin;
 
-import org.zstack.header.message.APIReply;
+import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
 import java.util.Collections;
 import java.util.List;
 
 @RestResponse(allTo = "inventories")
-public class APIQueryPluginDriversReply extends APIReply {
+public class APIQueryPluginDriversReply extends APIQueryReply {
     private List<PluginDriverInventory> inventories;
 
     public List<PluginDriverInventory> getInventories() {
