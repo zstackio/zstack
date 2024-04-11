@@ -7,6 +7,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.external.plugin.APIRefreshPluginDriversMsg;
+import org.zstack.header.core.external.plugin.APIRefreshPluginDrviersEvent;
 import org.zstack.header.core.external.plugin.PluginDriverVO;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -259,7 +261,17 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
     @Override
     public void handleMessage(Message msg) {
+        if (msg instanceof APIRefreshPluginDriversMsg) {
+            handle((APIRefreshPluginDriversMsg) msg);
+        }
+    }
 
+    private void handle(APIRefreshPluginDriversMsg msg) {
+        APIRefreshPluginDrviersEvent event = new APIRefreshPluginDrviersEvent(msg.getId());
+        collectPluginProtocolMetadata();
+        collectPluginValidators();
+        loadPluginsFromMetadata();
+        bus.publish(event);
     }
 
     @Override
