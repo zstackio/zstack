@@ -1595,6 +1595,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     @Override
+    public List<EipInventory> filterEipsForVmNicInVirtualRouter(VmNicInventory vmNic, List<EipInventory> eips) {
+        return eips;
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<VmNicInventory> filterVmNicsForEipInVirtualRouter(VipInventory vip, List<VmNicInventory> candidates) {
         if (candidates.isEmpty()){
