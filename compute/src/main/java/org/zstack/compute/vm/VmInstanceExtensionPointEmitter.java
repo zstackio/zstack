@@ -474,10 +474,28 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
-    public void preDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
-        for (VmDetachVolumeExtensionPoint ext : detachVolumeExtensions) {
-            ext.preDetachVolume(vm, volume);
-        }
+    public void preDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume, Completion completion) {
+        new While<>(detachVolumeExtensions).each((ext, comp) -> ext.preDetachVolume(vm, volume, new Completion(comp) {
+            @Override
+            public void success() {
+                comp.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.addError(errorCode);
+                comp.allDone();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().size() > 0) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                } else {
+                    completion.success();
+                }
+            }
+        });
     }
 
     public void beforeDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {

@@ -1265,7 +1265,7 @@ public class VolumeSnapshotTreeBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         new While<>(pluginRgty.getExtensionList(AfterUpdateVolumeSnapshotExtensionPoint.class)).each((ext, whileCompletion) -> {
-                            ext.afterUpdateVolumeSnapshot(self, new Completion(trigger) {
+                            ext.afterUpdateVolumeSnapshot(self, msg, new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     whileCompletion.done();
