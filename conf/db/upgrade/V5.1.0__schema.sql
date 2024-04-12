@@ -33,6 +33,8 @@ ALTER TABLE `zstack`.`LoadBalancerServerGroupVO` ADD COLUMN `ipVersion` int(10) 
 UPDATE `zstack`.`VipVO` set serviceProvider='SLB' where uuid in (select vipUuid from LoadBalancerVO where type='SLB');
 UPDATE `zstack`.`VipVO` set serviceProvider='SLB' where uuid in (select ipv6VipUuid from LoadBalancerVO where type='SLB');
 
+ALTER TABLE `zstack`.`VmVfNicVO` ADD COLUMN `haState` varchar(32) NOT NULL DEFAULT "Disabled" AFTER `pciDeviceUuid`;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`VpcSharedQosVO` (
     `uuid`          varchar(32)  NOT NULL UNIQUE,
     `name`          varchar(255) NOT NULL,
