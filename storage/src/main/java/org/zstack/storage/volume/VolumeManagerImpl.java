@@ -585,6 +585,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setRootImageUuid(msg.getRootImageUuid());
         vo.setDescription(msg.getDescription());
         vo.setName(msg.getName());
+        vo.setProtocol(msg.getProtocol());
         vo.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vo.setSize(msg.getSize());
         vo.setActualSize(msg.getActualSize());
@@ -1312,14 +1313,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     .set(VolumeVO_.status, VolumeStatus.Ready)
                     .update();
         }
-    }
-
-    @Override
-    public void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {
-    }
-
-    @Override
-    public void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {
     }
 
     @Override

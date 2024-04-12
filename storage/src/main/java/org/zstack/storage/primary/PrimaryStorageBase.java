@@ -42,6 +42,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
@@ -926,9 +927,73 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((APIGetTrashOnPrimaryStorageMsg) msg);
         } else if (msg instanceof APICleanUpStorageTrashOnPrimaryStorageMsg) {
             handle((APICleanUpStorageTrashOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof APIAddStorageProtocolMsg) {
+            handle((APIAddStorageProtocolMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIAddStorageProtocolMsg msg) {
+        APIAddStorageProtocolEvent evt = new APIAddStorageProtocolEvent(msg.getId());
+        addStorageProtocol(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void addStorageProtocol(APIAddStorageProtocolMsg msg, Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+
+        chain.setName(String.format("add-protocol-to-storage-%s", msg.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "add-protocol-storage-ref-vo";
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                PrimaryStorageOutputProtocolRefVO refVO = new PrimaryStorageOutputProtocolRefVO();
+                refVO.setPrimaryStorageUuid(msg.getUuid());
+                refVO.setOutputProtocol(msg.getOutputProtocol());
+                dbf.persist(refVO);
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "do-add-protocol-for-storage-vo";
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                doAddProtocol(msg, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    protected void doAddProtocol(APIAddStorageProtocolMsg msg, Completion completion) {
+        completion.success();
     }
 
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
