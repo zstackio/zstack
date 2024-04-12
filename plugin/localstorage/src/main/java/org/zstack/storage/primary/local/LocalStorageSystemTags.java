@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.zstack.header.core.NonCloneable;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.volume.VolumeVO;
@@ -12,6 +13,7 @@ import org.zstack.tag.PatternedSystemTag;
 @TagDefinition
 public class LocalStorageSystemTags {
     public static final String DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN = "hostUuid";
+    @NonCloneable
     public static PatternedSystemTag DEST_HOST_FOR_CREATING_DATA_VOLUME = new PatternedSystemTag(
             String.format("localStorage::hostUuid::{%s}", DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN),
             VolumeVO.class
