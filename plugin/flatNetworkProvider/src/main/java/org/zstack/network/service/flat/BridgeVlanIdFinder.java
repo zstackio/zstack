@@ -43,11 +43,14 @@ public class BridgeVlanIdFinder {
 
     @Transactional(readOnly = true)
     public Map<String, String> findByL2Uuids(Collection<String> l2Uuids) {
+        if (l2Uuids == null || l2Uuids.isEmpty()) {
+            return new HashMap<>();
+        }
         Map<String, String> bridgesVlan = new HashMap<>();
         List<L2NetworkVO> l2Vos = Q.New(L2NetworkVO.class).in(L2NetworkVO_.uuid, asList(l2Uuids)).list();
         l2Vos.forEach(l2 -> {
             String bridge = KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
-            if (l2.getVirtualNetworkId() != null && !l2.getVirtualNetworkId().equals(0)) {
+            if (bridge != null && l2.getVirtualNetworkId() != null && !l2.getVirtualNetworkId().equals(0)) {
                 // ugly if condition due to history vlan usage which embed in the legacy bridge name
                 if (!bridge.contains(l2.getVirtualNetworkId().toString())) {
                     String vlanId = "";
