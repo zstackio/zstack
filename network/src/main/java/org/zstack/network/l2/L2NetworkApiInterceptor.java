@@ -123,6 +123,11 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
                         " because there are hosts status in Connecting or Disconnected", l2.getUuid()));
             }
         });
+        // pvlan isolated not support change vlan
+        if (l2.getIsolated()) {
+            throw new ApiMessageInterceptionException(argerr("cannot change vlan for l2Network[uuid:%s]" +
+                    " because this l2Network is isolated", l2.getUuid()));
+        }
         if (msg.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
             if (msg.getVlan() == null) {
                 throw new ApiMessageInterceptionException(argerr("vlan is required for " +

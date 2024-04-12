@@ -11,6 +11,8 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -23,8 +25,10 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -36,6 +40,7 @@ import org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkChecker;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
@@ -47,6 +52,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -56,7 +63,7 @@ import static org.zstack.core.Platform.operr;
 /**
  * Created by weiwang on 02/03/2017.
  */
-public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInstanceMigrateExtensionPoint, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint, L2NetworkCascadeFilterExtensionPoint {
+public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInstanceMigrateExtensionPoint, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint, L2NetworkCascadeFilterExtensionPoint, GlobalApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(VxlanNetworkFactory.class);
     public static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
 
@@ -70,6 +77,8 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     protected AccountManager acntMgr;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private VxlanNetworkChecker vxlanInterceptor;
 
     @Override
     public L2NetworkType getType() {
@@ -293,5 +302,21 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
         } else {
             return l2invs;
         }
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        vxlanInterceptor.intercept(msg);
+        return msg;
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return Collections.singletonList(APIChangeL2NetworkVlanIdMsg.class);
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.FRONT;
     }
 }
