@@ -5,7 +5,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "已使用IP的结构清单"
 
 	field {
 		name "uuid"
