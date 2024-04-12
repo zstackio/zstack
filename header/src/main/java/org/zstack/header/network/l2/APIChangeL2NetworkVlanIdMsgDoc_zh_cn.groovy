@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "5.1.0"
 				}
 				column {
 					name "vlan"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "5.0.0"
+					since "5.1.0"
 				}
 				column {
 					name "type"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "5.1.0"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "5.1.0"
 				}
 				column {
 					name "userTags"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "5.1.0"
 				}
 			}
         }
