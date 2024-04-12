@@ -242,27 +242,40 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String lunId;
         LunType lunType;
         String source = vol.getInstallPath();
+        String addedIscsiClientId;
         if (source.contains("@")) {
             lunId = getSnapIdFromPath(source);
             lunType = LunType.Snapshot;
+            addedIscsiClientId = apiHelper.getSnapshotAttachedIscsiClientGroups(lunId).stream().findFirst().orElse(null);
         } else {
             lunId = getVolIdFromPath(source);
             lunType = LunType.Volume;
+            addedIscsiClientId = apiHelper.getVolumeAttachedIscsiClientGroups(lunId).stream().findFirst().orElse(null);
         }
 
         String tianshuId = addonInfo.getClusters().get(0).getId();
         List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
 
-        IscsiModule iscsi = "image".equals(vol.getType()) ? allocateImageIscsiTarget(nodes) : allocateIscsiTarget(nodes);
+        IscsiModule iscsi;
 
-        // for active image, we use one iscsi client group for one iscsi target to save client group count
-        String iscsiClientName = "image".equals(vol.getType()) ? iscsi.getName() : buildIscsiVolumeClientName(vol.getUuid());
-        IscsiClientGroupModule client = prepareOneToOneIscsiClientGroup(iscsiClientName, iscsi.getId(), tianshuId, clientIqn);
+        if (addedIscsiClientId != null) {
+            IscsiClientGroupModule client = apiHelper.getIscsiClient(addedIscsiClientId);
+            if (!client.getHosts().contains(clientIqn)) {
+                apiHelper.addHostToIscsiClient(clientIqn, client.getId());
+            }
+            iscsi = apiHelper.getIscsiClientAttachedTargets(addedIscsiClientId).get(0);
+        } else {
+            iscsi = "image".equals(vol.getType()) ? allocateImageIscsiTarget(nodes) : allocateIscsiTarget(nodes);
 
-        if (lunType == LunType.Volume && !apiHelper.getVolumeAttachedIscsiClientGroups(lunId).contains(client.getId())) {
-            apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), shareable);
-        } else if (lunType == LunType.Snapshot && !apiHelper.getSnapshotAttachedIscsiClientGroups(lunId).contains(client.getId())) {
-            apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
+            // for active image, we use one iscsi client group for one iscsi target to save client group count
+            String iscsiClientName = "image".equals(vol.getType()) ? iscsi.getName() : buildIscsiVolumeClientName(vol.getUuid());
+            IscsiClientGroupModule client = prepareOneToOneIscsiClientGroup(iscsiClientName, iscsi.getId(), tianshuId, clientIqn);
+
+            if (lunType == LunType.Volume && !apiHelper.getVolumeAttachedIscsiClientGroups(lunId).contains(client.getId())) {
+                apiHelper.addVolumeToIscsiClientGroup(lunId, client.getId(), iscsi.getId(), shareable);
+            } else if (lunType == LunType.Snapshot && !apiHelper.getSnapshotAttachedIscsiClientGroups(lunId).contains(client.getId())) {
+                apiHelper.addSnapshotToIscsiClientGroup(lunId, client.getId(), iscsi.getId());
+            }
         }
 
         IscsiVolumeTO to = new IscsiVolumeTO();
@@ -318,8 +331,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             return iscsi;
         }
 
-        int index = Integer.parseInt(iscsi.getName().substring(iscsi.getName().lastIndexOf("_") + 1));
-        return createIscsiTarget(index, tianshuId, nodes);
+        int index = getIndexFromIscsiTargetName(iscsi.getName());
+        return createIscsiTarget(index + 1, tianshuId, nodes);
     }
 
     private IscsiModule createIscsiTarget(int index, String tianshuId, List<IscsiSeverNode> nodes) {
@@ -349,8 +362,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             return iscsi;
         }
 
-        int index = Integer.parseInt(iscsi.getName().substring(iscsi.getName().lastIndexOf("_") + 1));
-        return createImageIscsiTarget(index, tianshuId, nodes);
+        int index = getIndexFromIscsiTargetName(iscsi.getName());
+        return createImageIscsiTarget(index + 1, tianshuId, nodes);
     }
 
     private IscsiModule createImageIscsiTarget(int index, String tianshuId, List<IscsiSeverNode> nodes) {
