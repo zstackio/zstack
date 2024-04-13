@@ -764,6 +764,11 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     }
 
     @Override
+    public List<EipInventory> filterEipsForVmNicInVirtualRouter(VmNicInventory vmNic, List<EipInventory> eips) {
+        return eips;
+    }
+
+    @Override
     public List<VmNicInventory> filterVmNicsForEipInVirtualRouter(VipInventory vip, List<VmNicInventory> vmNics) {
         /* if vmnic is in flat network, it will be filtered out if it already has eip attached */
         Map<String, NetworkServiceProviderType> l3Maps = new HashMap<>();

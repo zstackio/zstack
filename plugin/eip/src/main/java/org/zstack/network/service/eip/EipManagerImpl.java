@@ -225,7 +225,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         }
 
         List<EipVO> eipVOS = Q.New(EipVO.class).in(EipVO_.uuid, ret).list();
-        return EipInventory.valueOf(eipVOS);
+        return filterEipsForVmNicInVirtualRouterExtensionPoint(vmNicInv, EipInventory.valueOf(eipVOS));
     }
 
     private HashMap<Boolean, List<String>>  getL3NetworkForVmNicAttachableEip(VmNicInventory vmNicInv) {
@@ -426,6 +426,17 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         List<VmNicInventory> ret = new ArrayList<>(vmNics);
         for (FilterVmNicsForEipInVirtualRouterExtensionPoint extp : pluginRgty.getExtensionList(FilterVmNicsForEipInVirtualRouterExtensionPoint.class)) {
             ret = extp.filterVmNicsForEipInVirtualRouter(vip, ret);
+        }
+        return ret;
+    }
+
+    private List<EipInventory> filterEipsForVmNicInVirtualRouterExtensionPoint(VmNicInventory vmNic, List<EipInventory> eips) {
+        if (eips.isEmpty()){
+            return eips;
+        }
+        List<EipInventory> ret = new ArrayList<>(eips);
+        for (FilterVmNicsForEipInVirtualRouterExtensionPoint extp : pluginRgty.getExtensionList(FilterVmNicsForEipInVirtualRouterExtensionPoint.class)) {
+            ret = extp.filterEipsForVmNicInVirtualRouter(vmNic, ret);
         }
         return ret;
     }

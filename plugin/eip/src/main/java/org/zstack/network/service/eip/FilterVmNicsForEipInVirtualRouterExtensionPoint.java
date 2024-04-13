@@ -10,5 +10,5 @@ import java.util.List;
  */
 public interface FilterVmNicsForEipInVirtualRouterExtensionPoint {
     List<VmNicInventory> filterVmNicsForEipInVirtualRouter(VipInventory vip, List<VmNicInventory> vmNics);
-
+    List<EipInventory> filterEipsForVmNicInVirtualRouter(VmNicInventory vmNic, List<EipInventory> eips);
 }
