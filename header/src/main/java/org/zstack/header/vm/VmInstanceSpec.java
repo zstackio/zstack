@@ -350,6 +350,7 @@ public class VmInstanceSpec implements Serializable {
     private List<String> dataVolumeSystemTags;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
+    private VmCreationStrategy strategy;
 
     public List<String> getRequiredClusterUuids() {
         return requiredClusterUuids;
@@ -845,6 +846,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setAllocatedPrimaryStorageUuidForDataVolume(String allocatedPrimaryStorageUuidForDataVolume) {
         this.allocatedPrimaryStorageUuidForDataVolume = allocatedPrimaryStorageUuidForDataVolume;
+    }
+
+    public VmCreationStrategy getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(VmCreationStrategy strategy) {
+        this.strategy = strategy;
     }
 
     public String getVolumeFormatFromImage() {
