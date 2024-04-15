@@ -34,7 +34,7 @@ public class UsedIpInventory implements Serializable {
     private String usedFor;
     @APINoSee
     private String metaData;
-    private long ipInLong;
+    private Long ipInLong;
     private String vmNicUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -109,7 +109,7 @@ public class UsedIpInventory implements Serializable {
         this.ip = ip;
     }
 
-    public long getIpInLong() {
+    public Long getIpInLong() {
         return ipInLong;
     }
 
