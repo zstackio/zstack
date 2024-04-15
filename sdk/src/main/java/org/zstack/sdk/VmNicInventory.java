@@ -76,14 +76,6 @@ public class VmNicInventory  {
         return this.metaData;
     }
 
-    public java.lang.Integer ipVersion;
-    public void setIpVersion(java.lang.Integer ipVersion) {
-        this.ipVersion = ipVersion;
-    }
-    public java.lang.Integer getIpVersion() {
-        return this.ipVersion;
-    }
-
     public java.lang.String driverType;
     public void setDriverType(java.lang.String driverType) {
         this.driverType = driverType;

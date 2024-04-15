@@ -34,7 +34,7 @@ public class StaticIpOperator {
     @Autowired
     private DatabaseFacade dbf;
 
-    public Map<String, List<String>> getStaticIpbyVmUuid(String vmUuid) {
+    public Map<String, List<String>> getStaticIpByVmUuid(String vmUuid) {
         Map<String, List<String>> ret = new HashMap<String, List<String>>();
 
         List<Map<String, String>> tokenList = VmSystemTags.STATIC_IP.getTokensOfTagsByResourceUuid(vmUuid);
@@ -63,11 +63,8 @@ public class StaticIpOperator {
             if(VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                 Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
                 String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
-                NicIpAddressInfo nicIpAddressInfo = ret.get(l3Uuid);
-                if (nicIpAddressInfo == null) {
-                    ret.put(l3Uuid, new NicIpAddressInfo("", "", "",
-                            "", "", ""));
-                }
+                ret.computeIfAbsent(l3Uuid, k -> new NicIpAddressInfo("", "", "",
+                        "", "", ""));
                 String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
                 ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
                 if (NetworkUtils.isIpv4Address(ip)) {
@@ -120,7 +117,7 @@ public class StaticIpOperator {
         return ret;
     }
 
-    public Map<String, List<String>> getStaticIpbySystemTag(List<String> systemTags) {
+    public Map<String, List<String>> getStaticIpBySystemTag(List<String> systemTags) {
         Map<String, List<String>> ret = new HashMap<>();
 
         if (systemTags == null) {
@@ -167,7 +164,7 @@ public class StaticIpOperator {
             }
         }
 
-        /* '::' is token used by systemtag, replace with "--" */
+        /* '::' is token used by systemTag, replace with "--" */
         ip = IPv6NetworkUtils.ipv6AddessToTagValue(ip);
         if (tagUuid == null) {
             SystemTagCreator creator = VmSystemTags.STATIC_IP.newSystemTagCreator(vmUuid);

@@ -307,7 +307,7 @@
 		<name>enable.vm.internal.ip.overwrite</name>
 		<description>enable vm internal ip address overwrite db record</description>
 		<type>java.lang.Boolean</type>
-		<defaultValue>false</defaultValue>
+		<defaultValue>true</defaultValue>
 	</config>
 
 	<config>

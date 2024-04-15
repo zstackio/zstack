@@ -54,7 +54,7 @@ public class VmAllocateNicIpFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         final List<VmNicInventory> nics = (List<VmNicInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString());
         Boolean allowDuplicatedAddress = (Boolean) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString());
-        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
+        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpByVmUuid(spec.getVmInventory().getUuid());
         List<ErrorCode> errs = new ArrayList<>();
         Set<UsedIpVO> ipVOS = new HashSet<>();
         List<VmNicVO> nicsWithIp = new ArrayList<>();
