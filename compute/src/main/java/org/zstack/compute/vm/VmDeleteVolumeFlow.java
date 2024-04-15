@@ -9,14 +9,14 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
-import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -45,6 +45,7 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
     public void run(final FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         final boolean deleteDataDisk = VmGlobalConfig.DELETE_DATA_VOLUME_ON_VM_DESTROY.value(Boolean.class);
+        final boolean templated = isTemplated(spec.getVmInventory().getUuid());
 
         /* data volume must be detached anyway no matter if it is going to be deleted */
         if (spec.getVmInventory().getAllVolumes().size() > 1) {
@@ -62,13 +63,13 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         List<VolumeDeletionStruct> ctx = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<VolumeDeletionStruct, VolumeInventory>() {
             @Override
             public VolumeDeletionStruct call(VolumeInventory arg) {
-                if (VolumeType.Data.toString().equals(arg.getType()) && !deleteDataDisk) {
+                if (VolumeType.Data.toString().equals(arg.getType()) && !deleteDataDisk && !templated) {
                     return null;
                 }
 
                 VolumeDeletionStruct s = new VolumeDeletionStruct();
                 s.setInventory(arg);
-                if (volumeTypes.contains(arg.getType())) {
+                if (volumeTypes.contains(arg.getType()) || templated) {
                     s.setDeletionPolicy(deletionPolicy.toString());
                 }
                 // for data volume, use volume's own deletion policy
@@ -129,5 +130,16 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
             q.setParameter("vmUuid", spec.getVmInventory().getUuid());
             q.executeUpdate();
         }
+    }
+
+    private boolean isTemplated(String vmUuid) {
+        boolean templated = Q.New(TemplatedVmInstanceVO.class)
+                .eq(TemplatedVmInstanceVO_.uuid, vmUuid)
+                .isExists();
+        boolean templatedCache = Q.New(TemplatedVmInstanceCacheVO.class)
+                .eq(TemplatedVmInstanceCacheVO_.cacheVmInstanceUuid, vmUuid)
+                .isExists();
+
+        return templated || templatedCache;
     }
 }

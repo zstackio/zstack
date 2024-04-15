@@ -166,10 +166,59 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APITakeVmConsoleScreenshotMsg) msg);
         } else if (msg instanceof APIGetVmUptimeMsg) {
             validate((APIGetVmUptimeMsg) msg);
+        } else if (msg instanceof APIConvertVmInstanceToTemplatedVmInstanceMsg) {
+            validate((APIConvertVmInstanceToTemplatedVmInstanceMsg) msg);
+        } else if (msg instanceof APIConvertTemplatedVmInstanceToVmInstanceMsg) {
+            validate((APIConvertTemplatedVmInstanceToVmInstanceMsg) msg);
+        } else if (msg instanceof APIDeleteTemplatedVmInstanceMsg) {
+            validate((APIDeleteTemplatedVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIDeleteTemplatedVmInstanceMsg msg) {
+        if (!dbf.isExist(msg.getUuid(), TemplatedVmInstanceVO.class)) {
+            APIDeleteTemplatedVmInstanceEvent evt = new APIDeleteTemplatedVmInstanceEvent(msg.getId());
+            bus.publish(evt);
+            throw new StopRoutingException();
+        }
+    }
+
+    private void validate(APIConvertTemplatedVmInstanceToVmInstanceMsg msg) {
+        if (msg.getVmInstanceUuid() == null) {
+            msg.setVmInstanceUuid(msg.getTemplatedVmInstanceUuid());
+        }
+    }
+
+    private void validate(APIConvertVmInstanceToTemplatedVmInstanceMsg msg) {
+        TemplatedVmInstanceVO templatedVm = Q.New(TemplatedVmInstanceVO.class)
+                .eq(TemplatedVmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                .find();
+        if (templatedVm != null) {
+            APIConvertVmInstanceToTemplatedVmInstanceEvent event = new APIConvertVmInstanceToTemplatedVmInstanceEvent(msg.getId());
+            event.setInventory(TemplatedVmInstanceInventory.valueOf(templatedVm));
+            bus.publish(event);
+            throw new StopRoutingException();
+        }
+
+        boolean isTemplatedCache = Q.New(TemplatedVmInstanceCacheVO.class).eq(TemplatedVmInstanceCacheVO_.cacheVmInstanceUuid, msg.getVmInstanceUuid()).isExists();
+        if (isTemplatedCache) {
+            throw new ApiMessageInterceptionException(operr("templated vm cache[uuid:%s] cannot be convert to templated vm",
+                    msg.getVmInstanceUuid()));
+        }
+
+        List<String> sharedVolumeUuids = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .eq(VolumeVO_.isShareable, true)
+                .select(VolumeVO_.uuid)
+                .listValues();
+        if (!sharedVolumeUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr(
+                    "vm[uuid:%s] cannot be convert to templated vm while shared volume[uuids:%s] attached",
+                    msg.getVmInstanceUuid(), sharedVolumeUuids));
+        }
     }
 
     private void validate(APIGetVmUptimeMsg msg) {
@@ -494,12 +543,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     return;
                 }
 
-                boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
-                if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).notEq(VmInstanceVO_.uuid, msg.getUuid()).isExists()) {
-                    throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
-                            msg.getName()));
-                }
-
                 Integer cpuSum = msg.getCpuNum();
                 Long memorySize = msg.getMemorySize();
 
@@ -543,7 +586,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }.execute();
     }
-
 
     private void validate(APIGetInterdependentL3NetworksImagesMsg msg) {
         if (msg.getL3NetworkUuids() == null && msg.getImageUuid() == null) {
@@ -1319,11 +1361,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(NewVmInstanceMessage2 msg) {
         validateInstanceSettings(msg);
-        boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
-        if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).isExists()) {
-            throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
-                    msg.getName()));
-        }
 
         Set<String> macs = new HashSet<>();
         if (null != msg.getSystemTags()) {

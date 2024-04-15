@@ -329,6 +329,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
+			put("org.zstack.header.vm.TemplatedVmInstanceInventory", "org.zstack.sdk.TemplatedVmInstanceInventory");
 			put("org.zstack.header.vm.VdiPortInfo", "org.zstack.sdk.VdiPortInfo");
 			put("org.zstack.header.vm.VirtualizerInfo", "org.zstack.sdk.VirtualizerInfo");
 			put("org.zstack.header.vm.VirtualizerInfoInventory", "org.zstack.sdk.VirtualizerInfoInventory");
@@ -1198,6 +1199,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TaskInfo", "org.zstack.header.core.progress.TaskInfo");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
 			put("org.zstack.sdk.TemplateConfigInventory", "org.zstack.templateConfig.TemplateConfigInventory");
+			put("org.zstack.sdk.TemplatedVmInstanceInventory", "org.zstack.header.vm.TemplatedVmInstanceInventory");
 			put("org.zstack.sdk.Threshold", "org.zstack.drs.api.Threshold");
 			put("org.zstack.sdk.TrashCleanupResult", "org.zstack.header.core.trash.TrashCleanupResult");
 			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");

@@ -112,7 +112,8 @@ public abstract class AbstractVmInstance implements VmInstance {
                 FlattenVmInstanceMsg.class.getName(),
                 APIFlattenVmInstanceMsg.class.getName(),
                 CancelFlattenVmInstanceMsg.class.getName(),
-                APISetVmBootVolumeMsg.class.getName()
+                APISetVmBootVolumeMsg.class.getName(),
+                APIConvertVmInstanceToTemplatedVmInstanceMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Unknown,
