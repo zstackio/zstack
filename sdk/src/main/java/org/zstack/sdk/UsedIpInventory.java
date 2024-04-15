@@ -68,11 +68,11 @@ public class UsedIpInventory  {
         return this.usedFor;
     }
 
-    public long ipInLong;
-    public void setIpInLong(long ipInLong) {
+    public java.lang.Long ipInLong;
+    public void setIpInLong(java.lang.Long ipInLong) {
         this.ipInLong = ipInLong;
     }
-    public long getIpInLong() {
+    public java.lang.Long getIpInLong() {
         return this.ipInLong;
     }
 

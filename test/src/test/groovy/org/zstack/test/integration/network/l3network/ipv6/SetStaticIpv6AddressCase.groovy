@@ -2,7 +2,6 @@ package org.zstack.test.integration.network.l3network.ipv6
 
 import com.googlecode.ipv6.IPv6Address
 import org.zstack.compute.vm.StaticIpOperator
-import org.zstack.network.service.flat.FlatNetworkSystemTags
 import org.zstack.sdk.GetL3NetworkDhcpIpAddressResult
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -17,8 +16,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
-
-import java.util.stream.Collectors
 
 /**
  * Created by shixin on 2018/09/10.
@@ -155,7 +152,7 @@ class SetStaticIpv6AddressCase extends SubCase {
             }
         }
 
-        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpByVmUuid(vm.uuid)
         assert staticIpMap.get(l3_statefull.uuid) != null
         assert staticIpMap.get(l3_statefull.uuid).size() == 2
         assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
@@ -165,7 +162,7 @@ class SetStaticIpv6AddressCase extends SubCase {
             vmInstanceUuid = vm.uuid
             l3NetworkUuid = l3_statefull.uuid
         }
-        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        staticIpMap = new StaticIpOperator().getStaticIpByVmUuid(vm.uuid)
         assert staticIpMap.get(l3_statefull.uuid) == null
 
         ip4Str = ip4s.get(1)
@@ -182,7 +179,7 @@ class SetStaticIpv6AddressCase extends SubCase {
             l3NetworkUuid = l3_statefull.uuid
             staticIp = ip4Str
         }
-        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        staticIpMap = new StaticIpOperator().getStaticIpByVmUuid(vm.uuid)
         assert staticIpMap.get(l3_statefull.uuid) != null
         assert staticIpMap.get(l3_statefull.uuid).size() == 1
         assert staticIpMap.get(l3_statefull.uuid).contains(ip6Str)
@@ -192,7 +189,7 @@ class SetStaticIpv6AddressCase extends SubCase {
             l3NetworkUuid = l3_statefull.uuid
             staticIp = ip6Str
         }
-        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        staticIpMap = new StaticIpOperator().getStaticIpByVmUuid(vm.uuid)
         assert staticIpMap.get(l3_statefull.uuid) == null
 
         destroyVmInstance {
@@ -248,7 +245,7 @@ class SetStaticIpv6AddressCase extends SubCase {
                 assert ip.ip == ip6Str
             }
         }
-        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpByVmUuid(vm.uuid)
         assert staticIpMap.get(l3_statefull.uuid) != null
         assert staticIpMap.get(l3_statefull.uuid).size() == 2
         assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
@@ -266,7 +263,7 @@ class SetStaticIpv6AddressCase extends SubCase {
             l3NetworkUuid = l3_statefull.uuid
             staticIp = ip6Str
         }
-        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        staticIpMap = new StaticIpOperator().getStaticIpByVmUuid(vm.uuid)
         assert staticIpMap.get(l3_statefull.uuid) != null
         assert staticIpMap.get(l3_statefull.uuid).size() == 1
         assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
@@ -334,7 +331,7 @@ class SetStaticIpv6AddressCase extends SubCase {
             }
         }
 
-        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpByVmUuid(vm.uuid)
         assert staticIpMap.get(l3_statefull.uuid) != null
         assert staticIpMap.get(l3_statefull.uuid).size() == 2
         assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
@@ -351,7 +348,7 @@ class SetStaticIpv6AddressCase extends SubCase {
             delegate.ip = ip4Str
             delegate.ip6 = ip6Str
         }
-        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        staticIpMap = new StaticIpOperator().getStaticIpByVmUuid(vm.uuid)
         assert staticIpMap.get(l3_statefull.uuid) != null
         assert staticIpMap.get(l3_statefull.uuid).size() == 2
         assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)

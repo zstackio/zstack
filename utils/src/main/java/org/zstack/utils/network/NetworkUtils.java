@@ -956,7 +956,7 @@ public class NetworkUtils {
         }
     }
 
-    public static Boolean isValidInternalAddress(String ip) {
+    public static Boolean isInternalAddress(String ip) {
         if (isIpv4Address(ip)) {
             return isAutomaticPrivateIpAddr(ip);
         } else if (IPv6NetworkUtils.isIpv6Address(ip)) {

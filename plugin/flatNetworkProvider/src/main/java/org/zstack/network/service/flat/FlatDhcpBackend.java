@@ -1337,7 +1337,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void beforeStartNewCreatedVm(VmInstanceSpec spec) {
         String providerUuid = new NetworkServiceProviderLookup().lookupUuidByType(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
 
-        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
+        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpByVmUuid(spec.getVmInventory().getUuid());
         // make sure the Flat DHCP acquired DHCP server IP before starting VMs,
         // otherwise it may not be able to get IP when lots of VMs start concurrently
         // because the logic of VM acquiring IP is ahead flat DHCP acquiring IP
