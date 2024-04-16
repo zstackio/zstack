@@ -46,6 +46,9 @@ public class CreateIAM2VirtualIDAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean withoutDefaultRole = false;
 
+    @Param(required = false, validValues = {"ZStack","OAuth2","Ldap"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -119,6 +122,7 @@ public class CreateIAM2VirtualIDAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
+        info.morphTransform = "IAM2";
         return info;
     }
 

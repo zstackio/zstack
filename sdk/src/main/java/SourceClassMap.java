@@ -540,11 +540,15 @@ public class SourceClassMap {
 			put("org.zstack.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
 			put("org.zstack.sns.platform.snmp.SNSSnmpPlatformInventory", "org.zstack.sdk.sns.platform.snmp.SNSSnmpPlatformInventory");
+			put("org.zstack.sso.header.AttributePurpose", "org.zstack.sdk.AttributePurpose");
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
 			put("org.zstack.sso.header.CasState", "org.zstack.sdk.CasState");
+			put("org.zstack.sso.header.ExtendedAttribute", "org.zstack.sdk.ExtendedAttribute");
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
 			put("org.zstack.sso.header.OAuth2TokenInventory", "org.zstack.sdk.OAuth2TokenInventory");
 			put("org.zstack.sso.header.RedirectUrlTemplate", "org.zstack.sdk.RedirectUrlTemplate");
+			put("org.zstack.sso.header.RuleAttributeType", "org.zstack.sdk.RuleAttributeType");
+			put("org.zstack.sso.header.SSOClientAttributeInventory", "org.zstack.sdk.SSOClientAttributeInventory");
 			put("org.zstack.sso.header.SSOClientInventory", "org.zstack.sdk.SSOClientInventory");
 			put("org.zstack.sso.header.SSORedirectTemplateInventory", "org.zstack.sdk.SSORedirectTemplateInventory");
 			put("org.zstack.sso.header.SSOTokenInventory", "org.zstack.sdk.SSOTokenInventory");
@@ -758,6 +762,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AppBuildSystemZoneRefInventory", "org.zstack.header.buildsystem.AppBuildSystemZoneRefInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
+			put("org.zstack.sdk.AttributePurpose", "org.zstack.sso.header.AttributePurpose");
 			put("org.zstack.sdk.AutoScalingGroupActivityInventory", "org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory");
 			put("org.zstack.sdk.AutoScalingGroupInstanceInventory", "org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory");
 			put("org.zstack.sdk.AutoScalingGroupInventory", "org.zstack.autoscaling.group.AutoScalingGroupInventory");
@@ -866,6 +871,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ErrorCode", "org.zstack.header.errorcode.ErrorCode");
 			put("org.zstack.sdk.ErrorCodeList", "org.zstack.header.errorcode.ErrorCodeList");
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
+			put("org.zstack.sdk.ExtendedAttribute", "org.zstack.sso.header.ExtendedAttribute");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
 			put("org.zstack.sdk.ExternalServiceCapabilities", "org.zstack.header.core.external.service.ExternalServiceCapabilities");
@@ -1120,8 +1126,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RootVolumeSpending", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpending");
 			put("org.zstack.sdk.RootVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpendingInventory");
 			put("org.zstack.sdk.RouterAreaInventory", "org.zstack.header.protocol.RouterAreaInventory");
+			put("org.zstack.sdk.RuleAttributeType", "org.zstack.sso.header.RuleAttributeType");
 			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
 			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
+			put("org.zstack.sdk.SSOClientAttributeInventory", "org.zstack.sso.header.SSOClientAttributeInventory");
 			put("org.zstack.sdk.SSOClientInventory", "org.zstack.sso.header.SSOClientInventory");
 			put("org.zstack.sdk.SSORedirectTemplateInventory", "org.zstack.sso.header.SSORedirectTemplateInventory");
 			put("org.zstack.sdk.SSOTokenInventory", "org.zstack.sso.header.SSOTokenInventory");

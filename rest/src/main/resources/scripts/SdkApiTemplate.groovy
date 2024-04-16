@@ -284,7 +284,9 @@ class SdkApiTemplate implements SdkTemplate {
         info.path = "${path}";
         info.needSession = ${!apiMessageClass.isAnnotationPresent(SuppressCredentialCheck.class)};
         info.needPoll = ${!APISyncCallMessage.class.isAssignableFrom(apiMessageClass)};
-        info.parameterName = "${requestAnnotation.isAction() ? StringUtils.uncapitalize(normalizeApiName()) : requestAnnotation.parameterName()}";
+        info.parameterName = "${requestAnnotation.isAction() ? StringUtils.uncapitalize(normalizeApiName()) : requestAnnotation.parameterName()}";\
+${requestAnnotation.morphTransform() ? """
+        info.morphTransform = \"${requestAnnotation.morphTransform()}\";""" : ""}
         return info;
     }
 """)

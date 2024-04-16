@@ -1,6 +1,7 @@
 package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.Constants;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.StatementEffect;
@@ -12,7 +13,7 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
-@RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class, parameterName = "params")
+@RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class, parameterName = "params", morphTransform = Constants.MORPH_TRANSFORM_IAM2)
 public class APICreateRoleMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;
