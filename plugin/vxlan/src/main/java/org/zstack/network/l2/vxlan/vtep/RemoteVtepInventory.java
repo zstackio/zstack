@@ -23,6 +23,8 @@ import java.util.List;
 public class RemoteVtepInventory {
     private String uuid;
 
+    private String clusterUuid;
+
     private String vtepIp;
 
     private Integer port;
@@ -40,6 +42,7 @@ public class RemoteVtepInventory {
 
     protected RemoteVtepInventory(RemoteVtepVO vo) {
         this.setUuid(vo.getUuid());
+        this.setClusterUuid(vo.getClusterUuid());
         this.setVtepIp(vo.getVtepIp());
         this.setPort(vo.getPort());
         this.setPoolUuid(vo.getPoolUuid());
@@ -116,4 +119,11 @@ public class RemoteVtepInventory {
         this.lastOpDate = lastOpDate;
     }
 
+    public String getClusterUuid() {
+        return clusterUuid;
+    }
+
+    public void setClusterUuid(String clusterUuid) {
+        this.clusterUuid = clusterUuid;
+    }
 }
