@@ -60,8 +60,20 @@ public class LoadBalancerConstants {
     }
 
     public static enum HttpVersions {
-        h1,
-        h2
+        HTTP_1_1,
+        HTTP_2;
+
+        @Override
+        public String toString() {
+            switch (this) {
+                case HTTP_1_1:
+                    return "http1.1";
+                case HTTP_2:
+                    return "h2";
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
     }
 
     public static final String DisableLbSupportHttpCompressAlgos = "disable";
@@ -75,8 +87,8 @@ public class LoadBalancerConstants {
     );
 
     public static final List<String> LbSupportHttpVersion = asList(
-            HttpVersions.h1.toString(),
-            HttpVersions.h2.toString()
+            HttpVersions.HTTP_1_1.toString(),
+            HttpVersions.HTTP_2.toString()
     );
 
     public static final String HEALTH_CHECK_URI_REGEX = "^/[A-Za-z0-9-/.%?#&]*";

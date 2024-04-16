@@ -1077,11 +1077,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
 
             String httpVersions = String.join(",", msg.getHttpVersions());
-            String httpVersion = httpVersions.replace("h1", "http1.1");
             insertTagIfNotExisting(
                     msg, LoadBalancerSystemTags.HTTP_VERSIONS,
                     LoadBalancerSystemTags.HTTP_VERSIONS.instantiateTag(
-                            map(e(LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersion))
+                            map(e(LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersions))
                     )
             );
         }
@@ -1374,7 +1373,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
             if (hasNotSupportedHttpVersion(msg.getHttpVersions())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because the listener with protocol https only support http version:[h1, h2]"));
+                        argerr("cloud not change the loadbalancer listener, because the listener with protocol https only support http version:[%s]", LbSupportHttpVersion));
             }
         }
 
@@ -1412,7 +1411,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             return false;
         }
 
-        return !LbSupportHttpVersion.containsAll(httpVersions);
+        return !new HashSet<>(LbSupportHttpVersion).containsAll(httpVersions);
     }
 
     private boolean hasNotSupportedHttpCompressAlgos(List<String> httpCompressAlgos) {
@@ -1420,7 +1419,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             return false;
         }
 
-        return !LbSupportHttpCompressAlgos.containsAll(httpCompressAlgos);
+        return !new HashSet<>(LbSupportHttpCompressAlgos).containsAll(httpCompressAlgos);
     }
 
 

@@ -2287,8 +2287,7 @@ public class LoadBalancerBase {
 
                 if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
                     String httpVersions = String.join(",", msg.getHttpVersions());
-                    String httpVersion = httpVersions.replace("h1", "http1.1");
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_VERSIONS, msg.getUuid(), LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersion);
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_VERSIONS, msg.getUuid(), LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersions);
                 }
 
                 if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
