@@ -7,7 +7,7 @@ doc {
 
     category "network.l2"
 
-    desc """在这里填写API描述"""
+    desc """修改二层物理VlanId"""
 
     rest {
         request {
