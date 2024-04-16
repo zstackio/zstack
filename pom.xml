@@ -181,9 +181,9 @@
                 <version>5.0.5.Final</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>8.0.28</version>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>8.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
@@ -279,7 +279,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20170516</version>
+                <version>20230618</version>
             </dependency>
             <dependency>
                 <groupId>com.github.mwiede</groupId>
