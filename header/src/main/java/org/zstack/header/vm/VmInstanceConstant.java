@@ -21,6 +21,10 @@ public interface VmInstanceConstant {
 
     String TF_VIRTUAL_NIC_TYPE = "TFVNIC";
 
+    String SHUTDOWN_DETAIL_BY_HOST = "by host";
+    String SHUTDOWN_DETAIL_BY_GUEST = "by guest";
+    String SHUTDOWN_DETAIL_FINISHED = "finished";
+
     enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,
