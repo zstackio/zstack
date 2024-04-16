@@ -542,7 +542,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(SyncTaskChain chain) {
                 KvmReportVmShutdownEventReply reply = new KvmReportVmShutdownEventReply();
                 for (KvmReportVmShutdownEventExtensionPoint ext : pluginRgty.getExtensionList(KvmReportVmShutdownEventExtensionPoint.class)) {
-                    ext.kvmReportVmShutdownEvent(msg.getVmInstanceUuid());
+                    ext.kvmReportVmShutdownEvent(KvmReportVmShutdownEventExtensionPoint.ShutdownDetail.of(msg));
                 }
                 bus.reply(msg, reply);
                 chain.next();
