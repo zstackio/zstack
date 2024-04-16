@@ -11,6 +11,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -121,6 +123,11 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
                     .notEq(HostVO_.status, HostStatus.Connected).isExists()) {
                 throw new ApiMessageInterceptionException(operr("cannot change vlan for l2Network[uuid:%s]" +
                         " because there are hosts status in Connecting or Disconnected", l2.getUuid()));
+            }
+            if (!Q.New(ClusterVO.class).eq(ClusterVO_.uuid, ref.getClusterUuid())
+                    .eq(ClusterVO_.hypervisorType, L2NetworkConstant.KVM_HYPERVISOR_TYPE).isExists()) {
+                throw new ApiMessageInterceptionException(operr("cannot change vlan for l2Network[uuid:%s]" +
+                        " because it only supports an L2Network that is exclusively attached to a kvm cluster", l2.getUuid()));
             }
         });
         // pvlan isolated not support change vlan
