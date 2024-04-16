@@ -103,6 +103,9 @@ public class APILogInByAccountMsg extends APISessionMessage implements APILoginA
         if (clientInfo != null && !clientInfo.isEmpty()) {
             clientIp = StringUtils.isNotEmpty(clientInfo.get("clientIp")) ? clientInfo.get("clientIp") : "";
             clientBrowser = StringUtils.isNotEmpty(clientInfo.get("clientBrowser")) ? clientInfo.get("clientBrowser") : "";
+        } else {
+            clientIp = StringUtils.isNotBlank(msg.getClientIp()) ? msg.getClientIp() : "";
+            clientBrowser = StringUtils.isNotBlank(msg.getClientBrowser()) ? msg.getClientBrowser() : "";
         }
         String resourceUuid = reply.isSuccess() ? ((APILogInReply) reply).getInventory().getUuid() : "";
         return new LoginResult(clientIp, clientBrowser, resourceUuid, SessionVO.class);
