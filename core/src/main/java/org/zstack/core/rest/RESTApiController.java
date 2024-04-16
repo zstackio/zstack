@@ -13,6 +13,7 @@ import org.zstack.header.rest.RESTApiFacade;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.RestAPIResponse;
+import org.zstack.utils.HttpServletRequestUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -49,10 +50,12 @@ public class RESTApiController {
         }
     }
 
-    private String handleByMessageType(String body) {
+    private String handleByMessageType(String body, String clientIp, String clientBrowser) {
         APIMessage amsg = null;
         try {
             amsg = (APIMessage) RESTApiDecoder.loads(body);
+            amsg.setClientIp(clientIp);
+            amsg.setClientBrowser(clientBrowser);
         } catch (Throwable t) {
             return t.getMessage();
         }
@@ -69,8 +72,10 @@ public class RESTApiController {
     @RequestMapping(value = RESTConstant.REST_API_CALL, method = {RequestMethod.POST, RequestMethod.PUT})
     public void post(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(request);
+        String clientIp = HttpServletRequestUtils.getClientIP(request);
+        String clientBrowser = HttpServletRequestUtils.getClientBrowser(request);
         try {
-            String ret = handleByMessageType(entity.getBody());
+            String ret = handleByMessageType(entity.getBody(), clientIp, clientBrowser);
             response.setStatus(HttpStatus.SC_OK);
             response.setCharacterEncoding("UTF-8");
             PrintWriter writer = response.getWriter();
@@ -84,4 +89,5 @@ public class RESTApiController {
             response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, sb.toString());
         }
     }
+
 }
