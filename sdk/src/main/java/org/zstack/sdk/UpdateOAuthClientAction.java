@@ -58,6 +58,9 @@ public class UpdateOAuthClientAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String logoutUrl;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List scopeList;
+
     @Param(required = false)
     public java.util.List systemTags;
 
