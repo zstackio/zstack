@@ -12,6 +12,14 @@ public class RemoteVtepInventory  {
         return this.uuid;
     }
 
+    public java.lang.String clusterUuid;
+    public void setClusterUuid(java.lang.String clusterUuid) {
+        this.clusterUuid = clusterUuid;
+    }
+    public java.lang.String getClusterUuid() {
+        return this.clusterUuid;
+    }
+
     public java.lang.String vtepIp;
     public void setVtepIp(java.lang.String vtepIp) {
         this.vtepIp = vtepIp;
