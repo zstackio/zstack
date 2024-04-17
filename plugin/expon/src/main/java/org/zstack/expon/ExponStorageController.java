@@ -758,7 +758,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             return;
         }
 
-        apiHelper.removeHostFromIscsiClient(iqn, client.getId());
+        retry(() -> apiHelper.removeHostFromIscsiClient(iqn, client.getId()));
     }
 
     private synchronized void unexportIscsi(String source, String clientIp) {

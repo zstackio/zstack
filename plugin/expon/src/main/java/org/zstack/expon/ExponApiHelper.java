@@ -863,4 +863,13 @@ public class ExponApiHelper {
 
         return queryVolumeSnapshot(name);
     }
+
+    public VolumeLunModule getVolumeLunDetail(String volId) {
+        GetVolumeLunDetailRequest req = new GetVolumeLunDetailRequest();
+        req.setSessionId(sessionId);
+        req.setVolId(volId);
+        GetVolumeLunDetailResponse rsp = callErrorOut(req, GetVolumeLunDetailResponse.class);
+
+        return rsp.getLunDetails().get(0);
+    }
 }
