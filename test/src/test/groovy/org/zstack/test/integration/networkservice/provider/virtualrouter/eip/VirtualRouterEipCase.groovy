@@ -115,11 +115,8 @@ class VirtualRouterEipCase extends SubCase {
         })
         assert defaultNic != null
 
-        final List<String> l3s = CollectionUtils.transformToList(vm.getVmNics(), new Function<String, VmNicInventory>() {
-            String call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid()
-            }
-        })
+        final List<String> l3s = CollectionUtils.transformAndRemoveNull(vm.getVmNics(),
+                { VmNicInventory nic -> nic.getL3NetworkUuid() })
         long count = Q.New(NetworkServiceL3NetworkRefVO.class).select()
                 .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, "DHCP")
                 .in(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3s).count()

@@ -9,14 +9,13 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,12 +39,7 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
         }
 
         String psUuid = spec.getVmInstance().getRootVolume().getPrimaryStorageUuid();
-        List<String> huuids = CollectionUtils.transformToList(candidates, new Function<String, HostVO>() {
-            @Override
-            public String call(HostVO arg) {
-                return arg.getUuid();
-            }
-        });
+        List<String> huuids = CollectionUtils.transformAndRemoveNull(candidates, ResourceVO::getUuid);
 
         long volumeSize = 0;
         List<String> volUuids = new ArrayList<>();
@@ -74,12 +68,7 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
             }
         }
 
-        candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
-            @Override
-            public HostVO call(HostVO arg) {
-                return hostUuids.contains(arg.getUuid()) ? arg : null;
-            }
-        });
+        candidates = CollectionUtils.transformAndRemoveNull(candidates, arg -> hostUuids.contains(arg.getUuid()) ? arg : null);
 
         if (candidates.isEmpty()) {
             fail(Platform.operr("no hosts can provide %s bytes for all volumes of the vm[uuid:%s]", volumeSize, spec.getVmInstance().getUuid()));

@@ -58,14 +58,11 @@ public class AccessControlListCascadeExtension extends AbstractAsyncCascadeExten
             return;
         }
 
-        List<DeleteAccessControlListMsg> msgs = CollectionUtils.transformToList(acls, new Function<DeleteAccessControlListMsg, AccessControlListInventory>() {
-            @Override
-            public DeleteAccessControlListMsg call(AccessControlListInventory arg) {
-                DeleteAccessControlListMsg msg = new DeleteAccessControlListMsg();
-                msg.setUuid(arg.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, AccessControlListConstants.SERVICE_ID, msg.getUuid());
-                return msg;
-            }
+        List<DeleteAccessControlListMsg> msgs = CollectionUtils.transformAndRemoveNull(acls, arg -> {
+            DeleteAccessControlListMsg msg = new DeleteAccessControlListMsg();
+            msg.setUuid(arg.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, AccessControlListConstants.SERVICE_ID, msg.getUuid());
+            return msg;
         });
 
         bus.send(msgs, 10, new CloudBusListCallBack(completion) {
@@ -114,12 +111,8 @@ public class AccessControlListCascadeExtension extends AbstractAsyncCascadeExten
 
     private List<AccessControlListInventory> aclFromAction(CascadeAction action) {
         if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<AccountInventory> parentIssuerContext = action.getParentIssuerContext();
+            final List<String> auuids = CollectionUtils.transformAndRemoveNull(parentIssuerContext, AccountInventory::getUuid);
 
             List<AccessControlListVO> vos = new Callable<List<AccessControlListVO>>() {
                 @Override

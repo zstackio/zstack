@@ -48,7 +48,6 @@ import org.zstack.network.service.vip.VipDeletionMsg;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -177,17 +176,13 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                final List<MigrateVmMsg> migrateVmMsgs = CollectionUtils.transformToList(toMigrate,
-                        new Function<MigrateVmMsg, VmInstanceVO>() {
-                            @Override
-                            public MigrateVmMsg call(VmInstanceVO arg) {
-                                MigrateVmMsg msg = new MigrateVmMsg();
-                                msg.setVmInstanceUuid(arg.getUuid());
-                                msg.setAvoidHostUuids(avoidHostUuids);
-                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
-                                return msg;
-                            }
-                        });
+                final List<MigrateVmMsg> migrateVmMsgs = CollectionUtils.transformAndRemoveNull(toMigrate, arg -> {
+                    MigrateVmMsg msg = new MigrateVmMsg();
+                    msg.setVmInstanceUuid(arg.getUuid());
+                    msg.setAvoidHostUuids(avoidHostUuids);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
+                    return msg;
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "migrate-appliance-vm";
@@ -221,16 +216,13 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                             return;
                         }
 
-                        List<VmInstanceDeletionMsg> msgs = CollectionUtils.transformToList(toDelete, new Function<VmInstanceDeletionMsg, VmInstanceVO>() {
-                            @Override
-                            public VmInstanceDeletionMsg call(VmInstanceVO arg) {
-                                VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
-                                msg.setIgnoreResourceReleaseFailure(true);
-                                msg.setVmInstanceUuid(arg.getUuid());
-                                msg.setTimeout(TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.DELETE_TIMEOUT.value(Long.class)));
-                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
-                                return msg;
-                            }
+                        List<VmInstanceDeletionMsg> msgs = CollectionUtils.transformAndRemoveNull(toDelete, arg -> {
+                            VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
+                            msg.setIgnoreResourceReleaseFailure(true);
+                            msg.setVmInstanceUuid(arg.getUuid());
+                            msg.setTimeout(TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.DELETE_TIMEOUT.value(Long.class)));
+                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
+                            return msg;
                         });
 
                         bus.send(msgs, 20, new CloudBusListCallBack(completion) {
@@ -301,12 +293,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         List<String> needMigrateVmUuids = applianceVmVOS.stream().map(ApplianceVmVO::getUuid).collect(Collectors.toList());
         apvms = apvms.stream().filter(apvm -> needMigrateVmUuids.contains(apvm.getUuid())).collect(Collectors.toList());
 
-        List<String> clusterUuids = CollectionUtils.transformToList(structs, new Function<String, L2NetworkDetachStruct>() {
-            @Override
-            public String call(L2NetworkDetachStruct arg) {
-                return arg.getClusterUuid();
-            }
-        });
+        List<String> clusterUuids = CollectionUtils.transformAndRemoveNull(structs, L2NetworkDetachStruct::getClusterUuid);
 
         migrateOrStopVmOnClusterDetach(apvms, clusterUuids, completion);
     }
@@ -347,12 +334,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        List<String> clusterUuids = CollectionUtils.transformToList(structs, new Function<String, PrimaryStorageDetachStruct>() {
-            @Override
-            public String call(PrimaryStorageDetachStruct arg) {
-                return arg.getClusterUuid();
-            }
-        });
+        List<String> clusterUuids = CollectionUtils.transformAndRemoveNull(structs, PrimaryStorageDetachStruct::getClusterUuid);
 
         migrateOrStopVmOnClusterDetach(vmInstanceVOs, clusterUuids, completion);
     }
@@ -516,12 +498,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                     List<String> avoidHostUuids = null;
                     if (action.getRootIssuer().equals(ClusterVO.class.getSimpleName())) {
                         List<ClusterInventory> clusters = action.getRootIssuerContext();
-                        List<String> clusterUuids = CollectionUtils.transformToList(clusters, new Function<String, ClusterInventory>() {
-                            @Override
-                            public String call(ClusterInventory arg) {
-                                return arg.getUuid();
-                            }
-                        });
+                        List<String> clusterUuids = CollectionUtils.transformAndRemoveNull(clusters, ClusterInventory::getUuid);
                         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
                         q.select(HostVO_.uuid);
                         q.add(HostVO_.clusterUuid, Op.IN, clusterUuids);
@@ -535,17 +512,14 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
                             @Override
                             public void run(final FlowTrigger trigger, Map data) {
-                                final List<GetVmMigrationTargetHostMsg> gmsgs = CollectionUtils.transformToList(apvmToMigrate, new Function<GetVmMigrationTargetHostMsg, ApplianceVmInventory>() {
-                                    @Override
-                                    public GetVmMigrationTargetHostMsg call(ApplianceVmInventory arg) {
-                                        GetVmMigrationTargetHostMsg gmsg = new GetVmMigrationTargetHostMsg();
-                                        gmsg.setVmInstanceUuid(arg.getUuid());
-                                        if (finalAvoidHostUuids != null) {
-                                            gmsg.setAvoidHostUuids(finalAvoidHostUuids);
-                                        }
-                                        bus.makeTargetServiceIdByResourceUuid(gmsg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
-                                        return gmsg;
+                                final List<GetVmMigrationTargetHostMsg> gmsgs = CollectionUtils.transformAndRemoveNull(apvmToMigrate, arg -> {
+                                    GetVmMigrationTargetHostMsg gmsg = new GetVmMigrationTargetHostMsg();
+                                    gmsg.setVmInstanceUuid(arg.getUuid());
+                                    if (finalAvoidHostUuids != null) {
+                                        gmsg.setAvoidHostUuids(finalAvoidHostUuids);
                                     }
+                                    bus.makeTargetServiceIdByResourceUuid(gmsg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
+                                    return gmsg;
                                 });
 
                                 bus.send(gmsgs, 1, new CloudBusListCallBack(trigger) {
@@ -577,15 +551,12 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                                     return;
                                 }
 
-                                List<MigrateVmMsg> mmsgs = CollectionUtils.transformToList(apvmToMigrate, new Function<MigrateVmMsg, ApplianceVmInventory>() {
-                                    @Override
-                                    public MigrateVmMsg call(ApplianceVmInventory arg) {
-                                        MigrateVmMsg mmsg = new MigrateVmMsg();
-                                        mmsg.setVmInstanceUuid(arg.getUuid());
-                                        mmsg.setAvoidHostUuids(finalAvoidHostUuids);
-                                        bus.makeTargetServiceIdByResourceUuid(mmsg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
-                                        return mmsg;
-                                    }
+                                List<MigrateVmMsg> mmsgs = CollectionUtils.transformAndRemoveNull(apvmToMigrate, arg -> {
+                                    MigrateVmMsg mmsg = new MigrateVmMsg();
+                                    mmsg.setVmInstanceUuid(arg.getUuid());
+                                    mmsg.setAvoidHostUuids(finalAvoidHostUuids);
+                                    bus.makeTargetServiceIdByResourceUuid(mmsg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
+                                    return mmsg;
                                 });
 
                                 bus.send(mmsgs, 2, new CloudBusListCallBack(trigger) {
@@ -630,17 +601,14 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                         boolean ignoreResourceReleaseFailure = ignoreReleaseResourceFailIssuers.contains(action.getParentIssuer()) ||
                                 ignoreReleaseResourceFailIssuers.contains(action.getRootIssuer());
 
-                        List<VmInstanceDeletionMsg> msgs = CollectionUtils.transformToList(apvmToDelete, new Function<VmInstanceDeletionMsg, ApplianceVmInventory>() {
-                            @Override
-                            public VmInstanceDeletionMsg call(ApplianceVmInventory arg) {
-                                VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
-                                msg.setIgnoreResourceReleaseFailure(ignoreResourceReleaseFailure);
-                                msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
-                                msg.setVmInstanceUuid(arg.getUuid());
-                                msg.setTimeout(TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.DELETE_TIMEOUT.value(Long.class)));
-                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
-                                return msg;
-                            }
+                        List<VmInstanceDeletionMsg> msgs = CollectionUtils.transformAndRemoveNull(apvmToDelete, arg -> {
+                            VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
+                            msg.setIgnoreResourceReleaseFailure(ignoreResourceReleaseFailure);
+                            msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
+                            msg.setVmInstanceUuid(arg.getUuid());
+                            msg.setTimeout(TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.DELETE_TIMEOUT.value(Long.class)));
+                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
+                            return msg;
                         });
 
                         bus.send(msgs, 20, new CloudBusListCallBack(completion) {
@@ -700,12 +668,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<HostInventory> hosts = action.getParentIssuerContext();
-            List<String> huuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
-                @Override
-                public String call(HostInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> huuids = CollectionUtils.transformAndRemoveNull(hosts, HostInventory::getUuid);
 
             Map<String, ApplianceVmVO> vmvos = new HashMap<String, ApplianceVmVO>();
             SimpleQuery<ApplianceVmVO> q = dbf.createQuery(ApplianceVmVO.class);
@@ -717,12 +680,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
             if (ClusterVO.class.getSimpleName().equals(action.getRootIssuer())) {
                 List<ClusterInventory> clusters = action.getRootIssuerContext();
-                List<String> clusterUuids = CollectionUtils.transformToList(clusters, new Function<String, ClusterInventory>() {
-                    @Override
-                    public String call(ClusterInventory arg) {
-                        return arg.getUuid();
-                    }
-                });
+                List<String> clusterUuids = CollectionUtils.transformAndRemoveNull(clusters, ClusterInventory::getUuid);
                 q = dbf.createQuery(ApplianceVmVO.class);
                 q.add(ApplianceVmVO_.clusterUuid, Op.IN, clusterUuids);
                 lst = q.list();
@@ -731,12 +689,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             } else if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
                 List<ZoneInventory> zones = action.getRootIssuerContext();
-                List<String> zoneUuids = CollectionUtils.transformToList(zones, new Function<String, ZoneInventory>() {
-                    @Override
-                    public String call(ZoneInventory arg) {
-                        return arg.getUuid();
-                    }
-                });
+                List<String> zoneUuids = CollectionUtils.transformAndRemoveNull(zones, ZoneInventory::getUuid);
                 q = dbf.createQuery(ApplianceVmVO.class);
                 q.add(ApplianceVmVO_.zoneUuid, Op.IN, zoneUuids);
                 lst = q.list();
@@ -751,12 +704,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (NAME.equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
         } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> pruuids = CollectionUtils.transformToList((List<PrimaryStorageInventory>) action.getParentIssuerContext(), new Function<String, PrimaryStorageInventory>() {
-                @Override
-                public String call(PrimaryStorageInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> pruuids = CollectionUtils.transformAndRemoveNull(action.getParentIssuerContext(), PrimaryStorageInventory::getUuid);
 
             List<ApplianceVmVO> vmvos = new Callable<List<ApplianceVmVO>>() {
                 @Override
@@ -776,12 +724,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             }
         } else if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<L3NetworkInventory> l3s = action.getParentIssuerContext();
-            List<String> l3uuids = CollectionUtils.transformToList(l3s, new Function<String, L3NetworkInventory>() {
-                @Override
-                public String call(L3NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> l3uuids = CollectionUtils.transformAndRemoveNull(l3s, L3NetworkInventory::getUuid);
 
             String sql = "select apvm from ApplianceVmVO apvm where apvm.uuid in (select nic.vmInstanceUuid from VmNicVO nic where nic.l3NetworkUuid in (:l3Uuids))";
             TypedQuery<ApplianceVmVO> q = dbf.getEntityManager().createQuery(sql, ApplianceVmVO.class);
@@ -797,16 +740,16 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
-                @Override
-                public String call(IpRangeInventory arg) {
-                    if (Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, arg.getUuid()).isExists()) {
-                        return arg.getUuid();
-                    } else {
-                        return null;
-                    }
-                }
-            });
+            List<IpRangeInventory> ipRanges = action.getParentIssuerContext();
+            if (ipRanges.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            List<String> ipRangeUuidList = CollectionUtils.transform(ipRanges, IpRangeInventory::getUuid);
+            final List<String> ipruuids = Q.New(NormalIpRangeVO.class)
+                    .select(NormalIpRangeVO_.uuid)
+                    .in(NormalIpRangeVO_.uuid, ipRangeUuidList)
+                    .listValues();
 
             if (ipruuids.isEmpty()) {
                 return new ArrayList<>();
@@ -824,17 +767,10 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                     return q.getResultList();
                 }
             }.call();
-            List<String> vmUuids = vmvos.stream().map(ApplianceVmVO::getUuid).collect(Collectors.toList());
 
             // find out appliance vm whose ip is gateway of ip range (only private network match this selection)
 
-            final List<String> iprL3Uuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
-                @Override
-                public String call(IpRangeInventory arg) {
-                    return arg.getL3NetworkUuid();
-                }
-            });
-
+            final List<String> iprL3Uuids = CollectionUtils.transformAndRemoveNull(ipRanges, IpRangeInventory::getL3NetworkUuid);
             List<ApplianceVmVO> vmvos1 = new Callable<List<ApplianceVmVO>>() {
                 @Override
                 @Transactional(readOnly = true)
@@ -847,7 +783,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             }.call();
 
             if (!vmvos1.isEmpty()) {
-                for (final IpRangeInventory ipr : (List<IpRangeInventory>) action.getParentIssuerContext()) {
+                for (final IpRangeInventory ipr : ipRanges) {
                     for (ApplianceVmVO vm : vmvos1) {
                         for (VmNicVO nic : vm.getVmNics()) {
                             if (ipr.getGateway().equals(nic.getIp())) {
@@ -865,13 +801,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             if (!vmvos.isEmpty()) {
                 ret = ApplianceVmInventory.valueOf1(vmvos);
             }
-        }  else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+        } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            final List<AccountInventory> parentIssuerContext = action.getParentIssuerContext();
+            final List<String> auuids = CollectionUtils.transformAndRemoveNull(parentIssuerContext, AccountInventory::getUuid);
 
             List<ApplianceVmVO> vos = new Callable<List<ApplianceVmVO>>() {
                 @Override
