@@ -154,7 +154,6 @@
           "org.zstack.vmware.APIQueryVCenterClusterMsg",
           "org.zstack.vmware.APIQueryVCenterMsg",
           "org.zstack.vmware.APIQueryVCenterBackupStorageMsg",
-          "org.zstack.v2v.**",
           "org.zstack.header.aliyun.image.**",
           "org.zstack.network.service.portforwarding.**",
           "org.zstack.multicast.router.header.**",
