@@ -142,6 +142,8 @@ public interface KVMConstant {
     public static final String L2_PROVIDER_TYPE_OVS_DPDK = "OvsDpdk";
     public static final String L2_PROVIDER_TYPE_MACVLAN = "MacVlan";
 
+    public static final String DHCP_BIN_FILE_PATH = "/usr/local/zstack/dnsmasq";
+
     enum KvmVmState {
         NoState,
         Running,
