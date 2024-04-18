@@ -700,7 +700,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "TaskProgressVO", "TaskStepVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
-                              "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO",
+                              "HistoricalPasswordVO", "InstallPathRecycleVO",
                               "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO", "EventLogVO", "VmSchedHistoryVO",
                               "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO", "FileIntegrityVerificationVO",
                               "EncryptEntityMetadataVO", "VmInstanceDeviceAddressGroupVO", "HostOsCategoryVO", "KvmHostHypervisorMetadataVO",
