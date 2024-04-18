@@ -25,12 +25,12 @@ import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.function.FunctionNoArg;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -139,17 +139,17 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
                     continue;
                 }
 
-                List<EipVO> evos = new FunctionNoArg<List<EipVO>>() {
+                List<EipVO> evos = new Supplier<List<EipVO>>() {
                     @Override
                     @Transactional
-                    public List<EipVO> call() {
+                    public List<EipVO> get() {
                         String sql = "select eip from EipVO eip, VmNicVO nic, UsedIpVO ip where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :l3uuid and nic.uuid = eip.vmNicUuid and nic.uuid = :nicUuid";
                         Query q = dbf.getEntityManager().createQuery(sql);
                         q.setParameter("l3uuid", l3.getUuid());
                         q.setParameter("nicUuid", nic.getUuid());
                         return q.getResultList();
                     }
-                }.call();
+                }.get();
 
                 if (evos.isEmpty()) {
                     continue;

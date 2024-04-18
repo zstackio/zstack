@@ -2,7 +2,6 @@ package org.zstack.utils;
 
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.function.ListFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Method;
@@ -17,19 +16,6 @@ import java.util.stream.Stream;
 public class CollectionUtils {
     private static final CLogger logger = Utils.getLogger(CollectionUtils.class);
 
-    public static <K, V> List<K> transformToList(Collection<V> from, ListFunction<K, V> func) {
-        List<K> ret = new ArrayList<K>();
-        for (V v : from) {
-            List<K> k = func.call(v);
-            if (k == null) {
-                continue;
-            }
-            ret.addAll(k);
-        }
-
-        return ret;
-    }
-
     public static <T> List<T> getDuplicateElementsOfList(List<T> list) {
         List<T> result = new ArrayList<T>();
         Set<T> set = new HashSet<T>();
@@ -41,6 +27,10 @@ public class CollectionUtils {
         return result;
     }
 
+    /**
+     * use {@link #transformAndRemoveNull(Collection, java.util.function.Function)}
+     */
+    @Deprecated
     public static <K, V> List<K> transformToList(Collection<V> from, Function<K, V> func) {
         List<K> ret = new ArrayList<K>();
         for (V v : from) {
@@ -56,6 +46,10 @@ public class CollectionUtils {
 
     public static <FROM, TO> List<TO> transform(Collection<FROM> from, java.util.function.Function<FROM, TO> mapper) {
         return from.stream().map(mapper).collect(Collectors.toList());
+    }
+
+    public static <FROM, TO> List<TO> transformAndRemoveNull(Collection<FROM> from, java.util.function.Function<FROM, TO> mapper) {
+        return from.stream().map(mapper).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public static <T> List<T> filter(Collection<T> from, Predicate<T> tester) {
@@ -85,6 +79,10 @@ public class CollectionUtils {
         return ret;
     }
 
+    /**
+     * use {@link #findOneOrNull}
+     */
+    @Deprecated
     public static <K, V> K find(Collection<V> from, Function<K, V> func) {
         for (V v : from) {
             K k = func.call(v);

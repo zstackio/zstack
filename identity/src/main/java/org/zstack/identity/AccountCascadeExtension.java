@@ -1,7 +1,6 @@
 package org.zstack.identity;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
@@ -15,9 +14,7 @@ import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
-import javax.persistence.Query;
 import java.util.Arrays;
 import java.util.List;
 
@@ -50,14 +47,11 @@ public class AccountCascadeExtension extends AbstractAsyncCascadeExtension {
     private void handleDeletion(final CascadeAction action, final Completion completion) {
         final List<AccountInventory> ainvs = action.getParentIssuerContext();
 
-        List<AccountDeletionMsg> msgs = CollectionUtils.transformToList(ainvs, new Function<AccountDeletionMsg, AccountInventory>() {
-            @Override
-            public AccountDeletionMsg call(AccountInventory arg) {
-                AccountDeletionMsg msg = new AccountDeletionMsg();
-                msg.setUuid(arg.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, AccountConstant.SERVICE_ID, arg.getUuid());
-                return msg;
-            }
+        List<AccountDeletionMsg> msgs = CollectionUtils.transformAndRemoveNull(ainvs, arg -> {
+            AccountDeletionMsg msg = new AccountDeletionMsg();
+            msg.setUuid(arg.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, AccountConstant.SERVICE_ID, arg.getUuid());
+            return msg;
         });
 
         bus.send(msgs, 10, new CloudBusListCallBack(completion) {
@@ -72,12 +66,7 @@ public class AccountCascadeExtension extends AbstractAsyncCascadeExtension {
                     }
                 }
 
-                List<String> uuids = CollectionUtils.transformToList(ainvs, new Function<String, AccountInventory>() {
-                    @Override
-                    public String call(AccountInventory arg) {
-                        return arg.getUuid();
-                    }
-                });
+                List<String> uuids = CollectionUtils.transformAndRemoveNull(ainvs, AccountInventory::getUuid);
 
                 dbf.removeByPrimaryKeys(uuids, AccountVO.class);
                 completion.success();
