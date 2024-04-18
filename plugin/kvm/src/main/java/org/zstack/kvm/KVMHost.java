@@ -5272,6 +5272,13 @@ public class KVMHost extends HostBase implements Host {
                         checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                         checker.addSrcDestPair(srcPath, destPath);
 
+                        SshFileExistChecker dhcpChecker = new SshFileExistChecker();
+                        dhcpChecker.setUsername(getSelf().getUsername());
+                        dhcpChecker.setPassword(getSelf().getPassword());
+                        dhcpChecker.setSshPort(getSelf().getPort());
+                        dhcpChecker.setTargetIp(getSelf().getManagementIp());
+                        dhcpChecker.setFilePath(KVMConstant.DHCP_BIN_FILE_PATH);
+
                         SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
                         chronyChecker.setTargetIp(getSelf().getManagementIp());
                         chronyChecker.setUsername(getSelf().getUsername());
@@ -5301,6 +5308,7 @@ public class KVMHost extends HostBase implements Host {
 
                         AnsibleRunner runner = new AnsibleRunner();
                         runner.installChecker(checker);
+                        runner.installChecker(dhcpChecker);
                         runner.installChecker(chronyChecker);
                         runner.installChecker(repoChecker);
                         runner.installChecker(callbackChecker);
