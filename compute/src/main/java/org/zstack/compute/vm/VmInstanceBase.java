@@ -3253,6 +3253,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APITakeVmConsoleScreenshotMsg) msg);
         } else if (msg instanceof APIGetVmUptimeMsg) {
             handle((APIGetVmUptimeMsg) msg);
+        } else if (msg instanceof APIConvertVmInstanceToTemplateVmInstanceMsg) {
+            handle((APIConvertVmInstanceToTemplateVmInstanceMsg) msg);
+        } else if (msg instanceof APIConvertTemplateVmInstanceToVmInstanceMsg) {
+            handle((APIConvertTemplateVmInstanceToVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -3262,6 +3266,53 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(APIConvertTemplateVmInstanceToVmInstanceMsg msg) {
+        APIConvertTemplateVmInstanceToVmInstanceEvent event = new APIConvertTemplateVmInstanceToVmInstanceEvent(msg.getId());
+
+        String templateVmInstanceUuid = msg.getTemplateVmInstanceUuid();
+        boolean exists = Q.New(TemplateVmInstanceCacheVO.class)
+                .eq(TemplateVmInstanceCacheVO_.templateVmInstanceUuid, templateVmInstanceUuid)
+                .isExists();
+        if (!exists) {
+            dbf.removeByPrimaryKey(templateVmInstanceUuid, TemplateVmInstanceVO.class);
+        }
+
+        UpdateVmInstanceMsg umsg = new UpdateVmInstanceMsg();
+        umsg.setUuid(templateVmInstanceUuid);
+        umsg.setName(msg.getName());
+        bus.makeTargetServiceIdByResourceUuid(umsg, VmInstanceConstant.SERVICE_ID, umsg.getVmInstanceUuid());
+        bus.send(umsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setError(reply.getError());
+                    bus.publish(event);
+                    return;
+                }
+                VmInstanceInventory inventory = ((UpdateVmInstanceReply) reply.castReply()).getInventory();
+                event.setInventory(inventory);
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(APIConvertVmInstanceToTemplateVmInstanceMsg msg) {
+        refreshVO();
+        ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (error != null) {
+            throw new OperationFailureException(error);
+        }
+
+        APIConvertVmInstanceToTemplateVmInstanceEvent event = new APIConvertVmInstanceToTemplateVmInstanceEvent(msg.getId());
+        TemplateVmInstanceVO templateVmInstance = new TemplateVmInstanceVO();
+        templateVmInstance.setUuid(msg.getVmInstanceUuid());
+        dbf.persistAndRefresh(templateVmInstance);
+
+        TemplateVmInstanceInventory inventory = TemplateVmInstanceInventory.valueOf(templateVmInstance);
+        event.setInventory(inventory);
+        bus.publish(event);
     }
 
     private void handle(APIGetVmUptimeMsg msg) {
@@ -5296,7 +5347,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     Boolean unique = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
                     boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).notEq(VmInstanceVO_.uuid, self.getUuid()).isExists();
                     if (unique && exists) {
-                        trigger.fail(operr("could not create vm, a vm with the name [%s] already exists", msg.getName()));
+                        trigger.fail(operr("the vm with the name [%s] already exists", msg.getName()));
                         return;
                     }
                     self.setName(msg.getName());

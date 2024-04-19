@@ -1097,6 +1097,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     protected void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
+        boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
+        if (uniqueVmName) {
+            boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).isExists();
+            if (exists) {
+                throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
+                        msg.getName()));
+            }
+        }
+
         pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(extensionPoint -> {
             extensionPoint.preCreateVmInstance(msg);
         });
@@ -1154,27 +1163,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     otherDisks = msg.getDiskAOs().stream().filter(diskAO -> !diskAO.isBoot()).collect(Collectors.toList());
                     setDiskAOsName(otherDisks);
                     attachOtherDisk = !otherDisks.isEmpty();
-                }
-
-                if (VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class)) {
-                    flow(new Flow() {
-                        String __name__ = String.format("check-unique-name-for-vm-%s", finalVo.getUuid());
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, finalVo.getName()).notEq(VmInstanceVO_.uuid, finalVo.getUuid()).isExists();
-                            if (exists) {
-                                trigger.fail(operr("could not create vm, a vm with the name [%s] already exists", msg.getName()));
-                                return;
-                            }
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void rollback(FlowRollback trigger, Map data) {
-                            trigger.rollback();
-                        }
-                    });
                 }
 
                 flow(new Flow() {
