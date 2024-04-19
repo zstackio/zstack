@@ -322,6 +322,12 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
         }
 
         @Override
+        public int hashCode() {
+            return Objects.hash(type, remoteSecurityGroupUuid,
+                    ipVersion, protocol, srcIpRange, dstIpRange, dstPortRange, action);
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (o == this) {
                 return true;

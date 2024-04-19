@@ -284,11 +284,12 @@ public class TfPortClient {
             client.create(instanceObj);
         } catch (Exception e) { // Exception......
             VirtualMachine dbInstanceObj = null;
-            if (instanceObj.getUuid() != null) {
-                dbInstanceObj = (VirtualMachine) client.findById(VirtualMachine.class, instanceObj.getUuid());
-            } else {
-                dbInstanceObj = (VirtualMachine) client.findByFQN(VirtualMachine.class, instanceObj.getName());
-
+            if (instanceObj != null) {
+                if (instanceObj.getUuid() != null) {
+                    dbInstanceObj = (VirtualMachine) client.findById(VirtualMachine.class, instanceObj.getUuid());
+                } else {
+                    dbInstanceObj = (VirtualMachine) client.findByFQN(VirtualMachine.class, instanceObj.getName());
+                }
             }
             if (dbInstanceObj != null) {
                 if (baremeetal && !Objects.equals(dbInstanceObj.getServerType(), "baremetal-server")) {

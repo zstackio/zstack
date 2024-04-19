@@ -33,11 +33,11 @@ public class TfHttpClient<T> {
     private TimeUnit unit;
     private Long timeout;
     private String tf_ip;
-    private Map<String, String> headers = new HashMap<String, String>() {
-        {
-            put("Content-Type", "application/json; charset=UTF-8");
-        }
-    };
+    private Map<String, String> headers;
+    {
+        headers = new HashMap<>();
+        headers.put("Content-Type", "application/json; charset=UTF-8");
+    }
 
     public TfHttpClient(String ip) {
         this.tf_ip = ip;
