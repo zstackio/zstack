@@ -169,36 +169,46 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APITakeVmConsoleScreenshotMsg) msg);
         } else if (msg instanceof APIGetVmUptimeMsg) {
             validate((APIGetVmUptimeMsg) msg);
-        } else if (msg instanceof APIConvertVmInstanceToTemplateVmInstanceMsg) {
-            validate((APIConvertVmInstanceToTemplateVmInstanceMsg) msg);
-        } else if (msg instanceof APIConvertTemplateVmInstanceToVmInstanceMsg) {
-            validate((APIConvertTemplateVmInstanceToVmInstanceMsg) msg);
+        } else if (msg instanceof APIConvertVmInstanceToTemplatedVmInstanceMsg) {
+            validate((APIConvertVmInstanceToTemplatedVmInstanceMsg) msg);
+        } else if (msg instanceof APIConvertTemplatedVmInstanceToVmInstanceMsg) {
+            validate((APIConvertTemplatedVmInstanceToVmInstanceMsg) msg);
+        } else if (msg instanceof APIDeleteTemplatedVmInstanceMsg) {
+            validate((APIDeleteTemplatedVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
     }
 
-    private void validate(APIConvertTemplateVmInstanceToVmInstanceMsg msg) {
-        if (msg.getVmInstanceUuid() == null) {
-            msg.setVmInstanceUuid(msg.getTemplateVmInstanceUuid());
+    private void validate(APIDeleteTemplatedVmInstanceMsg msg) {
+        if (!dbf.isExist(msg.getUuid(), TemplatedVmInstanceVO.class)) {
+            APIDeleteTemplatedVmInstanceEvent evt = new APIDeleteTemplatedVmInstanceEvent(msg.getId());
+            bus.publish(evt);
+            throw new StopRoutingException();
         }
     }
 
-    private void validate(APIConvertVmInstanceToTemplateVmInstanceMsg msg) {
-        TemplateVmInstanceVO templateVm = Q.New(TemplateVmInstanceVO.class)
-                .eq(TemplateVmInstanceVO_.uuid, msg.getVmInstanceUuid())
+    private void validate(APIConvertTemplatedVmInstanceToVmInstanceMsg msg) {
+        if (msg.getVmInstanceUuid() == null) {
+            msg.setVmInstanceUuid(msg.getTemplatedVmInstanceUuid());
+        }
+    }
+
+    private void validate(APIConvertVmInstanceToTemplatedVmInstanceMsg msg) {
+        TemplatedVmInstanceVO templatedVm = Q.New(TemplatedVmInstanceVO.class)
+                .eq(TemplatedVmInstanceVO_.uuid, msg.getVmInstanceUuid())
                 .find();
-        if (templateVm != null) {
-            APIConvertVmInstanceToTemplateVmInstanceEvent event = new APIConvertVmInstanceToTemplateVmInstanceEvent(msg.getId());
-            event.setInventory(TemplateVmInstanceInventory.valueOf(templateVm));
+        if (templatedVm != null) {
+            APIConvertVmInstanceToTemplatedVmInstanceEvent event = new APIConvertVmInstanceToTemplatedVmInstanceEvent(msg.getId());
+            event.setInventory(TemplatedVmInstanceInventory.valueOf(templatedVm));
             bus.publish(event);
             throw new StopRoutingException();
         }
 
-        boolean isTemplateCache = Q.New(TemplateVmInstanceCacheVO.class).eq(TemplateVmInstanceCacheVO_.cacheVmInstanceUuid, msg.getVmInstanceUuid()).isExists();
-        if (isTemplateCache) {
-            throw new ApiMessageInterceptionException(operr("vm template cache[uuid:%s] cannot be convert to vm template",
+        boolean isTemplatedCache = Q.New(TemplatedVmInstanceCacheVO.class).eq(TemplatedVmInstanceCacheVO_.cacheVmInstanceUuid, msg.getVmInstanceUuid()).isExists();
+        if (isTemplatedCache) {
+            throw new ApiMessageInterceptionException(operr("templated vm cache[uuid:%s] cannot be convert to templated vm",
                     msg.getVmInstanceUuid()));
         }
 
@@ -209,7 +219,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 .listValues();
         if (!sharedVolumeUuids.isEmpty()) {
             throw new ApiMessageInterceptionException(operr(
-                    "vm[uuid:%s] cannot be convert to vm template while shared volume[uuids:%s] attached",
+                    "vm[uuid:%s] cannot be convert to templated vm while shared volume[uuids:%s] attached",
                     msg.getVmInstanceUuid(), sharedVolumeUuids));
         }
     }

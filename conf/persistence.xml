@@ -74,8 +74,9 @@
         <class>org.zstack.header.network.service.NetworkServiceL3NetworkRefVO</class>
         <class>org.zstack.header.network.service.NetworkServiceProviderL2NetworkRefVO</class>
         <class>org.zstack.header.network.service.NetworkServiceTypeVO</class>
-        <class>org.zstack.header.vm.TemplateVmInstanceCacheVO</class>
-        <class>org.zstack.header.vm.TemplateVmInstanceVO</class>
+        <class>org.zstack.header.vm.TemplatedVmInstanceCacheVO</class>
+        <class>org.zstack.header.vm.TemplatedVmInstanceRefVO</class>
+        <class>org.zstack.header.vm.TemplatedVmInstanceVO</class>
         <class>org.zstack.header.vm.VmInstanceVO</class>
         <class>org.zstack.header.vm.VmInstanceEO</class>
         <class>org.zstack.header.vm.VmInstanceSequenceNumberVO</class>
