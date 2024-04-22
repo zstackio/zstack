@@ -18,6 +18,7 @@ import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
@@ -51,7 +52,6 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
-import org.zstack.utils.network.NicIpAddressInfo;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -60,7 +60,8 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionUtils.getDuplicateElementsOfList;
 
 /**
@@ -293,38 +294,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
-        if (msg.getRequiredIpMap() != null) {
+        Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpBySystemTag(msg.getSystemTags());
+        if (msg.getStaticIp() != null) {
             staticIps.computeIfAbsent(msg.getDestL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getDestL3NetworkUuid());
-            List<NormalIpRangeVO> iprs = iprq.list();
-
-            boolean found = false;
-            for (NormalIpRangeVO ipr : iprs) {
-                if (!ipr.getIpVersion().equals(NetworkUtils.getIpversion(msg.getStaticIp()))) {
-                    continue;
-                }
-
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!l3NetworkVO.getEnableIPAM()) {
-                found = true;
-            }
-
-            if (!found) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getDestL3NetworkUuid()));
-            }
-
-            SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
-            uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getDestL3NetworkUuid());
-            uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
-            if (uq.isExists()) {
-                throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getDestL3NetworkUuid()));
+            String staticIpTag = VmSystemTags.STATIC_IP.instantiateTag(map(
+                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getDestL3NetworkUuid()),
+                    e(VmSystemTags.STATIC_IP_TOKEN, msg.getStaticIp())));
+            if (msg.getSystemTags() == null) {
+                msg.setSystemTags(Collections.singletonList(staticIpTag));
+            } else {
+                msg.getSystemTags().add(staticIpTag);
             }
         }
 
@@ -339,36 +318,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, l3Uuid);
             List<NormalIpRangeVO> iprs = iprq.list();
 
-            boolean found = false;
             for (String staticIp : ips) {
-                int ipVersion = IPv6Constants.IPv4;
-                if (IPv6NetworkUtils.isIpv6Address(staticIp)) {
-                    ipVersion = IPv6Constants.IPv6;
-                }
-                for (NormalIpRangeVO ipr : iprs) {
-                    if (ipVersion != ipr.getIpVersion()) {
-                        continue;
-                    }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!l3NetworkVO.getEnableIPAM()) {
-                    found = true;
-                }
-
-                if (!found) {
-                    throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
-                }
-
-                SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
-                uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getDestL3NetworkUuid());
-                uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
-                if (uq.isExists()) {
-                    throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", staticIp, l3Uuid));
-                }
+                checkIfIpInRange(staticIp, iprs, l3Uuid, l3NetworkVO.getEnableIPAM());
+                checkIfIpOccupied(staticIp, l3Uuid, l3NetworkVO.getEnableIPAM());
             }
         }
 
@@ -377,16 +329,40 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
             msg.getRequiredIpMap().put(e.getKey(), e.getValue());
         }
+    }
 
-        final Map<String, NicIpAddressInfo> nicNetworkInfo = new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags());
-        NicIpAddressInfo nicIpAddressInfo = nicNetworkInfo.get(msg.getDestL3NetworkUuid());
-        if (nicIpAddressInfo != null) {
-            if (!nicIpAddressInfo.ipv4Address.isEmpty() && Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, nicIpAddressInfo.ipv4Address).eq(UsedIpVO_.l3NetworkUuid, msg.getDestL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", nicIpAddressInfo.ipv4Address, msg.getDestL3NetworkUuid()));
+    private void checkIfIpInRange(String ip, List<NormalIpRangeVO> ipRanges, String l3Uuid, boolean enableIPAM) {
+        boolean found = false;
+        for (NormalIpRangeVO ipr : ipRanges) {
+            if (!NetworkUtils.getIpversion(ip).equals(ipr.getIpVersion())) {
+                continue;
             }
-            if (!nicIpAddressInfo.ipv6Address.isEmpty() && Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Address)).eq(UsedIpVO_.l3NetworkUuid, msg.getDestL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", nicIpAddressInfo.ipv6Address, msg.getDestL3NetworkUuid()));
+            if (NetworkUtils.isInRange(ip, ipr.getStartIp(), ipr.getEndIp())) {
+                found = true;
+                break;
             }
+        }
+
+        if (!enableIPAM) {
+            found = true;
+        }
+
+        if (!found) {
+            throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", ip, l3Uuid));
+        }
+    }
+
+    private void checkIfIpOccupied(String ip, String l3Uuid, boolean enableIPAM) {
+        boolean isIpOccupied = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3Uuid)
+                .eq(UsedIpVO_.ip, ip)
+                .isExists();
+        ErrorCode err = argerr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", ip, l3Uuid);
+        if (isIpOccupied) {
+            if (enableIPAM) {
+                throw new ApiMessageInterceptionException(err);
+            }
+            logger.warn(err.getDetails());
         }
     }
 
@@ -823,28 +799,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             List<NormalIpRangeVO> iprs = iprq.list();
 
-            boolean found = false;
-            for (NormalIpRangeVO ipr : iprs) {
-                if (NetworkUtils.isInRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!t.get(4, Boolean.class)) {
-                found = true;
-            }
-
-            if (!found) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
-            }
-
-            SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
-            uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            uq.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
-            if (uq.isExists()) {
-                throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
-            }
+            checkIfIpInRange(msg.getIp(), iprs, msg.getL3NetworkUuid(), t.get(4, Boolean.class));
+            checkIfIpOccupied(msg.getIp(), msg.getL3NetworkUuid(), t.get(4, Boolean.class));
         }
     }
 
@@ -915,44 +871,22 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
+        Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpBySystemTag(msg.getSystemTags());
+        if (msg.getStaticIp() != null) {
+            staticIps.computeIfAbsent(msg.getL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
+            String staticIpTag = VmSystemTags.STATIC_IP.instantiateTag(map(
+                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                    e(VmSystemTags.STATIC_IP_TOKEN, msg.getStaticIp())));
+            if (msg.getSystemTags() == null) {
+                msg.setSystemTags(Collections.singletonList(staticIpTag));
+            } else {
+                msg.getSystemTags().add(staticIpTag);
+            }
+        }
         msg.setNicNetworkInfo(new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags()).entrySet()
                 .stream()
                 .filter(entry -> Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, entry.getKey()).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-        if (msg.getStaticIp() != null) {
-            staticIps.computeIfAbsent(msg.getL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            List<NormalIpRangeVO> iprs = iprq.list();
-
-            boolean found = false;
-            for (NormalIpRangeVO ipr : iprs) {
-                if (!ipr.getIpVersion().equals(NetworkUtils.getIpversion(msg.getStaticIp()))) {
-                    continue;
-                }
-
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!l3NetworkVO.getEnableIPAM()) {
-                found = true;
-            }
-
-            if (!found) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
-            }
-
-            SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
-            uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
-            if (uq.isExists()) {
-                throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
-            }
-        }
 
         for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
             if (!newAddedL3Uuids.contains(e.getKey())) {
@@ -965,36 +899,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, l3Uuid);
             List<NormalIpRangeVO> iprs = iprq.list();
 
-            boolean found = false;
             for (String staticIp : ips) {
-                int ipVersion = IPv6Constants.IPv4;
-                if (IPv6NetworkUtils.isIpv6Address(staticIp)) {
-                    ipVersion = IPv6Constants.IPv6;
-                }
-                for (NormalIpRangeVO ipr : iprs) {
-                    if (ipVersion != ipr.getIpVersion()) {
-                        continue;
-                    }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!l3NetworkVO.getEnableIPAM()) {
-                    found = true;
-                }
-
-                if (!found) {
-                    throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
-                }
-
-                SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
-                uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                uq.add(UsedIpVO_.ip, Op.EQ, staticIp);
-                if (uq.isExists()) {
-                    throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", staticIp, l3Uuid));
-                }
+                checkIfIpInRange(staticIp, iprs, l3Uuid, l3NetworkVO.getEnableIPAM());
+                checkIfIpOccupied(staticIp, l3Uuid, l3NetworkVO.getEnableIPAM());
             }
         }
 

@@ -8,7 +8,6 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.sugonSdnController.controller.api.Status;
-import org.zstack.sugonSdnController.controller.api.types.KeyValuePair;
 import org.zstack.sugonSdnController.controller.api.types.KeyValuePairs;
 import org.zstack.sugonSdnController.controller.api.types.VirtualMachineInterface;
 import org.zstack.sugonSdnController.controller.neutronClient.TfPortClient;
@@ -50,7 +49,7 @@ public class TfPortService {
     public TfPortResponse createTfPort(String tfPortUUid, VmInstanceInventory vm, L3NetworkInventory l3) {
         MacOperator mo = new MacOperator();
         String customMac = mo.getMac(vm.getUuid(), l3.getUuid());
-        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(vm.getUuid());
+        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpByVmUuid(vm.getUuid());
         Map<Integer, String> nicStaticIpMap = new StaticIpOperator().getNicStaticIpMap(vmStaticIps.get(l3.getUuid()));
 
         // ignoring ipv6 now , so if the user didn't assign ip on the webpage,then useTf Ip;
