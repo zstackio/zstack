@@ -28,6 +28,10 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
     @NoJsonSchema
     @APINoSee
     private SessionInventory session;
+    @APINoSee
+    private String clientIp;
+    @APINoSee
+    private String clientBrowser;
 
     public SessionInventory getSession() {
         return session;
@@ -231,5 +235,21 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
 
     public String getOperator() {
         return null;
+    }
+
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
+    }
+
+    public String getClientBrowser() {
+        return clientBrowser;
+    }
+
+    public void setClientBrowser(String clientBrowser) {
+        this.clientBrowser = clientBrowser;
     }
 }
