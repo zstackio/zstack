@@ -4,4 +4,5 @@ public enum AdditionalLicenseType {
 	cube,
 	edge,
 	zstone,
+	zaku,
 }
