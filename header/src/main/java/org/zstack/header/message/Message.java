@@ -44,10 +44,6 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
      */
     @APINoSee
     private long createdTime;
-    @APINoSee
-    private String clientIp;
-    @APINoSee
-    private String clientBrowser;
 
     protected static String uuid() {
         String uuidForExample = System.getProperty(Constants.UUID_FOR_EXAMPLE);
@@ -178,21 +174,5 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
             Class clz = Class.forName(type);
             setProperty(this, p, rehashObject(getProperty(raw, p), clz));
         }
-    }
-
-    public String getClientIp() {
-        return clientIp;
-    }
-
-    public void setClientIp(String clientIp) {
-        this.clientIp = clientIp;
-    }
-
-    public String getClientBrowser() {
-        return clientBrowser;
-    }
-
-    public void setClientBrowser(String clientBrowser) {
-        this.clientBrowser = clientBrowser;
     }
 }
