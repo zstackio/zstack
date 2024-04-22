@@ -266,8 +266,16 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
         }
     }
 
+    private void cleanUp() {
+        pluginMetadata.clear();
+        pluginInstances.clear();
+        pluginRegisters.clear();
+        pluginValidators.clear();
+    }
+
     private void handle(APIRefreshPluginDriversMsg msg) {
         APIRefreshPluginDrviersEvent event = new APIRefreshPluginDrviersEvent(msg.getId());
+        cleanUp();
         collectPluginProtocolMetadata();
         collectPluginValidators();
         loadPluginsFromMetadata();

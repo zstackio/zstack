@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT
 )
 public class APIRefreshPluginDriversMsg extends APIMessage {
-    @APIParam
+    @APIParam(required = false)
     private String name;
 
     public String getName() {
