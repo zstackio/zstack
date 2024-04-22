@@ -62,4 +62,7 @@ public class KVMSystemTags {
 
     public static final String LIBVIRT_CAPABILITIES_TOKEN = "libvirtCapabilities";
     public static PatternedSystemTag LIBVIRT_CAPABILITIES = new PatternedSystemTag(String.format("libvirtCapabilities::{%s}", LIBVIRT_CAPABILITIES_TOKEN), HostVO.class);
+
+
+    public static SystemTag FORCE_DEPLOYMENT_ONCE = new SystemTag("force::deployment::once", HostVO.class);
 }
