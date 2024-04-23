@@ -4166,7 +4166,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void checkIpConflict(final String vmUuid) {
         StaticIpOperator ipo = new StaticIpOperator();
 
-        for (Map.Entry<String, List<String>> entry : ipo.getStaticIpbyVmUuid(vmUuid).entrySet()) {
+        for (Map.Entry<String, List<String>> entry : ipo.getStaticIpByVmUuid(vmUuid).entrySet()) {
             for (String ip : entry.getValue()) {
                 if (ipExists(entry.getKey(), ip)) {
                     ipo.deleteStaticIpByVmUuidAndL3Uuid(vmUuid, entry.getKey());
@@ -6324,7 +6324,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void allocateIp(L3NetworkInventory l3, VmNicInventory nic,final ReturnValueCompletion<List<UsedIpInventory>> completion) {
         L3NetworkInventory nw = l3;
-        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(getSelf().getUuid());
+        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpByVmUuid(getSelf().getUuid());
         List<Integer> ipVersions = nw.getIpVersions();
         Map<Integer, String> nicStaticIpMap = new StaticIpOperator().getNicStaticIpMap(vmStaticIps.get(nw.getUuid()));
 
