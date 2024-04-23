@@ -410,6 +410,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>upgrade-hack</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>yunshan</artifactId>
                     <version>${project.version}</version>
                 </dependency>

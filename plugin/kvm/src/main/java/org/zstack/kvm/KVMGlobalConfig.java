@@ -130,4 +130,9 @@ public class KVMGlobalConfig {
     @GlobalConfigDef(defaultValue = "none", description = "enable host ksm")
     @BindResourceConfig({HostVO.class})
     public static GlobalConfig HOST_KSM = new GlobalConfig(CATEGORY, "host.ksm");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", description = "restart kvm host libvirtd service or not")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE = new GlobalConfig(CATEGORY, "reconnect.host.restart.libvirtd.service");
 }

@@ -114,6 +114,7 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
+import static org.zstack.kvm.KvmHostUpdateOsExtensionPoint.UPDATE_OS_RSP;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -5364,6 +5365,11 @@ public class KVMHost extends HostBase implements Host {
                             runner.setForceRun(true);
                         }
 
+                        if (KVMSystemTags.FORCE_DEPLOYMENT_ONCE.hasTag(self.getUuid())) {
+                            runner.setForceRun(true);
+                            KVMSystemTags.FORCE_DEPLOYMENT_ONCE.delete(self.getUuid());
+                        }
+
                         String enableKsm = rcf.getResourceConfigValue(KVMGlobalConfig.HOST_KSM, self.getUuid(), String.class);
                         kvmHostConfigChecker.setRequireKsmCheck(enableKsm);
                         deployArguments.setIsEnableKsm(enableKsm);
@@ -5372,6 +5378,7 @@ public class KVMHost extends HostBase implements Host {
                             deployArguments.setBridgeDisableIptables("true");
                         }
 
+                        deployArguments.setRestartLibvirtd(rcf.getResourceConfigValue(KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE, self.getUuid(), String.class));
                         deployArguments.setHostname(String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
                         deployArguments.setSkipPackages(info.getSkipPackages());
                         deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
@@ -5752,6 +5759,11 @@ public class KVMHost extends HostBase implements Host {
 
                 createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
                 createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
+
+                if (ret.getLibvirtPackageVersion() != null) {
+                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_PACKAGE_VERSION, KVMSystemTags.LIBVIRT_PACKAGE_VERSION_TOKEN, ret.getLibvirtPackageVersion().trim(), false);
+                }
+
                 createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
                 createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
                 createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
@@ -6087,6 +6099,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(UpdateHostOSRsp ret) {
                                 if (ret.isSuccess()) {
+                                    data.put(UPDATE_OS_RSP, ret);
                                     trigger.next();
                                 } else {
                                     trigger.fail(Platform.operr("%s", ret.getError()));
@@ -6098,6 +6111,19 @@ public class KVMHost extends HostBase implements Host {
                                 trigger.fail(errorCode);
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "after-update-kvm-host-os";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (KvmHostUpdateOsExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostUpdateOsExtensionPoint.class)) {
+                            ext.afterUpdateOs(data, getSelfInventory());
+                        }
+
+                        trigger.next();
                     }
                 });
 

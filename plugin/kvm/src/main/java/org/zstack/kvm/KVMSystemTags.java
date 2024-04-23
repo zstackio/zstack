@@ -20,6 +20,9 @@ public class KVMSystemTags {
     public static final String LIBVIRT_VERSION_TOKEN = "version";
     public static PatternedSystemTag LIBVIRT_VERSION = new PatternedSystemTag(String.format("libvirt::version::{%s}", LIBVIRT_VERSION_TOKEN), HostVO.class);
 
+    public static final String LIBVIRT_PACKAGE_VERSION_TOKEN = "version";
+    public static PatternedSystemTag LIBVIRT_PACKAGE_VERSION = new PatternedSystemTag(String.format("libvirt::package::version::{%s}", LIBVIRT_PACKAGE_VERSION_TOKEN), HostVO.class);
+
     public static final String HVM_CPU_FLAG_TOKEN = "flag";
     public static PatternedSystemTag HVM_CPU_FLAG = new PatternedSystemTag(String.format("hvm::{%s}", HVM_CPU_FLAG_TOKEN), HostVO.class);
 
@@ -59,4 +62,7 @@ public class KVMSystemTags {
 
     public static final String LIBVIRT_CAPABILITIES_TOKEN = "libvirtCapabilities";
     public static PatternedSystemTag LIBVIRT_CAPABILITIES = new PatternedSystemTag(String.format("libvirtCapabilities::{%s}", LIBVIRT_CAPABILITIES_TOKEN), HostVO.class);
+
+
+    public static SystemTag FORCE_DEPLOYMENT_ONCE = new SystemTag("force::deployment::once", HostVO.class);
 }
