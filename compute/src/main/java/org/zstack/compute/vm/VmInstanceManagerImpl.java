@@ -62,7 +62,6 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
-import org.zstack.header.vm.cdrom.VmCdRomInventory;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.*;
@@ -76,6 +75,7 @@ import org.zstack.tag.*;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -90,8 +90,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static java.lang.Integer.parseInt;
-import static java.lang.Integer.valueOf;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
@@ -1736,46 +1734,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
 
                         validateHostname(sysTag, hostname);
-                    } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
-                        validateStaticIp(sysTag);
-                    } 
-                }
-            }
-
-            private void validateStaticIp(String sysTag) {
-                Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
-                String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
-                if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
-                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
-                            l3Uuid, sysTag));
-                }
-
-                String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
-                ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
-                if (!NetworkUtils.isIpv4Address(ip) && !IPv6NetworkUtils.isIpv6Address(ip)) {
-                    throw new ApiMessageInterceptionException(argerr("%s is not a valid ip address. Please correct your system tag[%s] of static IP",
-                            ip, sysTag));
-                }
-
-                if (Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists()) {
-                    if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, ip).eq(UsedIpVO_.l3NetworkUuid, l3Uuid).isExists()) {
-                        logger.warn(String.format("IP[%s] is already used on the L3 network[uuid:%s]", ip, l3Uuid));
                     }
-                    return;
-                }
-
-                CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
-                cmsg.setIp(ip);
-                cmsg.setL3NetworkUuid(l3Uuid);
-                bus.makeLocalServiceId(cmsg, L3NetworkConstant.SERVICE_ID);
-                MessageReply r = bus.call(cmsg);
-                if (!r.isSuccess()) {
-                    throw new ApiMessageInterceptionException(inerr(r.getError().getDetails()));
-                }
-
-                CheckIpAvailabilityReply cr = r.castReply();
-                if (!cr.isAvailable()) {
-                    throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3Uuid, cr.getReason()));
                 }
             }
 
@@ -1814,8 +1773,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     q.select(VmInstanceVO_.defaultL3NetworkUuid);
                     q.add(VmInstanceVO_.uuid, Op.EQ, resourceUuid);
                     String defaultL3Uuid = q.findValue();
-                } else if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
-                    validateStaticIp(systemTag);
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
                     validateBootOrder(systemTag);
                 }
@@ -1864,6 +1821,152 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 throw new ApiMessageInterceptionException(argerr("cpuThreads must be an integer"));
             }
         });
+    }
+
+    private void installStaticIpValidator() {
+        class StaticIpValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage cmsg) {
+                for (String sysTag : cmsg.getSystemTags()) {
+                    if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
+                        validateStaticIp(sysTag, true);
+                    } else if (VmSystemTags.IPV4_GATEWAY.isMatch(sysTag)) {
+                        validateIpv4Gateway(sysTag);
+                    } else if (VmSystemTags.IPV6_GATEWAY.isMatch(sysTag)) {
+                        validateIpv6Gateway(sysTag);
+                    } else if (VmSystemTags.IPV4_NETMASK.isMatch(sysTag)) {
+                        validateIpv4NetMask(sysTag);
+                    } else if (VmSystemTags.IPV6_PREFIX.isMatch(sysTag)) {
+                        validateIpv6Prefix(sysTag);
+                    }
+                }
+            }
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
+                    validateStaticIp(systemTag, false);
+                } else if (VmSystemTags.IPV4_GATEWAY.isMatch(systemTag)) {
+                    validateIpv4Gateway(systemTag);
+                } else if (VmSystemTags.IPV6_GATEWAY.isMatch(systemTag)) {
+                    validateIpv6Gateway(systemTag);
+                } else if (VmSystemTags.IPV4_NETMASK.isMatch(systemTag)) {
+                    validateIpv4NetMask(systemTag);
+                } else if (VmSystemTags.IPV6_PREFIX.isMatch(systemTag)) {
+                    validateIpv6Prefix(systemTag);
+                }
+            }
+
+            private void validateStaticIp(String sysTag, boolean checkAvailability) {
+                String tagUsage = VmSystemTags.STATIC_IP_TOKEN;
+                Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
+                if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of %s",
+                            l3Uuid, sysTag, tagUsage));
+                }
+
+                String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
+                ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
+                if (!NetworkUtils.isIpv4Address(ip) && !IPv6NetworkUtils.isIpv6Address(ip)) {
+                    throw new ApiMessageInterceptionException(argerr("%s is not a valid %s. Please correct your system tag[%s] of %s",
+                            ip, tagUsage, sysTag, tagUsage));
+                }
+
+                if (Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists()) {
+                    if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, ip).eq(UsedIpVO_.l3NetworkUuid, l3Uuid).isExists()) {
+                        logger.warn(String.format("IP[%s] is already used on the L3 network[uuid:%s]", ip, l3Uuid));
+                    }
+                    return;
+                }
+
+                if (!checkAvailability) {
+                    return;
+                }
+
+                CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
+                cmsg.setIp(ip);
+                cmsg.setL3NetworkUuid(l3Uuid);
+                bus.makeLocalServiceId(cmsg, L3NetworkConstant.SERVICE_ID);
+                MessageReply r = bus.call(cmsg);
+                if (!r.isSuccess()) {
+                    throw new ApiMessageInterceptionException(inerr(r.getError().getDetails()));
+                }
+
+                CheckIpAvailabilityReply cr = r.castReply();
+                if (!cr.isAvailable()) {
+                    throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3Uuid, cr.getReason()));
+                }
+            }
+
+            private void validateIpv4Gateway(String sysTag) {
+                String tagUsage = VmSystemTags.IPV4_GATEWAY_TOKEN;
+                Map<String, String> token = TagUtils.parse(VmSystemTags.IPV4_GATEWAY.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN);
+                if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of %s",
+                            l3Uuid, sysTag, tagUsage));
+                }
+
+                String ip = token.get(VmSystemTags.IPV4_GATEWAY_TOKEN);
+                if (!NetworkUtils.isIpv4Address(ip)) {
+                    throw new ApiMessageInterceptionException(argerr("%s is not a valid %s. Please correct your system tag[%s] of %s",
+                            ip, tagUsage, sysTag, tagUsage));
+                }
+            }
+
+            private void validateIpv6Gateway(String sysTag) {
+                String tagUsage = VmSystemTags.IPV6_GATEWAY_TOKEN;
+                Map<String, String> token = TagUtils.parse(VmSystemTags.IPV6_GATEWAY.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN);
+                if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of %s",
+                            l3Uuid, sysTag, tagUsage));
+                }
+
+                String ip = IPv6NetworkUtils.ipv6TagValueToAddress(token.get(VmSystemTags.IPV6_GATEWAY_TOKEN));
+                if (!IPv6NetworkUtils.isIpv6Address(ip)) {
+                    throw new ApiMessageInterceptionException(argerr("%s is not a valid %s. Please correct your system tag[%s] of %s",
+                            ip, tagUsage, sysTag, tagUsage));
+                }
+            }
+
+            private void validateIpv4NetMask(String sysTag) {
+                String tagUsage = VmSystemTags.IPV4_NETMASK_TOKEN;
+                Map<String, String> token = TagUtils.parse(VmSystemTags.IPV4_NETMASK.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN);
+                if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of %s",
+                            l3Uuid, sysTag, tagUsage));
+                }
+
+                String netMask = token.get(VmSystemTags.IPV4_NETMASK_TOKEN);
+                if (!NetworkUtils.isNetmask(netMask)) {
+                    throw new ApiMessageInterceptionException(argerr("%s is not a valid %s. Please correct your system tag[%s] of %s",
+                            netMask, tagUsage, sysTag, tagUsage));
+                }
+            }
+
+            private void validateIpv6Prefix(String sysTag) {
+                String tagUsage = VmSystemTags.IPV6_PREFIX_TOKEN;
+                Map<String, String> token = TagUtils.parse(VmSystemTags.IPV6_PREFIX.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN);
+                if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of %s",
+                            l3Uuid, sysTag, tagUsage));
+                }
+
+                int prefixLen = Integer.parseInt(token.get(VmSystemTags.IPV6_PREFIX_TOKEN));
+                if (prefixLen > IPv6Constants.IPV6_PREFIX_LEN_MAX || prefixLen < IPv6Constants.IPV6_PREFIX_LEN_MIN) {
+                    throw new ApiMessageInterceptionException(argerr("ip range prefix length[%d] is out of range [%d - %d]. Please correct your system tag[%s] of %s",
+                            prefixLen, IPv6Constants.IPV6_PREFIX_LEN_MIN, IPv6Constants.IPV6_PREFIX_LEN_MAX, sysTag, tagUsage));
+                }
+            }
+        }
+
+        StaticIpValidator staticIpValidator = new StaticIpValidator();
+        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), staticIpValidator);
+        VmSystemTags.STATIC_IP.installValidator(staticIpValidator);
     }
 
     private void installUserdataValidator() {
@@ -2096,6 +2199,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private void installSystemTagValidator() {
         installHostnameValidator();
+        installStaticIpValidator();
         installUserdataValidator();
         installBootModeValidator();
         installCleanTrafficValidator();
