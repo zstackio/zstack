@@ -24,4 +24,16 @@ doc {
 		type "String"
 		since "zsv 4.2.6"
 	}
+	field {
+		name "createDate"
+		desc "创建时间"
+		type "Timestamp"
+		since "zsv 4.2.6"
+	}
+	field {
+		name "lastOpDate"
+		desc "最后一次修改时间"
+		type "Timestamp"
+		since "zsv 4.2.6"
+	}
 }

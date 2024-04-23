@@ -51,4 +51,8 @@ public class ResourceConfigSystemTag extends PatternedSystemTag {
                 tokens.get(TagConstant.RESOURCE_CONFIG_NAME_TOKEN)));
         resourceConfig.updateValue(resourceUuid, tokens.get(TagConstant.RESOURCE_CONFIG_VALUE_TOKEN));
     }
+
+    public static String buildResourceConfig(String category, String name, String value) {
+        return String.format("%s::%s::%s::%s", TagConstant.RESOURCE_CONFIG_TAG_PREFIX, category, name, value);
+    }
 }

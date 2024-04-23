@@ -3272,30 +3272,88 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIConvertTemplateVmInstanceToVmInstanceEvent event = new APIConvertTemplateVmInstanceToVmInstanceEvent(msg.getId());
 
         String templateVmInstanceUuid = msg.getTemplateVmInstanceUuid();
-        boolean exists = Q.New(TemplateVmInstanceCacheVO.class)
-                .eq(TemplateVmInstanceCacheVO_.templateVmInstanceUuid, templateVmInstanceUuid)
-                .isExists();
-        if (!exists) {
-            dbf.removeByPrimaryKey(templateVmInstanceUuid, TemplateVmInstanceVO.class);
-        }
 
-        UpdateVmInstanceMsg umsg = new UpdateVmInstanceMsg();
-        umsg.setUuid(templateVmInstanceUuid);
-        umsg.setName(msg.getName());
-        bus.makeTargetServiceIdByResourceUuid(umsg, VmInstanceConstant.SERVICE_ID, umsg.getVmInstanceUuid());
-        bus.send(umsg, new CloudBusCallBack(msg) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("create lun from a template lun");
+        chain.then(new ShareFlow() {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    event.setError(reply.getError());
-                    bus.publish(event);
-                    return;
-                }
-                VmInstanceInventory inventory = ((UpdateVmInstanceReply) reply.castReply()).getInventory();
-                event.setInventory(inventory);
-                bus.publish(event);
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-template-vm-cache";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map map) {
+                        TemplateVmInstanceCacheVO cache = Q.New(TemplateVmInstanceCacheVO.class)
+                                .eq(TemplateVmInstanceCacheVO_.templateVmInstanceUuid, templateVmInstanceUuid).find();
+                        if (cache == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        DestroyVmInstanceMsg dmsg = new DestroyVmInstanceMsg();
+                        dmsg.setVmInstanceUuid(cache.getCacheVmInstanceUuid());
+                        dmsg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct);
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, cache.getCacheVmInstanceUuid());
+                        bus.send(dmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(operr(String.format("failed to delete the cache vmInstance[uuid:%s] of templateVmInstance[uuid:%s], %s",
+                                            cache.getCacheVmInstanceUuid(), templateVmInstanceUuid, reply.getError())));
+                                    return;
+                                }
+                                dbf.remove(cache);
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-vm-name";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map map) {
+                        UpdateVmInstanceMsg umsg = new UpdateVmInstanceMsg();
+                        umsg.setUuid(templateVmInstanceUuid);
+                        umsg.setName(msg.getName());
+                        bus.makeTargetServiceIdByResourceUuid(umsg, VmInstanceConstant.SERVICE_ID, umsg.getVmInstanceUuid());
+                        bus.send(umsg, new CloudBusCallBack(msg) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.debug(String.format("failed to update the name of the vm[uuid:%s] from the template vm[uuid:%s], %s",
+                                            msg.getVmInstanceUuid(), templateVmInstanceUuid, reply.getError()));
+                                    VmInstanceVO vmInstanceVO = dbf.findByUuid(templateVmInstanceUuid, VmInstanceVO.class);
+                                    event.setInventory(VmInstanceInventory.valueOf(vmInstanceVO));
+                                    trigger.next();
+                                    return;
+                                }
+                                VmInstanceInventory inventory = ((UpdateVmInstanceReply) reply.castReply()).getInventory();
+                                event.setInventory(inventory);
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        dbf.removeByPrimaryKey(templateVmInstanceUuid, TemplateVmInstanceVO.class);
+                        bus.publish(event);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        event.setError(errCode);
+                        bus.publish(event);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     private void handle(APIConvertVmInstanceToTemplateVmInstanceMsg msg) {
