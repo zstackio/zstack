@@ -44,6 +44,7 @@ import org.zstack.sdk.sns.platform.email.CreateSNSEmailPlatformAction
 import org.zstack.sdk.sns.platform.http.CreateSNSHttpEndpointAction
 import org.zstack.sdk.sns.platform.snmp.CreateSNSSnmpEndpointAction
 import org.zstack.sdk.sns.platform.snmp.CreateSNSSnmpPlatformAction
+import org.zstack.sdk.sns.platform.universalsms.CreateSNSUniversalSmsEndpointAction
 import org.zstack.sdk.zwatch.alarm.CreateAlarmAction
 import org.zstack.sdk.zwatch.alarm.DeleteAlarmAction
 import org.zstack.sdk.zwatch.alarm.SubscribeEventAction
@@ -163,6 +164,7 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateSNSHttpEndpointAction.metaClass, CreateSNSHttpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSDingTalkEndpointAction.metaClass, CreateSNSDingTalkEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSAliyunSmsEndpointAction.metaClass, CreateSNSAliyunSmsEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
+            [CreateSNSUniversalSmsEndpointAction.metaClass, CreateSNSUniversalSmsEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSTextTemplateAction.metaClass, CreateSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
             [CreateAliyunSmsSNSTextTemplateAction.metaClass, CreateAliyunSmsSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
             [CreateEmailMonitorTriggerActionAction.metaClass, CreateEmailMonitorTriggerActionAction.Result.metaClass, DeleteMonitorTriggerActionAction.class],

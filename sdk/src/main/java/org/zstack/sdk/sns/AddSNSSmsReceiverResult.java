@@ -1,14 +1,14 @@
 package org.zstack.sdk.sns;
 
-import org.zstack.sdk.sns.SNSSmsReceiverInventory;
+
 
 public class AddSNSSmsReceiverResult {
-    public SNSSmsReceiverInventory inventory;
-    public void setInventory(SNSSmsReceiverInventory inventory) {
-        this.inventory = inventory;
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
+        this.inventories = inventories;
     }
-    public SNSSmsReceiverInventory getInventory() {
-        return this.inventory;
+    public java.util.List getInventories() {
+        return this.inventories;
     }
 
 }
