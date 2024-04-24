@@ -67,7 +67,9 @@ public class HttpServletRequestUtils {
             return "Sogou Explorer";
         } else if (userAgent.contains("safari")) {
             return "Safari";
-        } else {
+        } else if (userAgent.contains("zstack-cli")) {
+            return "zstack-cli";
+        }else {
             return "Other";
         }
     }
