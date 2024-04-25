@@ -8,6 +8,7 @@ import org.zstack.utils.path.PathUtil
 
 import javax.persistence.Entity
 import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 class TermsGenerator {
     static String termFileFormat = "terms_%s.yaml"
@@ -93,7 +94,7 @@ class TermsGenerator {
         replaceI18nProperties(outputDir, '../../conf/i18n', propertyFileName, "../conf/i18n", outputFileName, replaceList)
         propertyFileName = "Elaboration.json"
         outputFileName = "Elaboration_${replaceTo == "cloud" ? "zsv" : "cloud"}.json"
-        replaceI18nProperties(outputDir, '../../conf/errorElaborations', propertyFileName, "../conf/errorElaborations", outputFileName, replaceList)
+        replaceI18nProperties(outputDir, '../../conf/errorElaborations', propertyFileName, "../conf/zsvErrorElaborations", outputFileName, replaceList)
     }
 
     static void replaceI18nProperties(String workDir, String sourceDir, String fileName, String destDir, String destFileName, List<TermTranslatePropertyLine> replaceList) {
@@ -111,11 +112,14 @@ class TermsGenerator {
             }
         }
 
-        File f = new File(PathUtil.
-                join(workDir, destDir, destFileName))
-        for (String line : outputLines) {
-            f.append(line, Charset.forName("UTF-8").toString())
-        }
+        File f = new File(PathUtil.join(workDir, destDir, destFileName));
+        f.withOutputStream({ os ->
+            os.withWriter(StandardCharsets.UTF_8.toString()) { writer ->
+                outputLines.each { line ->
+                    writer.write(line)
+                }
+            }
+        })
     }
 
     static List<TermTranslatePropertyLine> loadFileFromResource(String fileName) {
