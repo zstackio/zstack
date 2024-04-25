@@ -38,7 +38,7 @@ doc {
 					type "String"
 					optional false
 					since "5.0.0"
-					values ("Vhost","Scsi","Nvme","Curve","file")
+					values ("Vhost","Scsi","Nvme","CBD","file")
 				}
 				column {
 					name "config"

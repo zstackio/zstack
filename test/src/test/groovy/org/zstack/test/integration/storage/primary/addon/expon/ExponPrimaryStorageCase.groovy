@@ -1,4 +1,4 @@
-package org.zstack.test.integration.storage.primary.addon
+package org.zstack.test.integration.storage.primary.addon.expon
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
@@ -51,7 +51,7 @@ import static java.util.Arrays.asList
 import static org.zstack.expon.ExponIscsiHelper.iscsiExportTargetName
 import static org.zstack.expon.ExponNameHelper.getVolIdFromPath
 
-class ExternalPrimaryStorageCase extends SubCase {
+class ExponPrimaryStorageCase extends SubCase {
     EnvSpec env
     ClusterInventory cluster
     InstanceOfferingInventory instanceOffering
@@ -468,7 +468,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             return rsp
         }
 
-        deleleVolume(vol.uuid)
+        deleteVolume(vol.uuid)
     }
 
     void testExpungeActiveVolume() {
@@ -487,7 +487,7 @@ class ExternalPrimaryStorageCase extends SubCase {
         // skip deactivate volume
         SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, vol.uuid).set(VolumeVO_.vmInstanceUuid, null).update()
 
-        deleleVolume(vol.uuid)
+        deleteVolume(vol.uuid)
     }
 
     void testAttachIso() {
@@ -566,7 +566,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             primaryStorageUuid = ps.uuid
         } as VolumeInventory
 
-        deleleVolume(vol.uuid)
+        deleteVolume(vol.uuid)
 
         vol = createDataVolume {
             name = "test"
@@ -712,7 +712,7 @@ class ExternalPrimaryStorageCase extends SubCase {
         }
     }
 
-    void deleleVolume(String volUuid) {
+    void deleteVolume(String volUuid) {
         deleteDataVolume {
             uuid = volUuid
         }
