@@ -52,6 +52,14 @@ public class OAuth2ClientInventory extends org.zstack.sdk.SSOClientInventory {
         return this.grantType;
     }
 
+    public java.lang.String identityProvider;
+    public void setIdentityProvider(java.lang.String identityProvider) {
+        this.identityProvider = identityProvider;
+    }
+    public java.lang.String getIdentityProvider() {
+        return this.identityProvider;
+    }
+
     public java.lang.String logoutUrl;
     public void setLogoutUrl(java.lang.String logoutUrl) {
         this.logoutUrl = logoutUrl;
