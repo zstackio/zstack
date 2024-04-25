@@ -119,6 +119,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private StorageTrash trash;
     @Autowired
     private PoolUsageReport poolUsageCollector;
+    @Autowired
+    protected PrimaryStoragePhysicalCapacityManager psPhysicalCapacityMgr;
 
 
     public CephPrimaryStorageBase() {
@@ -816,6 +818,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class RollbackSnapshotCmd extends AgentCommand implements HasThreadContext {
         String snapshotPath;
+        double capacityThreshold;
 
         public String getSnapshotPath() {
             return snapshotPath;
@@ -823,6 +826,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setSnapshotPath(String snapshotPath) {
             this.snapshotPath = snapshotPath;
+        }
+
+        public void setCapacityThreshold(double capacityThreshold) {
+            this.capacityThreshold = capacityThreshold;
+        }
+
+        public double getCapacityThreshold() {
+            return capacityThreshold;
         }
     }
 
@@ -5106,6 +5117,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
                         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+                        cmd.capacityThreshold = psPhysicalCapacityMgr.getRatio(getSelf().getUuid());
                         httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
                             @Override
                             public void success(RollbackSnapshotRsp returnValue) {
