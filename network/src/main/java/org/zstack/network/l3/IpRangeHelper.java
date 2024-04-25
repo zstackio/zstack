@@ -1,5 +1,4 @@
 package org.zstack.network.l3;
-import org.zstack.header.exception.CloudRuntimeException;
 
 import javax.persistence.Tuple;
 import javax.persistence.TupleElement;
@@ -20,8 +19,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.*;
-
-import static org.junit.runner.Request.aClass;
 
 
 public class IpRangeHelper {
@@ -253,5 +250,29 @@ public class IpRangeHelper {
             }
         }
         return ret;
+    }
+
+    public static String getIpRangeUuid(String l3Uuid, String ip) {
+        if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class)
+                    .eq(IpRangeVO_.l3NetworkUuid, l3Uuid)
+                    .eq(IpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
+            for (IpRangeVO ipr : ipRangeVOS) {
+                if (IPv6NetworkUtils.isIpv6InRange(ip, ipr.getStartIp(), ipr.getEndIp())) {
+                    return ipr.getUuid();
+                }
+            }
+        } else if (NetworkUtils.isIpv4Address(ip)) {
+            List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class)
+                    .eq(IpRangeVO_.l3NetworkUuid, l3Uuid)
+                    .eq(IpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
+            for (IpRangeVO ipr : ipRangeVOS) {
+                if (NetworkUtils.isInRange(ip, ipr.getStartIp(), ipr.getEndIp())) {
+                    return ipr.getUuid();
+                }
+            }
+        }
+
+        return null;
     }
 }

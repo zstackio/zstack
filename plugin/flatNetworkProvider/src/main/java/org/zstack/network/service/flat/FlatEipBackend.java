@@ -49,6 +49,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -622,14 +624,15 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             to.nicGateway = struct.getGuestIp().getGateway();
             to.ipVersion = struct.getGuestIp().getIpVersion();
             to.vmBridgeName = new BridgeNameFinder().findByL3UuidOnHost(struct.getGuestIp().getL3NetworkUuid(), struct.getHostUuid());
+            if (struct.getGuestIp().getIpVersion() == IPv6Constants.IPv4) {
+                to.nicPrefixLen = NetworkUtils.getPrefixLengthFromNetmask(struct.getGuestIp().getNetmask());
+            } else {
+                to.nicPrefixLen = IPv6NetworkUtils.getPrefixLengthFromNetmask(struct.getGuestIp().getNetmask());
+            }
         } else {
             /* for detachEip */
             to.nicIp = struct.getEip().getGuestIp();
             to.ipVersion = NetworkUtils.getIpversion(to.nicIp);
-        }
-        if (struct.getGuestIpRange() != null) {
-            /* when delete eip, no need nicPrefixLen */
-            to.nicPrefixLen = struct.getGuestIpRange().getPrefixLen();
         }
         to.vip = struct.getVip().getIp();
         to.vipGateway = struct.getVip().getGateway();

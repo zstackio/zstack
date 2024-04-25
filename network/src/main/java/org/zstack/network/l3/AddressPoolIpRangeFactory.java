@@ -48,6 +48,14 @@ public class AddressPoolIpRangeFactory implements IpRangeFactory {
             }
         }.execute();
 
-        return AddressPoolInventory.valueOf1(vo);
+        final IpRangeInventory finalIpr = AddressPoolInventory.valueOf1(vo);
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {
+            @Override
+            public void run(AfterAddIpRangeExtensionPoint ext) {
+                ext.afterAddIpRange(finalIpr, msg.getSystemTags());
+            }
+        });
+
+        return finalIpr;
     }
 }

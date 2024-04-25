@@ -111,7 +111,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             try {
                 hostParams = JSONObjectUtil.toCollection(msg.getHostParams(), ArrayList.class, HostParam.class);
             } catch (JsonSyntaxException e) {
-                throw new ApiMessageInterceptionException(operr("invalid json format, causes: %s", e.getMessage()));
+                throw new ApiMessageInterceptionException(argerr("invalid json format, causes: %s", e.getMessage()));
             }
 
             ErrorCode err = L2NetworkHostUtils.validateHostParams(hostParams, msg.getClusterUuid(), null);
@@ -160,7 +160,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             try {
                 hostParam = JSONObjectUtil.toObject(msg.getHostParam(), HostParam.class);
             } catch (JsonSyntaxException e) {
-                throw new ApiMessageInterceptionException(operr("invalid json format, causes: %s", e.getMessage()));
+                throw new ApiMessageInterceptionException(argerr("invalid json format, causes: %s", e.getMessage()));
             }
 
 

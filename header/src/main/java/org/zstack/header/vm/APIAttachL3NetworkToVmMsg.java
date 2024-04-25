@@ -69,10 +69,6 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     private String vmNicParams;
 
     @APINoSee
-    @Deprecated
-    private List<String> secondaryL3Uuids;
-
-    @APINoSee
     private Map<String, List<String>> staticIpMap;
 
     @APINoSee
@@ -120,14 +116,6 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
 
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
-    }
-
-    public List<String> getSecondaryL3Uuids() {
-        return secondaryL3Uuids;
-    }
-
-    public void setSecondaryL3Uuids(List<String> secondaryL3Uuids) {
-        this.secondaryL3Uuids = secondaryL3Uuids;
     }
 
     public Map<String, List<String>> getStaticIpMap() {

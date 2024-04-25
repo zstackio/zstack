@@ -23,31 +23,50 @@ import java.util.stream.Collectors;
 public class NewVmInstanceMsgBuilder {
     public static List<VmNicSpec> getVmNicSpecsFromNewVmInstanceMsg(NewVmInstanceMessage msg) {
         if (CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
-            return Collections.EMPTY_LIST;
+            return new ArrayList<>();
         }
         return getVmNicSpecsFromVmNicParams(msg.getVmNicParams(), msg.getL3NetworkUuids());
     }
 
+    @SuppressWarnings({"unchecked"})
     public static List<VmNicSpec> getVmNicSpecsFromVmNicParams(String nicParams, List<String> l3NetworkUuids) {
         List<VmNicParam> vmNicParams = new ArrayList<>();
         if (!StringUtils.isEmpty(nicParams)) {
             vmNicParams.addAll(JSONObjectUtil.toCollection(nicParams, ArrayList.class, VmNicParam.class));
         }
+        return getVmNicSpecsFromVmNicParams(vmNicParams, l3NetworkUuids);
+    }
+
+    public static List<VmNicSpec> getVmNicSpecsFromVmNicParams(List<VmNicParam> vmNicParamList, List<String> l3NetworkUuids) {
+        if (CollectionUtils.isEmpty(l3NetworkUuids)) {
+            return new ArrayList<>();
+        }
+
+        List<VmNicParam> vmNicParams = !CollectionUtils.isEmpty(vmNicParamList)
+                ? new ArrayList<>(vmNicParamList)
+                : new ArrayList<>();
+        boolean hasVmNicParams = !vmNicParams.isEmpty();
 
         List<VmNicSpec> nicSpecs = new ArrayList<>();
+        List<L3NetworkVO> l3s = Q.New(L3NetworkVO.class)
+                .in(L3NetworkVO_.uuid, l3NetworkUuids)
+                .list();
         for (String l3Uuid : l3NetworkUuids) {
-            List<L3NetworkInventory> l3Invs = new ArrayList<>();
-            L3NetworkVO l3vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
-            L3NetworkInventory inv = L3NetworkInventory.valueOf(l3vo);
-            l3Invs.add(inv);
+            L3NetworkVO l3 = l3s.stream().filter(vo -> vo.getUuid().equals(l3Uuid)).findFirst().orElse(null);
+            if (l3 == null) {
+                continue;
+            }
 
-            VmNicSpec vmNicSpec = new VmNicSpec(l3Invs);
-            if (!vmNicParams.isEmpty()) {
-                List<VmNicParam> nicParamOfL3 = vmNicParams.stream().filter(vmNicParam -> vmNicParam.getL3NetworkUuid().equals(l3Uuid)).distinct().collect(Collectors.toList());
-                if (!nicParamOfL3.isEmpty()) {
-                    vmNicSpec.setVmNicParams(nicParamOfL3);
-                    vmNicSpec.setNicDriverType(nicParamOfL3.get(0).getDriverType());
-                    vmNicParams.removeAll(nicParamOfL3);
+            VmNicSpec vmNicSpec = new VmNicSpec(L3NetworkInventory.valueOf(l3));
+            if (hasVmNicParams) {
+                VmNicParam nicParamOfL3 = vmNicParams.stream()
+                        .filter(vmNicParam -> vmNicParam.getL3NetworkUuid().equals(l3Uuid))
+                        .findFirst()
+                        .orElse(null);
+                if (nicParamOfL3 != null) {
+                    vmNicSpec.setVmNicParams(Collections.singletonList(nicParamOfL3));
+                    vmNicSpec.setNicDriverType(nicParamOfL3.getDriverType());
+                    vmNicParams.remove(nicParamOfL3);
                 }
             }
             nicSpecs.add(vmNicSpec);

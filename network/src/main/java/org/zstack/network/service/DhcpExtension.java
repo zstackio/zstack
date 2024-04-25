@@ -1,5 +1,6 @@
 package org.zstack.network.service;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
@@ -28,6 +29,8 @@ import org.zstack.utils.network.NetworkUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -185,13 +188,14 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             } else {
                 List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ip.getL3NetworkUuid())
                         .eq(NormalIpRangeVO_.ipVersion, ip.getIpVersion()).list();
-                if (iprs.get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
-                    continue;
-                }
+
                 struct.setGateway6(ip.getGateway());
                 struct.setIp6(ip.getIp());
-                struct.setRaMode(iprs.get(0).getAddressMode());
                 struct.setEnableRa(isEnableRa(ip.getL3NetworkUuid()));
+                if (iprs.isEmpty() || iprs.get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
+                    continue;
+                }
+                struct.setRaMode(iprs.get(0).getAddressMode());
                 struct.setPrefixLength(iprs.get(0).getPrefixLen());
                 struct.setFirstIp(NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeVO::getStartIp).collect(Collectors.toList())));
                 struct.setEndIP(NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeVO::getEndIp).collect(Collectors.toList())));
@@ -212,8 +216,11 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                     .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
             struct.setGateway6(ip.getGateway());
             struct.setIp6(ip.getIp());
-            struct.setRaMode(iprs.get(0).getAddressMode());
             struct.setEnableRa(isEnableRa(ip.getL3NetworkUuid()));
+            if (iprs.isEmpty()) {
+                return;
+            }
+            struct.setRaMode(iprs.get(0).getAddressMode());
             struct.setPrefixLength(iprs.get(0).getPrefixLen());
             struct.setFirstIp(NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeVO::getStartIp).collect(Collectors.toList())));
             struct.setEndIP(NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeVO::getEndIp).collect(Collectors.toList())));
@@ -229,15 +236,48 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             if (isDualStackNicInSingleL3Network(VmNicInventory.valueOf(nic))) {
                 DhcpStruct struct = getDhcpStruct(vm, hostNames, nic, null, isDefaultNic);
                 setDualStackNicOfSingleL3Network(struct, nic);
+
+                if (struct.getIp() != null && struct.getGateway() == null) {
+                    /* dnsmasq need gateway parameter when ipv4 */
+                    logger.info(String.format("can not get gateway address for vmnic[ip:%s] for vm[name:%s, uuid:%s]",
+                            struct.getIp(), vm.getName(), vm.getUuid()));
+                    continue;
+                }
+
+                if (struct.getIp6() != null && (struct.getFirstIp() == null
+                        || struct.getEndIP() == null || struct.getPrefixLength() == null)) {
+                    logger.info(String.format("can not get ipv6 range info for vmnic[ip:%s] for vm[name:%s, uuid:%s]",
+                            struct.getIp6(), vm.getName(), vm.getUuid()));
+                    /* dnsmasq need start ip and end ip when ipv6 */
+                    continue;
+                }
+
                 res.add(struct);
                 continue;
             }
 
             for (UsedIpVO ip : nic.getUsedIps()) {
-                NormalIpRangeVO ipr = dbf.findByUuid(ip.getIpRangeUuid(), NormalIpRangeVO.class);
-                if (ipr.getIpVersion() == IPv6Constants.IPv6 &&
-                        (ipr.getAddressMode().equals(IPv6Constants.SLAAC))) {
-                    continue;
+                if (ip.getIpVersion() == IPv6Constants.IPv6) {
+                    NormalIpRangeVO ipr = Q.New(NormalIpRangeVO.class)
+                            .eq(NormalIpRangeVO_.l3NetworkUuid, ip.getL3NetworkUuid())
+                            .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).limit(1).find();
+                    if (ipr == null) {
+                        /* dhcp v6 need ra mode and ip range start/end ip */
+                        logger.info(String.format("can not get ipv6 range info for vmnic[ip:%s] for vm[name:%s, uuid:%s]",
+                                ip.getIp(), vm.getName(), vm.getUuid()));
+                        continue;
+                    }
+
+                    if (ipr.getAddressMode().equals(IPv6Constants.SLAAC)) {
+                        continue;
+                    }
+                } else {
+                    if (StringUtils.isEmpty(ip.getGateway())) {
+                        /* dnsmasq need gateway parameter when ipv4 */
+                        logger.info(String.format("can not get gateway address for vmnic[ip:%s] for vm[name:%s, uuid:%s]",
+                                ip.getIp(), vm.getName(), vm.getUuid()));
+                        continue;
+                    }
                 }
 
                 DhcpStruct struct = getDhcpStruct(vm, hostNames, nic, ip, isDefaultNic);
@@ -347,5 +387,29 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 }
             });
         }
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
+        NetworkServiceDhcpBackend bkd = dhcpBackends.get(providerType);
+        if (bkd == null) {
+            completion.fail(operr("unable to find NetworkServiceDhcpBackend[provider type: %s]", providerType));
+            return;
+        }
+
+        bkd.enableNetworkService(l3VO, systemTags, completion);
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        NetworkServiceDhcpBackend bkd = dhcpBackends.get(providerType);
+        if (bkd == null) {
+            completion.fail(operr("unable to find NetworkServiceDhcpBackend[provider type: %s]", providerType));
+            return;
+        }
+
+        logger.debug(String.format("[%s] disable dhcp service for l3 network[uuid:%s]",
+                bkd.getClass().getSimpleName(), l3VO.getUuid()));
+        bkd.disableNetworkService(l3VO, completion);
     }
 }

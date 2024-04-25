@@ -173,6 +173,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
     private final static VmConfigSyncHelper vmConfigSyncHelper = new VmConfigSyncHelper();
+    private final static StaticIpOperator ipOperator = new StaticIpOperator();
 
     @Override
     public void handleMessage(Message msg) {
@@ -379,9 +380,26 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handle(APIGetInterdependentL3NetworksImagesMsg msg) {
         final String accountUuid = msg.getSession().getAccountUuid();
         if (msg.getImageUuid() != null) {
+                thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                        .setSyncSignature(String.format("get-interdependent-l3-by-image-%s-in-zone-%s",
+                                msg.getImageUuid(),
+                                msg.getZoneUuid()))
+                        .run((completion) -> completion.success(getInterdependentL3NetworksByImageUuid(msg, accountUuid)))
+                        .done(((result) -> {
+                            APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
+                            if (!result.isSuccess()) {
+                                reply.setError(result.getErrorCode());
+                            } else {
+                                reply.setInventories((List<L3NetworkInventory>) result.getResult());
+                            }
+
+                            bus.reply(msg, reply);
+                        })));
+        } else if (msg.getL3NetworkUuids() != null) {
+            getInterdependentImagesByL3NetworkUuids(msg);
+        } else {
             thdf.singleFlightSubmit(new SingleFlightTask(msg)
-                    .setSyncSignature(String.format("get-interdependent-l3-by-image-%s-in-zone-%s",
-                            msg.getImageUuid(),
+                    .setSyncSignature(String.format("get-interdependent-l3-by-zone-%s",
                             msg.getZoneUuid()))
                     .run((completion) -> completion.success(getInterdependentL3NetworksByImageUuid(msg, accountUuid)))
                     .done(((result) -> {
@@ -394,8 +412,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                         bus.reply(msg, reply);
                     })));
-        } else {
-            getInterdependentImagesByL3NetworkUuids(msg);
         }
     }
 
@@ -488,16 +504,28 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Transactional(readOnly = true)
     private List<L3NetworkInventory> getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg, String accountUuid) {
-        String sql = "select bs" +
-                " from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
-                " where bs.uuid = ref.backupStorageUuid" +
-                " and ref.imageUuid = :imgUuid" +
-                " and ref.backupStorageUuid = zref.backupStorageUuid" +
-                " and zref.zoneUuid = :zoneUuid";
-        TypedQuery<BackupStorageVO> bsq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
-        bsq.setParameter("imgUuid", msg.getImageUuid());
-        bsq.setParameter("zoneUuid", msg.getZoneUuid());
-        List<BackupStorageVO> bss = bsq.getResultList();
+        List<BackupStorageVO> bss = null;
+        if (msg.getImageUuid() != null) {
+            String sql = "select bs" +
+                    " from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
+                    " where bs.uuid = ref.backupStorageUuid" +
+                    " and ref.imageUuid = :imgUuid" +
+                    " and ref.backupStorageUuid = zref.backupStorageUuid" +
+                    " and zref.zoneUuid = :zoneUuid";
+            TypedQuery<BackupStorageVO> bsq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+            bsq.setParameter("imgUuid", msg.getImageUuid());
+            bsq.setParameter("zoneUuid", msg.getZoneUuid());
+            bss = bsq.getResultList();
+        } else {
+            String sql = "select bs" +
+                    " from BackupStorageVO bs, BackupStorageZoneRefVO zref" +
+                    " where bs.uuid = zref.backupStorageUuid" +
+                    " and zref.zoneUuid = :zoneUuid";
+            TypedQuery<BackupStorageVO> bsq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+            bsq.setParameter("zoneUuid", msg.getZoneUuid());
+            bss = bsq.getResultList();
+        }
+
         if (bss.isEmpty()) {
             throw new OperationFailureException(argerr("the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
                             msg.getImageUuid(), msg.getZoneUuid()));
@@ -1864,26 +1892,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void installStaticIpValidator() {
         class StaticIpValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
             @Override
-            public void validateSystemTagInCreateMessage(APICreateMessage cmsg) {
-                for (String sysTag : cmsg.getSystemTags()) {
-                    if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
-                        validateStaticIp(sysTag, true);
-                    } else if (VmSystemTags.IPV4_GATEWAY.isMatch(sysTag)) {
-                        validateIpv4Gateway(sysTag);
-                    } else if (VmSystemTags.IPV6_GATEWAY.isMatch(sysTag)) {
-                        validateIpv6Gateway(sysTag);
-                    } else if (VmSystemTags.IPV4_NETMASK.isMatch(sysTag)) {
-                        validateIpv4NetMask(sysTag);
-                    } else if (VmSystemTags.IPV6_PREFIX.isMatch(sysTag)) {
-                        validateIpv6Prefix(sysTag);
-                    }
-                }
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                ipOperator.validateStaticIpTagsInApiMessage(msg);
             }
 
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
                 if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
-                    validateStaticIp(systemTag, false);
+                    validateStaticIp(systemTag);
                 } else if (VmSystemTags.IPV4_GATEWAY.isMatch(systemTag)) {
                     validateIpv4Gateway(systemTag);
                 } else if (VmSystemTags.IPV6_GATEWAY.isMatch(systemTag)) {
@@ -1895,7 +1911,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             }
 
-            private void validateStaticIp(String sysTag, boolean checkAvailability) {
+            private void validateStaticIp(String sysTag) {
                 String tagUsage = VmSystemTags.STATIC_IP_TOKEN;
                 Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
                 String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
@@ -1911,29 +1927,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             ip, tagUsage, sysTag, tagUsage));
                 }
 
-                if (Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists()) {
+                L3NetworkVO l3NetworkVO = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
+                if (!l3NetworkVO.enableIpAllocation()) {
                     if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, ip).eq(UsedIpVO_.l3NetworkUuid, l3Uuid).isExists()) {
                         logger.warn(String.format("IP[%s] is already used on the L3 network[uuid:%s]", ip, l3Uuid));
                     }
-                    return;
-                }
-
-                if (!checkAvailability) {
-                    return;
-                }
-
-                CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
-                cmsg.setIp(ip);
-                cmsg.setL3NetworkUuid(l3Uuid);
-                bus.makeLocalServiceId(cmsg, L3NetworkConstant.SERVICE_ID);
-                MessageReply r = bus.call(cmsg);
-                if (!r.isSuccess()) {
-                    throw new ApiMessageInterceptionException(inerr(r.getError().getDetails()));
-                }
-
-                CheckIpAvailabilityReply cr = r.castReply();
-                if (!cr.isAvailable()) {
-                    throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3Uuid, cr.getReason()));
                 }
             }
 
