@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.compute.VmNicUtils;
-import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
@@ -1003,9 +1002,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (!StringUtils.isEmpty(msg.getVmNicParams())) {
             List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
 
-            VmNicParm vmNicParam;
+            VmNicParam vmNicParam;
             try {
-                vmNicParam = JSONObjectUtil.toObject(msg.getVmNicParams(), VmNicParm.class);
+                vmNicParam = JSONObjectUtil.toObject(msg.getVmNicParams(), VmNicParam.class);
             } catch (JsonSyntaxException e) {
                 throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
             }
@@ -1410,9 +1409,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("l3NetworkUuids and vmNicInventories mustn't both be empty or both be set"));
             }
 
-            List<VmNicParm> vmNicInventories;
+            List<VmNicParam> vmNicInventories;
             try {
-                vmNicInventories = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
+                vmNicInventories = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class);
             } catch (JsonSyntaxException e) {
                 throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
             }

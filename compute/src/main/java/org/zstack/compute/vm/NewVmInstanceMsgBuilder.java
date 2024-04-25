@@ -25,9 +25,9 @@ public class NewVmInstanceMsgBuilder {
         if (CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
             return Collections.EMPTY_LIST;
         }
-        List<VmNicParm> vmNicParms = Collections.emptyList();
+        List<VmNicParam> vmNicParms = Collections.emptyList();
         if (msg.getVmNicParams() != null && !msg.getVmNicParams().isEmpty()) {
-            vmNicParms = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
+            vmNicParms = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class);
         }
 
         List<VmNicSpec> nicSpecs = new ArrayList<>();
@@ -41,7 +41,7 @@ public class NewVmInstanceMsgBuilder {
 
 
             if (!vmNicParms.isEmpty()) {
-                List<VmNicParm> nicParmOfL3 = vmNicParms.stream().filter(vmNicParm -> vmNicParm.getL3NetworkUuid().equals(l3Uuid)).distinct().collect(Collectors.toList());
+                List<VmNicParam> nicParmOfL3 = vmNicParms.stream().filter(vmNicParm -> vmNicParm.getL3NetworkUuid().equals(l3Uuid)).distinct().collect(Collectors.toList());
                 if (!nicParmOfL3.isEmpty()) {
                     vmNicSpec.setVmNicParms(nicParmOfL3);
                     vmNicSpec.setNicDriverType(nicParmOfL3.get(0).getDriverType());
@@ -60,8 +60,8 @@ public class NewVmInstanceMsgBuilder {
         if (StringUtils.isEmpty(msg.getVmNicParams())) {
             return Collections.EMPTY_LIST;
         }
-        List<VmNicParm> vmNicParms = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParm.class);
-        return vmNicParms.stream().filter(nic -> VmNicState.disable.toString().equals(nic.getState())).map(VmNicParm::getL3NetworkUuid).collect(Collectors.toList());
+        List<VmNicParam> vmNicParms = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class);
+        return vmNicParms.stream().filter(nic -> VmNicState.disable.toString().equals(nic.getState())).map(VmNicParam::getL3NetworkUuid).collect(Collectors.toList());
     }
 
     public static CreateVmInstanceMsg fromAPINewVmInstanceMsg(NewVmInstanceMessage2 msg) {
