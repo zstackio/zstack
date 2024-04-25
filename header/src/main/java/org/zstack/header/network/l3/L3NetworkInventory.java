@@ -3,6 +3,7 @@ package org.zstack.header.network.l3;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -152,6 +153,10 @@ public class L3NetworkInventory implements Serializable {
             joinColumn = @JoinColumn(name = "l3NetworkUuid"))
     private List<L3NetworkHostRouteInventory> hostRoute;
 
+    @Queryable(mappingClass = ReservedIpRangeInventory.class,
+            joinColumn = @JoinColumn(name = "l3NetworkUuid"))
+    private List<ReservedIpRangeInventory> reservedIpRanges;
+
     public L3NetworkInventory() {
     }
 
@@ -173,6 +178,7 @@ public class L3NetworkInventory implements Serializable {
         this.setNetworkServices(NetworkServiceL3NetworkRefInventory.valueOf(vo.getNetworkServices()));
         this.setCategory(vo.getCategory().toString());
         this.setHostRoute(L3NetworkHostRouteInventory.valueOf(vo.getHostRoutes()));
+        this.setReservedIpRanges(ReservedIpRangeInventory.valueOf(vo.getReservedIpRanges()));
         this.setIpVersion(vo.getIpVersion());
         this.setEnableIPAM(vo.getEnableIPAM());
     }
@@ -289,6 +295,14 @@ public class L3NetworkInventory implements Serializable {
         this.ipRanges = ipRanges;
     }
 
+    public List<ReservedIpRangeInventory> getReservedIpRanges() {
+        return reservedIpRanges;
+    }
+
+    public void setReservedIpRanges(List<ReservedIpRangeInventory> reservedIpRanges) {
+        this.reservedIpRanges = reservedIpRanges;
+    }
+
     public List<NetworkServiceL3NetworkRefInventory> getNetworkServices() {
         return networkServices;
     }
@@ -383,5 +397,19 @@ public class L3NetworkInventory implements Serializable {
 
     public void setEnableIPAM(Boolean enableIPAM) {
         this.enableIPAM = enableIPAM;
+    }
+
+    public boolean enableIpAllocation() {
+        if (L3NetworkType.valueOf(getType()).isMandatoryIpAllocation()) {
+            return true;
+        }
+
+        for (NetworkServiceL3NetworkRefInventory ref : networkServices) {
+            if (ref.getNetworkServiceType().equals(NetworkServiceType.DHCP.toString())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

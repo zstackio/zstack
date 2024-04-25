@@ -51,7 +51,7 @@ doc {
 	}
 	field {
 		name "usedFor"
-		desc ""
+		desc "分配原因"
 		type "String"
 		since "4.10.0"
 	}

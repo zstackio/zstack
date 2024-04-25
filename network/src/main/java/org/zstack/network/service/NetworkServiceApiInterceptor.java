@@ -19,6 +19,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.network.IPv6Constants;
 
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
@@ -40,7 +41,18 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
             validate(attachMsg);
         } else if (msg instanceof APIDetachNetworkServiceFromL3NetworkMsg) {
             APIDetachNetworkServiceFromL3NetworkMsg detachMsg = (APIDetachNetworkServiceFromL3NetworkMsg)msg;
-            detachMsg.setNetworkServices(convertNetworkProviderTypeToUuid(detachMsg.getNetworkServices()));
+            if (detachMsg.getService() != null) {
+                Map<String, List<String>> services = new HashMap<>();
+                NetworkServiceL3NetworkRefVO ref = Q.New(NetworkServiceL3NetworkRefVO.class)
+                        .eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, detachMsg.getL3NetworkUuid())
+                        .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, detachMsg.getService()).find();
+                if (ref != null) {
+                    services.put(ref.getNetworkServiceProviderUuid(), asList(ref.getNetworkServiceType()));
+                }
+                detachMsg.setNetworkServices(services);
+            } else {
+                detachMsg.setNetworkServices(convertNetworkProviderTypeToUuid(detachMsg.getNetworkServices()));
+            }
         }
 
         return msg;

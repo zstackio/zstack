@@ -1,5 +1,7 @@
 package org.zstack.test.integration.network.l3network.getfreeip
 
+import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.sdk.FreeIpInventory
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
@@ -31,6 +33,11 @@ class OneL3AddressPoolIpRangeCase extends SubCase {
                     l3Network {
                         category = "Public"
                         name = "l3"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
+                        }   
                     }
                 }
             }

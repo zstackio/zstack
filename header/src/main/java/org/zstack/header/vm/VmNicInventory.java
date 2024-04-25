@@ -12,7 +12,9 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Inventory(mappingVOClass = VmNicVO.class)
 @ExpandedQueries({
@@ -43,7 +45,7 @@ public class VmNicInventory implements Serializable {
     private String internalName;
     private Integer deviceId;
     private String type;
-    private String state = VmNicState.enable.toString();
+    private String state;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -77,6 +79,7 @@ public class VmNicInventory implements Serializable {
 
     public static List<VmNicInventory> valueOf(Collection<VmNicVO> vos) {
         List<VmNicInventory> invs = new ArrayList<VmNicInventory>(vos.size());
+        vos = vos.stream().sorted(Comparator.comparingInt(VmNicVO::getDeviceId)).collect(Collectors.toList());
         for (VmNicVO vo : vos) {
             invs.add(VmNicInventory.valueOf(vo));
         }

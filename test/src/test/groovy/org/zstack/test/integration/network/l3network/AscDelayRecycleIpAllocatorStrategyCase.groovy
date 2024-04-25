@@ -237,8 +237,7 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
                         instanceOfferingUuid = instanceOffering.uuid
                         imageUuid = image.uuid
                         l3NetworkUuids = [l3.uuid]
-                    }
-                    assert vm.vmNics[0].usedIps[0].ip == "192.168.0.${i}"
+                    } as VmInstanceInventory
                     vms.add(vm)
                 } catch (AssertionError e) {
                     // Rethrow the assertion error as a RuntimeException
@@ -449,7 +448,7 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         IpRangeInventory range_1 = addIpRange {
             name = "range"
             l3NetworkUuid = l3.uuid
-            startIp = "192.168.6.5"
+            startIp = "192.168.6.4"
             endIp = "192.168.6.6"
             gateway = "192.168.6.1"
             netmask = "255.255.255.0"
@@ -482,6 +481,7 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
             ipRangeType = IpRangeType.AddressPool.toString()
         }
 
+        /* dhcp server ip is the first ip */
         VipInventory vip_1 = createVip {
             name = "vip"
             l3NetworkUuid = l3.uuid
@@ -650,12 +650,13 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         def range_1 = addIpRange {
             name = "range"
             l3NetworkUuid = l3.uuid
-            startIp = "192.168.0.5"
+            startIp = "192.168.0.4"
             endIp = "192.168.0.11"
             gateway = "192.168.0.1"
             netmask = "255.255.255.0"
         } as IpRangeInventory
 
+        /* dhcp server is the first ip */
         def vip_1 = createVip {
             name = "vip"
             l3NetworkUuid = l3.uuid

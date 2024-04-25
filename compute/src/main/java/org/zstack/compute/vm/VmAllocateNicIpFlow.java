@@ -72,7 +72,30 @@ public class VmAllocateNicIpFlow implements Flow {
         }
         List<VmNicSpec> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())
                 .stream()
-                .filter(v -> v.getL3Invs().get(0).getEnableIPAM())
+                .filter(v -> {
+                    if (v.getL3Invs().get(0).enableIpAllocation()) {
+                        return true;
+                    }
+
+                    /* if dhcp is disabled, will not allocate ip address for user vm
+                     *  allocated ip to appliance vm based on the following conditions */
+                    if (spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+                        return false;
+                    } else {
+                        L3NetworkInventory nw = v.getL3Invs().get(0);
+                        VmNicInventory nic = nicsL3s.get(nw.getUuid()).stream().findFirst().orElse(null);
+                        if (nic == null) {  
+                            return false;
+                        }
+                        VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+                        if (nicVO == null) {
+                            return false;
+                        }
+
+                        /* if there is no ip range, or creates ip in VmAllocateNicFlow from systemTags  */
+                        return nicVO.getUsedIps().isEmpty() && !nw.getIpRanges().isEmpty();
+                    }
+                })
                 .peek(v -> {
                     if (!Q.New(NormalIpRangeVO.class)
                             .eq(NormalIpRangeVO_.l3NetworkUuid, v.getL3Invs().get(0).getUuid())
@@ -138,13 +161,16 @@ public class VmAllocateNicIpFlow implements Flow {
                         errs.add(ipErrs.get(0));
                         wcomp.allDone();
                     } else {
-                        UsedIpInventory ip = nicIps.get(0);
+                        List<UsedIpInventory> sortedNicsIps = nicIps.stream()
+                                .sorted(Comparator.comparingInt(UsedIpInventory::getIpVersion))
+                                .collect(Collectors.toList());
+                        UsedIpInventory ip = sortedNicsIps.get(0);
                         nic.setIp(ip.getIp());
                         nic.setIpVersion(ip.getIpVersion());
                         nic.setUsedIpUuid(ip.getUuid());
                         nic.setNetmask(ip.getNetmask());
                         nic.setGateway(ip.getGateway());
-                        for (UsedIpInventory usedIp : nicIps) {
+                        for (UsedIpInventory usedIp : sortedNicsIps) {
                             /* update usedIpVo */
                             UsedIpVO ipVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIp.getUuid()).find();
                             ipVO.setVmNicUuid(nic.getUuid());

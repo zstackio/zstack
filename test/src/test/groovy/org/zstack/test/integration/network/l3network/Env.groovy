@@ -70,6 +70,7 @@ class Env {
 
                     attachPrimaryStorage("local")
                     attachL2Network("l2")
+                    attachL2Network("l2-vlan-100")
                 }
 
                 localPrimaryStorage {
@@ -112,6 +113,25 @@ class Env {
                         }
                     }
 
+                }
+
+                l2VlanNetwork {
+                    name = "l2-vlan-100"
+                    physicalInterface = "eth0"
+                    vlan = 100
+
+                    l3Network {
+                        name = "l3-2"
+                        systemTags = ["resourceConfig::l3Network::ipAllocateStrategy::FirstAvailableIpAllocatorStrategy",
+                                      "resourceConfig::l3Network::ipv6AllocateStrategy::FirstAvailableIpv6AllocatorStrategy"]
+
+                        ip {
+                            startIp = "10.0.0.2"
+                            endIp = "10.0.0.254"
+                            netmask = "255.0.0.0"
+                            gateway = "10.0.0.1"
+                        }
+                    }
                 }
 
                 virtualRouterOffering {

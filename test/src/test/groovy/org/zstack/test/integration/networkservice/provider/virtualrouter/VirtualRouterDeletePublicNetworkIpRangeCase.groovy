@@ -7,7 +7,6 @@ import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.sdk.IpRangeInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -46,6 +45,10 @@ class VirtualRouterDeletePublicNetworkIpRangeCase extends SubCase {
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "pubL3-2"
         }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_1.uuid
+            networkServices = ["Flat":["DHCP"]]
+        }
 
         IpRangeInventory iprInv = addIpRange {
             delegate.name = "TestIpRange"
@@ -60,6 +63,10 @@ class VirtualRouterDeletePublicNetworkIpRangeCase extends SubCase {
             delegate.category = "Public"
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "pubL3-3"
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_2.uuid
+            networkServices = ["Flat":["DHCP"]]
         }
 
         addIpRange {

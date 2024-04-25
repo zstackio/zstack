@@ -1,11 +1,17 @@
 package org.zstack.compute.vm;
 
 import org.apache.commons.lang.StringUtils;
+import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
 import org.zstack.header.vm.VmInstanceType;
 import org.zstack.header.vm.VmNicParam;
 import org.zstack.header.vm.VmNicState;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -92,6 +98,15 @@ public class VmNicParamValidator {
                 throw new ApiMessageInterceptionException(argerr("l3NetworkUuid of vm nic is not in l3[%s]", l3Uuids));
             }
 
+            // only set when cloning vm
+            if (nic.isDefaultNic()) {
+                if (defaultL3Uuid != null && !l3Uuid.equals(defaultL3Uuid)) {
+                    throw new ApiMessageInterceptionException(argerr("duplicate default nic is set"));
+                }
+
+                defaultL3Uuid = l3Uuid;
+            }
+
             if (nic.getOutboundBandwidth() != null) {
                 if (nic.getOutboundBandwidth() < 8192 || nic.getOutboundBandwidth() > 32212254720L) {
                     throw new ApiMessageInterceptionException(argerr("outbound bandwidth[%d] of vm nic is out of [8192, 32212254720]", nic.getOutboundBandwidth()));
@@ -127,6 +142,98 @@ public class VmNicParamValidator {
 
             if (!nic.isSriovEnabled() && nic.getVfParentUuid() != null) {
                 throw new ApiMessageInterceptionException(argerr("vm nic with vf parent uuid[%s] should be SR-IOV enabled", nic.getVfParentUuid()));
+            }
+
+            if (!StringUtils.isEmpty(nic.getMac())) {
+                MacOperator macOperator = new MacOperator();
+                macOperator.validateAvailableMac(nic.getMac());
+            }
+
+            if (!StringUtils.isEmpty(nic.getIp())) {
+                if (!NetworkUtils.isIpv4Address(nic.getIp())) {
+                    throw new ApiMessageInterceptionException(argerr("ipv4 address[%s] is not valid", nic.getIp()));
+                }
+                L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
+                StaticIpOperator operator = new StaticIpOperator();
+                operator.checkIpAvailability(l3, nic.getIp());
+            }
+
+            if (!StringUtils.isEmpty(nic.getIp6())) {
+                String ip6 = IPv6NetworkUtils.ipv6TagValueToAddress(nic.getIp6());
+                if (!IPv6NetworkUtils.isIpv6Address(ip6)) {
+                    throw new ApiMessageInterceptionException(argerr("ipv6 address[%s] is not valid", ip6));
+                }
+                L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
+                StaticIpOperator operator = new StaticIpOperator();
+                operator.checkIpAvailability(l3, ip6);
+            }
+
+            if (!StringUtils.isEmpty(nic.getNetmask())) {
+                if (!NetworkUtils.isNetmask(nic.getNetmask())) {
+                    throw new ApiMessageInterceptionException(argerr("netmask[%s] is not valid", nic.getNetmask()));
+                }
+            }
+
+            if (!StringUtils.isEmpty(nic.getGateway())) {
+                if (!NetworkUtils.isIpv4Address(nic.getGateway())) {
+                    throw new ApiMessageInterceptionException(argerr("gateway[%s] should be ipv4 address", nic.getGateway()));
+                }
+            }
+
+            if (nic.getIpv6Prefix() != null) {
+                int prefixLen = nic.getIpv6Prefix();
+                if (prefixLen > IPv6Constants.IPV6_PREFIX_LEN_MAX || prefixLen < IPv6Constants.IPV6_PREFIX_LEN_MIN) {
+                    throw new ApiMessageInterceptionException(argerr("ip range prefix length[%d] is out of range [%d - %d]",
+                            prefixLen, IPv6Constants.IPV6_PREFIX_LEN_MIN, IPv6Constants.IPV6_PREFIX_LEN_MAX));
+                }
+            }
+
+            if (!StringUtils.isEmpty(nic.getIpv6Gateway())) {
+                if (!IPv6NetworkUtils.isIpv6Address(nic.getIpv6Gateway())) {
+                    throw new ApiMessageInterceptionException(argerr("ipv6 gateway[%s] should be ipv6 address", nic.getIpv6Gateway()));
+                }
+            }
+
+            if (!StringUtils.isEmpty(nic.getIp())) {
+                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
+                        .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
+                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4)
+                        .limit(1).find();
+                if (ipRangeVO == null) {
+                    if (StringUtils.isEmpty(nic.getNetmask())) {
+                        throw new ApiMessageInterceptionException(argerr("netmask must be set when ip is set"));
+                    }
+                } else {
+                    if (!StringUtils.isEmpty(nic.getNetmask()) && !Objects.equals(nic.getNetmask(), ipRangeVO.getNetmask())) {
+                        throw new ApiMessageInterceptionException(argerr("netmask error, expect: %s, got: %s",
+                                ipRangeVO.getNetmask(), nic.getNetmask()));
+                    }
+                    if (!StringUtils.isEmpty(nic.getGateway()) && !Objects.equals(nic.getGateway(), ipRangeVO.getGateway())) {
+                        throw new ApiMessageInterceptionException(argerr("gateway error, expect: %s, got: %s",
+                                ipRangeVO.getGateway(), nic.getGateway()));
+                    }
+                }
+            }
+
+            if (!StringUtils.isEmpty(nic.getIp6())) {
+                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
+                        .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
+                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6)
+                        .limit(1).find();
+                if (ipRangeVO == null) {
+                    if (nic.getIpv6Prefix() == null) {
+                        throw new ApiMessageInterceptionException(argerr("ipv6 prefix length must be set when ip6 is set"));
+                    }
+                } else {
+                    if (nic.getIpv6Prefix() != null && !Objects.equals(nic.getIpv6Prefix(), ipRangeVO.getPrefixLen())) {
+                        throw new ApiMessageInterceptionException(argerr("ipv6 prefix length error, expect: %s, got: %s",
+                                ipRangeVO.getPrefixLen(), nic.getIpv6Prefix()));
+                    }
+                    if (!StringUtils.isEmpty(nic.getIpv6Gateway()) && !Objects.equals(nic.getIpv6Gateway(), ipRangeVO.getGateway())) {
+                        throw new ApiMessageInterceptionException(argerr("ipv6 gateway error, expect: %s, got: %s",
+                                ipRangeVO.getGateway(), nic.getIpv6Gateway()));
+                    }
+                }
             }
 
             if (!CollectionUtils.isEmpty(nic.getDns6List())) {
@@ -173,7 +280,7 @@ public class VmNicParamValidator {
                     }
 
                     for (String dns: nic.getDnsList()) {
-                        if (!NetworkUtils.isIpAddress(dns)) {
+                        if (!NetworkUtils.isValidIPAddress(dns)) {
                             throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", dns));
                         }
                     }
@@ -182,6 +289,12 @@ public class VmNicParamValidator {
                 if (nic.getDnsList().size() > nic.getDnsList().stream().distinct().count()) {
                     throw new ApiMessageInterceptionException(argerr("duplicate dns in dns list %s", nic.getDnsList()));
                 }
+            }
+        }
+
+        if (defaultL3Uuid == null) {
+            if (vmNicParams.size() > 1) {
+                throw new ApiMessageInterceptionException(argerr("default nic is not set, but multiple nics are specified"));
             }
         }
     }

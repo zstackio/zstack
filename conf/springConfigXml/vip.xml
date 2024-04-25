@@ -15,6 +15,7 @@
     <bean id="VipApiInterceptor" class="org.zstack.network.service.vip.VipApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
 

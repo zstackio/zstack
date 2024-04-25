@@ -22,6 +22,8 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.L3NetworkState;
@@ -219,7 +221,7 @@ public class VmInstanceHelper {
             try {
                 vmNicParams = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class);
             } catch (JsonSyntaxException e) {
-                throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
+                throw new ApiMessageInterceptionException(argerr("invalid json format, causes: %s", e.getMessage()));
             }
 
             new VmNicParamValidator().withVmNicParams(vmNicParams)
@@ -229,6 +231,10 @@ public class VmInstanceHelper {
                     .withVmType(msg.getType())
                     .isWindowsVm(ImagePlatform.Windows.toString().equals(msg.getPlatform()))
                     .validate();
+        }
+
+        if (msg instanceof APIMessage && !(msg instanceof APICreateMessage)) {
+            new StaticIpOperator().validateStaticIpTagsInApiMessage((APIMessage) msg);
         }
 
         validateCdRomsTag(msg);

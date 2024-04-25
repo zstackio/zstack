@@ -7,8 +7,11 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l3.*;
 
 public class L3BasicNetworkFactory implements L3NetworkFactory {
-    private static final L3NetworkType type = new L3NetworkType(L3NetworkConstant.L3_BASIC_NETWORK_TYPE);
-    
+    private static final L3NetworkType type = new L3NetworkType.L3NetworkTypeBuilder()
+            .typeName(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)
+            .mandatoryIpAllocation(false)
+            .build();
+
     @Autowired
     protected DatabaseFacade dbf;
 

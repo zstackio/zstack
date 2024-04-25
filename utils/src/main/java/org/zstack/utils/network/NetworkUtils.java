@@ -66,6 +66,9 @@ public class NetworkUtils {
     }
 
     public static boolean isHostname(String hostname) {
+        if (hostname == null) {
+            return false;
+        }
         String PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
         Pattern pattern = Pattern.compile(PATTERN);
         Matcher matcher = pattern.matcher(hostname);
@@ -73,6 +76,10 @@ public class NetworkUtils {
     }
 
     public static boolean isIpv4Address(String ip) {
+        if (ip == null) {
+            return false;
+        }
+
         String PATTERN =
                 "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
                         "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
@@ -189,7 +196,7 @@ public class NetworkUtils {
         }
     }
 
-    public static boolean isValidIpRange(String startIp, String endIp) {
+    public static boolean isValidIpv4Range(String startIp, String endIp) {
         validateIp(startIp);
         validateIp(endIp);
         long s = ipv4StringToLong(startIp);
@@ -769,7 +776,7 @@ public class NetworkUtils {
         }
     }
 
-    public static Integer getPrefixLengthFromNetwork(String mask) {
+    public static Integer getPrefixLengthFromNetmask(String mask) {
         if (isIpv4Address(mask)) {
             return validNetmasks.get(mask);
         } else {
@@ -975,6 +982,11 @@ public class NetworkUtils {
 
     public static Boolean isValidVni(Integer vni){
         return vni != null && vni >= 1 && vni <= 16777214;
+    }
+
+    public static int compareIpv4Address(String ip1, String ip2) {
+        long diff = NetworkUtils.ipv4StringToLong(ip1) - NetworkUtils.ipv4StringToLong(ip2);
+        return diff > 0 ? 1 : diff == 0 ? 0 : -1;
     }
 }
 

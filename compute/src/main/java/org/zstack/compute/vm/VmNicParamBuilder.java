@@ -1,25 +1,37 @@
 package org.zstack.compute.vm;
 
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.Q;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.DnsUtils;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmNicParamBuilder {
-    public static List<VmNicParam> buildByVmUuid(String vmInstanceUuid) {
-        List<VmNicParam> vmNicParams = new ArrayList<>();
-        boolean isWindowsVm = ImagePlatform.Windows.toString().equals(
-                Q.New(VmInstanceVO.class).select(VmInstanceVO_.platform).eq(VmInstanceVO_.uuid, vmInstanceUuid).findValue());
+    @Autowired
+    private ResourceConfigFacade rcf;
 
+    public List<VmNicParam> buildByVmUuid(String vmInstanceUuid) {
+        List<VmNicParam> vmNicParams = new ArrayList<>();
+        VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmInstanceUuid).find();
+        boolean isWindowsVm = ImagePlatform.Windows.toString().equals(vm.getPlatform());
+
+        List<VmNicVO> sortedVmNics = vm.getVmNics().stream()
+                .sorted(Comparator.comparingInt(VmNicVO::getDeviceId))
+                .collect(Collectors.toList());
         if (isWindowsVm) {
-            List<VmNicVO> nicVOList = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vmInstanceUuid).list();
-            for (VmNicVO nicVO: nicVOList) {
+            for (VmNicVO nicVO: sortedVmNics) {
                 VmNicParam nicParam = new VmNicParam();
                 nicParam.setL3NetworkUuid(nicVO.getL3NetworkUuid());
 
@@ -42,7 +54,7 @@ public class VmNicParamBuilder {
                 }
             }
         } else {
-            String defaultL3Uuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.defaultL3NetworkUuid).eq(VmInstanceVO_.uuid, vmInstanceUuid).findValue();
+            String defaultL3Uuid = vm.getDefaultL3NetworkUuid();
             VmNicParam nicParam = new VmNicParam();
             nicParam.setL3NetworkUuid(defaultL3Uuid);
             boolean isSet = false;
@@ -58,10 +70,27 @@ public class VmNicParamBuilder {
             }
         }
 
-        return vmNicParams;
-    }
+        List<VmNicParam> ret = new ArrayList<>(vmNicParams);
+        for (VmNicVO nic: sortedVmNics) {
+            VmNicParam nicParam = ret.stream()
+                    .filter(param -> Objects.equals(param.getL3NetworkUuid(), nic.getL3NetworkUuid()))
+                    .findFirst()
+                    .orElse(new VmNicParam());
 
-    public static String buildJsonStringByVmUuid(String vmInstanceUuid) {
-        return JSONObjectUtil.toJsonString(buildByVmUuid(vmInstanceUuid));
+            nicParam.setL3NetworkUuid(nic.getL3NetworkUuid());
+            nicParam.setState(nic.getState().toString());
+            nicParam.setDriverType(nic.getDriverType());
+
+            Integer nicMultiQueueNum = rcf.getResourceConfigValueByResourceType(
+                    VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM, nic.getUuid(), VmNicVO.class.getSimpleName(), Integer.class);
+            if (nicMultiQueueNum != null) {
+                nicParam.setMultiQueueNum(nicMultiQueueNum);
+            }
+
+            vmNicParams.remove(nicParam);
+            ret.add(nicParam);
+        }
+
+        return ret;
     }
 }
