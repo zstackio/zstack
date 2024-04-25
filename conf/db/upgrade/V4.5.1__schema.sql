@@ -4,6 +4,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PluginDriverVO` (
     `type` varchar(64) NOT NULL,
     `vendor` varchar(64) NOT NULL,
     `features` varchar(1024) NOT NULL,
+    `description` varchar(1024) DEFAULT NULL,
+    `license` varchar(1024) DEFAULT NULL,
+    `version` varchar(1024) DEFAULT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

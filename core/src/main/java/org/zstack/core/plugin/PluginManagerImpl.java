@@ -116,12 +116,18 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                 vo.setVendor(pluginDriver.vendor());
                 vo.setFeatures(JSONObjectUtil.toJsonString(pluginDriver.features()));
                 vo.setType(pluginDriver.type());
+                vo.setDescription(pluginDriver.description());
+                vo.setVersion(pluginDriver.version());
+                vo.setLicense(pluginDriver.license());
                 dbf.persist(vo);
             } else {
                 vo.setName(pluginDriver.name());
                 vo.setVendor(pluginDriver.vendor());
                 vo.setFeatures(JSONObjectUtil.toJsonString(pluginDriver.features()));
                 vo.setType(pluginDriver.type());
+                vo.setDescription(pluginDriver.description());
+                vo.setVersion(pluginDriver.version());
+                vo.setLicense(pluginDriver.license());
                 dbf.update(vo);
             }
         } catch (Exception e) {

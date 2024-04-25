@@ -12,6 +12,9 @@ public class PluginDriverInventory {
     private String type;
     private String vendor;
     private String features;
+    private String license;
+    private String version;
+    private String description;
 
     public static PluginDriverInventory valueOf(PluginDriverVO vo) {
         PluginDriverInventory inv = new PluginDriverInventory();
@@ -19,6 +22,9 @@ public class PluginDriverInventory {
         inv.setVendor(vo.getVendor());
         inv.setFeatures(vo.getFeatures());
         inv.setType(vo.getType());
+        inv.setLicense(vo.getLicense());
+        inv.setVersion(vo.getVersion());
+        inv.setDescription(vo.getDescription());
         return inv;
     }
 
@@ -60,5 +66,29 @@ public class PluginDriverInventory {
 
     public void setFeatures(String features) {
         this.features = features;
+    }
+
+    public String getLicense() {
+        return license;
+    }
+
+    public void setLicense(String license) {
+        this.license = license;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

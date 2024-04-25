@@ -21,6 +21,15 @@ public class PluginDriverVO extends ResourceVO {
     private String vendor;
 
     @Column
+    private String license;
+
+    @Column
+    private String version;
+
+    @Column
+    private String description;
+
+    @Column
     private String features;
 
     public PluginDriverVO() {
@@ -31,6 +40,9 @@ public class PluginDriverVO extends ResourceVO {
         this.name = other.name;
         this.vendor = other.vendor;
         this.features = other.features;
+        this.license = other.license;
+        this.version = other.version;
+        this.description = other.description;
         this.type = other.type;
     }
 
@@ -74,5 +86,29 @@ public class PluginDriverVO extends ResourceVO {
 
     public void setFeatures(String features) {
         this.features = features;
+    }
+
+    public String getLicense() {
+        return license;
+    }
+
+    public void setLicense(String license) {
+        this.license = license;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
