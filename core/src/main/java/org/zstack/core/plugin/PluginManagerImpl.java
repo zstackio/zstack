@@ -216,6 +216,11 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                             .features().get(capability) == Boolean.TRUE)));
         }
 
+        if (pluginInstances.get(pluginProductKey)
+                .features() == null) {
+            return true;
+        }
+
         return pluginInstances.get(pluginProductKey)
                 .features()
                 .get(capability) == Boolean.TRUE;

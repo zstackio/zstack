@@ -545,7 +545,7 @@
     <distributionManagement>
         <repository>
             <id>maven-releases</id>
-            <url>http://172.20.93.29:8081/repository/maven-releases/</url>
+            <url>http://maven.nexus.zstack.io/repository/maven-zstack-open-source/</url>
         </repository>
     </distributionManagement>
 
