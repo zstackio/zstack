@@ -1,5 +1,10 @@
 package org.zstack.core.plugin;
 
+import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.FilterBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.abstraction.PluginDriver;
 import org.zstack.abstraction.PluginValidator;
@@ -45,7 +50,15 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             pluginValidators = new HashMap<>();
 
     private void collectPluginProtocolMetadata() {
-        Platform.getReflections().getSubTypesOf(PluginDriver.class).forEach(clz -> {
+        ConfigurationBuilder builder = ConfigurationBuilder.build()
+                .setUrls(ClasspathHelper.forPackage("org.zstack"))
+                .setScanners(Scanners.SubTypes, Scanners.MethodsAnnotated,
+                        Scanners.FieldsAnnotated, Scanners.TypesAnnotated,
+                        Scanners.MethodsParameter)
+                .setExpandSuperTypes(false)
+                .filterInputsBy(new FilterBuilder().includePackage("org.zstack"));
+        Reflections reflections = new Reflections(builder);
+        reflections.getSubTypesOf(PluginDriver.class).forEach(clz -> {
             if (!clz.getCanonicalName().contains("org.zstack.abstraction")
                     || !clz.isInterface()) {
                 return;
