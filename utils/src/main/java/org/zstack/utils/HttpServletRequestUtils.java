@@ -68,7 +68,7 @@ public class HttpServletRequestUtils {
         } else if (userAgent.contains("safari")) {
             return "Safari";
         } else if (userAgent.contains("zstack-cli")) {
-            return "zstack-cli";
+            return "cli";
         }else {
             return "Other";
         }
