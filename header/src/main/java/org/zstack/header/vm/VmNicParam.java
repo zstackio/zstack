@@ -1,11 +1,21 @@
 package org.zstack.header.vm;
 
-import java.io.Serializable;
+import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.rest.APINoSee;
 
-public class VmNicParm implements Serializable {
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@PythonClassInventory
+public class VmNicParam implements Serializable {
     private String l3NetworkUuid;
 
     private String ip;
+
+    private String ip6;
 
     private String mac;
 
@@ -19,6 +29,8 @@ public class VmNicParm implements Serializable {
 
     private String driverType;
 
+    private String VmNicType;
+
     private String state = VmNicState.enable.toString();
 
     private Long outboundBandwidth;
@@ -26,6 +38,16 @@ public class VmNicParm implements Serializable {
     private Long inboundBandwidth;
 
     private Integer multiQueueNum;
+
+    private Boolean isDefaultNic;
+
+    private List<String> sgUuids = new ArrayList<>();
+
+    @APINoSee
+    private Map<String, String> IpMap = new HashMap<>(); /* filled for cloned vms more than 2 */
+
+    @APINoSee
+    private Map<String, String> Ip6Map = new HashMap<>(); /* filled for cloned vms more than 2 */
 
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
@@ -121,5 +143,53 @@ public class VmNicParm implements Serializable {
 
     public void setMultiQueueNum(Integer multiQueueNum) {
         this.multiQueueNum = multiQueueNum;
+    }
+
+    public String getIp6() {
+        return ip6;
+    }
+
+    public void setIp6(String ip6) {
+        this.ip6 = ip6;
+    }
+
+    public Boolean getDefaultNic() {
+        return isDefaultNic;
+    }
+
+    public void setDefaultNic(Boolean defaultNic) {
+        this.isDefaultNic = defaultNic;
+    }
+
+    public String getVmNicType() {
+        return VmNicType;
+    }
+
+    public void setVmNicType(String vmNicType) {
+        VmNicType = vmNicType;
+    }
+
+    public List<String> getSgUuids() {
+        return sgUuids;
+    }
+
+    public void setSgUuids(List<String> sgUuids) {
+        this.sgUuids = sgUuids;
+    }
+
+    public Map<String, String> getIpMap() {
+        return IpMap;
+    }
+
+    public void setIpMap(Map<String, String> ipMap) {
+        IpMap = ipMap;
+    }
+
+    public Map<String, String> getIp6Map() {
+        return Ip6Map;
+    }
+
+    public void setIp6Map(Map<String, String> ip6Map) {
+        Ip6Map = ip6Map;
     }
 }

@@ -12,6 +12,7 @@ doc {
     rest {
         request {
 			url "DELETE /v1/l3-networks/{l3NetworkUuid}/network-services"
+			url "DELETE /v1/l3-networks/{l3NetworkUuid}/network-services/{service}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -36,7 +37,7 @@ doc {
 					desc "网络服务"
 					location "body"
 					type "Map"
-					optional false
+					optional true
 					since "0.6"
 				}
 				column {
@@ -56,6 +57,15 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
+				}
+				column {
+					name "service"
+					enclosedIn ""
+					desc "服务类型"
+					location "body"
+					type "String"
+					optional true
+					since "5.1.0"
 				}
 			}
         }

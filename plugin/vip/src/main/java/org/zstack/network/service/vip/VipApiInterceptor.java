@@ -7,12 +7,14 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.vm.APIAttachL3NetworkToVmMsg;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -22,13 +24,15 @@ import static org.zstack.core.Platform.operr;
 import org.apache.commons.collections.CollectionUtils;
 import org.zstack.identity.AccountManager;
 import org.zstack.header.identity.AccountConstant;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 /**
  */
-public class VipApiInterceptor implements ApiMessageInterceptor {
+public class VipApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -41,6 +45,18 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
     private AccountManager acntMgr;
 
     @Override
+    public List<Class> getMessageClassToIntercept() {
+        List<Class> ret = new ArrayList<>();
+        ret.add(APIDeleteIpAddressMsg.class);
+        return ret;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
+    }
+
+    @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APICreateVipMsg) {
             validate((APICreateVipMsg) msg);
@@ -50,6 +66,8 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
             validate((APICheckVipPortAvailabilityMsg) msg);
         } else if (msg instanceof APIDeleteVipMsg) {
             validate((APIDeleteVipMsg) msg);
+        } else if (msg instanceof APIDeleteIpAddressMsg) {
+            validate((APIDeleteIpAddressMsg) msg);
         }
 
         return msg;
@@ -76,6 +94,16 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIGetVipAvailablePortMsg msg) {
         String accountUuid = msg.getSession().getAccountUuid();
         checkVipBelongToAccount(msg.getVipUuid(), accountUuid);
+    }
+
+    private void validate(APIDeleteIpAddressMsg msg) {
+        for (String uuid : msg.getUsedIpUuids()) {
+            UsedIpVO ip = dbf.findByUuid(uuid, UsedIpVO.class);
+            if (Q.New(VipVO.class).eq(VipVO_.l3NetworkUuid, ip.getL3NetworkUuid())
+                    .eq(VipVO_.ip, ip.getIp()).isExists()) {
+                throw new ApiMessageInterceptionException(argerr("could delete ip, because ip[uuid:%s] is a vip", ip.getIp()));
+            }
+        }
     }
 
     private void validate(APIDeleteVipMsg msg) {

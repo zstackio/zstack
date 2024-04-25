@@ -57,6 +57,24 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "arpCheck"
+					enclosedIn ""
+					desc "使用arping检测"
+					location "query"
+					type "Boolean"
+					optional true
+					since "5.1.0"
+				}
+				column {
+					name "ipRangeCheck"
+					enclosedIn ""
+					desc "在数据库可用地址段内检测"
+					location "query"
+					type "Boolean"
+					optional true
+					since "5.1.0"
+				}
 			}
         }
 

@@ -23,6 +23,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -133,13 +134,16 @@ public class VmAllocateNicIpFlow implements Flow {
                         errs.add(ipErrs.get(0));
                         wcomp.allDone();
                     } else {
-                        UsedIpInventory ip = nicIps.get(0);
+                        List<UsedIpInventory> sortedNicsIps = nicIps.stream()
+                                .sorted(Comparator.comparingInt(UsedIpInventory::getIpVersion))
+                                .collect(Collectors.toList());
+                        UsedIpInventory ip = sortedNicsIps.get(0);
                         nic.setIp(ip.getIp());
                         nic.setIpVersion(ip.getIpVersion());
                         nic.setUsedIpUuid(ip.getUuid());
                         nic.setNetmask(ip.getNetmask());
                         nic.setGateway(ip.getGateway());
-                        for (UsedIpInventory usedIp : nicIps) {
+                        for (UsedIpInventory usedIp : sortedNicsIps) {
                             /* update usedIpVo */
                             UsedIpVO ipVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIp.getUuid()).find();
                             ipVO.setVmNicUuid(nic.getUuid());

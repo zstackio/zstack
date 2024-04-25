@@ -15,6 +15,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkCategory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -432,5 +433,15 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         structs.add(releaseDhcp);
 
         return structs;
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, List<String> systemTags, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, Completion completion) {
+        completion.success();
     }
 }

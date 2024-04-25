@@ -40,7 +40,6 @@ test the API ApiGetInterdependentL3NetworksImagesMsg
     @Override
     void test() {
         env.create {
-            testValidateParameter()
             testGetL3NetworkByImage()
             testGetImageByL3Network()
             testGetL3NetworkByBS()
@@ -250,16 +249,6 @@ test the API ApiGetInterdependentL3NetworksImagesMsg
         }
     }
 
-    void testValidateParameter() {
-        def zone = env.inventoryByName("zone") as ZoneInventory
-
-        expect(AssertionError.class) {
-            getInterdependentL3NetworksImages {
-                zoneUuid = zone.uuid
-            }
-        }
-    }
-
     void testGetL3NetworkByImage() {
         def zone = env.inventoryByName("zone") as ZoneInventory
         def sftpImage1 = env.inventoryByName("image1") as ImageInventory
@@ -398,6 +387,13 @@ test the API ApiGetInterdependentL3NetworksImagesMsg
 
         assert sftpL3s.size() == 3
         assert sftpL3s.stream().allMatch({l3 -> l3.uuid in [l31.uuid, l32.uuid, l33.uuid]})
+
+        def L3s =  getInterdependentL3NetworksImages {
+            zoneUuid = zone.uuid
+        } as List
+
+        assert L3s.size() == 4
+        assert L3s.stream().allMatch({l3 -> l3.uuid in [l31.uuid, l32.uuid, l33.uuid, l34.uuid]})
     }
 
     void testGetBSsByL3Networks() {

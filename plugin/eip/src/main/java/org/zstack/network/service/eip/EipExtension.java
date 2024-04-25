@@ -33,6 +33,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  */
 public class EipExtension extends AbstractNetworkServiceExtension implements Component, ReleaseNetworkServiceOnDeletingNicExtensionPoint {
@@ -326,5 +328,15 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
 
         map.put(providerType.toString(), structs);
         releaseNetworkService(map.entrySet().iterator(), true, completion);
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
     }
 }

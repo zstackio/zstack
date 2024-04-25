@@ -154,6 +154,10 @@ public class L3NetworkInventory implements Serializable {
             joinColumn = @JoinColumn(name = "l3NetworkUuid"))
     private List<L3NetworkHostRouteInventory> hostRoute;
 
+    @Queryable(mappingClass = ReservedIpRangeInventory.class,
+            joinColumn = @JoinColumn(name = "l3NetworkUuid"))
+    private List<ReservedIpRangeInventory> reservedIpRanges;
+
     public static L3NetworkInventory valueOf(L3NetworkVO vo) {
         L3NetworkInventory inv = new L3NetworkInventory();
         inv.setUuid(vo.getUuid());
@@ -176,6 +180,7 @@ public class L3NetworkInventory implements Serializable {
         inv.setIpVersion(vo.getIpVersion());
         inv.setEnableIPAM(vo.getEnableIPAM());
         inv.setIsolated(vo.getIsolated());
+        inv.setReservedIpRanges(ReservedIpRangeInventory.valueOf(vo.getReservedIpRanges()));
         return inv;
     }
 
@@ -285,6 +290,14 @@ public class L3NetworkInventory implements Serializable {
 
     public void setIpRanges(List<IpRangeInventory> ipRanges) {
         this.ipRanges = ipRanges;
+    }
+
+    public List<ReservedIpRangeInventory> getReservedIpRanges() {
+        return reservedIpRanges;
+    }
+
+    public void setReservedIpRanges(List<ReservedIpRangeInventory> reservedIpRanges) {
+        this.reservedIpRanges = reservedIpRanges;
     }
 
     public List<NetworkServiceL3NetworkRefInventory> getNetworkServices() {
