@@ -41,8 +41,6 @@ import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
-import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
@@ -818,32 +816,51 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
                             });
                         }
-
-                        @Override
-                        public boolean skip(Map data) {
-                            return !PrimaryStorageType.valueOf(storageVO.getType()).isSupportCreateVolumeSnapshotCheckCapacity();
-                        }
                     });
                 }
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "check-primary-storage-capacity";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        boolean capacityChecked = PrimaryStorageCapacityChecker.New(volumeVO.getPrimaryStorageUuid()).checkRequiredSize(volumeSize);
-                        if (!capacityChecked) {
-                            trigger.fail(operr("after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes], may be the threshold of primary storage physical capacity setting is lower",
-                                    PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value(), volumeSize));
-                            return;
-                        }
-
-                        trigger.next();
-                    }
+                flow(new Flow() {
+                    String __name__ = "pre-allocate-primary-storage-capacity";
+                    String allocatedInstall;
 
                     @Override
                     public boolean skip(Map data) {
-                        return !PrimaryStorageType.valueOf(storageVO.getType()).isSupportCreateVolumeSnapshotCheckCapacity();
+                        return volumeSize <= 0;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+                        amsg.setRequiredPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+                        amsg.setSize(volumeSize);
+                        amsg.setRequiredInstallUri(String.format("volume://%s", msg.getVolumeUuid()));
+
+                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+                                allocatedInstall = ((AllocatePrimaryStorageSpaceReply) reply).getAllocatedInstallUrl();
+                                trigger.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        // rollback when no snapshot created
+                        if (snapshot == null && allocatedInstall != null) {
+                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                            rmsg.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+                            rmsg.setDiskSize(snapshot.getSize());
+                            rmsg.setAllocatedInstallUrl(allocatedInstall);
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                            bus.send(rmsg);
+                        }
+                        trigger.rollback();
                     }
                 });
 
@@ -910,10 +927,15 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     String allocatedInstall;
 
                     @Override
+                    public boolean skip(Map data) {
+                        return volumeSize >= snapshot.getSize();
+                    }
+
+                    @Override
                     public void run(FlowTrigger trigger, Map data) {
                         AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                         amsg.setRequiredPrimaryStorageUuid(vol.getPrimaryStorageUuid());
-                        amsg.setSize(snapshot.getSize());
+                        amsg.setSize(snapshot.getSize() - volumeSize);
                         amsg.setRequiredInstallUri(String.format("volume://%s", snapshot.getVolumeUuid()));
                         amsg.setForce(true);
                         amsg.setNoOverProvisioning(true);
