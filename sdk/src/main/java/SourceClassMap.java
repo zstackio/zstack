@@ -335,8 +335,8 @@ public class SourceClassMap {
 			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
-			put("org.zstack.header.vm.CreateVmInstanceFromTemplateVmInstanceResults", "org.zstack.sdk.CreateVmInstanceFromTemplateVmInstanceResults");
-			put("org.zstack.header.vm.TemplateVmInstanceInventory", "org.zstack.sdk.TemplateVmInstanceInventory");
+			put("org.zstack.header.vm.CreateVmInstanceFromTemplatedVmInstanceResults", "org.zstack.sdk.CreateVmInstanceFromTemplatedVmInstanceResults");
+			put("org.zstack.header.vm.TemplatedVmInstanceInventory", "org.zstack.sdk.TemplatedVmInstanceInventory");
 			put("org.zstack.header.vm.VdiPortInfo", "org.zstack.sdk.VdiPortInfo");
 			put("org.zstack.header.vm.VirtualizerInfo", "org.zstack.sdk.VirtualizerInfo");
 			put("org.zstack.header.vm.VirtualizerInfoInventory", "org.zstack.sdk.VirtualizerInfoInventory");
@@ -854,7 +854,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CpuMemoryCapacityData", "org.zstack.header.allocator.datatypes.CpuMemoryCapacityData");
 			put("org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
-			put("org.zstack.sdk.CreateVmInstanceFromTemplateVmInstanceResults", "org.zstack.header.vm.CreateVmInstanceFromTemplateVmInstanceResults");
+			put("org.zstack.sdk.CreateVmInstanceFromTemplatedVmInstanceResults", "org.zstack.header.vm.CreateVmInstanceFromTemplatedVmInstanceResults");
 			put("org.zstack.sdk.DRSAdviceInventory", "org.zstack.drs.entity.DRSAdviceInventory");
 			put("org.zstack.sdk.DRSVmMigrationActivityInventory", "org.zstack.drs.entity.DRSVmMigrationActivityInventory");
 			put("org.zstack.sdk.DataCenterInventory", "org.zstack.header.datacenter.DataCenterInventory");
@@ -1214,7 +1214,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TaskInfo", "org.zstack.header.core.progress.TaskInfo");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
 			put("org.zstack.sdk.TemplateConfigInventory", "org.zstack.templateConfig.TemplateConfigInventory");
-			put("org.zstack.sdk.TemplateVmInstanceInventory", "org.zstack.header.vm.TemplateVmInstanceInventory");
+			put("org.zstack.sdk.TemplatedVmInstanceInventory", "org.zstack.header.vm.TemplatedVmInstanceInventory");
 			put("org.zstack.sdk.Threshold", "org.zstack.drs.api.Threshold");
 			put("org.zstack.sdk.TrashCleanupResult", "org.zstack.header.core.trash.TrashCleanupResult");
 			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
