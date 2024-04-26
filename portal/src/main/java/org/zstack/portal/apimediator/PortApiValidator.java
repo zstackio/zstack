@@ -61,8 +61,8 @@ public class PortApiValidator implements ApiMessageValidator, Ordered {
 
                         if (!invalids.isEmpty()) {
                             throw new ApiMessageInterceptionException(err(SysErrors.RESOURCE_NOT_FOUND,
-                                    "invalid field[%s], resource[uuids:%s, type:%s] not found", f.getName(), invalids, at.resourceType().getSimpleName()
-                            ));
+                                    "invalid field[%s] for %s, resource[uuids:%s, type:%s] not found",
+                                    f.getName(), msg.getClass().getSimpleName(), invalids, at.resourceType().getSimpleName()));
                         }
                     }
                 }
@@ -96,8 +96,8 @@ public class PortApiValidator implements ApiMessageValidator, Ordered {
                         throw new StopRoutingException();
                     } else {
                         throw new ApiMessageInterceptionException(err(SysErrors.RESOURCE_NOT_FOUND,
-                                "invalid field[%s], resource[uuid:%s, type:%s] not found", f.getName(), value, at.resourceType().getSimpleName()
-                        ));
+                                "invalid field[%s] for %s, resource[uuid:%s, type:%s] not found",
+                                f.getName(), msg.getClass().getSimpleName(), value, at.resourceType().getSimpleName()));
                     }
                 }
             }
