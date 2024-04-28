@@ -8,6 +8,7 @@ public class ZSha2Info {
     private String peerip;
     private String dbvip;
     private String nic;
+    private int peerport;
     private boolean isMaster;
 
     public String getNodeip() {
@@ -48,5 +49,10 @@ public class ZSha2Info {
 
     public void setMaster(boolean master) {
         isMaster = master;
+    }
+
+    public int getPeerport() {return peerport;}
+
+    public void setPeerport(int peerport) {this.peerport = peerport;
     }
 }
