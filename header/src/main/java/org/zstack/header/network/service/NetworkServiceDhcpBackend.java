@@ -2,6 +2,7 @@ package org.zstack.header.network.service;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 
@@ -21,4 +22,8 @@ public interface NetworkServiceDhcpBackend {
     void releaseDhcpService(List<DhcpStruct> dhcpStructsList, VmInstanceSpec spec, NoErrorCompletion completion);
 
     void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, Completion completion);
+
+    void enableNetworkService(L3NetworkVO l3VO, Completion completion);
+
+    void disableNetworkService(L3NetworkVO l3VO, Completion completion);
 }

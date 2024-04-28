@@ -48,6 +48,10 @@ public class APIChangeL3NetworkStateMsg extends APIMessage implements L3NetworkM
      */
     @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
+
+    @APIParam(required = false, resourceType = IpRangeVO.class, checkAccount = true, operationTarget = true)
+    private String ipRangeUuid;
+
     /**
      * @desc - enable: enable l3Network
      * - disable: disable l3Network
@@ -73,6 +77,14 @@ public class APIChangeL3NetworkStateMsg extends APIMessage implements L3NetworkM
 
     public void setStateEvent(String stateEvent) {
         this.stateEvent = stateEvent;
+    }
+
+    public String getIpRangeUuid() {
+        return ipRangeUuid;
+    }
+
+    public void setIpRangeUuid(String ipRangeUuid) {
+        this.ipRangeUuid = ipRangeUuid;
     }
 
     @Override

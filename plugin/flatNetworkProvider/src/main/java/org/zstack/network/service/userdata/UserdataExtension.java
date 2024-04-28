@@ -10,6 +10,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicSpec;
@@ -190,5 +191,15 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
                 completion.done();
             }
         });
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
     }
 }

@@ -510,4 +510,29 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	    /* serviceType is not used now, maybe used in future */
         return supportedVmTypes.contains(vmType);
     }
+
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion) {
+        for (final NetworkServiceExtensionPoint ns : nsExts) {
+            if (ns.getNetworkServiceType() == nsType) {
+                ns.enableNetworkService(l3VO, providerType, completion);
+                return;
+            }
+        }
+        logger.debug(String.format("there is no backend[provideType:%s, serviceType:%S] to enable service", providerType.toString(), nsType.toString()));
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion) {
+        for (final NetworkServiceExtensionPoint ns : nsExts) {
+            if (ns.getNetworkServiceType() == nsType) {
+                ns.disableNetworkService(l3VO, providerType, completion);
+                return;
+            }
+        }
+        logger.debug(String.format("there is no backend[provideType:%s, serviceType:%S] to disable service", providerType.toString(), nsType.toString()));
+        completion.success();
+    }
 }

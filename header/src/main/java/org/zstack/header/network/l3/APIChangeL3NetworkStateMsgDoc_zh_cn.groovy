@@ -58,6 +58,15 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "ipRangeUuid"
+					enclosedIn "changeL3NetworkState"
+					desc "IP段UUID"
+					location "body"
+					type "String"
+					optional true
+					since "5.1.0"
+				}
 			}
         }
 

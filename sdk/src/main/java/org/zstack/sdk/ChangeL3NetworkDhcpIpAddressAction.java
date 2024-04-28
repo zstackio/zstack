@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeL3NetworkStateAction extends AbstractAction {
+public class ChangeL3NetworkDhcpIpAddressAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ChangeL3NetworkStateResult value;
+        public org.zstack.sdk.ChangeL3NetworkDhcpIpAddressResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,13 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String l3NetworkUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ipRangeUuid;
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dhcpServerIp;
 
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String stateEvent;
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dhcpv6ServerIp;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +66,8 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ChangeL3NetworkStateResult value = res.getResult(org.zstack.sdk.ChangeL3NetworkStateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ChangeL3NetworkStateResult() : value; 
+        org.zstack.sdk.ChangeL3NetworkDhcpIpAddressResult value = res.getResult(org.zstack.sdk.ChangeL3NetworkDhcpIpAddressResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeL3NetworkDhcpIpAddressResult() : value; 
 
         return ret;
     }
@@ -97,10 +97,10 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/l3-networks/{uuid}/actions";
+        info.path = "/l3-networks/{l3NetworkUuid}/dhcp-ip";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "changeL3NetworkState";
+        info.parameterName = "changeL3NetworkDhcpIpAddress";
         return info;
     }
 

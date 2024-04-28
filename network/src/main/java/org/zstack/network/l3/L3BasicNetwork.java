@@ -3,6 +3,7 @@ package org.zstack.network.l3;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -21,8 +22,10 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.ResourceBindingStrategy;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -36,6 +39,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -44,6 +48,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -84,6 +89,8 @@ public class L3BasicNetwork implements L3Network {
     private ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private NetworkServiceManager nsMgr;
 
     private L3NetworkVO self;
 
@@ -467,28 +474,76 @@ public class L3BasicNetwork implements L3Network {
         bus.publish(event);
     }
 
+    private void detachNetworkServiceFromL3NetworkMsg(L3NetworkVO l3VO, List<NetworkServiceL3NetworkRefVO> refs, Completion completion) {
+        List<NetworkServiceProviderVO> networkServiceProviderVOS = Q.New(NetworkServiceProviderVO.class).list();
+        Map<String, String> providerUuidTypeMap = new HashMap<>();
+        for (NetworkServiceProviderVO providerVO : networkServiceProviderVOS) {
+            providerUuidTypeMap.put(providerVO.getUuid(), providerVO.getType());
+        }
+
+        new While<>(refs).each((ref, wcomp) -> {
+            NetworkServiceProviderType pType = NetworkServiceProviderType.valueOf(providerUuidTypeMap.get(ref.getNetworkServiceProviderUuid()));
+            NetworkServiceType nsType = NetworkServiceType.valueOf(ref.getNetworkServiceType());
+
+            nsMgr.disableNetworkService(l3VO, pType, nsType, new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
+            }
+        });
+    }
+
+
     private void handle(APIDetachNetworkServiceFromL3NetworkMsg msg) {
+        APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
+
+        List<NetworkServiceL3NetworkRefVO> refs = new ArrayList<>();
+        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+
         for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
             SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
             q.add(NetworkServiceL3NetworkRefVO_.networkServiceProviderUuid, Op.EQ, e.getKey());
             q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, self.getUuid());
             q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.IN, e.getValue());
-            List<NetworkServiceL3NetworkRefVO> refs = q.list();
-
-            if (refs.isEmpty()) {
-                logger.warn(String.format("no network service references found for the provider[uuid:%s] and L3 network[uuid:%s]",
-                        e.getKey(), self.getUuid()));
-            } else {
-                dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
-            }
-
-            logger.debug(String.format("successfully detached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
+            refs.addAll(q.list());
         }
 
-        self = dbf.reload(self);
-        APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
-        evt.setInventory(L3NetworkInventory.valueOf(self));
-        bus.publish(evt);
+        if (refs.isEmpty()) {
+            self = dbf.reload(self);
+            evt.setInventory(L3NetworkInventory.valueOf(self));
+            bus.publish(evt);
+            return;
+        }
+
+        detachNetworkServiceFromL3NetworkMsg(l3VO, refs, new Completion(msg) {
+            @Override
+            public void success() {
+                dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
+                logger.debug(String.format("successfully detached network service provider[uuid:%s]", JSONObjectUtil.dumpPretty(refs)));
+                self = dbf.reload(self);
+                evt.setInventory(L3NetworkInventory.valueOf(self));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.debug(String.format("detached network service provider[uuid:%s] failed:%s", JSONObjectUtil.dumpPretty(refs), errorCode.getDetails()));
+                self = dbf.reload(self);
+                evt.setInventory(L3NetworkInventory.valueOf(self));
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APIUpdateIpRangeMsg msg) {
@@ -812,17 +867,65 @@ public class L3BasicNetwork implements L3Network {
 
 	private void handle(final AttachNetworkServiceToL3Msg msg) {
         MessageReply reply = new MessageReply();
+        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        List<NetworkServiceProviderVO> networkServiceProviderVOS = Q.New(NetworkServiceProviderVO.class).list();
+        Map<String, String> providerUuidTypeMap = new HashMap<>();
+        for (NetworkServiceProviderVO providerVO : networkServiceProviderVOS) {
+            providerUuidTypeMap.put(providerVO.getUuid(), providerVO.getType());
+        }
+
+        List<NetworkServiceL3NetworkRefVO> refVOS = new ArrayList<>();
         for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
             for (String nsType : e.getValue()) {
                 NetworkServiceL3NetworkRefVO ref = new NetworkServiceL3NetworkRefVO();
                 ref.setL3NetworkUuid(self.getUuid());
                 ref.setNetworkServiceProviderUuid(e.getKey());
                 ref.setNetworkServiceType(nsType);
-                dbf.persist(ref);
+                refVOS.add(ref);
             }
             logger.debug(String.format("successfully attached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
         }
-        bus.reply(msg, reply);
+
+        dbf.persistCollection(refVOS);
+
+        new While<>(refVOS).each((ref, wcomp) -> {
+            String provideType = providerUuidTypeMap.get(ref.getNetworkServiceProviderUuid());
+            NetworkServiceProviderType ptype = NetworkServiceProviderType.valueOf(provideType);
+            NetworkServiceType nsType = NetworkServiceType.valueOf(ref.getNetworkServiceType());
+            nsMgr.enableNetworkService(l3VO, ptype, nsType, new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    wcomp.addError(errorCode);
+                    wcomp.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    bus.reply(msg, reply);
+                } else {
+                    detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, new Completion(msg) {
+                        @Override
+                        public void success() {
+                            reply.setError(errorCodeList.getCauses().get(0));
+                            bus.reply(msg, reply);
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCodeList.getCauses().get(0));
+                            bus.reply(msg, reply);
+                        }
+                    });
+                }
+            }
+        });
     }
 
 	private void handle(APIAttachNetworkServiceToL3NetworkMsg msg) {
@@ -830,6 +933,9 @@ public class L3BasicNetwork implements L3Network {
         AttachNetworkServiceToL3Msg amsg = new AttachNetworkServiceToL3Msg();
         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
         amsg.setNetworkServices(msg.getNetworkServices());
+        if (msg.getSystemTags() != null) {
+            amsg.setApiSystemTags(msg.getSystemTags());
+        }
 
         bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
         bus.send(amsg, new CloudBusCallBack(msg) {
