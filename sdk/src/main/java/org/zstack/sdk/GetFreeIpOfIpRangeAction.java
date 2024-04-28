@@ -40,6 +40,9 @@ public class GetFreeIpOfIpRangeAction extends AbstractAction {
     @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer ipVersion;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean addressDetection = false;
+
     @Param(required = false)
     public int limit = 100;
 

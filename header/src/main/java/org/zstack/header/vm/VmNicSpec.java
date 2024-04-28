@@ -16,7 +16,7 @@ public class VmNicSpec implements Serializable {
 
     //from api msg
     /* due to the design changed, single nic will only has 1 l3 network */
-    public List<VmNicParm> vmNicParms;
+    public List<VmNicParam> vmNicParms;
 
     public VmNicSpec(List<L3NetworkInventory> l3Invs) {
         this.l3Invs = l3Invs;
@@ -85,11 +85,11 @@ public class VmNicSpec implements Serializable {
         return res;
     }
 
-    public List<VmNicParm> getVmNicParms() {
+    public List<VmNicParam> getVmNicParms() {
         return vmNicParms;
     }
 
-    public void setVmNicParms(List<VmNicParm> vmNicParms) {
+    public void setVmNicParms(List<VmNicParam> vmNicParms) {
         this.vmNicParms = vmNicParms;
     }
 }
