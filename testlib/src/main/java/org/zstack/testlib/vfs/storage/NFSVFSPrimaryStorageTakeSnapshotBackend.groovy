@@ -12,6 +12,7 @@ import org.zstack.storage.primary.nfs.NfsPrimaryStorageConstant
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.LocalStorageSpec
 import org.zstack.testlib.NfsPrimaryStorageSpec
+import org.zstack.testlib.vfs.Qcow2
 import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.extensions.VFSPrimaryStorageTakeSnapshotBackend
 import org.zstack.testlib.vfs.extensions.VFSSnapshot
@@ -48,6 +49,25 @@ class NFSVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSystemBased
 
     @Override
     void blockStream(HttpEntity<String> e, EnvSpec spec, VolumeInventory volume) {
-        blockStream(NfsPrimaryStorageSpec.vfs(volume.getPrimaryStorageUuid(), spec), volume)
+        VFS vfs = NfsPrimaryStorageSpec.vfs(volume.getPrimaryStorageUuid(), spec)
+        if (vfs.exists(volume.getInstallPath())) {
+            vfs.delete(volume.getInstallPath())
+        }
+        blockStream(vfs, volume)
+    }
+
+    @Override
+    Qcow2 blockCommit(HttpEntity<String> e, EnvSpec spec, KVMAgentCommands.BlockCommitVolumeCmd cmd, VolumeInventory volume) {
+        String primaryStorageUuid = Q.New(VolumeVO.class)
+                .select(VolumeVO_.primaryStorageUuid)
+                .eq(VolumeVO_.uuid, volume.uuid)
+                .findValue()
+        VFS vfs = NfsPrimaryStorageSpec.vfs(primaryStorageUuid, spec)
+
+        Qcow2 top = vfs.getFile(cmd.top, true)
+        Qcow2 base = vfs.getFile(cmd.base, true)
+
+        Qcow2.commit(vfs, top, base)
+        return vfs.getFile(cmd.base, true)
     }
 }

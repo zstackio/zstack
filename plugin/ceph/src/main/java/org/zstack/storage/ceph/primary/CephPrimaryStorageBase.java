@@ -45,7 +45,6 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -2938,11 +2937,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             return;
                         }
 
-                        UndoSnapshotCreationMsg cmsg = new UndoSnapshotCreationMsg();
-                        cmsg.setVolumeUuid(snapshot.getVolumeUuid());
-                        cmsg.setSnapShot(snapshot);
-                        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, snapshot.getVolumeUuid());
-                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                        VolumeSnapshotDeletionMsg dmsg = new VolumeSnapshotDeletionMsg();
+                        dmsg.setTreeUuid(snapshot.getTreeUuid());
+                        dmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                        dmsg.setSnapshotUuid(snapshot.getUuid());
+                        dmsg.setOnlySelf(true);
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeSnapshotConstant.SERVICE_ID, snapshot.getUuid());
+                        bus.send(dmsg, new CloudBusCallBack(msg) {
                             @Override
                             public void run(MessageReply reply) {
                                 trigger.rollback();
@@ -2988,7 +2989,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "undo-snapshot-creation";
+                    String __name__ = "undo-temp-snapshot-creation";
 
                     @Override
                     public boolean skip(Map data) {
@@ -3003,11 +3004,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, UNDO_SNAPSHOT_CREATION_STAGE);
-                        UndoSnapshotCreationMsg cmsg = new UndoSnapshotCreationMsg();
-                        cmsg.setVolumeUuid(snapshot.getVolumeUuid());
-                        cmsg.setSnapShot(snapshot);
-                        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, snapshot.getVolumeUuid());
-                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+
+                        VolumeSnapshotDeletionMsg dmsg = new VolumeSnapshotDeletionMsg();
+                        dmsg.setTreeUuid(snapshot.getTreeUuid());
+                        dmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                        dmsg.setSnapshotUuid(snapshot.getUuid());
+                        dmsg.setOnlySelf(true);
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeSnapshotConstant.SERVICE_ID, snapshot.getUuid());
+                        bus.send(dmsg, new CloudBusCallBack(msg) {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
@@ -3044,28 +3048,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }).start();
     }
 
-    private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
-        VolumeSnapshotDeletionMsg dmsg = new VolumeSnapshotDeletionMsg();
-        dmsg.setTreeUuid(msg.getSnapshot().getTreeUuid());
-        dmsg.setVolumeUuid(msg.getSnapshot().getVolumeUuid());
-        dmsg.setSnapshotUuid(msg.getSnapshot().getUuid());
-        dmsg.setVolumeDeletion(false);
-        bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeSnapshotConstant.SERVICE_ID, msg.getSnapshot().getUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
-                if (!reply.isSuccess()) {
-                    ret.setError(reply.getError());
-                    bus.reply(msg, ret);
-                    return;
-                }
-
-                ret.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
-                ret.setSize(msg.getVolume().getActualSize());
-                bus.reply(msg, ret);
-            }
-        });
+    private void handle(final DeleteVolumeSnapshotSelfOnPrimaryStorageMsg msg) {
+        DeleteVolumeSnapshotSelfOnPrimaryStorageReply reply = new DeleteVolumeSnapshotSelfOnPrimaryStorageReply();
+        reply.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
+        reply.setSize(msg.getSnapshot().getSize());
+        bus.reply(msg, reply);
     }
 
     @Override
@@ -4388,12 +4375,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetPrimaryStorageUsageReportMsg) msg);
         } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {
             handle((CleanUpStorageTrashOnPrimaryStorageMsg)msg);
-        } else if (msg instanceof UndoSnapshotCreationOnPrimaryStorageMsg) {
-            handle((UndoSnapshotCreationOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeSnapshotSelfOnPrimaryStorageMsg) {
+            handle((DeleteVolumeSnapshotSelfOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
-
     }
 
     public static class CheckIsBitsExistingRsp extends AgentResponse {

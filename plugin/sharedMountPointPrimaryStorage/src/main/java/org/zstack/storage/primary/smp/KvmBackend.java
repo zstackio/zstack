@@ -41,8 +41,10 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.*;
-import org.zstack.identity.AccountManager;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
@@ -57,7 +59,6 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -1774,7 +1775,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(UndoSnapshotCreationOnPrimaryStorageMsg msg, ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply> completion) {
+    void handle(DeleteVolumeSnapshotSelfOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteVolumeSnapshotSelfOnPrimaryStorageReply> completion) {
         VolumeInventory vol = msg.getVolume();
         String hostUuid;
         String connectedHostUuid = primaryStorageFactory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
@@ -1801,23 +1802,27 @@ public class KvmBackend extends HypervisorBackend {
             hostUuid = connectedHostUuid;
         }
 
-        CommitVolumeOnHypervisorMsg hmsg = new CommitVolumeOnHypervisorMsg();
+
+        DeleteVolumeSnapshotSelfOnPrimaryStorageReply ret = new DeleteVolumeSnapshotSelfOnPrimaryStorageReply();
+
+        DeleteVolumeSnapshotSelfOnHypervisorMsg hmsg = new DeleteVolumeSnapshotSelfOnHypervisorMsg();
         hmsg.setHostUuid(hostUuid);
         hmsg.setVmUuid(msg.getVmUuid());
         hmsg.setVolume(msg.getVolume());
         hmsg.setSrcPath(msg.getSrcPath());
         hmsg.setDstPath(msg.getDstPath());
+        hmsg.setAliveChainInstallPathInDb(msg.getAliveChainInstallPathInDb());
         bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(hmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
+                DeleteVolumeSnapshotSelfOnPrimaryStorageReply ret = new DeleteVolumeSnapshotSelfOnPrimaryStorageReply();
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
                     return;
                 }
 
-                CommitVolumeOnHypervisorReply treply = (CommitVolumeOnHypervisorReply) reply;
+                DeleteVolumeSnapshotSelfOnHypervisorReply treply =  reply.castReply();
                 ret.setSize(treply.getSize());
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 completion.success(ret);

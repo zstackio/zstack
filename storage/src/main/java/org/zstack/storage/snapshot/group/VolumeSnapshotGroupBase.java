@@ -26,18 +26,15 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
+import org.zstack.tag.TagManagerImpl;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -67,6 +64,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     private PluginRegistry pluginRgty;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private TagManagerImpl tagMgr;
 
     public VolumeSnapshotGroupBase(VolumeSnapshotGroupVO self) {
         this.self = self;
@@ -187,6 +186,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         DeleteVolumeSnapshotGroupInnerMsg imsg = new DeleteVolumeSnapshotGroupInnerMsg();
         imsg.setUuid(msg.getUuid());
         imsg.setDeletionMode(msg.getDeletionMode());
+        imsg.setOnlySelf(msg.isOnlySelf());
         bus.makeTargetServiceIdByResourceUuid(imsg, VolumeSnapshotConstant.SERVICE_ID, msg.getUuid());
         overlaySend(imsg, new CloudBusCallBack(msg) {
             @Override
@@ -212,12 +212,13 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             logger.debug(String.format("skip snapshots not belong to origin vm[uuid:%s]", self.getVmInstanceUuid()));
         }
 
-        new While<>(snapshots).all((snapshot, compl) -> {
+        new While<>(snapshots).each((snapshot, compl) -> {
             DeleteVolumeSnapshotMsg rmsg = new DeleteVolumeSnapshotMsg();
             rmsg.setSnapshotUuid(snapshot.getUuid());
             rmsg.setVolumeUuid(snapshot.getVolumeUuid());
             rmsg.setTreeUuid(snapshot.getTreeUuid());
             rmsg.setDeletionMode(msg.getDeletionMode());
+            rmsg.setOnlySelf(msg.isOnlySelf());
 
             bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeSnapshotConstant.SERVICE_ID, getResourceIdToRouteMsg(snapshot));
             bus.send(rmsg, new CloudBusCallBack(compl) {

@@ -31,7 +31,6 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.*;
-import org.zstack.header.storage.backup.VolumeBackupOverlayMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint;
@@ -59,7 +58,6 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -3511,7 +3509,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        UndoSnapshotCreationOnPrimaryStorageMsg bmsg = new UndoSnapshotCreationOnPrimaryStorageMsg();
+                        DeleteVolumeSnapshotSelfOnPrimaryStorageMsg bmsg = new DeleteVolumeSnapshotSelfOnPrimaryStorageMsg();
                         bmsg.setVolume(getSelfInventory());
                         bmsg.setDstPath(snapShot.getPrimaryStorageInstallPath());
                         bmsg.setSrcPath(originVolumePath);
@@ -3527,7 +3525,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                     return;
                                 }
 
-                                UndoSnapshotCreationOnPrimaryStorageReply treply = (UndoSnapshotCreationOnPrimaryStorageReply) reply;
+                                DeleteVolumeSnapshotSelfOnPrimaryStorageReply treply = (DeleteVolumeSnapshotSelfOnPrimaryStorageReply) reply;
                                 newVolumeInstallPath = treply.getNewVolumeInstallPath();
                                 size = treply.getSize();
                                 trigger.next();
@@ -3676,21 +3674,23 @@ public class VolumeBase extends AbstractVolume implements Volume {
         APIUndoSnapshotCreationEvent evt = new APIUndoSnapshotCreationEvent(msg.getId());
 
         VolumeSnapshotVO snapShot = dbf.findByUuid(msg.getSnapShotUuid(), VolumeSnapshotVO.class);
-        UndoSnapshotCreationMsg vmsg = new UndoSnapshotCreationMsg();
-        vmsg.setVmInstanceUuid(self.getVmInstanceUuid());
-        vmsg.setVolumeUuid(msg.getVolumeUuid());
-        vmsg.setSnapShot(VolumeSnapshotInventory.valueOf(snapShot));
-        bus.makeTargetServiceIdByResourceUuid(vmsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-        bus.send(vmsg, new CloudBusCallBack(msg) {
+        DeleteVolumeSnapshotMsg dmsg = new DeleteVolumeSnapshotMsg();
+        dmsg.setTreeUuid(snapShot.getTreeUuid());
+        dmsg.setVolumeUuid(snapShot.getVolumeUuid());
+        dmsg.setSnapshotUuid(snapShot.getUuid());
+        dmsg.setDeletionMode(APIDeleteMessage.DeletionMode.Permissive);
+        dmsg.setOnlySelf(true);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeSnapshotConstant.SERVICE_ID, snapShot.getUuid());
+        bus.send(dmsg, new CloudBusCallBack(msg) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    evt.setError(r.getError());
                     bus.publish(evt);
                     return;
                 }
-                UndoSnapshotCreationReply gr = reply.castReply();
-                evt.setInventory(gr.getVolume());
+                VolumeVO volumeVO = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, snapShot.getVolumeUuid()).find();
+                evt.setInventory(VolumeInventory.valueOf(volumeVO));
                 bus.publish(evt);
             }
         });

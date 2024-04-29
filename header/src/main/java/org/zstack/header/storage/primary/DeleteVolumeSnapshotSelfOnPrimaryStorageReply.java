@@ -2,7 +2,7 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.MessageReply;
 
-public class UndoSnapshotCreationOnPrimaryStorageReply extends MessageReply {
+public class DeleteVolumeSnapshotSelfOnPrimaryStorageReply extends MessageReply {
     private String newVolumeInstallPath;
     private long size;
 
