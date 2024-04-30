@@ -1,7 +1,9 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.*;
 
@@ -13,7 +15,7 @@ import javax.persistence.*;
                 @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "vmInstanceUuid", targetField = "uuid")
         }
 )
-public class TemplatedVmInstanceRefVO {
+public class TemplatedVmInstanceRefVO implements ToInventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
