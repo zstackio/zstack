@@ -162,13 +162,6 @@ public class VmSystemTags {
     public static String VM_NIC_MULTIQUEUE_L3_TOKEN = "l3Uuid";
     public static PatternedSystemTag VM_NIC_MULTIQUEUE = new PatternedSystemTag(String.format("nicMultiQueueNum::{%s}::{%s}", VM_NIC_MULTIQUEUE_L3_TOKEN, VM_NIC_MULTIQUEUE_TOKEN), VmInstanceVO.class);
 
-    @Deprecated
-    public static final String V2V_VM_CDROMS_TOKEN = "v2vVmCdroms";
-    public static PatternedSystemTag V2V_VM_CDROMS = new PatternedSystemTag(
-            String.format("v2vVmCdroms::{%s}", V2V_VM_CDROMS_TOKEN),
-            VmInstanceVO.class
-    );
-
     public static final String MACHINE_TYPE_TOKEN = "vmMachineType";
     public static PatternedSystemTag MACHINE_TYPE = new PatternedSystemTag(
             String.format("vmMachineType::{%s}", MACHINE_TYPE_TOKEN),

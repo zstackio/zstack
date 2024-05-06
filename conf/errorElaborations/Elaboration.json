@@ -1049,30 +1049,6 @@
     "message_en": "The field of MTU must be in the range of [%2$s, %3$s]."
   },
   {
-    "category": "V2V",
-    "code": "1000",
-    "method": "regex",
-    "regex": ".*failed to run virt-v2v command, because .*... for more details, please see log in conversion host: /tmp/v2v_log/.*",
-    "message_cn": "执行 virt-v2v 命令失败，详细内容请登录宿物理机查找日志：/tmp/v2v_log/。",
-    "message_en": "Failed to run the virt-v2v command. For more details, please see log in conversion host: /tmp/v2v_log/."
-  },
-  {
-    "category": "V2V",
-    "code": "1001",
-    "method": "regex",
-    "regex": ".*underlying host of conversion host\\[uuid:.*] should be Connected.*",
-    "message_cn": "v2v 迁移时所使用的迁移物理机应处于己连接状态。",
-    "message_en": "The status of the conversion host must be Connected during V2V migration."
-  },
-  {
-    "category": "V2V",
-    "code": "1002",
-    "method": "regex",
-    "regex": ".*refers to non-existing datastore.*This may be a bug in vCenter 5.5, please detach ISO in vSphere client and try again",
-    "message_cn": "文件名指向的 datastore 不存在，请通过 vSphere 客户端卸载掉 iso 后重试。",
-    "message_en": "The datastore redirected by the filename does not exist. Please detach ISO in vSphere client and try again."
-  },
-  {
     "category": "VCENTER",
     "code": "1000",
     "method": "regex",
