@@ -126,7 +126,6 @@ class ZbsPrimaryStorageCase extends SubCase {
 
             testZbsStorageLifecycle()
             testDataVolumeLifecycle()
-
             testZbsStorageNegativeScenario()
             testDataVolumeNegativeScenario()
         }
@@ -157,15 +156,6 @@ class ZbsPrimaryStorageCase extends SubCase {
     }
 
     void testDataVolumeLifecycle() {
-        def actualSize = SizeUnit.GIGABYTE.toByte(1)
-        env.simulator(ZbsStorageController.CREATE_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def rsp = new ZbsStorageController.CreateVolumeRsp()
-            rsp.size = actualSize
-            rsp.actualSize = actualSize
-            rsp.installPath = "cbd:pool1/lpool1/test"
-            return rsp
-        }
-
         vol = createDataVolume {
             name = "test"
             diskOfferingUuid = diskOffering.uuid
