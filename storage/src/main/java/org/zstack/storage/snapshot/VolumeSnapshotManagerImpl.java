@@ -68,8 +68,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.storage.snapshot.VolumeSnapshotTagHelper.getBackingVolumeTag;
 import static org.zstack.utils.CollectionDSL.list;
@@ -807,6 +806,24 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         }
                     });
                 }
+                flow(new NoRollbackFlow() {
+                    private void doBeforeCreateVolumeSnapshot(final Iterator<BeforeCreateVolumeSnapshotExtensionPoint> it, VolumeSnapshotStruct volumeSnapshotStruct) {
+                        if (!it.hasNext()) {
+                            return;
+                        }
+
+                        BeforeCreateVolumeSnapshotExtensionPoint ext = it.next();
+                        ext.beforeCreateVolumeSnapshot(Collections.singletonList(volumeSnapshotStruct));
+                        doBeforeCreateVolumeSnapshot(it, volumeSnapshotStruct);
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Iterator<BeforeCreateVolumeSnapshotExtensionPoint> it = pluginRgty.getExtensionList(BeforeCreateVolumeSnapshotExtensionPoint.class).listIterator();
+                        doBeforeCreateVolumeSnapshot(it, struct);
+                        trigger.next();
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-primary-storage-capacity";
