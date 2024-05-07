@@ -111,6 +111,13 @@ public interface KVMConstant {
     String TAKE_VM_CONSOLE_SCREENSHOT_PATH = "/vm/console/screenshot";
     String GET_VM_UPTIME_PATH = "/vm/getpidcreatetime";
 
+    String SET_HOST_PHYSICAL_MEMORY_MONITOR = "/host/physical/memory/monitor/start";
+
+    String HOST_PHYSICAL_HARD_STATUS_ALARM_EVENT = "/host/physical/hardware/status/alarm";
+    String HOST_PHYSICAL_DISK_INSERT_ALARM_EVENT = "/host/physical/disk/insert/alarm";
+    String HOST_PHYSICAL_DISK_REMOVE_ALARM_EVENT = "/host/physical/disk/remove/alarm";
+    String HOST_PHYSICAL_MEMORY_ECC_ERROR_ALARM_EVENT = "/host/physical/memory/ecc/error/alarm";
+    String HOST_PHYSICAL_GPU_REMOVE_ALARM_EVENT = "/host/physical/gpu/remove/alarm";
     String KVM_AGENT_OWNER = "kvm";
 
     String ALI_REPO = "ali";
@@ -137,6 +144,17 @@ public interface KVMConstant {
     int KVM_HOST_POWER_OPERATION_TIMEOUT_SECONDS = 300;
 
     String KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS = "kvm.host.skip.ping.no.failure.extensions";
+
+    String MEMORY_LOCATOR_NAME = "locator";
+    String PHSICAL_DEVICE_STATUS_NAME = "status";
+    String CPU_NAME = "cpuName";
+    String PCI_DEVICE_ADDRESS = "pcideviceAddress";
+    String DEVICE_NAME = "name";
+    String DEVICE_SERIAL_NUMBER = "serial_number";
+    String ENCLOSURE_DEVICE_ID = "enclosure_device_id";
+    String SLOT_NUMBER = "slot_number";
+    String DRIVE_STATE = "drive_state";
+    String TARGET_ID = "target_id";
 
     public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
     public static final String L2_PROVIDER_TYPE_OVS_DPDK = "OvsDpdk";

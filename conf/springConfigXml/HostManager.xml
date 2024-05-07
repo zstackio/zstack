@@ -52,7 +52,7 @@
 
     <bean id="HostCascadeExtension" class="org.zstack.compute.host.HostCascadeExtension">
         <zstack:plugin>
-			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
         </zstack:plugin>
     </bean>
 
