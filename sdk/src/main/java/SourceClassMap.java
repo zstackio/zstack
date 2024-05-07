@@ -556,6 +556,7 @@ public class SourceClassMap {
 			put("org.zstack.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
 			put("org.zstack.sns.platform.snmp.SNSSnmpPlatformInventory", "org.zstack.sdk.sns.platform.snmp.SNSSnmpPlatformInventory");
+			put("org.zstack.sns.platform.universalsms.SNSUniversalSmsEndpointInventory", "org.zstack.sdk.sns.platform.universalsms.SNSUniversalSmsEndpointInventory");
 			put("org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory");
 			put("org.zstack.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory");
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
@@ -1381,6 +1382,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
 			put("org.zstack.sdk.sns.platform.snmp.SNSSnmpPlatformInventory", "org.zstack.sns.platform.snmp.SNSSnmpPlatformInventory");
+			put("org.zstack.sdk.sns.platform.universalsms.SNSUniversalSmsEndpointInventory", "org.zstack.sns.platform.universalsms.SNSUniversalSmsEndpointInventory");
 			put("org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory");
 			put("org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sns.platform.wecom.SNSWeComEndpointInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketInventory", "org.zstack.ticket.entity.ArchiveTicketInventory");
