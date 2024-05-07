@@ -3944,6 +3944,8 @@ public class KVMAgentCommands {
 
     public static class ReportVmShutdownEventCmd {
         public String vmUuid;
+        public String detail;
+        public String opaque;
     }
 
     public static class ReportVmRebootEventCmd {
