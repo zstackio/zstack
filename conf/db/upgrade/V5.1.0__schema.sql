@@ -67,20 +67,22 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ExponBlockVolumeVO` (
     CONSTRAINT fkExponBlockVolumeVOBlockVolumeVO FOREIGN KEY (uuid) REFERENCES BlockVolumeVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `zstack`.`SNSUniversalSmsEndpointVO`
+CREATE TABLE IF NOT EXISTS `zstack`.`SNSUniversalSmsEndpointVO`
 (
     `uuid`               varchar(32)  NOT NULL UNIQUE,
     `smsAccessKeyId`     varchar(128) NOT NULL,
     `smsAccessKeySecret` varchar(128) NOT NULL,
     `supplier`           varchar(32)  NOT NULL,
-    PRIMARY KEY (`uuid`)
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT fkSNSUniversalSmsEndpointVOSNSApplicationEndpointVO FOREIGN KEY (uuid) REFERENCES SNSApplicationEndpointVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `zstack`.`SNSEmaySmsEndpointVO`
+CREATE TABLE IF NOT EXISTS `zstack`.`SNSEmaySmsEndpointVO`
 (
     `uuid`       varchar(32)  NOT NULL UNIQUE,
     `requestUrl` varchar(128) NOT NULL,
-    PRIMARY KEY (`uuid`)
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT fkSNSEmaySmsEndpointVOSNSApplicationEndpointVO FOREIGN KEY (uuid) REFERENCES SNSApplicationEndpointVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`SNSSmsEndpointVO` RENAME TO `zstack`.`SNSAliyunSmsEndpointVO`;

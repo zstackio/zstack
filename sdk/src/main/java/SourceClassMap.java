@@ -541,7 +541,7 @@ public class SourceClassMap {
 			put("org.zstack.snmp.agent.SnmpAgentInventory", "org.zstack.sdk.SnmpAgentInventory");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
-			put("org.zstack.sns.SNSSmsEndpointInventory", "org.zstack.sdk.sns.SNSSmsEndpointInventory");
+			put("org.zstack.sns.SNSAliyunSmsEndpointInventory", "org.zstack.sdk.sns.SNSAliyunSmsEndpointInventory");
 			put("org.zstack.sns.SNSSmsReceiverInventory", "org.zstack.sdk.sns.SNSSmsReceiverInventory");
 			put("org.zstack.sns.SNSSubscriberInventory", "org.zstack.sdk.sns.SNSSubscriberInventory");
 			put("org.zstack.sns.SNSTopicInventory", "org.zstack.sdk.sns.SNSTopicInventory");
@@ -1367,7 +1367,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.role.RoleType", "org.zstack.header.identity.role.RoleType");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
-			put("org.zstack.sdk.sns.SNSSmsEndpointInventory", "org.zstack.sns.SNSSmsEndpointInventory");
+			put("org.zstack.sdk.sns.SNSAliyunSmsEndpointInventory", "org.zstack.sns.SNSAliyunSmsEndpointInventory");
 			put("org.zstack.sdk.sns.SNSSmsReceiverInventory", "org.zstack.sns.SNSSmsReceiverInventory");
 			put("org.zstack.sdk.sns.SNSSubscriberInventory", "org.zstack.sns.SNSSubscriberInventory");
 			put("org.zstack.sdk.sns.SNSTopicInventory", "org.zstack.sns.SNSTopicInventory");
