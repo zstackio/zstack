@@ -22,14 +22,6 @@ import java.util.stream.Collectors;
 @Entity
 @Table
 @BaseResource
-@EntityGraph(
-        parents = {
-                @EntityGraph.Neighbour(type = LoadBalancerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerListenerServerGroupRefVO.class, myField = "uuid", targetField = "serverGroupUuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerServerGroupServerIpVO.class, myField = "uuid", targetField = "serverGroupUuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVmNicRefVO.class, myField = "uuid", targetField = "serverGroupUuid"),
-        }
-)
 public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAccount {
     @Column
     private String name;
