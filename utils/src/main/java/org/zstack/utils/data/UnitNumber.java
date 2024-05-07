@@ -51,7 +51,7 @@ public class UnitNumber {
         if (i == 0 || chars[0] == '-' && i == 1) {
             return null;
         }
-        return new UnitNumber(Long.parseLong(text.substring(0, i)), text.substring(i));
+        return new UnitNumber(Long.parseLong(text.substring(0, i)), text.substring(i).trim());
     }
 
     public UnitNumber setNumber(long number) {

@@ -52,4 +52,8 @@ public class HostGlobalConfig {
     public static GlobalConfig HOST_PORT_ALLOCATION_START_PORT = new GlobalConfig(CATEGORY, "host.port.allocate.start.port");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig HOST_POWER_REFRESH_INTERVAL = new GlobalConfig(CATEGORY, "host.power.refresh.interval");
+
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    public static GlobalConfig SYNC_HOST_HW_MONITOR_INTERVAL = new GlobalConfig(CATEGORY, "sync.host.hw.monitor.interval");
+
 }

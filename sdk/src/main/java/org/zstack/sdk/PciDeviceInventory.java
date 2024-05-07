@@ -113,12 +113,28 @@ public class PciDeviceInventory  {
         return this.vendorId;
     }
 
+    public java.lang.String vendor;
+    public void setVendor(java.lang.String vendor) {
+        this.vendor = vendor;
+    }
+    public java.lang.String getVendor() {
+        return this.vendor;
+    }
+
     public java.lang.String deviceId;
     public void setDeviceId(java.lang.String deviceId) {
         this.deviceId = deviceId;
     }
     public java.lang.String getDeviceId() {
         return this.deviceId;
+    }
+
+    public java.lang.String device;
+    public void setDevice(java.lang.String device) {
+        this.device = device;
+    }
+    public java.lang.String getDevice() {
+        return this.device;
     }
 
     public java.lang.String subvendorId;
