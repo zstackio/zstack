@@ -148,4 +148,12 @@ public class AuditsInventory  {
         return this.resourceName;
     }
 
+    public java.lang.Long startTime;
+    public void setStartTime(java.lang.Long startTime) {
+        this.startTime = startTime;
+    }
+    public java.lang.Long getStartTime() {
+        return this.startTime;
+    }
+
 }
