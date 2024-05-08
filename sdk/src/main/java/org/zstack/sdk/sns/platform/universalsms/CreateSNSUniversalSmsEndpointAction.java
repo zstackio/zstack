@@ -32,7 +32,7 @@ public class CreateSNSUniversalSmsEndpointAction extends AbstractAction {
     public java.lang.String smsAccessKeySecret;
 
     @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    public java.lang.String supplier;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.HashMap additionParam;
