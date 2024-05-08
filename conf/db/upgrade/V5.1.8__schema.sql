@@ -50,6 +50,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CSPSecretResourcePoolVO` (
 
 ALTER TABLE `zstack`.`SNSApplicationEndpointVO` ADD COLUMN `connectionStatus` varchar(10) DEFAULT 'UP' COMMENT 'UP or DOWN';
 
-ALTER TABLE `zstack`.`OAuth2ClientVO` ADD COLUMN `scope` varchar(255) default NULL;
+ALTER TABLE `zstack`.`OAuth2ClientVO` ADD COLUMN `scope` varchar(255) default 'openid';
 
 ALTER TABLE `zstack`.`OAuth2ClientVO` ADD COLUMN `identityProvider` varchar(16) default NULL;
