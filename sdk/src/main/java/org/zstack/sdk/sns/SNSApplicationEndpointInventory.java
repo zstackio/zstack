@@ -68,6 +68,14 @@ public class SNSApplicationEndpointInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String connectionStatus;
+    public void setConnectionStatus(java.lang.String connectionStatus) {
+        this.connectionStatus = connectionStatus;
+    }
+    public java.lang.String getConnectionStatus() {
+        return this.connectionStatus;
+    }
+
     public SNSApplicationPlatformInventory platform;
     public void setPlatform(SNSApplicationPlatformInventory platform) {
         this.platform = platform;
