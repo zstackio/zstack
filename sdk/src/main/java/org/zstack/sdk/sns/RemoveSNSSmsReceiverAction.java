@@ -29,7 +29,7 @@ public class RemoveSNSSmsReceiverAction extends AbstractAction {
     public java.lang.String endpointUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
+    public java.util.List phoneNumberList;
 
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";

@@ -26,7 +26,7 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
     }
 
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
+    public java.util.List phoneNumberList;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String endpointUuid;

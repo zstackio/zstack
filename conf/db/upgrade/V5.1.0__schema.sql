@@ -91,4 +91,4 @@ ALTER TABLE `zstack`.`SNSAliyunSmsEndpointVO`
     ADD CONSTRAINT fkSNSAliyunSmsEndpointVOSNSApplicationEndpointVO FOREIGN KEY (uuid) REFERENCES `zstack`.`SNSApplicationEndpointVO` (uuid) ON DELETE CASCADE;
 ALTER TABLE `zstack`.`SNSSmsReceiverVO` DROP FOREIGN KEY fkSNSSmsReceiverVOSNSSmsEndpointVO;
 ALTER TABLE `zstack`.`SNSSmsReceiverVO`
-    ADD CONSTRAINT fkSNSSmsReceiverVOSNSUniversalSmsEndpointVO FOREIGN KEY (endpointUuid) REFERENCES `zstack`.`SNSUniversalSmsEndpointVO` (uuid);
+    ADD CONSTRAINT fkSNSSmsReceiverVOSNSUniversalSmsEndpointVO FOREIGN KEY (endpointUuid) REFERENCES `zstack`.`SNSUniversalSmsEndpointVO` (uuid) ON DELETE CASCADE;
