@@ -23,16 +23,6 @@ import java.util.Set;
 @Entity
 @Table
 @BaseResource
-@EntityGraph(
-        parents = {
-                @EntityGraph.Neighbour(type = VipVO.class, myField = "vipUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = VipVO.class, myField = "ipv6VipUuid", targetField = "uuid")
-        },
-
-        friends = {
-                @EntityGraph.Neighbour(type = LoadBalancerListenerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
-        }
-)
 public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
