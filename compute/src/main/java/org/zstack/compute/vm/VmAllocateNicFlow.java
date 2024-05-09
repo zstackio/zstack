@@ -155,6 +155,7 @@ public class VmAllocateNicFlow implements Flow {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(nicNicIpAddressInfo.ipv6Address));
+                            vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(nicNicIpAddressInfo.ipv6Address).longValue());
                             vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(nicNicIpAddressInfo.ipv6Address+"/"+ nicNicIpAddressInfo.ipv6Prefix));
                             vo.setGateway(nicNicIpAddressInfo.ipv6Gateway.isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(nicNicIpAddressInfo.ipv6Gateway));
                             vo.setIpVersion(IPv6Constants.IPv6);
@@ -165,6 +166,7 @@ public class VmAllocateNicFlow implements Flow {
                                 nicVO.setUsedIpUuid(vo.getUuid());
                             }
                             nicVO.setIp(vo.getIp());
+                            nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
                             dbf.persist(vo);
@@ -173,6 +175,7 @@ public class VmAllocateNicFlow implements Flow {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setIp(nicNicIpAddressInfo.ipv4Address);
+                            vo.setIpInLong(NetworkUtils.ipv4StringToLong(nicNicIpAddressInfo.ipv4Address));
                             vo.setGateway(nicNicIpAddressInfo.ipv4Gateway);
                             vo.setNetmask(nicNicIpAddressInfo.ipv4Netmask);
                             vo.setIpVersion(IPv6Constants.IPv4);
@@ -183,6 +186,7 @@ public class VmAllocateNicFlow implements Flow {
                                 nicVO.setUsedIpUuid(vo.getUuid());
                             }
                             nicVO.setIp(vo.getIp());
+                            nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
                             dbf.persist(vo);

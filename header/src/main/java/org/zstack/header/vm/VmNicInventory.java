@@ -36,6 +36,7 @@ public class VmNicInventory implements Serializable {
     private String gateway;
     private String metaData;
     @Deprecated
+    @APINoSee
     private Integer ipVersion;
     private String driverType;
     private List<UsedIpInventory> usedIps;
