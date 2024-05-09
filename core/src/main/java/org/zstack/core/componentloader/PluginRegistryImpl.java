@@ -10,7 +10,6 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
@@ -23,13 +22,8 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
 
     private void sortPlugins() {
         for (List<PluginExtension> exts : extensionsByInterfaceName.values()) {
-            Collections.sort(exts, new Comparator<PluginExtension>() {
-                @Override
-                public int compare(PluginExtension o1, PluginExtension o2) {
-                    // greater order means the position is more proceeding in plugin list
-                    return o2.getOrder() - o1.getOrder();
-                }
-            });
+            // greater order means the position is more proceeding in plugin list
+            exts.sort(Comparator.comparingInt(PluginExtension::getOrder).reversed());
         }
     }
 
@@ -113,11 +107,7 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
                                     ext.getInstance().getClass().getCanonicalName(), extd.interfaceClass.getName()));
                 }
 
-                List<PluginExtension> exts = extensionsByInterfaceName.get(ifaceName);
-                if (exts == null) {
-                    exts = new ArrayList<>();
-                    extensionsByInterfaceName.put(ifaceName, exts);
-                }
+                List<PluginExtension> exts = extensionsByInterfaceName.computeIfAbsent(ifaceName, any -> new ArrayList<>());
 
                 logger.debug(String.format("Plugin[%s] declares an extension[%s] from static DSL",
                         beanClass.getName(), extd.interfaceClass.getName()));
@@ -132,8 +122,8 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
             List<PluginExtension> exts = e.getValue();
 
             try {
-                Class clazz = Class.forName(className);
-                List instances = new ArrayList();
+                Class<?> clazz = Class.forName(className);
+                List<Object> instances = new ArrayList<>();
                 for (PluginExtension ext : exts) {
                     if (!instances.contains(ext.getInstance())) {
                         instances.add(ext.getInstance());
@@ -186,11 +176,7 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
             K key = func.call(ext);
             DebugUtils.Assert(key != null, "key cannot be null");
 
-            List lst = m.get(key);
-            if (lst == null) {
-                lst = new ArrayList();
-                m.put(key, lst);
-            }
+            List lst = m.computeIfAbsent(key, k -> new ArrayList<>());
 
             lst.add(ext);
         }
@@ -202,7 +188,7 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
     public <T> List getExtensionListFromMap(Object key, Class<T> clazz) {
         Map<Object, List> m = extensionListAsMap.get(clazz);
         if (m == null) {
-            return new ArrayList();
+            return new ArrayList<>();
         }
 
         return m.get(key);
@@ -210,7 +196,7 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
 
     @Override
     public void defineDynamicExtension(Class interfaceClass, Object instance) {
-        List exts = extensionsByInterfaceClass.computeIfAbsent(interfaceClass, k -> new ArrayList());
+        List exts = extensionsByInterfaceClass.computeIfAbsent(interfaceClass, k -> new ArrayList<>());
         exts.add(instance);
     }
 
