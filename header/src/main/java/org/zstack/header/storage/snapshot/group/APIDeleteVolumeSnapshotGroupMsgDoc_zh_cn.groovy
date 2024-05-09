@@ -31,6 +31,15 @@ doc {
 					since "3.6.0"
 				}
 				column {
+					name "onlySelf"
+					enclosedIn ""
+					desc "仅删除当前快照"
+					location "body"
+					type "boolean"
+					optional true
+					since "zsv 4.2.6"
+				}
+				column {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
