@@ -217,6 +217,13 @@ public class VmSystemTags {
             new PatternedSystemTag(String.format("l3::{%s}::SecurityGroupUuids::{%s}", L3_UUID_TOKEN, SECURITY_GROUP_UUIDS_TOKEN),
                     VmInstanceVO.class);
 
+    public static String SECURITY_GROUP_INGRESS_POLICY_TOKEN = "securityGroupIngressPolicy";
+    public static String SECURITY_GROUP_EGRESS_POLICY_TOKEN = "securityGroupEgressPolicy";
+    public static PatternedSystemTag SECURITY_GROUP_POLICY =
+            new PatternedSystemTag(String.format("l3::{%s}::securityGroupIngressPolicy::{%s}::securityGroupEgressPolicy::{%s}",
+                    L3_UUID_TOKEN, SECURITY_GROUP_INGRESS_POLICY_TOKEN, SECURITY_GROUP_EGRESS_POLICY_TOKEN),
+                    VmInstanceVO.class);
+
     public static String DIRECTORY_UUID_TOKEN = "directoryUuid";
     public static PatternedSystemTag DIRECTORY_UUID = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
 
