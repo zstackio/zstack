@@ -14,7 +14,6 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.storage.primary.nfs.NfsPrimaryToSftpBackupKVMBackend
@@ -67,25 +66,39 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
             simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_BASE_IMAGE_PATH) {
                 def rsp = new NfsPrimaryStorageKVMBackendCommands.GetVolumeBaseImagePathRsp()
-                rsp.path = "/some/fake/path"
                 return rsp
             }
 
             VFS.vfsHook(NfsPrimaryStorageKVMBackend.GET_VOLUME_BASE_IMAGE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.GetVolumeBaseImagePathCmd.class)
+                rsp.otherPaths = []
+
                 VFS vfs = vfs(cmd, spec)
-                List<String> backingFiles = []
+                Qcow2 qfile = vfs.getFile(cmd.volumeInstallPath)
+                if (qfile == null) {
+                    logger.debug("Dump of whole VFS:\\n${vfs.dumpAsString()}")
+                }
+                assert qfile != null : "cannot find file[${cmd.volumeInstallPath}]"
+                while (qfile.backingFile != null) {
+                    if (qfile.backingFile.toAbsolutePath().toString().startsWith(cmd.imageCacheDir)) {
+                        rsp.path = qfile.backingFile.toAbsolutePath().toString()
+                        break
+                    }
+
+                    qfile = qfile.backingQcow2()
+
+                }
+
                 vfs.walkFileSystem { vfile ->
                     if (vfile.pathString().contains(cmd.volumeInstallDir)) {
-                        Qcow2 qfile = vfile as Qcow2
+                        qfile = vfile as Qcow2
                         if (qfile.backingFile != null && qfile.backingFile.toAbsolutePath().toString().startsWith(cmd.imageCacheDir)) {
-                            backingFiles.add(qfile.backingFile.toAbsolutePath().toString())
+                            rsp.otherPaths.add(qfile.backingFile.toAbsolutePath().toString())
                         }
                     }
                 }
 
-                assert backingFiles.size() == 1 : "zero or more than one backing file found. ${backingFiles}"
-                rsp.path = backingFiles[0]
+                rsp.otherPaths.remove(rsp.path)
                 return rsp
             }
 
@@ -222,8 +235,8 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.OfflineMergeSnapshotCmd.class)
                 VFS vfs = vfs(cmd, spec)
 
-                Qcow2 src = vfs.getFile(cmd.srcPath)
                 if (!cmd.fullRebase) {
+                    Qcow2 src = vfs.getFile(cmd.srcPath)
                     src.rebase(cmd.destPath)
                 } else {
                     // when full rebase requested
@@ -234,6 +247,9 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                     if (!vfs.exists(cmd.destPath)) {
                         vfs.createQcow2(cmd.destPath, 0, 0)
                     }
+
+                    Qcow2 dest = vfs.getFile(cmd.destPath)
+                    dest.rebase(null)
                 }
 
                 return rsp

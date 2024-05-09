@@ -746,10 +746,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String volumeUuid;
         public String imageCacheDir;
         public String volumeInstallDir;
+        public String volumeInstallPath;
     }
 
     public static class GetVolumeBaseImagePathRsp extends AgentResponse {
         public String path;
+        public List<String> otherPaths;
         public Long size;
     }
 
@@ -2433,6 +2435,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion) {
         GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
         cmd.volumeInstallDir = makeVolumeInstallDir(msg.getVolume());
+        cmd.volumeInstallPath = msg.getVolume().getInstallPath();
         cmd.imageCacheDir = getCachedImageDir();
         cmd.volumeUuid = msg.getVolume().getUuid();
         cmd.storagePath = Q.New(PrimaryStorageVO.class)
@@ -2440,23 +2443,19 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 .select(PrimaryStorageVO_.url)
                 .findValue();
 
-        new KvmCommandSender(hostUuid).send(cmd, GET_BASE_IMAGE_PATH, new KvmCommandFailureChecker() {
+        httpCall(GET_BASE_IMAGE_PATH, hostUuid, cmd, GetVolumeBaseImagePathRsp.class, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(completion) {
             @Override
-            public ErrorCode getError(KvmResponseWrapper w) {
-                GetVolumeBaseImagePathRsp rsp = w.getResponse(GetVolumeBaseImagePathRsp.class);
-                if (rsp.isSuccess() && StringUtils.isEmpty(rsp.path)) {
-                    return operr("cannot get root image of volume[uuid:%s], may be it create from iso", msg.getVolume().getUuid());
-                }
-                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
-            }
-        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-            @Override
-            public void success(KvmResponseWrapper w) {
-                GetVolumeBaseImagePathRsp rsp = w.getResponse(GetVolumeBaseImagePathRsp.class);
-                String rootImageUuid = new File(rsp.path).getName().split("\\.")[0];
+            public void success(GetVolumeBaseImagePathRsp rsp) {
                 GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
-                reply.setImageUuid(rootImageUuid);
-                bus.reply(msg, reply);
+                if (rsp.path != null) {
+                    String rootImageUuid = new File(rsp.path).getName().split("\\.")[0];
+                    reply.setImageUuid(rootImageUuid);
+                }
+
+                if (!CollectionUtils.isEmpty(rsp.otherPaths)) {
+                    reply.setOtherImageUuids(rsp.otherPaths.stream().map(p -> new File(p).getName().split("\\.")[0]).collect(Collectors.toList()));
+                }
+                completion.success(reply);
             }
 
             @Override
@@ -2660,6 +2659,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 public void run(final FlowTrigger trigger, Map data) {
                     GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
                     cmd.volumeInstallDir = makeVolumeInstallDir(struct.getVolume());
+                    cmd.volumeInstallPath = struct.getVolume().getInstallPath();
                     cmd.imageCacheDir = getCachedImageDir();
                     cmd.volumeUuid = struct.getVolume().getUuid();
                     httpCall(GET_BASE_IMAGE_PATH, struct.getSrcHostUuid(), cmd, GetVolumeBaseImagePathRsp.class, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(trigger) {
@@ -2668,6 +2668,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             if (rsp.path != null && isCachedImageUrl(rsp.path)) {
                                 context.baseImageCachePath = rsp.path;
                                 context.baseImageCacheSize = rsp.size;
+                            } else if (rsp.path == null && !CollectionUtils.isEmpty(rsp.otherPaths)) {
+                                // TODO handle snapshot image
+                                context.baseImageCachePath = rsp.otherPaths.get(0);
+                                context.baseImageCacheSize = 0L;
                             }
 
                             context.rootVolumeUuid = cmd.volumeUuid;
