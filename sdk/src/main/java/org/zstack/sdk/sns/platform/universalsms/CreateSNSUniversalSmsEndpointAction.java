@@ -35,7 +35,7 @@ public class CreateSNSUniversalSmsEndpointAction extends AbstractAction {
     public java.lang.String supplier;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.HashMap additionParam;
+    public java.util.Map additionParam;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
