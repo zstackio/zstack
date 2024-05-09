@@ -29,6 +29,8 @@ import org.zstack.utils.network.NetworkUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -347,5 +349,29 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 }
             });
         }
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        NetworkServiceDhcpBackend bkd = dhcpBackends.get(providerType);
+        if (bkd == null) {
+            completion.fail(operr("unable to find NetworkServiceDhcpBackend[provider type: %s]", providerType));
+            return;
+        }
+
+        bkd.enableNetworkService(l3VO, completion);
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        NetworkServiceDhcpBackend bkd = dhcpBackends.get(providerType);
+        if (bkd == null) {
+            completion.fail(operr("unable to find NetworkServiceDhcpBackend[provider type: %s]", providerType));
+            return;
+        }
+
+        logger.debug(String.format("[%s] disable dhcp service for l3 network[uuid:%s]",
+                bkd.getClass().getSimpleName(), l3VO.getUuid()));
+        bkd.disableNetworkService(l3VO, completion);
     }
 }

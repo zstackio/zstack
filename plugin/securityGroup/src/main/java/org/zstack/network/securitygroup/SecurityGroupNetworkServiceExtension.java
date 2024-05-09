@@ -13,6 +13,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
@@ -200,5 +201,15 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 .eq(VmNicSecurityGroupRefVO_.vmNicUuid, nicUuid)
                 .eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmInstanceInventory.getUuid()).hardDelete();
         completion.done();
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
     }
 }

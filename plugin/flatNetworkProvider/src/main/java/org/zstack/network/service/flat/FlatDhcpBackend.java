@@ -10,31 +10,30 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.upgrade.GrayVersion;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowRollback;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
@@ -69,7 +68,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.*;
+import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.network.service.NetworkServiceHelper.getL3NetworkHostRoute;
 import static org.zstack.network.service.flat.IpStatisticConstants.ResourceType;
 import static org.zstack.network.service.flat.IpStatisticConstants.SortBy;
@@ -108,16 +109,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static final String DHCP_CONNECT_PATH = "/flatnetworkprovider/dhcp/connect";
     public static final String RESET_DEFAULT_GATEWAY_PATH = "/flatnetworkprovider/dhcp/resetDefaultGateway";
     public static final String DHCP_DELETE_NAMESPACE_PATH = "/flatnetworkprovider/dhcp/deletenamespace";
+    public static final String DHCP_FLUSH_NAMESPACE_PATH = "/flatnetworkprovider/dhcp/flush";
 
     public static String makeNamespaceName(String brName, String l3Uuid) {
         return String.format("%s_%s", brName, l3Uuid);
     }
 
     @Transactional(readOnly = true)
-    private List<DhcpInfo> getDhcpInfoForConnectedKvmHost(KVMHostConnectedContext context) {
+    private List<DhcpInfo> getDhcpInfoForConnectedKvmHost(HostInventory hostInv, String l3Uuid) {
         String sql = "select vm from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state in (:states) and vm.type = :vtype";
         TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
-        q.setParameter("huuid", context.getInventory().getUuid());
+        q.setParameter("huuid", hostInv.getUuid());
         q.setParameter("states", list(VmInstanceState.Running, VmInstanceState.Unknown, VmInstanceState.Starting,
                 VmInstanceState.Rebooting, VmInstanceState.Resuming, VmInstanceState.Migrating, VmInstanceState.VolumeMigrating));
         q.setParameter("vtype", VmInstanceConstant.USER_VM_TYPE);
@@ -130,13 +132,19 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         sql = "select nic.uuid from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
                 " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
-                " and ref.networkServiceType = :dhcpType " +
-                " and provider.type = :ptype and nic.vmInstanceUuid in (:vmUuids) group by nic.uuid";
+                " and ref.networkServiceType = :dhcpType ";
+        if (l3Uuid != null) {
+            sql += " and l3.uuid = :l3Uuid ";
+        }
+        sql += " and provider.type = :ptype and nic.vmInstanceUuid in (:vmUuids) group by nic.uuid";
 
         TypedQuery<String> nq = dbf.getEntityManager().createQuery(sql, String.class);
         nq.setParameter("ptype", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         nq.setParameter("dhcpType", NetworkServiceType.DHCP.toString());
         nq.setParameter("vmUuids", vmUuids);
+        if (l3Uuid != null) {
+            nq.setParameter("l3Uuid", l3Uuid);
+        }
         List<String> nicUuids = nq.getResultList();
         if (nicUuids.isEmpty()) {
             return null;
@@ -178,9 +186,138 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             handle((APIGetL3NetworkDhcpIpAddressMsg) msg);
         } else if (msg instanceof APIGetL3NetworkIpStatisticMsg) {
             handle((APIGetL3NetworkIpStatisticMsg) msg);
+        } else if (msg instanceof APIChangeL3NetworkDhcpIpAddressMsg) {
+            handle((APIChangeL3NetworkDhcpIpAddressMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIChangeL3NetworkDhcpIpAddressMsg msg) {
+        APIChangeL3NetworkDhcpIpAddressEvent event = new APIChangeL3NetworkDhcpIpAddressEvent(msg.getId());
+        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+
+        /*
+        * step #1, delete old dhcp server ip
+        * step #2, allocate new dhcp server ip
+        * step #3, flush new dhcp config to host
+        * */
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("change-dhcp-server-ip-fo-l3-%s", msg.getL3NetworkUuid()));
+
+        chain.then(new Flow() {
+            String __name__ = "delete-old-dhcp-server-ip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
+                if (dhcpMap.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                data.put("oldServerIp", dhcpMap);
+                for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
+                    if (IPv6NetworkUtils.isValidIpv4(e.getKey()) && msg.getDhcpServerIp() != null) {
+                        deleteDhcpServerIp(msg.getL3NetworkUuid(), e.getKey(), e.getValue());
+                    } else if (IPv6NetworkUtils.isIpv6Address(e.getKey()) && msg.getDhcpv6ServerIp() != null) {
+                        deleteDhcpServerIp(msg.getL3NetworkUuid(), e.getKey(), e.getValue());
+                    }
+                }
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                Map<String, String> dhcpMap = (Map<String, String>) data.get("oldServerIp");
+                if (dhcpMap == null || dhcpMap.isEmpty()) {
+                    trigger.rollback();
+                    return;
+                }
+
+                for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
+                    String dhcpIp = null;
+                    if (IPv6NetworkUtils.isValidIpv4(e.getKey()) && msg.getDhcpServerIp() != null) {
+                        dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, true, e.getKey(), null);
+                    } else if (IPv6NetworkUtils.isIpv6Address(e.getKey()) && msg.getDhcpv6ServerIp() != null){
+                        dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, true, e.getKey(), null);
+                    }
+
+                    if (dhcpIp == null || !dhcpIp.equals(e.getKey())) {
+                        logger.error(String.format("roll back dhcp server ip to [%s], but got [%s]", e.getKey(), dhcpIp));
+                    }
+                }
+                trigger.rollback();
+            }
+        }).then(new Flow() {
+            String __name__ = "allocate-new-dhcp-server-ip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (msg.getDhcpServerIp() != null) {
+                    String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, true, msg.getDhcpServerIp(), null);
+                    if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpServerIp())) {
+                        trigger.fail(operr("change dhcp server ip to [%s], but got [%s]", msg.getDhcpServerIp(), dhcpIp));
+                        return;
+                    }
+                }
+
+                if (msg.getDhcpv6ServerIp() != null) {
+                    String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, true, msg.getDhcpv6ServerIp(), null);
+                    if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpv6ServerIp())) {
+                        trigger.fail(operr("change dhcp server ip to [%s], but got [%s]", msg.getDhcpv6ServerIp(), dhcpIp));
+                    }
+                }
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (msg.getDhcpServerIp() != null) {
+                    deleteDhcpServerIp(msg.getL3NetworkUuid(), msg.getDhcpServerIp());
+                }
+
+                if (msg.getDhcpv6ServerIp() != null) {
+                    deleteDhcpServerIp(msg.getL3NetworkUuid(), msg.getDhcpv6ServerIp());
+                }
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "enable-dhcp-server-on-hosts";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                enableNetworkService(l3VO, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                event.setError(errCode);
+                bus.publish(event);
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
+                for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
+                    if (IPv6NetworkUtils.isValidIpv4(e.getKey())) {
+                        event.setDhcpServerIp(e.getKey());
+                    } else {
+                        event.setDhcpv6ServerIp(e.getKey());
+                    }
+                }
+                bus.publish(event);
+            }
+        }).start();
     }
 
     private void handle(APIGetL3NetworkIpStatisticMsg msg) {
@@ -891,18 +1028,23 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     dhcpIp, inventory.getUuid()));
         }
 
-        deleteNameSpace(inventory);
+        deleteNameSpace(inventory, new NopeCompletion());
     }
 
-    private void deleteNameSpace(L3NetworkInventory inventory) {
+    private void deleteNameSpace(L3NetworkInventory inventory, Completion completion) {
+        deleteNameSpace(inventory, DHCP_DELETE_NAMESPACE_PATH, completion);
+    }
+
+    private void deleteNameSpace(L3NetworkInventory inventory, String path, Completion completion) {
         List<String> huuids = new Callable<List<String>>() {
             @Override
             @Transactional(readOnly = true)
             public List<String> call() {
                 String sql = "select host.uuid from HostVO host, L2NetworkVO l2, L2NetworkClusterRefVO ref where l2.uuid = ref.l2NetworkUuid" +
-                        " and ref.clusterUuid = host.clusterUuid and l2.uuid = :uuid";
+                        " and ref.clusterUuid = host.clusterUuid and host.hypervisorType = :hType and l2.uuid = :uuid";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                 q.setParameter("uuid", inventory.getL2NetworkUuid());
+                q.setParameter("hType", KVMConstant.KVM_HYPERVISOR_TYPE);
                 return q.getResultList();
             }
         }.call();
@@ -916,8 +1058,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         cmd.bridgeName = brName;
         cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
 
-        new While<>(huuids).all((huuid, comp) -> {
-            new KvmCommandSender(huuid).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
+        new While<>(huuids).step((huuid, comp) -> {
+            new KvmCommandSender(huuid).send(cmd, path, wrapper -> {
                 DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
                 return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }, new SteppingSendCallback<KvmResponseWrapper>() {
@@ -925,26 +1067,30 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 public void success(KvmResponseWrapper w) {
                     logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
                             "KVM host[uuid:%s]", inventory.getUuid(), inventory.getName(), getHostUuid()));
+                    comp.done();
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
                     if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                        comp.done();
                         return;
                     }
 
                     FlatDHCPDeleteNamespaceGC gc = new FlatDHCPDeleteNamespaceGC();
+                    gc.path = path;
                     gc.hostUuid = getHostUuid();
                     gc.command = cmd;
                     gc.NAME = String.format("gc-namespace-on-host-%s", getHostUuid());
                     gc.submit();
+
+                    comp.done();
                 }
             });
-            comp.done();
-        }).run(new WhileDoneCompletion(new NopeCompletion()){
+        }, 10).run(new WhileDoneCompletion(new NopeCompletion(completion)){
             @Override
             public void done(ErrorCodeList errorCodeList) {
-
+                completion.success();
             }
         });
 
@@ -1229,6 +1375,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     }
 
+    private void deleteDhcpServerIp(String l3Uuid, String dhcpServerIp) {
+        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l3Uuid,
+                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.instantiateTag(map(
+                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(dhcpServerIp)))));
+        for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
+            exp.afterRemoveDhcpServerIP(l3Uuid, dhcpServerIp);
+        }
+    }
+
     private void deleteDhcpServerIp(String l3Uuid, String dhcpServerIp, String dhcpServerIpUuid) {
         FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l3Uuid,
                 FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.instantiateTag(map(
@@ -1258,6 +1413,45 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     }
 
+    private void refreshDhcpInfoForConnectedHost(HostInventory hostInv, L3NetworkInventory l3Inv, Completion completion) {
+        final List<DhcpInfo> dhcpInfoList = getDhcpInfoForConnectedKvmHost(hostInv, l3Inv.getUuid());
+        if (dhcpInfoList == null) {
+            logger.debug(String.format("there is no vm running on host[uuid:%s] for L3 network[uuid:%s]",
+                    hostInv.getUuid(), l3Inv.getUuid()));
+            completion.success();
+            return;
+        }
+
+        // to flush ebtables
+        ConnectCmd cmd = new ConnectCmd();
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostInv.getUuid());
+        msg.setCommand(cmd);
+        msg.setNoStatusCheck(true);
+        msg.setPath(DHCP_CONNECT_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostInv.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    applyDhcpToHosts(dhcpInfoList, hostInv.getUuid(), true, new Completion(completion) {
+                        @Override
+                        public void success() {
+                            completion.success();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
         return new NoRollbackFlow() {
@@ -1265,7 +1459,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                final List<DhcpInfo> dhcpInfoList = getDhcpInfoForConnectedKvmHost(context);
+                if (!context.getInventory().getHypervisorType().equals(KVMConstant.KVM_HYPERVISOR_TYPE)) {
+                    trigger.next();
+                    return;
+                }
+
+                final List<DhcpInfo> dhcpInfoList = getDhcpInfoForConnectedKvmHost(context.getInventory(), null);
                 if (dhcpInfoList == null) {
                     trigger.next();
                     return;
@@ -1951,5 +2150,57 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 allocateDhcpIp(ipr.getL3NetworkUuid(), ipr.getIpVersion(), true, entry.getKey());
             }
         }
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, Completion completion) {
+        L2NetworkVO l2VO = dbf.findByUuid(l3VO.getL2NetworkUuid(), L2NetworkVO.class);
+        List<String> clusterUuids = l2VO.getAttachedClusterRefs().stream()
+                .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
+        if (clusterUuids.isEmpty()) {
+            logger.debug(String.format("l2 network[uuid:%s] did not attach any cluster", l3VO.getL2NetworkUuid()));
+            completion.success();
+            return;
+        }
+
+
+        List<HostVO> hosts = Q.New(HostVO.class).eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
+                .eq(HostVO_.status,HostStatus.Connected)
+                .in(HostVO_.clusterUuid, clusterUuids).list();
+        if (hosts.isEmpty()) {
+            logger.debug(String.format("there is no host connected for l3 network[uuid:%s]", l3VO.getUuid()));
+            completion.success();
+            return;
+        }
+
+        new While<>(hosts).step((hostVO, wcomp) -> {
+            refreshDhcpInfoForConnectedHost(KVMHostInventory.valueOf(hostVO), L3NetworkInventory.valueOf(l3VO), new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    wcomp.addError(errorCode);
+                    wcomp.allDone();
+                }
+            });
+        }, 10).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, Completion completion) {
+        deleteNameSpace(L3NetworkInventory.valueOf(l3VO), DHCP_FLUSH_NAMESPACE_PATH, completion);
     }
 }

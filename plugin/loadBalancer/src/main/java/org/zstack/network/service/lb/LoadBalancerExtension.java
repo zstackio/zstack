@@ -23,6 +23,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -387,5 +388,16 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
     @Override
     public void afterDeleteAcl(AccessControlListInventory acl) {
         return;
+    }
+
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
     }
 }

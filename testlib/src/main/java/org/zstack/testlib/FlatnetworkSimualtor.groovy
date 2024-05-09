@@ -41,6 +41,10 @@ class FlatnetworkSimualtor implements Simulator {
             return new FlatDhcpBackend.DeleteNamespaceRsp()
         }
 
+        spec.simulator(FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH) {
+            return new FlatDhcpBackend.DeleteNamespaceRsp()
+        }
+
         spec.simulator(FlatDhcpBackend.DHCP_CONNECT_PATH) {
             return new FlatDhcpBackend.ConnectRsp()
         }

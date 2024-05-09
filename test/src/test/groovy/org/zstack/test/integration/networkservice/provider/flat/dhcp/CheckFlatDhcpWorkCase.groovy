@@ -7,7 +7,10 @@ import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
+import org.zstack.sdk.FreeIpInventory
+import org.zstack.sdk.GetL3NetworkDhcpIpAddressResult
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.NetworkServiceL3NetworkRefInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -18,6 +21,9 @@ import org.zstack.utils.CollectionUtils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.function.Function
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.network.IPv6Constants
+
+import java.util.stream.Collectors
 
 /**
  * Created by heathhose on 17-4-1.
@@ -62,8 +68,15 @@ class CheckFlatDhcpWorkCase extends SubCase{
                     hypervisorType = "KVM"
 
                     kvm {
-                        name = "kvm"
-                        managementIp = "localhost"
+                        name = "host-1"
+                        managementIp = "127.0.0.1"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "host-2"
+                        managementIp = "127.0.0.2"
                         username = "root"
                         password = "password"
                     }
@@ -111,6 +124,12 @@ class CheckFlatDhcpWorkCase extends SubCase{
                             types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
                         }
 
+                        ipv6 {
+                            name = "ipv6-Stateless-DHCP"
+                            networkCidr = "2024:05:07:86:01::/64"
+                            addressMode = "Stateless-DHCP"
+                        }
+
                         ip {
                             startIp = "192.168.200.10"
                             endIp = "192.168.200.100"
@@ -124,11 +143,21 @@ class CheckFlatDhcpWorkCase extends SubCase{
             }
 
             vm {
-                name = "vm"
+                name = "vm-1"
                 useImage("image")
                 useDefaultL3Network("l3-1")
                 useL3Networks("l3-1","l3-2")
                 useInstanceOffering("instanceOffering")
+                useHost("host-1")
+            }
+
+            vm {
+                name = "vm-2"
+                useImage("image")
+                useDefaultL3Network("l3-1")
+                useL3Networks("l3-1","l3-2")
+                useInstanceOffering("instanceOffering")
+                useHost("host-2")
             }
         }
     }
@@ -137,11 +166,13 @@ class CheckFlatDhcpWorkCase extends SubCase{
     void test() {
         env.create {
             checkDhcpWork()
+            testDisableIpv4Dhcp()
+            testDisableDualStackDhcp()
         }
     }
 
     void checkDhcpWork(){
-        VmInstanceInventory vm = env.inventoryByName("vm")
+        VmInstanceInventory vm = env.inventoryByName("vm-1")
         final L3NetworkInventory l31 = env.inventoryByName("l3-1")
         final L3NetworkInventory l32 = env.inventoryByName("l3-2")
 
@@ -184,6 +215,152 @@ class CheckFlatDhcpWorkCase extends SubCase{
 
             Assert.fail(String.format("nic %s", JSONObjectUtil.toJsonString(cmd.dhcp)))
         }
+    }
+
+    void testDisableIpv4Dhcp(){
+        final L3NetworkInventory l31 = env.inventoryByName("l3-1")
+
+        List<FlatDhcpBackend.DeleteNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.DeleteNamespaceCmd>())
+        env.afterSimulator(FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH) { rsp, HttpEntity<String> e1 ->
+            FlatDhcpBackend.DeleteNamespaceCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.DeleteNamespaceCmd.class)
+            flushCmds.add(cmd)
+            return rsp
+        }
+
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l31.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
+        assert flushCmds.size() == 2
+        flushCmds.clear()
+        l31 = queryL3Network{ conditions = ["uuid=${l31.uuid}"]}[0]
+        for (NetworkServiceL3NetworkRefInventory ref : l31.networkServices) {
+            if (ref.networkServiceType == "DHCP") {
+                assert false
+            }
+        }
+
+        List<FlatDhcpBackend.BatchPrepareDhcpCmd> bCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.BatchPrepareDhcpCmd>())
+        env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
+            FlatDhcpBackend.BatchPrepareDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.BatchPrepareDhcpCmd.class)
+            bCmds.add(cmd)
+            return rsp
+        }
+
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l31.uuid
+            networkServices = ["Flat":["DHCP"]]
+        }
+        assert bCmds.size() == 2
+        bCmds.clear()
+        l31 = queryL3Network{ conditions = ["uuid=${l31.uuid}"]}[0]
+        List<String> services = l31.networkServices.stream().map {ref -> ref.networkServiceType}.collect(Collectors.toList())
+        assert services.contains("DHCP")
+
+        def freeIp4s = getFreeIp {
+            l3NetworkUuid = l31.getUuid()
+            ipVersion = IPv6Constants.IPv4
+            limit = 1
+        } as List<FreeIpInventory>
+
+        changeL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l31.uuid
+            dhcpServerIp = freeIp4s.get(0).ip
+        }
+        assert bCmds.size() == 2
+        bCmds.clear()
+
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l31.uuid
+        }
+        assert ret.ip == freeIp4s.get(0).ip
+        assert ret.ip6 == null
+    }
+
+    void testDisableDualStackDhcp(){
+        final L3NetworkInventory l32 = env.inventoryByName("l3-2")
+
+        List<FlatDhcpBackend.DeleteNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.DeleteNamespaceCmd>())
+        env.afterSimulator(FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH) { rsp, HttpEntity<String> e1 ->
+            FlatDhcpBackend.DeleteNamespaceCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.DeleteNamespaceCmd.class)
+            flushCmds.add(cmd)
+            return rsp
+        }
+
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l32.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
+        assert flushCmds.size() == 2
+        flushCmds.clear()
+        l32 = queryL3Network{ conditions = ["uuid=${l32.uuid}"]}[0]
+        for (NetworkServiceL3NetworkRefInventory ref : l32.networkServices) {
+            if (ref.networkServiceType == "DHCP") {
+                assert false
+            }
+        }
+
+        List<FlatDhcpBackend.BatchPrepareDhcpCmd> bCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.BatchPrepareDhcpCmd>())
+        env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
+            FlatDhcpBackend.BatchPrepareDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.BatchPrepareDhcpCmd.class)
+            bCmds.add(cmd)
+            return rsp
+        }
+
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l32.uuid
+            networkServices = ["Flat":["DHCP"]]
+        }
+        assert bCmds.size() == 2
+        bCmds.clear()
+        l32 = queryL3Network{ conditions = ["uuid=${l32.uuid}"]}[0]
+        List<String> services = l32.networkServices.stream().map {ref -> ref.networkServiceType}.collect(Collectors.toList())
+        assert services.contains("DHCP")
+
+        def freeIp6s = getFreeIp {
+            l3NetworkUuid = l32.getUuid()
+            ipVersion = IPv6Constants.IPv6
+            limit = 1
+        } as List<FreeIpInventory>
+
+        changeL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l32.uuid
+            dhcpv6ServerIp = freeIp6s.get(0).ip
+        }
+        assert bCmds.size() == 2
+        bCmds.clear()
+
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l32.uuid
+        }
+        assert ret.ip6 == freeIp6s.get(0).ip
+
+        /* change again */
+        freeIp6s = getFreeIp {
+            l3NetworkUuid = l32.getUuid()
+            ipVersion = IPv6Constants.IPv6
+            limit = 1
+        } as List<FreeIpInventory>
+
+        def freeIp4s = getFreeIp {
+            l3NetworkUuid = l32.getUuid()
+            ipVersion = IPv6Constants.IPv4
+            limit = 1
+        } as List<FreeIpInventory>
+
+        changeL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l32.uuid
+            dhcpServerIp = freeIp4s.get(0).ip
+            dhcpv6ServerIp = freeIp6s.get(0).ip
+        }
+        assert bCmds.size() == 2
+        bCmds.clear()
+
+        ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l32.uuid
+        }
+        assert ret.ip == freeIp4s.get(0).ip
+        assert ret.ip6 == freeIp6s.get(0).ip
     }
 
     @Override
