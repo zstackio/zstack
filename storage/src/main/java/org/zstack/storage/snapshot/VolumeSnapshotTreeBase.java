@@ -770,15 +770,15 @@ public class VolumeSnapshotTreeBase {
 
         final boolean treeIsCurrent = dbf.findByUuid(currentSnapshotVO.getTreeUuid(), VolumeSnapshotTreeVO.class).isCurrent();
         List<VolumeSnapshotVO> vos = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.treeUuid, currentSnapshotVO.getTreeUuid()).list();
-        VolumeSnapshotTreeWithVolume currentVolumeTree = VolumeSnapshotTreeWithVolume.fromVOs(vos, treeIsCurrent, volume);
-        VolumeSnapshotTreeWithVolume.VolumeSnapshotLeaf currentSnapshotLeaf = currentVolumeTree
+        VolumeTree currentVolumeTree = VolumeTree.fromVOs(vos, treeIsCurrent, volume);
+        VolumeTree.VolumeSnapshotLeaf currentSnapshotLeaf = currentVolumeTree
                 .findSnapshot(new Function<Boolean, VolumeSnapshotInventory>() {
                     @Override
                     public Boolean call(VolumeSnapshotInventory arg) {
                         return arg.getUuid().equals(currentSnapshotVO.getUuid());
                     }
                 });
-        VolumeSnapshotTreeWithVolume.VolumeSnapshotLeaf currentParentSnapshotLeaf = currentSnapshotLeaf.getParent();
+        VolumeTree.VolumeSnapshotLeaf currentParentSnapshotLeaf = currentSnapshotLeaf.getParent();
 
         chain.setName(String.format("delete-volume-snapshot-%s-by-commit", currentSnapshotVO.getUuid()));
         chain.then(new ShareFlow() {
@@ -994,7 +994,7 @@ public class VolumeSnapshotTreeBase {
                         bmsg.setSnapshot(dstSnapshotInv);
                         bmsg.setVolume(VolumeInventory.valueOf(volume));
                         bmsg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
-                        bmsg.setAliveChainInstallPathInDb(inAliveChain() ? currentVolumeTree.getAliveChainSnapshotInstallPath() : new ArrayList<>());
+                        bmsg.setAliveChainInstallPathInDb(inAliveChain() ? currentVolumeTree.getAliveChainSnapshotInstallPaths() : new ArrayList<>());
                         if (onlineDelete()) {
                             bmsg.setVmUuid(volume.getVmInstanceUuid());
                         }
