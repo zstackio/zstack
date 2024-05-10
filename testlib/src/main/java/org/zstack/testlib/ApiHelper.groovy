@@ -19403,6 +19403,33 @@ abstract class ApiHelper {
     }
 
 
+    def getCdpBackupStorageRequirement(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCdpBackupStorageRequirementAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetCdpBackupStorageRequirementAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getChainTask(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetChainTaskAction.class) Closure c) {
         def a = new org.zstack.sdk.GetChainTaskAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -42763,6 +42790,33 @@ abstract class ApiHelper {
 
     def updateZone(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateZoneAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateZoneAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def upgradeBackupStorageCdpTasks(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpgradeBackupStorageCdpTasksAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpgradeBackupStorageCdpTasksAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
