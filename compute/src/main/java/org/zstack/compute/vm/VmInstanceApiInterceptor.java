@@ -651,9 +651,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (msg.getGateway() == null) {
                 msg.setGateway("");
             }
-            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getIp()).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic", msg.getIp()));
-            }
         }
         if (msg.getIp6() != null && !l3NetworkVO.getEnableIPAM()) {
             l3Found = true;
@@ -662,9 +659,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
             if (msg.getIpv6Gateway() == null) {
                 msg.setIpv6Gateway("");
-            }
-            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getIp6()).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic", msg.getIp6()));
             }
         }
         if (!l3Found) {
