@@ -28,7 +28,7 @@ public class RemoveSNSSmsReceiverAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String endpointUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String phoneNumber;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
