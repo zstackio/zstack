@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetFreeIpAction extends AbstractAction {
+public class DeleteIpAddressAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetFreeIpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetFreeIpResult value;
+        public org.zstack.sdk.DeleteIpAddressResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,14 @@ public class GetFreeIpAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String l3NetworkUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ipRangeUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String start;
-
-    @Param(required = false, validValues = {"Normal","AddressPool"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ipRangeType;
-
-    @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer ipVersion;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List usedIpUuids;
 
     @Param(required = false)
-    public int limit = 100;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -61,6 +52,12 @@ public class GetFreeIpAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -69,8 +66,8 @@ public class GetFreeIpAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetFreeIpResult value = res.getResult(org.zstack.sdk.GetFreeIpResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetFreeIpResult() : value; 
+        org.zstack.sdk.DeleteIpAddressResult value = res.getResult(org.zstack.sdk.DeleteIpAddressResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteIpAddressResult() : value; 
 
         return ret;
     }
@@ -99,11 +96,11 @@ public class GetFreeIpAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/l3-networks/ip/free";
+        info.httpMethod = "DELETE";
+        info.path = "/l3-networks/{l3NetworkUuid}/ip-address";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

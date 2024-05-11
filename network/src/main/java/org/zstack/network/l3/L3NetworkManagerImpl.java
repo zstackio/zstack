@@ -213,7 +213,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     IpCapacity element = elements.getOrDefault(elementUuid, new IpCapacity());
                     elements.put(elementUuid, element);
                     if (ipVersion == IPv6Constants.IPv4) {
-                        if (NetworkUtils.isValidIpRange(sip, eip)) {
+                        if (NetworkUtils.isValidIpv4Range(sip, eip)) {
                             int t = NetworkUtils.getTotalIpInRange(sip, eip);
                             element.total += t;
                             element.total = Math.min(element.total, Integer.MAX_VALUE);

@@ -2231,7 +2231,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             String vmNicParams = msg1.getVmNicParams();
             if (!StringUtils.isEmpty(vmNicParams)) {
                 VmNicParam nicParams = JSONObjectUtil.toObject(vmNicParams, VmNicParam.class);
-                nicSpec.setVmNicParms(Arrays.asList(nicParams));
+                nicSpec.setVmNicParams(Arrays.asList(nicParams));
                 if (VmNicState.disable.toString().equals(nicParams.getState())) {
                     spec.getDisableL3Networks().add(nicParams.getL3NetworkUuid());
                 }
@@ -7157,7 +7157,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!l3s.isEmpty()) {
                     VmNicSpec nicSpec1 = new VmNicSpec(l3s);
                     nicSpec1.setNicDriverType(nicSpec.getNicDriverType());
-                    nicSpec1.setVmNicParms(nicSpec.getVmNicParms());
+                    nicSpec1.setVmNicParams(nicSpec.getVmNicParams());
                     nicSpecs.add(nicSpec1);
                 }
             }

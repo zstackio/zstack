@@ -31,6 +31,9 @@ public class CheckIpAvailabilityAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ip;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean arpingDetection = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 

@@ -212,7 +212,7 @@ public class VmAllocateNicFlow implements Flow {
             return;
         }
 
-        List<VmNicParam> vmNicParms = nicSpec.getVmNicParms();
+        List<VmNicParam> vmNicParms = nicSpec.getVmNicParams();
         if (CollectionUtils.isEmpty(vmNicParms)) {
             return;
         }

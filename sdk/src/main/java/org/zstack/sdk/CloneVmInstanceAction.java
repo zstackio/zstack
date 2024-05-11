@@ -32,7 +32,7 @@ public class CloneVmInstanceAction extends AbstractAction {
     public java.lang.String strategy = "InstantStart";
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vmNicParms;
+    public java.util.List vmNicParams;
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List names;

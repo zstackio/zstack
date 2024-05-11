@@ -103,11 +103,40 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteIpRangeMsg) msg);
         } else if (msg instanceof APISetL3NetworkMtuMsg) {
             validate((APISetL3NetworkMtuMsg) msg);
+        } else if (msg instanceof APIReserveIpAddressMsg) {
+            validate((APIReserveIpAddressMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIReserveIpAddressMsg msg) {
+        if (NetworkUtils.isValidIPAddress(msg.getStartIp())) {
+            throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
+                    "because start ip[%s] is not valid ip address", msg.getStartIp()));
+        }
+
+        if (NetworkUtils.isValidIPAddress(msg.getEndIp())) {
+            throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
+                    "because start ip[%s] is not valid ip address", msg.getStartIp()));
+        }
+
+        if (NetworkUtils.isIpv4Address(msg.getStartIp()) && !NetworkUtils.isIpv4Address(msg.getStartIp())) {
+            throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
+                    "because end ip[%s] is not ipv4 address", msg.getEndIp()));
+        }
+
+        if (IPv6NetworkUtils.isIpv6Address(msg.getStartIp()) && !IPv6NetworkUtils.isIpv6Address(msg.getStartIp())) {
+            throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
+                    "because end ip[%s] is not ipv6 address", msg.getEndIp()));
+        }
+
+        if (!IPv6NetworkUtils.isValidIpRange(msg.getStartIp(), msg.getEndIp())) {
+            throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
+                    "because end ip[%s] is less than start ip[%s]", msg.getEndIp(), msg.getStartIp()));
+        }
     }
 
     private void validate(APISetL3NetworkMtuMsg msg) {

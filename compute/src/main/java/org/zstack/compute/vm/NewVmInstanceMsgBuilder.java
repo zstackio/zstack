@@ -43,7 +43,7 @@ public class NewVmInstanceMsgBuilder {
             if (!vmNicParms.isEmpty()) {
                 List<VmNicParam> nicParmOfL3 = vmNicParms.stream().filter(vmNicParm -> vmNicParm.getL3NetworkUuid().equals(l3Uuid)).distinct().collect(Collectors.toList());
                 if (!nicParmOfL3.isEmpty()) {
-                    vmNicSpec.setVmNicParms(nicParmOfL3);
+                    vmNicSpec.setVmNicParams(nicParmOfL3);
                     vmNicSpec.setNicDriverType(nicParmOfL3.get(0).getDriverType());
                 }
             }

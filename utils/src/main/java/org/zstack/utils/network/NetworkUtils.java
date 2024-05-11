@@ -189,7 +189,7 @@ public class NetworkUtils {
         }
     }
 
-    public static boolean isValidIpRange(String startIp, String endIp) {
+    public static boolean isValidIpv4Range(String startIp, String endIp) {
         validateIp(startIp);
         validateIp(endIp);
         long s = ipv4StringToLong(startIp);
@@ -972,6 +972,11 @@ public class NetworkUtils {
 
     public static Boolean isValidVni(Integer vni){
         return vni != null && vni >= 1 && vni <= 16777214;
+    }
+
+    public static int compareIpv4Address(String ip1, String ip2) {
+        long diff = NetworkUtils.ipv4StringToLong(ip1) - NetworkUtils.ipv4StringToLong(ip2);
+        return diff > 0 ? 1 : diff == 0 ? 0 : -1;
     }
 }
 

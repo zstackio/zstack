@@ -1,8 +1,10 @@
 package org.zstack.network.l3;
 
+import com.googlecode.ipv6.IPv6Address;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -32,6 +34,7 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.*;
+import org.zstack.header.network.IpAllocatedReason;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
@@ -47,7 +50,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -55,12 +57,15 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
+import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.network.NetworkUtils.compareIpv4Address;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L3BasicNetwork implements L3Network {
@@ -367,10 +372,115 @@ public class L3BasicNetwork implements L3Network {
             handle((APIAddHostRouteToL3NetworkMsg) msg);
         } else if (msg instanceof APIRemoveHostRouteFromL3NetworkMsg) {
             handle((APIRemoveHostRouteFromL3NetworkMsg) msg);
+        } else if (msg instanceof APIReserveIpAddressMsg) {
+            handle((APIReserveIpAddressMsg) msg);
+        } else if (msg instanceof APIDeleteIpAddressMsg) {
+            handle((APIDeleteIpAddressMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
+
+    private void handle(APIReserveIpAddressMsg msg) {
+        APIReserveIpAddreessEvent event = new APIReserveIpAddreessEvent(msg.getId());
+        List<IpRangeVO> ipv4Ranges = self.getIpRanges().stream()
+                .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4)
+                .collect(Collectors.toList());
+        List<IpRangeVO> ipv6Ranges = self.getIpRanges().stream()
+                .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+        List<UsedIpVO> usedIpVOS = new ArrayList<>();
+        if(IPv6NetworkUtils.isValidIpv4(msg.getStartIp()) && !ipv4Ranges.isEmpty()) {
+            long start = NetworkUtils.ipv4StringToLong(msg.getStartIp());
+            long end  = NetworkUtils.ipv4StringToLong(msg.getEndIp());
+            Comparator<IpRangeVO> ipv4Comparator
+                    = Comparator.comparing(
+                    IpRangeVO::getStartIp, (s1, s2) -> {
+                        return NetworkUtils.compareIpv4Address(s1, s2);
+                    });
+            ipv4Ranges.sort(ipv4Comparator);
+            Iterator<IpRangeVO> ip4 = ipv4Ranges.iterator();
+            IpRangeVO ipr = ip4.next();
+
+            for (long i = start; i <= end && ipr != null;) {
+                String newIp = NetworkUtils.longToIpv4String(i);
+                if (NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    i++;
+                    UsedIpVO vo = new UsedIpVO();
+                    vo.setUuid(Platform.getUuid());
+                    vo.setIpRangeUuid(ipr.getUuid());
+                    vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                    //vo.setVmNicUuid(nic.getUuid());
+                    vo.setIpVersion(ipr.getIpVersion());
+                    vo.setIp(newIp);
+                    vo.setNetmask(ipr.getNetmask());
+                    vo.setGateway(ipr.getGateway());
+                    vo.setIpInLong(i);
+                    vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+
+                    usedIpVOS.add(vo);
+                } else if (ip4.hasNext()) {
+                    ipr = ip4.next();
+                } else {
+                    ipr = null;
+                }
+            }
+        } else if (IPv6NetworkUtils.isValidIpv6(msg.getStartIp()) && !ipv6Ranges.isEmpty()){
+            BigInteger start = IPv6Address.fromString(msg.getStartIp()).toBigInteger();
+            BigInteger end = IPv6Address.fromString(msg.getEndIp()).toBigInteger();
+            Comparator<IpRangeVO> ipv6Comparator
+                    = Comparator.comparing(
+                    IpRangeVO::getStartIp, (s1, s2) -> {
+                        return IPv6NetworkUtils.compareIpv6Address(msg.getStartIp(), msg.getEndIp());
+                    });
+            ipv6Ranges.sort(ipv6Comparator);
+            Iterator<IpRangeVO> ip6 = ipv6Ranges.iterator();
+            IpRangeVO ipr = ip6.next();
+
+            for (BigInteger i = start; i.compareTo(end) <= 0 && ipr != null;) {
+                String newIp = IPv6NetworkUtils.IPv6AddressToString(i);
+                if (IPv6NetworkUtils.isIpv6InRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    i = i.add(BigInteger.ONE);
+                    UsedIpVO vo = new UsedIpVO();
+                    vo.setUuid(Platform.getUuid());
+                    vo.setIpRangeUuid(ipr.getUuid());
+                    vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                    //vo.setVmNicUuid(nic.getUuid());
+                    vo.setIpVersion(ipr.getIpVersion());
+                    vo.setIp(newIp);
+                    vo.setNetmask(ipr.getNetmask());
+                    vo.setGateway(ipr.getGateway());
+                    vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+
+                    usedIpVOS.add(vo);
+                } else if (ip6.hasNext()) {
+                    ipr = ip6.next();
+                } else {
+                    ipr = null;
+                }
+            }
+        }
+
+        if (!usedIpVOS.isEmpty()) {
+            dbf.persistCollection(usedIpVOS);
+            usedIpVOS = dbf.reload(usedIpVOS);
+            event.setInventories(UsedIpInventory.valueOf(usedIpVOS));
+        }
+
+
+        bus.publish(event);
+    }
+
+    private void handle(APIDeleteIpAddressMsg msg) {
+        APIDeleteIpAddressEvent event = new APIDeleteIpAddressEvent();
+
+        SQL.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .in(UsedIpVO_.uuid, msg.getUsedIpUuids())
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .delete();
+
+        bus.publish(event);
+    }
+
 
     protected CheckIpAvailabilityReply checkIpAvailability(String ip) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
