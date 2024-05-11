@@ -22,6 +22,11 @@
     </code>
 
     <code>
+        <id>1005</id>
+        <description>Long job has been manually cancelled</description>
+    </code>
+
+    <code>
         <id>2001</id>
         <description>Upload image long job suspended</description>
     </code>
