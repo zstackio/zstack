@@ -40,7 +40,7 @@ public class AddFlkSecSecurityMachineAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String model;
 
-    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine","SecureSignVerifyService"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
