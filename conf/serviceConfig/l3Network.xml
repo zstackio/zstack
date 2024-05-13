@@ -122,6 +122,14 @@
     </message>
 
     <message>
+        <name>org.zstack.header.network.l3.APIReserveIpAddressMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIDeleteIpAddressMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.network.l3.APIQueryIpAddressMsg</name>
         <serviceId>query</serviceId>
     </message>

@@ -97,15 +97,6 @@ doc {
 					optional true
 					since "0.6"
 				}
-				column {
-					name "addressDetection"
-					enclosedIn ""
-					desc ""
-					location "query"
-					type "Boolean"
-					optional true
-					since "5.1.0"
-				}
 			}
         }
 
