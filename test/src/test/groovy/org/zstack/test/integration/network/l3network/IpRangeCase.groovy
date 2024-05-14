@@ -1,11 +1,17 @@
 package org.zstack.test.integration.network.l3network
 
+import org.zstack.core.db.Q
+import org.zstack.header.network.IpAllocatedReason
 import org.zstack.header.network.l3.L3NetworkCategory
+import org.zstack.header.network.l3.UsedIpVO
+import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.network.l3.IpNotAvailabilityReason
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.*
+
+import java.util.stream.Collectors
 
 import static java.util.Arrays.asList
 
@@ -36,6 +42,7 @@ class IpRangeCase extends SubCase {
     void test() {
         env.create {
             testAddIpRangeToDifferentL3ButSameL2()
+            testReserveIpAddress()
         }
     }
 
@@ -222,6 +229,32 @@ class IpRangeCase extends SubCase {
         assert ret.value.inventories.get(1).startIp == "192.168.214.101"
         assert ret.value.inventories.get(1).endIp == "192.168.214.254"
         assert ret.value.inventories.get(1).gateway == "192.168.214.100"
-   }
+    }
+
+    void testReserveIpAddress() {
+        L3NetworkInventory l3_2 = env.inventoryByName("l3-2")
+
+        reserveIpAddress {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "10.0.0.2"
+            endIp = "10.0.3.255"
+        }
+
+        List<String> reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 1022
+
+        deleteIpAddress {
+            l3NetworkUuid = l3_2.uuid
+            usedIpUuids = reservedUuids.stream().limit(100).collect(Collectors.toList())
+        }
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 922
+    }
 }
 

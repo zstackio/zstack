@@ -95,17 +95,6 @@ class Env {
                     l3Network {
                         name = "l3-1"
 
-                        ip {
-                            startIp = "10.0.0.2"
-                            endIp = "10.255.255.254"
-                            netmask = "255.0.0.0"
-                            gateway = "10.0.0.1"
-                        }
-                    }
-
-                    l3Network {
-                        name = "l3-1"
-
                         service {
                             provider = VirtualRouterConstant.PROVIDER_TYPE
                             types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
@@ -123,6 +112,23 @@ class Env {
                         }
                     }
 
+                }
+
+                l2VlanNetwork {
+                    name = "l2-vlan-100"
+                    physicalInterface = "eth0"
+                    vlan = 100
+
+                    l3Network {
+                        name = "l3-2"
+
+                        ip {
+                            startIp = "10.0.0.2"
+                            endIp = "10.255.255.254"
+                            netmask = "255.0.0.0"
+                            gateway = "10.0.0.1"
+                        }
+                    }
                 }
 
                 virtualRouterOffering {

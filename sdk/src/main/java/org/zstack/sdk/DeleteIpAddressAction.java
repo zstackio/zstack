@@ -100,7 +100,7 @@ public class DeleteIpAddressAction extends AbstractAction {
         info.path = "/l3-networks/{l3NetworkUuid}/ip-address";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
