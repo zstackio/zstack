@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.zstack.core.config.GuestOsHelper;
 import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -13,8 +14,6 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
-
 public class KVMGuestOsCharacterExtensionPoint implements
         VmAfterAttachNicExtensionPoint,
         VmNicSetDriverExtensionPoint
@@ -22,8 +21,11 @@ public class KVMGuestOsCharacterExtensionPoint implements
     private static final CLogger logger = Utils.getLogger(KVMGuestOsCharacterExtensionPoint.class);
 
     private String getNicDriverFromConfig(VmInstanceInventory vm) {
-        String vmArchPlatformRelease = String.format("%s_%s_%s", vm.getArchitecture(), vm.getPlatform(), vm.getGuestOsType());
-        GuestOsCharacter.Config config = allGuestOsCharacter.get(vmArchPlatformRelease);
+        GuestOsCharacter.Config config = GuestOsHelper.getInstance()
+                .getGuestOsCharacter(
+                        vm.getArchitecture(),
+                        vm.getPlatform(),
+                        vm.getGuestOsType());
         if (config == null) {
             logger.warn(String.format("cannot find guest os character for vm[uuid:%s, arch:%s, platform:%s, guestOsType:%s]",
                     vm.getUuid(), vm.getArchitecture(), vm.getPlatform(), vm.getGuestOsType()));

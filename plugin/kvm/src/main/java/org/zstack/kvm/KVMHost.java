@@ -12,6 +12,8 @@ import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.core.config.GuestOsHelper;
+import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
@@ -107,7 +109,6 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
-import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.kvm.KvmHostUpdateOsExtensionPoint.UPDATE_OS_RSP;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -4204,10 +4205,14 @@ public class KVMHost extends HostBase implements Host {
             cmd.setCreatePaused(true);
         }
         cmd.setAcpi(true);
-        String vmArchPlatformRelease = String.format("%s_%s_%s", spec.getVmInventory().getArchitecture(), spec.getVmInventory().getPlatform(), spec.getVmInventory().getGuestOsType());
-        if (allGuestOsCharacter.containsKey(vmArchPlatformRelease)) {
-            cmd.setAcpi(allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi() == null || allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi());
-            cmd.setX2apic(allGuestOsCharacter.get(vmArchPlatformRelease).getX2apic() == null || allGuestOsCharacter.get(vmArchPlatformRelease).getX2apic());
+
+        GuestOsCharacter.Config config = GuestOsHelper.getInstance().getGuestOsCharacter(
+                spec.getVmInventory().getArchitecture(),
+                spec.getVmInventory().getPlatform(),
+                spec.getVmInventory().getGuestOsType());
+        if (config != null) {
+            cmd.setAcpi(config.getAcpi() == null || config.getAcpi());
+            cmd.setX2apic(config.getX2apic() == null || config.getX2apic());
         }
 
         cmd.setCpuHypervisorFeature(rcf.getResourceConfigValue(KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE,
