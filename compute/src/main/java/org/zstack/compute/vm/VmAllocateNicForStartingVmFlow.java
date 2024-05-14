@@ -79,7 +79,7 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
             return;
         }
 
-        final Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(vm.getUuid());
+        final Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpByVmUuid(vm.getUuid());
         List<AllocateIpMsg> amsgs = new ArrayList<>();
         for (VmNicInventory nic : nicsNeedNewIp) {
             L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
