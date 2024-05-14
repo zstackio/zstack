@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk.sns.platform.universalsms;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSNSSmsReceiverAction extends AbstractAction {
+public class CreateSNSUniversalSmsEndpointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.AddSNSSmsReceiverResult value;
+        public org.zstack.sdk.sns.platform.universalsms.CreateSNSUniversalSmsEndpointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,26 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
+    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String smsAccessKeyId;
+
+    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String smsAccessKeySecret;
+
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String supplier;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List phoneNumberList;
+    public java.util.Map additionParam;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endpointUuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = true, validValues = {"AliyunSms","UniversalSms"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String platformUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -78,8 +84,8 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.AddSNSSmsReceiverResult value = res.getResult(org.zstack.sdk.sns.AddSNSSmsReceiverResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.AddSNSSmsReceiverResult() : value; 
+        org.zstack.sdk.sns.platform.universalsms.CreateSNSUniversalSmsEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.universalsms.CreateSNSUniversalSmsEndpointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.universalsms.CreateSNSUniversalSmsEndpointResult() : value; 
 
         return ret;
     }
@@ -109,7 +115,7 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/sms-endpoints/receivers";
+        info.path = "/sns/application-endpoints/universal-sms";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

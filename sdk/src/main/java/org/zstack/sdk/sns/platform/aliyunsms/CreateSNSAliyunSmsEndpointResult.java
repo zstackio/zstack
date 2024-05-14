@@ -1,13 +1,13 @@
 package org.zstack.sdk.sns.platform.aliyunsms;
 
-import org.zstack.sdk.sns.SNSSmsEndpointInventory;
+import org.zstack.sdk.sns.SNSAliyunSmsEndpointInventory;
 
 public class CreateSNSAliyunSmsEndpointResult {
-    public SNSSmsEndpointInventory inventory;
-    public void setInventory(SNSSmsEndpointInventory inventory) {
+    public SNSAliyunSmsEndpointInventory inventory;
+    public void setInventory(SNSAliyunSmsEndpointInventory inventory) {
         this.inventory = inventory;
     }
-    public SNSSmsEndpointInventory getInventory() {
+    public SNSAliyunSmsEndpointInventory getInventory() {
         return this.inventory;
     }
 

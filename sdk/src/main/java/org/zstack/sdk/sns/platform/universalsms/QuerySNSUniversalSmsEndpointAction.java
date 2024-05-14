@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk.sns.platform.universalsms;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoveSNSSmsReceiverAction extends AbstractAction {
+public class QuerySNSUniversalSmsEndpointAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RemoveSNSSmsReceiverAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.RemoveSNSSmsReceiverResult value;
+        public org.zstack.sdk.sns.platform.universalsms.QuerySNSUniversalSmsEndpointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,41 +25,6 @@ public class RemoveSNSSmsReceiverAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endpointUuid;
-
-    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List phoneNumberList;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -69,8 +34,8 @@ public class RemoveSNSSmsReceiverAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.RemoveSNSSmsReceiverResult value = res.getResult(org.zstack.sdk.sns.RemoveSNSSmsReceiverResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.RemoveSNSSmsReceiverResult() : value; 
+        org.zstack.sdk.sns.platform.universalsms.QuerySNSUniversalSmsEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.universalsms.QuerySNSUniversalSmsEndpointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.universalsms.QuerySNSUniversalSmsEndpointResult() : value; 
 
         return ret;
     }
@@ -99,10 +64,10 @@ public class RemoveSNSSmsReceiverAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/sns/sms-endpoints/{endpointUuid}/receivers/{phoneNumber}";
+        info.httpMethod = "GET";
+        info.path = "/sns/application-endpoints/universal-sms";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }
