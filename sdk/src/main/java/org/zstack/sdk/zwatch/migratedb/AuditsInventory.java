@@ -124,4 +124,36 @@ public class AuditsInventory  {
         return this.signedText;
     }
 
+    public java.lang.String resourceType;
+    public void setResourceType(java.lang.String resourceType) {
+        this.resourceType = resourceType;
+    }
+    public java.lang.String getResourceType() {
+        return this.resourceType;
+    }
+
+    public java.lang.String responseUuid;
+    public void setResponseUuid(java.lang.String responseUuid) {
+        this.responseUuid = responseUuid;
+    }
+    public java.lang.String getResponseUuid() {
+        return this.responseUuid;
+    }
+
+    public java.lang.String resourceName;
+    public void setResourceName(java.lang.String resourceName) {
+        this.resourceName = resourceName;
+    }
+    public java.lang.String getResourceName() {
+        return this.resourceName;
+    }
+
+    public java.lang.Long startTime;
+    public void setStartTime(java.lang.Long startTime) {
+        this.startTime = startTime;
+    }
+    public java.lang.Long getStartTime() {
+        return this.startTime;
+    }
+
 }
