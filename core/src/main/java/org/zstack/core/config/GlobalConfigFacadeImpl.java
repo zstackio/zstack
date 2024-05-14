@@ -1,17 +1,27 @@
 package org.zstack.core.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
@@ -63,9 +73,83 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             handle((APIGetGlobalConfigOptionsMsg) msg);
         } else if (msg instanceof APIResetGlobalConfigMsg) {
             handle((APIResetGlobalConfigMsg) msg);
+        } else if (msg instanceof APIGetGuestOsMetadataMsg) {
+            handle((APIGetGuestOsMetadataMsg) msg);
+        } else if (msg instanceof APIRefreshGuestOsMetadataMsg) {
+            handle((APIRefreshGuestOsMetadataMsg) msg);
+        } else if (msg instanceof RefreshGuestOsMetadataMsg) {
+            handle((RefreshGuestOsMetadataMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetGuestOsMetadataMsg msg) {
+        APIGetGuestOsMetadataReply reply = new APIGetGuestOsMetadataReply();
+        reply.setInventories(GuestOsCharacterInventory
+                .valueOf(GuestOsHelper
+                        .getInstance()
+                        .getAllGuestOsCharacter()));
+        bus.reply(msg, reply);
+    }
+
+    private void handle(RefreshGuestOsMetadataMsg msg) {
+        GuestOsHelper.getInstance().initGuestOsRelatedDb();
+        bus.reply(msg, new RefreshGuestOsMetadataReply());
+    }
+
+    private void handle(APIRefreshGuestOsMetadataMsg msg) {
+        APIRefreshGuestOsMetadataEvent evt = new APIRefreshGuestOsMetadataEvent(msg.getId());
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("refresh-guest-os-metadata");
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<String> managementNodeUuids = Q.New(ManagementNodeVO.class)
+                        .select(ManagementNodeVO_.uuid)
+                        .listValues();
+                new While<>(managementNodeUuids).each((uuid, wcomp) -> {
+                    RefreshGuestOsMetadataMsg rmsg = new RefreshGuestOsMetadataMsg();
+                    bus.makeServiceIdByManagementNodeId(rmsg, GlobalConfigConstant.SERVICE_ID, uuid);
+                    bus.send(rmsg, new CloudBusCallBack(wcomp) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                wcomp.addError(reply.getError());
+                            }
+                            wcomp.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            trigger.fail(errorCodeList);
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                GuestOsHelper.getInstance().initGuestOsRelatedDb();
+                trigger.next();
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private void handle(APIResetGlobalConfigMsg msg) {
@@ -698,6 +782,9 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
         GlobalConfigInitializer initializer = new GlobalConfigInitializer();
         initializer.init();
+
+        GuestOsHelper.getInstance().initGuestOsRelatedDb();
+
         return true;
     }
 

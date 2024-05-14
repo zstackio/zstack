@@ -19,4 +19,12 @@
     <message>
         <name>org.zstack.core.config.APIResetGlobalConfigMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.core.config.APIGetGuestOsMetadataMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.config.APIRefreshGuestOsMetadataMsg</name>
+    </message>
 </service>
