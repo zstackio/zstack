@@ -113,22 +113,22 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIReserveIpAddressMsg msg) {
-        if (NetworkUtils.isValidIPAddress(msg.getStartIp())) {
+        if (!NetworkUtils.isValidIPAddress(msg.getStartIp())) {
             throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
                     "because start ip[%s] is not valid ip address", msg.getStartIp()));
         }
 
-        if (NetworkUtils.isValidIPAddress(msg.getEndIp())) {
+        if (!NetworkUtils.isValidIPAddress(msg.getEndIp())) {
             throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
                     "because start ip[%s] is not valid ip address", msg.getStartIp()));
         }
 
-        if (NetworkUtils.isIpv4Address(msg.getStartIp()) && !NetworkUtils.isIpv4Address(msg.getStartIp())) {
+        if (NetworkUtils.isIpv4Address(msg.getStartIp()) && !NetworkUtils.isIpv4Address(msg.getEndIp())) {
             throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
                     "because end ip[%s] is not ipv4 address", msg.getEndIp()));
         }
 
-        if (IPv6NetworkUtils.isIpv6Address(msg.getStartIp()) && !IPv6NetworkUtils.isIpv6Address(msg.getStartIp())) {
+        if (IPv6NetworkUtils.isIpv6Address(msg.getStartIp()) && !IPv6NetworkUtils.isIpv6Address(msg.getEndIp())) {
             throw new ApiMessageInterceptionException(argerr("could not reserve ip address, " +
                     "because end ip[%s] is not ipv6 address", msg.getEndIp()));
         }

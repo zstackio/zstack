@@ -55,6 +55,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.stopwatch.StopWatch;
 
 import javax.persistence.Tuple;
 import java.math.BigInteger;
@@ -318,9 +319,10 @@ public class L3BasicNetwork implements L3Network {
                             "IP allocator strategy[%s] failed, because %s", strategyType, reason));
                     bus.reply(msg, reply);
                     chain.next();
+                    return;
                 }
 
-                logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, printer.print(ip)));
+                logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, ip.getIp()));
                 reply.setIpInventory(ip);
                 bus.reply(msg, reply);
                 chain.next();
@@ -389,6 +391,7 @@ public class L3BasicNetwork implements L3Network {
         List<IpRangeVO> ipv6Ranges = self.getIpRanges().stream()
                 .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
         List<UsedIpVO> usedIpVOS = new ArrayList<>();
+        List<String> usedIpUuids = new ArrayList<>();
         if(IPv6NetworkUtils.isValidIpv4(msg.getStartIp()) && !ipv4Ranges.isEmpty()) {
             long start = NetworkUtils.ipv4StringToLong(msg.getStartIp());
             long end  = NetworkUtils.ipv4StringToLong(msg.getEndIp());
@@ -407,6 +410,7 @@ public class L3BasicNetwork implements L3Network {
                     i++;
                     UsedIpVO vo = new UsedIpVO();
                     vo.setUuid(Platform.getUuid());
+                    usedIpUuids.add(vo.getUuid());
                     vo.setIpRangeUuid(ipr.getUuid());
                     vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
                     //vo.setVmNicUuid(nic.getUuid());
@@ -442,6 +446,7 @@ public class L3BasicNetwork implements L3Network {
                     i = i.add(BigInteger.ONE);
                     UsedIpVO vo = new UsedIpVO();
                     vo.setUuid(Platform.getUuid());
+                    usedIpUuids.add(vo.getUuid());
                     vo.setIpRangeUuid(ipr.getUuid());
                     vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
                     //vo.setVmNicUuid(nic.getUuid());
@@ -461,9 +466,16 @@ public class L3BasicNetwork implements L3Network {
         }
 
         if (!usedIpVOS.isEmpty()) {
+            StopWatch watch = Utils.getStopWatch();
+            watch.start();
             dbf.persistCollection(usedIpVOS);
-            usedIpVOS = dbf.reload(usedIpVOS);
-            event.setInventories(UsedIpInventory.valueOf(usedIpVOS));
+            List<UsedIpVO> ret = Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                    .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString()).list();
+            watch.stop();
+            logger.debug(String.format("it takes %d microseconds to save %d ip addresses", watch.getLapse(), usedIpVOS.size()));
+            ret = ret.stream().filter(r -> usedIpUuids.contains(r.getUuid())).collect(Collectors.toList());
+            event.setInventories(UsedIpInventory.valueOf(ret));
         }
 
 
@@ -471,7 +483,7 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(APIDeleteIpAddressMsg msg) {
-        APIDeleteIpAddressEvent event = new APIDeleteIpAddressEvent();
+        APIDeleteIpAddressEvent event = new APIDeleteIpAddressEvent(msg.getId());
 
         SQL.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                 .in(UsedIpVO_.uuid, msg.getUsedIpUuids())

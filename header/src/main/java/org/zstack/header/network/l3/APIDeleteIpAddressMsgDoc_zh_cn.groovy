@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "l3NetworkUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "三层网络UUID"
 					location "url"
 					type "String"
@@ -32,7 +32,7 @@ doc {
 				}
 				column {
 					name "usedIpUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc ""
 					location "body"
 					type "List"
@@ -41,7 +41,7 @@ doc {
 				}
 				column {
 					name "deleteMode"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "删除模式(Permissive / Enforcing，Permissive)"
 					location "body"
 					type "String"
