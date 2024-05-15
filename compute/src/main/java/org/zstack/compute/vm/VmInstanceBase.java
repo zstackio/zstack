@@ -2153,11 +2153,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             private boolean isSet = false;
 
             void set () {
-                if (msg instanceof VmAttachNicMsg) {
-                    VmAttachNicMsg amsg = (VmAttachNicMsg) msg;
+                if (msg instanceof VmAttachNicMsg || msg instanceof APIAttachL3NetworkToVmMsg) {
+                    NeedReplyMessage msg1 = (NeedReplyMessage) msg;
 
-                    if (amsg.hasSystemTag(VmSystemTags.CUSTOM_MAC::isMatch)) {
-                        tagMgr.createNonInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
+                    if (msg1.hasSystemTag(VmSystemTags.CUSTOM_MAC::isMatch)) {
+                        tagMgr.createNonInherentSystemTags(msg1.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
                         isSet = true;
                     }
                 }
