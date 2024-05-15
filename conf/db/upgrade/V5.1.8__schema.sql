@@ -6,3 +6,5 @@ CREATE INDEX idx_id_resourceType_startTime ON AuditsVO (id, resourceType, startT
 
 UPDATE AuditsVO set startTime = createTime WHERE startTime IS NULL;
 
+
+ALTER TABLE `zstack`.`SNSApplicationEndpointVO` ADD COLUMN `connectionStatus` varchar(10) DEFAULT 'UP' COMMENT 'UP or DOWN';
