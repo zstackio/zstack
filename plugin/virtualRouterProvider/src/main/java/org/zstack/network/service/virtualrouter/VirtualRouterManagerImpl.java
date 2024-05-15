@@ -1,6 +1,5 @@
 package org.zstack.network.service.virtualrouter;
 
-import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -38,6 +37,10 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.Quota.QuotaOperator;
+import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.image.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
@@ -45,6 +48,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
@@ -61,7 +65,6 @@ import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.image.ImageSystemTags;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
@@ -105,6 +108,7 @@ import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.
 import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_ROUTER_PROVIDER_TYPE;
 import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_VM_TYPE;
 import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
@@ -112,7 +116,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
         GetPeerL3NetworksForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
-        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint, QueryBelongFilter {
+        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint, QueryBelongFilter,
+        ReportQuotaExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -182,6 +187,77 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     protected VirtualRouterHaBackend haBackend;
     @Autowired
     private ApplianceVmFactory apvmFactory;
+
+    @Override
+    public List<Quota> reportQuota() {
+        QuotaOperator checker = new QuotaOperator() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
+
+            }
+
+            @Override
+            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
+
+            }
+
+            @Override
+            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                List<Quota.QuotaUsage> usages = new ArrayList<>();
+                VirtualRouterQuotaUtil.VirtualRouterQuota vrQuota = new VirtualRouterQuotaUtil().getUsedVirtualRouterCpuMemory(accountUuid);
+                Quota.QuotaUsage usage;
+
+                usage = new Quota.QuotaUsage();
+                usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_TOTAL_NUM);
+                usage.setUsed(vrQuota.totalNum);
+                usages.add(usage);
+
+                usage = new Quota.QuotaUsage();
+                usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_NUM);
+                usage.setUsed(vrQuota.runningNum);
+                usages.add(usage);
+
+                usage = new Quota.QuotaUsage();
+                usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_CPU_NUM);
+                usage.setUsed(vrQuota.runningCpuNum);
+                usages.add(usage);
+
+                usage = new Quota.QuotaUsage();
+                usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_MEMORY_SIZE);
+                usage.setUsed(vrQuota.runningMemorySize);
+                usages.add(usage);
+
+                return usages;
+            }
+        };
+
+        Quota quota = new Quota();
+        QuotaPair p;
+
+        p = new QuotaPair();
+        p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_TOTAL_NUM);
+        p.setValue(VirtualRouterQuotaGlobalConfig.VIRTUAL_ROUTER_TOTAL_NUM.defaultValue(Long.class));
+        quota.addPair(p);
+
+        p = new QuotaPair();
+        p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_NUM);
+        p.setValue(VirtualRouterQuotaGlobalConfig.VIRTUAL_ROUTER_RUNNING_NUM.defaultValue(Long.class));
+        quota.addPair(p);
+
+        p = new QuotaPair();
+        p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_CPU_NUM);
+        p.setValue(VirtualRouterQuotaGlobalConfig.VIRTUAL_ROUTER_RUNNING_CPU_NUM.defaultValue(Long.class));
+        quota.addPair(p);
+
+        p = new QuotaPair();
+        p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_MEMORY_SIZE);
+        p.setValue(VirtualRouterQuotaGlobalConfig.VIRTUAL_ROUTER_RUNNING_MEMORY_SIZE.defaultValue(Long.class));
+        quota.addPair(p);
+
+        quota.setOperator(checker);
+
+        return list(quota);
+    }
 
     @Override
     @MessageSafe

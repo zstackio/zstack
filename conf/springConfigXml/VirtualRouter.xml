@@ -123,6 +123,7 @@
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterHaGetCallbackExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint" />
             <zstack:extension interface="org.zstack.header.query.QueryBelongFilter"/>
+            <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

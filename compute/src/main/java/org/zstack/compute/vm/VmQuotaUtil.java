@@ -18,6 +18,9 @@ import javax.persistence.TypedQuery;
 
 import static org.zstack.utils.CollectionDSL.list;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by miao on 16-10-9.
  */
@@ -78,7 +81,7 @@ public class VmQuotaUtil {
                 " and ref.resourceType = :rtype" +
                 " and not (vm.state = :starting and vm.hostUuid is null)" +
                 " and vm.state not in (:states)" +
-                " and vm.type != :vmtype";
+                " and vm.type not in (:vmtypes)";
         if (excludeVmUuid != null) {
             sql += " and vm.uuid != (:excludeVmUuid)";
         }
@@ -89,7 +92,10 @@ public class VmQuotaUtil {
         q.setParameter("starting", VmInstanceState.Starting);
         q.setParameter("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                 VmInstanceState.Destroyed, VmInstanceState.Created));
-        q.setParameter("vmtype", "baremetal2");
+        List<String> excludeVmTypes = new ArrayList<>();
+        excludeVmTypes.add("baremetal2");
+        excludeVmTypes.add("ApplianceVm");
+        q.setParameter("vmtypes", excludeVmTypes);
 
         if (excludeVmUuid != null) {
             q.setParameter("excludeVmUuid", excludeVmUuid);
@@ -110,12 +116,12 @@ public class VmQuotaUtil {
                 " and ref.resourceType = :rtype" +
                 " and not (vm.hostUuid is null and vm.lastHostUuid is null)" +
                 " and vm.state not in (:states)" +
-                " and vm.type != :vmtype";
+                " and vm.type not in (:vmtypes)";
         TypedQuery<Long> q2 = dbf.getEntityManager().createQuery(sql2, Long.class);
         q2.setParameter("auuid", accountUUid);
         q2.setParameter("rtype", VmInstanceVO.class.getSimpleName());
         q2.setParameter("states", list(VmInstanceState.Destroyed));
-        q2.setParameter("vmtype", "baremetal2");
+        q2.setParameter("vmtypes", excludeVmTypes);
         Long totalVmNum = q2.getSingleResult();
         quota.totalVmNum = totalVmNum == null ? 0 : totalVmNum;
 
