@@ -41,8 +41,6 @@ public class VmNicParam implements Serializable {
 
     private Boolean isDefaultNic;
 
-    private Boolean ipAddressDetection;
-
     private List<String> sgUuids = new ArrayList<>();
 
     @APINoSee
@@ -161,14 +159,6 @@ public class VmNicParam implements Serializable {
 
     public void setDefaultNic(Boolean defaultNic) {
         this.isDefaultNic = defaultNic;
-    }
-
-    public Boolean getIpAddressDetection() {
-        return ipAddressDetection;
-    }
-
-    public void setIpAddressDetection(Boolean ipAddressDetection) {
-        this.ipAddressDetection = ipAddressDetection;
     }
 
     public String getVmNicType() {
