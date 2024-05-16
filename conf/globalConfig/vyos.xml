@@ -28,4 +28,11 @@
         <type>java.lang.Boolean</type>
         <defaultValue>true</defaultValue>
     </config>
+    <config>
+        <category>vyos</category>
+        <name>enable.snat</name>
+        <description>enable or disable snat when create vpc</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>false</defaultValue>
+    </config>
 </globalConfig>
