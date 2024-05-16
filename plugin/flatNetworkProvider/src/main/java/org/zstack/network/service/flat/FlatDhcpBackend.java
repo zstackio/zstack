@@ -893,6 +893,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 amsg.setRequiredIp(requiredIp);
             }
             amsg.setIpVersion(ipVersion);
+            if (ipVersion == IPv6Constants.IPv4) {
+                amsg.setAllocateStrategy(L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY);
+            } else {
+                amsg.setAllocateStrategy(L3NetworkConstant.FIRST_AVAILABLE_IPV6_ALLOCATOR_STRATEGY);
+            }
             amsg.setExcludedIp(excludedIp);
             bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
             MessageReply reply = bus.call(amsg);

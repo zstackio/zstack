@@ -144,8 +144,9 @@ class Ipv6AddressAllocationCase extends SubCase {
             addressMode = IPv6Constants.Stateful_DHCP
         }
 
+        /* dhcp server will occupy an ip address */
         List<VmNicInventory> nics = new ArrayList<>()
-        for (int i = 0; i< 14; i++) {
+        for (int i = 0; i < 13; i++) {
             VmNicInventory nic = createVmNic {
                 l3NetworkUuid = l3_private_ipv6.uuid
             }
@@ -159,7 +160,7 @@ class Ipv6AddressAllocationCase extends SubCase {
         }
 
         List<String> ips = nics.stream().distinct().collect(Collectors.toList())
-        assert ips.size() == 14
+        assert ips.size() == 13
 
         for (VmNicInventory nic : nics) {
             deleteVmNic {
@@ -189,7 +190,7 @@ class Ipv6AddressAllocationCase extends SubCase {
             delegate.networkServices = netServices
         }
 
-        /* there are should 10 usable address */
+        /* there are should 16 usable address */
         IpRangeInventory ipr_1 = addIpv6Range {
             name = "ipr-1"
             l3NetworkUuid = l3_private_ipv6.getUuid()
@@ -200,8 +201,9 @@ class Ipv6AddressAllocationCase extends SubCase {
             addressMode = IPv6Constants.Stateful_DHCP
         }
 
+        /* dhcp server will occupy an ip address */
         List<VmNicInventory> nics = new ArrayList<>()
-        for (int i = 0; i< 16; i++) {
+        for (int i = 0; i< 15; i++) {
             VmNicInventory nic = createVmNic {
                 l3NetworkUuid = l3_private_ipv6.uuid
             }
@@ -215,7 +217,7 @@ class Ipv6AddressAllocationCase extends SubCase {
         }
 
         List<String> ips = nics.stream().distinct().collect(Collectors.toList())
-        assert ips.size() == 16
+        assert ips.size() == 15
         for (VmNicInventory nic : nics) {
             deleteVmNic {
                 uuid = nic.uuid
