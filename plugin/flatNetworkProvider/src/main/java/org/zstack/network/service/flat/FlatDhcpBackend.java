@@ -1,10 +1,12 @@
 package org.zstack.network.service.flat;
 
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.StaticIpOperator;
 import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -32,6 +34,7 @@ import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.IpAllocatedReason;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
@@ -62,6 +65,7 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -2165,6 +2169,80 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
      *      */
     @Override
     public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
+        List<ReservedIpRangeVO> reservedIpRanges = null;
+        if (ipr.getIpVersion() == IPv6Constants.IPv4) {
+            reservedIpRanges = l3NetworkVO.getReservedIpRanges()
+                    .stream().filter(r -> r.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
+            for (ReservedIpRangeVO reservedIpRange : reservedIpRanges) {
+                List<UsedIpVO> usedIpVOS = new ArrayList<>();
+                if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(),
+                        reservedIpRange.getStartIp(), reservedIpRange.getEndIp())) {
+                    long start = NetworkUtils.ipv4StringToLong(reservedIpRange.getStartIp());
+                    long end  = NetworkUtils.ipv4StringToLong(reservedIpRange.getEndIp());
+
+                    for (long i = start; i <= end; i++){
+                        String newIp = NetworkUtils.longToIpv4String(i);
+                        if (NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                            UsedIpVO vo = new UsedIpVO();
+                            vo.setUuid(Platform.getUuid());
+                            vo.setIpRangeUuid(ipr.getUuid());
+                            vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                            //vo.setVmNicUuid(nic.getUuid());
+                            vo.setIpVersion(ipr.getIpVersion());
+                            vo.setIp(newIp);
+                            vo.setNetmask(ipr.getNetmask());
+                            vo.setGateway(ipr.getGateway());
+                            vo.setIpInLong(i);
+                            vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+                            vo.setMetaData(reservedIpRange.getUuid());
+                            usedIpVOS.add(vo);
+                        }
+                    }
+                }
+                if (!usedIpVOS.isEmpty()) {
+                    dbf.persistCollection(usedIpVOS);
+                }
+            }
+        } else {
+            List<ReservedIpRangeVO> ipv6ReservedIpRange = l3NetworkVO.getReservedIpRanges()
+                    .stream().filter(r -> r.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+            for (ReservedIpRangeVO reservedIpRange : ipv6ReservedIpRange) {
+                List<UsedIpVO> usedIpVOS = new ArrayList<>();
+                if (IPv6NetworkUtils.isIpv6RangeOverlap(ipr.getStartIp(), ipr.getEndIp(),
+                        reservedIpRange.getStartIp(), reservedIpRange.getEndIp())) {
+                    BigInteger start = IPv6Address.fromString(reservedIpRange.getStartIp()).toBigInteger();
+                    BigInteger end = IPv6Address.fromString(reservedIpRange.getEndIp()).toBigInteger();
+
+                    for (BigInteger i = start; i.compareTo(end) <= 0 && ipr != null; i = i.add(BigInteger.ONE)) {
+                        String newIp = IPv6NetworkUtils.IPv6AddressToString(i);
+                        if (IPv6NetworkUtils.isIpv6InRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                            UsedIpVO vo = new UsedIpVO();
+                            vo.setUuid(Platform.getUuid());
+                            vo.setIpRangeUuid(ipr.getUuid());
+                            vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                            //vo.setVmNicUuid(nic.getUuid());
+                            vo.setIpVersion(ipr.getIpVersion());
+                            vo.setIp(newIp);
+                            vo.setNetmask(ipr.getNetmask());
+                            vo.setGateway(ipr.getGateway());
+                            vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+                            vo.setMetaData(reservedIpRange.getUuid());
+
+                            usedIpVOS.add(vo);
+                        }
+                    }
+                }
+                if (!usedIpVOS.isEmpty()) {
+                    dbf.persistCollection(usedIpVOS);
+                }
+            }
+        }
+
+        if (ipr.getIpRangeType() != IpRangeType.Normal) {
+            return;
+        }
+
         if (!Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ipr.getUuid()).isExists()) {
             return;
         }

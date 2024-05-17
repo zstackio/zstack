@@ -156,4 +156,12 @@ public class L3NetworkInventory  {
         return this.hostRoute;
     }
 
+    public java.util.List reservedIpRanges;
+    public void setReservedIpRanges(java.util.List reservedIpRanges) {
+        this.reservedIpRanges = reservedIpRanges;
+    }
+    public java.util.List getReservedIpRanges() {
+        return this.reservedIpRanges;
+    }
+
 }

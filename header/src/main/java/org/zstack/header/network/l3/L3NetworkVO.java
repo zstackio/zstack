@@ -48,6 +48,11 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
     @NoView
     private Set<L3NetworkHostRouteVO> hostRoutes = new HashSet<L3NetworkHostRouteVO>();
 
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<ReservedIpRangeVO> reservedIpRanges = new HashSet<ReservedIpRangeVO>();
+
     @Transient
     private String accountUuid;
 
@@ -91,6 +96,14 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
 
     public void setHostRoutes(Set<L3NetworkHostRouteVO> hostRoutes) {
         this.hostRoutes = hostRoutes;
+    }
+
+    public Set<ReservedIpRangeVO> getReservedIpRanges() {
+        return reservedIpRanges;
+    }
+
+    public void setReservedIpRanges(Set<ReservedIpRangeVO> reservedIpRanges) {
+        this.reservedIpRanges = reservedIpRanges;
     }
 
     public List<Integer> getIpVersions() {

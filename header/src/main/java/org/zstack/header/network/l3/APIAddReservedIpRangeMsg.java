@@ -13,12 +13,12 @@ import org.zstack.header.tag.TagResourceType;
 @TagResourceType(L3NetworkVO.class)
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/l3-networks/{l3NetworkUuid}/ip-address",
+        path = "/l3-networks/{l3NetworkUuid}/reserved-ip-ranges",
         method = HttpMethod.POST,
-        responseClass = APIReserveIpAddreessEvent.class,
+        responseClass = APIAddReservedIpRangeEvent.class,
         parameterName = "params"
 )
-public class APIReserveIpAddressMsg extends APICreateMessage implements L3NetworkMessage, APIAuditor {
+public class APIAddReservedIpRangeMsg extends APICreateMessage implements L3NetworkMessage, APIAuditor {
     /**
      * @desc l3Network uuid
      */
@@ -60,8 +60,8 @@ public class APIReserveIpAddressMsg extends APICreateMessage implements L3Networ
         this.endIp = endIP;
     }
 
-    public static APIReserveIpAddressMsg __example__() {
-        APIReserveIpAddressMsg msg = new APIReserveIpAddressMsg();
+    public static APIAddReservedIpRangeMsg __example__() {
+        APIAddReservedIpRangeMsg msg = new APIAddReservedIpRangeMsg();
 
         msg.setL3NetworkUuid(uuid());
         msg.setStartIp("192.168.100.10");
@@ -72,6 +72,6 @@ public class APIReserveIpAddressMsg extends APICreateMessage implements L3Networ
 
     @Override
     public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APIReserveIpAddreessEvent)rsp).getInventories().get(0).getL3NetworkUuid() : "", L3NetworkVO.class);
+        return new Result(rsp.isSuccess() ? ((APIAddReservedIpRangeEvent)rsp).getInventory().getL3NetworkUuid() : "", L3NetworkVO.class);
     }
 }
