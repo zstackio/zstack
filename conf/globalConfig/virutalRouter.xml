@@ -91,4 +91,36 @@
         <category>virtualRouter</category>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <name>vrouter.totalNum</name>
+        <description>default quota for vrouter.totalNum</description>
+        <defaultValue>1</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <name>vrouter.num</name>
+        <description>default quota for vrouter.num</description>
+        <defaultValue>1</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <name>vrouter.memorySize</name>
+        <description>default quota for vrouter.memorySize</description>
+        <defaultValue>4294967296</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <name>vrouter.cpuNum</name>
+        <description>default quota for vrouter.cpuNum</description>
+        <defaultValue>4</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>
