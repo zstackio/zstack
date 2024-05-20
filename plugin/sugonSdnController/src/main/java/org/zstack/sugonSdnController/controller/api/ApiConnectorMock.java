@@ -52,6 +52,8 @@ public class ApiConnectorMock implements ApiConnector {
         _parentMap = parentMap;
     }
 
+    private static Random random = new Random();
+
     private static void assignAutoProperty(ApiObjectBase obj) {
         if (obj.getClass() == VirtualMachineInterface.class) {
             if (((VirtualMachineInterface)obj).getMacAddresses() != null) {
@@ -71,7 +73,7 @@ public class ApiConnectorMock implements ApiConnector {
             if (((InstanceIp)obj).getAddress() != null) {
                return;
             }
-            Random random = new Random();
+
             String ipString = InetAddresses.fromInteger(random.nextInt()).getHostAddress();
             s_logger.debug("Assigned auto property ip address : " + ipString);
             ((InstanceIp)obj).setAddress(ipString);
@@ -496,11 +498,7 @@ public class ApiConnectorMock implements ApiConnector {
         ArrayList<ApiObjectBase> arr = new ArrayList<ApiObjectBase>(fqnMap.values());
         List<ApiObjectBase> list = new ArrayList<ApiObjectBase>();
         for (ApiObjectBase obj:arr) {
-           if (fqnParent != null && getFqnString(obj.getQualifiedName()).startsWith(fqnParent + ":")) {
-              list.add(obj);
-           } else {
-              list.add(obj);
-           }
+            list.add(obj);
         }
         return list;
     }

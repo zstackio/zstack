@@ -556,13 +556,13 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
 
         L3NetworkVO defaultL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, struct.getL3NetworkUuid()).find();
-        if (defaultL3!= null && defaultL3.getNetworkServices().stream().noneMatch(
+        if (defaultL3 != null && defaultL3.getNetworkServices().stream().noneMatch(
                 service -> Objects.equals(UserdataConstant.USERDATA_TYPE_STRING, service.getNetworkServiceType()))) {
             completion.success();
             return;
         }
 
-        if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
+        if (defaultL3 != null && !defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
             // userdata depends on the ipv4 address
             completion.success();
             return;

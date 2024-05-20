@@ -491,7 +491,7 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
             // forecast used physical capacity
             List<Long> forecastResults;
             if (CoreGlobalProperty.UNIT_TEST_ON) {
-                forecastResults = new Random().longs(historicalUsedPhysicalCapacities.size() + 185).boxed().collect(Collectors.toList());
+                forecastResults = new Random().longs(historicalUsedPhysicalCapacities.size() + 185L).boxed().collect(Collectors.toList());
             } else {
                 forecastResults = getForecastResults(resourceUuid, historicalUsedPhysicalCapacities);
                 if (forecastResults.isEmpty()) {

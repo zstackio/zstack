@@ -422,8 +422,13 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     }
 
     private List<List<String>> getPrimaryStorageCombinationFromSpec(VmInstanceSpec spec, List<String> localPsUuids, List<String> nonLocalPsUuids) {
-        List<String> availPsForRootVolume = new ArrayList<String>() {{addAll(localPsUuids); addAll(nonLocalPsUuids);}};
-        List<String> availPsForDataVolume = new ArrayList<String>() {{addAll(nonLocalPsUuids); addAll(localPsUuids);}};
+        List<String> availPsForRootVolume = new ArrayList<String>();
+        availPsForRootVolume.addAll(localPsUuids);
+        availPsForRootVolume.addAll(nonLocalPsUuids);
+
+        List<String> availPsForDataVolume = new ArrayList<String>();
+        availPsForDataVolume.addAll(nonLocalPsUuids);
+        availPsForDataVolume.addAll(localPsUuids);
 
         boolean autoAllocateRootVolumePs = false;
         boolean autoAllocateDataVolumePs = false;

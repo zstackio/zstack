@@ -176,31 +176,6 @@ class ApiConnectorImpl implements ApiConnector {
         return  _api_port;
     }
 
-    // return value indicates whether the token changed
-    private boolean authenticate() {
-        /*
-        if (_has_input_authtoken) {
-            return false;
-        }
-
-        _authtoken = null;
-        if ("keystone".equals(_authtype)) {
-            try {
-                OSClient os = OSFactory.builder().endpoint(_authurl)
-                    .credentials(_username, _password).tenantName(_tenant).authenticate();
-                _authtoken = os.getToken().getId();
-                return true;
-            }
-            catch (AuthenticationException authe) {
-                s_logger.warn("authenticate to keystone " + _authurl + "failed: " + authe);
-                return false;
-            }
-        }
-        */
-        // authenticate type unknown
-        return false;
-
-    }
 
     private HttpResponse execute(String method, String uri, StringEntity entity) throws IOException {
         return execute_doauth(method, uri, entity, MAX_RETRIES);
@@ -241,17 +216,6 @@ class ApiConnectorImpl implements ApiConnector {
         }
 
         s_logger.debug("<< Response Status: " + response.getStatusLine());
-        if ((response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED
-                && retry_count > 0)) {
-            if (authenticate()) {
-                getResponseData(response);
-                checkResponseKeepAliveStatus(response);
-                s_logger.error("<< Received \"unauthorized response from the Api server, retrying "
-                        + retry_count + " more times after authentication");
-                return execute_doauth(method, uri, entity, --retry_count);
-            }
-        }
-
         return response;
     }
 
