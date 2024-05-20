@@ -1126,6 +1126,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         new While<>(huuids).step((huuid, comp) -> {
             new KvmCommandSender(huuid).send(cmd, path, wrapper -> {
                 DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
+                if (rsp == null) {
+                    return null;
+                }
                 return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }, new SteppingSendCallback<KvmResponseWrapper>() {
                 @Override
