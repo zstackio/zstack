@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-import org.zstack.header.network.l3.UsedIpInventory
+import org.zstack.header.network.l3.ReservedIpRangeInventory
 import org.zstack.header.errorcode.ErrorCode
 
 doc {
@@ -8,12 +8,12 @@ doc {
 	title "在这里输入结构的名称"
 
 	ref {
-		name "inventories"
-		path "org.zstack.header.network.l3.APIReserveIpAddreessEvent.inventories"
+		name "inventory"
+		path "org.zstack.header.network.l3.APIAddReservedIpRangeEvent.inventory"
 		desc "null"
-		type "List"
+		type "ReservedIpRangeInventory"
 		since "5.1.0"
-		clz UsedIpInventory.class
+		clz ReservedIpRangeInventory.class
 	}
 	field {
 		name "success"
@@ -23,7 +23,7 @@ doc {
 	}
 	ref {
 		name "error"
-		path "org.zstack.header.network.l3.APIReserveIpAddreessEvent.error"
+		path "org.zstack.header.network.l3.APIAddReservedIpRangeEvent.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "5.1.0"

@@ -124,7 +124,7 @@ class Env {
 
                         ip {
                             startIp = "10.0.0.2"
-                            endIp = "10.255.255.254"
+                            endIp = "10.0.0.254"
                             netmask = "255.0.0.0"
                             gateway = "10.0.0.1"
                         }

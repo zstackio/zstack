@@ -261,6 +261,7 @@ public class SourceClassMap {
 			put("org.zstack.header.network.l3.L3NetworkHostRouteInventory", "org.zstack.sdk.L3NetworkHostRouteInventory");
 			put("org.zstack.header.network.l3.L3NetworkInventory", "org.zstack.sdk.L3NetworkInventory");
 			put("org.zstack.header.network.l3.NormalIpRangeInventory", "org.zstack.sdk.NormalIpRangeInventory");
+			put("org.zstack.header.network.l3.ReservedIpRangeInventory", "org.zstack.sdk.ReservedIpRangeInventory");
 			put("org.zstack.header.network.l3.UsedIpInventory", "org.zstack.sdk.UsedIpInventory");
 			put("org.zstack.header.network.l3.datatypes.IpCapacityData", "org.zstack.sdk.IpCapacityData");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
@@ -1129,6 +1130,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ReplicationNetworkStatus", "org.zstack.storage.primary.ministorage.ReplicationNetworkStatus");
 			put("org.zstack.sdk.ReplicationRole", "org.zstack.storage.primary.ministorage.ReplicationRole");
 			put("org.zstack.sdk.ReplicationState", "org.zstack.storage.primary.ministorage.ReplicationState");
+			put("org.zstack.sdk.ReservedIpRangeInventory", "org.zstack.header.network.l3.ReservedIpRangeInventory");
 			put("org.zstack.sdk.ResourceBackupState", "org.zstack.externalbackup.ResourceBackupState");
 			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
 			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");

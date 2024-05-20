@@ -2498,6 +2498,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
+        if (ipr.getIpRangeType() != IpRangeType.Normal) {
+            return;
+        }
+
         /* when change a IPv4/IPv6 network to dual stack network, after add the ip range,
            allocate the gateway ip to virtual router, but only after reboot virtual router,
             virtual router will be configured with the gateway */

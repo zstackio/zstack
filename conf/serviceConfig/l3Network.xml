@@ -122,7 +122,11 @@
     </message>
 
     <message>
-        <name>org.zstack.header.network.l3.APIReserveIpAddressMsg</name>
+        <name>org.zstack.header.network.l3.APIAddReservedIpRangeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIDeleteReservedIpRangeMsg</name>
     </message>
 
     <message>

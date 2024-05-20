@@ -233,8 +233,9 @@ class IpRangeCase extends SubCase {
 
     void testReserveIpAddress() {
         L3NetworkInventory l3_2 = env.inventoryByName("l3-2")
+        IpRangeInventory ipr = l3_2.ipRanges.get(0)
 
-        reserveIpAddress {
+        ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
             l3NetworkUuid = l3_2.uuid
             startIp = "10.0.0.2"
             endIp = "10.0.3.255"
@@ -244,7 +245,7 @@ class IpRangeCase extends SubCase {
                 .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
                 .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
                 .select(UsedIpVO_.uuid).listValues()
-        assert reservedUuids.size() == 1022
+        assert reservedUuids.size() == 253
 
         deleteIpAddress {
             l3NetworkUuid = l3_2.uuid
@@ -254,7 +255,84 @@ class IpRangeCase extends SubCase {
                 .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
                 .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
                 .select(UsedIpVO_.uuid).listValues()
-        assert reservedUuids.size() == 922
+        assert reservedUuids.size() == 153
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange.uuid
+        }
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 0
+
+        reservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "10.0.0.100"
+            endIp = "10.0.0.200"
+        }
+
+        expect(AssertionError.class) {
+            addReservedIpRange {
+                l3NetworkUuid = l3_2.uuid
+                startIp = "10.0.0.100"
+                endIp = "10.0.0.150"
+            }
+        }
+
+        expect(AssertionError.class) {
+            addReservedIpRange {
+                l3NetworkUuid = l3_2.uuid
+                startIp = "10.0.0.2"
+                endIp = "10.0.3.0"
+            }
+        }
+
+        ReservedIpRangeInventory reservedIpRange1 = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "10.0.1.0"
+            endIp = "10.0.1.10"
+        }
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 101
+
+        addIpRange {
+            name = "TestIpRange"
+            l3NetworkUuid = l3_2.getUuid()
+            startIp = "10.0.1.0"
+            endIp = "10.0.1.100"
+            gateway = "10.0.0.1"
+            netmask = "255.0.0.0"
+        }
+
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 112
+
+        deleteIpRange {
+            uuid = ipr.uuid
+        }
+
+        retryInSecs {
+            reservedUuids = Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                    .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                    .select(UsedIpVO_.uuid).listValues()
+            assert reservedUuids.size() == 11
+        }
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange1.uuid
+        }
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange.uuid
+        }
     }
 }
 

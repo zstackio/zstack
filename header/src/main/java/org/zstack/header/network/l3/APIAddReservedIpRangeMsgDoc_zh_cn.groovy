@@ -1,21 +1,21 @@
 package org.zstack.header.network.l3
 
-import org.zstack.header.network.l3.APIReserveIpAddreessEvent
+import org.zstack.header.network.l3.APIAddReservedIpRangeEvent
 
 doc {
-    title "ReserveIpAddress"
+    title "AddReservedIpRange"
 
-    category "未知类别"
+    category "network.l3"
 
     desc """在这里填写API描述"""
 
     rest {
         request {
-			url "POST /v1/l3-networks/{l3NetworkUuid}/ip-address"
+			url "POST /v1/l3-networks/{l3NetworkUuid}/reserved-ip-ranges"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReserveIpAddressMsg.class
+            clz APIAddReservedIpRangeMsg.class
 
             desc """"""
             
@@ -88,7 +88,7 @@ doc {
         }
 
         response {
-            clz APIReserveIpAddreessEvent.class
+            clz APIAddReservedIpRangeEvent.class
         }
     }
 }
