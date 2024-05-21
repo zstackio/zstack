@@ -259,6 +259,11 @@ class CheckFlatDhcpWorkCase extends SubCase{
                 assert false
             }
         }
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l31.uuid
+        }
+        assert ret.ip6 == null
+        assert ret.ip == null
 
         List<FlatDhcpBackend.BatchPrepareDhcpCmd> bCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.BatchPrepareDhcpCmd>())
         env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
@@ -290,7 +295,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
         assert bCmds.size() == 2
         bCmds.clear()
 
-        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+        ret = getL3NetworkDhcpIpAddress {
             l3NetworkUuid = l31.uuid
         }
         assert ret.ip == freeIp4s.get(0).ip
@@ -319,6 +324,11 @@ class CheckFlatDhcpWorkCase extends SubCase{
                 assert false
             }
         }
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l32.uuid
+        }
+        assert ret.ip6 == null
+        assert ret.ip == null
 
         List<FlatDhcpBackend.BatchPrepareDhcpCmd> bCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.BatchPrepareDhcpCmd>())
         env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
@@ -350,7 +360,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
         assert bCmds.size() == 2
         bCmds.clear()
 
-        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+        ret = getL3NetworkDhcpIpAddress {
             l3NetworkUuid = l32.uuid
         }
         assert ret.ip6 == freeIp6s.get(0).ip

@@ -265,7 +265,32 @@ public class L3BasicNetwork implements L3Network {
             @Override
             @RetryCondition(times = 6)
             protected Void call() {
-                SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
+                String reserveRangeUuid = null;
+                Tuple t = Q.New(UsedIpVO.class).select(UsedIpVO_.ip, UsedIpVO_.ipVersion)
+                        .eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).findTuple();
+                if (t != null) {
+                    String ip = t.get(0, String.class);
+                    Integer ipVersion = t.get(1, Integer.class);
+                    List<ReservedIpRangeVO> ranges = self.getReservedIpRanges()
+                            .stream().filter(r -> r.getIpVersion() == ipVersion).collect(Collectors.toList());
+                    for (ReservedIpRangeVO ripr : ranges) {
+                        if (NetworkUtils.isInRange(ip, ripr.getStartIp(), ripr.getEndIp())) {
+                            reserveRangeUuid = ripr.getUuid();
+                            break;
+                        }
+                    }
+                }
+
+                if (reserveRangeUuid != null) {
+                    SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid())
+                            .set(UsedIpVO_.vmNicUuid, null)
+                            .set(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                            .set(UsedIpVO_.metaData, reserveRangeUuid)
+                            .update();
+                } else {
+                    SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
+                }
+
                 return null;
             }
         }.run();
@@ -418,6 +443,13 @@ public class L3BasicNetwork implements L3Network {
 
             for (long i = start; i <= end && ipr != null; i++) {
                 String newIp = NetworkUtils.longToIpv4String(i);
+                /* ip address is used, can not be reserved */
+                if (Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ip, newIp).isExists()) {
+                    continue;
+                }
+
                 if (NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
                     UsedIpVO vo = new UsedIpVO();
                     vo.setUuid(Platform.getUuid());

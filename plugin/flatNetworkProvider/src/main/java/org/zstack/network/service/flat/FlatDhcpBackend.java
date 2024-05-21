@@ -982,6 +982,35 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         });
     }
 
+
+    private void returnDhcpIp(String l3Uuid) {
+        if (!isProvidedByMe(l3Uuid)) {
+            logger.debug("returnDhcpIp 1");
+            return;
+        }
+
+        Map<String, String> dhcpServerMap = getExistingDhcpServerIp(l3Uuid, IPv6Constants.DUAL_STACK);
+        if (dhcpServerMap.isEmpty()) {
+            logger.debug("returnDhcpIp 2");
+            return;
+        }
+
+        for (Map.Entry<String, String> e : dhcpServerMap.entrySet()) {
+            ReturnIpMsg rmsg = new ReturnIpMsg();
+            rmsg.setL3NetworkUuid(l3Uuid);
+            rmsg.setUsedIpUuid(e.getValue());
+            bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
+            MessageReply reply = bus.call(rmsg);
+            if (!reply.isSuccess()) {
+                throw new OperationFailureException(reply.getError());
+            }
+            deleteDhcpServerIp(l3Uuid, e.getKey(), e.getValue());
+        }
+
+        logger.debug(String.format("successfully reutun dhcp server ip[%s] for l3 network[uuid:%s]",
+                dhcpServerMap, l3Uuid));
+    }
+
     @Override
     public String getId() {
         return bus.makeLocalServiceId(FlatNetworkServiceConstant.SERVICE_ID);
@@ -1440,9 +1469,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void deleteDhcpServerIp(String l3Uuid, String dhcpServerIp) {
-        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l3Uuid,
-                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.instantiateTag(map(
-                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(dhcpServerIp)))));
+        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l3Uuid);
         for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
             exp.afterRemoveDhcpServerIP(l3Uuid, dhcpServerIp);
         }
@@ -2341,6 +2368,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, Completion completion) {
-        deleteNameSpace(L3NetworkInventory.valueOf(l3VO), DHCP_FLUSH_NAMESPACE_PATH, completion);
+        deleteNameSpace(L3NetworkInventory.valueOf(l3VO), DHCP_FLUSH_NAMESPACE_PATH, new Completion(completion) {
+            @Override
+            public void success() {
+                returnDhcpIp(l3VO.getUuid());
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 }

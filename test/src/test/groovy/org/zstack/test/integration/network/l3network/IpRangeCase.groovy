@@ -43,6 +43,7 @@ class IpRangeCase extends SubCase {
         env.create {
             testAddIpRangeToDifferentL3ButSameL2()
             testReserveIpAddress()
+            testReturnIpAddressInReserveIpRange()
         }
     }
 
@@ -329,6 +330,69 @@ class IpRangeCase extends SubCase {
         deleteReservedIpRange {
             uuid = reservedIpRange1.uuid
         }
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange.uuid
+        }
+    }
+
+    void testReturnIpAddressInReserveIpRange() {
+        /* l3-2 has ip range: 10.0.1.0, 10.0.1.100, added in last step */
+        L3NetworkInventory l3_2 = env.inventoryByName("l3-2")
+        InstanceOfferingSpec  ioSpec= env.specByName("instanceOffering")
+        ImageSpec iSpec = env.specByName("image1")
+
+        /* delete old dhcp server ip  */
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l3_2.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
+
+        /* enable dhcp to occupy an ip address  */
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_2.uuid
+            networkServices = ["Flat":["DHCP"]]
+        }
+
+        /* create vm to occupy an ip address */
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = ioSpec.inventory.uuid
+            imageUuid = iSpec.inventory.uuid
+            l3NetworkUuids = asList((l3_2.uuid))
+        }
+
+        /* because ip allocate type: FirstAvailableIpAllocatorStrategy:
+        * dhcp server ip and vm nic ip is first 2 ip address of the range */
+        ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "10.0.1.0"
+            endIp = "10.0.1.9"
+        }
+
+        List<String> reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 8
+
+        /* delete dhcp server ip  */
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l3_2.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
+
+        /* delete vm ip */
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        /* dhcp server ip and vm nic ip change to reserve ip */
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 10
 
         deleteReservedIpRange {
             uuid = reservedIpRange.uuid
