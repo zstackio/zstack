@@ -811,20 +811,16 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         Map<String, String> dhcpServerMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
-        if (dhcpServerMap.isEmpty()) {
-            reply.setError(operr("Cannot find DhcpIp for l3 network[uuid:%s]", msg.getL3NetworkUuid()));
-        } else {
-            for (Map.Entry<String, String> entry : dhcpServerMap.entrySet()) {
-                String ip = entry.getKey();
-                if (NetworkUtils.isIpv4Address(ip)) {
+        for (Map.Entry<String, String> entry : dhcpServerMap.entrySet()) {
+            String ip = entry.getKey();
+            if (NetworkUtils.isIpv4Address(ip)) {
+                reply.setIp(ip);
+            } else {
+                reply.setIp6(ip);
+                int l3IpVersion = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).select(L3NetworkVO_.ipVersion).findValue();
+                if (l3IpVersion == IPv6Constants.IPv6) {
+                    /* to be compitable with old version, dhcp server address of ipv6 only l3 network is filled in this field */
                     reply.setIp(ip);
-                } else {
-                    reply.setIp6(ip);
-                    int l3IpVersion = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).select(L3NetworkVO_.ipVersion).findValue();
-                    if (l3IpVersion == IPv6Constants.IPv6) {
-                        /* to be compitable with old version, dhcp server address of ipv6 only l3 network is filled in this field */
-                        reply.setIp(ip);
-                    }
                 }
             }
         }
@@ -991,9 +987,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return bus.makeLocalServiceId(FlatNetworkServiceConstant.SERVICE_ID);
     }
 
-    private void upgradeFlatDhcpServerIp() {
+    public void upgradeFlatDhcpServerIp() {
         NetworkServiceProviderVO nsVO = Q.New(NetworkServiceProviderVO.class)
-                .eq(NetworkServiceProviderVO_.type, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE)
+                .eq(NetworkServiceProviderVO_.type, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE.toString())
                 .find();
         List<L3NetworkVO> l3NetworkVos = Q.New(L3NetworkVO.class).list();
         for (L3NetworkVO l3vo : l3NetworkVos) {
