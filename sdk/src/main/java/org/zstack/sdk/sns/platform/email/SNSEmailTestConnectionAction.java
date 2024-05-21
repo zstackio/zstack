@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ValidateSNSEmailPlatformAction extends AbstractAction {
+public class SNSEmailTestConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ValidateSNSEmailPlatformAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.email.ValidateSNSEmailPlatformResult value;
+        public org.zstack.sdk.sns.platform.email.SNSEmailTestConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,19 @@ public class ValidateSNSEmailPlatformAction extends AbstractAction {
     }
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.util.List emails;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String platformUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String smtpServer;
+    public java.lang.String endpointUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public java.lang.Integer smtpPort;
+    @Param(required = false, maxLength = 512, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String subject;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
+    @Param(required = false, maxLength = 8192, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String text;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +72,8 @@ public class ValidateSNSEmailPlatformAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.email.ValidateSNSEmailPlatformResult value = res.getResult(org.zstack.sdk.sns.platform.email.ValidateSNSEmailPlatformResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.email.ValidateSNSEmailPlatformResult() : value; 
+        org.zstack.sdk.sns.platform.email.SNSEmailTestConnectionResult value = res.getResult(org.zstack.sdk.sns.platform.email.SNSEmailTestConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.email.SNSEmailTestConnectionResult() : value; 
 
         return ret;
     }
@@ -102,11 +102,11 @@ public class ValidateSNSEmailPlatformAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sns/application-platforms/email/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/sns/application-endpoints/email/test-connection";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "validateSNSEmailPlatform";
+        info.parameterName = "params";
         return info;
     }
 
