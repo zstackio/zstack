@@ -1,10 +1,19 @@
 package org.zstack.test.integration.network.l3network
 
+import org.springframework.http.HttpEntity
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
+import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.sdk.ApplianceVmInventory
+import org.zstack.sdk.CheckIpAvailabilityAction
+import org.zstack.sdk.CheckIpAvailabilityResult
 import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.FreeIpInventory
 import org.zstack.sdk.GetL3NetworkRouterInterfaceIpResult
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
@@ -12,6 +21,9 @@ import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.InstanceOfferingSpec
 import org.zstack.testlib.L3NetworkSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.network.IPv6Constants
+
 import static java.util.Arrays.asList
 
 
@@ -43,6 +55,7 @@ class OneIpL3NetworkCase extends SubCase {
             createVmSuccessOnOneIpL3Network()
             add3IpRangeToL3Andcreate3VmSuccessButCreateOneMoreVmFailure()
             testSpecifyL3RouterInterfaceIp()
+            testIpAddressConflictCase()
         }
     }
 
@@ -160,13 +173,76 @@ class OneIpL3NetworkCase extends SubCase {
             routerInterfaceIp = "192.168.0.2"
         }
         createVmInstance {
-            name = "vm"
+            name = "vm-for-conflict"
             instanceOfferingUuid = ioSpec.inventory.uuid
             imageUuid = iSpec.inventory.uuid
             l3NetworkUuids = asList((l3Inv.uuid))
         }
         ApplianceVmInventory vrouterInv = queryApplianceVm {}[0]
         assert vrouterInv.vmNics.stream().filter{vmnic -> vmnic.ip.equals("192.168.0.2")}.findAny().isPresent()
+    }
+
+    void testIpAddressConflictCase() {
+        VmInstanceInventory vm = queryVmInstance {conditions=["name=vm-for-conflict"]}[0]
+        VmNicInventory nic = vm.getVmNics().get(0)
+
+        CheckIpAvailabilityResult res = checkIpAvailability {
+            l3NetworkUuid = nic.l3NetworkUuid
+            ip = nic.ip
+            arpingDetection = true
+        }
+        assert !res.available
+
+        List<FreeIpInventory> freeIp4s = getFreeIp {
+            l3NetworkUuid = nic.l3NetworkUuid
+            ipVersion = IPv6Constants.IPv4
+            limit = 1
+        }
+
+        env.simulator(FlatDhcpBackend.ARPING_NAMESPACE_PATH) { HttpEntity<String> e ->
+            FlatDhcpBackend.ArpingRsp rsp = new FlatDhcpBackend.ArpingRsp()
+            FlatDhcpBackend.ArpingCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ArpingCmd.class)
+            Map<String, List<String>> result = new HashMap<>();
+            result.put(cmd.targetIps.get(0), asList("00:00:00:00:00:01"))
+            rsp.result = result
+            return rsp
+        }
+
+        res = checkIpAvailability {
+            l3NetworkUuid = nic.l3NetworkUuid
+            ip = freeIp4s.get(0).ip
+            arpingDetection = true
+        }
+        assert !res.available
+
+        env.simulator(FlatDhcpBackend.ARPING_NAMESPACE_PATH) { HttpEntity<String> e ->
+            FlatDhcpBackend.ArpingRsp rsp = new FlatDhcpBackend.ArpingRsp()
+            FlatDhcpBackend.ArpingCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ArpingCmd.class)
+            Map<String, List<String>> result = new HashMap<>();
+            result.put(cmd.targetIps.get(0), new ArrayList<String>())
+            rsp.result = result
+            return rsp
+        }
+
+        res = checkIpAvailability {
+            l3NetworkUuid = nic.l3NetworkUuid
+            ip = freeIp4s.get(0).ip
+            arpingDetection = true
+        }
+        assert res.available
+
+        env.simulator(FlatDhcpBackend.ARPING_NAMESPACE_PATH) { HttpEntity<String> e ->
+            FlatDhcpBackend.ArpingRsp rsp = new FlatDhcpBackend.ArpingRsp()
+            FlatDhcpBackend.ArpingCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ArpingCmd.class)
+            return rsp
+        }
+
+        res = checkIpAvailability {
+            l3NetworkUuid = nic.l3NetworkUuid
+            ip = freeIp4s.get(0).ip
+            arpingDetection = true
+        }
+        assert res.available
     }
 }
 

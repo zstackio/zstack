@@ -21,8 +21,10 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -542,8 +544,12 @@ public class L3BasicNetwork implements L3Network {
         bus.publish(event);
     }
 
+    @Override
+    public CheckIpAvailabilityReply checkIpAvailability(CheckIpAvailabilityMsg msg) {
+        return checkIpAvailability(msg.getIp());
+    }
 
-    protected CheckIpAvailabilityReply checkIpAvailability(String ip) {
+    public CheckIpAvailabilityReply checkIpAvailability(String ip) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
         int ipversion = IPv6Constants.IPv4;
         if (IPv6NetworkUtils.isIpv6Address(ip)) {
@@ -602,10 +608,52 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(APICheckIpAvailabilityMsg msg) {
         APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
-        CheckIpAvailabilityReply r = checkIpAvailability(msg.getIp());
-        reply.setAvailable(r.isAvailable());
-        reply.setReason(r.getReason());
-        bus.reply(msg, reply);
+        reply.setAvailable(true);
+        reply.setReason("");
+        CheckIpAvailabilityMsg imsg = new CheckIpAvailabilityMsg();
+        imsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+        imsg.setIp(msg.getIp());
+        imsg.setArpingDetection(msg.getArpingDetection());
+
+        FlowChain flowChain = new SimpleFlowChain();
+        flowChain.setName(String.format("check-ip-address-availability-%s-%s",
+                msg.getL3NetworkUuid(), msg.getIp()));
+        for (CheckIpAddressAvailabilityExtensionPoint exp : pluginRgty.getExtensionList(CheckIpAddressAvailabilityExtensionPoint.class)) {
+            flowChain.then(new NoRollbackFlow() {
+                String __name__ = "check-ip-address-availability-" + exp.getClass().getSimpleName();
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    exp.check(imsg, new ReturnValueCompletion<CheckIpAvailabilityReply>(trigger) {
+                        @Override
+                        public void success(CheckIpAvailabilityReply r) {
+                            if (!r.isAvailable()) {
+                                reply.setAvailable(r.isAvailable());
+                                reply.setReason(r.getReason());
+                                trigger.next();
+                            } else {
+                                trigger.next();
+                            }
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.next();
+                        }
+                    });
+                }
+            });
+        }
+        flowChain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                bus.reply(msg, reply);
+            }
+        }).start();
     }
 
     private void handle(final APIGetL3NetworkRouterInterfaceIpMsg msg) {

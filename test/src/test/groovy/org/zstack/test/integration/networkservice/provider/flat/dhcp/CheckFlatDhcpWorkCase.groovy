@@ -240,9 +240,9 @@ class CheckFlatDhcpWorkCase extends SubCase{
     void testDisableIpv4Dhcp(){
         final L3NetworkInventory l31 = env.inventoryByName("l3-1")
 
-        List<FlatDhcpBackend.DeleteNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.DeleteNamespaceCmd>())
+        List<FlatDhcpBackend.FlushDhcpNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.FlushDhcpNamespaceCmd>())
         env.afterSimulator(FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH) { rsp, HttpEntity<String> e1 ->
-            FlatDhcpBackend.DeleteNamespaceCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.DeleteNamespaceCmd.class)
+            FlatDhcpBackend.FlushDhcpNamespaceCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.FlushDhcpNamespaceCmd.class)
             flushCmds.add(cmd)
             return rsp
         }
@@ -305,9 +305,9 @@ class CheckFlatDhcpWorkCase extends SubCase{
     void testDisableDualStackDhcp(){
         final L3NetworkInventory l32 = env.inventoryByName("l3-2")
 
-        List<FlatDhcpBackend.DeleteNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.DeleteNamespaceCmd>())
+        List<FlatDhcpBackend.FlushDhcpNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.FlushDhcpNamespaceCmd>())
         env.afterSimulator(FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH) { rsp, HttpEntity<String> e1 ->
-            FlatDhcpBackend.DeleteNamespaceCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.DeleteNamespaceCmd.class)
+            FlatDhcpBackend.FlushDhcpNamespaceCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.FlushDhcpNamespaceCmd.class)
             flushCmds.add(cmd)
             return rsp
         }

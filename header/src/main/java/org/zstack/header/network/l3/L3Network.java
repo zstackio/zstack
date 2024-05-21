@@ -6,4 +6,6 @@ public interface L3Network {
     void handleMessage(Message msg);
 
     void deleteHook();
+
+    CheckIpAvailabilityReply checkIpAvailability(CheckIpAvailabilityMsg msg);
 }

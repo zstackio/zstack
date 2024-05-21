@@ -64,7 +64,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint,
-        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint, ResourceSharingExtensionPoint {
+        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint, ResourceSharingExtensionPoint, CheckIpAddressAvailabilityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(L3NetworkManagerImpl.class);
 
     @Autowired
@@ -905,5 +905,13 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 completion.success(newIps);
             }
         }).start();
+    }
+
+    @Override
+    public void check(CheckIpAvailabilityMsg msg, ReturnValueCompletion<CheckIpAvailabilityReply> completion) {
+        L3NetworkVO vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(vo.getType()));
+        L3Network nw = factory.getL3Network(vo);
+        completion.success(nw.checkIpAvailability(msg));
     }
 }
