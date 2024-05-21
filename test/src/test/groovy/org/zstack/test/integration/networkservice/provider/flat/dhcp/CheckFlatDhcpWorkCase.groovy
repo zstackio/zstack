@@ -2,10 +2,12 @@ package org.zstack.test.integration.networkservice.provider.flat.dhcp
 
 import junit.framework.Assert
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
+import org.zstack.network.service.flat.FlatNetworkSystemTags
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.sdk.FreeIpInventory
 import org.zstack.sdk.GetL3NetworkDhcpIpAddressResult
@@ -31,6 +33,7 @@ import java.util.stream.Collectors
 class CheckFlatDhcpWorkCase extends SubCase{
 
     EnvSpec env
+    FlatDhcpBackend dhcpBackend
     @Override
     void setup() {
         useSpring(NetworkServiceProviderTest.springSpec)
@@ -38,8 +41,8 @@ class CheckFlatDhcpWorkCase extends SubCase{
 
     @Override
     void environment() {
-        env = FlatNetworkServiceEnv.oneFlatEipEnv()
-        env = env{
+        dhcpBackend = bean(FlatDhcpBackend.class)
+        env = env {
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(8)
@@ -165,10 +168,27 @@ class CheckFlatDhcpWorkCase extends SubCase{
     @Override
     void test() {
         env.create {
+            testFlatDhcpUpgrade()
             checkDhcpWork()
             testDisableIpv4Dhcp()
             testDisableDualStackDhcp()
         }
+    }
+
+    void testFlatDhcpUpgrade() {
+        final L3NetworkInventory l32 = env.inventoryByName("l3-2")
+        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l32.uuid)
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l32.uuid
+        }
+        assert ret.ip == null
+        assert ret.ip6 == null
+        dhcpBackend.upgradeFlatDhcpServerIp()
+        ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l32.uuid
+        }
+        assert ret.ip != null
+        assert ret.ip6 != null
     }
 
     void checkDhcpWork(){
