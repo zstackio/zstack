@@ -70,6 +70,7 @@ class Env {
 
                     attachPrimaryStorage("local")
                     attachL2Network("l2")
+                    attachL2Network("l2-vlan-100")
                 }
 
                 localPrimaryStorage {
@@ -121,6 +122,7 @@ class Env {
 
                     l3Network {
                         name = "l3-2"
+                        systemTags = ["resourceConfig::l3Network::ipAllocateStrategy::FirstAvailableIpAllocatorStrategy"]
 
                         ip {
                             startIp = "10.0.0.2"
