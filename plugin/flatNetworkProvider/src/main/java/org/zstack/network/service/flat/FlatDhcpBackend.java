@@ -46,6 +46,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
 import org.zstack.network.l3.CheckIpAddressAvailabilityExtensionPoint;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.DhcpExtension;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceHelper.HostRouteInfo;
@@ -106,6 +107,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private DhcpExtension dhcpExtension;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+    @Autowired
+    protected L3NetworkManager l3NwMgr;
 
     private Map<String, L3NetworkGetIpStatisticExtensionPoint> getIpStatisticExts = new HashMap<>();
 
@@ -1042,12 +1045,44 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 if (ipVersion == IPv6Constants.IPv4) {
                     Map<String, String> dhcpMap = getExistingDhcpServerIp(l3vo.getUuid(), IPv6Constants.IPv4);
                     if (dhcpMap.isEmpty()) {
-                        allocateDhcpIp(l3vo.getUuid(), IPv6Constants.IPv4);
+                        AllocateIpMsg msg = new AllocateIpMsg();
+                        msg.setL3NetworkUuid(l3vo.getUuid());
+                        IpAllocatorType strategyType = IpAllocatorType.valueOf(L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY);
+                        IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
+                        UsedIpInventory ip = ias.allocateIp(msg);
+
+                        SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3vo.getUuid());
+                        creator.inherent = true;
+                        creator.setTagByTokens(
+                                map(
+                                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, ip.getIp()),
+                                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
+                                )
+                        );
+                        creator.create();
+
+                        for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
+                            exp.afterAllocateDhcpServerIP(l3vo.getUuid(), ip.getIp());
+                        }
                     }
                 } else {
                     Map<String, String> dhcpMap = getExistingDhcpServerIp(l3vo.getUuid(), IPv6Constants.IPv6);
                     if (dhcpMap.isEmpty()) {
-                        allocateDhcpIp(l3vo.getUuid(), IPv6Constants.IPv6);
+                        AllocateIpMsg msg = new AllocateIpMsg();
+                        msg.setL3NetworkUuid(l3vo.getUuid());
+                        IpAllocatorType strategyType = IpAllocatorType.valueOf(L3NetworkConstant.FIRST_AVAILABLE_IPV6_ALLOCATOR_STRATEGY);
+                        IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
+                        UsedIpInventory ip = ias.allocateIp(msg);
+
+                        SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3vo.getUuid());
+                        creator.inherent = true;
+                        creator.setTagByTokens(
+                                map(
+                                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(ip.getIp())),
+                                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
+                                )
+                        );
+                        creator.create();
                     }
                 }
             } else if (ipVersions.size() == 2) {
@@ -1063,10 +1098,42 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     }
                 }
                 if (!hasIpv4) {
-                    allocateDhcpIp(l3vo.getUuid(), IPv6Constants.IPv4);
+                    AllocateIpMsg msg = new AllocateIpMsg();
+                    msg.setL3NetworkUuid(l3vo.getUuid());
+                    IpAllocatorType strategyType = IpAllocatorType.valueOf(L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY);
+                    IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
+                    UsedIpInventory ip = ias.allocateIp(msg);
+
+                    SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3vo.getUuid());
+                    creator.inherent = true;
+                    creator.setTagByTokens(
+                            map(
+                                    e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, ip.getIp()),
+                                    e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
+                            )
+                    );
+                    creator.create();
+
+                    for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
+                        exp.afterAllocateDhcpServerIP(l3vo.getUuid(), ip.getIp());
+                    }
                 }
                 if (!hasIpv6) {
-                    allocateDhcpIp(l3vo.getUuid(), IPv6Constants.IPv6);
+                    AllocateIpMsg msg = new AllocateIpMsg();
+                    msg.setL3NetworkUuid(l3vo.getUuid());
+                    IpAllocatorType strategyType = IpAllocatorType.valueOf(L3NetworkConstant.FIRST_AVAILABLE_IPV6_ALLOCATOR_STRATEGY);
+                    IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
+                    UsedIpInventory ip = ias.allocateIp(msg);
+
+                    SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3vo.getUuid());
+                    creator.inherent = true;
+                    creator.setTagByTokens(
+                            map(
+                                    e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(ip.getIp())),
+                                    e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
+                            )
+                    );
+                    creator.create();
                 }
             }
         }
