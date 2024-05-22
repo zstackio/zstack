@@ -208,16 +208,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 Quota.QuotaUsage usage;
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_TOTAL_NUM);
-                usage.setUsed(vrQuota.totalNum);
-                usages.add(usage);
-
-                usage = new Quota.QuotaUsage();
-                usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_NUM);
-                usage.setUsed(vrQuota.runningNum);
-                usages.add(usage);
-
-                usage = new Quota.QuotaUsage();
                 usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_CPU_NUM);
                 usage.setUsed(vrQuota.runningCpuNum);
                 usages.add(usage);
@@ -233,16 +223,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         Quota quota = new Quota();
         QuotaPair p;
-
-        p = new QuotaPair();
-        p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_TOTAL_NUM);
-        p.setValue(VirtualRouterQuotaGlobalConfig.VIRTUAL_ROUTER_TOTAL_NUM.defaultValue(Long.class));
-        quota.addPair(p);
-
-        p = new QuotaPair();
-        p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_NUM);
-        p.setValue(VirtualRouterQuotaGlobalConfig.VIRTUAL_ROUTER_RUNNING_NUM.defaultValue(Long.class));
-        quota.addPair(p);
 
         p = new QuotaPair();
         p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_CPU_NUM);
