@@ -24,6 +24,8 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_DISK_INSERT_TRIGGERED = "/host/physicalDisk/insert/triggered";
     public static final String HOST_PHYSICAL_DISK_REMOVE_TRIGGERED = "/host/physicalDisk/remove/triggered";
 
+    public static final String HOST_PHYSICAL_POWER_SUPPLY_STATUS_ABNORMAL = "/host/physicalPowerSupply/status/abnormal";
+
     @NeedJsonSchema
     public static class HostPhysicalCpuStatusAbnormalData {
         private String hostUuid;
@@ -106,6 +108,37 @@ public class HostCanonicalEvents {
 
         public void setFanName(String fanName) {
             this.fanName = fanName;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalPowerSupplyStatusAbnormalData {
+        private String hostUuid;
+        private String name;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
 
         public String getStatus() {

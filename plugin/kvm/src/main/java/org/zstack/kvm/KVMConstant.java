@@ -118,6 +118,17 @@ public interface KVMConstant {
     String KVM_HOST_IPSET_DETACH_NIC_PATH = "/network/ipset/detach";
     String KVM_HOST_IPSET_SYNC_PATH = "/network/ipset/sync";
 
+    String SET_HOST_PHYSICAL_MEMORY_MONITOR = "/host/physical/memory/monitor/start";
+
+    String HOST_PHYSICAL_CPU_STATUS_ALARM_EVENT = "/host/physical/cpu/status/alarm";
+    String HOST_PHYSICAL_MEMORY_STATUS_ALARM_EVENT = "/host/physical/memory/status/alarm";
+    String HOST_PHYSICAL_FAN_STATUS_ALARM_EVENT = "/host/physical/fan/status/alarm";
+    String HOST_PHYSICAL_DISK_STATUS_ALARM_EVENT = "/host/physical/disk/status/alarm";
+    String HOST_PHYSICAL_DISK_INSERT_ALARM_EVENT = "/host/physical/disk/insert/alarm";
+    String HOST_PHYSICAL_DISK_REMOVE_ALARM_EVENT = "/host/physical/disk/remove/alarm";
+    String HOST_PHYSICAL_MEMORY_ECC_ERROR_ALARM_EVENT = "/host/physical/memory/ecc/error/alarm";
+    String HOST_PHYSICAL_POWER_SUPPLY_STATUS_ALARM_ALARM_EVENT = "/host/physical/powersupply/status/alarm";
+
     String KVM_AGENT_OWNER = "kvm";
 
     String ALI_REPO = "ali";
