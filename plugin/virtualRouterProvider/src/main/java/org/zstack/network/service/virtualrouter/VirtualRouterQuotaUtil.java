@@ -19,8 +19,8 @@ public class VirtualRouterQuotaUtil {
     private DatabaseFacade dbf;
 
     public class VirtualRouterQuota {
-        public long totalNum;
-        public long runningNum;
+        // public long totalNum;
+        // public long runningNum;
         public long runningCpuNum;
         public long runningMemorySize;
     }
@@ -33,8 +33,8 @@ public class VirtualRouterQuotaUtil {
     @Transactional(readOnly = true)
     public VirtualRouterQuota getUsedVirtualRouterCpuMemory(String accountUuid, String excludeUuid) {
         VirtualRouterQuota quota = new VirtualRouterQuota();
-        // get running info
-        String sql = "select count(vr), sum(vr.cpuNum), sum(vr.memorySize)" +
+        // get running vrouter cpu num and memory size
+        String sql = "select sum(vr.cpuNum), sum(vr.memorySize)" +
                 " from VirtualRouterVmVO vr, AccountResourceRefVO ref" +
                 " where vr.uuid = ref.resourceUuid" +
                 " and ref.accountUuid = :auuid" +
@@ -55,24 +55,10 @@ public class VirtualRouterQuotaUtil {
         }
 
         Tuple t = q.getSingleResult();
-        Long vnum = t.get(0, Long.class);
-        quota.runningNum = vnum == null ? 0 : vnum;
-        Long cnum = t.get(1, Long.class);
+        Long cnum = t.get(0, Long.class);
         quota.runningCpuNum = cnum == null ? 0 : cnum;
-        Long msize = t.get(2, Long.class);
+        Long msize = t.get(1, Long.class);
         quota.runningMemorySize = msize == null ? 0 : msize;
-        // get total vrouter
-        String sql2 = "select count(vr)" +
-                " from VirtualRouterVmVO vr, AccountResourceRefVO ref" +
-                " where vr.uuid = ref.resourceUuid" +
-                " and ref.accountUuid = :auuid" +
-                " and not (vr.hostUuid is null and vr.lastHostUuid is null)" +
-                " and vr.state not in (:states)";
-        TypedQuery<Long> q2 = dbf.getEntityManager().createQuery(sql2, Long.class);
-        q2.setParameter("auuid", accountUuid);
-        q2.setParameter("states", list(VmInstanceState.Destroyed));
-        Long totalVmNum = q2.getSingleResult();
-        quota.totalNum = totalVmNum == null ? 0 : totalVmNum;
 
         return quota;
     }
