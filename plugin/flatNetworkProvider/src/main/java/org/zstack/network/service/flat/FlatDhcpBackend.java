@@ -36,6 +36,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.IpAllocatedReason;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
@@ -44,6 +45,7 @@ import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperati
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
+import org.zstack.network.l3.CheckIpAddressAvailabilityExtensionPoint;
 import org.zstack.network.service.DhcpExtension;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceHelper.HostRouteInfo;
@@ -69,6 +71,8 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -85,7 +89,7 @@ import static org.zstack.utils.CollectionDSL.*;
  */
 public class FlatDhcpBackend extends AbstractService implements NetworkServiceDhcpBackend, KVMHostConnectExtensionPoint,
         L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint, VmAbnormalLifeCycleExtensionPoint, IpRangeDeletionExtensionPoint,
-        BeforeStartNewCreatedVmExtensionPoint, GlobalApiMessageInterceptor, AfterAddIpRangeExtensionPoint, DnsServiceExtensionPoint {
+        BeforeStartNewCreatedVmExtensionPoint, GlobalApiMessageInterceptor, AfterAddIpRangeExtensionPoint, DnsServiceExtensionPoint, CheckIpAddressAvailabilityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatDhcpBackend.class);
 
     @Autowired
@@ -114,6 +118,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static final String RESET_DEFAULT_GATEWAY_PATH = "/flatnetworkprovider/dhcp/resetDefaultGateway";
     public static final String DHCP_DELETE_NAMESPACE_PATH = "/flatnetworkprovider/dhcp/deletenamespace";
     public static final String DHCP_FLUSH_NAMESPACE_PATH = "/flatnetworkprovider/dhcp/flush";
+    public static final String ARPING_NAMESPACE_PATH = "/flatnetworkprovider/arping";
 
     public static String makeNamespaceName(String brName, String l3Uuid) {
         return String.format("%s_%s", brName, l3Uuid);
@@ -1732,6 +1737,34 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static class DeleteNamespaceRsp extends KVMAgentCommands.AgentResponse {
     }
 
+    public static class FlushDhcpNamespaceCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.1.8")
+        public String bridgeName;
+        @GrayVersion(value = "5.1.8")
+        public String namespaceName;
+    }
+
+    public static class FlushDhcpNamespaceRsp extends KVMAgentCommands.AgentResponse {
+    }
+
+    public static class ArpingCmd extends KVMAgentCommands.AgentCommand {
+        @GrayVersion(value = "5.1.8")
+        public String bridgeName;
+        @GrayVersion(value = "5.1.8")
+        public String vlanId;
+        @GrayVersion(value = "5.1.8")
+        public String namespaceName;
+        @GrayVersion(value = "5.1.8")
+        public List<String> targetIps;
+    }
+
+    public static class ArpingRsp extends KVMAgentCommands.AgentResponse {
+        @GrayVersion(value = "5.1.8")
+        /* key: arping target ip:
+        * value: arping result macs */
+        public Map<String, List<String>> result;
+    }
+
     public NetworkServiceProviderType getProviderType() {
         return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE;
     }
@@ -2366,9 +2399,64 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         });
     }
 
+    private void flushDhcpConfig(L3NetworkInventory inventory, Completion completion) {
+        List<String> huuids = new Callable<List<String>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> call() {
+                String sql = "select host.uuid from HostVO host, L2NetworkVO l2, L2NetworkClusterRefVO ref where l2.uuid = ref.l2NetworkUuid" +
+                        " and ref.clusterUuid = host.clusterUuid and host.hypervisorType = :hType and l2.uuid = :uuid";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("uuid", inventory.getL2NetworkUuid());
+                q.setParameter("hType", KVMConstant.KVM_HYPERVISOR_TYPE);
+                return q.getResultList();
+            }
+        }.call();
+
+        if (huuids.isEmpty()) {
+            return;
+        }
+
+        String brName = new BridgeNameFinder().findByL3Uuid(inventory.getUuid());
+        FlushDhcpNamespaceCmd cmd = new FlushDhcpNamespaceCmd();
+        cmd.bridgeName = brName;
+        cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
+
+        new While<>(huuids).step((huuid, comp) -> {
+            new KvmCommandSender(huuid).send(cmd, DHCP_FLUSH_NAMESPACE_PATH, wrapper -> {
+                FlushDhcpNamespaceRsp rsp = wrapper.getResponse(FlushDhcpNamespaceRsp.class);
+                if (rsp == null) {
+                    return null;
+                }
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+            }, new SteppingSendCallback<KvmResponseWrapper>() {
+                @Override
+                public void success(KvmResponseWrapper w) {
+                    logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
+                            "KVM host[uuid:%s]", inventory.getUuid(), inventory.getName(), getHostUuid()));
+                    comp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.debug(String.format("delete namespace for L3 network[uuid:%s, name:%s] on the " +
+                            "KVM host[uuid:%s], failed: %s", inventory.getUuid(),
+                            inventory.getName(), getHostUuid(), errorCode.getDetails()));
+                    comp.done();
+                }
+            });
+        }, 10).run(new WhileDoneCompletion(new NopeCompletion(completion)){
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
+            }
+        });
+
+    }
+
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, Completion completion) {
-        deleteNameSpace(L3NetworkInventory.valueOf(l3VO), DHCP_FLUSH_NAMESPACE_PATH, new Completion(completion) {
+        flushDhcpConfig(L3NetworkInventory.valueOf(l3VO), new Completion(completion) {
             @Override
             public void success() {
                 returnDhcpIp(l3VO.getUuid());
@@ -2378,6 +2466,111 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void doArpingOnHost(CheckIpAvailabilityMsg msg, HostInventory host, L2NetworkInventory l2Inv, ReturnValueCompletion<List<String>> completion) {
+        ArpingCmd cmd = new ArpingCmd();
+        cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(msg.getL3NetworkUuid());
+        cmd.vlanId = new BridgeVlanIdFinder().findByL2Uuid(l2Inv.getUuid(), false);
+        cmd.namespaceName = makeNamespaceName(cmd.bridgeName, msg.getL3NetworkUuid());
+        cmd.targetIps = Collections.singletonList(msg.getIp());
+
+        KvmCommandSender sender = new KvmCommandSender(host.getUuid());
+        sender.send(cmd, ARPING_NAMESPACE_PATH, wrapper -> {
+            ArpingRsp rsp = wrapper.getResponse(ArpingRsp.class);
+            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper returnValue) {
+                ArpingRsp rsp = returnValue.getResponse(ArpingRsp.class);
+                List<String> conflictMacs = new ArrayList<>();
+                if (rsp.result == null || rsp.result.isEmpty()) {
+                    completion.success(conflictMacs);
+                    return;
+                }
+
+                List<String> macs = rsp.result.get(msg.getIp());
+                for (String mac : macs) {
+                    boolean localMac = Q.New(VmNicVO.class)
+                            .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                            .eq(VmNicVO_.ip, msg.getIp())
+                            .eq(VmNicVO_.mac, mac).isExists();
+                    if (!localMac) {
+                        conflictMacs.add(mac);
+                    }
+                }
+                completion.success(conflictMacs);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void check(CheckIpAvailabilityMsg msg,  ReturnValueCompletion<CheckIpAvailabilityReply> completion) {
+        CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
+        reply.setAvailable(true);
+        reply.setReason("");
+        if (!msg.getArpingDetection() || !NetworkUtils.isIpv4Address(msg.getIp())) {
+            completion.success(reply);
+            return;
+        }
+
+        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        L2NetworkVO l2VO = dbf.findByUuid(l3VO.getL2NetworkUuid(), L2NetworkVO.class);
+        List<String> clusterUuids = l2VO.getAttachedClusterRefs().stream()
+                .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
+        if (clusterUuids.isEmpty()) {
+            logger.debug(String.format("l2 network[uuid:%s] did not attach any cluster", l3VO.getL2NetworkUuid()));
+            completion.success(reply);
+            return;
+        }
+
+        /* find 3 hosts to do arping */
+        List<HostVO> hosts = Q.New(HostVO.class).eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
+                .eq(HostVO_.status,HostStatus.Connected)
+                .in(HostVO_.clusterUuid, clusterUuids).limit(3).list();
+        if (hosts.isEmpty()) {
+            logger.debug(String.format("there is no host connected for l3 network[uuid:%s]", l3VO.getUuid()));
+            completion.success(reply);
+            return;
+        }
+
+        ConcurrentHashMap<String, List<String>> macMaps = new ConcurrentHashMap<String, List<String>>();
+        new While<>(hosts).step((hostVO, wcomp) -> {
+            doArpingOnHost(msg, HostInventory.valueOf(hostVO), L2NetworkInventory.valueOf(l2VO), new ReturnValueCompletion<List<String>>(wcomp) {
+                @Override
+                public void success(List<String> returnValue) {
+                    if (returnValue != null && !returnValue.isEmpty()) {
+                        if (macMaps.get(msg.getIp()) == null) {
+                            macMaps.put(msg.getIp(), new CopyOnWriteArrayList<>());
+                        }
+                        macMaps.get(msg.getIp()).addAll(returnValue);
+                        logger.debug(String.format("found arp conflict on host[uuid:%s], result:%s",
+                                hostVO.getUuid(), returnValue));
+                    }
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    wcomp.done();
+                }
+            });
+        }, 10).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (macMaps.get(msg.getIp()) != null) {
+                    reply.setAvailable(false);
+                    reply.setReason(String.format("%s", macMaps.get(msg.getIp())));
+                }
+                completion.success(reply);
             }
         });
     }
