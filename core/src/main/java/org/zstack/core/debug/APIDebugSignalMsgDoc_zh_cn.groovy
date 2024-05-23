@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "signals"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "List"

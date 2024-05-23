@@ -5,7 +5,7 @@ import org.zstack.header.storage.snapshot.group.APIUpdateVolumeSnapshotGroupEven
 doc {
     title "UpdateVolumeSnapshotGroup"
 
-	category "snapshot.volume"
+    category "snapshot.volume"
 
     desc """更新云盘快照组信息"""
 

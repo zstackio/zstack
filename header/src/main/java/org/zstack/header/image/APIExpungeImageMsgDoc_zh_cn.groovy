@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIExpungeImageMsg.class
 
             desc """"""
@@ -58,6 +57,16 @@ doc {
 					desc "用户标签"
 					location "body"
 					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "uuid"
+					enclosedIn "expungeImage"
+					desc "资源的UUID，唯一标示该资源"
+					location "body"
+					type "String"
 					optional true
 					since "0.6"
 					

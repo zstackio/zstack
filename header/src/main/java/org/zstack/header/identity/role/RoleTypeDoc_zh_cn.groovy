@@ -7,15 +7,33 @@ doc {
 	title "在这里输入结构的名称"
 
 	field {
-		name "name"
-		desc "资源名称"
-		type "String"
+		name "System"
+		desc ""
+		type "RoleType"
 		since "0.6"
 	}
 	field {
-		name "ordinal"
+		name "Customized"
 		desc ""
-		type "int"
+		type "RoleType"
+		since "0.6"
+	}
+	field {
+		name "Predefined"
+		desc ""
+		type "RoleType"
+		since "0.6"
+	}
+	field {
+		name "CreatedBySystem"
+		desc ""
+		type "RoleType"
+		since "0.6"
+	}
+	field {
+		name "PredefinedBySystem"
+		desc ""
+		type "RoleType"
 		since "0.6"
 	}
 }

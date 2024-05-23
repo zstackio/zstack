@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "clusterUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "集群UUID"
 					location "url"
 					type "String"
@@ -33,7 +33,7 @@ doc {
 				}
 				column {
 					name "primaryStorageUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "主存储UUID"
 					location "url"
 					type "String"

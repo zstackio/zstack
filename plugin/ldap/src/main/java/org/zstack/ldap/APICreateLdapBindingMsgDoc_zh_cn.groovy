@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "ldapUid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "LDAP UID"
 					location "body"
 					type "String"
@@ -33,7 +33,7 @@ doc {
 				}
 				column {
 					name "accountUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "账户UUID"
 					location "body"
 					type "String"

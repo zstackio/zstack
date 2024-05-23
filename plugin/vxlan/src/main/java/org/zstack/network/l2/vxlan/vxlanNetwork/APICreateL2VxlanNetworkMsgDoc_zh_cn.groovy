@@ -99,7 +99,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-
+					
 				}
 				column {
 					name "systemTags"
@@ -115,6 +115,26 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "vSwitchType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					values ("LinuxBridge","OvsDpdk")
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
 					location "body"
 					type "List"
 					optional true

@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "vmInstanceUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "云主机UUID"
 					location "url"
 					type "String"
@@ -33,7 +33,7 @@ doc {
 				}
 				column {
 					name "volumeUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "云盘UUID"
 					location "url"
 					type "String"
