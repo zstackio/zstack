@@ -7,7 +7,7 @@ import org.zstack.header.vo.ResourceVO;
 
 /**
  */
-public abstract class APICreateTagMsg extends APIMessage {
+public abstract class APIAbstractCreateTagMsg extends APIMessage {
     @APIParam
     private String resourceType;
     @APIParam(checkAccount = true, resourceType = ResourceVO.class)

@@ -24,6 +24,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
+import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.identity.role.RolePolicyStatementVO;
 import org.zstack.header.identity.role.RolePolicyStatementVO_;
 import org.zstack.header.identity.role.RoleVO;
@@ -31,18 +32,20 @@ import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -380,13 +383,18 @@ public class AccountBase extends AbstractAccount {
     private void handle(APIGetAccountQuotaUsageMsg msg) {
         APIGetAccountQuotaUsageReply reply = new APIGetAccountQuotaUsageReply();
 
-        List<Quota> quotas = acntMgr.getQuotas();
-        List<Quota.QuotaUsage> usages = new ArrayList<Quota.QuotaUsage>();
+        List<Quota.QuotaUsage> usages = new ArrayList<>();
+        for (QuotaDefinition q : acntMgr.getQuotasDefinitions().values()) {
+            Long used = q.getQuotaUsage(msg.getAccountUuid());
 
-        for (Quota q : quotas) {
-            List<Quota.QuotaUsage> us = q.getOperator().getQuotaUsageByAccount(msg.getAccountUuid());
-            DebugUtils.Assert(us != null, String.format("%s returns null quotas", q.getOperator().getClass()));
-            usages.addAll(us);
+            if (used == null) {
+                continue;
+            }
+
+            Quota.QuotaUsage usage = new Quota.QuotaUsage();
+            usage.setUsed(used);
+            usage.setName(q.getName());
+            usages.add(usage);
         }
 
         Map<String, Quota.QuotaUsage> umap = new HashMap<String, Quota.QuotaUsage>();
