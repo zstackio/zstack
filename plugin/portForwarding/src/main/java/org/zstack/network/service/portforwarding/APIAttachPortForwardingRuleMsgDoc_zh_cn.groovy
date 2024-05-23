@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "ruleUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "规则的uuid"
 					location "url"
 					type "String"
@@ -33,7 +33,7 @@ doc {
 				}
 				column {
 					name "vmNicUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "云主机网卡UUID"
 					location "url"
 					type "String"

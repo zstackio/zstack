@@ -47,7 +47,7 @@ doc {
 					desc "云盘规格UUID"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}
@@ -79,7 +79,7 @@ doc {
 					type "List"
 					optional true
 					since "3.4"
-
+					
 				}
 				column {
 					name "systemTags"
@@ -97,6 +97,16 @@ doc {
 					desc "用户标签"
 					location "body"
 					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "diskSize"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "long"
 					optional true
 					since "0.6"
 					

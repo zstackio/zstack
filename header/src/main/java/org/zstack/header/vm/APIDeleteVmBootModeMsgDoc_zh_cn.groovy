@@ -13,8 +13,7 @@ doc {
         request {
 			url "DELETE /v1/vm-instances/{uuid}/bootmode"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVmBootModeMsg.class
 
@@ -36,7 +35,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "url"
+					location "body"
 					type "String"
 					optional true
 					since "0.6"

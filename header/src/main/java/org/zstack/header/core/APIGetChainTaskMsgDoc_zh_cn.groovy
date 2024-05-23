@@ -1,5 +1,7 @@
 package org.zstack.header.core
 
+import org.zstack.header.core.APIGetChainTaskReply
+
 doc {
     title "GetChainTask"
 
@@ -27,7 +29,7 @@ doc {
 					type "List"
 					optional true
 					since "4.6.0"
-
+					
 				}
 				column {
 					name "systemTags"

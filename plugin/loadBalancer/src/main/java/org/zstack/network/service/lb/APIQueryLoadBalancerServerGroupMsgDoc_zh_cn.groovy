@@ -2,6 +2,7 @@ package org.zstack.network.service.lb
 
 import org.zstack.network.service.lb.APIQueryLoadBalancerServerGroupReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryLoadBalancerServerGroup"

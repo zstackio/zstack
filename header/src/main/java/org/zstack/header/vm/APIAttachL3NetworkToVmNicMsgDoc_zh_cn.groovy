@@ -11,10 +11,9 @@ doc {
 
     rest {
         request {
-			url "POST /v1/vm-instances/{vmNicUuid}/l3-networks/{l3NetworkUuid}"
+			url "POST /v1/nics/{vmNicUuid}/l3-networks/{l3NetworkUuid}"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachL3NetworkToVmNicMsg.class
 
