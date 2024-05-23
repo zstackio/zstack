@@ -41,6 +41,9 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
         } else if (msg instanceof APIDetachNetworkServiceFromL3NetworkMsg) {
             APIDetachNetworkServiceFromL3NetworkMsg detachMsg = (APIDetachNetworkServiceFromL3NetworkMsg)msg;
             detachMsg.setNetworkServices(convertNetworkProviderTypeToUuid(detachMsg.getNetworkServices()));
+        } else if (msg instanceof APIDeleteNetworkServiceFromL3NetworkMsg) {
+            APIDeleteNetworkServiceFromL3NetworkMsg detachMsg = (APIDeleteNetworkServiceFromL3NetworkMsg)msg;
+            detachMsg.setNetworkServices(convertNetworkProviderTypeToUuid(detachMsg.getNetworkServices()));
         }
 
         return msg;

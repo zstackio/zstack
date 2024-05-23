@@ -3,10 +3,10 @@ package org.zstack.header.network.l3
 import java.lang.Boolean
 import java.lang.Integer
 import java.sql.Timestamp
-import java.sql.Timestamp
 import org.zstack.header.network.l3.IpRangeInventory
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory
 import org.zstack.header.network.l3.L3NetworkHostRouteInventory
+import org.zstack.header.network.l3.ReservedIpRangeInventory
 
 doc {
 
@@ -76,7 +76,19 @@ doc {
 		name "ipVersion"
 		desc "ip协议号"
 		type "Integer"
-		since "3.1"
+		since "3.1.0"
+	}
+	field {
+		name "enableIPAM"
+		desc ""
+		type "Boolean"
+		since "5.1.0"
+	}
+	field {
+		name "isolated"
+		desc ""
+		type "Boolean"
+		since "5.1.0"
 	}
 	field {
 		name "createDate"
@@ -119,5 +131,13 @@ doc {
 		type "List"
 		since "2.3"
 		clz L3NetworkHostRouteInventory.class
+	}
+	ref {
+		name "reservedIpRanges"
+		path "org.zstack.header.network.l3.L3NetworkInventory.reservedIpRanges"
+		desc "null"
+		type "List"
+		since "5.1.0"
+		clz ReservedIpRangeInventory.class
 	}
 }
