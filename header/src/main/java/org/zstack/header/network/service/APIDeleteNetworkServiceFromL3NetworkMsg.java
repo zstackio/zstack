@@ -3,7 +3,6 @@ package org.zstack.header.network.service;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.MapField;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkConstant;
@@ -11,19 +10,20 @@ import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.RestRequest;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Created by frank on 1/4/2016.
- */
-@Deprecated
+
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/l3-networks/{l3NetworkUuid}/network-services",
-        method = HttpMethod.DELETE,
-        responseClass = APIDetachNetworkServiceFromL3NetworkEvent.class
+        path = "/l3-networks/{l3NetworkUuid}/network-services/delete",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APIDeleteNetworkServiceFromL3NetworkEvent.class
 )
-public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implements L3NetworkMessage {
+public class APIDeleteNetworkServiceFromL3NetworkMsg extends APIMessage implements L3NetworkMessage {
     /**
      * @desc l3Network uuid
      */
@@ -53,8 +53,8 @@ public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implemen
         this.networkServices = networkServices;
     }
  
-    public static APIDetachNetworkServiceFromL3NetworkMsg __example__() {
-        APIDetachNetworkServiceFromL3NetworkMsg msg = new APIDetachNetworkServiceFromL3NetworkMsg();
+    public static APIDeleteNetworkServiceFromL3NetworkMsg __example__() {
+        APIDeleteNetworkServiceFromL3NetworkMsg msg = new APIDeleteNetworkServiceFromL3NetworkMsg();
 
         Map<String, List<String>> m = new HashMap<>();
         m.put(uuid(), Arrays.asList("PortForwarding","EIP"));

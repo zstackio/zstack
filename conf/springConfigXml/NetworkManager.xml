@@ -48,7 +48,7 @@
 
     <bean id="L3NetworkManager" class="org.zstack.network.l3.L3NetworkManagerImpl">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Component" order="500"/>
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint"/>
