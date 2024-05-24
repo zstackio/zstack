@@ -32,6 +32,11 @@ public class VirtualRouterRunningMemoryNumQuotaDefinition implements QuotaDefini
                 .param("starting", VmInstanceState.Starting)
                 .param("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                         VmInstanceState.Destroyed, VmInstanceState.Created));
-        return query.find();
+        Long memorySize = query.find();
+        if (memorySize == null) {
+            return 0L;
+        }
+
+        return memorySize;
     }
 }
