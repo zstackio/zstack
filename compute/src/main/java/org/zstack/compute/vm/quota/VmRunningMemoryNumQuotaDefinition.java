@@ -7,6 +7,9 @@ import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmRunningMemoryNumQuotaDefinition implements QuotaDefinition {
@@ -29,7 +32,11 @@ public class VmRunningMemoryNumQuotaDefinition implements QuotaDefinition {
                 " and ref.resourceType = :rtype" +
                 " and not (vm.state = :starting and vm.hostUuid is null)" +
                 " and vm.state not in (:states)" +
-                " and vm.type != :vmtype";
+                " and vm.type not in (:vmtypes)";
+
+        List<String> excludeVmTypes = new ArrayList<>();
+        excludeVmTypes.add("baremetal2");
+        excludeVmTypes.add("ApplianceVm");
 
         Long used = SQL.New(sql, Long.class)
                 .param("auuid", accountUuid)
@@ -37,7 +44,7 @@ public class VmRunningMemoryNumQuotaDefinition implements QuotaDefinition {
                 .param("starting", VmInstanceState.Starting)
                 .param("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                         VmInstanceState.Destroyed, VmInstanceState.Created))
-                .param("vmtype", "baremetal2")
+                .param("vmtypes", excludeVmTypes)
                 .find();
         return used == null ? 0L : used;
     }
