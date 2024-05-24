@@ -32,6 +32,11 @@ public class VirtualRouterRunningCpuNumQuotaDefinition implements QuotaDefinitio
                 .param("starting", VmInstanceState.Starting)
                 .param("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                         VmInstanceState.Destroyed, VmInstanceState.Created));
-        return query.find();
+        Long cpuNum = query.find();
+        if (cpuNum == null) {
+            return 0L;
+        }
+
+        return cpuNum;
     }
 }
