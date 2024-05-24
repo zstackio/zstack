@@ -1050,13 +1050,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     VmInstanceVO.class.getSimpleName(), false);
         }
 
+        if (!msg.hasSystemTag(VmSystemTags.BOOT_MODE::isMatch)) {
         if (msg.getImageUuid() != null) {
             tagMgr.copySystemTag(
                     msg.getImageUuid(),
                     ImageVO.class.getSimpleName(),
                     finalVo.getUuid(),
                     VmInstanceVO.class.getSimpleName(), false);
-        }
+        }}
 
         if (ImageArchitecture.aarch64.toString().equals(finalVo.getArchitecture())) {
             SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(finalVo.getUuid());
@@ -1151,14 +1152,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
         chain.then(new ShareFlow() {
             VmInstanceInventory instantiateVm;
             List<APICreateVmInstanceMsg.DiskAO> otherDisks = new ArrayList<>();
-            boolean attachOtherDisk = false;
+            boolean attachOtherDisks = false;
 
             @Override
             public void setup() {
                 if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
                     otherDisks = msg.getDiskAOs().stream().filter(diskAO -> !diskAO.isBoot()).collect(Collectors.toList());
                     setDiskAOsName(otherDisks);
-                    attachOtherDisk = !otherDisks.isEmpty();
+                    attachOtherDisks = !otherDisks.isEmpty();
                 }
 
                 flow(new Flow() {
@@ -1265,7 +1266,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
                         smsg.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
                         smsg.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
-                        if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && attachOtherDisk) {
+                        if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && attachOtherDisks) {
                             smsg.setStrategy(VmCreationStrategy.CreateStopped.toString());
                         } else {
                             smsg.setStrategy(msg.getStrategy());
@@ -1326,11 +1327,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 });
 
 
-                if (!CollectionUtils.isEmpty(otherDisks)) {
+                if (!Objects.equals(msg.getStrategy(), VmCreationStrategy.JustCreate.toString()) && attachOtherDisks) {
                     otherDisks.forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
                 }
 
-                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && attachOtherDisk) {
+                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && attachOtherDisks) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "start-vm";
 
