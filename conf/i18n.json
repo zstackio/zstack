@@ -10774,9 +10774,9 @@
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
-    "raw": "advice[%s] has expired",
-    "en_US": "advice[{0}] has expired",
-    "zh_CN": "建议[{0}]已过期",
+    "raw": "advice[uuid:%s] has expired as the scheduling policy has been modified",
+    "en_US": "advice[uuid:{0}] has expired as the scheduling policy has been modified",
+    "zh_CN": "建议[uuid:{0}]已过期,因为调度策略已经发生了变更",
     "arguments": [
       "msg.getAdviceUuid()"
     ],
