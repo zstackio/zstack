@@ -116,8 +116,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
         GetPeerL3NetworksForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
-        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint, QueryBelongFilter,
-        ReportQuotaExtensionPoint {
+        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint, QueryBelongFilter {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -187,57 +186,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     protected VirtualRouterHaBackend haBackend;
     @Autowired
     private ApplianceVmFactory apvmFactory;
-
-    @Override
-    public List<Quota> reportQuota() {
-        QuotaOperator checker = new QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                List<Quota.QuotaUsage> usages = new ArrayList<>();
-                VirtualRouterQuotaUtil.VirtualRouterQuota vrQuota = new VirtualRouterQuotaUtil().getUsedVirtualRouterCpuMemory(accountUuid);
-                Quota.QuotaUsage usage;
-
-                usage = new Quota.QuotaUsage();
-                usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_CPU_NUM);
-                usage.setUsed(vrQuota.runningCpuNum);
-                usages.add(usage);
-
-                usage = new Quota.QuotaUsage();
-                usage.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_MEMORY_SIZE);
-                usage.setUsed(vrQuota.runningMemorySize);
-                usages.add(usage);
-
-                return usages;
-            }
-        };
-
-        Quota quota = new Quota();
-        QuotaPair p;
-
-        p = new QuotaPair();
-        p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_CPU_NUM);
-        p.setValue(VirtualRouterQuotaGlobalConfig.VIRTUAL_ROUTER_RUNNING_CPU_NUM.defaultValue(Long.class));
-        quota.addPair(p);
-
-        p = new QuotaPair();
-        p.setName(VirtualRouterQuotaConstant.VIRTUAL_ROUTER_RUNNING_MEMORY_SIZE);
-        p.setValue(VirtualRouterQuotaGlobalConfig.VIRTUAL_ROUTER_RUNNING_MEMORY_SIZE.defaultValue(Long.class));
-        quota.addPair(p);
-
-        quota.setOperator(checker);
-
-        return list(quota);
-    }
 
     @Override
     @MessageSafe
