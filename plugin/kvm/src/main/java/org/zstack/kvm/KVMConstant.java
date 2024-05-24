@@ -127,8 +127,9 @@ public interface KVMConstant {
     String HOST_PHYSICAL_DISK_INSERT_ALARM_EVENT = "/host/physical/disk/insert/alarm";
     String HOST_PHYSICAL_DISK_REMOVE_ALARM_EVENT = "/host/physical/disk/remove/alarm";
     String HOST_PHYSICAL_MEMORY_ECC_ERROR_ALARM_EVENT = "/host/physical/memory/ecc/error/alarm";
-    String HOST_PHYSICAL_POWER_SUPPLY_STATUS_ALARM_ALARM_EVENT = "/host/physical/powersupply/status/alarm";
-
+    String HOST_PHYSICAL_POWER_SUPPLY_STATUS_ALARM_EVENT = "/host/physical/powersupply/status/alarm";
+    String HOST_PHYSICAL_GPU_STATUS_ALARM_EVENT = "/host/physical/gpu/status/alarm";
+    String HOST_PHYSICAL_GPU_REMOVE_ALARM_EVENT = "/host/physical/gpu/remove/alarm";
     String KVM_AGENT_OWNER = "kvm";
 
     String ALI_REPO = "ali";

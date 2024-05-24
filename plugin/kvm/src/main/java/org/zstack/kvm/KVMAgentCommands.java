@@ -4686,4 +4686,17 @@ public class KVMAgentCommands {
         public String detail;
     }
 
+    public static class PhysicalGpuStatusAlarmEventCmd {
+        public String host;
+        public String pcideviceAddress;
+        public String status;
+    }
+
+    public static class PhysicalGpuRemoveAlarmEventCmd {
+        public String host;
+        public String pcideviceAddress;
+    }
+
+
+
 }
