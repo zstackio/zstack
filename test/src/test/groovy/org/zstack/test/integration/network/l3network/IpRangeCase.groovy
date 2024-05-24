@@ -345,7 +345,7 @@ class IpRangeCase extends SubCase {
         /* delete old dhcp server ip  */
         detachNetworkServiceFromL3Network {
             l3NetworkUuid = l3_2.uuid
-            networkServices = ['Flat':['DHCP']]
+            service = 'DHCP'
         }
 
         /* enable dhcp to occupy an ip address  */
@@ -379,7 +379,7 @@ class IpRangeCase extends SubCase {
         /* delete dhcp server ip  */
         detachNetworkServiceFromL3Network {
             l3NetworkUuid = l3_2.uuid
-            networkServices = ['Flat':['DHCP']]
+            service = 'DHCP'
         }
 
         /* delete vm ip */
