@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -18,6 +18,8 @@ import org.zstack.header.identity.quota.FixedSizeRequiredRequest;
 import org.zstack.header.identity.quota.FunctionalSizeRequiredRequest;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -145,12 +147,16 @@ public class QuotaUtil {
     }
 
     @Transactional(readOnly = true)
-    public void checkQuota(APIMessage msg, String currentAccountUuid, String targetAccountUuid) {
+    public void checkQuota(Message msg, String currentAccountUuid, String targetAccountUuid) {
+        if (!(msg instanceof APIMessage) && !(msg instanceof NeedQuotaCheckMessage)) {
+            return;
+        }
+
         if (AccountConstant.isAdminPermission(targetAccountUuid)) {
             return;
         }
 
-        List<QuotaMessageHandler> handlers = acntMgr.getQuotaMessageHandlerMap().entrySet().stream()
+        List<QuotaMessageHandler<? extends Message>> handlers = acntMgr.getQuotaMessageHandlerMap().entrySet().stream()
                 .filter((entry) -> entry.getKey().isAssignableFrom(msg.getClass()))
                 .map((Map.Entry::getValue))
                 .flatMap(List::stream)
@@ -178,7 +184,7 @@ public class QuotaUtil {
         }
     }
 
-    private boolean needSkipCheck(APIMessage msg, QuotaMessageHandler checker) {
+    private boolean needSkipCheck(Message msg, QuotaMessageHandler checker) {
         for (Object condition : checker.getConditions()) {
             Boolean result = (Boolean) ((Function) condition).call(msg);
 
@@ -192,7 +198,7 @@ public class QuotaUtil {
     }
 
     @Transactional(readOnly = true)
-    private void checkFunctionalSizeRequest(APIMessage msg,
+    private void checkFunctionalSizeRequest(Message msg,
                                             FunctionalSizeRequiredRequest requiredRequest,
                                             String currentAccountUuid,
                                             String targetAccountUuid,
