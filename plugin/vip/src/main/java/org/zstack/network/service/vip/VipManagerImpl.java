@@ -414,6 +414,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         quota.defineQuota(new VipNumQuotaDefinition());
         quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateVipMsg.class)
                 .addCounterQuota(VipQuotaConstant.VIP_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(CreateVipMsg.class)
+                .addCounterQuota(VipQuotaConstant.VIP_NUM));
         quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
                 .addCheckCondition((msg) -> Q.New(VipVO.class)
                         .eq(VipVO_.uuid, msg.getResourceUuid())
