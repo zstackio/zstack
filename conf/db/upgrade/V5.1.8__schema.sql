@@ -90,3 +90,5 @@ END IF;
 END $$
 DELIMITER ;
 CALL UpgradeSNSAliyunSmsEndpointVO();
+
+ALTER TABLE `zstack`.`ExternalPrimaryStorageVO` modify column config varchar(2048) DEFAULT NULL;

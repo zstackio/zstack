@@ -12,14 +12,14 @@ import java.util.regex.Pattern;
 import static java.util.Arrays.asList;
 
 public class ApiResult {
-    public ErrorCode error;
+    public ExponErrorCode error;
     private String resultString;
 
-    public ErrorCode getError() {
+    public ExponErrorCode getError() {
         return error;
     }
 
-    void setError(ErrorCode error) {
+    void setError(ExponErrorCode error) {
         this.error = error;
     }
 

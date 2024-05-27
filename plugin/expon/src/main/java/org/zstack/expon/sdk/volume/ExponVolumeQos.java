@@ -1,7 +1,7 @@
 package org.zstack.expon.sdk.volume;
 
 import org.zstack.expon.sdk.ExponParam;
-import org.zstack.expon.sdk.Param;
+import org.zstack.externalStorage.sdk.Param;
 import org.zstack.header.volume.VolumeQos;
 
 import java.util.HashMap;

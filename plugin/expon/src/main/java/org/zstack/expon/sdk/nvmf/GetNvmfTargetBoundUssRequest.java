@@ -3,10 +3,9 @@ package org.zstack.expon.sdk.nvmf;
 import org.springframework.http.HttpMethod;
 import org.zstack.expon.sdk.ExponRequest;
 import org.zstack.expon.sdk.ExponRestRequest;
-import org.zstack.expon.sdk.Param;
+import org.zstack.externalStorage.sdk.Param;
 import org.zstack.expon.sdk.volume.GetVolumeResponse;
 
-import javax.persistence.Column;
 import java.util.HashMap;
 import java.util.Map;
 
