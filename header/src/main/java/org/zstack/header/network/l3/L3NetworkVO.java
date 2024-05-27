@@ -11,10 +11,7 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Entity
@@ -107,6 +104,7 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
     }
 
     public List<Integer> getIpVersions() {
-        return getIpRanges().stream().map(IpRangeAO::getIpVersion).distinct().collect(Collectors.toList());
+        return getIpRanges().stream().map(IpRangeAO::getIpVersion).distinct()
+                .sorted().collect(Collectors.toList());
     }
 }
