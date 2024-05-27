@@ -5,6 +5,7 @@ import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.utils.Utils
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -35,6 +36,9 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 espec.simulator(arg1, arg2)
             }
 
+            def actualSize = SizeUnit.GIGABYTE.toByte(1)
+            def targetSize = SizeUnit.GIGABYTE.toByte(2)
+
             simulator(ZbsPrimaryStorageMdsBase.ECHO_PATH) { HttpEntity<String> entity ->
                 checkHttpCallType(entity, true)
                 return [:]
@@ -43,10 +47,10 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
             simulator(ZbsStorageController.GET_FACTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 ZbsStorageController.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetFactsCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
-                assert zspec != null: "cannot find zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 def rsp = new ZbsStorageController.GetFactsRsp()
-                rsp.version = "1.4.0+6e9353ad+release"
+                rsp.setVersion("1.4.0+6e9353ad+release")
 
                 return rsp
             }
@@ -54,11 +58,11 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
             simulator(ZbsStorageController.GET_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 ZbsStorageController.GetCapacityCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetCapacityCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
-                assert zspec != null: "cannot find zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 def rsp = new ZbsStorageController.GetCapacityRsp()
-                rsp.capacity = 536870912000
-                rsp.storedSize = 4194304
+                rsp.setCapacity(536870912000)
+                rsp.setStoredSize(4194304)
 
                 return rsp
             }
@@ -66,17 +70,80 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
             simulator(ZbsStorageController.CREATE_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 ZbsStorageController.CreateVolumeCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
-                assert zspec != null: "cannot find zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
-                return new ZbsStorageController.CreateVolumeRsp()
+                def rsp = new ZbsStorageController.CreateVolumeRsp()
+                rsp.setSize(actualSize)
+                rsp.setActualSize(actualSize)
+                rsp.setInstallPath("cbd:pool1/lpool1/volume")
+
+                return rsp
             }
 
             simulator(ZbsStorageController.DELETE_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 ZbsStorageController.DeleteVolumeCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeleteVolumeCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
-                assert zspec != null: "cannot find zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 return new ZbsStorageController.DeleteVolumeRsp()
+            }
+
+            simulator(ZbsStorageController.CREATE_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.CreateSnapshotCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateSnapshotCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.CreateSnapshotRsp()
+                rsp.setSize(actualSize)
+                rsp.setInstallPath("cbd:pool1/lpool1/image@image")
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.CLONE_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.CloneVolumeCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CloneVolumeCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.CloneVolumeRsp()
+                rsp.setSize(actualSize)
+                rsp.setInstallPath("cbd:pool1/lpool1/clone")
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.QUERY_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.QueryVolumeCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.QueryVolumeCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.QueryVolumeRsp()
+                rsp.setSize(actualSize)
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.EXPAND_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.ExpandVolumeCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.ExpandVolumeCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.ExpandVolumeRsp()
+                rsp.setSize(targetSize)
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.COPY_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.CopySnapshotCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CopySnapshotCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.CopySnapshotRsp()
+                rsp.setInstallPath("cbd:pool1/lpool1/copy_snapshot")
+                rsp.setSize(actualSize)
+
+                return rsp
             }
         }
     }
