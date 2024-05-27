@@ -37,6 +37,9 @@ public class UpdateSNSMicrosoftTeamsEndpointAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String platformUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
