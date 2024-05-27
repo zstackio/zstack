@@ -12,15 +12,19 @@ import java.util.Collection;
 public class SizeUtils {
     private static final String T_SUFFIX = "T";
     private static final String TB_SUFFIX = "TB";
+    private static final String TIB_SUFFIX = "TiB";
     private static final String t_SUFFIX = "t";
     private static final String G_SUFFIX = "G";
     private static final String GB_SUFFIX = "GB";
+    private static final String GIB_SUFFIX = "GiB";
     private static final String g_SUFFIX = "g";
     private static final String M_SUFFIX = "M";
     private static final String MB_SUFFIX = "MB";
+    private static final String MIB_SUFFIX = "MiB";
     private static final String m_SUFFIX = "m";
     private static final String K_SUFFIX = "K";
     private static final String KB_SUFFIX = "KB";
+    private static final String KIB_SUFFIX = "KiB";
     private static final String k_SUFFIX = "k";
     private static final String B_SUFFIX = "B";
     private static final String b_SUFFIX = "b";
@@ -103,13 +107,13 @@ public class SizeUtils {
         }
 
         switch (suffix) {
-        case T_SUFFIX: case t_SUFFIX: case TB_SUFFIX:
+        case T_SUFFIX: case t_SUFFIX: case TB_SUFFIX: case TIB_SUFFIX:
             return SizeUnit.TERABYTE.toByte(size);
-        case G_SUFFIX: case g_SUFFIX: case GB_SUFFIX:
+        case G_SUFFIX: case g_SUFFIX: case GB_SUFFIX: case GIB_SUFFIX:
             return SizeUnit.GIGABYTE.toByte(size);
-        case M_SUFFIX: case m_SUFFIX: case MB_SUFFIX:
+        case M_SUFFIX: case m_SUFFIX: case MB_SUFFIX: case MIB_SUFFIX:
             return SizeUnit.MEGABYTE.toByte(size);
-        case K_SUFFIX: case k_SUFFIX: case KB_SUFFIX:
+        case K_SUFFIX: case k_SUFFIX: case KB_SUFFIX: case KIB_SUFFIX:
             return SizeUnit.KILOBYTE.toByte(size);
         case B_SUFFIX: case b_SUFFIX:
             return SizeUnit.BYTE.toByte(size);

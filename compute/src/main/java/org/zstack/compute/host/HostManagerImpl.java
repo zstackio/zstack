@@ -743,9 +743,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private boolean noStorageAccessible(String hostUuid){
         // detach ps will delete PrimaryStorageClusterRefVO first.
         List<String> attachedPsUuids = SQL.New("select distinct ref.primaryStorageUuid" +
-                " from PrimaryStorageClusterRefVO ref, HostVO h" +
-                " where h.uuid =:hostUuid" +
-                " and ref.clusterUuid = h.clusterUuid", String.class)
+                        " from PrimaryStorageClusterRefVO ref, HostVO h" +
+                        " where h.uuid =:hostUuid" +
+                        " and ref.clusterUuid = h.clusterUuid", String.class)
                 .param("hostUuid", hostUuid)
                 .list();
 
@@ -917,18 +917,18 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
         bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class),
                 new CloudBusSteppingCallback(null) {
-            @Override
-            public void run(NeedReplyMessage msg, MessageReply reply) {
-                ConnectHostMsg cmsg = (ConnectHostMsg) msg;
-                if (reply.isSuccess()) {
-                    logger.debug(String.format("host[uuid:%s] load successfully", cmsg.getHostUuid()));
-                } else if (reply.isCanceled()) {
-                    logger.warn(String.format("canceled connect kvm host[uuid:%s], because it connecting now", cmsg.getHostUuid()));
-                } else {
-                    logger.warn(String.format("failed to load host[uuid:%s], %s", cmsg.getHostUuid(), reply.getError()));
-                }
-            }
-        });
+                    @Override
+                    public void run(NeedReplyMessage msg, MessageReply reply) {
+                        ConnectHostMsg cmsg = (ConnectHostMsg) msg;
+                        if (reply.isSuccess()) {
+                            logger.debug(String.format("host[uuid:%s] load successfully", cmsg.getHostUuid()));
+                        } else if (reply.isCanceled()) {
+                            logger.warn(String.format("canceled connect kvm host[uuid:%s], because it connecting now", cmsg.getHostUuid()));
+                        } else {
+                            logger.warn(String.format("failed to load host[uuid:%s], %s", cmsg.getHostUuid(), reply.getError()));
+                        }
+                    }
+                });
     }
 
     @Override
