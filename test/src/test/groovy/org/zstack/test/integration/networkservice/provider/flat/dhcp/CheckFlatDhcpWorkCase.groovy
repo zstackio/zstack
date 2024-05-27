@@ -3,6 +3,9 @@ package org.zstack.test.integration.networkservice.provider.flat.dhcp
 import junit.framework.Assert
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.header.network.l3.UsedIpVO
+import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
@@ -282,12 +285,43 @@ class CheckFlatDhcpWorkCase extends SubCase{
         List<String> services = l31.networkServices.stream().map {ref -> ref.networkServiceType}.collect(Collectors.toList())
         assert services.contains("DHCP")
 
+        ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l31.uuid
+        }
+        String oldDhcpServer = ret.ip
+
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l31.uuid
+            service = 'DHCP'
+        }
+
+        /* dhcp is disabled, can not change dhcp server ip */
+        expect(AssertionError.class) {
+            changeL3NetworkDhcpIpAddress {
+                l3NetworkUuid = l31.uuid
+                dhcpServerIp = "172.16.10.10"
+            }
+        }
+
         def freeIp4s = getFreeIp {
             l3NetworkUuid = l31.getUuid()
             ipVersion = IPv6Constants.IPv4
             limit = 1
         } as List<FreeIpInventory>
 
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l31.uuid
+            networkServices = ["Flat":["DHCP"]]
+            systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::NULL", freeIp4s.get(0).ip)]
+        }
+
+        freeIp4s = getFreeIp {
+            l3NetworkUuid = l31.getUuid()
+            ipVersion = IPv6Constants.IPv4
+            limit = 1
+        } as List<FreeIpInventory>
+
+        bCmds.clear()
         changeL3NetworkDhcpIpAddress {
             l3NetworkUuid = l31.uuid
             dhcpServerIp = freeIp4s.get(0).ip
@@ -300,6 +334,8 @@ class CheckFlatDhcpWorkCase extends SubCase{
         }
         assert ret.ip == freeIp4s.get(0).ip
         assert ret.ip6 == null
+
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, oldDhcpServer).isExists()
     }
 
     void testDisableDualStackDhcp(){

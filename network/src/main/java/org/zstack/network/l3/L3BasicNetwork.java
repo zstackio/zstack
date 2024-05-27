@@ -622,6 +622,12 @@ public class L3BasicNetwork implements L3Network {
         for (CheckIpAddressAvailabilityExtensionPoint exp : pluginRgty.getExtensionList(CheckIpAddressAvailabilityExtensionPoint.class)) {
             flowChain.then(new NoRollbackFlow() {
                 String __name__ = "check-ip-address-availability-" + exp.getClass().getSimpleName();
+
+                @Override
+                public boolean skip(Map data) {
+                    return !reply.isAvailable();
+                }
+
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     exp.check(imsg, new ReturnValueCompletion<CheckIpAvailabilityReply>(trigger) {
