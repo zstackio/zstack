@@ -2,7 +2,7 @@ package org.zstack.sdk.sns;
 
 
 
-public class SNSSmsEndpointInventory extends org.zstack.sdk.sns.SNSApplicationEndpointInventory {
+public class SNSAliyunSmsEndpointInventory extends org.zstack.sdk.sns.platform.universalsms.SNSUniversalSmsEndpointInventory {
 
     public java.util.List receivers;
     public void setReceivers(java.util.List receivers) {

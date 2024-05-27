@@ -154,12 +154,14 @@ class SDKQueryTestValidator {
                 String queryOp
                 String queryValue
                 queryName = f.name
-                if (value != null) {
-                    queryOp = QueryOp.EQ.toString()
-                    queryValue = value.toString()
-                } else {
+                if (value == null) {
                     queryOp = " " + QueryOp.IS_NULL.toString()
                     queryValue = ""
+                } else if (value instanceof String && ((String) value).isEmpty()) {
+                    continue
+                } else {
+                    queryOp = QueryOp.EQ.toString()
+                    queryValue = value.toString()
                 }
                 action.conditions.add("${queryName}${queryOp}${queryValue}".toString())
             }
