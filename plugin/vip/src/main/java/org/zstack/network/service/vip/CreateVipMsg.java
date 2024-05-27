@@ -1,13 +1,14 @@
 package org.zstack.network.service.vip;
 
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.identity.Session;
 
 /**
  * Created by shixin on 2019/05/17.
  */
-public class CreateVipMsg extends NeedReplyMessage {
+public class CreateVipMsg extends NeedReplyMessage implements NeedQuotaCheckMessage {
     private String name;
     private String description;
     private String l3NetworkUuid;
@@ -16,6 +17,7 @@ public class CreateVipMsg extends NeedReplyMessage {
     private SessionInventory session;
     private boolean system;
     private Integer ipVersion;
+    private String accountUuid;
 
     public String getName() {
         return name;
@@ -79,5 +81,19 @@ public class CreateVipMsg extends NeedReplyMessage {
 
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
+    }
+
+    @Override
+    public String getAccountUuid() {
+        if (session == null) {
+            return accountUuid;
+        }
+
+        return session.getAccountUuid();
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
 }
