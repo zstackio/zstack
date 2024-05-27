@@ -87,6 +87,7 @@ END $$
 DELIMITER ;
 CALL UpgradeSNSAliyunSmsEndpointVO();
 
+<<<<<<< HEAD
 DROP PROCEDURE IF EXISTS check_and_insert_encrypt_metadata;
 DELIMITER $$
 CREATE PROCEDURE check_and_insert_encrypt_metadata()
@@ -272,3 +273,5 @@ CREATE PROCEDURE addPciDeviceVendor()
 DELIMITER ;
 call addPciDeviceVendor;
 DROP PROCEDURE IF EXISTS `addPciDeviceVendor`;
+
+ALTER TABLE `zstack`.`ExternalPrimaryStorageVO` modify column config varchar(2048) DEFAULT NULL;

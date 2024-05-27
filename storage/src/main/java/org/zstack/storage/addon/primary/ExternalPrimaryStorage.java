@@ -283,6 +283,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             String installPath;
             String format;
             Long actualSize;
+            Long size;
 
             @Override
             public void setup() {
@@ -316,6 +317,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             public void success(VolumeStats returnValue) {
                                 actualSize = returnValue.getActualSize();
                                 installPath = returnValue.getInstallPath();
+                                size = returnValue.getSize();
                                 format = returnValue.getFormat();
                                 trigger.next();
                             }
@@ -335,6 +337,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         volume.setInstallPath(installPath);
                         volume.setActualSize(actualSize);
                         volume.setFormat(format);
+                        volume.setSize(size);
                         if (StringUtils.isEmpty(volume.getProtocol())) {
                             volume.setProtocol(externalVO.getDefaultProtocol());
                         }
@@ -1283,7 +1286,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public boolean skip(Map data) {
-                        return !targetClz.equals(ImageCacheVO.class.getSimpleName()) || controller.reportCapabilities().isSupportCloneFromVolume();
+                        return !targetClz.equals(ImageCacheVO.class.getSimpleName())
+                                || controller.reportCapabilities().isSupportCloneFromVolume()
+                                || (ImageConstant.ImageMediaType.ISO.toString().equals(image.getMediaType())
+                                    && !controller.reportCapabilities().isSupportExportVolumeSnapshot());
                     }
 
                     @Override

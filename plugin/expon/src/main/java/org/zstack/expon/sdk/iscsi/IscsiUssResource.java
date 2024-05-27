@@ -1,6 +1,6 @@
 package org.zstack.expon.sdk.iscsi;
 
-import org.zstack.expon.sdk.Param;
+import org.zstack.externalStorage.sdk.Param;
 
 import java.util.List;
 import java.util.stream.Collectors;
