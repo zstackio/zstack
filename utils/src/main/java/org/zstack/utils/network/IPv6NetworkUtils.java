@@ -441,7 +441,7 @@ public class IPv6NetworkUtils {
     }
 
     public static boolean isValidIpRange(String startIp, String endIp) {
-        if (NetworkUtils.isValidIPAddress(startIp) && NetworkUtils.isValidIPAddress(endIp)) {
+        if (NetworkUtils.isIpv4Address(startIp) && NetworkUtils.isIpv4Address(endIp)) {
             long s = NetworkUtils.ipv4StringToLong(startIp);
             long e = NetworkUtils.ipv4StringToLong(endIp);
             return e >= s;

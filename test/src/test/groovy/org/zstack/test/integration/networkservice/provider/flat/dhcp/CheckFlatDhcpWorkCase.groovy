@@ -285,11 +285,6 @@ class CheckFlatDhcpWorkCase extends SubCase{
         List<String> services = l31.networkServices.stream().map {ref -> ref.networkServiceType}.collect(Collectors.toList())
         assert services.contains("DHCP")
 
-        ret = getL3NetworkDhcpIpAddress {
-            l3NetworkUuid = l31.uuid
-        }
-        String oldDhcpServer = ret.ip
-
         detachNetworkServiceFromL3Network {
             l3NetworkUuid = l31.uuid
             service = 'DHCP'
@@ -314,6 +309,11 @@ class CheckFlatDhcpWorkCase extends SubCase{
             networkServices = ["Flat":["DHCP"]]
             systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::NULL", freeIp4s.get(0).ip)]
         }
+        ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l31.uuid
+        }
+        assert ret.ip == freeIp4s.get(0).ip
+        String oldDhcpServer = ret.ip
 
         freeIp4s = getFreeIp {
             l3NetworkUuid = l31.getUuid()
