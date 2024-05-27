@@ -87,6 +87,7 @@ END $$
 DELIMITER ;
 CALL UpgradeSNSAliyunSmsEndpointVO();
 
+<<<<<<< HEAD
 DROP PROCEDURE IF EXISTS check_and_insert_encrypt_metadata;
 DELIMITER $$
 CREATE PROCEDURE check_and_insert_encrypt_metadata()
@@ -219,3 +220,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2ChassisGpuDeviceVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkBm2ChassisGpuDeviceVOBm2ChassisPciDeviceVO` FOREIGN KEY (`uuid`) REFERENCES `BareMetal2ChassisPciDeviceVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`ExternalPrimaryStorageVO` modify column config varchar(2048) DEFAULT NULL;

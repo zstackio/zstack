@@ -11,6 +11,16 @@ public class IscsiRemoteTarget extends BlockRemoteTarget {
 
     private String diskId;
 
+    private String diskIdType;
+
+    public String getDiskIdType() {
+        return diskIdType;
+    }
+
+    public void setDiskIdType(String diskIdType) {
+        this.diskIdType = diskIdType;
+    }
+
     public String getTransport() {
         return transport;
     }
@@ -37,7 +47,7 @@ public class IscsiRemoteTarget extends BlockRemoteTarget {
 
     @Override
     public String getResourceURI() {
-        return String.format("iscsi://%s:%s/%s/%s", ip, port, iqn, diskId);
+        return String.format("iscsi://%s:%s/%s/%s_%s", ip, port, iqn, diskIdType, diskId);
     }
 
     public String getDiskId() {
@@ -54,5 +64,10 @@ public class IscsiRemoteTarget extends BlockRemoteTarget {
 
     public void setIqn(String iqn) {
         this.iqn = iqn;
+    }
+
+    public enum DiskIdType {
+        wwn,
+        serial
     }
 }
