@@ -766,8 +766,6 @@ public class L3BasicNetwork implements L3Network {
         });
     }
 
-    /* this API is Deprecated  */
-    @Deprecated
     private void handle(APIDetachNetworkServiceFromL3NetworkMsg msg) {
         APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
 

@@ -107,16 +107,6 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
     }
 
     public List<Integer> getIpVersions() {
-        List<Integer> ipVersions = new ArrayList<>();
-        if (super.getIpVersion() == IPv6Constants.IPv4) {
-            ipVersions.add(IPv6Constants.IPv4);
-        } else if (super.getIpVersion() == IPv6Constants.IPv6) {
-            ipVersions.add(IPv6Constants.IPv6);
-        } else if (super.getIpVersion() == IPv6Constants.DUAL_STACK) {
-            ipVersions.add(IPv6Constants.IPv4);
-            ipVersions.add(IPv6Constants.IPv6);
-        }
-
-        return ipVersions;
+        return getIpRanges().stream().map(IpRangeAO::getIpVersion).distinct().collect(Collectors.toList());
     }
 }
