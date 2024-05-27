@@ -153,7 +153,6 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
             msgs.add(cmsg);
         }
 
-        List<ErrorCode> errs = new ArrayList<>();
         List<VipInventory> vips = new ArrayList<>();
         /* use for rollback */
         data.put(VirtualRouterConstant.Param.PUB_VIP_UUID.toString(), vips);
@@ -162,7 +161,7 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
-                        errs.add(reply.getError());
+                        wcoml.addError(reply.getError());
                         wcoml.allDone();
                         return;
                     }
@@ -177,6 +176,11 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
         }).run(new WhileDoneCompletion(chain) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList != null && !errorCodeList.getCauses().isEmpty()) {
+                    chain.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
                 if (snat != null && !snat) {
                     logger.debug(String.format("SNAT is not enabled on virtual router [uuid:%s]", vr.getUuid()));
                     chain.next();
