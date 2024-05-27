@@ -38,6 +38,7 @@
         <module>externalStorage</module>
         <module>zbs</module>
         <module>cbd</module>
+        <module>xinfini</module>
     </modules>
     <dependencies>
         <dependency>

@@ -47,6 +47,7 @@
     <import resource="springConfigXml/expon.xml"/>
     <import resource="springConfigXml/zbs.xml"/>
     <import resource="springConfigXml/cbd.xml"/>
+    <import resource="springConfigXml/xinfini.xml"/>
     <import resource="springConfigXml/ExternalPrimaryStorage.xml"/>
     <import resource="springConfigXml/ExternalBackupStorage.xml"/>
     <import resource="springConfigXml/CloudBus.xml"/>

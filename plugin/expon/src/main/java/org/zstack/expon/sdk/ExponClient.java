@@ -1,9 +1,6 @@
 package org.zstack.expon.sdk;
 
 import com.google.common.base.CaseFormat;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import okhttp3.*;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -12,6 +9,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.expon.sdk.volume.GetVolumeTaskProgressRequest;
 import org.zstack.expon.sdk.volume.GetVolumeTaskProgressResponse;
+import org.zstack.externalStorage.sdk.ExternalStorageApiClient;
 import org.zstack.header.expon.Constants;
 import org.zstack.header.rest.DefaultSSLVerifier;
 import org.zstack.utils.Utils;
@@ -21,31 +19,14 @@ import org.zstack.utils.logging.CLogger;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ExponClient {
+public class ExponClient extends ExternalStorageApiClient {
     private static final CLogger logger = Utils.getLogger(ExponClient.class);
-    private static OkHttpClient http = new OkHttpClient();
-
-    static final Gson gson;
-    private static final DateTimeFormatter formatter;
-
-    private static final long ACTION_DEFAULT_TIMEOUT = -1;
-    private static final long ACTION_DEFAULT_POLLINGINTERVAL = -1;
-
-    static {
-        gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-        formatter = new DateTimeFormatterBuilder()
-                .parseCaseInsensitive()
-                .appendPattern("EEE, dd MMM yyyy HH:mm:ss VV")
-                .toFormatter(Locale.ENGLISH);
-    }
 
     private ExponConnectConfig config;
 
@@ -340,8 +321,8 @@ public class ExponClient {
             reqBuilder.addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.BEARER, action.sessionId));
         }
 
-        private ErrorCode errorCode(String id, String s) {
-            ErrorCode err = new ErrorCode();
+        private ExponErrorCode errorCode(String id, String s) {
+            ExponErrorCode err = new ExponErrorCode();
             err.retCode = id;
             err.message = s;
             return err;
@@ -504,7 +485,7 @@ public class ExponClient {
                 if (rsp.isSuccess()) {
                     res.setResultString(body);
                 } else {
-                    res.error = errorCode(rsp.retCode, StringEscapeUtils.unescapeJava(rsp.message));
+                    res.error = errorCode(rsp.getRetCode(), StringEscapeUtils.unescapeJava(rsp.getMessage()));
                 }
             } else {
                 throw new ExponApiException(String.format("unknown status code: %s", response.code()));
@@ -553,11 +534,11 @@ public class ExponClient {
         }
 
         private long getTimeout(){
-            return action.timeout == ACTION_DEFAULT_TIMEOUT ? config.defaultPollingTimeout: action.timeout;
+            return action.timeout == ACTION_DEFAULT_TIMEOUT ? config.getDefaultPollingTimeout(): action.timeout;
         }
 
         private long getInterval(){
-            return config.defaultPollingInterval;
+            return config.getDefaultPollingInterval();
         }
     }
 

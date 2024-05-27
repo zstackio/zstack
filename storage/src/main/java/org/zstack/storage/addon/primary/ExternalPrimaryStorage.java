@@ -319,6 +319,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                                 size = returnValue.getSize();
                                 actualSize = returnValue.getActualSize();
                                 installPath = returnValue.getInstallPath();
+                                size = returnValue.getSize();
                                 format = returnValue.getFormat();
                                 trigger.next();
                             }
@@ -339,6 +340,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         volume.setSize(size);
                         volume.setActualSize(actualSize);
                         volume.setFormat(format);
+                        volume.setSize(size);
                         if (StringUtils.isEmpty(volume.getProtocol())) {
                             volume.setProtocol(externalVO.getDefaultProtocol());
                         }
@@ -1288,7 +1290,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public boolean skip(Map data) {
-                        return !targetClz.equals(ImageCacheVO.class.getSimpleName()) || controller.reportCapabilities().isSupportCloneFromVolume();
+                        return !targetClz.equals(ImageCacheVO.class.getSimpleName())
+                                || controller.reportCapabilities().isSupportCloneFromVolume()
+                                || (ImageConstant.ImageMediaType.ISO.toString().equals(image.getMediaType())
+                                    && !controller.reportCapabilities().isSupportExportVolumeSnapshot());
                     }
 
                     @Override
@@ -1769,26 +1774,29 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                if (!CoreGlobalProperty.UNIT_TEST_ON) {
-                    flow(new NoRollbackFlow() {
-                        final String __name__ = "ping-storage";
+                flow(new NoRollbackFlow() {
+                    final String __name__ = "ping-storage";
 
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            controller.ping(new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
 
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-                }
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        controller.ping(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     final String __name__ = "report-capacity";
