@@ -301,18 +301,18 @@ class CheckFlatDhcpWorkCase extends SubCase{
         def freeIp4s = getFreeIp {
             l3NetworkUuid = l31.getUuid()
             ipVersion = IPv6Constants.IPv4
-            limit = 1
+            limit = 5
         } as List<FreeIpInventory>
 
         attachNetworkServiceToL3Network {
             l3NetworkUuid = l31.uuid
             networkServices = ["Flat":["DHCP"]]
-            systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::NULL", freeIp4s.get(0).ip)]
+            systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::NULL", freeIp4s.get(4).ip)]
         }
         ret = getL3NetworkDhcpIpAddress {
             l3NetworkUuid = l31.uuid
         }
-        assert ret.ip == freeIp4s.get(0).ip
+        assert ret.ip == freeIp4s.get(4).ip
         String oldDhcpServer = ret.ip
 
         freeIp4s = getFreeIp {

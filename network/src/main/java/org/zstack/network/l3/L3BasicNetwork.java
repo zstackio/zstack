@@ -249,6 +249,12 @@ public class L3BasicNetwork implements L3Network {
             }
         }
 
+        if (!self.getReservedIpRanges().isEmpty()) {
+            SQL.New(ReservedIpRangeVO.class)
+                    .in(ReservedIpRangeVO_.uuid, self.getReservedIpRanges().stream().map(ReservedIpRangeVO::getUuid).collect(Collectors.toList()))
+                    .delete();
+        }
+
         L3NetworkInventory inv = L3NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
         deleteHook();
@@ -486,6 +492,13 @@ public class L3BasicNetwork implements L3Network {
 
             for (BigInteger i = start; i.compareTo(end) <= 0 && ipr != null; i = i.add(BigInteger.ONE)) {
                 String newIp = IPv6NetworkUtils.IPv6AddressToString(i);
+                /* ip address is used, can not be reserved */
+                if (Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ip, newIp).isExists()) {
+                    continue;
+                }
+
                 if (IPv6NetworkUtils.isIpv6InRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
                     UsedIpVO vo = new UsedIpVO();
                     vo.setUuid(Platform.getUuid());
@@ -1125,7 +1138,7 @@ public class L3BasicNetwork implements L3Network {
                 return;
             }
 
-            nsMgr.enableNetworkService(l3VO, ptype, nsType, new Completion(wcomp) {
+            nsMgr.enableNetworkService(l3VO, ptype, nsType, msg.getApiSystemTags(), new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();

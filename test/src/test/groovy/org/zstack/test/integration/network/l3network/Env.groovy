@@ -122,7 +122,8 @@ class Env {
 
                     l3Network {
                         name = "l3-2"
-                        systemTags = ["resourceConfig::l3Network::ipAllocateStrategy::FirstAvailableIpAllocatorStrategy"]
+                        systemTags = ["resourceConfig::l3Network::ipAllocateStrategy::FirstAvailableIpAllocatorStrategy",
+                                      "resourceConfig::l3Network::ipv6AllocateStrategy::FirstAvailableIpv6AllocatorStrategy"]
 
                         ip {
                             startIp = "10.0.0.2"

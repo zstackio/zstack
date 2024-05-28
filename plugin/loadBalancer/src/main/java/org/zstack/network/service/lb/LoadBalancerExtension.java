@@ -392,7 +392,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
 
 
     @Override
-    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags,  Completion completion) {
         completion.success();
     }
 
