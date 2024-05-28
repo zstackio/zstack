@@ -940,15 +940,14 @@ public class KVMHost extends HostBase implements Host {
         KVMHostVO host = dbf.findByUuid(msg.getHostUuid(), KVMHostVO.class);
         HTTP.Builder hb = HTTP.post();
         hb.body("");
-        try {
-            hb.url(String.format("http://localhost:%s?username=%s&&hostname=%s&&port=%s&&password=%s",
-                    KVMGlobalConfig.HOST_WEBSSH_PORT.value(),
-                    msg.getUserName(),
-                    host.getManagementIp(),
-                    host.getPort().toString(),
-                    msg.getPassword()));
+        hb.url(String.format("http://localhost:%s?username=%s&&hostname=%s&&port=%s&&password=%s",
+                KVMGlobalConfig.HOST_WEBSSH_PORT.value(),
+                msg.getUserName(),
+                host.getManagementIp(),
+                host.getPort().toString(),
+                msg.getPassword()));
 
-            Response r = hb.callWithException();
+        try (Response r = hb.callWithException()) {
             // 1. webssh maybe is not running
             if (!r.isSuccessful()) {
                 reply.setError(inerr("webssh server is unreachable for %s", r.message()));
