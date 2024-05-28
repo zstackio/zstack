@@ -52,22 +52,6 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                 bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
                 msgs.add(msg);
             }
-
-            VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
-            if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
-                VmInstanceDeletionPolicy deletionPolicy = getDeletionPolicy(spec, data);
-                if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
-                    dbf.remove(vo);
-                } else {
-                    vo.setUsedIpUuid(null);
-                    vo.setIp(null);
-                    vo.setGateway(null);
-                    vo.setNetmask(null);
-                    dbf.update(vo);
-                }
-            } else {
-                dbf.remove(vo);
-            }
         }
 
         new While<>(msgs).each((returnIpMsg, completion) -> bus.send(returnIpMsg, new CloudBusCallBack(completion) {
@@ -82,6 +66,23 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
         })).run(new WhileDoneCompletion(chain) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
+                    VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+                    if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
+                        VmInstanceDeletionPolicy deletionPolicy = getDeletionPolicy(spec, data);
+                        if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
+                            dbf.remove(vo);
+                        } else {
+                            vo.setUsedIpUuid(null);
+                            vo.setIp(null);
+                            vo.setGateway(null);
+                            vo.setNetmask(null);
+                            dbf.update(vo);
+                        }
+                    } else {
+                        dbf.remove(vo);
+                    }
+                }
                 chain.next();
             }
         });

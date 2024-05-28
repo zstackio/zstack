@@ -1,15 +1,18 @@
 package org.zstack.test.integration.network.l3network
 
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.network.IpAllocatedReason
 import org.zstack.header.network.l3.L3NetworkCategory
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.network.l3.IpNotAvailabilityReason
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.*
+import org.zstack.utils.network.IPv6Constants
 
 import java.util.stream.Collectors
 
@@ -236,6 +239,14 @@ class IpRangeCase extends SubCase {
         L3NetworkInventory l3_2 = env.inventoryByName("l3-2")
         IpRangeInventory ipr = l3_2.ipRanges.get(0)
 
+        expect(AssertionError.class)  {
+            addReservedIpRange {
+                l3NetworkUuid = l3_2.uuid
+                startIp = "193.0.0.2"
+                endIp = "193.0.3.255"
+            }
+        }
+
         ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
             l3NetworkUuid = l3_2.uuid
             startIp = "10.0.0.2"
@@ -327,12 +338,32 @@ class IpRangeCase extends SubCase {
             assert reservedUuids.size() == 11
         }
 
+        addIpv6Range {
+            name = "ipr-6"
+            l3NetworkUuid = l3_2.uuid
+            startIp = "2024:05:27::30"
+            endIp = "2024:05:27::40"
+            gateway = "2024:05:27::1"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        ReservedIpRangeInventory reservedIpRange2 = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "2024:05:27::30"
+            endIp = "2024:05:27::33"
+        }
+
         deleteReservedIpRange {
             uuid = reservedIpRange1.uuid
         }
 
         deleteReservedIpRange {
             uuid = reservedIpRange.uuid
+        }
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange2.uuid
         }
     }
 
@@ -361,6 +392,7 @@ class IpRangeCase extends SubCase {
             imageUuid = iSpec.inventory.uuid
             l3NetworkUuids = asList((l3_2.uuid))
         }
+        VmNicInventory nic = vm.getVmNics().get(0)
 
         /* because ip allocate type: FirstAvailableIpAllocatorStrategy:
         * dhcp server ip and vm nic ip is first 2 ip address of the range */
@@ -383,6 +415,7 @@ class IpRangeCase extends SubCase {
         }
 
         /* delete vm ip */
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString());
         destroyVmInstance {
             uuid = vm.uuid
         }
@@ -393,7 +426,7 @@ class IpRangeCase extends SubCase {
                 .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
                 .select(UsedIpVO_.uuid).listValues()
         assert reservedUuids.size() == 10
-
+        
         deleteReservedIpRange {
             uuid = reservedIpRange.uuid
         }

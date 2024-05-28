@@ -145,7 +145,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                     "because end ip[%s] is less than start ip[%s]", msg.getEndIp(), msg.getStartIp()));
         }
 
-        if (NetworkUtils.isValidIPAddress(msg.getStartIp())) {
+        if (NetworkUtils.isIpv4Address(msg.getStartIp())) {
             List<IpRangeVO> ipv4Ranges = l3NetworkVO.getIpRanges().stream()
                     .filter(ipr -> (ipr.getIpVersion() == IPv6Constants.IPv4))
                     .collect(Collectors.toList());
@@ -154,28 +154,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                         "because there is no ipv4 range"));
             }
 
-            /*
-            boolean startInRange = false;
-            boolean endInRange = false;
-            for (IpRangeVO ipr : ipv4Ranges) {
-                if (NetworkUtils.isInRange(msg.getStartIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    startInRange = true;
-                }
-                if (NetworkUtils.isInRange(msg.getEndIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    endInRange = true;
-                }
-            }
-
-
-            if (!startInRange) {
+            if (!NetworkUtils.isIpv4InCidr(msg.getStartIp(), ipv4Ranges.get(0).getNetworkCidr()) ||
+                    !NetworkUtils.isIpv4InCidr(msg.getEndIp(), ipv4Ranges.get(0).getNetworkCidr())) {
                 throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
-                        "because start ip[%s] is not in any valid ip range", msg.getStartIp()));
+                        "because reserve ip is not in ip range[%s]", ipv4Ranges.get(0).getNetworkCidr()));
             }
-
-            if (!endInRange) {
-                throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
-                        "because end ip[%s] is not in any valid ip range", msg.getEndIp()));
-            }*/
 
             List<ReservedIpRangeVO> reservedIpv4Ranges = l3NetworkVO.getReservedIpRanges().stream()
                     .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4)
@@ -200,27 +183,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                         "because there is no ipv6 range"));
             }
 
-            /*
-            boolean startInRange = false;
-            boolean endInRange = false;
-            for (IpRangeVO ipr : ipv6Ranges) {
-                if (IPv6NetworkUtils.isIpv6InRange(msg.getStartIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    startInRange = true;
-                }
-                if (IPv6NetworkUtils.isIpv6InRange(msg.getEndIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    endInRange = true;
-                }
-            }
-
-            if (!startInRange) {
+            if (!IPv6NetworkUtils.isIpv6InCidrRange(msg.getStartIp(), ipv6Ranges.get(0).getNetworkCidr()) ||
+                    !IPv6NetworkUtils.isIpv6InCidrRange(msg.getEndIp(), ipv6Ranges.get(0).getNetworkCidr())) {
                 throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
-                        "because start ip[%s] is not in any valid ip range", msg.getStartIp()));
+                        "because reserve ip is not in ip range[%s]", ipv6Ranges.get(0).getNetworkCidr()));
             }
-
-            if (!endInRange) {
-                throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
-                        "because end ip[%s] is not in any valid ip range", msg.getEndIp()));
-            }*/
 
             List<ReservedIpRangeVO> reservedIpv6Ranges = l3NetworkVO.getReservedIpRanges().stream()
                     .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6)
