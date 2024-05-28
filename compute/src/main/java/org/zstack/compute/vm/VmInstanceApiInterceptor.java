@@ -555,11 +555,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
 
     private void validate(APIGetInterdependentL3NetworksImagesMsg msg) {
-        if (msg.getL3NetworkUuids() == null && msg.getImageUuid() == null) {
-            throw new ApiMessageInterceptionException(argerr(
-                    "either l3NetworkUuids or imageUuid must be set"
-            ));
-        }
     }
 
     private void validate(APIStartVmInstanceMsg msg) {
