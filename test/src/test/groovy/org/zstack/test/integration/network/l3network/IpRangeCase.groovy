@@ -368,7 +368,9 @@ class IpRangeCase extends SubCase {
     }
 
     void testReturnIpAddressInReserveIpRange() {
-        /* l3-2 has ip range: 10.0.1.0, 10.0.1.100, added in last step */
+        /* l3-2 has ip range:
+           10.0.1.0, 10.0.1.100,
+           2024:05:27::30~2024:05:27::40 added in last step */
         L3NetworkInventory l3_2 = env.inventoryByName("l3-2")
         InstanceOfferingSpec  ioSpec= env.specByName("instanceOffering")
         ImageSpec iSpec = env.specByName("image1")
@@ -402,11 +404,18 @@ class IpRangeCase extends SubCase {
             endIp = "10.0.1.9"
         }
 
+        ReservedIpRangeInventory reservedIpRange2 = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "2024:05:27::30"
+            endIp = "2024:05:27::33"
+        }
+
+        /* 8 ipv4 + 2 ipv6 */
         List<String> reservedUuids = Q.New(UsedIpVO.class)
                 .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
                 .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
                 .select(UsedIpVO_.uuid).listValues()
-        assert reservedUuids.size() == 8
+        assert reservedUuids.size() == 10
 
         /* delete dhcp server ip  */
         detachNetworkServiceFromL3Network {
@@ -420,16 +429,13 @@ class IpRangeCase extends SubCase {
             uuid = vm.uuid
         }
 
-        /* dhcp server ip and vm nic ip change to reserve ip */
+        /* dhcp server ip and vm nic ip change to reserve ip
+        * 10 ipv4 + 4 ipv6 */
         reservedUuids = Q.New(UsedIpVO.class)
                 .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
                 .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
                 .select(UsedIpVO_.uuid).listValues()
-        assert reservedUuids.size() == 10
-        
-        deleteReservedIpRange {
-            uuid = reservedIpRange.uuid
-        }
+        assert reservedUuids.size() == 14
     }
 }
 

@@ -298,7 +298,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                enableNetworkService(l3VO, new Completion(trigger) {
+                enableNetworkService(l3VO, new ArrayList<>(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -2263,8 +2263,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             validateIpv6PrefixLength(inv);
         } else if (msg instanceof APIChangeL3NetworkDhcpIpAddressMsg) {
             validate((APIChangeL3NetworkDhcpIpAddressMsg) msg);
-        } else if (msg instanceof APIAttachNetworkServiceToL3NetworkMsg) {
-            validate((APIAttachNetworkServiceToL3NetworkMsg) msg);
         }
 
         return msg;
@@ -2273,25 +2271,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private void validate(APIChangeL3NetworkDhcpIpAddressMsg msg) {
         if (!isProvidedByMe(msg.getL3NetworkUuid())) {
             throw new ApiMessageInterceptionException(argerr("could change dhcp server ip, because flat dhcp is not enabled"));
-        }
-    }
-
-    private void validate(APIAttachNetworkServiceToL3NetworkMsg msg) {
-        for (String tag : msg.getSystemTags()) {
-            Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
-            if (tokens.isEmpty()) {
-                continue;
-            }
-
-            String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
-            if (NetworkUtils.isIpv4Address(dhcpServerIp)) {
-                allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, true, dhcpServerIp, null);
-            } else if (IPv6NetworkUtils.isIpv6Address(dhcpServerIp)) {
-                allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, true, dhcpServerIp, null);
-            } else {
-                throw new ApiMessageInterceptionException(argerr("could not enable dhcp, because dhcp server ip[%s] error", dhcpServerIp));
-            }
-
         }
     }
 
@@ -2436,7 +2415,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     @Override
-    public void enableNetworkService(L3NetworkVO l3VO, Completion completion) {
+    public void enableNetworkService(L3NetworkVO l3VO, List<String> systemTags, Completion completion) {
         L2NetworkVO l2VO = dbf.findByUuid(l3VO.getL2NetworkUuid(), L2NetworkVO.class);
         List<String> clusterUuids = l2VO.getAttachedClusterRefs().stream()
                 .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
@@ -2446,6 +2425,25 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
+        if (systemTags != null && !systemTags.isEmpty()){
+            for (String tag : systemTags) {
+                Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
+                if (tokens.isEmpty()) {
+                    continue;
+                }
+
+                String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+                dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
+                if (NetworkUtils.isIpv4Address(dhcpServerIp)) {
+                    allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv4, true, dhcpServerIp, null);
+                } else if (IPv6NetworkUtils.isIpv6Address(dhcpServerIp)) {
+                    allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv6, true, dhcpServerIp, null);
+                } else {
+                    completion.fail(argerr("could not enable dhcp, because dhcp server ip[%s] error", dhcpServerIp));
+                    return;
+                }
+            }
+        }
 
         List<HostVO> hosts = Q.New(HostVO.class).eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
                 .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))

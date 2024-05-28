@@ -17,7 +17,8 @@ public interface NetworkServiceManager {
     void applyNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPoint.NetworkServiceExtensionPosition position, Completion completion);
     List<String> getL3NetworkDns(String l3NetworkUuid);
 
-    void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion);
+    void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
+                              NetworkServiceType nsType, List<String> systemTags, Completion completion);
 
     void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion);
 }

@@ -352,14 +352,14 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
     }
 
     @Override
-    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
         NetworkServiceDhcpBackend bkd = dhcpBackends.get(providerType);
         if (bkd == null) {
             completion.fail(operr("unable to find NetworkServiceDhcpBackend[provider type: %s]", providerType));
             return;
         }
 
-        bkd.enableNetworkService(l3VO, completion);
+        bkd.enableNetworkService(l3VO, systemTags, completion);
     }
 
     @Override

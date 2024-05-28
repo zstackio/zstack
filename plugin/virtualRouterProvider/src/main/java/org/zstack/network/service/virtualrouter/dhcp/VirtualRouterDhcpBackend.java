@@ -436,7 +436,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
     }
 
     @Override
-    public void enableNetworkService(L3NetworkVO l3VO, Completion completion) {
+    public void enableNetworkService(L3NetworkVO l3VO, List<String> systemTags, Completion completion) {
         completion.success();
     }
 

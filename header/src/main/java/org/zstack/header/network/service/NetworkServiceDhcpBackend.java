@@ -23,7 +23,7 @@ public interface NetworkServiceDhcpBackend {
 
     void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, Completion completion);
 
-    void enableNetworkService(L3NetworkVO l3VO, Completion completion);
+    void enableNetworkService(L3NetworkVO l3VO, List<String> systemTags, Completion completion);
 
     void disableNetworkService(L3NetworkVO l3VO, Completion completion);
 }

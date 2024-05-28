@@ -513,10 +513,11 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
 
     @Override
-    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion) {
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
+                                     NetworkServiceType nsType, List<String> systemTags, Completion completion) {
         for (final NetworkServiceExtensionPoint ns : nsExts) {
             if (ns.getNetworkServiceType() == nsType) {
-                ns.enableNetworkService(l3VO, providerType, completion);
+                ns.enableNetworkService(l3VO, providerType, systemTags, completion);
                 return;
             }
         }
