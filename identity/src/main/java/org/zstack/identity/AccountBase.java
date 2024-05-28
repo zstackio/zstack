@@ -1,5 +1,6 @@
 package org.zstack.identity;
 
+import org.apache.commons.lang.StringUtils;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,7 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -42,11 +44,15 @@ import javax.persistence.Query;
 import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AccountBase extends AbstractAccount {
@@ -417,7 +423,7 @@ public class AccountBase extends AbstractAccount {
         q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
         q.add(QuotaVO_.name, Op.IN, umap.keySet());
         List<QuotaVO> vos = q.list();
-        Map<String, QuotaVO> vmap = new HashMap<String, QuotaVO>();
+        Map<String, QuotaVO> vmap = new HashMap<>();
         for (QuotaVO vo : vos) {
             vmap.put(vo.getName(), vo);
         }
@@ -509,7 +515,7 @@ public class AccountBase extends AbstractAccount {
                 .select(AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType)
                 .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
                 .listTuple();
-        Map<String, String> uuidType = new HashMap<String, String>();
+        Map<String, String> uuidType = new HashMap<>();
         for (Tuple t : ts) {
             String resUuid = t.get(0, String.class);
             String resType = t.get(1, String.class);
@@ -546,46 +552,80 @@ public class AccountBase extends AbstractAccount {
             @Override
             protected void scripts() {
                 if (msg.isToPublic()) {
-                    for (String ruuid : msg.getResourceUuids()) {
-                        if(Q.New(SharedResourceVO.class)
-                                .eq(SharedResourceVO_.ownerAccountUuid, msg.getAccountUuid())
-                                .eq(SharedResourceVO_.resourceUuid, ruuid)
-                                .eq(SharedResourceVO_.toPublic, msg.isToPublic())
-                                .isExists()){
+                    shareToPublic(msg.getResourceUuids());
+                } else {
+                    shareToAccount(msg.getResourceUuids(), msg.getAccountUuids());
+                }
+            }
+
+            void shareToPublic(List<String> resourceUuidList) {
+                List<String> existsUuidList = q(SharedResourceVO.class)
+                        .eq(SharedResourceVO_.ownerAccountUuid, msg.getAccountUuid())
+                        .in(SharedResourceVO_.resourceUuid, resourceUuidList)
+                        .eq(SharedResourceVO_.toPublic, true)
+                        .select(SharedResourceVO_.resourceUuid)
+                        .listValues();
+                Set<String> existsUuidSet = new HashSet<>(existsUuidList);
+
+                List<SharedResourceVO> sharedList = resourceUuidList.stream()
+                        .filter(uuid -> !existsUuidSet.contains(uuid))
+                        .map(uuid -> {
+                            SharedResourceVO shared = new SharedResourceVO();
+                            shared.setOwnerAccountUuid(msg.getAccountUuid());
+                            shared.setResourceType(uuidType.get(uuid));
+                            shared.setResourceUuid(uuid);
+                            shared.setToPublic(true);
+                            shared.setPermission(permission.code);
+                            return shared;
+                        })
+                        .collect(Collectors.toList());
+                if (sharedList.isEmpty()) {
+                    return;
+                }
+
+                dbf.persistCollection(sharedList);
+                String texts = StringUtils.join(transform(sharedList,
+                        shared -> String.format("\tuuid:%s type:%s", shared.getResourceUuid(), shared.getResourceType())), "\n");
+                logger.debug(String.format("Shared below resources to public: \n%s", texts));
+            }
+
+            void shareToAccount(List<String> resourceUuidList, List<String> receiverUuidList) {
+                List<Tuple> tuples = q(SharedResourceVO.class)
+                        .eq(SharedResourceVO_.ownerAccountUuid, msg.getAccountUuid())
+                        .in(SharedResourceVO_.resourceUuid, resourceUuidList)
+                        .in(SharedResourceVO_.receiverAccountUuid, receiverUuidList)
+                        .select(SharedResourceVO_.resourceUuid, SharedResourceVO_.receiverAccountUuid)
+                        .listTuple();
+
+                Set<Pair<String, String>> PairSet = transformToSet(tuples,
+                        tuple -> new Pair<>(tuple.get(0, String.class), tuple.get(1, String.class)));
+
+                List<SharedResourceVO> sharedList = new ArrayList<>();
+                for (String resourceUuid : resourceUuidList) {
+                    String resourceType = uuidType.get(resourceUuid);
+                    for (String receiverUuid : receiverUuidList) {
+                        if (PairSet.contains(new Pair<>(resourceUuid, receiverUuid))) {
                             continue;
                         }
-                        String resourceType = uuidType.get(ruuid);
 
-                        SharedResourceVO svo = new SharedResourceVO();
-                        svo.setOwnerAccountUuid(msg.getAccountUuid());
-                        svo.setResourceType(resourceType);
-                        svo.setResourceUuid(ruuid);
-                        svo.setToPublic(true);
-                        svo.setPermission(permission.code);
-                        dbf.persist(svo);
-                        logger.debug(String.format("Shared resource[uuid:%s type:%s] to public", ruuid, resourceType));
-                    }
-                } else {
-                    for (String ruuid : msg.getResourceUuids()) {
-                        String resourceType = uuidType.get(ruuid);
-                        for (String auuid : msg.getAccountUuids()) {
-                            if (! Q.New(SharedResourceVO.class)
-                                    .eq(SharedResourceVO_.ownerAccountUuid, msg.getAccountUuid())
-                                    .eq(SharedResourceVO_.resourceUuid, ruuid)
-                                    .eq(SharedResourceVO_.receiverAccountUuid,auuid)
-                                    .isExists()){
-                                SharedResourceVO svo = new SharedResourceVO();
-                                svo.setOwnerAccountUuid(msg.getAccountUuid());
-                                svo.setResourceType(resourceType);
-                                svo.setResourceUuid(ruuid);
-                                svo.setReceiverAccountUuid(auuid);
-                                svo.setPermission(permission.code);
-                                dbf.persist(svo);
-                                logger.debug(String.format("Shared resource[uuid:%s type:%s] to account[uuid:%s]", ruuid, resourceType, auuid));
-                            }
-                        }
+                        SharedResourceVO shared = new SharedResourceVO();
+                        shared.setOwnerAccountUuid(msg.getAccountUuid());
+                        shared.setResourceType(resourceType);
+                        shared.setResourceUuid(resourceUuid);
+                        shared.setReceiverAccountUuid(receiverUuid);
+                        shared.setPermission(permission.code);
+                        sharedList.add(shared);
                     }
                 }
+
+                if (sharedList.isEmpty()) {
+                    return;
+                }
+
+                dbf.persistCollection(sharedList);
+                String texts = StringUtils.join(transform(sharedList,
+                        shared -> String.format("\tuuid:%s type:%s", shared.getResourceUuid(), shared.getResourceType())), "\n");
+                logger.debug(String.format("Shared below resources to account[uuid:%s]: \n%s", receiverUuidList, texts));
             }
         }.execute();
 
