@@ -368,8 +368,6 @@ public class L3BasicNetwork implements L3Network {
             handle((APIAttachNetworkServiceToL3NetworkMsg) msg);
         } else if (msg instanceof APIDetachNetworkServiceFromL3NetworkMsg) {
             handle((APIDetachNetworkServiceFromL3NetworkMsg) msg);
-        } else if (msg instanceof APIDeleteNetworkServiceFromL3NetworkMsg) {
-            handle((APIDeleteNetworkServiceFromL3NetworkMsg) msg);
         } else if (msg instanceof APIAddDnsToL3NetworkMsg) {
         	handle((APIAddDnsToL3NetworkMsg)msg);
         } else if (msg instanceof APIRemoveDnsFromL3NetworkMsg) {
@@ -729,49 +727,7 @@ public class L3BasicNetwork implements L3Network {
             }
         });
     }
-
-
-    private void handle(APIDeleteNetworkServiceFromL3NetworkMsg msg) {
-        APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
-
-        List<NetworkServiceL3NetworkRefVO> refs = new ArrayList<>();
-        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
-
-        for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
-            SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
-            q.add(NetworkServiceL3NetworkRefVO_.networkServiceProviderUuid, Op.EQ, e.getKey());
-            q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, self.getUuid());
-            q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.IN, e.getValue());
-            refs.addAll(q.list());
-        }
-
-        if (refs.isEmpty()) {
-            self = dbf.reload(self);
-            evt.setInventory(L3NetworkInventory.valueOf(self));
-            bus.publish(evt);
-            return;
-        }
-
-        detachNetworkServiceFromL3NetworkMsg(l3VO, refs, new Completion(msg) {
-            @Override
-            public void success() {
-                dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
-                logger.debug(String.format("successfully detached network service provider[uuid:%s]", JSONObjectUtil.dumpPretty(refs)));
-                self = dbf.reload(self);
-                evt.setInventory(L3NetworkInventory.valueOf(self));
-                bus.publish(evt);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.debug(String.format("detached network service provider[uuid:%s] failed:%s", JSONObjectUtil.dumpPretty(refs), errorCode.getDetails()));
-                self = dbf.reload(self);
-                evt.setInventory(L3NetworkInventory.valueOf(self));
-                bus.publish(evt);
-            }
-        });
-    }
-
+    
     private void handle(APIDetachNetworkServiceFromL3NetworkMsg msg) {
         APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
 
