@@ -25,13 +25,17 @@ public class NewVmInstanceMsgBuilder {
         if (CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
             return Collections.EMPTY_LIST;
         }
+        return getVmNicSpecsFromVmNicParams(msg.getVmNicParams(), msg.getL3NetworkUuids());
+    }
+
+    public static List<VmNicSpec> getVmNicSpecsFromVmNicParams(String nicParams, List<String> l3NetworkUuids) {
         List<VmNicParam> vmNicParams = new ArrayList<>();
-        if (!StringUtils.isEmpty(msg.getVmNicParams())) {
-            vmNicParams.addAll(JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class));
+        if (!StringUtils.isEmpty(nicParams)) {
+            vmNicParams.addAll(JSONObjectUtil.toCollection(nicParams, ArrayList.class, VmNicParam.class));
         }
 
         List<VmNicSpec> nicSpecs = new ArrayList<>();
-        for (String l3Uuid : msg.getL3NetworkUuids()) {
+        for (String l3Uuid : l3NetworkUuids) {
             List<L3NetworkInventory> l3Invs = new ArrayList<>();
             L3NetworkVO l3vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
             L3NetworkInventory inv = L3NetworkInventory.valueOf(l3vo);
@@ -48,8 +52,6 @@ public class NewVmInstanceMsgBuilder {
             }
             nicSpecs.add(vmNicSpec);
         }
-
-
         return nicSpecs;
     }
 
