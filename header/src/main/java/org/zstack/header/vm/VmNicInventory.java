@@ -42,7 +42,7 @@ public class VmNicInventory implements Serializable {
     private String internalName;
     private Integer deviceId;
     private String type;
-    private String state = VmNicState.enable.toString();
+    private String state;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
