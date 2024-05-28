@@ -172,6 +172,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     protected EventFacade evtf;
 
     private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
+    private final static VmPortsHelper vmPortsHelper = new VmPortsHelper();
 
     @Override
     public void handleMessage(Message msg) {
@@ -1064,10 +1065,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             creator.create();
         }
 
-        SystemTagCreator creator = VmSystemTags.SYNC_PORTS.newSystemTagCreator(finalVo.getUuid());
-        creator.recreate = true;
-        creator.setTagByTokens(map(e(VmSystemTags.SYNC_PORTS_TOKEN, finalVo.getUuid())));
-        creator.create();
+        vmPortsHelper.setVmSyncPorts(finalVo.getUuid());
     }
 
     private List<ErrorCode> extEmitterHandleSystemTag(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, VmInstanceVO finalVo) {
