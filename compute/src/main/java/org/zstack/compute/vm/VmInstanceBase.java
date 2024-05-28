@@ -139,6 +139,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceVO originalCopy;
     protected String syncThreadName;
     private final static StaticIpOperator ipOperator = new StaticIpOperator();
+    private final static VmPortsHelper vmPortsHelper = new VmPortsHelper();
 
     protected void checkState(final String hostUuid, final NoErrorCompletion completion) {
         CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
@@ -3573,6 +3574,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         dbf.persistCollection(voNewList);
         dbf.update(nicVO);
         dbf.removeCollection(voRemoveList, UsedIpVO.class);
+        if (self.getState() != VmInstanceState.Running) {
+            vmPortsHelper.setVmSyncPorts(msg.getVmInstanceUuid());
+        }
         completion.success();
     }
 
@@ -6187,6 +6191,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                         dbf.removeCollection(voOldList, UsedIpVO.class);
                         data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
                         data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
+                        if (self.getState() != VmInstanceState.Running) {
+                            vmPortsHelper.setVmSyncPorts(msg.getVmInstanceUuid());
+                        }
                         trigger.next();
                     }
                 });
