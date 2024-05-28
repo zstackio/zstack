@@ -48,6 +48,10 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CSPSecretResourcePoolVO` (
     CONSTRAINT fkCSPSecretResourcePoolVOSecretResourcePoolVO FOREIGN KEY (uuid) REFERENCES SecretResourcePoolVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `zstack`.`OAuth2ClientVO` ADD COLUMN `scope` varchar(255) default 'openid';
+
+ALTER TABLE `zstack`.`OAuth2ClientVO` ADD COLUMN `identityProvider` varchar(32) default 'default';
+
 ALTER TABLE `zstack`.`SNSApplicationEndpointVO` ADD COLUMN `connectionStatus` varchar(10) DEFAULT 'UP' COMMENT 'UP or DOWN';
 
 CREATE TABLE IF NOT EXISTS `zstack`.`SNSUniversalSmsEndpointVO`
