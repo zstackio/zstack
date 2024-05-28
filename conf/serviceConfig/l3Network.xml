@@ -30,11 +30,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.network.service.APIDeleteNetworkServiceFromL3NetworkMsg</name>
-        <interceptor>NetworkServiceApiInterceptor</interceptor>
-    </message>
-
-    <message>
         <name>org.zstack.header.network.l3.APIAddDnsToL3NetworkMsg</name>
     </message>
 
