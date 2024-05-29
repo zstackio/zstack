@@ -43,7 +43,6 @@ import org.zstack.header.rest.RestAuthenticationType;
 import org.zstack.header.vo.*;
 import org.zstack.identity.rbac.PolicyUtils;
 import org.zstack.utils.*;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -61,7 +60,9 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.header.identity.AccountConstant.ACCOUNT_REST_AUTHENTICATION_TYPE;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class AccountManagerImpl extends AbstractService implements AccountManager, SoftDeleteEntityExtensionPoint,
         HardDeleteEntityExtensionPoint, ApiMessageInterceptor, RestAuthenticationBackend, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
@@ -79,7 +80,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Autowired
     private List<QuotaUpdateChecker> quotaChangeCheckers = Collections.emptyList();
 
-    private final List<String> resourceTypeForAccountRef = new ArrayList<>();
     private final List<Class> resourceTypes = new ArrayList<>();
     private final Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
     private final Map<String, Quota> nameQuotaMap = new HashMap<>();
@@ -88,7 +88,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private final HashSet<Class> accountApiControl = new HashSet<>();
     private final HashSet<Class> accountApiControlInternal = new HashSet<>();
-    private final List<Quota> definedQuotas = new ArrayList<>();
 
     private static final Map<String, QuotaDefinition> quotaDefinitionMap = new HashMap<>();
 
@@ -113,12 +112,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }.execute();
     }
-    class AccountCheckField {
+    static class AccountCheckField {
         Field field;
         APIParam param;
     }
 
-    class MessageAction {
+    static class MessageAction {
         boolean adminOnly;
         List<String> actions;
         String category;
@@ -188,13 +187,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         ref.setOwnerAccountUuid(newOwnerUuid);
         ref = dbf.getEntityManager().merge(ref);
 
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(ResourceOwnerAfterChangeExtensionPoint.class),
-                new ForEachFunction<ResourceOwnerAfterChangeExtensionPoint>() {
-                    @Override
-                    public void run(ResourceOwnerAfterChangeExtensionPoint ext) {
-                        ext.resourceOwnerAfterChange(origin, newOwnerUuid);
-                    }
-                });
+        CollectionUtils.safeForEach(
+                pluginRgty.getExtensionList(ResourceOwnerAfterChangeExtensionPoint.class),
+                ext -> ext.resourceOwnerAfterChange(origin, newOwnerUuid));
 
         return AccountResourceRefInventory.valueOf(ref);
     }
@@ -380,9 +375,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         AccountVO admin = dbf.findByUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountVO.class);
         AccountInventory adminInv = AccountInventory.valueOf(admin);
         for (String resUuid : msg.getResourceUuids()) {
-            if (!ret.containsKey(resUuid)) {
-                ret.put(resUuid, adminInv);
-            }
+            ret.putIfAbsent(resUuid, adminInv);
         }
 
         APIGetResourceAccountReply reply = new APIGetResourceAccountReply();
@@ -656,28 +649,22 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void buildResourceTypes() throws ClassNotFoundException {
-        for (String resourceTypeName : resourceTypeForAccountRef) {
-            Class<?> rs = Class.forName(resourceTypeName);
-            resourceTypes.add(rs);
-        }
-    }
-
-    private void addResourceType() {
         for (AddtionalResourceTypeExtensionPoint ext: pluginRgty.getExtensionList(AddtionalResourceTypeExtensionPoint.class)) {
-            List<String> list = ext.getAddtionalResourceType();
-            if (list != null && list.size() > 0) {
-                resourceTypeForAccountRef.addAll(list);
+            final List<String> typeNameList = ext.getAddtionalResourceType();
+            if (isEmpty(typeNameList)) {
+                continue;
+            }
+            for (String resourceTypeName : typeNameList) {
+                resourceTypes.add(Class.forName(resourceTypeName));
             }
         }
 
-        Platform.getReflections().getSubTypesOf(OwnedByAccount.class)
-                .forEach(clz -> resourceTypeForAccountRef.add(clz.getName()));
+        resourceTypes.addAll(getReflections().getSubTypesOf(OwnedByAccount.class));
     }
 
     @Override
     public boolean start() {
         try {
-            addResourceType();
             buildResourceTypes();
             buildActions();
             collectDefaultQuota();
@@ -756,43 +743,37 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
-        IdentityGlobalConfig.ACCOUNT_API_CONTROL.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
-            @Override
-            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
-                if (newValue.isEmpty()) {
-                    return;
-                }
+        IdentityGlobalConfig.ACCOUNT_API_CONTROL.installValidateExtension((category, name, oldValue, newValue) -> {
+            if (newValue.isEmpty()) {
+                return;
+            }
 
-                String[] classNames = newValue.split(",");
-                for (String cn : classNames) {
-                    cn = cn.trim();
-                    try {
-                        Class.forName(cn);
-                    } catch (ClassNotFoundException e) {
-                        throw new GlobalConfigException(String.format("no API found for %s", cn));
-                    }
+            String[] classNames12 = newValue.split(",");
+            for (String cn : classNames12) {
+                cn = cn.trim();
+                try {
+                    Class.forName(cn);
+                } catch (ClassNotFoundException e) {
+                    throw new GlobalConfigException(String.format("no API found for %s", cn));
                 }
             }
         });
 
-        IdentityGlobalConfig.ACCOUNT_API_CONTROL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
-            @Override
-            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                accountApiControl.clear();
+        IdentityGlobalConfig.ACCOUNT_API_CONTROL.installUpdateExtension((oldConfig, newConfig) -> {
+            accountApiControl.clear();
 
-                if (newConfig.value().isEmpty()) {
-                    return;
-                }
+            if (newConfig.value().isEmpty()) {
+                return;
+            }
 
-                String[] classNames = newConfig.value().split(",");
-                for (String name : classNames) {
-                    try {
-                        name = name.trim();
-                        Class clz = Class.forName(name);
-                        accountApiControl.add(clz);
-                    } catch (ClassNotFoundException e) {
-                        throw new CloudRuntimeException(e);
-                    }
+            String[] classNames1 = newConfig.value().split(",");
+            for (String name : classNames1) {
+                try {
+                    name = name.trim();
+                    Class clz = Class.forName(name);
+                    accountApiControl.add(clz);
+                } catch (ClassNotFoundException e) {
+                    throw new CloudRuntimeException(e);
                 }
             }
         });
@@ -803,7 +784,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         for (ReportQuotaExtensionPoint ext : pluginRgty.getExtensionList(ReportQuotaExtensionPoint.class)) {
             List<Quota> quotas = ext.reportQuota();
             DebugUtils.Assert(quotas != null, String.format("%s.reportQuota() returns null", ext.getClass()));
-            definedQuotas.addAll(quotas);
 
             for (Quota quota : quotas) {
                 DebugUtils.Assert(quota.getQuotaDefinitions() != null
@@ -934,17 +914,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }.execute();
 
-        if (orphanedResources.size() == 0 || resourceUuids.size() == 0) {
+        if (orphanedResources.isEmpty() || resourceUuids.isEmpty()) {
             return;
         }
         List<String> uuids = resourceUuids.stream().filter(orphanedResources::contains).collect(Collectors.toList());
 
-        CollectionUtils.forEach(exts, new ForEachFunction<TakeOverResourceExtensionPoint>() {
-            @Override
-            public void run(TakeOverResourceExtensionPoint ext) {
-                ext.afterTakeOverResource(uuids, originAccountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
-            }
-        });
+        CollectionUtils.forEach(exts,
+                ext -> ext.afterTakeOverResource(uuids, originAccountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID));
     }
 
     public void adminAdoptAllOrphanedResource(List<String> resourceUuid, String originAccountUuid){
@@ -1000,9 +976,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ma.accountOnly = a.accountOnly();
             ma.adminOnly = a.adminOnly();
             ma.category = a.category();
-            ma.actions = new ArrayList<String>();
+            ma.actions = new ArrayList<>();
             ma.accountControl = a.accountControl();
-            ma.accountCheckFields = new ArrayList<AccountCheckField>();
+            ma.accountCheckFields = new ArrayList<>();
             for (String ac : a.names()) {
                 ma.actions.add(String.format("%s:%s", ma.category, ac));
             }
@@ -1053,15 +1029,18 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return false;
     }
 
-    @SuppressWarnings("rawtypes")
+    @Override
     public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType) {
-        return getResourceUuidsCanAccessByAccount(accountUuid, resourceType, ShareResourcePermission.READ);
+        return findAllAccessResources(accountUuid, resourceType, ShareResourcePermission.READ);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    @SuppressWarnings("rawtypes")
     public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType, ShareResourcePermission permission) {
+        return findAllAccessResources(accountUuid, resourceType, permission);
+    }
+
+    @Transactional(readOnly = true)
+    private List<String> findAllAccessResources(String accountUuid, Class resourceType, ShareResourcePermission permission) {
         String sql = "select a.type from AccountVO a where a.uuid = :auuid";
         TypedQuery<AccountType> q = dbf.getEntityManager().createQuery(sql, AccountType.class);
         q.setParameter("auuid", accountUuid);
@@ -1196,8 +1175,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         private void accountFieldCheck() throws IllegalAccessException {
-            Set resourceUuids = new HashSet();
-            Set operationTargetResourceUuids = new HashSet();
+            Set<String> resourceUuids = new HashSet<>();
+            Set<String> operationTargetResourceUuids = new HashSet<>();
 
             for (AccountCheckField af : action.accountCheckFields) {
                 Object value = af.field.get(msg);
@@ -1207,15 +1186,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
                 if (String.class.isAssignableFrom(af.field.getType())) {
                     if (af.param.operationTarget()) {
-                        operationTargetResourceUuids.add(value);
+                        operationTargetResourceUuids.add(value.toString());
                     } else {
-                        resourceUuids.add(value);
+                        resourceUuids.add(value.toString());
                     }
                 } else if (Collection.class.isAssignableFrom(af.field.getType())) {
                     if (af.param.operationTarget()) {
-                        operationTargetResourceUuids.addAll((Collection) value);
+                        operationTargetResourceUuids.addAll((Collection<String>) value);
                     } else {
-                        resourceUuids.addAll((Collection) value);
+                        resourceUuids.addAll((Collection<String>) value);
                     }
                 }
             }
@@ -1235,7 +1214,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     String ruuid = t.get(0, String.class);
                     Boolean toPublic = t.get(1, Boolean.class);
                     String resUuid = t.get(2, String.class);
-                    if (toPublic || session.getAccountUuid().equals(ruuid)) {
+                    if (toPublic == Boolean.TRUE || session.getAccountUuid().equals(ruuid)) {
                         // this resource is shared to the account
                         resourceUuids.remove(resUuid);
                     }
@@ -1463,8 +1442,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        //new Auth().validate(msg);
-
         if (msg instanceof APIUpdateAccountMsg) {
             validate((APIUpdateAccountMsg) msg);
         } else if (msg instanceof APICreatePolicyMsg) {
