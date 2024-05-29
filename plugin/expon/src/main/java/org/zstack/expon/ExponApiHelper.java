@@ -2,6 +2,10 @@ package org.zstack.expon;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.singleflight.MultiNodeSingleFlightImpl;
 import org.zstack.expon.sdk.*;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterRequest;
 import org.zstack.expon.sdk.cluster.QueryTianshuClusterResponse;
@@ -17,27 +21,32 @@ import org.zstack.expon.sdk.uss.UssGatewayModule;
 import org.zstack.expon.sdk.vhost.*;
 import org.zstack.expon.sdk.volume.*;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.expon.ExponError;
+import org.zstack.header.storage.addon.SingleFlightExecutor;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
-public class ExponApiHelper {
-
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
+public class ExponApiHelper implements SingleFlightExecutor {
     AccountInfo accountInfo;
     ExponClient client;
     String sessionId;
     String refreshToken;
+    private String storageUuid;
+
+    @Autowired
+    private MultiNodeSingleFlightImpl singleFlight;
 
     private static final Cache<String, String> snapshotClientCache = CacheBuilder.newBuilder()
             .maximumSize(1000)
@@ -46,8 +55,12 @@ public class ExponApiHelper {
     ExponApiHelper(AccountInfo accountInfo, ExponClient client) {
         this.accountInfo = accountInfo;
         this.client = client;
-        this.client.setSessionRefresher(this::refreshSession);
+        this.client.setSessionRefresher(this::refreshSessionInQueue);
         this.client.setSessionGetter(() -> sessionId);
+    }
+
+    void setStorageUuid(String storageUuid) {
+        this.storageUuid = storageUuid;
     }
 
     private <T extends ExponResponse> T callWithExpiredSessionRetry(ExponRequest req, Class<T> clz) {
@@ -55,21 +68,50 @@ public class ExponApiHelper {
         T rsp = client.call(req, clz);
 
         if (!rsp.isSuccess() && rsp.sessionExpired()) {
-            refreshSession();
+            refreshSessionInQueue();
             req.setSessionId(sessionId);
             rsp = client.call(req, clz);
         }
         return rsp;
     }
 
-    private synchronized String refreshSession() {
-        if (sessionExpired()) {
-            login();
+    private synchronized String refreshSessionInQueue() {
+        FutureCompletion fcompl = new FutureCompletion(null);
+        ReturnValueCompletion<Object> completion = new ReturnValueCompletion<Object>(fcompl) {
+            @Override
+            public void success(Object returnValue) {
+                sessionId = (String) returnValue;
+                fcompl.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                fcompl.fail(errorCode);
+            }
+        };
+
+        singleFlight.run(this, "refreshSession", completion);
+
+        fcompl.await(TimeUnit.MILLISECONDS.toSeconds(30));
+        if (!fcompl.isSuccess()) {
+            throw new OperationFailureException(fcompl.getErrorCode());
         }
         return sessionId;
     }
 
+    @SingleFlightExecutor.SingleFlight
+    public void refreshSession(ReturnValueCompletion<Object> completion) {
+        if (sessionExpired()) {
+            login();
+        }
+        completion.success(sessionId);
+    }
+
     private boolean sessionExpired() {
+        if (sessionId == null) {
+            return true;
+        }
+
         QueryTianshuClusterRequest req = new QueryTianshuClusterRequest();
 
         req.setSessionId(sessionId);
@@ -100,7 +142,7 @@ public class ExponApiHelper {
                 return;
             }
 
-            refreshSession();
+            refreshSessionInQueue();
             req.setSessionId(sessionId);
             client.call(req, retryRes -> {
                 if (retryRes.error != null) {
@@ -836,5 +878,11 @@ public class ExponApiHelper {
         SetTrashExpireTimeRequest req = new SetTrashExpireTimeRequest();
         req.setTrashRecycle(days);
         callErrorOut(req, SetTrashExpireTimeResponse.class);
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return storageUuid != null ? storageUuid :
+                UUID.nameUUIDFromBytes(client.getConfig().hostname.getBytes()).toString().replace("-", "");
     }
 }

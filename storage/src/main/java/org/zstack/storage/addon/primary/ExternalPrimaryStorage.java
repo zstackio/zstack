@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -15,6 +16,7 @@ import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
@@ -77,11 +79,14 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Autowired
     private ExternalPrimaryStorageImageCacheCleaner imageCacheCleaner;
 
+    @Autowired
+    private ResourceDestinationMaker destMaker;
+
     public ExternalPrimaryStorage(PrimaryStorageVO self, PrimaryStorageControllerSvc controller, PrimaryStorageNodeSvc node) {
         super(self);
         this.controller = controller;
         this.node = node;
-        this.externalVO = Q.New(ExternalPrimaryStorageVO.class)
+        this.externalVO = self instanceof ExternalPrimaryStorageVO ? (ExternalPrimaryStorageVO) self : Q.New(ExternalPrimaryStorageVO.class)
                 .eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                 .find();
         this.selfConfig = JSONObjectUtil.toObject(externalVO.getConfig(), LinkedHashMap.class);
@@ -93,6 +98,16 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         this.node = other.node;
         this.externalVO = other.externalVO;
         this.selfConfig = other.selfConfig;
+    }
+
+    @Override
+    public void handleMessage(Message msg) {
+        if (msg instanceof PrimaryStorageMessage && !destMaker.isManagedByUs(((PrimaryStorageMessage) msg).getPrimaryStorageUuid())) {
+            logger.warn(String.format("message[%s] is not managed by us, we may not has ps controller for it, " +
+                    "please contact us ASAP.", msg.getClass().getName()));
+        }
+
+        super.handleMessage(msg);
     }
 
     @Override
@@ -1639,6 +1654,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(ConnectParam param, Completion completion) {
+
         controller.connect(externalVO.getConfig(), self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
             @Override
             public void success(LinkedHashMap addonInfo) {
@@ -1646,6 +1662,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
                         .update();
 
+
+                controller.setTrashExpireTime(PrimaryStorageGlobalConfig.TRASH_EXPIRATION_TIME.value(Integer.class), new NopeCompletion());
                 // to update capacity
                 pingHook(completion);
             }

@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -17,7 +18,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorage;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
-import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -33,7 +33,7 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
-    private AccountManager acntMgr;
+    private ThreadFacade thdf;
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -63,6 +63,7 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
 
     private void handleLocalMessage(Message msg) {
         bus.dealWithUnknownMessage(msg);
+
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -107,7 +108,7 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
                     inventory.setIdentity(builder.getIdentity());
                     inventory.setAddonInfo(addonInfo);
                     event.setInventory(inventory);
-                    comp.done();
+                    comp.allDone();
                 }
 
                 @Override
@@ -120,7 +121,7 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (event.getInventory() == null) {
-                    event.setError(operr("cannot connect any external storage"));
+                    event.setError(operr(errorCodeList, "cannot connect any external storage"));
                 }
 
                 bus.publish(event);

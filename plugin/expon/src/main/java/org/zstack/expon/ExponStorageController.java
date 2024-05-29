@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
-import org.zstack.core.thread.ThreadFacade;
 import org.zstack.expon.sdk.ExponClient;
 import org.zstack.expon.sdk.ExponConnectConfig;
 import org.zstack.expon.sdk.cluster.TianshuClusterModule;
@@ -24,7 +23,6 @@ import org.zstack.expon.sdk.volume.ExponVolumeQos;
 import org.zstack.expon.sdk.volume.VolumeModule;
 import org.zstack.expon.sdk.volume.VolumeSnapshotModule;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -43,6 +41,7 @@ import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -68,13 +67,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ThreadFacade thdf;
     private ExternalPrimaryStorageVO self;
     private ExponAddonInfo addonInfo;
     private ExponConfig config;
 
-    private final ExponApiHelper apiHelper;
+    final ExponApiHelper apiHelper;
 
     // TODO static nqn
     private final static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
@@ -106,6 +103,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     public ExponStorageController(ExternalPrimaryStorageVO self) {
         this(self.getUrl());
         this.self = self;
+        this.apiHelper.setStorageUuid(self.getUuid());
     }
 
     public ExponStorageController(String url) {
@@ -812,7 +810,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             });
         }
         addonInfo = info;
-        setTrashExpireTime(PrimaryStorageGlobalConfig.TRASH_EXPIRATION_TIME.value(Integer.class), new NopeCompletion());
         comp.success(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
     }
 
