@@ -189,7 +189,7 @@ class OneIpL3NetworkCase extends SubCase {
         CheckIpAvailabilityResult res = checkIpAvailability {
             l3NetworkUuid = nic.l3NetworkUuid
             ip = nic.ip
-            arpingDetection = true
+            arpCheck = true
         }
         assert !res.available
 
@@ -211,7 +211,7 @@ class OneIpL3NetworkCase extends SubCase {
         res = checkIpAvailability {
             l3NetworkUuid = nic.l3NetworkUuid
             ip = freeIp4s.get(0).ip
-            arpingDetection = true
+            arpCheck = true
         }
         assert !res.available
 
@@ -227,7 +227,7 @@ class OneIpL3NetworkCase extends SubCase {
         res = checkIpAvailability {
             l3NetworkUuid = nic.l3NetworkUuid
             ip = freeIp4s.get(0).ip
-            arpingDetection = true
+            arpCheck = true
         }
         assert res.available
 
@@ -240,7 +240,7 @@ class OneIpL3NetworkCase extends SubCase {
         res = checkIpAvailability {
             l3NetworkUuid = nic.l3NetworkUuid
             ip = freeIp4s.get(0).ip
-            arpingDetection = true
+            arpCheck = true
         }
         assert res.available
     }

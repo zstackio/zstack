@@ -186,7 +186,7 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(CheckIpAvailabilityMsg msg) {
-        CheckIpAvailabilityReply reply = checkIpAvailability(msg.getIp());
+        CheckIpAvailabilityReply reply = checkIpAvailability(msg);
         bus.reply(msg, reply);
     }
 
@@ -558,13 +558,9 @@ public class L3BasicNetwork implements L3Network {
 
     @Override
     public CheckIpAvailabilityReply checkIpAvailability(CheckIpAvailabilityMsg msg) {
-        return checkIpAvailability(msg.getIp());
-    }
-
-    public CheckIpAvailabilityReply checkIpAvailability(String ip) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
         int ipversion = IPv6Constants.IPv4;
-        if (IPv6NetworkUtils.isIpv6Address(ip)) {
+        if (IPv6NetworkUtils.isIpv6Address(msg.getIp())) {
             ipversion = IPv6Constants.IPv6;
         }
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
@@ -579,16 +575,21 @@ public class L3BasicNetwork implements L3Network {
 
         boolean inRange = false;
         boolean isGateway = false;
+        /* disable ip range check */
+        if (!msg.getIpRangeCheck()) {
+            inRange = true;
+        }
+
         for (Tuple t : ts) {
             String sip = t.get(0, String.class);
             String eip = t.get(1, String.class);
             String gw = t.get(2, String.class);
-            if (ip.equals(gw) && !addressPoolGateways.contains(gw)) {
+            if (msg.getIp().equals(gw) && !addressPoolGateways.contains(gw)) {
                 isGateway = true;
                 break;
             }
 
-            if (NetworkUtils.isInRange(ip, sip, eip)) {
+            if (NetworkUtils.isInRange(msg.getIp(), sip, eip)) {
                 inRange = true;
                 break;
             }
@@ -602,20 +603,18 @@ public class L3BasicNetwork implements L3Network {
             } else {
                 reply.setReason(IpNotAvailabilityReason.NO_IN_RANGE.toString());
             }
-            return reply;
         } else {
             SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
             q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, self.getUuid());
-            q.add(UsedIpVO_.ip, Op.EQ, ip);
+            q.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
             if (q.isExists()) {
                 reply.setAvailable(false);
                 reply.setReason(IpNotAvailabilityReason.USED.toString());
             } else {
                 reply.setAvailable(true);
             }
-
-            return reply;
         }
+        return reply;
     }
 
     private void handle(APICheckIpAvailabilityMsg msg) {
@@ -625,7 +624,8 @@ public class L3BasicNetwork implements L3Network {
         CheckIpAvailabilityMsg imsg = new CheckIpAvailabilityMsg();
         imsg.setL3NetworkUuid(msg.getL3NetworkUuid());
         imsg.setIp(msg.getIp());
-        imsg.setArpingDetection(msg.getArpingDetection());
+        imsg.setArpCheck(msg.getArpCheck());
+        imsg.setIpRangeCheck(msg.getIpRangeCheck());
 
         FlowChain flowChain = new SimpleFlowChain();
         flowChain.setName(String.format("check-ip-address-availability-%s-%s",

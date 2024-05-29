@@ -58,7 +58,16 @@ doc {
 					since "0.6"
 				}
 				column {
-					name "arpingDetection"
+					name "arpCheck"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "Boolean"
+					optional true
+					since "5.1.0"
+				}
+				column {
+					name "ipRangeCheck"
 					enclosedIn ""
 					desc ""
 					location "query"
