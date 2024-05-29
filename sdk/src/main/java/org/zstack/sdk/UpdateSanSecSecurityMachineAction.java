@@ -109,7 +109,7 @@ public class UpdateSanSecSecurityMachineAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/security-machines/fiSec/{uuid}/actions";
+        info.path = "/security-machines/sanSec/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateSanSecSecurityMachine";
