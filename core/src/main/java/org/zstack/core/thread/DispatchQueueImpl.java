@@ -18,6 +18,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.TaskContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -893,12 +894,18 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         processTimeoutTask(cf);
                         cf.setStartExecutionTimeInMills(zTimer.getCurrentTimeMillis());
                         // add to running queue
-                        logger.debug(String.format("Start executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
                         runningQueue.offer(cf);
                         Optional.ofNullable(getApiId(cf))
                                 .ifPresent(apiId -> apiRunningSignature.computeIfAbsent(apiId,
                                         k -> Collections.synchronizedList(new ArrayList<>())).add(syncSignature));
                     }
+
+                    // recover task context from backup
+                    if (cf.getTask().getTaskContext() != null) {
+                        TaskContext.setTaskContext(cf.getTask().getTaskContext());
+                    }
+
+                    logger.debug(String.format("Start executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
 
                     if (cf.getTask().getDeduplicateString() != null) {
                         removeSubPending(cf.getTask().getDeduplicateString(), false);
@@ -919,6 +926,15 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                             }
                         }
 
+                        /*
+                          Note: run queue @AsyncThread will set thread context from
+                          current task and next task's context will not be set until
+                          `cf.run` so the code from `runQueue()` to `cf.run` will
+                          use a wrong api id which might be confusing.
+
+                          Manually remove thread context here to avoid this issue.
+                         */
+                        TaskContext.removeTaskContext();
                         runQueue();
                     });
                 }
