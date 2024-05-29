@@ -5,19 +5,29 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.singleflight.ExternalSingleFlightMsg;
+import org.zstack.core.singleflight.ExternalSingleFlightReply;
+import org.zstack.core.singleflight.MultiNodeSingleFlightImpl;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.ChainInfo;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.addon.SingleFlightExecutor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 public class CoreManagerImpl extends AbstractService implements CoreManager {
     private static final CLogger logger = Utils.getLogger(CoreManagerImpl.class);
@@ -28,6 +38,8 @@ public class CoreManagerImpl extends AbstractService implements CoreManager {
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private MultiNodeSingleFlightImpl singleFlight;
 
     @Override
     public void handleMessage(Message msg) {
@@ -47,7 +59,33 @@ public class CoreManagerImpl extends AbstractService implements CoreManager {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof GetLocalTaskMsg) {
             handle((GetLocalTaskMsg) msg);
+        } else if (msg instanceof ExternalSingleFlightMsg) {
+            handle((ExternalSingleFlightMsg) msg);
         }
+    }
+
+    private void handle(ExternalSingleFlightMsg msg) {
+        SingleFlightExecutor executor = MultiNodeSingleFlightImpl.getExecutor(msg.getResourceUuid());
+        if (executor == null) {
+            bus.replyErrorByMessageType(msg, operr("no executor found for resourceUuid[%s]", msg.getResourceUuid()));
+            return;
+        }
+
+        Object[] args = Arrays.copyOf(msg.getArgs(), msg.getArgs().length + 1);
+        args[args.length - 1] = new ReturnValueCompletion<Object>(msg) {
+            @Override
+            public void success(Object returnValue) {
+                ExternalSingleFlightReply reply = new ExternalSingleFlightReply();
+                reply.setResult(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                bus.replyErrorByMessageType(msg, errorCode);
+            }
+        };
+        singleFlight.run(executor, msg.getMethod(), args);
     }
 
     private void handleMessage(APIGetChainTaskMsg msg) {

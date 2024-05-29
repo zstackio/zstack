@@ -5,9 +5,12 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.singleflight.MultiNodeSingleFlightImpl;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -19,6 +22,10 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.backup.BackupStorageConstant;
@@ -39,14 +46,14 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Component, PSCapacityExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes,
-        CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension, VmInstanceMigrateExtensionPoint {
+        CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension, VmInstanceMigrateExtensionPoint,
+        ManagementNodeChangeListener {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
 
@@ -66,6 +73,8 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
+    @Autowired
+    protected EventFacade evtf;
 
     static {
         type.setSupportHeartbeatFile(true);
@@ -75,12 +84,52 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     @Override
     public boolean start() {
         pluginRgty.saveExtensionAsMap(ExternalPrimaryStorageSvcBuilder.class, ExternalPrimaryStorageSvcBuilder::getIdentity);
+        buildPsController();
+        populateExtensions();
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void beforeDeliveryMessage(Message msg) {
+                ConnectPrimaryStorageMsg cmsg = (ConnectPrimaryStorageMsg) msg;
+                if (cmsg.isNewAdded() && !controllers.containsKey(cmsg.getPrimaryStorageUuid())) {
+                    ExternalPrimaryStorageVO evo = dbf.findByUuid(cmsg.getPrimaryStorageUuid(), ExternalPrimaryStorageVO.class);
+                    if (evo != null) {
+                        logger.debug("receive connect ps msg, save external ps controller if need");
+                        saveControllerIfNeed(evo);
+                    }
+                }
+            }
+        }, ConnectPrimaryStorageMsg.class);
+
+        bus.subscribeEvent(e -> {
+            if (e instanceof APIAddPrimaryStorageEvent) {
+                APIAddPrimaryStorageEvent evt = (APIAddPrimaryStorageEvent) e;
+                if (evt.isSuccess() && evt.getInventory() instanceof ExternalPrimaryStorageInventory) {
+                    logger.debug("receive event, save external ps controller if need");
+                    saveControllerIfNeed(dbf.findByUuid(evt.getInventory().getUuid(), ExternalPrimaryStorageVO.class));
+                }
+            }
+
+            return false;
+        }, new APIAddPrimaryStorageEvent());
+
+        evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DELETED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData d = (PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData) data;
+                MultiNodeSingleFlightImpl.unregister(d.getPrimaryStorageUuid());
+            }
+        });
+
+        return true;
+    }
+
+    private void buildPsController() {
         List<ExternalPrimaryStorageVO> extPs = dbf.listAll(ExternalPrimaryStorageVO.class);
         for (ExternalPrimaryStorageVO vo : extPs) {
-            saveController(vo);
+            if (!controllers.containsKey(vo.getUuid())) {
+                saveControllerIfNeed(vo);
+            }
         }
-        populateExtensions();
-        return true;
     }
 
     private void populateExtensions() {
@@ -170,19 +219,25 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         dbf.persist(lvo);
         dbf.persist(ref);
 
-        saveController(lvo);
+        saveControllerIfNeed(lvo);
         return lvo.toInventory();
     }
 
-    private void saveController(ExternalPrimaryStorageVO extVO) {
+    boolean saveControllerIfNeed(ExternalPrimaryStorageVO extVO) {
+        if (controllers.containsKey(extVO.getUuid())) {
+            return false;
+        }
+
         ExternalPrimaryStorageSvcBuilder builder = getSvcBuilder(extVO.getIdentity());
         PrimaryStorageControllerSvc controller = builder.buildControllerSvc(extVO);
         controllers.put(extVO.getUuid(), controller);
+
         if (controller instanceof PrimaryStorageNodeSvc) {
             nodes.put(extVO.getUuid(), (PrimaryStorageNodeSvc) controller);
         } else {
             nodes.put(extVO.getUuid(), builder.buildNodeSvc(extVO));
         }
+        return true;
     }
 
     @Override
@@ -878,5 +933,25 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
                 completion.done();
             }
         }).start();
+    }
+
+    @Override
+    public void nodeJoin(ManagementNodeInventory inv) {
+
+    }
+
+    @Override
+    public void nodeLeft(ManagementNodeInventory inv) {
+        buildPsController();
+    }
+
+    @Override
+    public void iAmDead(ManagementNodeInventory inv) {
+
+    }
+
+    @Override
+    public void iJoin(ManagementNodeInventory inv) {
+
     }
 }

@@ -19,4 +19,6 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="MultiNodeSingleFlightImpl" class="org.zstack.core.singleflight.MultiNodeSingleFlightImpl" />
+
 </beans>
