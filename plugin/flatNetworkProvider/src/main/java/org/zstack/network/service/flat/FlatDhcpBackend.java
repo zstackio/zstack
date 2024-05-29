@@ -2611,7 +2611,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
         reply.setAvailable(true);
         reply.setReason("");
-        if (!msg.getArpingDetection() || !NetworkUtils.isIpv4Address(msg.getIp())) {
+        if (!msg.getArpCheck() || !NetworkUtils.isIpv4Address(msg.getIp())) {
             completion.success(reply);
             return;
         }
