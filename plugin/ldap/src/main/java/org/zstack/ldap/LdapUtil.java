@@ -1,6 +1,7 @@
 package org.zstack.ldap;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.ldap.NamingException;
 import org.springframework.ldap.control.PagedResultsDirContextProcessor;
 import org.springframework.ldap.core.DirContextOperations;
@@ -167,8 +168,11 @@ public class LdapUtil {
             }
         }
         ldapContextSource.setCacheEnvironmentProperties(false);
-        ldapContextSource.setPooled(false);
-        ldapContextSource.setReferral("follow");
+        ldapContextSource.setPooled(LdapGlobalProperty.LDAP_CONNECT_POOL);
+
+        if (!Strings.isEmpty(LdapGlobalProperty.LDAP_REFERRAL)) {
+            ldapContextSource.setReferral(LdapGlobalProperty.LDAP_REFERRAL);
+        }
 
         if (baseEnvironmentProperties != null && !baseEnvironmentProperties.isEmpty()) {
             ldapContextSource.setBaseEnvironmentProperties(baseEnvironmentProperties);
