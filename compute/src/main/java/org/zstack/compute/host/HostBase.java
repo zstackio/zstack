@@ -1267,6 +1267,11 @@ public abstract class HostBase extends AbstractHost {
             }
 
             @Override
+            public int getSyncLevel() {
+                return getHostSyncLevel();
+            }
+
+            @Override
             public void run(SyncTaskChain chain) {
                 checkState();
                 
