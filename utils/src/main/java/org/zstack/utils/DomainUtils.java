@@ -14,4 +14,14 @@ public class DomainUtils {
         }
         return "";
     }
+
+    public static Boolean curl(String url) {
+        ShellResult rst = ShellUtils.runAndReturn(String.format("curl %s", url), true);
+        return rst.getRetCode() == 0;
+    }
+
+    public static Boolean ping(String domain) {
+        ShellResult rst = ShellUtils.runAndReturn(String.format("ping %s -c 3 -W 2", domain), true);
+        return rst.getRetCode() == 0;
+    }
 }
