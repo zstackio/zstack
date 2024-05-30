@@ -66,17 +66,13 @@ public class CollectionUtils {
         return from.stream().collect(Collectors.toMap(keyMapper, valueMapper));
     }
 
-    public static <K, V> Set<K> transformToSet(Collection<V> from, Function<K, V> func) {
-        Set<K> ret = new HashSet<K>();
-        for (V v : from) {
-            K k = func.call(v);
-            if (k == null) {
-                continue;
-            }
-            ret.add(k);
-        }
+    public static <FROM, TO> Set<TO> transformToSetAndRemoveNull(Collection<FROM> from,
+                                                               java.util.function.Function<FROM, TO> mapper) {
+        return from.stream().map(mapper).filter(Objects::nonNull).collect(Collectors.toSet());
+    }
 
-        return ret;
+    public static <FROM, TO> Set<TO> transformToSet(Collection<FROM> from, java.util.function.Function<FROM, TO> mapper) {
+        return from.stream().map(mapper).collect(Collectors.toSet());
     }
 
     /**
@@ -105,7 +101,7 @@ public class CollectionUtils {
             try {
                 func.run(c);
             } catch (Throwable t) {
-                logger.warn(String.format("unhandled exception happened"), t);
+                logger.warn("unhandled exception happened", t);
             }
         }
     }

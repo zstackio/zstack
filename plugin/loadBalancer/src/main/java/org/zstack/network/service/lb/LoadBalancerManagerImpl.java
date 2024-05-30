@@ -47,11 +47,9 @@ import org.zstack.network.service.lb.quota.LoadBalanceListenerNumQuotaDefinition
 import org.zstack.network.service.lb.quota.LoadBalanceNumQuotaDefinition;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -61,6 +59,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.*;
 
 /**
  * Created by frank on 8/8/2015.
@@ -336,21 +335,22 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        Set<String> lbUuids = CollectionUtils.transformToSet(inv.getListeners(), new Function<String, LoadBalancerListenerCertificateRefInventory>() {
-                            @Override
-                            public String call(LoadBalancerListenerCertificateRefInventory arg) {
-                                return Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, arg.getListenerUuid())
-                                        .select(LoadBalancerListenerVO_.loadBalancerUuid).findValue();
-                            }
-                        });
-
-                        if (lbUuids == null || lbUuids.isEmpty()) {
+                        if (isEmpty(inv.getListeners())) {
                             trigger.next();
                             return;
                         }
 
-                        List<ErrorCode> errs = new ArrayList<>();
-                        new While<>(lbUuids).each((lbUuid, wcompl) -> {
+                        List<String> lbUuidList = Q.New(LoadBalancerListenerVO.class)
+                                .in(LoadBalancerListenerVO_.uuid, transform(inv.getListeners(), LoadBalancerListenerCertificateRefInventory::getListenerUuid))
+                                .select(LoadBalancerListenerVO_.loadBalancerUuid)
+                                .listValues();
+
+                        if (isEmpty(lbUuidList)) {
+                            trigger.next();
+                            return;
+                        }
+
+                        new While<>(new HashSet<>(lbUuidList)).each((lbUuid, wcompl) -> {
                             LoadBalancerChangeCertificateMsg cmsg = new LoadBalancerChangeCertificateMsg();
                             cmsg.setLoadBalancerUuid(lbUuid);
                             cmsg.setCertificateUuid(null);
@@ -359,7 +359,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                                 @Override
                                 public void run(MessageReply reply) {
                                     if (!reply.isSuccess()) {
-                                        errs.add(reply.getError());
+                                        wcompl.addError(reply.getError());
                                     }
                                     wcompl.done();
                                 }
@@ -367,10 +367,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         }).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
-                                if (errs.isEmpty()) {
+                                if (errorCodeList.getCauses().isEmpty()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errs.get(0));
+                                    trigger.fail(errorCodeList);
                                 }
                             }
                         });

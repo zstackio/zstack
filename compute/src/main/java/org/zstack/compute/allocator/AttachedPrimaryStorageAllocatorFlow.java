@@ -12,14 +12,15 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Set;
+
+import static org.zstack.utils.CollectionUtils.transformToSetAndRemoveNull;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AttachedPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     private static final CLogger logger = Utils.getLogger(AttachedPrimaryStorageAllocatorFlow.class);
@@ -49,7 +50,7 @@ public class AttachedPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFl
             String sql = "select h from HostVO h where h.clusterUuid in (select pcr.clusterUuid from PrimaryStorageClusterRefVO pcr where pcr.primaryStorageUuid in :psUuids group by pcr.clusterUuid having count(pcr.clusterUuid) = :psUuidSize) and h.state = :hostState and h.status = :hostConnectionState and h.hypervisorType = :hypervisorType";
             TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
             query.setParameter("psUuids", psUuids);
-            query.setParameter("psUuidSize", Long.valueOf(psUuids.size()));
+            query.setParameter("psUuidSize", (long) psUuids.size());
             query.setParameter("hostState", HostState.Enabled);
             query.setParameter("hostConnectionState", HostStatus.Connected);
             query.setParameter("hypervisorType", vm.getHypervisorType());
@@ -66,12 +67,7 @@ public class AttachedPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFl
     @Override
     public void allocate() {
         VmInstanceInventory vm = spec.getVmInstance();
-        Set<String> psuuids = CollectionUtils.transformToSet(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
-            @Override
-            public String call(VolumeInventory arg) {
-                return arg.getPrimaryStorageUuid();
-            }
-        });
+        Set<String> psuuids = transformToSetAndRemoveNull(vm.getAllVolumes(), VolumeInventory::getPrimaryStorageUuid);
 
         candidates = allocate(psuuids, vm);
 

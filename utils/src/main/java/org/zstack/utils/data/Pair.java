@@ -1,6 +1,7 @@
 package org.zstack.utils.data;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 
 public class Pair<T, U> implements Serializable {
@@ -52,7 +53,7 @@ public class Pair<T, U> implements Serializable {
             return false;
         }
         Pair<?, ?> that = (Pair<?, ?>)obj;
-        return (t != null ? t.equals(that.t) : that.t == null) && (u != null ? u.equals(that.u) : that.u == null);
+        return (Objects.equals(t, that.t)) && (Objects.equals(u, that.u));
     }
     
     @Override
