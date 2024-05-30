@@ -135,7 +135,7 @@ public class LogSafeGson {
         for (Field f : FieldUtils.getAllFields(si)) {
             NoLogging an = f.getAnnotation(NoLogging.class);
             if (an != null) {
-                logger.trace(String.format("load @NoLogging annotated class: %s", si.getName()));
+                logger.trace(String.format("load @NoLogging annotated class: %s, fields: %s", si.getName(), f.getName()));
 
                 f.setAccessible(true);
                 if (an.behavior().auto()) {
@@ -143,11 +143,24 @@ public class LogSafeGson {
                 } else {
                     maskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 }
-            } else if (mayHasSensitiveInfo(f.getType()) && !f.getType().isEnum() && !f.getType().isAssignableFrom(si)) {
-                logger.trace(String.format("load potentially sensitive info contained class: %s", si.getName()));
-                f.setAccessible(true);
-                potentialSensitiveFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f));
             }
+
+            if (f.getType().isEnum() || f.getType().isAssignableFrom(si)) {
+                continue;
+            }
+
+            if (Collection.class.isAssignableFrom(f.getType())) {
+                Class<?> genericType = FieldUtils.getGenericType(f);
+                if (genericType == null || !mayHasSensitiveInfo(genericType)) {
+                    continue;
+                }
+            } else if (!mayHasSensitiveInfo(f.getType())) {
+                continue;
+            }
+
+            f.setAccessible(true);
+            logger.trace(String.format("load potentially sensitive info contained class: %s, fields: %s", si.getName(), f.getName()));
+            potentialSensitiveFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f));
         }
     }
 
