@@ -1,6 +1,6 @@
 package org.zstack.expon.sdk.iscsi;
 
-import org.zstack.expon.sdk.Param;
+import org.zstack.externalStorage.sdk.Param;
 
 public class IscsiClient {
     @Param(validValues = {"ip"})
