@@ -34,8 +34,10 @@ public class SourceClassMap {
 			put("org.zstack.baremetal2.chassis.BareMetal2BondingInventory", "org.zstack.sdk.BareMetal2BondingInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2BondingNicRefInventory", "org.zstack.sdk.BareMetal2BondingNicRefInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisDiskInventory", "org.zstack.sdk.BareMetal2ChassisDiskInventory");
+			put("org.zstack.baremetal2.chassis.BareMetal2ChassisGpuDeviceInventory", "org.zstack.sdk.BareMetal2ChassisGpuDeviceInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisInventory", "org.zstack.sdk.BareMetal2ChassisInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory", "org.zstack.sdk.BareMetal2ChassisNicInventory");
+			put("org.zstack.baremetal2.chassis.BareMetal2ChassisPciDeviceInventory", "org.zstack.sdk.BareMetal2ChassisPciDeviceInventory");
 			put("org.zstack.baremetal2.chassis.ipmi.BareMetal2IpmiChassisInventory", "org.zstack.sdk.BareMetal2IpmiChassisInventory");
 			put("org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingInventory", "org.zstack.sdk.BareMetal2ChassisOfferingInventory");
 			put("org.zstack.baremetal2.gateway.BareMetal2GatewayInventory", "org.zstack.sdk.BareMetal2GatewayInventory");
@@ -793,9 +795,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BareMetal2BondingInventory", "org.zstack.baremetal2.chassis.BareMetal2BondingInventory");
 			put("org.zstack.sdk.BareMetal2BondingNicRefInventory", "org.zstack.baremetal2.chassis.BareMetal2BondingNicRefInventory");
 			put("org.zstack.sdk.BareMetal2ChassisDiskInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisDiskInventory");
+			put("org.zstack.sdk.BareMetal2ChassisGpuDeviceInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisGpuDeviceInventory");
 			put("org.zstack.sdk.BareMetal2ChassisInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisInventory");
 			put("org.zstack.sdk.BareMetal2ChassisNicInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory");
 			put("org.zstack.sdk.BareMetal2ChassisOfferingInventory", "org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingInventory");
+			put("org.zstack.sdk.BareMetal2ChassisPciDeviceInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisPciDeviceInventory");
 			put("org.zstack.sdk.BareMetal2GatewayInventory", "org.zstack.baremetal2.gateway.BareMetal2GatewayInventory");
 			put("org.zstack.sdk.BareMetal2GatewayProvisionNicInventory", "org.zstack.baremetal2.gateway.BareMetal2GatewayProvisionNicInventory");
 			put("org.zstack.sdk.BareMetal2InstanceInventory", "org.zstack.baremetal2.instance.BareMetal2InstanceInventory");
