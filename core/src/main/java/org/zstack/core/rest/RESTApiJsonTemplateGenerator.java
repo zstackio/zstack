@@ -5,6 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -137,7 +138,7 @@ public class RESTApiJsonTemplateGenerator {
         do {
             Field[] fields = clazz.getDeclaredFields();
             for (Field f : fields) {
-                if (f.isAnnotationPresent(APINoSee.class)) {
+                if (f.isAnnotationPresent(APINoSee.class) || f.isAnnotationPresent(NoJsonSchema.class)) {
                     continue;
                 }
                 if (Modifier.isStatic(f.getModifiers())) {
