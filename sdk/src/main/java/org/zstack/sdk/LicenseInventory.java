@@ -68,6 +68,14 @@ public class LicenseInventory  {
         return this.licenseType;
     }
 
+    public java.lang.String licenseAttribute;
+    public void setLicenseAttribute(java.lang.String licenseAttribute) {
+        this.licenseAttribute = licenseAttribute;
+    }
+    public java.lang.String getLicenseAttribute() {
+        return this.licenseAttribute;
+    }
+
     public java.lang.String expiredDate;
     public void setExpiredDate(java.lang.String expiredDate) {
         this.expiredDate = expiredDate;
