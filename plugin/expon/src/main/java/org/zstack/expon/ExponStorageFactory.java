@@ -1,26 +1,29 @@
 package org.zstack.expon;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.zstack.core.singleflight.MultiNodeSingleFlightImpl;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.volume.VolumeAfterExpungeExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, BackupStorageSelector, VolumeAfterExpungeExtensionPoint {
 
     private List<String> preferBackupStorageTypes;
 
-    @Autowired
-    private ExternalPrimaryStorageFactory extPsFactory;
+    private static Map<String, ExponStorageController> controllers = new ConcurrentHashMap<>();
+
 
     @Override
     public PrimaryStorageControllerSvc buildControllerSvc(ExternalPrimaryStorageVO vo) {
-        return new ExponStorageController(vo);
+        ExponStorageController svc = new ExponStorageController(vo);
+        MultiNodeSingleFlightImpl.register(svc.apiHelper);
+        controllers.put(vo.getUuid(), svc);
+        return svc;
     }
 
     @Override
@@ -55,7 +58,6 @@ public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, Ba
             return;
         }
 
-        PrimaryStorageControllerSvc controller = extPsFactory.getControllerSvc(volume.getPrimaryStorageUuid());
-        ((ExponStorageController) controller).cleanActiveRecord(volume);
+        controllers.get(volume.getPrimaryStorageUuid()).cleanActiveRecord(volume);
     }
 }

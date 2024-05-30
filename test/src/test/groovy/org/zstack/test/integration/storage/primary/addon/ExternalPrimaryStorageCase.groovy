@@ -5,6 +5,7 @@ import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.core.singleflight.MultiNodeSingleFlightImpl
 import org.zstack.expon.ExponApiHelper
 import org.zstack.expon.ExponStorageController
 import org.zstack.expon.sdk.iscsi.IscsiClientGroupModule
@@ -67,7 +68,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     ExponStorageController controller
     ExponApiHelper apiHelper
 
-    String exponUrl = "https://admin:Admin123@172.25.101.96:443/pool"
+    String exponUrl = "https://admin:Admin123@172.25.108.64:443/pool"
     String exportProtocol = "iscsi://"
 
     @Override
@@ -202,6 +203,8 @@ class ExternalPrimaryStorageCase extends SubCase {
             reconnectPrimaryStorage {
                 uuid = ps.uuid
             }
+
+            testDeletePs()
         }
     }
 
@@ -297,9 +300,7 @@ class ExternalPrimaryStorageCase extends SubCase {
     }
 
     void testSessionExpired() {
-        ExponStorageController svc = Platform.getComponentLoader().getComponent(ExternalPrimaryStorageFactory.class)
-                .getControllerSvc(ps.uuid) as ExponStorageController
-        svc.apiHelper.sessionId = "invalid"
+        controller.apiHelper.sessionId = "invalid"
     }
 
     void testCreateVm() {
@@ -699,6 +700,23 @@ class ExternalPrimaryStorageCase extends SubCase {
         retryInSecs {
             assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image.uuid).count() == 0
             assert Q.New(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.imageUuid, image.uuid).count() == 0
+        }
+    }
+
+    void testDeletePs() {
+        assert MultiNodeSingleFlightImpl.getExecutor(ps.uuid) != null
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        deletePrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        retryInSecs {
+            assert MultiNodeSingleFlightImpl.getExecutor(ps.uuid) == null
         }
     }
 
