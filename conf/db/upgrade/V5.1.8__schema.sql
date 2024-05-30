@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ALTER TABLE `zstack`.`AuditsVO` ADD COLUMN `startTime` bigint(20);
 
 CREATE INDEX idx_startTime ON AuditsVO (startTime);
@@ -191,3 +190,31 @@ CREATE TABLE IF NOT EXISTS `HostHwMonitorStatusVO`
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkHostHwMonitorStatusVO` FOREIGN KEY (`uuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2ChassisPciDeviceVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+    `chassisUuid` varchar(32) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `type` varchar(32) NOT NULL,
+    `pciDeviceAddress` varchar(32) NOT NULL,
+    `vendorId` varchar(64) NOT NULL,
+    `deviceId` varchar(64) NOT NULL,
+    `subvendorId` varchar(64) DEFAULT NULL,
+    `subdeviceId` varchar(64) DEFAULT NULL,
+    `iommuGroup` varchar(255) DEFAULT NULL,
+    `name` varchar(255) NOT NULL,
+    `vendor` varchar(128) DEFAULT NULL,
+    `device` varchar(128) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2ChassisGpuDeviceVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `serialNumber` varchar(255),
+    `memory` varchar(255),
+    `power` varchar(255),
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkBm2ChassisGpuDeviceVOBm2ChassisPciDeviceVO` FOREIGN KEY (`uuid`) REFERENCES `BareMetal2ChassisPciDeviceVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
