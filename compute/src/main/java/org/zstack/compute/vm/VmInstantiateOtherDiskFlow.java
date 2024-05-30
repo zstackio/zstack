@@ -29,13 +29,11 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.sql.Array;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmInstantiateOtherDiskFlow implements Flow {
@@ -55,7 +53,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
     APICreateVmInstanceMsg.DiskAO diskAO;
     VolumeInventory volumeInventory;
 
-    VmInstantiateOtherDiskFlow(APICreateVmInstanceMsg.DiskAO diskAO) {
+    public VmInstantiateOtherDiskFlow(APICreateVmInstanceMsg.DiskAO diskAO) {
         this.diskAO = diskAO;
     }
 
@@ -172,7 +170,6 @@ public class VmInstantiateOtherDiskFlow implements Flow {
 
                         CreateVolumeMsg msg = new CreateVolumeMsg();
                         msg.setAccountUuid(accountUuid);
-                        msg.setVmInstanceUuid(vmUuid);
                         msg.setSize(diskSize);
                         msg.setName(diskAO.getName());
                         msg.setFormat(volumeFormat);
@@ -316,7 +313,10 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         cmsg.setImageUuid(diskAO.getTemplateUuid());
                         cmsg.setName(diskAO.getName());
                         cmsg.setAccountUuid(accountUuid);
-                        cmsg.setSystemTags(diskAO.getSystemTags());
+                        cmsg.setSystemTags(new ArrayList<>());
+                        if (!CollectionUtils.isEmpty(diskAO.getSystemTags())) {
+                            cmsg.getSystemTags().addAll(diskAO.getSystemTags());
+                        }
                         cmsg.setDescription(String.format("vm-%s-data-volume", vmUuid));
                         if (diskAO.getPrimaryStorageUuid() != null) {
                             cmsg.setPrimaryStorageUuid(diskAO.getPrimaryStorageUuid());
