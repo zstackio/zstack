@@ -12,20 +12,28 @@ public class GpuDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
         return this.serialNumber;
     }
 
-    public java.lang.String memory;
-    public void setMemory(java.lang.String memory) {
+    public java.lang.Long memory;
+    public void setMemory(java.lang.Long memory) {
         this.memory = memory;
     }
-    public java.lang.String getMemory() {
+    public java.lang.Long getMemory() {
         return this.memory;
     }
 
-    public java.lang.String power;
-    public void setPower(java.lang.String power) {
+    public java.lang.Long power;
+    public void setPower(java.lang.Long power) {
         this.power = power;
     }
-    public java.lang.String getPower() {
+    public java.lang.Long getPower() {
         return this.power;
+    }
+
+    public java.lang.Boolean isDriverLoaded;
+    public void setIsDriverLoaded(java.lang.Boolean isDriverLoaded) {
+        this.isDriverLoaded = isDriverLoaded;
+    }
+    public java.lang.Boolean getIsDriverLoaded() {
+        return this.isDriverLoaded;
     }
 
 }

@@ -1035,7 +1035,7 @@ public abstract class HostBase extends AbstractHost {
         if (msg.isNewAdd() || msg.isCalledByAPI()) {
             return false;
         }
-        
+
         return upgradeChecker.skipConnectAgent(self.getUuid());
     }
 
@@ -1105,10 +1105,10 @@ public abstract class HostBase extends AbstractHost {
         }
         if (hostStatus == HostStatus.Disconnected) {
             SQL.New(SystemTagVO.class)
-                .eq(SystemTagVO_.resourceUuid, self.getUuid())
-                .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
-                .like(SystemTagVO_.tag, "ConnectedTime::%")
-                .hardDelete();
+                    .eq(SystemTagVO_.resourceUuid, self.getUuid())
+                    .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
+                    .like(SystemTagVO_.tag, "ConnectedTime::%")
+                    .hardDelete();
         }
     }
 
@@ -1269,7 +1269,7 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void run(SyncTaskChain chain) {
                 checkState();
-                
+
                 if(skipConnectHost(msg)){
                     completion.success();
                     chain.next();

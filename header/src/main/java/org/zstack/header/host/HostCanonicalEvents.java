@@ -4,6 +4,9 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.NeedJsonSchema;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created by xing5 on 2016/3/22.
  */
@@ -27,6 +30,7 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_GPU_REMOVE_TRIGGERED = "/host/physicalGpu/remove/triggered";
     public static final String HOST_PHYSICAL_GPU_STATUS_ABNORMAL = "/host/physicalGpu/status/abnormal";
     public static final String HOST_PHYSICAL_VGPU_STATUS_ABNORMAL = "/host/physicalVGpu/status/abnormal";
+    public static final String HOST_PHYSICAL_RAID_STATUS_ABNORMAL = "/host/physicalRaid/status/abnormal";
 
 
     @NeedJsonSchema
@@ -236,6 +240,37 @@ public class HostCanonicalEvents {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalRaidStatusAbnormalData {
+        private String hostUuid;
+        private String targetId;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getTargetId() {
+            return targetId;
+        }
+
+        public void setTargetId(String targetId) {
+            this.targetId = targetId;
         }
 
         public String getStatus() {

@@ -1,8 +1,9 @@
 CREATE TABLE IF NOT EXISTS `zstack`.`GpuDeviceVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `serialNumber` varchar(255),
-    `memory` varchar(255),
-    `power` varchar(255),
+    `memory` bigint unsigned NULL DEFAULT 0,
+    `power` bigint unsigned NULL DEFAULT 0,
+    `isDriverLoaded` TINYINT(1) NOT NULL DEFAULT 0,
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkGpuDeviceInfoVOPciDeviceVO` FOREIGN KEY (`uuid`) REFERENCES `PciDeviceVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -37,3 +38,19 @@ CREATE PROCEDURE MdevDeviceAddVendor()
 DELIMITER ;
 call MdevDeviceAddVendor;
 DROP PROCEDURE IF EXISTS `MdevDeviceAddVendor`;
+
+CREATE TABLE IF NOT EXISTS `HostHwMonitorStatusVO`
+(
+    `uuid` varchar(32)  NOT NULL UNIQUE,
+    `cpuStatus` TINYINT(1)  unsigned DEFAULT 1,
+    `memoryStatus` TINYINT(1) unsigned DEFAULT 1,
+    `diskStatus` TINYINT(1) unsigned DEFAULT 1,
+    `nicStatus` TINYINT(1) unsigned DEFAULT 1,
+    `gpuStatus` TINYINT(1) unsigned DEFAULT 1,
+    `powerSupplyStatus` TINYINT(1) unsigned DEFAULT 1,
+    `fanStatus` TINYINT(1) unsigned DEFAULT 1,
+    `raidStatus` TINYINT(1) unsigned DEFAULT 1,
+    `temperatureStatus` TINYINT(1) unsigned DEFAULT 1,
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkHostHwMonitorStatusVO` FOREIGN KEY (`uuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8;

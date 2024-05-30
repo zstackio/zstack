@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.zstack.core.upgrade.GrayUpgradeAgent;
 import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.validation.ConditionalValidation;
@@ -4697,6 +4698,35 @@ public class KVMAgentCommands {
         public String pcideviceAddress;
     }
 
+    public static class HostPhysicalDeviceStatusAlarmEventCmd {
+        private String host;
+        private String type;
+        private Map<String, Object> additionalProperties = new HashMap<>();
 
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public Map<String, Object> getAdditionalProperties() {
+            return additionalProperties;
+        }
+
+        @JsonAnySetter
+        public void setAdditionalProperties(Map<String, Object> additionalProperties) {
+            this.additionalProperties = additionalProperties;
+        }
+    }
 
 }
