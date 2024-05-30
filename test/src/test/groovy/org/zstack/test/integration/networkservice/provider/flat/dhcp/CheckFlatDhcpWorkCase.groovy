@@ -16,6 +16,7 @@ import org.zstack.sdk.FreeIpInventory
 import org.zstack.sdk.GetL3NetworkDhcpIpAddressResult
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.NetworkServiceL3NetworkRefInventory
+import org.zstack.sdk.UsedIpInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -242,6 +243,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
 
     void testDisableIpv4Dhcp(){
         final L3NetworkInventory l31 = env.inventoryByName("l3-1")
+        VmInstanceInventory vm = env.inventoryByName("vm-1")
 
         List<FlatDhcpBackend.FlushDhcpNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.FlushDhcpNamespaceCmd>())
         env.afterSimulator(FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH) { rsp, HttpEntity<String> e1 ->
@@ -314,6 +316,25 @@ class CheckFlatDhcpWorkCase extends SubCase{
         }
         assert ret.ip == freeIp4s.get(4).ip
         String oldDhcpServer = ret.ip
+
+        /* can not change dhcp server ip, because IP address is used */
+        VmNicInventory l31Nic
+        for (VmNicInventory nic : vm.vmNics) {
+            if (nic.l3NetworkUuid == l31.uuid) {
+                l31Nic = nic
+            }
+        }
+        expect(AssertionError.class) {
+            changeL3NetworkDhcpIpAddress {
+                l3NetworkUuid = l31.uuid
+                dhcpServerIp = l31Nic.ip
+            }
+        }
+
+        ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l31.uuid
+        }
+        assert ret.ip == oldDhcpServer
 
         freeIp4s = getFreeIp {
             l3NetworkUuid = l31.getUuid()

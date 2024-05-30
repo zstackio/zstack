@@ -30,6 +30,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -247,18 +248,24 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     return;
                 }
 
-                for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
-                    String dhcpIp = null;
-                    if (IPv6NetworkUtils.isValidIpv4(e.getKey()) && msg.getDhcpServerIp() != null) {
-                        dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, true, e.getKey(), null);
-                    } else if (IPv6NetworkUtils.isIpv6Address(e.getKey()) && msg.getDhcpv6ServerIp() != null){
-                        dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, true, e.getKey(), null);
-                    }
+                try {
+                    for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
+                        String dhcpIp = null;
+                        if (IPv6NetworkUtils.isValidIpv4(e.getKey()) && msg.getDhcpServerIp() != null) {
+                            dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, true, e.getKey(), null);
+                        } else if (IPv6NetworkUtils.isIpv6Address(e.getKey()) && msg.getDhcpv6ServerIp() != null){
+                            dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, true, e.getKey(), null);
+                        }
 
-                    if (dhcpIp == null || !dhcpIp.equals(e.getKey())) {
-                        logger.error(String.format("roll back dhcp server ip to [%s], but got [%s]", e.getKey(), dhcpIp));
+                        if (dhcpIp == null || !dhcpIp.equals(e.getKey())) {
+                            logger.error(String.format("roll back dhcp server ip to [%s], but got [%s]", e.getKey(), dhcpIp));
+                        }
                     }
+                } catch (Exception e) {
+                    /* ignore exception */
+                    logger.error(String.format("roll back dhcp server ip failed, %s", e.getMessage()));
                 }
+
                 trigger.rollback();
             }
         }).then(new Flow() {
@@ -266,21 +273,25 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (msg.getDhcpServerIp() != null) {
-                    String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, true, msg.getDhcpServerIp(), null);
-                    if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpServerIp())) {
-                        trigger.fail(operr("change dhcp server ip to [%s], but got [%s]", msg.getDhcpServerIp(), dhcpIp));
-                        return;
+                try {
+                    if (msg.getDhcpServerIp() != null) {
+                        String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, true, msg.getDhcpServerIp(), null);
+                        if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpServerIp())) {
+                            trigger.fail(operr("change dhcp server ip to [%s], but got [%s]", msg.getDhcpServerIp(), dhcpIp));
+                            return;
+                        }
                     }
-                }
 
-                if (msg.getDhcpv6ServerIp() != null) {
-                    String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, true, msg.getDhcpv6ServerIp(), null);
-                    if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpv6ServerIp())) {
-                        trigger.fail(operr("change dhcp server ip to [%s], but got [%s]", msg.getDhcpv6ServerIp(), dhcpIp));
+                    if (msg.getDhcpv6ServerIp() != null) {
+                        String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, true, msg.getDhcpv6ServerIp(), null);
+                        if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpv6ServerIp())) {
+                            trigger.fail(operr("change dhcp server ip to [%s], but got [%s]", msg.getDhcpv6ServerIp(), dhcpIp));
+                        }
                     }
+                    trigger.next();
+                } catch (Exception e) {
+                    trigger.fail(operr("allocate dhcp server ip failed, %s", e.getMessage()));
                 }
-                trigger.next();
             }
 
             @Override
@@ -292,6 +303,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 if (msg.getDhcpv6ServerIp() != null) {
                     deleteDhcpServerIp(msg.getL3NetworkUuid(), msg.getDhcpv6ServerIp());
                 }
+
+                trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "enable-dhcp-server-on-hosts";
@@ -2432,16 +2445,21 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     continue;
                 }
 
-                String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
-                dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
-                if (NetworkUtils.isIpv4Address(dhcpServerIp)) {
-                    allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv4, true, dhcpServerIp, null);
-                } else if (IPv6NetworkUtils.isIpv6Address(dhcpServerIp)) {
-                    allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv6, true, dhcpServerIp, null);
-                } else {
-                    completion.fail(argerr("could not enable dhcp, because dhcp server ip[%s] error", dhcpServerIp));
-                    return;
+                try {
+                    String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+                    dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
+                    if (NetworkUtils.isIpv4Address(dhcpServerIp)) {
+                        allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv4, true, dhcpServerIp, null);
+                    } else if (IPv6NetworkUtils.isIpv6Address(dhcpServerIp)) {
+                        allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv6, true, dhcpServerIp, null);
+                    } else {
+                        completion.fail(argerr("could not enable dhcp, because dhcp server ip[%s] error", dhcpServerIp));
+                        return;
+                    }
+                } catch (Exception e) {
+                    completion.fail(argerr("could not enable dhcp, because dhcp server ip[%s] error", e.getMessage()));
                 }
+
             }
         }
 
