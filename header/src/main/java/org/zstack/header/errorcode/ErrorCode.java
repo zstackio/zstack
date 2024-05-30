@@ -1,6 +1,7 @@
 package org.zstack.header.errorcode;
 
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.string.ErrorCodeElaboration;
@@ -20,6 +21,7 @@ public class ErrorCode implements Serializable, Cloneable {
     private ErrorCodeElaboration messages;
     private String cost;
     private ErrorCode cause;
+    @NoJsonSchema
     private LinkedHashMap opaque;
 
     public LinkedHashMap getOpaque() {
