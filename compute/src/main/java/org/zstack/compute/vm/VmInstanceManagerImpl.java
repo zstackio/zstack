@@ -608,7 +608,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }
 
-        List<String> l3UuidListOfCurrentAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
+        List<String> l3UuidListOfCurrentAccount;
+        if (!AccountConstant.isAdminPermission(accountUuid)) {
+            l3UuidListOfCurrentAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
+        } else {
+            l3UuidListOfCurrentAccount = null;
+        }
+
         if (l3UuidListOfCurrentAccount == null) {
             return L3NetworkInventory.valueOf(l3s);
         }
