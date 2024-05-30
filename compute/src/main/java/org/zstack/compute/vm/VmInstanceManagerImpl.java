@@ -39,10 +39,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.*;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
@@ -378,7 +375,21 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handle(APIGetInterdependentL3NetworksImagesMsg msg) {
         final String accountUuid = msg.getSession().getAccountUuid();
         if (msg.getImageUuid() != null) {
-            getInterdependentL3NetworksByImageUuid(msg, accountUuid);
+            thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                    .setSyncSignature(String.format("get-interdependent-l3-by-image-%s-in-zone-%s",
+                            msg.getImageUuid(),
+                            msg.getZoneUuid()))
+                    .run((completion) -> completion.success(getInterdependentL3NetworksByImageUuid(msg, accountUuid)))
+                    .done(((result) -> {
+                        APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
+                        if (!result.isSuccess()) {
+                            reply.setError(result.getErrorCode());
+                        } else {
+                            reply.setInventories((List<L3NetworkInventory>) result.getResult());
+                        }
+
+                        bus.reply(msg, reply);
+                    })));
         } else {
             getInterdependentImagesByL3NetworkUuids(msg);
         }
@@ -472,9 +483,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Transactional(readOnly = true)
-    private void getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg, String accountUuid) {
-        APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
-
+    private List<L3NetworkInventory> getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg, String accountUuid) {
         String sql = "select bs" +
                 " from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
                 " where bs.uuid = ref.backupStorageUuid" +
@@ -497,8 +506,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             l3s = ext.afterFilterByImage(l3s, bsUuids, msg.getImageUuid());
         }
 
-        reply.setInventories(l3s);
-        bus.reply(msg, reply);
+        return l3s;
     }
 
     @Transactional(readOnly = true)
@@ -607,7 +615,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }
 
-        List<String> l3UuidListOfCurrentAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
+        List<String> l3UuidListOfCurrentAccount;
+        if (!AccountConstant.isAdminPermission(accountUuid)) {
+            l3UuidListOfCurrentAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
+        } else {
+            l3UuidListOfCurrentAccount = null;
+        }
+
         if (l3UuidListOfCurrentAccount == null) {
             return L3NetworkInventory.valueOf(l3s);
         }

@@ -14,6 +14,9 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
+
+import java.util.concurrent.ConcurrentHashMap
+
 /**
  * Created by zhanyong.miao on 2019/01/05.
  */
@@ -268,12 +271,40 @@ test the API ApiGetInterdependentL3NetworksImagesMsg
         def l33 = env.inventoryByName("l3-3") as L3NetworkInventory
         def l34 = env.inventoryByName("l3-4") as L3NetworkInventory
 
-        List< L3NetworkInventory> l3s = getInterdependentL3NetworksImages {
+        List<L3NetworkInventory> l3s = getInterdependentL3NetworksImages {
             zoneUuid = zone.uuid
             imageUuid = sftpImage1.uuid
         }
 
         assert (3 == l3s.size())
+
+        // batch api queries
+        Map<Integer, List<L3NetworkInventory>> results = new ConcurrentHashMap<>()
+        def threads = []
+        for (int i = 0; i < 5; i++) {
+            def key = i
+            def thread = Thread.start {
+                List<L3NetworkInventory> result = getInterdependentL3NetworksImages {
+                    zoneUuid = zone.uuid
+                    imageUuid = sftpImage1.uuid
+                }
+                results.put(key, result)
+            }
+
+            threads.add(thread)
+        }
+
+        threads.each { it.join() }
+        assert (results.size() == 5)
+        // confirm all list contains the same elements
+        List<L3NetworkInventory> first = results.get(0)
+        results.each { key, value ->
+            assert (first.size() == value.size())
+            first.each { l3 ->
+                assert value.uuid.contains(l3.uuid)
+            }
+        }
+
         List<String> uuids = [l31.uuid, l32.uuid,l33.uuid]
         l3s.each { l3 ->
             assert uuids.contains(l3.uuid)
