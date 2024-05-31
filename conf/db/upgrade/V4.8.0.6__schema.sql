@@ -38,3 +38,5 @@ DROP TABLE IF EXISTS `zstack`.`LdapAccountRefVO`;
 DROP TABLE IF EXISTS `zstack`.`LdapResourceRefVO`;
 
 CALL ADD_COLUMN('AccountVO', 'state', 'varchar(128)', 0, 'Enabled');
+
+ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD COLUMN `zoneUuid` VARCHAR(32) DEFAULT NULL;
