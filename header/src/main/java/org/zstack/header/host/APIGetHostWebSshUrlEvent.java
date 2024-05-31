@@ -17,7 +17,6 @@ public class APIGetHostWebSshUrlEvent extends APIEvent {
         super(apiId);
     }
 
-    @NoLogging
     private String url;
 
     public String getUrl() {
