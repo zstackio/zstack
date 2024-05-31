@@ -300,21 +300,26 @@ class CheckFlatDhcpWorkCase extends SubCase{
             }
         }
 
-        def freeIp4s = getFreeIp {
-            l3NetworkUuid = l31.getUuid()
-            ipVersion = IPv6Constants.IPv4
-            limit = 5
-        } as List<FreeIpInventory>
+        /* l31 ip range: 192.168.100.10 ~ 192.168.100.100，  */
 
         attachNetworkServiceToL3Network {
             l3NetworkUuid = l31.uuid
             networkServices = ["Flat":["DHCP"]]
-            systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::NULL", freeIp4s.get(4).ip)]
+            systemTags = [String.format("flatNetwork::DhcpServer::192.168.100.149::ipUuid::NULL")]
         }
         ret = getL3NetworkDhcpIpAddress {
             l3NetworkUuid = l31.uuid
         }
-        assert ret.ip == freeIp4s.get(4).ip
+        assert ret.ip == "192.168.100.149"
+
+        changeL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l31.uuid
+            dhcpServerIp = "192.168.100.150"
+        }
+        ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l31.uuid
+        }
+        assert ret.ip == "192.168.100.150"
         String oldDhcpServer = ret.ip
 
         /* can not change dhcp server ip, because IP address is used */
@@ -336,7 +341,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
         }
         assert ret.ip == oldDhcpServer
 
-        freeIp4s = getFreeIp {
+        List<FreeIpInventory> freeIp4s = getFreeIp {
             l3NetworkUuid = l31.getUuid()
             ipVersion = IPv6Constants.IPv4
             limit = 1
