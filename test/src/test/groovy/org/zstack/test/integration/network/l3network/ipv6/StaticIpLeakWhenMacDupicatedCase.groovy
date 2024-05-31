@@ -12,6 +12,7 @@ import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.network.IPv6Constants
 
 /**
  * Created by shixin on 2018/11/12.
@@ -48,8 +49,13 @@ class StaticIpLeakWhenMacDupicatedCase extends SubCase {
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
+        List<UsedIpInventory> freeIp4s = getFreeIp {
+            l3NetworkUuid = l3.uuid
+            ipVersion = IPv6Constants.IPv4
+            limit = 1
+        }
         String staticMac = "00:00:01:00:00:02"
-        String staticIp = "192.168.100.10"
+        String staticIp = freeIp4s.get(0).ip
 
         CreateVmInstanceAction action = new CreateVmInstanceAction()
         action.name = "vm-static-ip"

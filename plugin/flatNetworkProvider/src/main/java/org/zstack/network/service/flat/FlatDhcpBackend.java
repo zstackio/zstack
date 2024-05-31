@@ -209,7 +209,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         APIChangeL3NetworkDhcpIpAddressEvent event = new APIChangeL3NetworkDhcpIpAddressEvent(msg.getId());
         L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         List<IpRangeVO> ip4Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
-        List<IpRangeVO> ip6Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+        List<IpRangeVO> ip6Ranges = l3VO.getIpRanges().stream().filter(
+                ipr -> ipr.getIpVersion() == IPv6Constants.IPv6 && !ipr.getAddressMode().equals(IPv6Constants.SLAAC))
+                .collect(Collectors.toList());
 
         /*
         * step #1, delete old dhcp server ip
@@ -329,11 +331,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "enable-dhcp-server-on-hosts";
+            String __name__ = "refresh-dhcp-server-on-hosts";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                enableNetworkService(l3VO, new ArrayList<>(), new Completion(trigger) {
+                refreshDhcpInfoToHosts(l3VO, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -945,7 +947,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
             MessageReply reply = bus.call(amsg);
             if (!reply.isSuccess()) {
-                throw new OperationFailureException(reply.getError());
+                return null;
             }
 
             AllocateIpReply r = reply.castReply();
@@ -2349,10 +2351,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void validate(APIDetachNetworkServiceFromL3NetworkMsg msg) {
-        if (!isProvidedByMe(msg.getL3NetworkUuid())) {
-            throw new ApiMessageInterceptionException(argerr("could disable dhcp server ip, because flat dhcp is not enabled"));
-        }
-
         String owner = acntMgr.getOwnerAccountUuidOfResource(msg.getL3NetworkUuid());
         if (!acntMgr.isAdmin(msg.getSession()) && !msg.getSession().getAccountUuid().equals(owner)) {
             throw new ApiMessageInterceptionException(argerr("could change dhcp server ip, because %s is not the owner of l3 network[uuid:%s]",
@@ -2573,7 +2571,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     @Override
     public void enableNetworkService(L3NetworkVO l3VO, List<String> systemTags, Completion completion) {
         List<IpRangeVO> ip4Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
-        List<IpRangeVO> ip6Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+        List<IpRangeVO> ip6Ranges = l3VO.getIpRanges().stream().filter(ipr ->
+                ipr.getIpVersion() == IPv6Constants.IPv6 && !ipr.getAddressMode().equals(IPv6Constants.SLAAC))
+                .collect(Collectors.toList());
 
         String dhcpIp = null;
         String dhcp6Ip = null;
@@ -2625,7 +2625,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             } else {
                 allocate_ip = true;
             }
-            dhcp6Ip = allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv4, allocate_ip, dhcp6Ip, null);
+            dhcp6Ip = allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv6, allocate_ip, dhcp6Ip, null);
             if (dhcp6Ip == null) {
                 completion.fail(argerr("allocated dhcp server ip failed"));
                 return;
