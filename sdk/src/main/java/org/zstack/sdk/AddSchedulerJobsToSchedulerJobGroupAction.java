@@ -31,6 +31,9 @@ public class AddSchedulerJobsToSchedulerJobGroupAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List schedulerJobUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map priorities;
+
     @Param(required = false)
     public java.util.List systemTags;
 
