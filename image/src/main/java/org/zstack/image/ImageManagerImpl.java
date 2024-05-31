@@ -1309,7 +1309,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
                                         inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
                             }
-                            pluginRgty.getExtensionList(AfterAddImageExtensionPoint.class).forEach(exp -> exp.saveEncryptAfterAddImage(vo.getUuid()));
 
                             completion.done();
                         }
@@ -1338,6 +1337,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     if (vo.getStatus() == ImageStatus.Ready) {
                         extEmitter.afterAddImage(einv);
+                        pluginRgty.getExtensionList(AfterAddImageExtensionPoint.class).forEach(exp -> exp.saveEncryptAfterAddImage(vo.getUuid()));
                     }
 
                     event.inv = einv;
