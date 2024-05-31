@@ -20,6 +20,14 @@ public class SchedulerJobGroupJobRefInventory  {
         return this.schedulerJobUuid;
     }
 
+    public java.lang.Integer priority;
+    public void setPriority(java.lang.Integer priority) {
+        this.priority = priority;
+    }
+    public java.lang.Integer getPriority() {
+        return this.priority;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
