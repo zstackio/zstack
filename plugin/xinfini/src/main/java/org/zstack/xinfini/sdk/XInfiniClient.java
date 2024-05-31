@@ -64,6 +64,7 @@ public class XInfiniClient extends ExternalStorageApiClient {
 
         if (ret.getMessage() != null) {
             XInfiniResponse rsp = new XInfiniResponse();
+            rsp.setReturnCode(ret.getReturnCode());
             rsp.setMessage(ret.getMessage());
             return JSONObjectUtil.rehashObject(rsp, clz);
         }
@@ -273,6 +274,7 @@ public class XInfiniClient extends ExternalStorageApiClient {
             XinfiniApiResult res = new XinfiniApiResult();
 
             if (validHttpStatus.contains(response.code())) {
+                res.setReturnCode(response.code());
                 String body = response.body().string();
                 XInfiniResponse rsp = gson.fromJson(body, XInfiniResponse.class);
                 if (rsp.isSuccess()) {
@@ -296,6 +298,7 @@ public class XInfiniClient extends ExternalStorageApiClient {
                 }
             }
 
+            res.setReturnCode(code);
             res.setMessage(String.format("the http status code[%s] details[%s] indicates a failure happened", code, details));
             return res;
         }

@@ -7,7 +7,7 @@ package org.zstack.xinfini;
  **/
 public class XInfiniPathHelper {
 
-    public static String buildVhostControllerName(String zsVolumeUuid) {
+    public static String buildBdevName(String zsVolumeUuid) {
         return "volume-" + zsVolumeUuid;
     }
 

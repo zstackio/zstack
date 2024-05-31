@@ -17,6 +17,7 @@ import org.zstack.xinfini.sdk.metric.QueryMetricRequest;
 import org.zstack.xinfini.sdk.metric.QueryMetricResponse;
 import org.zstack.xinfini.sdk.node.*;
 import org.zstack.xinfini.sdk.pool.*;
+import org.zstack.xinfini.sdk.vhost.*;
 import org.zstack.xinfini.sdk.volume.*;
 
 import java.util.List;
@@ -53,13 +54,13 @@ public class XInfiniApiHelper {
                 return;
             }
 
-            completion.fail(operr("expon request failed, message: %s.", result.getMessage()));
+            completion.fail(operr("xinfini request failed, message: %s.", result.getMessage()));
         });
     }
 
     public void errorOut(XInfiniResponse rsp) {
         if (!rsp.isSuccess()) {
-            throw new OperationFailureException(operr("expon request failed, message: %s.", rsp.getMessage()));
+            throw new OperationFailureException(operr("xinfini request failed, message: %s.", rsp.getMessage()));
         }
     }
 
@@ -92,6 +93,28 @@ public class XInfiniApiHelper {
         return callErrorOut(req, GetNodeResponse.class).toModule();
     }
 
+    public List<BdcModule> queryBdcs() {
+        QueryBdcRequest req = new QueryBdcRequest();
+        return queryErrorOut(req, QueryBdcResponse.class).getItems();
+    }
+
+    public BdcModule queryBdcByIp(String ip) {
+        QueryBdcRequest req = new QueryBdcRequest();
+        req.q = String.format("spec.ip:%s", ip);
+        QueryBdcResponse rsp = queryErrorOut(req, QueryBdcResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return null;
+        }
+
+        return rsp.getItems().get(0);
+    }
+
+    public BdcModule getBdc(int id) {
+        GetBdcRequest req = new GetBdcRequest();
+        req.setId(id);
+        return callErrorOut(req, GetBdcResponse.class).toModule();
+    }
+
     public BsPolicyModule getBsPolicy(int id) {
         GetBsPolicyRequest req = new GetBsPolicyRequest();
         req.setId(id);
@@ -120,7 +143,7 @@ public class XInfiniApiHelper {
         return rsp.getData().getResult().get(0).getValue();
     }
 
-    public VolumeModule queryVolume(String name) {
+    public VolumeModule queryVolumeByName(String name) {
         QueryVolumeRequest req = new QueryVolumeRequest();
         req.q = String.format("spec.name:%s", name);
         QueryVolumeResponse rsp = queryErrorOut(req, QueryVolumeResponse.class);
@@ -128,7 +151,7 @@ public class XInfiniApiHelper {
             return null;
         }
 
-        return rsp.getItems().stream().filter(it -> it.getSpec().getName().equals(name)).findFirst().orElse(null);
+        return rsp.getItems().get(0);
     }
 
     public VolumeModule getVolume(int id) {
@@ -159,7 +182,68 @@ public class XInfiniApiHelper {
         }.run();
     }
 
+    public BdcBdevModule createBdcBdev(int bdcId, int volumeId, String name) {
+        CreateBdcBdevRequest req = new CreateBdcBdevRequest();
+        req.setName(name);
+        req.setBdcId(bdcId);
+        req.setBsVolumeId(volumeId);
+        CreateBdcBdevResponse rsp = callErrorOut(req, CreateBdcBdevResponse.class);
+        return new Retry<BdcBdevModule>() {
+            @Override
+            @RetryCondition(onExceptions = {RetryException.class},
+                    times = XInfiniConstants.DEFAULT_POLLING_TIMES)
+            protected BdcBdevModule call() {
+                GetBdcBdevRequest gReq = new GetBdcBdevRequest();
+                gReq.setId(rsp.getSpec().getId());
+                BdcBdevModule bdevModule = callErrorOut(gReq, GetBdcBdevResponse.class).toModule();
+                if (!bdevModule.getMetadata().getState().getState().equals(MetadataState.active.toString())) {
+                    throw new RetryException(String.format("bdev %s state not active yet", gReq.getId()));
+                }
+                return bdevModule;
+            }
+        }.run();
+    }
+
+    public BdcBdevModule queryBdcBdevByVolumeIdAndBdcId(int volId, int bdcId) {
+        QueryBdcBdevRequest req = new QueryBdcBdevRequest();
+        req.q = String.format("((spec.bdc_id:%s) AND (spec.bs_volume_id:%s)", bdcId, volId);
+        QueryBdcBdevResponse rsp = queryErrorOut(req, QueryBdcBdevResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 1) {
+            return null;
+        }
+
+        return rsp.getItems().get(0);
+    }
+
+    public BdcBdevModule getBdcBdev(int id) {
+        GetBdcBdevRequest req = new GetBdcBdevRequest();
+        req.setId(id);
+        return callErrorOut(req, GetBdcBdevResponse.class).toModule();
+    }
+
+    public void deleteBdcBdev(int bdevId) {
+        GetBdcBdevRequest gReq = new GetBdcBdevRequest();
+        gReq.setId(bdevId);
+        GetBdcBdevResponse rsp = call(gReq, GetBdcBdevResponse.class);
+        if (rsp.resourceIsDeleted()) {
+            logger.info(String.format("bdev %s has been deleted, skip send delete req", bdevId));
+            return;
+        }
+
+        DeleteBdcBdevRequest req = new DeleteBdcBdevRequest();
+        req.setId(bdevId);
+        callErrorOut(req, DeleteBdcBdevResponse.class);
+    }
+
     public void deleteVolume(int volId, boolean force) {
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(volId);
+        GetVolumeResponse rsp = call(gReq, GetVolumeResponse.class);
+        if (rsp.resourceIsDeleted()) {
+            logger.info(String.format("volume %s has been deleted, skip send delete req", volId));
+            return;
+        }
+
         DeleteVolumeRequest req = new DeleteVolumeRequest();
         req.setId(volId);
         callErrorOut(req, DeleteVolumeResponse.class);

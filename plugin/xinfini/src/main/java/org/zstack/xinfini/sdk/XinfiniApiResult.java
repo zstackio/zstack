@@ -19,6 +19,15 @@ public class XinfiniApiResult {
     private static final CLogger logger = Utils.getLogger(XinfiniApiResult.class);
     private String resultString;
     private String message;
+    private int returnCode;
+
+    public int getReturnCode() {
+        return returnCode;
+    }
+
+    public void setReturnCode(int returnCode) {
+        this.returnCode = returnCode;
+    }
 
     public String getMessage() {
         return message;

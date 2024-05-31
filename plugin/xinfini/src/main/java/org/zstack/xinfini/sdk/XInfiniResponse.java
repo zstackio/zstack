@@ -7,6 +7,15 @@ import static org.zstack.core.Platform.operr;
 
 public class XInfiniResponse {
     protected String message;
+    protected int returnCode;
+
+    public int getReturnCode() {
+        return returnCode;
+    }
+
+    public void setReturnCode(int returnCode) {
+        this.returnCode = returnCode;
+    }
 
     public String getMessage() {
         return message;
@@ -22,5 +31,9 @@ public class XInfiniResponse {
 
     public ErrorCode getError() {
         return operr(message);
+    }
+
+    public boolean resourceIsDeleted() {
+        return returnCode == 404;
     }
 }
