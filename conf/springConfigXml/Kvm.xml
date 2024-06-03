@@ -32,7 +32,7 @@
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
-            <zstack:extension interface="org.zstack.configuration.GuestOsExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.config.GuestOsExtensionPoint" />
             <zstack:extension interface="org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint" />
         </zstack:plugin>
     </bean>
