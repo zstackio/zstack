@@ -280,9 +280,10 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                 new While<>(pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class)).each((ext, compl) -> {
                     List<VmInstanceDeviceAddressArchiveVO> archiveVmInfos = vidm.getAddressArchiveInfoFromArchiveForResourceUuid(getSelfInventory().getVmInstanceUuid(), getSelfInventory().getUuid(), ext.getArchiveBundleCanonicalName());
                     List<Object> bundles = archiveVmInfos.stream().map(archiveVmInfo -> (Object) JSONObjectUtil.toObject(archiveVmInfo.getMetadata(), ext.getArchiveBundleClass())).collect(Collectors.toList());
+                    // keep-backward-compatibility for old version since
                     if (bundles.isEmpty()) {
-                        compl.addError(operr("no bundle found for type:%s", ext.getArchiveBundleCanonicalName()));
-                        compl.allDone();
+                        logger.warn(String.format("no bundle found for type: %s", ext.getArchiveBundleCanonicalName()));
+                        compl.done();
                         return;
                     }
                     ext.beforeRevertMemorySnapshotGroup(getSelfInventory(), bundles, new Completion(compl) {
