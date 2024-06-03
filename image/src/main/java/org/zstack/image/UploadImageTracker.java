@@ -143,6 +143,7 @@ public class UploadImageTracker {
                 fireEvent(einv, null);
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class),
                         ext -> ext.afterAddImage(einv));
+                pluginRgty.getExtensionList(AfterAddImageExtensionPoint.class).forEach(exp -> exp.saveEncryptAfterAddImage(einv.getUuid()));
             }
 
             private void markFailure(ErrorCode reason) {
