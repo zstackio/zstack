@@ -86,3 +86,5 @@ END IF;
 END $$
 DELIMITER ;
 CALL UpgradeSNSAliyunSmsEndpointVO();
+
+UPDATE SystemTagVO SET resourceType='SNSAliyunSmsEndpointVO' where resourceType='SNSSmsEndpointVO';
