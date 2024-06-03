@@ -508,8 +508,8 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         installGlobalConfigUpdateHooks();
         removeConvertRecoverData();
         collectEncryptEntityMetadata();
-        handleNewAddedEncryptEntity();
         handleNeedDecryptEntity();
+        handleNewAddedEncryptEntity();
         return true;
     }
 
