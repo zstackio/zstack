@@ -187,6 +187,7 @@ class ExternalPrimaryStorageCase extends SubCase {
             KVMGlobalConfig.VM_SYNC_ON_HOST_PING.updateValue(true)
             simulatorEnv()
             testCreateExponStorage()
+            testComplexPassword()
             testSessionExpired()
             testCreateVm()
             testHandleInactiveVolume()
@@ -296,6 +297,15 @@ class ExternalPrimaryStorageCase extends SubCase {
 
         reconnectPrimaryStorage {
             uuid = ps.uuid
+        }
+    }
+
+    void testComplexPassword() {
+        String pswd = "Pswd@#123"
+        String encodePswd = URLEncoder.encode(pswd, "UTF-8")
+        discoverExternalPrimaryStorage {
+            url = String.format("https://complex:%s@172.25.108.64:443/pool", encodePswd)
+            identity = "expon"
         }
     }
 
