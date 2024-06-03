@@ -52,7 +52,9 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.vhost.kvm.VhostVolumeTO;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -122,7 +124,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
         AccountInfo accountInfo = new AccountInfo();
         accountInfo.username = uri.getUserInfo().split(":")[0];
-        accountInfo.password = uri.getUserInfo().split(":")[1];
+        try {
+            accountInfo.password = URLDecoder.decode(uri.getUserInfo().split(":")[1], "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
 
         apiHelper = new ExponApiHelper(accountInfo, client);
     }
