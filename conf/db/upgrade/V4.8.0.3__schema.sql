@@ -85,3 +85,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`EthernetVfPciDeviceVO` (
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `virtStatus` VARCHAR(32) DEFAULT NULL AFTER `offloadStatus`;
+
+ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD COLUMN `zoneUuid` VARCHAR(32) DEFAULT NULL;
