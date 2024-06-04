@@ -66,7 +66,7 @@ public class IPv6NetworkUtils {
         }
     }
 
-    private static String IPv6AddressToString(BigInteger ip) {
+    public static String IPv6AddressToString(BigInteger ip) {
         return IPv6Address.fromBigInteger(ip).toString();
     }
 
@@ -438,5 +438,28 @@ public class IPv6NetworkUtils {
             return false;
         }
         return ipv6.toLowerCase().startsWith("fe80");
+    }
+
+    public static boolean isValidIpRange(String startIp, String endIp) {
+        if (NetworkUtils.isIpv4Address(startIp) && NetworkUtils.isIpv4Address(endIp)) {
+            long s = NetworkUtils.ipv4StringToLong(startIp);
+            long e = NetworkUtils.ipv4StringToLong(endIp);
+            return e >= s;
+        }
+
+        if (isValidIpv6(startIp) && isValidIpv6(endIp)) {
+            BigInteger s = IPv6Address.fromString(startIp).toBigInteger();
+            BigInteger e = IPv6Address.fromString(endIp).toBigInteger();
+            return e.compareTo(s) >= 0;
+        }
+
+        return false;
+    }
+
+    public static int compareIpv6Address(String ip1, String ip2) {
+        BigInteger s = IPv6Address.fromString(ip1).toBigInteger();
+        BigInteger e = IPv6Address.fromString(ip2).toBigInteger();
+
+        return e.compareTo(s);
     }
 }

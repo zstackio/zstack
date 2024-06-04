@@ -11,10 +11,7 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Entity
@@ -47,6 +44,11 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
     @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<L3NetworkHostRouteVO> hostRoutes = new HashSet<L3NetworkHostRouteVO>();
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<ReservedIpRangeVO> reservedIpRanges = new HashSet<ReservedIpRangeVO>();
 
     @Transient
     private String accountUuid;
@@ -93,17 +95,16 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
         this.hostRoutes = hostRoutes;
     }
 
-    public List<Integer> getIpVersions() {
-        List<Integer> ipVersions = new ArrayList<>();
-        if (super.getIpVersion() == IPv6Constants.IPv4) {
-            ipVersions.add(IPv6Constants.IPv4);
-        } else if (super.getIpVersion() == IPv6Constants.IPv6) {
-            ipVersions.add(IPv6Constants.IPv6);
-        } else if (super.getIpVersion() == IPv6Constants.DUAL_STACK) {
-            ipVersions.add(IPv6Constants.IPv4);
-            ipVersions.add(IPv6Constants.IPv6);
-        }
+    public Set<ReservedIpRangeVO> getReservedIpRanges() {
+        return reservedIpRanges;
+    }
 
-        return ipVersions;
+    public void setReservedIpRanges(Set<ReservedIpRangeVO> reservedIpRanges) {
+        this.reservedIpRanges = reservedIpRanges;
+    }
+
+    public List<Integer> getIpVersions() {
+        return getIpRanges().stream().map(IpRangeAO::getIpVersion).distinct()
+                .sorted().collect(Collectors.toList());
     }
 }

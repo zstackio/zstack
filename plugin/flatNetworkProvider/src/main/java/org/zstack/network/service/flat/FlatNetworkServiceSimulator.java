@@ -21,6 +21,10 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
 import org.zstack.network.service.flat.FlatUserdataBackend.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by frank on 9/19/2015.
  */
@@ -81,6 +85,26 @@ public class FlatNetworkServiceSimulator {
         DeleteNamespaceCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteNamespaceCmd.class);
         config.deleteNamespaceCmds.add(cmd);
         DeleteNamespaceRsp rsp = new DeleteNamespaceRsp();
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value = FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH, method = RequestMethod.POST)
+    public @ResponseBody String flushNamespace(HttpEntity<String> entity) {
+        FlushDhcpNamespaceCmd cmd = JSONObjectUtil.toObject(entity.getBody(), FlushDhcpNamespaceCmd.class);
+        config.flushNamespaceCmds.add(cmd);
+        FlushDhcpNamespaceRsp rsp = new FlushDhcpNamespaceRsp();
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value = FlatDhcpBackend.ARPING_NAMESPACE_PATH, method = RequestMethod.POST)
+    public @ResponseBody String arpingNamespace(HttpEntity<String> entity) {
+        ArpingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ArpingCmd.class);
+        config.arpingNamespaceCmds.add(cmd);
+        Map<String, List<String>> result = new HashMap<>();
+        ArpingRsp rsp = new ArpingRsp();
+        rsp.result = result;
         reply(entity, rsp);
         return null;
     }

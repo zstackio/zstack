@@ -6,6 +6,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.ForwardDnsStruct;
 import org.zstack.header.network.service.NetworkServiceCentralizedDnsBackend;
 import org.zstack.header.network.service.NetworkServiceProviderType;
@@ -153,5 +154,15 @@ public class CentralizedDnsExtension extends AbstractNetworkServiceExtension imp
             }
             cDnsBackends.put(extp.getProviderType(), extp);
         }
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
     }
 }

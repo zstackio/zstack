@@ -19,6 +19,7 @@ import java.util.*;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/network-services",
+        optionalPaths = "/l3-networks/{l3NetworkUuid}/network-services/{service}",
         method = HttpMethod.DELETE,
         responseClass = APIDetachNetworkServiceFromL3NetworkEvent.class
 )
@@ -31,9 +32,12 @@ public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implemen
     /**
      * @desc a map where key is network service provider uuid and value is list of network service types
      */
-    @APIParam
+    @APIParam(required = false)
     @MapField(keyType = String.class, valueType = List.class)
     private Map<String, List<String>> networkServices;
+
+    @APIParam(required = false)
+    private String service;
 
     @Override
     public String getL3NetworkUuid() {
@@ -51,7 +55,15 @@ public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implemen
     public void setNetworkServices(Map<String, List<String>> networkServices) {
         this.networkServices = networkServices;
     }
- 
+
+    public String getService() {
+        return service;
+    }
+
+    public void setService(String service) {
+        this.service = service;
+    }
+
     public static APIDetachNetworkServiceFromL3NetworkMsg __example__() {
         APIDetachNetworkServiceFromL3NetworkMsg msg = new APIDetachNetworkServiceFromL3NetworkMsg();
 

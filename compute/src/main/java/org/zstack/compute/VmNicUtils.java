@@ -1,14 +1,11 @@
 package org.zstack.compute;
 
-import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang.StringUtils;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.vm.VmNicParm;
+import org.zstack.header.vm.VmNicParam;
 import org.zstack.header.vm.VmNicState;
 import org.zstack.utils.CollectionUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,17 +13,17 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 
 public class VmNicUtils {
-    public static void validateVmParms(List<VmNicParm> vmNicParms, List<String> l3Uuids, List<String> supportNicDriverTypes) {
+    public static void validateVmParms(List<VmNicParam> vmNicParms, List<String> l3Uuids, List<String> supportNicDriverTypes) {
         if (CollectionUtils.isEmpty(vmNicParms)) {
             return;
         }
 
-        List<String> l3UuidsInParms = vmNicParms.stream().map(VmNicParm::getL3NetworkUuid).distinct().collect(Collectors.toList());
+        List<String> l3UuidsInParms = vmNicParms.stream().map(VmNicParam::getL3NetworkUuid).distinct().collect(Collectors.toList());
         if (l3UuidsInParms.size() != vmNicParms.size()) {
             throw new ApiMessageInterceptionException(argerr("duplicate nic params"));
         }
 
-        for (VmNicParm nic : vmNicParms) {
+        for (VmNicParam nic : vmNicParms) {
             String l3 = nic.getL3NetworkUuid();
             if (StringUtils.isEmpty(l3)) {
                 throw new ApiMessageInterceptionException(argerr("l3NetworkUuid of vm nic can not be null"));

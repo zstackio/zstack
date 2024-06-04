@@ -1,6 +1,7 @@
 package org.zstack.network.service;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceExtensionPoint;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
@@ -15,4 +16,9 @@ public interface NetworkServiceManager {
     void releaseNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPoint.NetworkServiceExtensionPosition position, Completion completion);
     void applyNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPoint.NetworkServiceExtensionPosition position, Completion completion);
     List<String> getL3NetworkDns(String l3NetworkUuid);
+
+    void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
+                              NetworkServiceType nsType, List<String> systemTags, Completion completion);
+
+    void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion);
 }

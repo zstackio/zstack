@@ -375,9 +375,26 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handle(APIGetInterdependentL3NetworksImagesMsg msg) {
         final String accountUuid = msg.getSession().getAccountUuid();
         if (msg.getImageUuid() != null) {
+                thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                        .setSyncSignature(String.format("get-interdependent-l3-by-image-%s-in-zone-%s",
+                                msg.getImageUuid(),
+                                msg.getZoneUuid()))
+                        .run((completion) -> completion.success(getInterdependentL3NetworksByImageUuid(msg, accountUuid)))
+                        .done(((result) -> {
+                            APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
+                            if (!result.isSuccess()) {
+                                reply.setError(result.getErrorCode());
+                            } else {
+                                reply.setInventories((List<L3NetworkInventory>) result.getResult());
+                            }
+
+                            bus.reply(msg, reply);
+                        })));
+        } else if (msg.getL3NetworkUuids() != null) {
+            getInterdependentImagesByL3NetworkUuids(msg);
+        } else {
             thdf.singleFlightSubmit(new SingleFlightTask(msg)
-                    .setSyncSignature(String.format("get-interdependent-l3-by-image-%s-in-zone-%s",
-                            msg.getImageUuid(),
+                    .setSyncSignature(String.format("get-interdependent-l3-by-zone-%s",
                             msg.getZoneUuid()))
                     .run((completion) -> completion.success(getInterdependentL3NetworksByImageUuid(msg, accountUuid)))
                     .done(((result) -> {
@@ -390,8 +407,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                         bus.reply(msg, reply);
                     })));
-        } else {
-            getInterdependentImagesByL3NetworkUuids(msg);
         }
     }
 
@@ -484,16 +499,28 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Transactional(readOnly = true)
     private List<L3NetworkInventory> getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg, String accountUuid) {
-        String sql = "select bs" +
-                " from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
-                " where bs.uuid = ref.backupStorageUuid" +
-                " and ref.imageUuid = :imgUuid" +
-                " and ref.backupStorageUuid = zref.backupStorageUuid" +
-                " and zref.zoneUuid = :zoneUuid";
-        TypedQuery<BackupStorageVO> bsq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
-        bsq.setParameter("imgUuid", msg.getImageUuid());
-        bsq.setParameter("zoneUuid", msg.getZoneUuid());
-        List<BackupStorageVO> bss = bsq.getResultList();
+        List<BackupStorageVO> bss = null;
+        if (msg.getImageUuid() != null) {
+            String sql = "select bs" +
+                    " from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
+                    " where bs.uuid = ref.backupStorageUuid" +
+                    " and ref.imageUuid = :imgUuid" +
+                    " and ref.backupStorageUuid = zref.backupStorageUuid" +
+                    " and zref.zoneUuid = :zoneUuid";
+            TypedQuery<BackupStorageVO> bsq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+            bsq.setParameter("imgUuid", msg.getImageUuid());
+            bsq.setParameter("zoneUuid", msg.getZoneUuid());
+            bss = bsq.getResultList();
+        } else {
+            String sql = "select bs" +
+                    " from BackupStorageVO bs, BackupStorageZoneRefVO zref" +
+                    " where bs.uuid = zref.backupStorageUuid" +
+                    " and zref.zoneUuid = :zoneUuid";
+            TypedQuery<BackupStorageVO> bsq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+            bsq.setParameter("zoneUuid", msg.getZoneUuid());
+            bss = bsq.getResultList();
+        }
+
         if (bss.isEmpty()) {
             throw new OperationFailureException(argerr("the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
                             msg.getImageUuid(), msg.getZoneUuid()));

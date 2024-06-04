@@ -46,8 +46,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -2232,8 +2230,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             String vmNicParams = msg1.getVmNicParams();
             if (!StringUtils.isEmpty(vmNicParams)) {
-                VmNicParm nicParams = JSONObjectUtil.toObject(vmNicParams, VmNicParm.class);
-                nicSpec.setVmNicParms(Arrays.asList(nicParams));
+                VmNicParam nicParams = JSONObjectUtil.toObject(vmNicParams, VmNicParam.class);
+                nicSpec.setVmNicParams(Arrays.asList(nicParams));
                 if (VmNicState.disable.toString().equals(nicParams.getState())) {
                     spec.getDisableL3Networks().add(nicParams.getL3NetworkUuid());
                 }
@@ -7159,7 +7157,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!l3s.isEmpty()) {
                     VmNicSpec nicSpec1 = new VmNicSpec(l3s);
                     nicSpec1.setNicDriverType(nicSpec.getNicDriverType());
-                    nicSpec1.setVmNicParms(nicSpec.getVmNicParms());
+                    nicSpec1.setVmNicParams(nicSpec.getVmNicParams());
                     nicSpecs.add(nicSpec1);
                 }
             }

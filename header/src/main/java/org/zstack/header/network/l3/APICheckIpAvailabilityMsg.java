@@ -20,6 +20,10 @@ public class APICheckIpAvailabilityMsg extends APISyncCallMessage implements L3N
     private String l3NetworkUuid;
     @APIParam(maxLength = 255)
     private String ip;
+    @APIParam(required = false)
+    private Boolean arpCheck = false;
+    @APIParam(required = false)
+    private Boolean ipRangeCheck= true;
 
     @Override
     public String getL3NetworkUuid() {
@@ -37,7 +41,23 @@ public class APICheckIpAvailabilityMsg extends APISyncCallMessage implements L3N
     public void setIp(String ip) {
         this.ip = ip;
     }
- 
+
+    public Boolean getArpCheck() {
+        return arpCheck;
+    }
+
+    public void setArpCheck(Boolean arpCheck) {
+        this.arpCheck = arpCheck;
+    }
+
+    public Boolean getIpRangeCheck() {
+        return ipRangeCheck;
+    }
+
+    public void setIpRangeCheck(Boolean ipRangeCheck) {
+        this.ipRangeCheck = ipRangeCheck;
+    }
+
     public static APICheckIpAvailabilityMsg __example__() {
         APICheckIpAvailabilityMsg msg = new APICheckIpAvailabilityMsg();
 

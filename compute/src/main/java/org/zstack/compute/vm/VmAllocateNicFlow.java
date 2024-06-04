@@ -9,7 +9,6 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -19,15 +18,9 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionUtils;
@@ -219,12 +212,12 @@ public class VmAllocateNicFlow implements Flow {
             return;
         }
 
-        List<VmNicParm> vmNicParms = nicSpec.getVmNicParms();
+        List<VmNicParam> vmNicParms = nicSpec.getVmNicParams();
         if (CollectionUtils.isEmpty(vmNicParms)) {
             return;
         }
 
-        VmNicParm vmNicParm = vmNicParms.get(0);
+        VmNicParam vmNicParm = vmNicParms.get(0);
 
         // add vmnic bandwidth systemtag
         if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {

@@ -13,6 +13,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
@@ -87,8 +88,28 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 }
             }
         }
-
         VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(vmUuid);
+
+        tags = VmSystemTags.SECURITY_GROUP_POLICY.getTags(vmUuid);
+        for (String tag : tags) {
+            Map<String, String> tokens = VmSystemTags.SECURITY_GROUP_POLICY.getTokensByTag(tag);
+            String l3Uuid = tokens.get(VmSystemTags.L3_UUID_TOKEN);
+            String ingressPolicy = tokens.get(VmSystemTags.SECURITY_GROUP_INGRESS_POLICY_TOKEN);
+            String egressPolicy = tokens.get(VmSystemTags.SECURITY_GROUP_EGRESS_POLICY_TOKEN);
+
+            String vmNicUuid = Q.New(VmNicVO.class)
+                    .eq(VmNicVO_.l3NetworkUuid, l3Uuid)
+                    .eq(VmNicVO_.vmInstanceUuid, vmUuid)
+                    .select(VmNicVO_.uuid)
+                    .findValue();
+
+            SQL.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, vmNicUuid)
+                    .set(VmNicSecurityPolicyVO_.ingressPolicy, ingressPolicy)
+                    .set(VmNicSecurityPolicyVO_.egressPolicy, egressPolicy).update();
+        }
+        VmSystemTags.SECURITY_GROUP_POLICY.delete(vmUuid);
+
+
         return sgUuids.stream().distinct().collect(Collectors.toList());
     }
 
@@ -200,5 +221,15 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 .eq(VmNicSecurityGroupRefVO_.vmNicUuid, nicUuid)
                 .eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmInstanceInventory.getUuid()).hardDelete();
         completion.done();
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
     }
 }

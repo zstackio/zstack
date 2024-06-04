@@ -1,8 +1,11 @@
 package org.zstack.network.l3;
 
+import com.googlecode.ipv6.IPv6Address;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -18,17 +21,20 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.ResourceBindingStrategy;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.*;
+import org.zstack.header.network.IpAllocatedReason;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
@@ -36,6 +42,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -43,19 +50,20 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.stopwatch.StopWatch;
 
 import javax.persistence.Tuple;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L3BasicNetwork implements L3Network {
@@ -84,6 +92,8 @@ public class L3BasicNetwork implements L3Network {
     private ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private NetworkServiceManager nsMgr;
 
     private L3NetworkVO self;
 
@@ -176,7 +186,7 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(CheckIpAvailabilityMsg msg) {
-        CheckIpAvailabilityReply reply = checkIpAvailability(msg.getIp());
+        CheckIpAvailabilityReply reply = checkIpAvailability(msg);
         bus.reply(msg, reply);
     }
 
@@ -239,6 +249,12 @@ public class L3BasicNetwork implements L3Network {
             }
         }
 
+        if (!self.getReservedIpRanges().isEmpty()) {
+            SQL.New(ReservedIpRangeVO.class)
+                    .in(ReservedIpRangeVO_.uuid, self.getReservedIpRanges().stream().map(ReservedIpRangeVO::getUuid).collect(Collectors.toList()))
+                    .delete();
+        }
+
         L3NetworkInventory inv = L3NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
         deleteHook();
@@ -256,7 +272,32 @@ public class L3BasicNetwork implements L3Network {
             @Override
             @RetryCondition(times = 6)
             protected Void call() {
-                SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
+                String reserveRangeUuid = null;
+                Tuple t = Q.New(UsedIpVO.class).select(UsedIpVO_.ip, UsedIpVO_.ipVersion)
+                        .eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).findTuple();
+                if (t != null) {
+                    String ip = t.get(0, String.class);
+                    Integer ipVersion = t.get(1, Integer.class);
+                    List<ReservedIpRangeVO> ranges = self.getReservedIpRanges()
+                            .stream().filter(r -> r.getIpVersion() == ipVersion).collect(Collectors.toList());
+                    for (ReservedIpRangeVO ripr : ranges) {
+                        if (NetworkUtils.isInRange(ip, ripr.getStartIp(), ripr.getEndIp())) {
+                            reserveRangeUuid = ripr.getUuid();
+                            break;
+                        }
+                    }
+                }
+
+                if (reserveRangeUuid != null) {
+                    SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid())
+                            .set(UsedIpVO_.vmNicUuid, null)
+                            .set(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                            .set(UsedIpVO_.metaData, reserveRangeUuid)
+                            .update();
+                } else {
+                    SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
+                }
+
                 return null;
             }
         }.run();
@@ -306,9 +347,10 @@ public class L3BasicNetwork implements L3Network {
                             "IP allocator strategy[%s] failed, because %s", strategyType, reason));
                     bus.reply(msg, reply);
                     chain.next();
+                    return;
                 }
 
-                logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, printer.print(ip)));
+                logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, ip.getIp()));
                 reply.setIpInventory(ip);
                 bus.reply(msg, reply);
                 chain.next();
@@ -360,15 +402,166 @@ public class L3BasicNetwork implements L3Network {
             handle((APIAddHostRouteToL3NetworkMsg) msg);
         } else if (msg instanceof APIRemoveHostRouteFromL3NetworkMsg) {
             handle((APIRemoveHostRouteFromL3NetworkMsg) msg);
+        } else if (msg instanceof APIAddReservedIpRangeMsg) {
+            handle((APIAddReservedIpRangeMsg) msg);
+        } else if (msg instanceof APIDeleteIpAddressMsg) {
+            handle((APIDeleteIpAddressMsg) msg);
+        } else if (msg instanceof APIDeleteReservedIpRangeMsg) {
+            handle((APIDeleteReservedIpRangeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    protected CheckIpAvailabilityReply checkIpAvailability(String ip) {
+    private void handle(APIAddReservedIpRangeMsg msg) {
+        APIAddReservedIpRangeEvent event = new APIAddReservedIpRangeEvent(msg.getId());
+
+        /* step 1: create reservedIpRangeVO */
+        ReservedIpRangeVO reservedIpRangeVO = new ReservedIpRangeVO();
+        reservedIpRangeVO.setUuid(Platform.getUuid());
+        reservedIpRangeVO.setL3NetworkUuid(msg.getL3NetworkUuid());
+        reservedIpRangeVO.setStartIp(msg.getStartIp());
+        reservedIpRangeVO.setEndIp(msg.getEndIp());
+        if (NetworkUtils.isIpv4Address(msg.getStartIp())) {
+            reservedIpRangeVO.setIpVersion(IPv6Constants.IPv4);
+        } else {
+            reservedIpRangeVO.setIpVersion(IPv6Constants.IPv6);
+        }
+        reservedIpRangeVO = dbf.persistAndRefresh(reservedIpRangeVO);
+
+        /* step 2: allocate usedIpVO */
+        List<IpRangeVO> ipv4Ranges = self.getIpRanges().stream()
+                .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4)
+                .collect(Collectors.toList());
+        List<IpRangeVO> ipv6Ranges = self.getIpRanges().stream()
+                .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+        List<UsedIpVO> usedIpVOS = new ArrayList<>();
+        if(IPv6NetworkUtils.isValidIpv4(msg.getStartIp()) && !ipv4Ranges.isEmpty()) {
+            long start = NetworkUtils.ipv4StringToLong(msg.getStartIp());
+            long end  = NetworkUtils.ipv4StringToLong(msg.getEndIp());
+            Comparator<IpRangeVO> ipv4Comparator
+                    = Comparator.comparing(
+                    IpRangeVO::getStartIp, (s1, s2) -> {
+                        return NetworkUtils.compareIpv4Address(s1, s2);
+                    });
+            ipv4Ranges.sort(ipv4Comparator);
+            Iterator<IpRangeVO> ip4 = ipv4Ranges.iterator();
+            IpRangeVO ipr = ip4.next();
+
+            for (long i = start; i <= end && ipr != null; i++) {
+                String newIp = NetworkUtils.longToIpv4String(i);
+                /* ip address is used, can not be reserved */
+                if (Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ip, newIp).isExists()) {
+                    continue;
+                }
+
+                if (NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    UsedIpVO vo = new UsedIpVO();
+                    vo.setUuid(Platform.getUuid());
+                    vo.setIpRangeUuid(ipr.getUuid());
+                    vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                    //vo.setVmNicUuid(nic.getUuid());
+                    vo.setIpVersion(ipr.getIpVersion());
+                    vo.setIp(newIp);
+                    vo.setNetmask(ipr.getNetmask());
+                    vo.setGateway(ipr.getGateway());
+                    vo.setIpInLong(i);
+                    vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+                    vo.setMetaData(reservedIpRangeVO.getUuid());
+
+                    usedIpVOS.add(vo);
+                } else if (ip4.hasNext()) {
+                    ipr = ip4.next();
+                } else {
+                    ipr = null;
+                }
+            }
+        } else if (IPv6NetworkUtils.isValidIpv6(msg.getStartIp()) && !ipv6Ranges.isEmpty()){
+            BigInteger start = IPv6Address.fromString(msg.getStartIp()).toBigInteger();
+            BigInteger end = IPv6Address.fromString(msg.getEndIp()).toBigInteger();
+            Comparator<IpRangeVO> ipv6Comparator
+                    = Comparator.comparing(
+                    IpRangeVO::getStartIp, (s1, s2) -> {
+                        return IPv6NetworkUtils.compareIpv6Address(msg.getStartIp(), msg.getEndIp());
+                    });
+            ipv6Ranges.sort(ipv6Comparator);
+            Iterator<IpRangeVO> ip6 = ipv6Ranges.iterator();
+            IpRangeVO ipr = ip6.next();
+
+            for (BigInteger i = start; i.compareTo(end) <= 0 && ipr != null; i = i.add(BigInteger.ONE)) {
+                String newIp = IPv6NetworkUtils.IPv6AddressToString(i);
+                /* ip address is used, can not be reserved */
+                if (Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ip, newIp).isExists()) {
+                    continue;
+                }
+
+                if (IPv6NetworkUtils.isIpv6InRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    UsedIpVO vo = new UsedIpVO();
+                    vo.setUuid(Platform.getUuid());
+                    vo.setIpRangeUuid(ipr.getUuid());
+                    vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                    //vo.setVmNicUuid(nic.getUuid());
+                    vo.setIpVersion(ipr.getIpVersion());
+                    vo.setIp(newIp);
+                    vo.setNetmask(ipr.getNetmask());
+                    vo.setGateway(ipr.getGateway());
+                    vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+                    vo.setMetaData(reservedIpRangeVO.getUuid());
+
+                    usedIpVOS.add(vo);
+                } else if (ip6.hasNext()) {
+                    ipr = ip6.next();
+                } else {
+                    ipr = null;
+                }
+            }
+        }
+
+        if (!usedIpVOS.isEmpty()) {
+            StopWatch watch = Utils.getStopWatch();
+            watch.start();
+            dbf.persistCollection(usedIpVOS);
+            watch.stop();
+            logger.debug(String.format("it takes %d microseconds to save %d ip addresses", watch.getLapse(), usedIpVOS.size()));
+        }
+
+        event.setInventory(ReservedIpRangeInventory.valueOf(reservedIpRangeVO));
+
+        bus.publish(event);
+    }
+
+    private void handle(APIDeleteReservedIpRangeMsg msg) {
+        APIDeleteIpAddressEvent event = new APIDeleteIpAddressEvent(msg.getId());
+
+        SQL.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .eq(UsedIpVO_.metaData, msg.getIpRangeUuid())
+                .delete();
+
+        SQL.New(ReservedIpRangeVO.class).eq(ReservedIpRangeVO_.uuid, msg.getIpRangeUuid()).delete();
+
+        bus.publish(event);
+    }
+
+    private void handle(APIDeleteIpAddressMsg msg) {
+        APIDeleteIpAddressEvent event = new APIDeleteIpAddressEvent(msg.getId());
+
+        SQL.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .in(UsedIpVO_.uuid, msg.getUsedIpUuids())
+                .isNull(UsedIpVO_.vmNicUuid)
+                .delete();
+
+        bus.publish(event);
+    }
+
+    @Override
+    public CheckIpAvailabilityReply checkIpAvailability(CheckIpAvailabilityMsg msg) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
         int ipversion = IPv6Constants.IPv4;
-        if (IPv6NetworkUtils.isIpv6Address(ip)) {
+        if (IPv6NetworkUtils.isIpv6Address(msg.getIp())) {
             ipversion = IPv6Constants.IPv6;
         }
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
@@ -383,16 +576,21 @@ public class L3BasicNetwork implements L3Network {
 
         boolean inRange = false;
         boolean isGateway = false;
+        /* disable ip range check */
+        if (!msg.getIpRangeCheck()) {
+            inRange = true;
+        }
+
         for (Tuple t : ts) {
             String sip = t.get(0, String.class);
             String eip = t.get(1, String.class);
             String gw = t.get(2, String.class);
-            if (ip.equals(gw) && !addressPoolGateways.contains(gw)) {
+            if (msg.getIp().equals(gw) && !addressPoolGateways.contains(gw)) {
                 isGateway = true;
                 break;
             }
 
-            if (NetworkUtils.isInRange(ip, sip, eip)) {
+            if (NetworkUtils.isInRange(msg.getIp(), sip, eip)) {
                 inRange = true;
                 break;
             }
@@ -406,28 +604,75 @@ public class L3BasicNetwork implements L3Network {
             } else {
                 reply.setReason(IpNotAvailabilityReason.NO_IN_RANGE.toString());
             }
-            return reply;
         } else {
             SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
             q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, self.getUuid());
-            q.add(UsedIpVO_.ip, Op.EQ, ip);
+            q.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
             if (q.isExists()) {
                 reply.setAvailable(false);
                 reply.setReason(IpNotAvailabilityReason.USED.toString());
             } else {
                 reply.setAvailable(true);
             }
-
-            return reply;
         }
+        return reply;
     }
 
     private void handle(APICheckIpAvailabilityMsg msg) {
         APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
-        CheckIpAvailabilityReply r = checkIpAvailability(msg.getIp());
-        reply.setAvailable(r.isAvailable());
-        reply.setReason(r.getReason());
-        bus.reply(msg, reply);
+        reply.setAvailable(true);
+        reply.setReason("");
+        CheckIpAvailabilityMsg imsg = new CheckIpAvailabilityMsg();
+        imsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+        imsg.setIp(msg.getIp());
+        imsg.setArpCheck(msg.getArpCheck());
+        imsg.setIpRangeCheck(msg.getIpRangeCheck());
+
+        FlowChain flowChain = new SimpleFlowChain();
+        flowChain.setName(String.format("check-ip-address-availability-%s-%s",
+                msg.getL3NetworkUuid(), msg.getIp()));
+        for (CheckIpAddressAvailabilityExtensionPoint exp : pluginRgty.getExtensionList(CheckIpAddressAvailabilityExtensionPoint.class)) {
+            flowChain.then(new NoRollbackFlow() {
+                String __name__ = "check-ip-address-availability-" + exp.getClass().getSimpleName();
+
+                @Override
+                public boolean skip(Map data) {
+                    return !reply.isAvailable();
+                }
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    exp.check(imsg, new ReturnValueCompletion<CheckIpAvailabilityReply>(trigger) {
+                        @Override
+                        public void success(CheckIpAvailabilityReply r) {
+                            if (!r.isAvailable()) {
+                                reply.setAvailable(r.isAvailable());
+                                reply.setReason(r.getReason());
+                                trigger.next();
+                            } else {
+                                trigger.next();
+                            }
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.next();
+                        }
+                    });
+                }
+            });
+        }
+        flowChain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                bus.reply(msg, reply);
+            }
+        }).start();
     }
 
     private void handle(final APIGetL3NetworkRouterInterfaceIpMsg msg) {
@@ -467,28 +712,75 @@ public class L3BasicNetwork implements L3Network {
         bus.publish(event);
     }
 
+    private void detachNetworkServiceFromL3NetworkMsg(L3NetworkVO l3VO, List<NetworkServiceL3NetworkRefVO> refs, Completion completion) {
+        List<NetworkServiceProviderVO> networkServiceProviderVOS = Q.New(NetworkServiceProviderVO.class).list();
+        Map<String, String> providerUuidTypeMap = new HashMap<>();
+        for (NetworkServiceProviderVO providerVO : networkServiceProviderVOS) {
+            providerUuidTypeMap.put(providerVO.getUuid(), providerVO.getType());
+        }
+
+        new While<>(refs).each((ref, wcomp) -> {
+            NetworkServiceProviderType pType = NetworkServiceProviderType.valueOf(providerUuidTypeMap.get(ref.getNetworkServiceProviderUuid()));
+            NetworkServiceType nsType = NetworkServiceType.valueOf(ref.getNetworkServiceType());
+
+            nsMgr.disableNetworkService(l3VO, pType, nsType, new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
+            }
+        });
+    }
+    
     private void handle(APIDetachNetworkServiceFromL3NetworkMsg msg) {
+        APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
+
+        List<NetworkServiceL3NetworkRefVO> refs = new ArrayList<>();
+        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+
         for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
             SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
             q.add(NetworkServiceL3NetworkRefVO_.networkServiceProviderUuid, Op.EQ, e.getKey());
             q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, self.getUuid());
             q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.IN, e.getValue());
-            List<NetworkServiceL3NetworkRefVO> refs = q.list();
-
-            if (refs.isEmpty()) {
-                logger.warn(String.format("no network service references found for the provider[uuid:%s] and L3 network[uuid:%s]",
-                        e.getKey(), self.getUuid()));
-            } else {
-                dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
-            }
-
-            logger.debug(String.format("successfully detached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
+            refs.addAll(q.list());
         }
 
-        self = dbf.reload(self);
-        APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
-        evt.setInventory(L3NetworkInventory.valueOf(self));
-        bus.publish(evt);
+        if (refs.isEmpty()) {
+            self = dbf.reload(self);
+            evt.setInventory(L3NetworkInventory.valueOf(self));
+            bus.publish(evt);
+            return;
+        }
+
+        detachNetworkServiceFromL3NetworkMsg(l3VO, refs, new Completion(msg) {
+            @Override
+            public void success() {
+                dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
+                logger.debug(String.format("successfully detached network service provider[uuid:%s]", JSONObjectUtil.dumpPretty(refs)));
+                self = dbf.reload(self);
+                evt.setInventory(L3NetworkInventory.valueOf(self));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.debug(String.format("detached network service provider[uuid:%s] failed:%s", JSONObjectUtil.dumpPretty(refs), errorCode.getDetails()));
+                self = dbf.reload(self);
+                evt.setInventory(L3NetworkInventory.valueOf(self));
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APIUpdateIpRangeMsg msg) {
@@ -812,17 +1104,75 @@ public class L3BasicNetwork implements L3Network {
 
 	private void handle(final AttachNetworkServiceToL3Msg msg) {
         MessageReply reply = new MessageReply();
+        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        List<NetworkServiceProviderVO> networkServiceProviderVOS = Q.New(NetworkServiceProviderVO.class).list();
+        Map<String, String> providerUuidTypeMap = new HashMap<>();
+        for (NetworkServiceProviderVO providerVO : networkServiceProviderVOS) {
+            providerUuidTypeMap.put(providerVO.getUuid(), providerVO.getType());
+        }
+
+        List<NetworkServiceL3NetworkRefVO> refVOS = new ArrayList<>();
         for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
             for (String nsType : e.getValue()) {
                 NetworkServiceL3NetworkRefVO ref = new NetworkServiceL3NetworkRefVO();
                 ref.setL3NetworkUuid(self.getUuid());
                 ref.setNetworkServiceProviderUuid(e.getKey());
                 ref.setNetworkServiceType(nsType);
-                dbf.persist(ref);
+                refVOS.add(ref);
             }
             logger.debug(String.format("successfully attached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
         }
-        bus.reply(msg, reply);
+
+        dbf.persistCollection(refVOS);
+
+        new While<>(refVOS).each((ref, wcomp) -> {
+            String provideType = providerUuidTypeMap.get(ref.getNetworkServiceProviderUuid());
+            NetworkServiceProviderType ptype = NetworkServiceProviderType.valueOf(provideType);
+            NetworkServiceType nsType = null;
+            try {
+                /* some network service are not in NetworkServiceType
+                * if it need enable/disable, then add it later  */
+                nsType = NetworkServiceType.valueOf(ref.getNetworkServiceType());
+            } catch (Exception e) {
+                logger.debug(e.toString());
+                wcomp.done();
+                return;
+            }
+
+            nsMgr.enableNetworkService(l3VO, ptype, nsType, msg.getApiSystemTags(), new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    wcomp.addError(errorCode);
+                    wcomp.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    bus.reply(msg, reply);
+                } else {
+                    detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, new Completion(msg) {
+                        @Override
+                        public void success() {
+                            reply.setError(errorCodeList.getCauses().get(0));
+                            bus.reply(msg, reply);
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCodeList.getCauses().get(0));
+                            bus.reply(msg, reply);
+                        }
+                    });
+                }
+            }
+        });
     }
 
 	private void handle(APIAttachNetworkServiceToL3NetworkMsg msg) {
@@ -830,6 +1180,9 @@ public class L3BasicNetwork implements L3Network {
         AttachNetworkServiceToL3Msg amsg = new AttachNetworkServiceToL3Msg();
         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
         amsg.setNetworkServices(msg.getNetworkServices());
+        if (msg.getSystemTags() != null) {
+            amsg.setApiSystemTags(msg.getSystemTags());
+        }
 
         bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
         bus.send(amsg, new CloudBusCallBack(msg) {

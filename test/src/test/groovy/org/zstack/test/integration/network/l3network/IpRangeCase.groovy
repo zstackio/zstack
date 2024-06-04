@@ -1,11 +1,20 @@
 package org.zstack.test.integration.network.l3network
 
+import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.core.db.Q
+import org.zstack.header.network.IpAllocatedReason
 import org.zstack.header.network.l3.L3NetworkCategory
+import org.zstack.header.network.l3.UsedIpVO
+import org.zstack.header.network.l3.UsedIpVO_
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.network.l3.IpNotAvailabilityReason
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.*
+import org.zstack.utils.network.IPv6Constants
+
+import java.util.stream.Collectors
 
 import static java.util.Arrays.asList
 
@@ -36,6 +45,8 @@ class IpRangeCase extends SubCase {
     void test() {
         env.create {
             testAddIpRangeToDifferentL3ButSameL2()
+            testReserveIpAddress()
+            testReturnIpAddressInReserveIpRange()
         }
     }
 
@@ -222,6 +233,209 @@ class IpRangeCase extends SubCase {
         assert ret.value.inventories.get(1).startIp == "192.168.214.101"
         assert ret.value.inventories.get(1).endIp == "192.168.214.254"
         assert ret.value.inventories.get(1).gateway == "192.168.214.100"
-   }
+    }
+
+    void testReserveIpAddress() {
+        L3NetworkInventory l3_2 = env.inventoryByName("l3-2")
+        IpRangeInventory ipr = l3_2.ipRanges.get(0)
+
+        expect(AssertionError.class)  {
+            addReservedIpRange {
+                l3NetworkUuid = l3_2.uuid
+                startIp = "193.0.0.2"
+                endIp = "193.0.3.255"
+            }
+        }
+
+        ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "10.0.0.2"
+            endIp = "10.0.3.255"
+        }
+
+        List<String> reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 253
+
+        deleteIpAddress {
+            l3NetworkUuid = l3_2.uuid
+            usedIpUuids = reservedUuids.stream().limit(100).collect(Collectors.toList())
+        }
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 153
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange.uuid
+        }
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 0
+
+        reservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "10.0.0.100"
+            endIp = "10.0.0.200"
+        }
+
+        expect(AssertionError.class) {
+            addReservedIpRange {
+                l3NetworkUuid = l3_2.uuid
+                startIp = "10.0.0.100"
+                endIp = "10.0.0.150"
+            }
+        }
+
+        expect(AssertionError.class) {
+            addReservedIpRange {
+                l3NetworkUuid = l3_2.uuid
+                startIp = "10.0.0.2"
+                endIp = "10.0.3.0"
+            }
+        }
+
+        ReservedIpRangeInventory reservedIpRange1 = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "10.0.1.0"
+            endIp = "10.0.1.10"
+        }
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 101
+
+        addIpRange {
+            name = "TestIpRange"
+            l3NetworkUuid = l3_2.getUuid()
+            startIp = "10.0.1.0"
+            endIp = "10.0.1.100"
+            gateway = "10.0.0.1"
+            netmask = "255.0.0.0"
+        }
+
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 112
+
+        deleteIpRange {
+            uuid = ipr.uuid
+        }
+
+        retryInSecs {
+            reservedUuids = Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                    .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                    .select(UsedIpVO_.uuid).listValues()
+            assert reservedUuids.size() == 11
+        }
+
+        addIpv6Range {
+            name = "ipr-6"
+            l3NetworkUuid = l3_2.uuid
+            startIp = "2024:05:27::30"
+            endIp = "2024:05:27::40"
+            gateway = "2024:05:27::1"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        ReservedIpRangeInventory reservedIpRange2 = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "2024:05:27::30"
+            endIp = "2024:05:27::33"
+        }
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange1.uuid
+        }
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange.uuid
+        }
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange2.uuid
+        }
+    }
+
+    void testReturnIpAddressInReserveIpRange() {
+        /* l3-2 has ip range:
+           10.0.1.0, 10.0.1.100,
+           2024:05:27::30~2024:05:27::40 added in last step */
+        L3NetworkInventory l3_2 = env.inventoryByName("l3-2")
+        InstanceOfferingSpec  ioSpec= env.specByName("instanceOffering")
+        ImageSpec iSpec = env.specByName("image1")
+
+        /* delete old dhcp server ip  */
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l3_2.uuid
+            service = 'DHCP'
+        }
+
+        /* enable dhcp to occupy an ip address  */
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_2.uuid
+            networkServices = ["Flat":["DHCP"]]
+        }
+
+        /* create vm to occupy an ip address */
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = ioSpec.inventory.uuid
+            imageUuid = iSpec.inventory.uuid
+            l3NetworkUuids = asList((l3_2.uuid))
+        }
+        VmNicInventory nic = vm.getVmNics().get(0)
+
+        /* because ip allocate type: FirstAvailableIpAllocatorStrategy:
+        * dhcp server ip and vm nic ip is first 2 ip address of the range */
+        ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "10.0.1.0"
+            endIp = "10.0.1.9"
+        }
+
+        ReservedIpRangeInventory reservedIpRange2 = addReservedIpRange {
+            l3NetworkUuid = l3_2.uuid
+            startIp = "2024:05:27::30"
+            endIp = "2024:05:27::33"
+        }
+
+        /* 8 ipv4 + 2 ipv6 */
+        List<String> reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 10
+
+        /* delete dhcp server ip  */
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l3_2.uuid
+            service = 'DHCP'
+        }
+
+        /* delete vm ip */
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString());
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        /* dhcp server ip and vm nic ip change to reserve ip
+        * 10 ipv4 + 4 ipv6 */
+        reservedUuids = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3_2.uuid)
+                .eq(UsedIpVO_.usedFor, IpAllocatedReason.Reserved.toString())
+                .select(UsedIpVO_.uuid).listValues()
+        assert reservedUuids.size() == 14
+    }
 }
 

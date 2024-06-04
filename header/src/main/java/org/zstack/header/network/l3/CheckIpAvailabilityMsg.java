@@ -8,6 +8,8 @@ import org.zstack.header.message.NeedReplyMessage;
 public class CheckIpAvailabilityMsg extends NeedReplyMessage implements L3NetworkMessage {
     private String l3NetworkUuid;
     private String ip;
+    private Boolean arpCheck = false;
+    private Boolean ipRangeCheck = true;
 
     @Override
     public String getL3NetworkUuid() {
@@ -24,5 +26,21 @@ public class CheckIpAvailabilityMsg extends NeedReplyMessage implements L3Networ
 
     public void setIp(String ip) {
         this.ip = ip;
+    }
+
+    public Boolean getArpCheck() {
+        return arpCheck;
+    }
+
+    public void setArpCheck(Boolean arpCheck) {
+        this.arpCheck = arpCheck;
+    }
+
+    public Boolean getIpRangeCheck() {
+        return ipRangeCheck;
+    }
+
+    public void setIpRangeCheck(Boolean ipRangeCheck) {
+        this.ipRangeCheck = ipRangeCheck;
     }
 }
