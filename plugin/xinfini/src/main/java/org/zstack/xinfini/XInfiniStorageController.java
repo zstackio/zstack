@@ -79,7 +79,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         scap.setSupportCreateOnHypervisor(false);
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportCloneFromVolume(false);
-        capabilities.setSupportStorageQos(true);
+        capabilities.setSupportStorageQos(false);
         capabilities.setSupportLiveExpandVolume(false);
         capabilities.setSupportedImageFormats(Collections.singletonList("raw"));
     }
@@ -142,8 +142,11 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         String vhostName = buildBdevName(vol.getUuid());
         BdcModule bdc = apiHelper.queryBdcByIp(h.getManagementIp());
         VolumeModule volModule = getVolumeModule(vol);
-        BdcBdevModule bdev = apiHelper.createBdcBdev(bdc.getSpec().getId(), volModule.getSpec().getId(), vhostName);
+        if (volModule == null) {
+            throw new OperationFailureException(operr("cannot get volume[%s] details, maybe it has been deleted", vol.getInstallPath()));
+        }
 
+        BdcBdevModule bdev = apiHelper.createBdcBdev(bdc.getSpec().getId(), volModule.getSpec().getId(), vhostName);
         VhostVolumeTO to = new VhostVolumeTO();
         to.setInstallPath(bdev.getSpec().getSocketPath());
         return to;

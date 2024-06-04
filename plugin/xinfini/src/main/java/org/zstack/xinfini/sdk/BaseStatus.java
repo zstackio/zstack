@@ -8,8 +8,17 @@ public class BaseStatus {
     private int id;
     private String createdAt;
     private String updatedAt;
+    private String creationTimeoutAt;
     private String deletedAt;
     private String etag;
+
+    public String getCreationTimeoutAt() {
+        return creationTimeoutAt;
+    }
+
+    public void setCreationTimeoutAt(String creationTimeoutAt) {
+        this.creationTimeoutAt = creationTimeoutAt;
+    }
 
     public int getId() {
         return id;

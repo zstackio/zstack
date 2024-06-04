@@ -93,7 +93,6 @@ public class PoolModule extends BaseResource {
         private int springId;
         private int topoActionState;
         private String state;
-        private int creationTimeoutAt;
         private int totalMb;
         private int nodeNum;
         private int lunNum;
@@ -126,14 +125,6 @@ public class PoolModule extends BaseResource {
 
         public void setState(String state) {
             this.state = state;
-        }
-
-        public int getCreationTimeoutAt() {
-            return creationTimeoutAt;
-        }
-
-        public void setCreationTimeoutAt(int creationTimeoutAt) {
-            this.creationTimeoutAt = creationTimeoutAt;
         }
 
         public int getTotalMb() {

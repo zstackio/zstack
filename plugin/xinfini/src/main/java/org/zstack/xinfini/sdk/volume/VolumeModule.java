@@ -83,9 +83,27 @@ public class VolumeModule extends BaseResource {
 
     public static class VolumeSpec extends BaseSpec {
         private int bsPolicyId;
+        private int bsSnapId;
         private int sizeMb;
         private boolean loaded;
         private int poolId;
+        private boolean flattened;
+
+        public boolean isFlattened() {
+            return flattened;
+        }
+
+        public void setFlattened(boolean flattened) {
+            this.flattened = flattened;
+        }
+
+        public int getBsSnapId() {
+            return bsSnapId;
+        }
+
+        public void setBsSnapId(int bsSnapId) {
+            this.bsSnapId = bsSnapId;
+        }
 
         public int getBsPolicyId() {
             return bsPolicyId;
