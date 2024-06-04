@@ -194,7 +194,7 @@
   {
     "raw": "ocean api endpoint must not be null",
     "en_US": "ocean api endpoint must not be null",
-    "zh_CN": "Ocean API终结点不能为空",
+    "zh_CN": "Ocean API端点不能为空",
     "arguments": [],
     "line": 73,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunEbsClient.java"
@@ -316,7 +316,7 @@
   {
     "raw": "add endpoint to sdk failed, due to: %s",
     "en_US": "add endpoint to sdk failed, due to: {0}",
-    "zh_CN": "将终结点添加到SDK失败，原因是：{0}",
+    "zh_CN": "将端点添加到SDK失败，原因是：{0}",
     "arguments": [
       "e.getMessage()"
     ],
@@ -25864,7 +25864,7 @@
   {
     "raw": "can not add same email address to endpoint[uuid:%s]",
     "en_US": "can not add same email address to endpoint[uuid:{0}]",
-    "zh_CN": "无法将同一电子邮件地址添加到终结点[uuid：{0}]",
+    "zh_CN": "无法将同一电子邮件地址添加到端点[uuid：{0}]",
     "arguments": [
       "msg.getApplicationEndpointUuid()"
     ],
@@ -25884,7 +25884,7 @@
   {
     "raw": "cannot update email address to %s, which is already exists in endpoint[uuid:%s]",
     "en_US": "cannot update email address to {0}, which is already exists in endpoint[uuid:{1}]",
-    "zh_CN": "无法将电子邮件地址更新为{0}，该地址已存在于终结点[uuid：{1}]中",
+    "zh_CN": "无法将电子邮件地址更新为{0}，该地址已存在于端点[uuid：{1}]中",
     "arguments": [
       "msg.getEmailAddress()",
       "msg.getApplicationEndpointUuid()"
