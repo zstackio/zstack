@@ -1706,7 +1706,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
         sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, wrapper -> {
             ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
-            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+            return rsp.isSuccess() ? null : operr(rsp.getError(), "operation error, because:%s", rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper returnValue) {

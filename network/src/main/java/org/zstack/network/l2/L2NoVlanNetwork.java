@@ -751,7 +751,7 @@ public class L2NoVlanNetwork implements L2Network {
                     evt.setInventory(getSelfInventory());
                     bus.publish(evt);
                 } else {
-                    evt.setError(err(L2Errors.ATTACH_ERROR, "attach l2 network failed:%s", reply.getError()));
+                    evt.setError(err(L2Errors.ATTACH_ERROR, reply.getError(),"attach l2 network failed:%s", reply.getError()));
                     bus.publish(evt);
                 }
             }
