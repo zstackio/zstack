@@ -27,6 +27,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private String requiredBackupStorageUuid;
     // each primary storage in this set is required
     private Set<String> requiredPrimaryStorageUuids = new HashSet<>();
+    private String imageRequiredPrimaryStorageUuid;
     // for each set in the list, the primary storage inside is optional
     private final List<Set<String>> optionalPrimaryStorageUuids = new ArrayList<>();
     private boolean fullAllocate = true;
@@ -62,6 +63,14 @@ public class AllocateHostMsg extends NeedReplyMessage {
 
     public void addRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
         this.requiredPrimaryStorageUuids.add(requiredPrimaryStorageUuid);
+    }
+
+    public String getImageRequiredPrimaryStorageUuid() {
+        return imageRequiredPrimaryStorageUuid;
+    }
+
+    public void setImageRequiredPrimaryStorageUuid(String imageRequiredPrimaryStorageUuid) {
+        this.imageRequiredPrimaryStorageUuid = imageRequiredPrimaryStorageUuid;
     }
 
     public String getRequiredBackupStorageUuid() {

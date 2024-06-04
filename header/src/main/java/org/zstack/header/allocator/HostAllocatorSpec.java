@@ -21,6 +21,7 @@ public class HostAllocatorSpec {
     private String allocatorStrategy;
     private VmInstanceInventory vmInstance;
     private ImageInventory image;
+    private String imageRequiredPrimaryStorageUuid;
     private String vmOperation;
     private List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
     private Map<Object, Object> extraData = new HashMap<>();
@@ -224,6 +225,14 @@ public class HostAllocatorSpec {
         this.image = image;
     }
 
+    public String getImageRequiredPrimaryStorageUuid() {
+        return imageRequiredPrimaryStorageUuid;
+    }
+
+    public void setImageRequiredPrimaryStorageUuid(String imageRequiredPrimaryStorageUuid) {
+        this.imageRequiredPrimaryStorageUuid = imageRequiredPrimaryStorageUuid;
+    }
+
     public String getArchitecture() {
         return architecture;
     }
@@ -264,7 +273,7 @@ public class HostAllocatorSpec {
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
         }
-
+        spec.setImageRequiredPrimaryStorageUuid(msg.getImageRequiredPrimaryStorageUuid());
         return spec;
     }
 
