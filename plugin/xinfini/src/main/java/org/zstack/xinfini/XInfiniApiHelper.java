@@ -10,16 +10,22 @@ import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.xinfini.sdk.*;
+import org.zstack.xinfini.sdk.iscsi.GatewayModule;
+import org.zstack.xinfini.sdk.iscsi.QueryGatewayRequest;
+import org.zstack.xinfini.sdk.iscsi.QueryGatewayResponse;
 import org.zstack.xinfini.sdk.metric.PoolMetrics;
 import org.zstack.xinfini.sdk.metric.QueryMetricRequest;
 import org.zstack.xinfini.sdk.metric.QueryMetricResponse;
 import org.zstack.xinfini.sdk.node.*;
 import org.zstack.xinfini.sdk.pool.*;
+import org.zstack.xinfini.sdk.vhost.*;
 import org.zstack.xinfini.sdk.volume.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -53,13 +59,13 @@ public class XInfiniApiHelper {
                 return;
             }
 
-            completion.fail(operr("expon request failed, message: %s.", result.getMessage()));
+            completion.fail(operr("xinfini request failed, message: %s.", result.getMessage()));
         });
     }
 
     public void errorOut(XInfiniResponse rsp) {
         if (!rsp.isSuccess()) {
-            throw new OperationFailureException(operr("expon request failed, message: %s.", rsp.getMessage()));
+            throw new OperationFailureException(operr("xinfini request failed, message: %s.", rsp.getMessage()));
         }
     }
 
@@ -92,6 +98,33 @@ public class XInfiniApiHelper {
         return callErrorOut(req, GetNodeResponse.class).toModule();
     }
 
+    public List<GatewayModule> queryGateways() {
+        QueryGatewayRequest req = new QueryGatewayRequest();
+        return queryErrorOut(req, QueryGatewayResponse.class).getItems();
+    }
+
+    public List<BdcModule> queryBdcs() {
+        QueryBdcRequest req = new QueryBdcRequest();
+        return queryErrorOut(req, QueryBdcResponse.class).getItems();
+    }
+
+    public BdcModule queryBdcByIp(String ip) {
+        QueryBdcRequest req = new QueryBdcRequest();
+        req.q = String.format("spec.ip:%s", ip);
+        QueryBdcResponse rsp = queryErrorOut(req, QueryBdcResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return null;
+        }
+
+        return rsp.getItems().get(0);
+    }
+
+    public BdcModule getBdc(int id) {
+        GetBdcRequest req = new GetBdcRequest();
+        req.setId(id);
+        return callErrorOut(req, GetBdcResponse.class).toModule();
+    }
+
     public BsPolicyModule getBsPolicy(int id) {
         GetBsPolicyRequest req = new GetBsPolicyRequest();
         req.setId(id);
@@ -120,7 +153,7 @@ public class XInfiniApiHelper {
         return rsp.getData().getResult().get(0).getValue();
     }
 
-    public VolumeModule queryVolume(String name) {
+    public VolumeModule queryVolumeByName(String name) {
         QueryVolumeRequest req = new QueryVolumeRequest();
         req.q = String.format("spec.name:%s", name);
         QueryVolumeResponse rsp = queryErrorOut(req, QueryVolumeResponse.class);
@@ -128,7 +161,7 @@ public class XInfiniApiHelper {
             return null;
         }
 
-        return rsp.getItems().stream().filter(it -> it.getSpec().getName().equals(name)).findFirst().orElse(null);
+        return rsp.getItems().get(0);
     }
 
     public VolumeModule getVolume(int id) {
@@ -143,25 +176,156 @@ public class XInfiniApiHelper {
         req.setPoolId(poolId);
         req.setSizeMb(size);
         CreateVolumeResponse rsp = callErrorOut(req, CreateVolumeResponse.class);
-        return new Retry<VolumeModule>() {
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(rsp.getSpec().getId());
+        return retryUtilStateActive(req, GetVolumeResponse.class,
+                (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
+    public VolumeSnapshotModule getVolumeSnapshot(int id) {
+        GetVolumeSnapshotRequest req = new GetVolumeSnapshotRequest();
+        req.setId(id);
+        return callErrorOut(req, GetVolumeSnapshotResponse.class).toModule();
+    }
+
+    public VolumeSnapshotModule createVolumeSnapshot(int volumeId, String name) {
+        CreateVolumeSnapshotRequest req = new CreateVolumeSnapshotRequest();
+        req.setName(name);
+        req.setBsVolumeId(volumeId);
+        CreateVolumeSnapshotResponse rsp = callErrorOut(req, CreateVolumeSnapshotResponse.class);
+        GetVolumeSnapshotRequest gReq = new GetVolumeSnapshotRequest();
+        gReq.setId(rsp.getSpec().getId());
+        return retryUtilStateActive(req, GetVolumeSnapshotResponse.class,
+                (GetVolumeSnapshotResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
+    public VolumeModule cloneVolume(int snapId, String name, String desc, boolean flatten) {
+        CloneVolumeRequest req = new CloneVolumeRequest();
+        req.setName(name);
+        req.setDescription(desc);
+        req.setBsSnapId(snapId);
+        req.setFlatten(flatten);
+        CloneVolumeResponse rsp = callErrorOut(req, CloneVolumeResponse.class);
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(rsp.getSpec().getId());
+        return retryUtilStateActive(req, GetVolumeResponse.class,
+                (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
+    private <T extends XInfiniResponse> T retryUtilStateActive(XInfiniRequest req,
+                                                               Class<T> rsp,
+                                                               Function<String, T> activeGetter) {
+        return new Retry<T>() {
             @Override
             @RetryCondition(onExceptions = {RetryException.class},
                     times = XInfiniConstants.DEFAULT_POLLING_TIMES)
-            protected VolumeModule call() {
-                GetVolumeRequest gReq = new GetVolumeRequest();
-                gReq.setId(rsp.getSpec().getId());
-                VolumeModule vModule = callErrorOut(gReq, GetVolumeResponse.class).toModule();
-                if (!vModule.getMetadata().getState().getState().equals(MetadataState.active.toString())) {
-                    throw new RetryException(String.format("volume %s state not active yet", gReq.getId()));
+            protected T call() {
+                T r = callErrorOut(req, rsp);
+                if (!activeGetter.call(r).equals(MetadataState.active.toString())) {
+                    throw new RetryException("state not active yet");
                 }
-                return vModule;
+                return r;
             }
         }.run();
     }
 
+    public BdcBdevModule createBdcBdev(int bdcId, int volumeId, String name) {
+        CreateBdcBdevRequest req = new CreateBdcBdevRequest();
+        req.setName(name);
+        req.setBdcId(bdcId);
+        req.setBsVolumeId(volumeId);
+        CreateBdcBdevResponse rsp = callErrorOut(req, CreateBdcBdevResponse.class);
+        GetBdcBdevRequest gReq = new GetBdcBdevRequest();
+        gReq.setId(rsp.getSpec().getId());
+        return retryUtilStateActive(req, GetBdcBdevResponse.class,
+                (GetBdcBdevResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
+    public BdcBdevModule queryBdcBdevByVolumeIdAndBdcId(int volId, int bdcId) {
+        QueryBdcBdevRequest req = new QueryBdcBdevRequest();
+        req.q = String.format("((spec.bdc_id:%s) AND (spec.bs_volume_id:%s)", bdcId, volId);
+        QueryBdcBdevResponse rsp = queryErrorOut(req, QueryBdcBdevResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 1) {
+            return null;
+        }
+
+        return rsp.getItems().get(0);
+    }
+
+    public BdcBdevModule getBdcBdev(int id) {
+        GetBdcBdevRequest req = new GetBdcBdevRequest();
+        req.setId(id);
+        return callErrorOut(req, GetBdcBdevResponse.class).toModule();
+    }
+
+    public void deleteBdcBdev(int bdevId) {
+        GetBdcBdevRequest gReq = new GetBdcBdevRequest();
+        gReq.setId(bdevId);
+        GetBdcBdevResponse rsp = call(gReq, GetBdcBdevResponse.class);
+        if (rsp.resourceIsDeleted()) {
+            logger.info(String.format("bdev %s has been deleted, skip send delete req", bdevId));
+            return;
+        }
+
+        DeleteBdcBdevRequest req = new DeleteBdcBdevRequest();
+        req.setId(bdevId);
+        callErrorOut(req, DeleteBdcBdevResponse.class);
+    }
+
     public void deleteVolume(int volId, boolean force) {
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(volId);
+        GetVolumeResponse rsp = call(gReq, GetVolumeResponse.class);
+        if (rsp.resourceIsDeleted()) {
+            logger.info(String.format("volume %s has been deleted, skip send delete req", volId));
+            return;
+        }
+
         DeleteVolumeRequest req = new DeleteVolumeRequest();
         req.setId(volId);
         callErrorOut(req, DeleteVolumeResponse.class);
+    }
+
+    public void deleteVolumeSnapshot(int snapShotId) {
+        GetVolumeSnapshotRequest gReq = new GetVolumeSnapshotRequest();
+        gReq.setId(snapShotId);
+        GetVolumeSnapshotResponse rsp = call(gReq, GetVolumeSnapshotResponse.class);
+        if (rsp.resourceIsDeleted()) {
+            logger.info(String.format("volume snapshot %s has been deleted, skip send delete req", snapShotId));
+            return;
+        }
+
+        // check snapshot cloned volume
+        if (snapshotHasClonedVolume(snapShotId)) {
+            throw new OperationFailureException(operr("snapshot[id: %s] has cloned volume, please delete or flatten volumes", snapShotId));
+        }
+
+        DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
+        req.setId(snapShotId);
+        callErrorOut(req, DeleteVolumeSnapshotResponse.class);
+    }
+
+    public boolean snapshotHasClonedVolume(int snapId) {
+        QueryVolumeRequest req = new QueryVolumeRequest();
+        req.q = String.format("spec.bs_snap_id:%s", snapId);
+        QueryVolumeResponse rsp = queryErrorOut(req, QueryVolumeResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return false;
+        }
+
+        List<String> volNames = rsp.getItems().stream().map(VolumeModule::getSpec).map(VolumeModule.VolumeSpec::getName).collect(Collectors.toList());
+
+        logger.info(String.format("snapshot %s has %d cloned volume, volume names: %s", snapId, rsp.getMetadata().getPagination().getCount(), volNames));
+        return true;
+    }
+
+    public VolumeSnapshotModule queryVolumeSnapshotByName(String name) {
+        QueryVolumeSnapshotRequest req = new QueryVolumeSnapshotRequest();
+        req.q = String.format("spec.name:%s", name);
+        QueryVolumeSnapshotResponse rsp = queryErrorOut(req, QueryVolumeSnapshotResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return null;
+        }
+        return rsp.getItems().get(0);
     }
 }

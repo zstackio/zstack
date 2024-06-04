@@ -19,6 +19,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
 import org.zstack.header.xinfini.XInfiniConstants;
+import org.zstack.iscsi.IscsiUtils;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -26,6 +27,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.vhost.kvm.VhostVolumeTO;
 import org.zstack.xinfini.sdk.MetadataState;
 import org.zstack.xinfini.sdk.XInfiniClient;
 import org.zstack.xinfini.sdk.XInfiniConnectConfig;
@@ -33,6 +35,8 @@ import org.zstack.xinfini.sdk.node.NodeModule;
 import org.zstack.xinfini.sdk.pool.BsPolicyModule;
 import org.zstack.xinfini.sdk.pool.PoolCapacity;
 import org.zstack.xinfini.sdk.pool.PoolModule;
+import org.zstack.xinfini.sdk.vhost.BdcBdevModule;
+import org.zstack.xinfini.sdk.vhost.BdcModule;
 import org.zstack.xinfini.sdk.volume.VolumeModule;
 
 import java.util.*;
@@ -40,8 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.buildImageName;
-import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.buildVolumeName;
+import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.*;
 import static org.zstack.xinfini.XInfiniPathHelper.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -61,7 +64,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     // TODO static nqn
     private final static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
-    private final static String vhostSocketDir = "/var/run/wds/";
+    private final static String vhostSocketDir = "/var/run/bdc/";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -76,7 +79,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         scap.setSupportCreateOnHypervisor(false);
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportCloneFromVolume(false);
-        capabilities.setSupportStorageQos(true);
+        capabilities.setSupportStorageQos(false);
         capabilities.setSupportLiveExpandVolume(false);
         capabilities.setSupportedImageFormats(Collections.singletonList("raw"));
     }
@@ -121,12 +124,74 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp) {
+        ActiveVolumeTO to;
+        if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
+            to = activeVhostVolume(h, v);
+            comp.success(to);
+            return;
+        } /*else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
+            to = activeIscsiVolume(h, v, shareable);
+            comp.success(to);
+            return;
+        }*/
 
+        comp.fail(operr("not supported protocol[%s]", v.getProtocol()));
     }
+
+    private ActiveVolumeTO activeVhostVolume(HostInventory h, BaseVolumeInfo vol) {
+        String vhostName = buildBdevName(vol.getUuid());
+        BdcModule bdc = apiHelper.queryBdcByIp(h.getManagementIp());
+        VolumeModule volModule = getVolumeModule(vol);
+        if (volModule == null) {
+            throw new OperationFailureException(operr("cannot get volume[%s] details, maybe it has been deleted", vol.getInstallPath()));
+        }
+
+        BdcBdevModule bdev = apiHelper.createBdcBdev(bdc.getSpec().getId(), volModule.getSpec().getId(), vhostName);
+        VhostVolumeTO to = new VhostVolumeTO();
+        to.setInstallPath(bdev.getSpec().getSocketPath());
+        return to;
+    }
+
+    /*private synchronized ActiveVolumeTO activeIscsiVolume(HostInventory h, BaseVolumeInfo vol, boolean shareable) {
+        String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (clientIqn == null) {
+            throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
+        }
+        return activeIscsiVolume(clientIqn, vol, shareable);
+    }*/
 
     @Override
     public void deactivate(String installPath, String protocol, HostInventory h, Completion comp) {
+        logger.debug(String.format("deactivating volume[path: %s, protocol:%s] on host[uuid:%s, ip:%s]",
+                installPath, protocol, h.getUuid(), h.getManagementIp()));
+        if (VolumeProtocol.Vhost.toString().equals(protocol)) {
+            deactivateVhost(installPath, h);
+            comp.success();
+            return;
+        } /*else if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
+            // iscsi target is shared by all hosts, we cannot control one volume on one host for now.
+            deactivateIscsi(installPath, h);
+            comp.success();
+            return;
+        }*/
 
+        comp.fail(operr("not supported protocol[%s] for deactivate", protocol));
+    }
+
+    private void deactivateVhost(String installPath, HostInventory h) {
+        int volId = getVolIdFromPath(installPath);
+        VolumeModule vol = apiHelper.getVolume(volId);
+        BdcModule bdc = apiHelper.queryBdcByIp(h.getManagementIp());
+        if (bdc == null) {
+            return;
+        }
+
+        BdcBdevModule bdev = apiHelper.queryBdcBdevByVolumeIdAndBdcId(vol.getSpec().getId(), bdc.getSpec().getId());
+        if (bdev == null) {
+            return;
+        }
+
+        retry(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId()));
     }
 
     @Override
@@ -136,7 +201,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
-
+        comp.success();
     }
 
     @Override
@@ -181,9 +246,9 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         }
 
         if ("image".equals(vol.getType())) {
-            return apiHelper.queryVolume(buildImageName(vol.getUuid()));
+            return apiHelper.queryVolumeByName(buildImageName(vol.getUuid()));
         } else {
-            return apiHelper.queryVolume(buildVolumeName(vol.getUuid()));
+            return apiHelper.queryVolumeByName(buildVolumeName(vol.getUuid()));
         }
     }
 
@@ -490,5 +555,23 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     public void cleanActiveRecord(VolumeInventory vol) {
 
+    }
+    private void retry(Runnable r) {
+        retry(r, 3);
+    }
+
+
+    private void retry(Runnable r, int retry) {
+        while (retry-- > 0) {
+            try {
+                r.run();
+                return;
+            } catch (Exception e) {
+                logger.warn("runnable failed, try ", e);
+                try {
+                    TimeUnit.SECONDS.sleep(3);
+                } catch (InterruptedException ignore) {}
+            }
+        }
     }
 }
