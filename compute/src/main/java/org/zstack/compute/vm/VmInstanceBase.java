@@ -3474,7 +3474,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(final SyncTaskChain chain) {
 
                 L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
-                if (!l3NetworkVO.getEnableIPAM()) {
+                if (!l3NetworkVO.enableIpAddressAllocation()) {
                     setNoIpamStaticIp(msg, new Completion(reply) {
                         @Override
                         public void success() {
@@ -4682,7 +4682,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         q.setParameter("uuid", self.getUuid());
         List<String> attachedL3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).listValues();
         List<L3NetworkVO> l3s = q.getResultList();
-        l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || (!l3.getEnableIPAM() && !attachedL3Uuids.contains(l3.getUuid()))).collect(Collectors.toList());
+        l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || (!l3.enableIpAddressAllocation() && !attachedL3Uuids.contains(l3.getUuid()))).collect(Collectors.toList());
 
         return L3NetworkInventory.valueOf(l3s);
     }
@@ -4745,7 +4745,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
                 }
 
-                l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || !l3.getEnableIPAM()).collect(Collectors.toList());
+                l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || !l3.enableIpAddressAllocation()).collect(Collectors.toList());
                 return L3NetworkInventory.valueOf(l3s);
             }
 
@@ -6163,7 +6163,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (!destL3.getEnableIPAM()) {
+                        if (!destL3.enableIpAddressAllocation()) {
                             trigger.next();
                             return;
                         }
@@ -6217,7 +6217,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (destL3.getEnableIPAM()) {
+                        if (destL3.enableIpAddressAllocation()) {
                             trigger.next();
                             return;
                         }
@@ -6287,7 +6287,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (!destL3.getEnableIPAM()) {
+                        if (!destL3.enableIpAddressAllocation()) {
                             trigger.next();
                             return;
                         }

@@ -2,6 +2,7 @@ package org.zstack.network.service.virtualrouter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -39,12 +40,12 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  */
@@ -86,6 +87,8 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIUpdateVirtualRouterMsg) msg);
         } else if (msg instanceof APIAddBackendServerToServerGroupMsg) {
             validate((APIAddBackendServerToServerGroupMsg)msg);
+        } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            validate((APIAttachL3NetworkToVmMsg)msg);
         }
 
         setServiceId(msg);
@@ -105,6 +108,54 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
                 throw new ApiMessageInterceptionException(argerr("could not add server ip to load balancer server group, because share lb has no service provider, please add vmnic first"));
             }
         }
+    }
+
+    private void validate(APIAttachL3NetworkToVmMsg msg) {
+        VirtualRouterVmVO vrVO = dbf.findByUuid(msg.getVmInstanceUuid(), VirtualRouterVmVO.class);
+        if (vrVO == null) {
+            return;
+        }
+
+        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        if (!l3VO.enableIpAddressAllocation() && !CoreGlobalProperty.UNIT_TEST_ON) {
+            throw new ApiMessageInterceptionException(argerr("cloud not attach L3 network[uuid:%s] to applianceVm[uuid:%s], "
+                            + "because l3 network doesn't has ip allocation", msg.getL3NetworkUuid(), msg.getVmInstanceUuid()));
+        }
+
+        /*
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        List<IpRangeVO> ip4ranges = Q.New(NormalIpRangeVO.class)
+                .eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
+        List<IpRangeVO> ip6ranges = Q.New(NormalIpRangeVO.class)
+                .eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
+        if (!ip4ranges.isEmpty() && !l3NetworkVO.getEnableIPAM()) {
+            IpRangeVO rangeVO = ip4ranges.get(0);
+            msg.getSystemTags().add(VmSystemTags.STATIC_IP.instantiateTag(
+                    map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                            e(VmSystemTags.STATIC_IP_TOKEN, rangeVO.getGateway()))));
+            msg.getSystemTags().add(VmSystemTags.IPV4_NETMASK.instantiateTag(
+                    map(e(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                            e(VmSystemTags.IPV4_NETMASK_TOKEN, rangeVO.getNetmask()))));
+            msg.getSystemTags().add(VmSystemTags.IPV4_GATEWAY.instantiateTag(
+                    map(e(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                            e(VmSystemTags.IPV4_GATEWAY_TOKEN, rangeVO.getGateway()))));
+        }
+
+        if (!ip6ranges.isEmpty() && !l3NetworkVO.getEnableIPAM()) {
+            IpRangeVO rangeVO = ip6ranges.get(0);
+            String ip6tag = IPv6NetworkUtils.ipv6AddessToTagValue(rangeVO.getGateway());
+            msg.getSystemTags().add(VmSystemTags.STATIC_IP.instantiateTag(
+                    map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                            e(VmSystemTags.STATIC_IP_TOKEN, ip6tag))));
+            msg.getSystemTags().add(VmSystemTags.IPV6_PREFIX.instantiateTag(
+                    map(e(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                            e(VmSystemTags.IPV6_PREFIX_TOKEN, rangeVO.getNetmask()))));
+            msg.getSystemTags().add(VmSystemTags.IPV4_GATEWAY.instantiateTag(
+                    map(e(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                            e(VmSystemTags.IPV4_GATEWAY_TOKEN, ip6tag))));
+        }*/
     }
 
     private void validate(APIUpdateVirtualRouterMsg msg) {
@@ -312,6 +363,10 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        return Arrays.asList(APIAddBackendServerToServerGroupMsg.class);
+        List<Class> ret = new ArrayList<>();
+        ret.add(APIAddBackendServerToServerGroupMsg.class);
+        ret.add(APIAttachL3NetworkToVmMsg.class);
+
+        return ret;
     }
 }

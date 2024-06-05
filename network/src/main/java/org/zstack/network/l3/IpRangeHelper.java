@@ -254,4 +254,12 @@ public class IpRangeHelper {
         }
         return ret;
     }
+
+    public static boolean isIpAddressAllocationEnableOnL3(String l3Uuid) {
+        L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
+        if (l3NetworkVO == null) {
+            return false;
+        }
+        return l3NetworkVO.enableIpAddressAllocation();
+    }
 }

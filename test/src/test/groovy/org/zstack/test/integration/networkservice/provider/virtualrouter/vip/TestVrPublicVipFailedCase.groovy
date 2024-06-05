@@ -3,8 +3,10 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.vip
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
@@ -106,6 +108,14 @@ class TestVrPublicVipFailedCase extends SubCase{
 
                     l3Network {
                         name = "pubL3"
+                        category = "Public"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(),
+                                     NetworkServiceType.HostRoute.toString(),
+                                     UserdataConstant.USERDATA_TYPE_STRING]
+                        }
 
                         ip {
                             startIp = "11.168.100.10"

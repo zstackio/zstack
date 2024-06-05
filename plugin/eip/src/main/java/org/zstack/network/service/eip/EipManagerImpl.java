@@ -606,11 +606,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         struct.setVip(vip);
         struct.setEip(eip);
         if (guestIp != null) {
-            /* when delete l3 network, ip range is deleted, then release network, so can not get iprange */
-            NormalIpRangeVO ipr = dbf.findByUuid(guestIp.getIpRangeUuid(), NormalIpRangeVO.class);
-            if (ipr != null) {
-                struct.setGuestIpRange(IpRangeInventory.valueOf(ipr));
-            }
             struct.setGuestIp(guestIp);
         }
 

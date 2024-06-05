@@ -769,7 +769,7 @@ public class NetworkUtils {
         }
     }
 
-    public static Integer getPrefixLengthFromNetwork(String mask) {
+    public static Integer getPrefixLengthFromNetmask(String mask) {
         if (isIpv4Address(mask)) {
             return validNetmasks.get(mask);
         } else {

@@ -6,10 +6,13 @@ import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.image.ImageVO
 import org.zstack.header.image.ImageVO_
+import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmNicVO
 import org.zstack.header.vm.VmNicVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
+import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -100,6 +103,13 @@ class ChangeVmNicFailedCase extends SubCase {
                             netmask = "255.255.255.0"
                             gateway = "192.168.100.1"
                         }
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(),
+                                     NetworkServiceType.HostRoute.toString(),
+                                     UserdataConstant.USERDATA_TYPE_STRING]
+                        }
                     }
 
                     l3Network {
@@ -111,6 +121,13 @@ class ChangeVmNicFailedCase extends SubCase {
                             endIp = "12.16.10.100"
                             netmask = "255.255.255.0"
                             gateway = "12.16.10.1"
+                        }
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(),
+                                     NetworkServiceType.HostRoute.toString(),
+                                     UserdataConstant.USERDATA_TYPE_STRING]
                         }
                     }
                 }

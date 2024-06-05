@@ -1,6 +1,7 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
@@ -8,11 +9,11 @@ import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.*;
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 @Entity
 @Table
@@ -106,5 +107,23 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
     public List<Integer> getIpVersions() {
         return getIpRanges().stream().map(IpRangeAO::getIpVersion).distinct()
                 .sorted().collect(Collectors.toList());
+    }
+
+    public boolean enableIpAddressAllocation() {
+        if (getCategory() == L3NetworkCategory.System) {
+            return true;
+        }
+
+        if (!getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
+            return true;
+        }
+
+        for (NetworkServiceL3NetworkRefVO ref : networkServices) {
+            if (ref.getNetworkServiceType().equals(NetworkServiceType.DHCP.toString())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
