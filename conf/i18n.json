@@ -37992,5 +37992,13 @@
     "arguments": [],
     "line": 83,
     "fileName": "src/test/java/org/zstack/test/core/asyncbackup/TestSafeCompletion.java"
+  },
+  {
+    "raw": "Failed to validate universal sms",
+    "en_US": "Failed to validate universal sms",
+    "zh_CN": "发送测试短信失败",
+    "arguments": [],
+    "line": 166,
+    "fileName": "src/main/java/org/zstack/sns/platform/universalsms/SNSUniversalSmsEndpoint.java"
   }
 ]
