@@ -4,8 +4,6 @@ import org.zstack.xinfini.sdk.BaseResource;
 import org.zstack.xinfini.sdk.BaseSpec;
 import org.zstack.xinfini.sdk.BaseStatus;
 
-import java.util.List;
-
 /**
  * @ Author : yh.w
  * @ Date   : Created in 11:29 2024/5/28

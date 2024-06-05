@@ -1,7 +1,6 @@
 package org.zstack.xinfini.sdk.vhost;
 
 import org.zstack.xinfini.sdk.XInfiniQueryResponse;
-import org.zstack.xinfini.sdk.pool.PoolModule;
 
 import java.util.List;
 

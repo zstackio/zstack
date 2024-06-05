@@ -1,4 +1,4 @@
-package org.zstack.xinfini.sdk.iscsi;
+package org.zstack.xinfini.sdk.cluster;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.xinfini.XInfiniApiCategory;
@@ -13,12 +13,12 @@ import java.util.Map;
  * @ Date   : Created in 17:36 2024/5/27
  */
 @XInfiniRestRequest(
-    path = "/iscsi-clients",
+    path = "/cluster",
     method = HttpMethod.GET,
-    responseClass = QueryIscsiGatewayResponse.class,
-    category = XInfiniApiCategory.AFA
+    responseClass = QueryClusterResponse.class,
+    category = XInfiniApiCategory.SDDC
 )
-public class QueryIscsiClientRequest extends XInfiniQueryRequest {
+public class QueryClusterRequest extends XInfiniQueryRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     @Override

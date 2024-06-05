@@ -13,7 +13,7 @@ import java.util.Map;
  * @ Date   : Created in 17:36 2024/5/27
  */
 @XInfiniRestRequest(
-    path = "/bdc",
+    path = "/bdcs",
     method = HttpMethod.GET,
     responseClass = QueryBdcResponse.class,
     category = XInfiniApiCategory.AFA

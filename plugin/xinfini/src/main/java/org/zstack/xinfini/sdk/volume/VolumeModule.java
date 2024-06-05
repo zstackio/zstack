@@ -88,6 +88,15 @@ public class VolumeModule extends BaseResource {
         private boolean loaded;
         private int poolId;
         private boolean flattened;
+        private String serial;
+
+        public String getSerial() {
+            return serial;
+        }
+
+        public void setSerial(String serial) {
+            this.serial = serial;
+        }
 
         public boolean isFlattened() {
             return flattened;

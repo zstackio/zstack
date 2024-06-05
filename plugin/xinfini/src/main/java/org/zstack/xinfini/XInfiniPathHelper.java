@@ -1,5 +1,12 @@
 package org.zstack.xinfini;
 
+import org.zstack.header.errorcode.OperationFailureException;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.zstack.core.Platform.operr;
+
 /**
  * xinfini volume path like :
  * xinfini://1/2,
@@ -11,27 +18,11 @@ public class XInfiniPathHelper {
         return "volume-" + zsVolumeUuid;
     }
 
-    public static String buildVhostControllerPath(String zsVolumeUuid) {
-        return "/var/run/wds/volume-" + zsVolumeUuid;
-    }
-
-    public static String getVolumeUuidFromVhostControllerPath(String path) {
-        return path.replace("/var/run/wds/volume-", "");
-    }
-
-    public static String buildUssGwName(String protocol, String managerIp) {
-        return protocol + "_" + managerIp.replace(".", "_");
-    }
-
-    public static String getUssManagerIp(String name) {
-        return name.split("_", 2)[1].replace("_", ".");
-    }
-
     public static String buildXInfiniPath(Integer poolId, Integer volId) {
         return String.format("xinfini://%s/%s", poolId, volId);
     }
 
-    public static String buildXInfiniSnapshotPath(String volPath, String snapId) {
+    public static String buildXInfiniSnapshotPath(String volPath, Integer snapId) {
         return volPath + "@" + snapId;
     }
 

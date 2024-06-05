@@ -2,6 +2,7 @@ package org.zstack.xinfini;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.core.Completion;
@@ -13,9 +14,9 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.xinfini.sdk.*;
-import org.zstack.xinfini.sdk.iscsi.GatewayModule;
-import org.zstack.xinfini.sdk.iscsi.QueryGatewayRequest;
-import org.zstack.xinfini.sdk.iscsi.QueryGatewayResponse;
+import org.zstack.xinfini.sdk.cluster.QueryClusterRequest;
+import org.zstack.xinfini.sdk.cluster.QueryClusterResponse;
+import org.zstack.xinfini.sdk.iscsi.*;
 import org.zstack.xinfini.sdk.metric.PoolMetrics;
 import org.zstack.xinfini.sdk.metric.QueryMetricRequest;
 import org.zstack.xinfini.sdk.metric.QueryMetricResponse;
@@ -24,6 +25,7 @@ import org.zstack.xinfini.sdk.pool.*;
 import org.zstack.xinfini.sdk.vhost.*;
 import org.zstack.xinfini.sdk.volume.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,6 +89,11 @@ public class XInfiniApiHelper {
         return callErrorOut(req, GetPoolResponse.class).toModule();
     }
 
+    public String getClusterUuid() {
+        QueryClusterRequest req = new QueryClusterRequest();
+        return queryErrorOut(req, QueryClusterResponse.class).toModule().getUuid();
+    }
+
     public List<NodeModule> queryNodes() {
         QueryNodeRequest req = new QueryNodeRequest();
         return queryErrorOut(req, QueryNodeResponse.class).getItems();
@@ -98,25 +105,33 @@ public class XInfiniApiHelper {
         return callErrorOut(req, GetNodeResponse.class).toModule();
     }
 
-    public List<GatewayModule> queryGateways() {
-        QueryGatewayRequest req = new QueryGatewayRequest();
-        return queryErrorOut(req, QueryGatewayResponse.class).getItems();
-    }
-
     public List<BdcModule> queryBdcs() {
         QueryBdcRequest req = new QueryBdcRequest();
         return queryErrorOut(req, QueryBdcResponse.class).getItems();
     }
 
-    public BdcModule queryBdcByIp(String ip) {
+    public BdcModule queryBdcByIp(String ip, boolean errorIfNotExist) {
         QueryBdcRequest req = new QueryBdcRequest();
-        req.q = String.format("spec.ip:%s", ip);
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            req.sortBy = "spec.id:desc";
+        } else {
+            req.q = String.format("spec.ip:%s", ip);
+        }
+
         QueryBdcResponse rsp = queryErrorOut(req, QueryBdcResponse.class);
         if (rsp.getMetadata().getPagination().getCount() == 0) {
+            if (errorIfNotExist) {
+                throw new OperationFailureException(operr("bdc with ip %s not found.", ip));
+            }
+
             return null;
         }
 
         return rsp.getItems().get(0);
+    }
+
+    public BdcModule queryBdcByIp(String ip) {
+        return queryBdcByIp(ip, true);
     }
 
     public BdcModule getBdc(int id) {
@@ -132,10 +147,9 @@ public class XInfiniApiHelper {
     }
 
     public PoolCapacity getPoolCapacity(PoolModule pool) {
-        BsPolicyModule policy = getBsPolicy(pool.getSpec().getDefaultBsPolicyId());
         PoolCapacity capacity = new PoolCapacity();
-        long usedCapacity = SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.USED_KBYTES, pool)) / policy.getSpec().getDataReplicaNum();
-        capacity.setTotalCapacity(SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.TOTAL_KBYTES, pool)) / policy.getSpec().getDataReplicaNum());
+        long usedCapacity = SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.DATA_KBYTES, pool));
+        capacity.setTotalCapacity(SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.ACTUAL_KBYTES, pool)));
         capacity.setAvailableCapacity(capacity.getTotalCapacity() - usedCapacity);
         return capacity;
     }
@@ -178,7 +192,7 @@ public class XInfiniApiHelper {
         CreateVolumeResponse rsp = callErrorOut(req, CreateVolumeResponse.class);
         GetVolumeRequest gReq = new GetVolumeRequest();
         gReq.setId(rsp.getSpec().getId());
-        return retryUtilStateActive(req, GetVolumeResponse.class,
+        return retryUtilStateActive(gReq, GetVolumeResponse.class,
                 (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
@@ -195,7 +209,7 @@ public class XInfiniApiHelper {
         CreateVolumeSnapshotResponse rsp = callErrorOut(req, CreateVolumeSnapshotResponse.class);
         GetVolumeSnapshotRequest gReq = new GetVolumeSnapshotRequest();
         gReq.setId(rsp.getSpec().getId());
-        return retryUtilStateActive(req, GetVolumeSnapshotResponse.class,
+        return retryUtilStateActive(gReq, GetVolumeSnapshotResponse.class,
                 (GetVolumeSnapshotResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
@@ -208,8 +222,30 @@ public class XInfiniApiHelper {
         CloneVolumeResponse rsp = callErrorOut(req, CloneVolumeResponse.class);
         GetVolumeRequest gReq = new GetVolumeRequest();
         gReq.setId(rsp.getSpec().getId());
-        return retryUtilStateActive(req, GetVolumeResponse.class,
+        return retryUtilStateActive(gReq, GetVolumeResponse.class,
                 (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
+    private <T extends XInfiniResponse> void retryUtilResourceDeleted(XInfiniRequest req,
+                                                                      Class<T> rsp) {
+        new Retry<Void>() {
+            @Override
+            @RetryCondition(times = XInfiniConstants.DEFAULT_POLLING_TIMES)
+            protected Void call() {
+                T r = XInfiniApiHelper.this.call(req, rsp);
+                if (!r.resourceIsDeleted()) {
+                    throw new RetryException("resource not deleted yet");
+                }
+
+                return null;
+            }
+
+            @Override
+            // not error out if delete failed
+            protected boolean onFailure(Throwable t) {
+                return false;
+            }
+        }.run();
     }
 
     private <T extends XInfiniResponse> T retryUtilStateActive(XInfiniRequest req,
@@ -237,19 +273,25 @@ public class XInfiniApiHelper {
         CreateBdcBdevResponse rsp = callErrorOut(req, CreateBdcBdevResponse.class);
         GetBdcBdevRequest gReq = new GetBdcBdevRequest();
         gReq.setId(rsp.getSpec().getId());
-        return retryUtilStateActive(req, GetBdcBdevResponse.class,
+        return retryUtilStateActive(gReq, GetBdcBdevResponse.class,
                 (GetBdcBdevResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
     public BdcBdevModule queryBdcBdevByVolumeIdAndBdcId(int volId, int bdcId) {
         QueryBdcBdevRequest req = new QueryBdcBdevRequest();
-        req.q = String.format("((spec.bdc_id:%s) AND (spec.bs_volume_id:%s)", bdcId, volId);
+        req.q = String.format("((spec.bdc_id:%s) AND (spec.bs_volume_id:%s))", bdcId, volId);
         QueryBdcBdevResponse rsp = queryErrorOut(req, QueryBdcBdevResponse.class);
-        if (rsp.getMetadata().getPagination().getCount() == 1) {
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
             return null;
         }
 
         return rsp.getItems().get(0);
+    }
+
+    public List<BdcBdevModule> queryBdcBdevByVolumeId(int volId) {
+        QueryBdcBdevRequest req = new QueryBdcBdevRequest();
+        req.q = String.format("spec.bs_volume_id:%s", volId);
+        return queryErrorOut(req, QueryBdcBdevResponse.class).getItems();
     }
 
     public BdcBdevModule getBdcBdev(int id) {
@@ -270,6 +312,8 @@ public class XInfiniApiHelper {
         DeleteBdcBdevRequest req = new DeleteBdcBdevRequest();
         req.setId(bdevId);
         callErrorOut(req, DeleteBdcBdevResponse.class);
+
+        retryUtilResourceDeleted(gReq, GetBdcBdevResponse.class);
     }
 
     public void deleteVolume(int volId, boolean force) {
@@ -284,6 +328,8 @@ public class XInfiniApiHelper {
         DeleteVolumeRequest req = new DeleteVolumeRequest();
         req.setId(volId);
         callErrorOut(req, DeleteVolumeResponse.class);
+
+        retryUtilResourceDeleted(gReq, GetVolumeResponse.class);
     }
 
     public void deleteVolumeSnapshot(int snapShotId) {
@@ -303,6 +349,8 @@ public class XInfiniApiHelper {
         DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
         req.setId(snapShotId);
         callErrorOut(req, DeleteVolumeSnapshotResponse.class);
+
+        retryUtilResourceDeleted(gReq, GetVolumeSnapshotResponse.class);
     }
 
     public boolean snapshotHasClonedVolume(int snapId) {
@@ -319,6 +367,12 @@ public class XInfiniApiHelper {
         return true;
     }
 
+    public List<VolumeSnapshotModule> queryVolumeSnapshotByVolumeId(int volId) {
+        QueryVolumeSnapshotRequest req = new QueryVolumeSnapshotRequest();
+        req.q = String.format("spec.bs_volume_id:%s", volId);
+        return queryErrorOut(req, QueryVolumeSnapshotResponse.class).getItems();
+    }
+
     public VolumeSnapshotModule queryVolumeSnapshotByName(String name) {
         QueryVolumeSnapshotRequest req = new QueryVolumeSnapshotRequest();
         req.q = String.format("spec.name:%s", name);
@@ -327,5 +381,187 @@ public class XInfiniApiHelper {
             return null;
         }
         return rsp.getItems().get(0);
+    }
+
+    public List<IscsiGatewayModule> queryIscsiGateways() {
+        QueryIscsiGatewayRequest req = new QueryIscsiGatewayRequest();
+        return queryErrorOut(req, QueryIscsiGatewayResponse.class).getItems();
+    }
+
+    public List<IscsiGatewayModule> queryIscsiGatewaysByIds(List<Integer> ids) {
+        QueryIscsiGatewayRequest req = new QueryIscsiGatewayRequest();
+        req.q = String.format("spec.id:(%s)", ids.stream().map(String::valueOf).collect(Collectors.joining(" ")));
+        return queryErrorOut(req, QueryIscsiGatewayResponse.class).getItems();
+    }
+
+    public List<IscsiClientGroupModule> queryIscsiClientGroups() {
+        QueryIscsiClientGroupRequest req = new QueryIscsiClientGroupRequest();
+        return queryErrorOut(req, QueryIscsiClientGroupResponse.class).getItems();
+    }
+
+    public IscsiClientGroupModule queryIscsiClientGroupByName(String name) {
+        QueryIscsiClientGroupRequest req = new QueryIscsiClientGroupRequest();
+        req.q = String.format("spec.name:%s", name);
+        QueryIscsiClientGroupResponse rsp = queryErrorOut(req, QueryIscsiClientGroupResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return null;
+        }
+
+        return rsp.getItems().get(0);
+    }
+
+    public IscsiClientModule createIscsiClient(String name, String code, int iscsiClientGroupId) {
+        CreateIscsiClientRequest req = new CreateIscsiClientRequest();
+        req.setName(name);
+        req.setCode(code);
+        req.setIscsiClientGroupId(iscsiClientGroupId);
+        CreateIscsiClientResponse rsp =  callErrorOut(req, CreateIscsiClientResponse.class);
+        GetIscsiClientRequest gReq = new GetIscsiClientRequest();
+        gReq.setId(rsp.getSpec().getId());
+        return retryUtilStateActive(gReq, GetIscsiClientResponse.class,
+                (GetIscsiClientResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
+    public IscsiClientModule getIscsiClient(int id) {
+        GetIscsiClientRequest req = new GetIscsiClientRequest();
+        req.setId(id);
+        return callErrorOut(req, GetIscsiClientResponse.class).toModule();
+    }
+
+    public void addVolumeClientGroupMapping(int volumeId, int iscsiClientGroupId) {
+        QueryVolumeClientGroupMappingRequest qReq = new QueryVolumeClientGroupMappingRequest();
+        qReq.q = String.format("((spec.iscsi_client_group_id:%s) AND (spec.bs_volume_id:%s))", iscsiClientGroupId, volumeId);
+        if (queryErrorOut(qReq, QueryVolumeClientGroupMappingResponse.class).getMetadata().getPagination().getCount() > 0) {
+            logger.info(String.format("volume %s has already been mapped to iscsi client group %s, skip add", volumeId, iscsiClientGroupId));
+            return;
+        }
+
+        AddVolumeClientGroupMappingRequest req = new AddVolumeClientGroupMappingRequest();
+        req.setId(volumeId);
+        req.setIscsiClientGroupIds(Collections.singletonList(iscsiClientGroupId));
+        callErrorOut(req, AddVolumeClientGroupMappingResponse.class);
+
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(volumeId);
+        retryUtilStateActive(gReq, GetVolumeResponse.class,
+                (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
+    public void deleteVolumeClientGroupMapping(int mapId) {
+        GetVolumeClientGroupMappingRequest gReq = new GetVolumeClientGroupMappingRequest();
+        gReq.setId(mapId);
+        GetVolumeClientGroupMappingResponse rsp = call(gReq, GetVolumeClientGroupMappingResponse.class);
+        if (rsp.resourceIsDeleted()) {
+            logger.info(String.format("volume-client-group-mapping %s has been deleted, skip send delete req", mapId));
+            return;
+        }
+
+        DeleteVolumeClientGroupMappingRequest req = new DeleteVolumeClientGroupMappingRequest();
+        req.setId(mapId);
+        callErrorOut(req, DeleteVolumeClientGroupMappingResponse.class);
+
+        retryUtilResourceDeleted(gReq, GetVolumeClientGroupMappingResponse.class);
+    }
+
+    public List<IscsiGatewayClientGroupMappingModule> queryIscsiGatewayClientGroupMappingByGroupId(int groupId) {
+        QueryIscsiGatewayClientGroupMappingRequest req = new QueryIscsiGatewayClientGroupMappingRequest();
+        req.q = String.format("spec.iscsi_client_group_id:%s", groupId);
+        return queryErrorOut(req, QueryIscsiGatewayClientGroupMappingResponse.class).getItems();
+    }
+
+    public List<IscsiClientModule> queryIscsiClientByGroupId(int groupId) {
+        QueryIscsiClientRequest req = new QueryIscsiClientRequest();
+        req.q = String.format("spec.iscsi_client_group_id:%s", groupId);
+        return queryErrorOut(req, QueryIscsiClientResponse.class).getItems();
+    }
+
+    public List<IscsiClientModule> queryIscsiClientByIds(List<Integer> ids) {
+        QueryIscsiClientRequest req = new QueryIscsiClientRequest();
+        req.q = String.format("spec.id:(%s)", ids.stream().map(String::valueOf).collect(Collectors.joining(" ")));
+        return queryErrorOut(req, QueryIscsiClientResponse.class).getItems();
+    }
+
+    public IscsiClientModule queryIscsiClientByIqn(String code) {
+        QueryIscsiClientRequest req = new QueryIscsiClientRequest();
+        req.q = String.format("spec.code:%s", code);
+        QueryIscsiClientResponse rsp = queryErrorOut(req, QueryIscsiClientResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return null;
+        }
+
+        return rsp.getItems().get(0);
+    }
+
+    public void deleteIscsiClient(int iscsiClientId) {
+        GetIscsiClientRequest gReq = new GetIscsiClientRequest();
+        gReq.setId(iscsiClientId);
+        GetIscsiClientResponse rsp = call(gReq, GetIscsiClientResponse.class);
+        if (rsp.resourceIsDeleted()) {
+            logger.info(String.format("iscsi-client %s has been deleted, skip send delete req", iscsiClientId));
+            return;
+        }
+
+        DeleteIscsiClientRequest req = new DeleteIscsiClientRequest();
+        req.setId(iscsiClientId);
+        callErrorOut(req, DeleteIscsiClientResponse.class);
+
+        retryUtilResourceDeleted(gReq, GetIscsiClientResponse.class);
+    }
+
+    public IscsiClientGroupModule createIscsiClientGroup(String name, List<Integer> iscsiGatewayIds, List<String> iscsiClientCodes) {
+        CreateIscsiClientGroupRequest req = new CreateIscsiClientGroupRequest();
+        req.setName(name);
+        req.setIscsiGatewayIds(iscsiGatewayIds);
+        req.setIscsiClientCodes(iscsiClientCodes);
+        CreateIscsiClientGroupResponse rsp =  callErrorOut(req, CreateIscsiClientGroupResponse.class);
+        // TODO xinfini not support yet
+        // return retryUtilStateActive(req, CreateIscsiClientGroupResponse.class,(CreateIscsiClientGroupResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+        return rsp.toModule();
+    }
+
+    public IscsiClientGroupModule getIscsiClientGroup(int id) {
+        GetIscsiClientGroupRequest req = new GetIscsiClientGroupRequest();
+        req.setId(id);
+        return call(req, GetIscsiClientGroupResponse.class).toModule();
+    }
+
+    public VolumeClientGroupMappingModule queryVolumeClientGroupMappingByGroupIdAndVolId(int groupId, int volId) {
+        QueryVolumeClientGroupMappingRequest req = new QueryVolumeClientGroupMappingRequest();
+        req.q = String.format("((spec.iscsi_client_group_id:%s) AND (spec.bs_volume_id:%s))", groupId, volId);
+        QueryVolumeClientGroupMappingResponse rsp = queryErrorOut(req, QueryVolumeClientGroupMappingResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return null;
+        }
+
+        return rsp.getItems().get(0);
+    }
+
+    public List<VolumeClientGroupMappingModule> queryVolumeClientGroupMappingByVolId(int volId) {
+        QueryVolumeClientGroupMappingRequest req = new QueryVolumeClientGroupMappingRequest();
+        req.q = String.format("spec.bs_volume_id:%s", volId);
+        return queryErrorOut(req, QueryVolumeClientGroupMappingResponse.class).getItems();
+    }
+
+    public List<VolumeClientMappingModule> queryVolumeClientMappingByVolId(int volId) {
+        QueryVolumeClientMappingRequest req = new QueryVolumeClientMappingRequest();
+        req.q = String.format("spec.bs_volume_id:%s", volId);
+        return queryErrorOut(req, QueryVolumeClientMappingResponse.class).getItems();
+    }
+
+
+    public List<VolumeClientGroupMappingModule> queryVolumeClientGroupMappings() {
+        QueryVolumeClientGroupMappingRequest req = new QueryVolumeClientGroupMappingRequest();
+        return queryErrorOut(req, QueryVolumeClientGroupMappingResponse.class).getItems();
+    }
+
+    public IscsiClientGroupModule queryIscsiClientGroupByVolumeId(int volId) {
+        QueryVolumeClientGroupMappingRequest req = new QueryVolumeClientGroupMappingRequest();
+        req.q = String.format("spec.bs_volume_id:%s", volId);
+        QueryVolumeClientGroupMappingResponse rsp = queryErrorOut(req, QueryVolumeClientGroupMappingResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return null;
+        }
+
+        return getIscsiClientGroup(rsp.getItems().get(0).getSpec().getIscsiClientGroupId());
     }
 }

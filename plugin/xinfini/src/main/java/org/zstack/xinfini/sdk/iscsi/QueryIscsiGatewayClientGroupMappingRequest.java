@@ -15,10 +15,10 @@ import java.util.Map;
 @XInfiniRestRequest(
     path = "/iscsi-gateway-client-group-mappings",
     method = HttpMethod.GET,
-    responseClass = QueryGatewayClientGroupMappingResponse.class,
+    responseClass = QueryIscsiGatewayClientGroupMappingResponse.class,
     category = XInfiniApiCategory.AFA
 )
-public class QueryGatewayClientGroupMappingRequest extends XInfiniQueryRequest {
+public class QueryIscsiGatewayClientGroupMappingRequest extends XInfiniQueryRequest {
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     @Override

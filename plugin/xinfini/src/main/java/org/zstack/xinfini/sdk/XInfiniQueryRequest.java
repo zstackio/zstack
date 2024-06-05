@@ -11,7 +11,6 @@ public abstract class XInfiniQueryRequest extends XInfiniRequest {
     public Long limit;
     public Long offset;
     public String sortBy;
-    public String sortDirection;
     public String metric;
     public String lables;
 }

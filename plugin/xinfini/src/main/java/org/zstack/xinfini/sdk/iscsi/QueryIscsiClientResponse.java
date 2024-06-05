@@ -9,13 +9,13 @@ import java.util.List;
  * @ Date   : Created in 11:51 2024/5/28
  */
 public class QueryIscsiClientResponse extends XInfiniQueryResponse {
-    List<GatewayModule> items;
+    List<IscsiClientModule> items;
 
-    public List<GatewayModule> getItems() {
+    public List<IscsiClientModule> getItems() {
         return items;
     }
 
-    public void setItems(List<GatewayModule> items) {
+    public void setItems(List<IscsiClientModule> items) {
         this.items = items;
     }
 }

@@ -12,10 +12,8 @@ public interface XInfiniConstants {
 
     String XINFINI_MANUFACTURER = "xinfini";
     String HEADER_TOKEN = "x-sddc-token";
-    String ISCSI_EXPORT_CLIENT_GROUP = "iscsi_zstack_export";
-    String ISCSI_HEARTBEAT_CLIENT_GROUP = "iscsi_zstack_heartbeat";
 
     MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     int DEFAULT_POLLING_INTERVAL_IN_SECOND = 1;
-    int DEFAULT_POLLING_TIMES = 300;
+    int DEFAULT_POLLING_TIMES = 60;
 }
