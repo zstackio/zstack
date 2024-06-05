@@ -165,6 +165,12 @@ class DisableAndEnableNicFromVmCase extends SubCase{
             state = VmNicState.enable.toString()
         }
         assert Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicUuid).eq(VmNicVO_.state, VmNicState.enable).count() == 1L
+
+        changeVmNicState {
+            vmNicUuid = nicUuid
+            state = VmNicState.enable.toString()
+        }
+        assert Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicUuid).eq(VmNicVO_.state, VmNicState.enable).count() == 1L
     }
 
     void disableAndEnableNicFromStopVm() {

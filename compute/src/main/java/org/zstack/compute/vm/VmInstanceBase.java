@@ -5096,6 +5096,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         final APIChangeVmNicStateEvent evt = new APIChangeVmNicStateEvent(msg.getId());
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.ChangeNicState);
 
+        if (Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).eq(VmNicVO_.state, VmNicState.fromState(msg.getState())).isExists()) {
+            evt.setInventory(VmInstanceInventory.valueOf(self));
+            bus.publish(evt);
+            return;
+        }
+
         if (VmInstanceState.Stopped.toString().equals(spec.getVmInventory().getState())) {
             if (msg.getState().equals(VmNicState.enable.toString())) {
                 SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).set(VmNicVO_.state, VmNicState.enable).update();
