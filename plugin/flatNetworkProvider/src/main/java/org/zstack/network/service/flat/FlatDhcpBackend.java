@@ -2589,6 +2589,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 ipr.getIpVersion() == IPv6Constants.IPv6 && !ipr.getAddressMode().equals(IPv6Constants.SLAAC))
                 .collect(Collectors.toList());
 
+        /* enable ipam when enable dhcp service */
+        SQL.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3VO.getUuid())
+                .set(L3NetworkVO_.enableIPAM, Boolean.TRUE).update();
+
         String dhcpIp = null;
         String dhcp6Ip = null;
         if (systemTags != null && !systemTags.isEmpty()){
@@ -2622,6 +2626,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             }
             dhcpIp = allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv4, allocate_ip, dhcpIp, null);
             if (dhcpIp == null) {
+                SQL.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3VO.getUuid())
+                        .set(L3NetworkVO_.enableIPAM, Boolean.FALSE).update();
                 completion.fail(argerr("allocated dhcp server ip failed"));
                 return;
             }
@@ -2641,12 +2647,26 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             }
             dhcp6Ip = allocateDhcpIp(l3VO.getUuid(), IPv6Constants.IPv6, allocate_ip, dhcp6Ip, null);
             if (dhcp6Ip == null) {
+                SQL.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3VO.getUuid())
+                        .set(L3NetworkVO_.enableIPAM, Boolean.FALSE).update();
                 completion.fail(argerr("allocated dhcp server ip failed"));
                 return;
             }
         }
 
-        refreshDhcpInfoToHosts(l3VO, completion);
+        refreshDhcpInfoToHosts(l3VO, new Completion(completion) {
+            @Override
+            public void success() {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                SQL.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3VO.getUuid())
+                        .set(L3NetworkVO_.enableIPAM, Boolean.FALSE).update();
+                completion.fail(errorCode);
+            }
+        });
     }
 
     private void flushDhcpConfig(L3NetworkInventory inventory, Completion completion) {
@@ -2664,6 +2684,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }.call();
 
         if (huuids.isEmpty()) {
+            completion.success();
             return;
         }
 
@@ -2716,6 +2737,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             public void success() {
                 Map<String, String> dhcpServerMap = getExistingDhcpServerIp(l3VO.getUuid(), IPv6Constants.DUAL_STACK);
                 if (dhcpServerMap.isEmpty()) {
+                    /* disable ipam when disable dhcp service */
+                    SQL.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3VO.getUuid())
+                            .set(L3NetworkVO_.enableIPAM, Boolean.FALSE).update();
                     completion.success();
                     return;
                 }
@@ -2723,6 +2747,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 for (Map.Entry<String, String> e : dhcpServerMap.entrySet()) {
                     deleteDhcpServerIp(l3VO.getUuid(), e.getKey(), e.getValue());
                 }
+
+                /* disable ipam when disable dhcp service */
+                SQL.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3VO.getUuid())
+                                .set(L3NetworkVO_.enableIPAM, Boolean.FALSE).update();
 
                 completion.success();
             }

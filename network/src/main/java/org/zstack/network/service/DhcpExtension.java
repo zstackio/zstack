@@ -236,6 +236,10 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             }
 
             for (UsedIpVO ip : nic.getUsedIps()) {
+                if (ip.getIpRangeUuid() == null) {
+                    /* ip address allocated when ipam is disabled */
+                    continue;
+                }
                 NormalIpRangeVO ipr = dbf.findByUuid(ip.getIpRangeUuid(), NormalIpRangeVO.class);
                 if (ipr.getIpVersion() == IPv6Constants.IPv6 &&
                         (ipr.getAddressMode().equals(IPv6Constants.SLAAC))) {

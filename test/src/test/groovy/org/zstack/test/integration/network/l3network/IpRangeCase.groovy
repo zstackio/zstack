@@ -422,6 +422,8 @@ class IpRangeCase extends SubCase {
             l3NetworkUuid = l3_2.uuid
             service = 'DHCP'
         }
+        l3_2 = queryL3Network {conditions=["uuid=${l3_2.uuid}"]} [0]
+        assert !l3_2.enableIPAM
 
         /* delete vm ip */
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString());

@@ -13,19 +13,21 @@ import java.util.Map;
 public class VmNicParam implements Serializable {
     private String l3NetworkUuid;
 
-    private String ip;
-
-    private String ip6;
-
     private String mac;
+
+    private String ip;
 
     private String netmask;
 
     private String gateway;
 
-    private String metaData;
+    private String ip6;
 
-    private Integer ipVersion;
+    private String prefix6;
+
+    private String gateway6;
+
+    private String metaData;
 
     private String driverType;
 
@@ -95,14 +97,6 @@ public class VmNicParam implements Serializable {
 
     public void setMetaData(String metaData) {
         this.metaData = metaData;
-    }
-
-    public Integer getIpVersion() {
-        return ipVersion;
-    }
-
-    public void setIpVersion(Integer ipVersion) {
-        this.ipVersion = ipVersion;
     }
 
     public String getDriverType() {
@@ -191,5 +185,21 @@ public class VmNicParam implements Serializable {
 
     public void setIp6Map(Map<String, String> ip6Map) {
         Ip6Map = ip6Map;
+    }
+
+    public String getPrefix6() {
+        return prefix6;
+    }
+
+    public void setPrefix6(String prefix6) {
+        this.prefix6 = prefix6;
+    }
+
+    public String getGateway6() {
+        return gateway6;
+    }
+
+    public void setGateway6(String gateway6) {
+        this.gateway6 = gateway6;
     }
 }
