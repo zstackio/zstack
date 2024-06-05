@@ -286,11 +286,15 @@ class CheckFlatDhcpWorkCase extends SubCase{
         l31 = queryL3Network{ conditions = ["uuid=${l31.uuid}"]}[0]
         List<String> services = l31.networkServices.stream().map {ref -> ref.networkServiceType}.collect(Collectors.toList())
         assert services.contains("DHCP")
+        l31 = queryL3Network {conditions=["uuid=${l31.uuid}"]} [0]
+        assert l31.enableIPAM
 
         detachNetworkServiceFromL3Network {
             l3NetworkUuid = l31.uuid
             service = 'DHCP'
         }
+        l31 = queryL3Network {conditions=["uuid=${l31.uuid}"]} [0]
+        assert !l31.enableIPAM
 
         /* dhcp is disabled, can not change dhcp server ip */
         expect(AssertionError.class) {
