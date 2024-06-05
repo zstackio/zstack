@@ -104,6 +104,19 @@ CALL check_and_insert_encrypt_metadata();
 
 UPDATE SystemTagVO SET resourceType='SNSAliyunSmsEndpointVO' where resourceType='SNSSmsEndpointVO';
 
+
+UPDATE IAM2VirtualIDAttributeVO attr JOIN IAM2VirtualIDVO vid ON attr.virtualIDUuid = vid.uuid SET attr.createDate = vid.createDate WHERE attr.createDate = '0000-00-00 00:00:00';
+UPDATE IAM2VirtualIDAttributeVO attr JOIN IAM2VirtualIDVO vid ON attr.virtualIDUuid = vid.uuid SET attr.lastOpDate = vid.lastOpDate WHERE attr.lastOpDate = '0000-00-00 00:00:00';
+
+UPDATE IAM2OrganizationAttributeVO attr JOIN IAM2OrganizationVO vid ON attr.organizationUuid = vid.uuid SET attr.createDate = vid.createDate WHERE attr.createDate = '0000-00-00 00:00:00';
+UPDATE IAM2OrganizationAttributeVO attr JOIN IAM2OrganizationVO vid ON attr.organizationUuid = vid.uuid SET attr.lastOpDate = vid.lastOpDate WHERE attr.lastOpDate = '0000-00-00 00:00:00';
+
+UPDATE IAM2ProjectAttributeVO attr JOIN IAM2ProjectVO vid ON attr.projectUuid = vid.uuid SET attr.createDate = vid.createDate WHERE attr.createDate = '0000-00-00 00:00:00';
+UPDATE IAM2ProjectAttributeVO attr JOIN IAM2ProjectVO vid ON attr.projectUuid = vid.uuid SET attr.lastOpDate = vid.lastOpDate WHERE attr.lastOpDate = '0000-00-00 00:00:00';
+
+UPDATE IAM2VirtualIDGroupAttributeVO attr JOIN IAM2VirtualIDGroupVO vid ON attr.groupUuid = vid.uuid SET attr.createDate = vid.createDate WHERE attr.createDate = '0000-00-00 00:00:00';
+UPDATE IAM2VirtualIDGroupAttributeVO attr JOIN IAM2VirtualIDGroupVO vid ON attr.groupUuid = vid.uuid SET attr.lastOpDate = vid.lastOpDate WHERE attr.lastOpDate = '0000-00-00 00:00:00';
+
 CREATE TABLE IF NOT EXISTS `zstack`.`ReservedIpRangeVO` (
     `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
     `l3NetworkUuid` varchar(32) NOT NULL COMMENT 'l3 network uuid',
