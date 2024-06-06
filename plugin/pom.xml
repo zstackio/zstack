@@ -33,6 +33,7 @@
         <module>directory</module>
         <module>sshKeyPair</module>
         <module>hostNetworkInterface</module>
+        <module>account-import</module>
     </modules>
     <dependencies>
         <dependency>

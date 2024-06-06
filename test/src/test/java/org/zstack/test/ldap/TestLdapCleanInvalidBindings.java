@@ -52,6 +52,7 @@ public class TestLdapCleanInvalidBindings {
         DBUtil.reDeployDB();
 
         deployer = new Deployer("deployerXml/ldap/TestLdap.xml");
+        deployer.addSpringConfig("accountImport.xml");
         deployer.addSpringConfig("LdapManagerImpl.xml");
         deployer.build();
         api = deployer.getApi();
