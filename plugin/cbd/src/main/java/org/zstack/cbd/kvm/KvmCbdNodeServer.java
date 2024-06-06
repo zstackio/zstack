@@ -122,6 +122,12 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                     final String __name__ = "activate-cbd-heartbeat-volume";
 
                     @Override
+                    public boolean skip(Map data) {
+                        // TODO: support HA
+                        return true;
+                    }
+
+                    @Override
                     public void run(FlowTrigger trigger, Map data) {
                         nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(trigger) {
                             @Override
@@ -140,6 +146,12 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
                 flow(new NoRollbackFlow() {
                     final String __name__ = "setup-cbd-self-fencer-on-kvm";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        // TODO: support HA
+                        return true;
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
