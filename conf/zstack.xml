@@ -67,6 +67,7 @@
     <import resource="springConfigXml/Kvm.xml"/>
     <import resource="springConfigXml/lb.xml"/>
     <import resource="springConfigXml/acl.xml"/>
+    <import resource="springConfigXml/accountImport.xml"/>
     <import resource="springConfigXml/LdapManagerImpl.xml"/>
     <import resource="springConfigXml/localStorage.xml"/>
     <import resource="springConfigXml/ManagementNodeManager.xml"/>

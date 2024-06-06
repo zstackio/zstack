@@ -51,6 +51,7 @@ public class TestLdapServer {
 
         deployer = new Deployer("deployerXml/ldap/TestLdap.xml");
         deployer.addSpringConfig("KVMRelated.xml");
+        deployer.addSpringConfig("accountImport.xml");
         deployer.addSpringConfig("LdapManagerImpl.xml");
         deployer.build();
         api = deployer.getApi();

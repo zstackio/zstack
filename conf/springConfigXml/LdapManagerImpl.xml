@@ -7,8 +7,8 @@
          http://www.springframework.org/schema/aop
          http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
          http://www.springframework.org/schema/tx 
-     	 http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-     	 http://zstack.org/schema/zstack 
+         http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+         http://zstack.org/schema/zstack
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
@@ -35,6 +35,12 @@
     <bean id="AggregateSearch" class="org.zstack.ldap.externalSearch.AggregateSearch">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.ldap.LdapExternalSearchExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="LdapUserSourceFactory" class="org.zstack.ldap.compute.LdapAccountSourceFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.identity.imports.source.AccountSourceFactory"/>
         </zstack:plugin>
     </bean>
 
