@@ -28,8 +28,11 @@ public class DetachVipFromVpcSharedQosAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String sharedQosUuid;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List vipLists;
+
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List vipUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
