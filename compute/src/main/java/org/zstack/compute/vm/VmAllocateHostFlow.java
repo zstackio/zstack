@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -22,16 +23,13 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.APICreateVmInstanceMsg.DiskAO;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -127,7 +125,21 @@ public class VmAllocateHostFlow implements Flow {
             msg.getRequiredPrimaryStorageUuids().addAll(spec.getDiskAOs().stream()
                     .map(APICreateVmInstanceMsg.DiskAO::getPrimaryStorageUuid).filter(Objects::nonNull).collect(Collectors.toList()));
         }
+
+        setImageRequiredPrimaryStorageUuidFromDiskAO(msg, spec);
         return msg;
+    }
+
+    private void setImageRequiredPrimaryStorageUuidFromDiskAO(DesignatedAllocateHostMsg msg, VmInstanceSpec spec) {
+        if (CollectionUtils.isEmpty(spec.getDiskAOs())) {
+            return;
+        }
+
+        spec.getDiskAOs().stream().filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().ifPresent(rootDiskAO -> {
+            if (rootDiskAO.getPrimaryStorageUuid() != null) {
+                msg.setImageRequiredPrimaryStorageUuid(rootDiskAO.getPrimaryStorageUuid());
+            }
+        });
     }
 
     @Override

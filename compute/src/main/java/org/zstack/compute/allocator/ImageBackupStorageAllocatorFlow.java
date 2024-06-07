@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -27,6 +28,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -66,6 +68,10 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             if (psUuids.isEmpty()) {
                 return true;
             }
+        }
+
+        if (psUuids.contains(spec.getImageRequiredPrimaryStorageUuid())) {
+            psUuids = Collections.singleton(spec.getImageRequiredPrimaryStorageUuid());
         }
 
         long imageCacheCount = SQL.New("select count(distinct cache.primaryStorageUuid) from ImageCacheVO cache where cache.primaryStorageUuid in :psUuids and cache.imageUuid = :imageUuid", Long.class)
