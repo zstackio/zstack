@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.zql.ast.visitors.constants.MySqlKeyword.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
@@ -129,8 +130,27 @@ public class ZQL {
                     BeanUtils.setProperty(inv, fieldName, inventoryMetadata.toInventoryFieldObject(fieldName, fieldValues[i]));
                 }
             } else {
-                String fieldName =  astResult.targetFieldNames.get(0);
+                String fieldName = astResult.targetFieldNames.get(0);
                 BeanUtils.setProperty(inv, fieldName, astResult.inventoryMetadata.toInventoryFieldObject(fieldName, vo));
+            }
+            return inv;
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    private LinkedHashMap<Object, Object> entityVOtoMap(Object vo) {
+        try {
+            LinkedHashMap<Object, Object> inv = new LinkedHashMap<>();
+            if (vo instanceof Object[]) {
+                Object[] fieldValues = (Object[]) vo;
+                for (int i = 0; i < astResult.targetFieldNames.size(); i++) {
+                    String fieldName = astResult.targetFieldNames.get(i);
+                    inv.put(fieldName, fieldValues[i]);
+                }
+            } else {
+                String fieldName = astResult.targetFieldNames.get(0);
+                inv.put(fieldName, vo);
             }
             return inv;
         } catch (Exception e) {
@@ -335,7 +355,26 @@ public class ZQL {
 
                 clean.run();
 
-                qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
+
+                ASTNode.Function function = query.getTarget().getFunction();
+                if (isCount(function) || isSum(function)) {
+                    // Separate syntax support
+                    throw new CloudRuntimeException(String.format("query grammar can't support, %s", function.getFunctionName()));
+                } else if (isMax(function) || isMin(function) || isSum(function) || isAvg(function)) {
+                    qr.inventoryAggregateFunctions = new LinkedHashMap<>();
+                    for (Object result : ret.vos) {
+                        if (result instanceof Object[]) {
+                            Object[] fieldValues = (Object[]) result;
+                            int aggregateFunIndex = fieldValues.length - 1;
+                            qr.inventoryAggregateFunctions.put(entityVOtoMap(fieldValues), fieldValues[aggregateFunIndex]);
+                        } else {
+                            qr.inventoryAggregateFunctions.put(entityVOtoMap(result), result);
+                        }
+                    }
+                } else {
+                    // `distinct` keeps the original method for compatibility
+                    qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
+                }
             } else if (ctx instanceof ZQLParser.SumGrammarContext) {
                 ASTNode.Sum sum = ((ZQLParser.SumGrammarContext) ctx).sum().accept(new SumVisitor());
 

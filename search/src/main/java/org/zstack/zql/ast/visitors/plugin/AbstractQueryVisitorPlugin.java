@@ -27,7 +27,13 @@ public abstract class AbstractQueryVisitorPlugin extends QueryVisitorPlugin {
     @Override
     public List<String> targetFields() {
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.getTarget().getEntity());
-        List<String> fieldNames = node.getTarget().getFields() == null ? new ArrayList<>() : node.getTarget().getFields();
+        List<String> fieldNames = new ArrayList<>();
+        if (node.getGroupBy() != null) {
+            fieldNames.addAll(node.getGroupBy().getFields());
+        }
+        if (node.getTarget().getFields() != null) {
+            fieldNames.addAll(node.getTarget().getFields());
+        }
         fieldNames.forEach(inventory::errorIfNoField);
         return fieldNames;
     }
@@ -38,7 +44,7 @@ public abstract class AbstractQueryVisitorPlugin extends QueryVisitorPlugin {
         ASTNode.Function function;
         ASTNode.QueryTargetWithFunction target = node.getTarget();
         while ((function = target.getFunction()) != null) {
-            functions = String.format(functions, ((ASTNode) function).accept(new FunctionVisitor()));
+            functions = String.format(functions, function.accept(new FunctionVisitor()));
             if ((target = target.getSubTarget()) == null) {
                 break;
             }

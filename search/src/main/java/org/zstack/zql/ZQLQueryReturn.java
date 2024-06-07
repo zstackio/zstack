@@ -11,6 +11,7 @@ public class ZQLQueryReturn implements Serializable {
     @NoLogging(behavior = NoLogging.Behavior.Auto)
     public List inventories;
     public LinkedHashMap<Object, Long> inventoryCounts;
+    public LinkedHashMap<Object, Object> inventoryAggregateFunctions;
     public Long total;
     public Map returnWith;
     public String name;
