@@ -148,6 +148,7 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
         doLogIn(loginContext, new ReturnValueCompletion<SessionInventory>(msg) {
             @Override
             public void success(SessionInventory session) {
+                msg.setSession(session);
                 reply.setInventory(session);
                 bus.reply(msg, reply);
             }

@@ -10,7 +10,6 @@ import org.zstack.header.message.APIReply;
 import org.zstack.header.other.APILoginAuditor;
 import org.zstack.header.rest.RestRequest;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @SuppressCredentialCheck
@@ -111,5 +110,10 @@ public class APILogInMsg extends APISessionMessage implements APILoginAuditor {
         }
         String resourceUuid = reply.isSuccess() ? ((APILogInReply) reply).getInventory().getUuid() : "";
         return new LoginResult(clientIp, clientBrowser, resourceUuid, SessionVO.class);
+    }
+
+    @Override
+    public String getOperator() {
+        return username;
     }
 }
