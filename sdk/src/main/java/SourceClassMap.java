@@ -197,6 +197,8 @@ public class SourceClassMap {
 			put("org.zstack.header.flowMeter.FlowCounter", "org.zstack.sdk.FlowCounter");
 			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
 			put("org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory", "org.zstack.sdk.NetworkRouterFlowMeterRefInventory");
+			put("org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices", "org.zstack.sdk.BlockDevices");
+			put("org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices$BlockDevice", "org.zstack.sdk.BlockDevice");
 			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.host.HostIpmiInventory", "org.zstack.sdk.HostIpmiInventory");
@@ -802,6 +804,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BaremetalVlanNicInventory", "org.zstack.header.baremetal.network.BaremetalVlanNicInventory");
 			put("org.zstack.sdk.BatchDeleteVolumeSnapshotStruct", "org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
+			put("org.zstack.sdk.BlockDevice", "org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices$BlockDevice");
+			put("org.zstack.sdk.BlockDevices", "org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices");
 			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BlockVolumeInventory", "org.zstack.header.volume.block.BlockVolumeInventory");
 			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");
