@@ -7,10 +7,9 @@ import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmNicManager;
-import org.zstack.compute.vm.VmNicManagerImpl;
+import org.zstack.header.agent.ProxyHardwareFactory;
+import org.zstack.header.agent.ProxyHardware;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
-import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
@@ -56,8 +55,6 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
 import org.zstack.kvm.KVMAgentCommands.TransmitVmOperationToMnCmd;
-import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
-import org.zstack.resourceconfig.ResourceConfigValidatorExtensionPoint;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.SizeUtils;
@@ -94,7 +91,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
-        ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory {
+        ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory, ProxyHardwareFactory {
     private static final CLogger logger = Utils.getLogger(KVMHostFactory.class);
 
     public static final HypervisorType hypervisorType = new HypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
@@ -959,5 +956,13 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Override
     public String getId() {
         return bus.makeLocalServiceId(KVMConstant.SERVICE_ID);
+    }
+
+    @Override
+    public ProxyHardware getProxyHardware(String hostName) {
+        String sql = "select kvm from HostVO host, KVMHostVO kvm " +
+                "where host.uuid = kvm.uuid " +
+                "and host.managementIp = :hostname";
+        return SQL.New(sql, KVMHostVO.class).param("hostname", hostName).find();
     }
 }

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
+public class GetPhysicalMachineBlockDevicesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddImageStoreBackupStorageResult value;
+        public org.zstack.sdk.GetPhysicalMachineBlockDevicesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,44 +25,20 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String attachPoint;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endPoint;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String hostname;
-
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String username;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String password;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public int sshPort = 22;
-
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String url;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer sshPort;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String type;
+    public java.lang.String hostName;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean importImages = false;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.util.List excludedTypes;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -82,12 +58,6 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -96,8 +66,8 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.AddImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddImageStoreBackupStorageResult() : value; 
+        org.zstack.sdk.GetPhysicalMachineBlockDevicesResult value = res.getResult(org.zstack.sdk.GetPhysicalMachineBlockDevicesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPhysicalMachineBlockDevicesResult() : value; 
 
         return ret;
     }
@@ -126,11 +96,11 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/backup-storage/image-store/disaster";
+        info.httpMethod = "GET";
+        info.path = "/host/get-block-devices";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

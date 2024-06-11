@@ -2,6 +2,7 @@ package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
@@ -9,6 +10,8 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.agent.ProxyHardware;
+import org.zstack.header.agent.ProxyHardwareFactory;
 import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -38,6 +41,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof HostMessage) {
@@ -62,6 +67,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIReconnectHostMsg) msg);
         } else if (msg instanceof APIGetHostWebSshUrlMsg) {
             validate((APIGetHostWebSshUrlMsg) msg);
+        } else if (msg instanceof APIGetPhysicalMachineBlockDevicesMsg) {
+            validate((APIGetPhysicalMachineBlockDevicesMsg) msg);
         }
 
         return msg;
@@ -127,5 +134,28 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
                 dbf.persist(agentVersionVO);
             }
         }
+    }
+
+    private void validate(APIGetPhysicalMachineBlockDevicesMsg msg) {
+        if (msg.getPassword() != null) {
+            return;
+        }
+        ProxyHardware proxyHardware = getProxyHardware(msg.getHostName());
+        if (proxyHardware == null) {
+            throw new ApiMessageInterceptionException(operr("the password for the physical machine [%s] is empty. " +
+                    "please set a password", msg.getHostName()));
+        }
+        msg.setPassword(proxyHardware.getPassword());
+        msg.setUsername(msg.getUsername() != null ? msg.getUsername() : proxyHardware.getUsername());
+    }
+
+    private ProxyHardware getProxyHardware(String hostname) {
+        for (ProxyHardwareFactory factory : pluginRgty.getExtensionList(ProxyHardwareFactory.class)) {
+            ProxyHardware proxyHardware = factory.getProxyHardware(hostname);
+            if (proxyHardware != null && proxyHardware.getPassword() != null) {
+                return proxyHardware;
+            }
+        }
+        return null;
     }
 }
