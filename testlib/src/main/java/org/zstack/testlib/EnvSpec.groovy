@@ -700,13 +700,13 @@ class EnvSpec extends ApiHelper implements Node  {
                               "GarbageCollectorVO",
                               "GuestOsCategoryVO",
                               "TaskProgressVO", "TaskStepVO",
-                              "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
+                              "ResourceVO", "SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
                               "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO",
                               "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO", "EventLogVO", "VmSchedHistoryVO",
                               "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO", "FileIntegrityVerificationVO",
                               "EncryptEntityMetadataVO", "VmInstanceDeviceAddressGroupVO", "HostOsCategoryVO", "KvmHostHypervisorMetadataVO",
-                              "HaStrategyConditionVO", "SystemTagVO", "ConsoleProxyAgentVO", "ConsoleProxyVO", "XmlHookVO"]) {
+                              "HaStrategyConditionVO", "SystemTagVO", "ConsoleProxyAgentVO", "ConsoleProxyVO", "XmlHookVO", "SSOServerTokenVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }
