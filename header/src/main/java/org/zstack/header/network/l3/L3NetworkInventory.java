@@ -3,6 +3,7 @@ package org.zstack.header.network.l3;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -410,5 +411,23 @@ public class L3NetworkInventory implements Serializable {
 
     public void setIsolated(Boolean isolated) {
         this.isolated = isolated;
+    }
+
+    public boolean enableIpAddressAllocation() {
+        if (getCategory().equals(L3NetworkCategory.System.toString())) {
+            return true;
+        }
+
+        if (!getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
+            return true;
+        }
+
+        for (NetworkServiceL3NetworkRefInventory ref : networkServices) {
+            if (ref.getNetworkServiceType().equals(NetworkServiceType.DHCP.toString())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

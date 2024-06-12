@@ -51,11 +51,19 @@ class VirtualRouterAttachNetworkCase extends SubCase {
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "L3-2"
         }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_1.uuid
+            networkServices = ["Flat":["DHCP"]]
+        }
         L3NetworkInventory l3_2 = createL3Network {
             delegate.system = true
             delegate.category = "System"
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "L3-2"
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_2.uuid
+            networkServices = ["Flat":["DHCP"]]
         }
 
         // attach system L3Network to user vm
@@ -122,6 +130,10 @@ class VirtualRouterAttachNetworkCase extends SubCase {
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "pubL3-2"
         }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_1.uuid
+            networkServices = ["Flat":["DHCP"]]
+        }
 
         addIpRange {
             delegate.name = "TestIpRange"
@@ -136,6 +148,10 @@ class VirtualRouterAttachNetworkCase extends SubCase {
             delegate.category = "Public"
             delegate.l2NetworkUuid = l2_1.uuid
             delegate.name = "pubL3-3"
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_2.uuid
+            networkServices = ["Flat":["DHCP"]]
         }
 
         addIpRange {

@@ -49,6 +49,10 @@ class Ipv6DeleteRangeCase extends SubCase {
             l2NetworkUuid = l2.uuid
             name = "ipv4"
         }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_ipv4.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
 
         IpRangeInventory ip41 = addIpRange {
             name = "ipr-4-1"
@@ -97,6 +101,10 @@ class Ipv6DeleteRangeCase extends SubCase {
             l2NetworkUuid = l2.uuid
             name = "ipv4"
             ipVersion = 6
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_ipv6.uuid
+            networkServices = ['Flat':['DHCP']]
         }
         IpRangeInventory ip61 = addIpv6Range {
             name = "ipr-6-1"

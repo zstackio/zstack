@@ -739,7 +739,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     public void prepareDbInitialValue() {
         List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).isNull(IpRangeVO_.prefixLen).list();
         for (IpRangeVO ipr : ipRangeVOS) {
-            ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(ipr.getNetmask()));
+            ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetmask(ipr.getNetmask()));
         }
         if (!ipRangeVOS.isEmpty()) {
             dbf.updateCollection(ipRangeVOS);

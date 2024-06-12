@@ -46,6 +46,10 @@ class VirtualRouterDeletePublicNetworkIpRangeCase extends SubCase {
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "pubL3-2"
         }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_1.uuid
+            networkServices = ["Flat":["DHCP"]]
+        }
 
         IpRangeInventory iprInv = addIpRange {
             delegate.name = "TestIpRange"
@@ -60,6 +64,10 @@ class VirtualRouterDeletePublicNetworkIpRangeCase extends SubCase {
             delegate.category = "Public"
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "pubL3-3"
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_2.uuid
+            networkServices = ["Flat":["DHCP"]]
         }
 
         addIpRange {

@@ -109,6 +109,10 @@ class IpRangeCase extends SubCase {
             l2NetworkUuid = l3_1.l2NetworkUuid
             category = L3NetworkCategory.Private
         }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_3.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
 
         addIpRange {
             name = "ipr-5"
@@ -174,6 +178,10 @@ class IpRangeCase extends SubCase {
             l2NetworkUuid = l3_1.l2NetworkUuid
             category = L3NetworkCategory.Private
         }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_4.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
 
         addIpRangeByNetworkCidr {
             name = "cidr-4"
@@ -187,6 +195,10 @@ class IpRangeCase extends SubCase {
             l2NetworkUuid = l3_1.l2NetworkUuid
             category = L3NetworkCategory.Private
         }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_5.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
 
         addIpRangeByNetworkCidr {
             name = "cidr-5"
@@ -199,6 +211,10 @@ class IpRangeCase extends SubCase {
             name = "l3-6"
             l2NetworkUuid = l3_1.l2NetworkUuid
             category = L3NetworkCategory.Private
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_6.uuid
+            networkServices = ['Flat':['DHCP']]
         }
 
         addIpRangeByNetworkCidr {
@@ -422,8 +438,6 @@ class IpRangeCase extends SubCase {
             l3NetworkUuid = l3_2.uuid
             service = 'DHCP'
         }
-        l3_2 = queryL3Network {conditions=["uuid=${l3_2.uuid}"]} [0]
-        assert !l3_2.enableIPAM
 
         /* delete vm ip */
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString());

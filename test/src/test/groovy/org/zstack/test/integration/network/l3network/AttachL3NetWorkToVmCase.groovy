@@ -1,6 +1,9 @@
 package org.zstack.test.integration.network.l3network
 
 import org.zstack.header.errorcode.SysErrors
+import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.sdk.AttachL3NetworkToVmAction
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -91,6 +94,11 @@ class AttachL3NetWorkToVmCase extends SubCase{
                     l3Network {
                         name = "pubL3"
                         category = "Public"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE]
+                        }
                     }
                 }
 
@@ -166,6 +174,11 @@ class AttachL3NetWorkToVmCase extends SubCase{
             name = "L3WithNoIpRange"
             l2NetworkUuid = l2Inv.uuid
         } as L3NetworkInventory
+
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3.uuid
+            networkServices = ['Flat':['DHCP']]
+        }
 
         AttachL3NetworkToVmAction action = new AttachL3NetworkToVmAction()
         action.l3NetworkUuid = l3.uuid

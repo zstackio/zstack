@@ -15,7 +15,6 @@ public class EipStruct implements Serializable {
     private VipInventory vip;
     private boolean snatInboundTraffic;
     private UsedIpInventory guestIp;
-    private IpRangeInventory guestIpRange;
     private String hostUuid;
     private boolean skipArpCheck = false;
 
@@ -57,14 +56,6 @@ public class EipStruct implements Serializable {
 
     public void setGuestIp(UsedIpInventory guestIp) {
         this.guestIp = guestIp;
-    }
-
-    public IpRangeInventory getGuestIpRange() {
-        return guestIpRange;
-    }
-
-    public void setGuestIpRange(IpRangeInventory guestIpRange) {
-        this.guestIpRange = guestIpRange;
     }
 
     public String getHostUuid() {

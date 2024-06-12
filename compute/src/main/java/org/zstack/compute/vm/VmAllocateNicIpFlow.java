@@ -23,7 +23,6 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -74,7 +73,7 @@ public class VmAllocateNicIpFlow implements Flow {
         }
         List<VmNicSpec> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())
                 .stream()
-                .filter(v -> v.getL3Invs().get(0).getEnableIPAM())
+                .filter(v -> v.getL3Invs().get(0).enableIpAddressAllocation())
                 .peek(v -> {
                     if (!Q.New(NormalIpRangeVO.class)
                             .eq(NormalIpRangeVO_.l3NetworkUuid, v.getL3Invs().get(0).getUuid())

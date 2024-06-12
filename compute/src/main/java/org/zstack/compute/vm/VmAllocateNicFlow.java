@@ -149,7 +149,7 @@ public class VmAllocateNicFlow implements Flow {
                 @Override
                 protected void scripts() {
                     VmNicVO nicVO = vnicFactory.createVmNic(nic, spec);
-                    if (!nw.getEnableIPAM() && nicNetworkInfoMap != null && nicNetworkInfoMap.containsKey(nw.getUuid())) {
+                    if (!nw.enableIpAddressAllocation() && nicNetworkInfoMap != null && nicNetworkInfoMap.containsKey(nw.getUuid())) {
                         NicIpAddressInfo nicNicIpAddressInfo = nicNetworkInfoMap.get(nic.getL3NetworkUuid());
                         if (!nicNicIpAddressInfo.ipv6Address.isEmpty()) {
                             UsedIpVO vo = new UsedIpVO();
@@ -160,10 +160,8 @@ public class VmAllocateNicFlow implements Flow {
                             vo.setIpVersion(IPv6Constants.IPv6);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());
-                            if (nic.getUsedIpUuid() == null) {
-                                nic.setUsedIpUuid(vo.getUuid());
-                                nicVO.setUsedIpUuid(vo.getUuid());
-                            }
+                            nic.setUsedIpUuid(vo.getUuid());
+                            nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
@@ -178,10 +176,8 @@ public class VmAllocateNicFlow implements Flow {
                             vo.setIpVersion(IPv6Constants.IPv4);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());
-                            if (nic.getUsedIpUuid() == null) {
-                                nic.setUsedIpUuid(vo.getUuid());
-                                nicVO.setUsedIpUuid(vo.getUuid());
-                            }
+                            nic.setUsedIpUuid(vo.getUuid());
+                            nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());

@@ -462,4 +462,13 @@ public class IPv6NetworkUtils {
 
         return e.compareTo(s);
     }
+
+    public static int getPrefixLengthFromNetmask(String mask) {
+        if (isIpv6Address(mask)) {
+            IPv6Address netmask = IPv6Address.fromString(mask);
+            return netmask.numberOfLeadingOnes();
+        }
+
+        return 0;
+    }
 }

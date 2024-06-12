@@ -3,10 +3,9 @@ package org.zstack.network.service.vip;
 import java.util.ArrayList;
 import org.zstack.utils.VipUseForList;
 import org.zstack.header.network.l3.IpRangeVO;
-import org.zstack.header.network.l3.IpRangeVO_;
+
 import java.util.stream.Stream;
 import org.zstack.utils.network.NetworkUtils;
-import java.util.TreeMap;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
 import java.util.*;
@@ -46,11 +45,9 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
-import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -535,7 +532,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     public void prepareDbInitialValue() {
         List<VipVO> vipVOS = Q.New(VipVO.class).isNull(VipVO_.prefixLen).list();
         for (VipVO vip : vipVOS) {
-            vip.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(vip.getNetmask()));
+            vip.setPrefixLen(NetworkUtils.getPrefixLengthFromNetmask(vip.getNetmask()));
         }
         if (!vipVOS.isEmpty()) {
             dbf.updateCollection(vipVOS);

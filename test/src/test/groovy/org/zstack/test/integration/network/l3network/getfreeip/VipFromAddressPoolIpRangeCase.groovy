@@ -1,5 +1,8 @@
 package org.zstack.test.integration.network.l3network.getfreeip
 
+import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
+import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.L3NetworkSpec
@@ -81,6 +84,13 @@ class VipFromAddressPoolIpRangeCase extends SubCase {
                     l3Network {
                         name = "l3"
                         category = "Public"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(),
+                                     NetworkServiceType.HostRoute.toString(),
+                                     UserdataConstant.USERDATA_TYPE_STRING]
+                        }
                     }
                 }
 
@@ -116,11 +126,18 @@ class VipFromAddressPoolIpRangeCase extends SubCase {
             vipUuid = vip1.uuid
         }
 
+        List<FreeIpInventory> ipv4FreeIps = getFreeIp {
+            l3NetworkUuid = l3.getUuid()
+            ipRangeUuid = ipr4_normal.uuid
+            ipVersion = IPv6Constants.IPv4
+            limit = 1
+        } as List<FreeIpInventory>
+        FreeIpInventory ip = ipv4FreeIps.get(0)
         VipInventory vip2 = createVip {
             name = "vip2"
             l3NetworkUuid = l3.uuid
             ipRangeUuid = ipr4_normal.uuid
-            requiredIp = "192.168.1.2"
+            requiredIp = ip.ip
         }
         EipInventory eip2 = createEip {
             name = "eip2"
@@ -163,10 +180,17 @@ class VipFromAddressPoolIpRangeCase extends SubCase {
         IpRangeInventory ipr4_pool = addPoolIpRangesToL3Network(l3)
         IpRangeInventory ipr4_normal = addNormalIpRangesToL3Network(l3)
 
+        List<FreeIpInventory> ipv4FreeIps = getFreeIp {
+            l3NetworkUuid = l3.getUuid()
+            ipVersion = IPv6Constants.IPv4
+            ipRangeType = IpRangeType.Normal.toString()
+            limit = 1
+        } as List<FreeIpInventory>
+        FreeIpInventory ip = ipv4FreeIps.get(0)
         VipInventory vip1 = createVip {
             name = "vip1"
             l3NetworkUuid = l3.uuid
-            requiredIp = "192.168.1.2"
+            requiredIp = ip.ip
         }
         EipInventory eip1 = createEip {
             name = "eip1"
@@ -177,7 +201,7 @@ class VipFromAddressPoolIpRangeCase extends SubCase {
             VipInventory vip2 = createVip {
                 name = "vip2"
                 l3NetworkUuid = l3.uuid
-                requiredIp = "192.168.0.2"
+                requiredIp = ip.ip
             }
         }
 
@@ -252,7 +276,7 @@ class VipFromAddressPoolIpRangeCase extends SubCase {
             name = "ipr-4"
             l3NetworkUuid = l3.uuid
             startIp = "192.168.1.2"
-            endIp = "192.168.1.2"
+            endIp = "192.168.1.3"
             gateway = "192.168.1.1"
             netmask = "255.255.255.0"
         }

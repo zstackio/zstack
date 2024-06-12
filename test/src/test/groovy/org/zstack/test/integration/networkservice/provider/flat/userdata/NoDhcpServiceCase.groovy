@@ -167,6 +167,7 @@ class NoDhcpServiceCase extends SubCase {
             uuid = vm.uuid
         }
 
+        /* if there is no dhcp, no ip address, then no userdata */
         UserdataGlobalConfig.OPEN_USERDATA_SERVICE_BY_DEFAULT.updateValue(true)
         vm = createVmInstance {
             name = "vm"
@@ -175,7 +176,7 @@ class NoDhcpServiceCase extends SubCase {
             instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
             hostUuid = env.inventoryByName("kvm").uuid
         }
-        assert cmd != null
+        assert cmd == null
     }
 
     @Override
