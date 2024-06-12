@@ -9,10 +9,7 @@ import org.zstack.header.identity.login.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.zstack.core.Platform.err;
 
@@ -30,6 +27,15 @@ public class AccountLoginBackend implements LoginBackend {
     @Override
     public LoginType getLoginType() {
         return loginType;
+    }
+
+    @Override
+    public Map<String, Object> generateJwtTokenClaims(LoginContext loginContext, LoginSessionInfo info) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(AccountConstant.LOGIN_TYPE_NAME, loginContext.getLoginBackendType());
+        claims.put(AccountConstant.FULL_NAME, loginContext.getUsername());
+        claims.put(AccountConstant.PREFERRED_USERNAME, loginContext.getUsername());
+        return claims;
     }
 
     @Override
