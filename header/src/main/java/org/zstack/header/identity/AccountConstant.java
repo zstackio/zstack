@@ -37,6 +37,14 @@ public interface AccountConstant {
     // login property accountType
     String ACCOUNT_TYPE = "accountType";
 
+    String PREFERRED_USERNAME = "preferred_username";
+    String FULL_NAME = "fullname";
+    String LOGIN_TYPE_NAME = "loginType";
+    String GROUPS_NAME = "groups";
+    String PROJECTS_NAME = "projects";
+
+
+
     static boolean isAdminPermission(SessionInventory session) {
         return isAdminPermission(session.getAccountUuid());
     }
