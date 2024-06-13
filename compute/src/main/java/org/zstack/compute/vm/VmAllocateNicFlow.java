@@ -160,6 +160,7 @@ public class VmAllocateNicFlow implements Flow {
                             vo.setIpVersion(IPv6Constants.IPv6);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());
+                            vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(nic.getL3NetworkUuid(), vo.getIp()));
                             nic.setUsedIpUuid(vo.getUuid());
                             nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());
@@ -176,6 +177,8 @@ public class VmAllocateNicFlow implements Flow {
                             vo.setIpVersion(IPv6Constants.IPv4);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());
+                            vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
+                            vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(nic.getL3NetworkUuid(), vo.getIp()));
                             nic.setUsedIpUuid(vo.getUuid());
                             nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());

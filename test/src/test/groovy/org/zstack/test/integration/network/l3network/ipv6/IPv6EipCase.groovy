@@ -161,20 +161,19 @@ class IPv6EipCase extends SubCase {
             l3NetworkUuid = l3_statefull.uuid
         }
 
-        List<String> ips = new ArrayList<>()
-        ips.add(IPv6Address.fromString("2001:2003::02").toString())
-        ips.add(IPv6Address.fromString("2001:2003::03").toString())
-        ips.add(IPv6Address.fromString("2001:2003::04").toString())
-        ips.remove(ipv6.ip)
-        ips.remove(ret.ip6)
+        List<UsedIpInventory> ipv6s = getFreeIp {
+            l3NetworkUuid = l3_statefull.uuid
+            ipVersion = IPv6Constants.IPv6
+            limit = 1
+        }
 
         setVmStaticIp {
             vmInstanceUuid = vm.uuid
             l3NetworkUuid = l3_statefull.uuid
-            ip = ips.get(0)
+            ip = ipv6s.get(0).ip
         }
         eip6 = queryEip { conditions=["name=eip6"] }[0]
-        assert eip6.guestIp == ips.get(0)
+        assert eip6.guestIp == ipv6s.get(0).ip
     }
 
     void testIPv6EipApplyNetworkService() {

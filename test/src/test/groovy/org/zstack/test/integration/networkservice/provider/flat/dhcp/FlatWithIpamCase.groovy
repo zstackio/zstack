@@ -179,6 +179,7 @@ class FlatWithIpamCase extends SubCase{
             testPrivateNetworkWithoutIpam()
             testPublicNetworkWithoutIpam()
             testEipWithoutIpam()
+            testStaticIpSystemTag()
         }
     }
 
@@ -593,6 +594,128 @@ class FlatWithIpamCase extends SubCase{
             vmNicUuid = nic1.uuid
             usedIpUuid = ip61.uuid
         }
+    }
+
+    void testStaticIpSystemTag(){
+        L3NetworkInventory l31 = env.inventoryByName("l3-1")
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image")
+
+        List<IpRangeInventory> ipranges = queryIpRange {conditions=["l3NetworkUuid=${l31.uuid}"]}
+        for (IpRangeInventory ipr : ipranges) {
+            deleteIpRange {
+                uuid = ipr.uuid
+            }
+        }
+
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l31.uuid
+            service = 'DHCP'
+        }
+
+        expect(AssertionError.class){
+            /* no netmask failed */
+            createVmInstance {
+                name = "test-1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l31.uuid]
+                systemTags = [
+                        "staticIp::" + l31.uuid + "::192.168.1.100",
+                ]
+            }
+        }
+
+        expect(AssertionError.class){
+            /* no gateway failed */
+            createVmInstance {
+                name = "test-1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l31.uuid]
+                systemTags = [
+                        "staticIp::" + l31.uuid + "::192.168.1.100",
+                        "ipv4Gateway::" + l31.uuid + "::255.255.255.0",
+                ]
+            }
+        }
+
+        expect(AssertionError.class){
+            /* no prefix length failed */
+            createVmInstance {
+                name = "test-1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l31.uuid]
+                systemTags = [
+                        "staticIp::" + l31.uuid + "::2024:6:13:86:1--aa",
+                ]
+            }
+        }
+
+        expect(AssertionError.class){
+            /* no gateway failed */
+            createVmInstance {
+                name = "test-1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l31.uuid]
+                systemTags = [
+                        "staticIp::" + l31.uuid + "::2024:6:13:86:1--aa",
+                        "ipv6Prefix::" + l31.uuid + "::64"
+                ]
+            }
+        }
+
+        IpRangeInventory ipr4 = addIpRangeByNetworkCidr {
+            name = "cidr-1"
+            l3NetworkUuid = l31.getUuid()
+            networkCidr = "192.168.1.0/24"
+        }
+
+        VmInstanceInventory vm4 = createVmInstance {
+            name = "vm-ipv4"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l31.uuid]
+            systemTags = [
+                    "staticIp::" + l31.uuid + "::192.168.1.100",
+            ]
+        }
+        VmNicInventory nic4 = vm4.vmNics.get(0)
+        UsedIpInventory ip = nic4.usedIps.get(0)
+        assert nic4.ip == "192.168.1.100"
+        assert nic4.netmask == ipr4.netmask
+        assert nic4.gateway == ipr4.gateway
+        assert ip.ipRangeUuid == ipr4.uuid
+
+        deleteIpRange {
+            uuid = ipr4.uuid
+        }
+
+        IpRangeInventory ipr6 = addIpv6RangeByNetworkCidr {
+            name = "ipv6"
+            l3NetworkUuid = l31.getUuid()
+            networkCidr = "2024:6:13:86:1::/64"
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        VmInstanceInventory vm6 = createVmInstance {
+            name = "vm-ipv6"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l31.uuid]
+            systemTags = [
+                    "staticIp::" + l31.uuid + "::2024:6:13:86:1--aa",
+            ]
+        }
+
+        VmNicInventory nic6 = vm6.vmNics.get(0)
+        ip = nic6.usedIps.get(0)
+        assert nic6.ip == "2024:6:13:86:1::aa"
+        assert nic6.netmask == ipr6.netmask
+        assert nic6.gateway == ipr6.gateway
+        assert ip.ipRangeUuid == ipr6.uuid
     }
 
 
