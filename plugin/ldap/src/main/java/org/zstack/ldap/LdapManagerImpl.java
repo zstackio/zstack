@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -28,11 +29,14 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.login.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.identity.imports.AccountImportsConstant;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
+import org.zstack.identity.imports.message.SyncThirdPartyAccountMsg;
 import org.zstack.ldap.api.*;
 import org.zstack.ldap.driver.LdapTemplateContextSource;
 import org.zstack.ldap.entity.LdapServerInventory;
@@ -94,6 +98,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
             handle((APIGetLdapEntryMsg) msg);
         } else if(msg instanceof APIGetCandidateLdapEntryForBindingMsg){
             handle((APIGetCandidateLdapEntryForBindingMsg) msg);
+        } else if (msg instanceof APISyncAccountsFromLdapServerMsg) {
+            handle((APISyncAccountsFromLdapServerMsg) msg);
         } else if (msg instanceof APICreateLdapBindingMsg) {
             handle((APICreateLdapBindingMsg) msg);
         } else if (msg instanceof APIDeleteLdapBindingMsg) {
@@ -437,6 +443,30 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         }
 
         bus.publish(evt);
+    }
+
+    private void handle(APISyncAccountsFromLdapServerMsg msg) {
+        SyncThirdPartyAccountMsg innerMsg = new SyncThirdPartyAccountMsg();
+        innerMsg.setSourceUuid(msg.getUuid());
+
+        if (msg.getCreateAccountStrategy() != null) {
+            innerMsg.setCreateAccountStrategy(SyncCreatedAccountStrategy.valueOf(msg.getCreateAccountStrategy()));
+        }
+        if (msg.getDeleteAccountStrategy() != null) {
+            innerMsg.setDeleteAccountStrategy(SyncDeletedAccountStrategy.valueOf(msg.getDeleteAccountStrategy()));
+        }
+
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountImportsConstant.SERVICE_ID, msg.getUuid());
+        bus.send(innerMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                APISyncAccountsFromLdapServerEvent event = new APISyncAccountsFromLdapServerEvent(msg.getId());
+                if (!reply.isSuccess()) {
+                    event.setError(reply.getError());
+                }
+                bus.publish(event);
+            }
+        });
     }
 
     @Override
