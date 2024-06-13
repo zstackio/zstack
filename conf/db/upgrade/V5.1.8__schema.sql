@@ -129,3 +129,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ReservedIpRangeVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`PciDeviceVO` ADD `rev` varchar(32) DEFAULT '';

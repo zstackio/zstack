@@ -161,6 +161,14 @@ public class PciDeviceInventory  {
         return this.metaData;
     }
 
+    public java.lang.String rev;
+    public void setRev(java.lang.String rev) {
+        this.rev = rev;
+    }
+    public java.lang.String getRev() {
+        return this.rev;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
