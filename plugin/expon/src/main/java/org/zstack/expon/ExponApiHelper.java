@@ -365,8 +365,15 @@ public class ExponApiHelper implements SingleFlightExecutor {
         SetVolumeQosRequest req = new SetVolumeQosRequest();
         req.setQos(qos);
         req.setVolId(volId);
-        SetVolumeQosResponse rsp = callErrorOut(req, SetVolumeQosResponse.class);
+        callErrorOut(req, SetVolumeQosResponse.class);
         return getVolume(volId);
+    }
+
+    public void deleteVolumeQos(String volId) {
+        SetVolumeQosRequest req = new SetVolumeQosRequest();
+        req.setVolId(volId);
+        req.setQos(new ExponVolumeQos());
+        callErrorOut(req, SetVolumeQosResponse.class);
     }
 
     public VolumeModule recoverySnapshot(String volId, String snapId) {

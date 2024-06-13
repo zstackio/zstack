@@ -118,6 +118,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((SelectBackupStorageMsg) msg);
         } else if (msg instanceof SetVolumeQosOnPrimaryStorageMsg) {
             handle((SetVolumeQosOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeQosOnPrimaryStorageMsg) {
+            handle((DeleteVolumeQosOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ResizeVolumeOnPrimaryStorageMsg) {
             handle((ResizeVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
@@ -415,6 +417,25 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         qos.setWriteIOPS(msg.getWriteIOPS());
         v.setQos(qos);
         controller.setVolumeQos(v, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(DeleteVolumeQosOnPrimaryStorageMsg msg) {
+        DeleteVolumeQosOnPrimaryStorageReply reply = new DeleteVolumeQosOnPrimaryStorageReply();
+
+        VolumeInventory vol = VolumeInventory.valueOf(dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class));
+        BaseVolumeInfo v = BaseVolumeInfo.valueOf(vol);
+        controller.deleteVolumeQos(v, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);

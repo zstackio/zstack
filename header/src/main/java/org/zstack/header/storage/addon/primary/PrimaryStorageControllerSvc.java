@@ -37,7 +37,7 @@ public interface PrimaryStorageControllerSvc {
 
     void expandVolume(String installPath, long size, ReturnValueCompletion<VolumeStats> comp);
     void setVolumeQos(BaseVolumeInfo v, Completion comp);
-
+    void deleteVolumeQos(BaseVolumeInfo v, Completion comp);
     void export(ExportSpec espec, VolumeProtocol protocol, ReturnValueCompletion<RemoteTarget> comp);
     void unexport(ExportSpec espec, VolumeProtocol protocol, Completion comp);
 
