@@ -7,6 +7,9 @@ public class SourceClassMap {
         {
 			put("org.zstack.accessKey.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
 			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
+			put("org.zstack.ai.ModelCenterInventory", "org.zstack.sdk.ModelCenterInventory");
+			put("org.zstack.ai.ModelInventory", "org.zstack.sdk.ModelInventory");
+			put("org.zstack.ai.ModelServiceInventory", "org.zstack.sdk.ModelServiceInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemInventory", "org.zstack.sdk.AliyunNasFileSystemInventory");
@@ -1032,6 +1035,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MiniStorageResourceReplicationInventory", "org.zstack.storage.primary.ministorage.MiniStorageResourceReplicationInventory");
 			put("org.zstack.sdk.MiniStorageType", "org.zstack.storage.primary.ministorage.MiniStorageType");
 			put("org.zstack.sdk.MirrorNetworkUsedIpInventory", "org.zstack.header.portMirror.MirrorNetworkUsedIpInventory");
+			put("org.zstack.sdk.ModelCenterInventory", "org.zstack.ai.ModelCenterInventory");
+			put("org.zstack.sdk.ModelInventory", "org.zstack.ai.ModelInventory");
+			put("org.zstack.sdk.ModelServiceInventory", "org.zstack.ai.ModelServiceInventory");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
 			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
 			put("org.zstack.sdk.MttyDeviceInventory", "org.zstack.mttyDevice.MttyDeviceInventory");
