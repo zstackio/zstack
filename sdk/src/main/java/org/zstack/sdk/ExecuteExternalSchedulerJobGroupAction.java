@@ -1,10 +1,10 @@
-package org.zstack.sdk.databasebackup;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RecoverDatabaseFromBackupAction extends AbstractAction {
+public class ExecuteExternalSchedulerJobGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult value;
+        public org.zstack.sdk.ExecuteExternalSchedulerJobGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,8 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUrl;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupInstallPath;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mysqlRootPassword;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String managementNodeUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +60,8 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult value = res.getResult(org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult() : value; 
+        org.zstack.sdk.ExecuteExternalSchedulerJobGroupResult value = res.getResult(org.zstack.sdk.ExecuteExternalSchedulerJobGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ExecuteExternalSchedulerJobGroupResult() : value; 
 
         return ret;
     }
@@ -102,11 +90,11 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/database-backups/actions";
+        info.httpMethod = "POST";
+        info.path = "/external-scheduler/jobgroups/{uuid}/execute";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "recoverDatabaseFromBackup";
+        info.parameterName = "params";
         return info;
     }
 

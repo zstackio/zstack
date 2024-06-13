@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RecoverDatabaseFromBackupAction extends AbstractAction {
+public class DeleteDatabaseBackupsOnManagementNodeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult value;
+        public org.zstack.sdk.databasebackup.DeleteDatabaseBackupsOnManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,10 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
     }
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUrl;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupInstallPath;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mysqlRootPassword;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String managementNodeUuid;
+
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List installPaths;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +63,8 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult value = res.getResult(org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult() : value; 
+        org.zstack.sdk.databasebackup.DeleteDatabaseBackupsOnManagementNodeResult value = res.getResult(org.zstack.sdk.databasebackup.DeleteDatabaseBackupsOnManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.databasebackup.DeleteDatabaseBackupsOnManagementNodeResult() : value; 
 
         return ret;
     }
@@ -102,11 +93,11 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/database-backups/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/management-nodes/database-backups";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "recoverDatabaseFromBackup";
+        info.parameterName = "";
         return info;
     }
 
