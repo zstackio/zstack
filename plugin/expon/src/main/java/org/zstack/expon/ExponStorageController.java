@@ -1114,6 +1114,12 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
+    public void deleteVolumeQos(BaseVolumeInfo v, Completion comp) {
+        apiHelper.deleteVolumeQos(getVolIdFromPath(v.getInstallPath()));
+        comp.success();
+    }
+
+    @Override
     public void export(ExportSpec espec, VolumeProtocol protocol, ReturnValueCompletion<RemoteTarget> comp) {
         if (protocol == VolumeProtocol.NVMEoF) {
             NvmeRemoteTarget target = exportNvmf(espec);

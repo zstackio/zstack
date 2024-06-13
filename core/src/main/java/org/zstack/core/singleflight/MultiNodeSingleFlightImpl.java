@@ -78,9 +78,10 @@ public class MultiNodeSingleFlightImpl {
         boolean unitTestSaySendMsg = CoreGlobalProperty.UNIT_TEST_ON && new Random().nextBoolean();
         if (localSingleFlight && !unitTestSaySendMsg) {
             thdf.singleFlightSubmit(new SingleFlightTask(null)
-                    .setSyncSignature("external-signle-flight-" + executor.getResourceUuid())
+                    .setSyncSignature("external-single-flight-" + executor.getResourceUuid())
                     .run(outCompletion -> {
                         try {
+                            args[args.length - 1] = outCompletion;
                             consumer.invoke(executor, args);
                         } catch (IllegalAccessException | InvocationTargetException e) {
                             outCompletion.fail(operr(e.getMessage()));
