@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.identity.imports.AccountImportsManager.accountSourceQueueSyncSignature;
+import static org.zstack.identity.imports.AccountImportsManager.accountSourceSyncTaskSignature;
 import static org.zstack.utils.CollectionUtils.*;
 
 /**
@@ -248,7 +249,7 @@ public abstract class AbstractAccountSourceBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(spec.getAccountList()).each((accountSpec, whileCompletion) -> {
-                    final ImportThirdPartyAccountContext context = new ImportThirdPartyAccountContext();
+                    final ImportThirdPartyAccountContext context = findOneOrNull(contexts, c -> c.spec == accountSpec);
                     if (context.hasError() || context.bindToExistingAccount) {
                         whileCompletion.done();
                         return;
@@ -552,7 +553,7 @@ public abstract class AbstractAccountSourceBase {
 
             @Override
             public String getSyncSignature() {
-                return accountSourceQueueSyncSignature(self.getUuid());
+                return accountSourceSyncTaskSignature();
             }
 
             @Override

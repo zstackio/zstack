@@ -322,42 +322,6 @@ public class LdapUtil {
                 .toHexString(k);
     }
 
-    public String getMemberOfKey() {
-        String ldapServerUuid = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.uuid)
-                .findValue();
-        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
-
-        if(LdapConstant.WindowsAD.TYPE.equals(type)){
-            return LdapConstant.WindowsAD.MEMBER_OF_KEY;
-        }
-
-        if(LdapConstant.OpenLdap.TYPE.equals(type)){
-            return LdapConstant.OpenLdap.MEMBER_OF_KEY;
-        }
-
-        // default WindowsAD
-        return LdapConstant.WindowsAD.MEMBER_OF_KEY;
-    }
-
-    public String getGlobalUuidKey() {
-        String ldapServerUuid = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.uuid)
-                .findValue();
-        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
-
-        if(LdapConstant.WindowsAD.TYPE.equals(type)){
-            return LdapConstant.WindowsAD.GLOBAL_UUID_KEY;
-        }
-
-        if(LdapConstant.OpenLdap.TYPE.equals(type)){
-            return LdapConstant.OpenLdap.GLOBAL_UUID_KEY;
-        }
-
-        // default WindowsAD
-        return LdapConstant.WindowsAD.GLOBAL_UUID_KEY;
-    }
-
     private LdapTemplate getRootBaseLdapTemplate(String ldapServerUuid) {
         LdapTemplateContextSource ldapTemplateContextSource = readRootLdapServerConfiguration(ldapServerUuid);
         LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();

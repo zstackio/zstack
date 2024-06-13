@@ -33,4 +33,6 @@ public interface LdapConstant {
     String QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR = ",";
 
     String LOGIN_TYPE = "ldap";
+
+    String DEFAULT_PERSON_FILTER = "(objectClass=person)";
 }

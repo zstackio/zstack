@@ -74,6 +74,10 @@ public class AccountImportsManager extends AbstractService {
         return ErrorableValue.ofErrorCode(operr("failed to find account import source by type[%s]", type));
     }
 
+    public static String accountSourceSyncTaskSignature() {
+        return ThirdPartyAccountSourceVO.class.getSimpleName() + "-syncing";
+    }
+
     public static String accountSourceQueueSyncSignature(String sourceUuid) {
         return ThirdPartyAccountSourceVO.class.getSimpleName() + "-" + sourceUuid;
     }
