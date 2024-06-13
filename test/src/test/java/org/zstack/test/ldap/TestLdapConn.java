@@ -48,6 +48,7 @@ public class TestLdapConn {
         DBUtil.reDeployDB();
 
         deployer = new Deployer("deployerXml/ldap/TestLdapConn.xml");
+        deployer.addSpringConfig("accountImport.xml");
         deployer.addSpringConfig("LdapManagerImpl.xml");
         deployer.build();
         api = deployer.getApi();

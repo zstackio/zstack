@@ -18,6 +18,8 @@
         <groovy.eclipse.compiler>2.9.2-01</groovy.eclipse.compiler>
         <groovy.eclipse.batch>2.4.3-01</groovy.eclipse.batch>
         <hibernate.search.version>5.10.12.Final</hibernate.search.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>

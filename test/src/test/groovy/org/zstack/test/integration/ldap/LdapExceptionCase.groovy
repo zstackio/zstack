@@ -32,6 +32,7 @@ class LdapExceptionCase extends SubCase {
             kvm()
             localStorage()
             sftpBackupStorage()
+            include("accountImport.xml")
             include("LdapManagerImpl.xml")
             include("captcha.xml")
         }

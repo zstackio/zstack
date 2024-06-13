@@ -135,6 +135,7 @@ abstract class Test extends ApiHelper implements Retry {
             smp()
             console()
 
+            include("accountImport.xml")
             include("LdapManagerImpl.xml")
             include("captcha.xml")
             include("CloudBusAopProxy.xml")
