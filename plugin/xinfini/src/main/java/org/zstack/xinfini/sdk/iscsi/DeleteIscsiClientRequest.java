@@ -1,11 +1,10 @@
-package org.zstack.xinfini.sdk.vhost;
+package org.zstack.xinfini.sdk.iscsi;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.externalStorage.sdk.Param;
 import org.zstack.xinfini.XInfiniApiCategory;
 import org.zstack.xinfini.sdk.XInfiniRequest;
 import org.zstack.xinfini.sdk.XInfiniRestRequest;
-import org.zstack.xinfini.sdk.volume.DeleteVolumeResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,12 +14,12 @@ import java.util.Map;
  * @ Date   : Created in 17:36 2024/5/27
  */
 @XInfiniRestRequest(
-    path = "/bdc-bdevs/{id}",
+    path = "/iscsi-clients/{id}",
     method = HttpMethod.DELETE,
-    responseClass = DeleteVolumeResponse.class,
+    responseClass = DeleteIscsiClientResponse.class,
     category = XInfiniApiCategory.AFA
 )
-public class DeleteBdcBdevRequest extends XInfiniRequest {
+public class DeleteIscsiClientRequest extends XInfiniRequest {
     @Param
     private int id;
 

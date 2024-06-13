@@ -187,7 +187,6 @@ public class XInfiniClient extends ExternalStorageApiClient {
                 urlBuilder.addQueryParameter("index", String.format("%s", qaction.offset));
             }
             if (qaction.sortBy != null) {
-
                 urlBuilder.addQueryParameter("sort", String.format("%s", qaction.sortBy));
             }
 
@@ -290,6 +289,7 @@ public class XInfiniClient extends ExternalStorageApiClient {
 
         private XinfiniApiResult httpError(int code, String details) {
             XinfiniApiResult res = new XinfiniApiResult();
+            res.setReturnCode(code);
             if (details != null && details.startsWith("{")) {
                 XInfiniResponse rsp = gson.fromJson(details, XInfiniResponse.class);
                 if (rsp.getMessage() != null) {
@@ -298,7 +298,6 @@ public class XInfiniClient extends ExternalStorageApiClient {
                 }
             }
 
-            res.setReturnCode(code);
             res.setMessage(String.format("the http status code[%s] details[%s] indicates a failure happened", code, details));
             return res;
         }
@@ -306,8 +305,8 @@ public class XInfiniClient extends ExternalStorageApiClient {
         XinfiniApiResult call() {
             XinfiniApiResult ret = doCall();
             if (ret.getMessage() != null) {
-                logger.debug(String.format("request[%s: %s] error: %s result: %s", action.getClass().getSimpleName(),
-                        taskIdForLog, gson.toJson(ret.getMessage()), ret.getResultString()));
+                logger.debug(String.format("request[%s: %s] error: %s result: %s code: %s", action.getClass().getSimpleName(),
+                        taskIdForLog, gson.toJson(ret.getMessage()), ret.getResultString(), ret.getReturnCode()));
             } else {
                 logger.debug(String.format("request[%s: %s] result: %s", action.getClass().getSimpleName(),
                         taskIdForLog, ret.getResultString()));

@@ -2,7 +2,6 @@ package org.zstack.xinfini.sdk.vhost;
 
 import org.zstack.xinfini.sdk.BaseResource;
 import org.zstack.xinfini.sdk.XInfiniResponse;
-import org.zstack.xinfini.sdk.node.NodeModule;
 
 /**
  * @ Author : yh.w

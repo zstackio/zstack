@@ -13,9 +13,9 @@ import java.util.Map;
  * @ Date   : Created in 17:36 2024/5/27
  */
 @XInfiniRestRequest(
-    path = "/iscsi-gateways",
+    path = "/iscsi-client-groups",
     method = HttpMethod.GET,
-    responseClass = QueryGatewayResponse.class,
+    responseClass = QueryIscsiClientGroupResponse.class,
     category = XInfiniApiCategory.AFA
 )
 public class QueryIscsiClientGroupRequest extends XInfiniQueryRequest {

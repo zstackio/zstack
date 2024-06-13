@@ -1,4 +1,4 @@
-package org.zstack.xinfini.sdk.vhost;
+package org.zstack.xinfini.sdk.iscsi;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.externalStorage.sdk.Param;
@@ -14,20 +14,29 @@ import java.util.Map;
  * @ Date   : Created in 17:36 2024/5/27
  */
 @XInfiniRestRequest(
-    path = "/bdc-bdevs",
+    path = "/iscsi-clients",
     method = HttpMethod.POST,
-    responseClass = CreateBdcBdevResponse.class,
+    responseClass = CreateIscsiClientResponse.class,
     category = XInfiniApiCategory.AFA
 )
-public class CreateBdcBdevRequest extends XInfiniRequest {
-    @Param
-    private int bdcId;
+public class CreateIscsiClientRequest extends XInfiniRequest {
 
     @Param
-    private int bsVolumeId;
+    private Integer iscsiClientGroupId;
 
     @Param
     private String name;
+
+    @Param
+    private String code;
+
+    public Integer getIscsiClientGroupId() {
+        return iscsiClientGroupId;
+    }
+
+    public void setIscsiClientGroupId(Integer iscsiClientGroupId) {
+        this.iscsiClientGroupId = iscsiClientGroupId;
+    }
 
     public String getName() {
         return name;
@@ -37,20 +46,12 @@ public class CreateBdcBdevRequest extends XInfiniRequest {
         this.name = name;
     }
 
-    public int getBsVolumeId() {
-        return bsVolumeId;
+    public String getCode() {
+        return code;
     }
 
-    public void setBsVolumeId(int bsVolumeId) {
-        this.bsVolumeId = bsVolumeId;
-    }
-
-    public int getBdcId() {
-        return bdcId;
-    }
-
-    public void setBdcId(int bdcId) {
-        this.bdcId = bdcId;
+    public void setCode(String code) {
+        this.code = code;
     }
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();

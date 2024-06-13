@@ -3,7 +3,6 @@ package org.zstack.xinfini.sdk.vhost;
 import org.zstack.xinfini.sdk.BaseResource;
 import org.zstack.xinfini.sdk.BaseSpec;
 import org.zstack.xinfini.sdk.BaseStatus;
-import org.zstack.xinfini.sdk.node.NodeModule;
 
 import java.util.List;
 

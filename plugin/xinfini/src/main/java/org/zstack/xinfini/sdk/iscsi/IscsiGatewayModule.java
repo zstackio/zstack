@@ -10,33 +10,33 @@ import java.util.List;
  * @ Author : yh.w
  * @ Date   : Created in 11:29 2024/5/28
  */
-public class GatewayModule extends BaseResource {
-    public GatewayModule(Metadata md, GatewaySpec spec, GatewayStatus status) {
+public class IscsiGatewayModule extends BaseResource {
+    public IscsiGatewayModule(Metadata md, IscsiGatewaySpec spec, IscsiGatewayStatus status) {
         this.spec = spec;
         this.status = status;
         this.setMetadata(md);
     }
 
-    private GatewaySpec spec;
-    private GatewayStatus status;
+    private IscsiGatewaySpec spec;
+    private IscsiGatewayStatus status;
 
-    public GatewaySpec getSpec() {
+    public IscsiGatewaySpec getSpec() {
         return spec;
     }
 
-    public void setSpec(GatewaySpec spec) {
+    public void setSpec(IscsiGatewaySpec spec) {
         this.spec = spec;
     }
 
-    public GatewayStatus getStatus() {
+    public IscsiGatewayStatus getStatus() {
         return status;
     }
 
-    public void setStatus(GatewayStatus status) {
+    public void setStatus(IscsiGatewayStatus status) {
         this.status = status;
     }
 
-    public static class GatewayStatus extends BaseStatus {
+    public static class IscsiGatewayStatus extends BaseStatus {
         private String configContent;
         private String containerId;
         private long pid;
@@ -102,7 +102,7 @@ public class GatewayModule extends BaseResource {
         }
     }
 
-    public static class GatewaySpec extends BaseSpec {
+    public static class IscsiGatewaySpec extends BaseSpec {
 
         private int nodeId;
         private List<String> ips;

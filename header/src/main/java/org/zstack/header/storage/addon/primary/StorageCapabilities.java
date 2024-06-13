@@ -12,6 +12,7 @@ public class StorageCapabilities {
     private boolean supportStorageQos;
 
     private boolean supportLiveExpandVolume;
+    private boolean supportExportVolumeSnapshot;
     public List<String> supportedImageFormats;
 
     public VolumeSnapshotCapability getSnapshotCapability() {
@@ -20,6 +21,14 @@ public class StorageCapabilities {
 
     public void setSnapshotCapability(VolumeSnapshotCapability snapshotCapability) {
         this.snapshotCapability = snapshotCapability;
+    }
+
+    public boolean isSupportExportVolumeSnapshot() {
+        return supportExportVolumeSnapshot;
+    }
+
+    public void setSupportExportVolumeSnapshot(boolean supportExportVolumeSnapshot) {
+        this.supportExportVolumeSnapshot = supportExportVolumeSnapshot;
     }
 
     public boolean isSupportCloneFromVolume() {
