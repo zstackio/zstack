@@ -236,14 +236,18 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             }
 
             for (UsedIpVO ip : nic.getUsedIps()) {
-                if (ip.getIpRangeUuid() == null) {
-                    /* ip address allocated when ipam is disabled */
-                    continue;
-                }
-                NormalIpRangeVO ipr = dbf.findByUuid(ip.getIpRangeUuid(), NormalIpRangeVO.class);
-                if (ipr.getIpVersion() == IPv6Constants.IPv6 &&
-                        (ipr.getAddressMode().equals(IPv6Constants.SLAAC))) {
-                    continue;
+                if (ip.getIpVersion() == IPv6Constants.IPv6) {
+                    NormalIpRangeVO ipr = Q.New(NormalIpRangeVO.class)
+                            .eq(NormalIpRangeVO_.l3NetworkUuid, ip.getL3NetworkUuid())
+                            .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).limit(1).find();
+                    if (ipr == null) {
+                        /* dhcp v6 need ra mode and ip range start/end ip */
+                        continue;
+                    }
+
+                    if (ipr.getAddressMode().equals(IPv6Constants.SLAAC)) {
+                        continue;
+                    }
                 }
 
                 DhcpStruct struct = getDhcpStruct(vm, hostNames, nic, ip, isDefaultNic);

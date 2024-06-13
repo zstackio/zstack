@@ -1,8 +1,6 @@
 package org.zstack.test.integration.networkservice.provider.flat.dhcp
 
-import org.zstack.core.db.SQL
-import org.zstack.header.image.ImageVO
-import org.zstack.header.image.ImageVO_
+import org.springframework.http.HttpEntity
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.eip.EipConstant
@@ -16,8 +14,11 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
+
+import java.util.stream.Collectors
 
 /**
  * Created by shixin.ruan on 2024-06-06.
@@ -113,12 +114,6 @@ class FlatWithIpamCase extends SubCase{
                             netmask = "255.255.255.0"
                             gateway = "192.168.100.1"
                         }
-
-                        ipv6 {
-                            name = "ipv6-Stateless-DHCP"
-                            networkCidr = "2024:06:06:86:01::/64"
-                            addressMode = "Stateless-DHCP"
-                        }
                     }
                     
                 }
@@ -196,21 +191,10 @@ class FlatWithIpamCase extends SubCase{
         HostInventory host = env.inventoryByName ("host-1")
 
         VmNicInventory nic = vm.vmNics.get(0)
-        UsedIpInventory ip6
-        for (UsedIpInventory ip : nic.usedIps) {
-            if (ip.ipVersion == 6) {
-                ip6 = ip
-            }
-        }
         VipInventory vip4 = createVip {
             name = "vip4"
             l3NetworkUuid = pub.uuid
             ipVersion = 4
-        }
-        VipInventory vip6 = createVip {
-            name = "vip6"
-            l3NetworkUuid = pub.uuid
-            ipVersion = 6
         }
 
         EipInventory eip4 = createEip {
@@ -218,51 +202,56 @@ class FlatWithIpamCase extends SubCase{
             vipUuid = vip4.uuid
             vmNicUuid = nic.uuid
         }
-        EipInventory eip6 = createEip {
-            name = "eip5"
-            vipUuid = vip6.uuid
+
+        /* because only 1 host, only 1 BatchApplyDhcpCmd */
+        FlatDhcpBackend.BatchApplyDhcpCmd batchApplyDhcpCmd = null
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            batchApplyDhcpCmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
+            return rsp
         }
-        attachEip {
-            eipUuid = eip6.uuid
-            vmNicUuid = nic.uuid
-            usedIpUuid = ip6.uuid
+
+        /* because only 1 host, only 1 BatchApplyDhcpCmd */
+        FlatDhcpBackend.FlushDhcpNamespaceCmd flushCmd = null
+        env.afterSimulator(FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH) { rsp, HttpEntity<String> e ->
+            flushCmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.FlushDhcpNamespaceCmd.class)
+            return rsp
         }
 
         detachNetworkServiceFromL3Network {
             l3NetworkUuid = l31.uuid
             service = "DHCP"
         }
+        assert flushCmd != null
 
+        batchApplyDhcpCmd = null
         /* reboot vm */
         rebootVmInstance {
             uuid = vm.uuid
         }
+        assert batchApplyDhcpCmd == null
 
         /* reconnect host */
         reconnectHost {
             uuid = host.uuid
         }
 
+        batchApplyDhcpCmd = null
         VmInstanceInventory vm2 = createVmInstance {
             name = "vm-2"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l31.uuid]
         }
+        VmNicInventory nic2 = vm2.vmNics.get(0)
+        assert nic2.ip == null
+        assert batchApplyDhcpCmd == null
+
         List<UsedIpInventory> ipv4s = getFreeIp {
             l3NetworkUuid = nic.l3NetworkUuid
             ipVersion = IPv6Constants.IPv4
             limit = 1
         }
         FreeIpInventory ipv4 = ipv4s.get(0)
-        List<UsedIpInventory> ipv6s = getFreeIp {
-            l3NetworkUuid = nic.l3NetworkUuid
-            ipVersion = IPv6Constants.IPv6
-            limit = 1
-        }
-        FreeIpInventory ipv6 = ipv6s.get(0)
-        String ip6tag = IPv6NetworkUtils.ipv6AddessToTagValue(ipv6.ip)
-        String gw6tag = IPv6NetworkUtils.ipv6AddessToTagValue(ipv6.gateway)
         VmInstanceInventory vm3 = createVmInstance {
             name = "vm-3"
             instanceOfferingUuid = instanceOffering.uuid
@@ -270,13 +259,11 @@ class FlatWithIpamCase extends SubCase{
             l3NetworkUuids = [l31.uuid]
             systemTags = [
                     "staticIp::" + l31.uuid + "::${ipv4.ip}",
-                    "staticIp::" + l31.uuid + "::${ip6tag}",
                     "ipv4Gateway::" + l31.uuid + "::${ipv4.gateway}",
-                    "ipv6Gateway::" + l31.uuid + "::${gw6tag}",
-                    "ipv4Netmask::" + l31.uuid + "::${ipv4.netmask}",
-                    "ipv6Prefix::" + l31.uuid + "::64"
+                    "ipv4Netmask::" + l31.uuid + "::${ipv4.netmask}"
             ]
         }
+        assert batchApplyDhcpCmd == null
 
         /* reboot vm */
         rebootVmInstance {
@@ -290,16 +277,25 @@ class FlatWithIpamCase extends SubCase{
         rebootVmInstance {
             uuid = vm3.uuid
         }
+        assert batchApplyDhcpCmd == null
 
         /* reconnect host */
         reconnectHost {
             uuid = host.uuid
         }
 
+        batchApplyDhcpCmd = null
         attachNetworkServiceToL3Network {
             l3NetworkUuid = l31.uuid
             networkServices = ['Flat':['DHCP']]
         }
+        assert batchApplyDhcpCmd != null
+        assert batchApplyDhcpCmd.dhcpInfos.size() == 1
+        FlatDhcpBackend.ApplyDhcpCmd info = batchApplyDhcpCmd.dhcpInfos.get(0)
+        assert info.dhcp.size() == 2 /* vm-2 doesn't have ip address */
+        List<String> ips = info.dhcp.stream().map { i -> i.ip}.collect(Collectors.toList())
+        assert ips.contains(ipv4.ip)
+
         VmInstanceInventory vm4 = createVmInstance {
             name = "vm-4"
             instanceOfferingUuid = instanceOffering.uuid
@@ -341,10 +337,6 @@ class FlatWithIpamCase extends SubCase{
 
         detachEip {
             uuid = eip4.uuid
-        }
-
-        detachEip {
-            uuid = eip6.uuid
         }
     }
 
@@ -475,6 +467,18 @@ class FlatWithIpamCase extends SubCase{
         ImageInventory image = env.inventoryByName("image")
         HostInventory host = env.inventoryByName ("host-1")
 
+        addIpv6RangeByNetworkCidr {
+            name = "l3-1-ip6"
+            l3NetworkUuid = l31.getUuid()
+            networkCidr = "2024:6:12:86:1::/64"
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
+        vm = queryVmInstance {conditions = ["uuid=${vm.uuid}"]}[0]
         VmNicInventory nic1 = vm.vmNics.get(0)
         UsedIpInventory ip61
         for (UsedIpInventory ip : nic1.usedIps) {
