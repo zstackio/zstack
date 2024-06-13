@@ -282,6 +282,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             String pathInCache;
             String installPath;
             String format;
+            Long size;
             Long actualSize;
 
             @Override
@@ -314,6 +315,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         controller.cloneVolume(pathInCache, spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats returnValue) {
+                                size = returnValue.getSize();
                                 actualSize = returnValue.getActualSize();
                                 installPath = returnValue.getInstallPath();
                                 format = returnValue.getFormat();
@@ -333,6 +335,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     public void handle(Map data) {
                         InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                         volume.setInstallPath(installPath);
+                        volume.setSize(size);
                         volume.setActualSize(actualSize);
                         volume.setFormat(format);
                         if (StringUtils.isEmpty(volume.getProtocol())) {

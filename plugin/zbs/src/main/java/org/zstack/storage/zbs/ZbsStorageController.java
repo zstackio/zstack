@@ -467,8 +467,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                         httpCall(EXPAND_VOLUME_PATH, cmd, ExpandVolumeRsp.class, new ReturnValueCompletion<ExpandVolumeRsp>(trigger) {
                             @Override
                             public void success(ExpandVolumeRsp returnValue) {
-                                VolumeStats stats = new VolumeStats();
-                                stats.setInstallPath(stats.getInstallPath());
                                 stats.setSize(returnValue.getSize());
                                 trigger.next();
                             }
