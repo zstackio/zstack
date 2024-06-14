@@ -25,7 +25,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceVO` (
     `yaml` mediumtext NOT NULL,
     `requestCpu` int(10) NOT NULL,
     `requestMem` bigint(20) NOT NULL,
-    PRIMARY KEY  (`uuid`)
+    `modelUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkModelServiceVOModelVO FOREIGN KEY (uuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
