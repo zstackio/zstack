@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterVO` (
     `description` varchar(2048) DEFAULT NULL,
     `url` varchar(2048) DEFAULT NULL,
     `parameters` varchar(128) DEFAULT NULL,
-    PRIMARY KEY  (`uuid`),
+    PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelVO` (
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceVO` (
     `yaml` mediumtext NOT NULL,
     `requestCpu` int(10) NOT NULL,
     `requestMem` bigint(20) NOT NULL,
-    PRIMARY KEY  (`uuid`),
+    PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
     `status` varchar(255) NOT NULL,
     `url` varchar(2048) NOT NULL,
     `modelServiceUuid` varchar(32) NOT NULL,
-    PRIMARY KEY  (`uuid`),
+    PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceRefVO` (
@@ -43,6 +43,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceRefVO` (
     `modelUuid` varchar(32) NOT NULL,
     `modelServiceUuid` varchar(32) NOT NULL,
     PRIMARY KEY  (`uuid`),
-    CONSTRAINT fkModelRefVO FOREIGN KEY (modelUuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+    CONSTRAINT fkModelRefVO FOREIGN KEY (modelUuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
     CONSTRAINT fkModelServiceRefVO FOREIGN KEY (modelServiceUuid) REFERENCES ModelServiceVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
