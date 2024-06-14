@@ -1727,49 +1727,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
 
                         validateHostname(sysTag, hostname);
-                    } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
-                        validateStaticIp(sysTag);
-                    } 
-                }
-            }
-
-            private void validateStaticIp(String sysTag) {
-                Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
-                String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
-                if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
-                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
-                            l3Uuid, sysTag));
-                }
-
-                String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
-                ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
-                if (!NetworkUtils.isIpv4Address(ip) && !IPv6NetworkUtils.isIpv6Address(ip)) {
-                    throw new ApiMessageInterceptionException(argerr("%s is not a valid ip address. Please correct your system tag[%s] of static IP",
-                            ip, sysTag));
-                }
-
-                L3NetworkVO l3VO = Q.New(L3NetworkVO.class)
-                        .eq(L3NetworkVO_.uuid, l3Uuid).find();
-                if (!l3VO.enableIpAddressAllocation()) {
-                    if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, ip).eq(UsedIpVO_.l3NetworkUuid, l3Uuid).isExists()) {
-                        throw new ApiMessageInterceptionException(argerr("IP[%s] is already used on the L3 network[uuid:%s]. Please correct your system tag[%s] of static IP",
-                                ip, l3Uuid, sysTag));
                     }
-                    return;
-                }
-
-                CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
-                cmsg.setIp(ip);
-                cmsg.setL3NetworkUuid(l3Uuid);
-                bus.makeLocalServiceId(cmsg, L3NetworkConstant.SERVICE_ID);
-                MessageReply r = bus.call(cmsg);
-                if (!r.isSuccess()) {
-                    throw new ApiMessageInterceptionException(inerr(r.getError().getDetails()));
-                }
-
-                CheckIpAvailabilityReply cr = r.castReply();
-                if (!cr.isAvailable()) {
-                    throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3Uuid, cr.getReason()));
                 }
             }
 
@@ -1808,8 +1766,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     q.select(VmInstanceVO_.defaultL3NetworkUuid);
                     q.add(VmInstanceVO_.uuid, Op.EQ, resourceUuid);
                     String defaultL3Uuid = q.findValue();
-                } else if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
-                    validateStaticIp(systemTag);
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
                     validateBootOrder(systemTag);
                 }
@@ -2111,6 +2067,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installUsbRedirectValidator();
         installL3NetworkSecurityGroupValidator();
         installSeDeviceValidator();
+        new StaticIpOperator().installStaticIpValidator();
     }
     private void installUsbRedirectValidator() {
         VmSystemTags.USB_REDIRECT.installValidator(new SystemTagValidator() {
