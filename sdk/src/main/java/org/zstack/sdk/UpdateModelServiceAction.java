@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddModelServiceAction extends AbstractAction {
+public class UpdateModelServiceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddModelServiceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddModelServiceResult value;
+        public org.zstack.sdk.UpdateModelServiceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,25 +26,25 @@ public class AddModelServiceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dockerImageName;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String yaml;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceImageUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer requestCpu;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Long requestMemory;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String modelUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +78,8 @@ public class AddModelServiceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddModelServiceResult value = res.getResult(org.zstack.sdk.AddModelServiceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddModelServiceResult() : value; 
+        org.zstack.sdk.UpdateModelServiceResult value = res.getResult(org.zstack.sdk.UpdateModelServiceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateModelServiceResult() : value; 
 
         return ret;
     }
@@ -108,11 +108,11 @@ public class AddModelServiceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ai/model-services";
+        info.httpMethod = "PUT";
+        info.path = "/ai/model-services/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "param";
+        info.parameterName = "updateModelService";
         return info;
     }
 

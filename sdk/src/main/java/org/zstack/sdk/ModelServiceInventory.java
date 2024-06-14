@@ -52,4 +52,12 @@ public class ModelServiceInventory  {
         return this.requestMemory;
     }
 
+    public java.lang.String modelUuid;
+    public void setModelUuid(java.lang.String modelUuid) {
+        this.modelUuid = modelUuid;
+    }
+    public java.lang.String getModelUuid() {
+        return this.modelUuid;
+    }
+
 }
