@@ -627,7 +627,7 @@ class FlatWithIpamCase extends SubCase{
         }
 
         expect(AssertionError.class){
-            /* no gateway failed */
+            /* no netmask failed */
             createVmInstance {
                 name = "test-1"
                 instanceOfferingUuid = instanceOffering.uuid
@@ -649,20 +649,6 @@ class FlatWithIpamCase extends SubCase{
                 l3NetworkUuids = [l31.uuid]
                 systemTags = [
                         "staticIp::" + l31.uuid + "::2024:6:13:86:1--aa",
-                ]
-            }
-        }
-
-        expect(AssertionError.class){
-            /* no gateway failed */
-            createVmInstance {
-                name = "test-1"
-                instanceOfferingUuid = instanceOffering.uuid
-                imageUuid = image.uuid
-                l3NetworkUuids = [l31.uuid]
-                systemTags = [
-                        "staticIp::" + l31.uuid + "::2024:6:13:86:1--aa",
-                        "ipv6Prefix::" + l31.uuid + "::64"
                 ]
             }
         }

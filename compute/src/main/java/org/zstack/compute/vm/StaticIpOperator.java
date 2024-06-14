@@ -284,7 +284,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         return null;
     }
 
-    private void checkIpAvailability(String l3Uuid, String ip) {
+    public void checkIpAvailability(String l3Uuid, String ip) {
         CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
         cmsg.setIp(ip);
         cmsg.setL3NetworkUuid(l3Uuid);
@@ -330,9 +330,6 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                     if (StringUtils.isEmpty(nicIp.ipv4Netmask)) {
                         throw new ApiMessageInterceptionException(operr("netmask must be set"));
                     }
-                    if (StringUtils.isEmpty(nicIp.ipv4Gateway)) {
-                        throw new ApiMessageInterceptionException(operr("gateway must be set"));
-                    }
                 } else {
                     if (StringUtils.isEmpty(nicIp.ipv4Netmask)) {
                         newSystags.add(VmSystemTags.IPV4_NETMASK.instantiateTag(
@@ -364,9 +361,6 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                 if (ipRangeVO == null) {
                     if (StringUtils.isEmpty(nicIp.ipv6Prefix)) {
                         throw new ApiMessageInterceptionException(operr("ipv6 prefix length must be set"));
-                    }
-                    if (StringUtils.isEmpty(nicIp.ipv6Gateway)) {
-                        throw new ApiMessageInterceptionException(operr("ipv6 gateway must be set"));
                     }
                 } else {
                     if (StringUtils.isEmpty(nicIp.ipv6Prefix)) {
