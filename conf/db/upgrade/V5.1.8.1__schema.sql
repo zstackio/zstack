@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelVO` (
     `parameters` mediumtext DEFAULT NULL,
     `installPath` varchar(2048) DEFAULT NULL,
     PRIMARY KEY  (`uuid`),
-    CONSTRAINT fkModelVOModelCenterVO FOREIGN KEY (uuid) REFERENCES ModelCenterVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+    CONSTRAINT fkModelVOModelCenterVO FOREIGN KEY (modelCenterUuid) REFERENCES ModelCenterVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceVO` (
@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceVO` (
     `description` varchar(2048) DEFAULT NULL,
     `yaml` mediumtext NOT NULL,
     `requestCpu` int(10) NOT NULL,
-    `requestMem` bigint(20) NOT NULL,
-    `modelUuid` varchar(32) NOT NULL,
+    `requestMemory` bigint(20) NOT NULL,
+    `modelUuid` varchar(32) DEFAULT NULL,
     PRIMARY KEY  (`uuid`),
-    CONSTRAINT fkModelServiceVOModelVO FOREIGN KEY (uuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+    CONSTRAINT fkModelServiceVOModelVO FOREIGN KEY (modelUuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
