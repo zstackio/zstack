@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.core.convert.PasswordConverter;
+import org.zstack.header.agent.ProxyHardware;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vo.EO;
@@ -11,7 +12,7 @@ import javax.persistence.*;
 @Table
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = HostEO.class, needView = false)
-public class KVMHostVO extends HostVO {
+public class KVMHostVO extends HostVO implements ProxyHardware {
     @Column
     private String username;
     
