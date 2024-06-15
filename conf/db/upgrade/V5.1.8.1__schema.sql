@@ -30,16 +30,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceVO` (
     CONSTRAINT fkModelServiceVOModelVO FOREIGN KEY (modelUuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
-    `uuid` varchar(32) NOT NULL UNIQUE,
-    `description` varchar(2048) DEFAULT NULL,
-    `yaml` mediumtext NOT NULL,
-    `status` varchar(255) NOT NULL,
-    `url` varchar(2048) NOT NULL,
-    `modelServiceUuid` varchar(32) NOT NULL,
-    PRIMARY KEY  (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceRefVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `modelUuid` varchar(32) NOT NULL,
@@ -48,3 +38,26 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceRefVO` (
     CONSTRAINT fkModelRefVO FOREIGN KEY (modelUuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
     CONSTRAINT fkModelServiceRefVO FOREIGN KEY (modelServiceUuid) REFERENCES ModelServiceVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`ModelServiceInstanceGroupVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `modelServiceUuid` varchar(32) NOT NULL,
+    CONSTRAINT fkModelServiceInstanceGroupVOModelServiceModelServiceVO FOREIGN KEY (modelServiceUuid) REFERENCES ModelServiceVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `description` varchar(2048) DEFAULT NULL,
+    `yaml` mediumtext NOT NULL,
+    `status` varchar(255) NOT NULL,
+    `url` varchar(2048) NOT NULL,
+    `modelServiceGroupUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--CREATE TABLE  `zstack`.`VmModelServiceInstanceVO` (
+--    `uuid` varchar(32) NOT NULL UNIQUE,
+--    `modelServiceInstanceGroupUuid` varchar(32) DEFAULT NULL,
+--    PRIMARY KEY  (`uuid`)
+--) ENGINE=InnoDB DEFAULT CHARSET=utf8;
