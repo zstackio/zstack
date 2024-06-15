@@ -581,18 +581,26 @@ public class L3BasicNetwork implements L3Network {
             inRange = true;
         }
 
-        for (Tuple t : ts) {
-            String sip = t.get(0, String.class);
-            String eip = t.get(1, String.class);
-            String gw = t.get(2, String.class);
-            if (msg.getIp().equals(gw) && !addressPoolGateways.contains(gw)) {
-                isGateway = true;
-                break;
-            }
+        if (!self.enableIpAddressAllocation()) {
+            inRange = true;
+        }
 
-            if (NetworkUtils.isInRange(msg.getIp(), sip, eip)) {
-                inRange = true;
-                break;
+        if (ts.isEmpty()) {
+            inRange = true;
+        } else {
+            for (Tuple t : ts) {
+                String sip = t.get(0, String.class);
+                String eip = t.get(1, String.class);
+                String gw = t.get(2, String.class);
+                if (msg.getIp().equals(gw) && !addressPoolGateways.contains(gw)) {
+                    isGateway = true;
+                    break;
+                }
+
+                if (NetworkUtils.isInRange(msg.getIp(), sip, eip)) {
+                    inRange = true;
+                    break;
+                }
             }
         }
 
