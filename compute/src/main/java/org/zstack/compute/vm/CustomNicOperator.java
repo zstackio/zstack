@@ -43,31 +43,37 @@ public class CustomNicOperator {
         this.deleteNicTags();
         // set the results to system tag
         // because MacOperator doesn't provide a set mac method , so we set it here using SystemTagCreator
-        SystemTagCreator macCreator = VmSystemTags.CUSTOM_MAC.newSystemTagCreator(vmUuid);
-        macCreator.ignoreIfExisting = false;
-        macCreator.inherent = false;
-        macCreator.setTagByTokens(map(
-                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),
-                e(VmSystemTags.MAC_TOKEN, mac)
-        ));
-        macCreator.create();
+        if (mac != null) {
+            SystemTagCreator macCreator = VmSystemTags.CUSTOM_MAC.newSystemTagCreator(vmUuid);
+            macCreator.ignoreIfExisting = false;
+            macCreator.inherent = false;
+            macCreator.setTagByTokens(map(
+                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),
+                    e(VmSystemTags.MAC_TOKEN, mac)
+            ));
+            macCreator.create();
+        }
 
-        SystemTagCreator ipTagCreator = VmSystemTags.STATIC_IP.newSystemTagCreator(vmUuid);
-        ipTagCreator.ignoreIfExisting = false;
-        ipTagCreator.inherent = false;
-        ipTagCreator.setTagByTokens(map(
-                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),
-                e(VmSystemTags.STATIC_IP_TOKEN, ip)
-        ));
-        ipTagCreator.create();
+        if (ip != null) {
+            SystemTagCreator ipTagCreator = VmSystemTags.STATIC_IP.newSystemTagCreator(vmUuid);
+            ipTagCreator.ignoreIfExisting = false;
+            ipTagCreator.inherent = false;
+            ipTagCreator.setTagByTokens(map(
+                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),
+                    e(VmSystemTags.STATIC_IP_TOKEN, ip)
+            ));
+            ipTagCreator.create();
+        }
 
-        SystemTagCreator nicIdCreator = VmSystemTags.CUSTOM_NIC_UUID.newSystemTagCreator(vmUuid);
-        nicIdCreator.ignoreIfExisting = false;
-        nicIdCreator.inherent = false;
-        nicIdCreator.setTagByTokens(map(
-                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),
-                e(VmSystemTags.NIC_UUID_TOKEN, nicUuid)
-        ));
-        nicIdCreator.create();
+        if (nicUuid != null) {
+            SystemTagCreator nicIdCreator = VmSystemTags.CUSTOM_NIC_UUID.newSystemTagCreator(vmUuid);
+            nicIdCreator.ignoreIfExisting = false;
+            nicIdCreator.inherent = false;
+            nicIdCreator.setTagByTokens(map(
+                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),
+                    e(VmSystemTags.NIC_UUID_TOKEN, nicUuid)
+            ));
+            nicIdCreator.create();
+        }
     }
 }
