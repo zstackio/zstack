@@ -12,7 +12,7 @@ public class DeleteModelServiceInstanceGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteModelResult value;
+        public org.zstack.sdk.DeleteModelServiceInstanceGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class DeleteModelServiceInstanceGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteModelResult value = res.getResult(org.zstack.sdk.DeleteModelResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteModelResult() : value; 
+        org.zstack.sdk.DeleteModelServiceInstanceGroupResult value = res.getResult(org.zstack.sdk.DeleteModelServiceInstanceGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteModelServiceInstanceGroupResult() : value; 
 
         return ret;
     }

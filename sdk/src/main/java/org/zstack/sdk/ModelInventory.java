@@ -52,4 +52,44 @@ public class ModelInventory  {
         return this.modelCenterUuid;
     }
 
+    public java.lang.String logo;
+    public void setLogo(java.lang.String logo) {
+        this.logo = logo;
+    }
+    public java.lang.String getLogo() {
+        return this.logo;
+    }
+
+    public java.lang.String vendor;
+    public void setVendor(java.lang.String vendor) {
+        this.vendor = vendor;
+    }
+    public java.lang.String getVendor() {
+        return this.vendor;
+    }
+
+    public java.lang.String introduction;
+    public void setIntroduction(java.lang.String introduction) {
+        this.introduction = introduction;
+    }
+    public java.lang.String getIntroduction() {
+        return this.introduction;
+    }
+
+    public java.lang.Long size;
+    public void setSize(java.lang.Long size) {
+        this.size = size;
+    }
+    public java.lang.Long getSize() {
+        return this.size;
+    }
+
+    public java.lang.String version;
+    public void setVersion(java.lang.String version) {
+        this.version = version;
+    }
+    public java.lang.String getVersion() {
+        return this.version;
+    }
+
 }
