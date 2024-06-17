@@ -7,6 +7,9 @@ public interface LoginAuthConstant {
     String twoFactorAuth = "TWO_FACTOR_AUTH";
     AdditionalAuthFeature twoFactor = new AdditionalAuthFeature(twoFactorAuth);
 
+    String ssoServerLoginControlAuth = "SSO_SERVER_LOGIN_CONTROL_AUTH";
+    AdditionalAuthFeature ssoServerLoginControl = new AdditionalAuthFeature(ssoServerLoginControlAuth);
+
     String LOGIN_SESSION_INVENTORY = "LOGIN_SESSION_INVENTORY";
     String LOGIN_SESSION_INFO = "LOGIN_SESSION_INFO";
 }
