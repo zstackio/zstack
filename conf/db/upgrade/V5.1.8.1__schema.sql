@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelVO` (
     `modelCenterUuid` varchar(32) NOT NULL,
     `parameters` mediumtext DEFAULT NULL,
     `installPath` varchar(2048) DEFAULT NULL,
+    `introduction` mediumtext DEFAULT NULL,
+    `logo` mediumtext DEFAULT NULL,
+    `version` varchar(255) DEFAULT NULL,
+    `vendor` varchar(255) DEFAULT NULL,
+    `size` bigint(20) NOT NULL,
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkModelVOModelCenterVO FOREIGN KEY (modelCenterUuid) REFERENCES ModelCenterVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
