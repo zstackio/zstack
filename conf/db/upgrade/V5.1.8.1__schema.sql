@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterVO` (
     `parameters` varchar(128) DEFAULT NULL,
     `managementIp` varchar(128) NOT NULL,
     `managementPort` int(16) not NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -21,6 +23,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelVO` (
     `version` varchar(255) DEFAULT NULL,
     `vendor` varchar(255) DEFAULT NULL,
     `size` bigint(20) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkModelVOModelCenterVO FOREIGN KEY (modelCenterUuid) REFERENCES ModelCenterVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -33,6 +37,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceVO` (
     `requestCpu` int(10) NOT NULL,
     `requestMemory` bigint(20) NOT NULL,
     `modelUuid` varchar(32) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkModelServiceVOModelVO FOREIGN KEY (modelUuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -49,6 +55,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceRefVO` (
 CREATE TABLE  `zstack`.`ModelServiceInstanceGroupVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `modelServiceUuid` varchar(32) NOT NULL,
+    `status` varchar(255) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     CONSTRAINT fkModelServiceInstanceGroupVOModelServiceModelServiceVO FOREIGN KEY (modelServiceUuid) REFERENCES ModelServiceVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -60,6 +69,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
     `status` varchar(255) NOT NULL,
     `url` varchar(2048) NOT NULL,
     `modelServiceGroupUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
