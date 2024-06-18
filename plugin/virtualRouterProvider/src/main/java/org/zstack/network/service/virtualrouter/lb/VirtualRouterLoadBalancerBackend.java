@@ -2785,7 +2785,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         sql = "select nic from VmInstanceVO vm, VmNicVO nic " +
                 " where vm.uuid=nic.vmInstanceUuid and vm.type in ('UserVM', 'baremetal2') and vm.state in (:vmStates)  " +
-                " and nic.l3NetworkUuid in (:l3NetworkUuids) and nic.metaData is null ";
+                " and nic.l3NetworkUuid in (:l3NetworkUuids) and nic.metaData is null and nic.ip is not null";
         List<VmNicVO> nicVOS = SQL.New(sql, VmNicVO.class)
                 .param("l3NetworkUuids", l3NetworkUuids)
                 .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
