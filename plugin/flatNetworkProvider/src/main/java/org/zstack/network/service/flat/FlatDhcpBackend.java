@@ -2368,8 +2368,22 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             throw new ApiMessageInterceptionException(argerr("could set dhcp v4 server ip, because there is no ipv4 range"));
         }
 
+        if (dhcpIp != null) {
+            if (!NetworkUtils.isIpv4InCidr(dhcpIp, ipv4Ranges.get(0).getNetworkCidr())) {
+                throw new ApiMessageInterceptionException(argerr("could set dhcp v4 server ip, because ip[%s] is not the cidr of l3 [%s]",
+                dhcpIp, ipv4Ranges.get(0).getNetworkCidr()));
+            }
+        }
+
         if (dhcp6Ip != null && ipv6Ranges.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr("could set dhcp v6 server ip, because there is no ipv6 range"));
+        }
+
+        if (dhcp6Ip != null) {
+            if (!IPv6NetworkUtils.isIpv6InCidrRange(dhcp6Ip, ipv6Ranges.get(0).getNetworkCidr())) {
+                throw new ApiMessageInterceptionException(argerr("could set dhcp v6 server ip, because ip[%s] is not the cidr of l3 [%s]",
+                        dhcpIp, ipv6Ranges.get(0).getNetworkCidr()));
+            }
         }
     }
 
@@ -2400,8 +2414,22 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             throw new ApiMessageInterceptionException(argerr("could change dhcp v4 server ip, because there is no ipv4 range"));
         }
 
+        if (msg.getDhcpServerIp() != null) {
+            if (!NetworkUtils.isIpv4InCidr(msg.getDhcpServerIp(), ipv4Ranges.get(0).getNetworkCidr())) {
+                throw new ApiMessageInterceptionException(argerr("could set dhcp v4 server ip, because ip[%s] is not the cidr of l3 [%s]",
+                        msg.getDhcpServerIp(), ipv4Ranges.get(0).getNetworkCidr()));
+            }
+        }
+
         if (msg.getDhcpv6ServerIp() != null && ipv6Ranges.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr("could change dhcp v6 server ip, because there is no ipv6 range"));
+        }
+
+        if (msg.getDhcpv6ServerIp() != null) {
+            if (!IPv6NetworkUtils.isIpv6InCidrRange(msg.getDhcpv6ServerIp(), ipv6Ranges.get(0).getNetworkCidr())) {
+                throw new ApiMessageInterceptionException(argerr("could set dhcp v6 server ip, because ip[%s] is not the cidr of l3 [%s]",
+                        msg.getDhcpv6ServerIp(), ipv6Ranges.get(0).getNetworkCidr()));
+            }
         }
     }
 

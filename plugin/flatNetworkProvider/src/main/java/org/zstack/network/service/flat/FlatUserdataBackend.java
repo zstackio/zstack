@@ -1,5 +1,6 @@
 package org.zstack.network.service.flat;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.UserdataBuilder;
@@ -198,6 +199,13 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     }
 
                     if (bridgeNames.get(l.l3Uuid) == null) {
+                        continue;
+                    }
+
+                    if (l.netmask == null) {
+                        /* user data config need netmask */
+                        logger.info(String.format("can not get netmask for vmnic[ip:%s] for vm[uuid:%s]",
+                                l.vmIp, vmuuid));
                         continue;
                     }
 
@@ -597,6 +605,13 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 .eq(UsedIpVO_.ipVersion, IPv6Constants.IPv4).limit(1).find();
         if (ipv4 == null) {
             // userdata depends on the ipv4 address
+            completion.success();
+            return;
+        }
+        if (StringUtils.isEmpty(ipv4.getNetmask())) {
+            // userdata depends on the ipv4 netmask
+            logger.info(String.format("can not get netmask for vmnic[ip:%s] for vm[uuid:%s]",
+                    ipv4.getIp(), struct.getVmUuid()));
             completion.success();
             return;
         }
