@@ -44,6 +44,14 @@ public class ModelServiceInstanceInventory  {
         return this.url;
     }
 
+    public java.lang.String vmInstanceUuid;
+    public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
+    public java.lang.String getVmInstanceUuid() {
+        return this.vmInstanceUuid;
+    }
+
     public VmInstanceInventory vm;
     public void setVm(VmInstanceInventory vm) {
         this.vm = vm;
