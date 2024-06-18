@@ -44,4 +44,20 @@ public class ModelCenterInventory  {
         return this.parameters;
     }
 
+    public java.lang.String managementIp;
+    public void setManagementIp(java.lang.String managementIp) {
+        this.managementIp = managementIp;
+    }
+    public java.lang.String getManagementIp() {
+        return this.managementIp;
+    }
+
+    public int managementPort;
+    public void setManagementPort(int managementPort) {
+        this.managementPort = managementPort;
+    }
+    public int getManagementPort() {
+        return this.managementPort;
+    }
+
 }
