@@ -1,5 +1,7 @@
 package org.zstack.identity.imports.entity;
 
+import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.search.Inventory;
 import org.zstack.utils.CollectionUtils;
 
 import java.sql.Timestamp;
@@ -9,7 +11,9 @@ import java.util.List;
 /**
  * Created by Wenhao.Zhang on 2024/06/12
  */
-public class AccountThirdPartyAccountSourceRefInventory {
+@Inventory(mappingVOClass = AccountThirdPartyAccountSourceRefVO.class)
+@PythonClassInventory
+public class AccountThirdPartyAccountSourceRefInventory  {
     private Long id;
     private String credentials;
     private String accountSourceUuid;

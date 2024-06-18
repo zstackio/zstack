@@ -1,10 +1,10 @@
 package org.zstack.ldap.source;
 
 import org.zstack.header.core.Completion;
-import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
 import org.zstack.identity.imports.header.SyncTaskSpec;
 import org.zstack.identity.imports.source.AbstractAccountSourceBase;
 import org.zstack.ldap.LdapConstant;
+import org.zstack.ldap.entity.LdapServerVO;
 
 import static org.zstack.core.Platform.operr;
 
@@ -12,7 +12,7 @@ import static org.zstack.core.Platform.operr;
  * Created by Wenhao.Zhang on 2024/06/03
  */
 public class LdapAccountSource extends AbstractAccountSourceBase {
-    protected LdapAccountSource(ThirdPartyAccountSourceVO self) {
+    protected LdapAccountSource(LdapServerVO self) {
         super(self);
     }
 

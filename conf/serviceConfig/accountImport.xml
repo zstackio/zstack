@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>ldap</id>
+
+    <message>
+        <name>org.zstack.identity.imports.api.APIQueryThirdPartyAccountSourceBindingMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

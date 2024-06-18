@@ -386,6 +386,7 @@ public class SourceClassMap {
 			put("org.zstack.iam2.entity.State", "org.zstack.sdk.iam2.entity.State");
 			put("org.zstack.iam2.entity.StateEvent", "org.zstack.sdk.iam2.entity.StateEvent");
 			put("org.zstack.iam2.project.template.Template", "org.zstack.sdk.iam2.project.template.Template");
+			put("org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory", "org.zstack.sdk.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory");
 			put("org.zstack.imagereplicator.ImageReplicationGroupBackupStorageRefInventory", "org.zstack.sdk.ImageReplicationGroupBackupStorageRefInventory");
 			put("org.zstack.imagereplicator.ImageReplicationGroupInventory", "org.zstack.sdk.ImageReplicationGroupInventory");
 			put("org.zstack.imagereplicator.ReplicationGroupState", "org.zstack.sdk.ReplicationGroupState");
@@ -399,15 +400,13 @@ public class SourceClassMap {
 			put("org.zstack.kvm.hypervisor.datatype.HypervisorVersionState", "org.zstack.sdk.HypervisorVersionState");
 			put("org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataInventory", "org.zstack.sdk.KvmHostHypervisorMetadataInventory");
 			put("org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory", "org.zstack.sdk.KvmHypervisorInfoInventory");
-			put("org.zstack.ldap.LdapAccountRefInventory", "org.zstack.sdk.LdapAccountRefInventory");
-			put("org.zstack.ldap.LdapServerInventory", "org.zstack.sdk.LdapServerInventory");
+			put("org.zstack.ldap.entity.LdapServerInventory", "org.zstack.sdk.identity.ldap.entity.LdapServerInventory");
 			put("org.zstack.license.AdditionalLicenseInfo", "org.zstack.sdk.AdditionalLicenseInfo");
 			put("org.zstack.license.AdditionalLicenseType", "org.zstack.sdk.AdditionalLicenseType");
 			put("org.zstack.license.LicenseAddOnInventory", "org.zstack.sdk.LicenseAddOnInventory");
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
 			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
-			put("org.zstack.login.entity.LdapResourceRefInventory", "org.zstack.sdk.LdapResourceRefInventory");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
 			put("org.zstack.loginControl.entity.ControlStrategy", "org.zstack.sdk.ControlStrategy");
 			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
@@ -970,9 +969,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.L2VxlanNetworkPoolInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.L3NetworkHostRouteInventory", "org.zstack.header.network.l3.L3NetworkHostRouteInventory");
 			put("org.zstack.sdk.L3NetworkInventory", "org.zstack.header.network.l3.L3NetworkInventory");
-			put("org.zstack.sdk.LdapAccountRefInventory", "org.zstack.ldap.LdapAccountRefInventory");
-			put("org.zstack.sdk.LdapResourceRefInventory", "org.zstack.login.entity.LdapResourceRefInventory");
-			put("org.zstack.sdk.LdapServerInventory", "org.zstack.ldap.LdapServerInventory");
 			put("org.zstack.sdk.LicenseAddOnInventory", "org.zstack.license.LicenseAddOnInventory");
 			put("org.zstack.sdk.LicenseInventory", "org.zstack.license.LicenseInventory");
 			put("org.zstack.sdk.LoadBalancerInventory", "org.zstack.network.service.lb.LoadBalancerInventory");
@@ -1344,6 +1340,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.entity.State", "org.zstack.iam2.entity.State");
 			put("org.zstack.sdk.iam2.entity.StateEvent", "org.zstack.iam2.entity.StateEvent");
 			put("org.zstack.sdk.iam2.project.template.Template", "org.zstack.iam2.project.template.Template");
+			put("org.zstack.sdk.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory", "org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory");
+			put("org.zstack.sdk.identity.ldap.entity.LdapServerInventory", "org.zstack.ldap.entity.LdapServerInventory");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
 			put("org.zstack.sdk.identity.role.RolePolicyRefInventory", "org.zstack.header.identity.role.RolePolicyRefInventory");
 			put("org.zstack.sdk.identity.role.RolePolicyStatementInventory", "org.zstack.header.identity.role.RolePolicyStatementInventory");

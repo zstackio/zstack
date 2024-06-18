@@ -6,19 +6,16 @@ import com.unboundid.ldap.sdk.SearchScope
 import org.junit.ClassRule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
-import org.zstack.core.db.Q
 import org.zstack.header.identity.IdentityErrors
-import org.zstack.identity.Account
 import org.zstack.identity.IdentityGlobalConfig
-import org.zstack.ldap.LdapAccountRefVO
 import org.zstack.ldap.LdapConstant
 import org.zstack.ldap.LdapSystemTags
-import org.zstack.sdk.AddLdapServerAction
-import org.zstack.sdk.AddLdapServerResult
+import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
+import org.zstack.sdk.identity.ldap.api.AddLdapServerResult
 import org.zstack.sdk.ApiResult
-import org.zstack.sdk.LdapServerInventory
-import org.zstack.sdk.LogInByLdapAction
+import org.zstack.sdk.LogInAction
 import org.zstack.sdk.ZSClient
+import org.zstack.sdk.identity.ldap.entity.LdapServerInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.stabilisation.StabilityTestCase
 import org.zstack.test.integration.stabilisation.TestCaseStabilityTest
@@ -73,8 +70,6 @@ class LdapBasicCase extends SubCase {
 
             testLoginByLdap()
 
-            testCleanInvalidLdapBinding()
-
             testDeleteLdapServer()
         }
     }
@@ -113,41 +108,36 @@ class LdapBasicCase extends SubCase {
         String wrongPassword = "error"
         String rightPassword = "password"
 
-        LogInByLdapAction action = new LogInByLdapAction(
-                uid: notExistCn,
-                password: rightPassword
+        def action = new LogInAction(
+                username: notExistCn,
+                password: rightPassword,
+                loginType: "ldap"
         )
         assert null != action.call().error
 
-        action = new LogInByLdapAction(
-                uid: cn,
-                password: wrongPassword
+        action = new LogInAction(
+                username: cn,
+                password: wrongPassword,
+                loginType: "ldap"
         )
         assert null != action.call().error
 
         IdentityGlobalConfig.MAX_CONCURRENT_SESSION.updateValue(1)
 
-        action = new LogInByLdapAction()
-        action.uid = cn
+        action = new LogInAction()
+        action.username = cn
         action.password = rightPassword
-        LogInByLdapAction.Result result = action.call()
+        action.loginType = "ldap"
+        LogInAction.Result result = action.call()
         assert result.error.details.contains(IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED.toString())
 
         IdentityGlobalConfig.MAX_CONCURRENT_SESSION.resetValue()
 
-        logInByLdap {
-            uid = cn
+        logIn {
+            username = cn
             password = rightPassword
+            loginType = "ldap"
         }
-    }
-
-    void testCleanInvalidLdapBinding(){
-        assert Q.New(LdapAccountRefVO.class).exists
-
-        cleanInvalidLdapBinding {
-        }
-
-        assert !Q.New(LdapAccountRefVO.class).exists
     }
 
     void testGetLdapEntry(){
