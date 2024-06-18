@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterVO` (
     `description` varchar(2048) DEFAULT NULL,
     `url` varchar(2048) DEFAULT NULL,
     `parameters` varchar(128) DEFAULT NULL,
+    `managementIp` varchar(128) NOT NULL,
+    `managementPort` int(16) not NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
