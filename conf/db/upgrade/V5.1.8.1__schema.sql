@@ -36,11 +36,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceVO` (
     `yaml` mediumtext NOT NULL,
     `requestCpu` int(10) NOT NULL,
     `requestMemory` bigint(20) NOT NULL,
-    `modelUuid` varchar(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    PRIMARY KEY  (`uuid`),
-    CONSTRAINT fkModelServiceVOModelVO FOREIGN KEY (modelUuid) REFERENCES ModelVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+    PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceRefVO` (
@@ -69,6 +67,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
     `status` varchar(255) NOT NULL,
     `url` varchar(2048) NOT NULL,
     `modelServiceGroupUuid` varchar(32) NOT NULL,
+    `vmInstanceUuid` varchar(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
