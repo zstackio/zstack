@@ -52,12 +52,28 @@ public class ModelServiceInventory  {
         return this.requestMemory;
     }
 
-    public java.lang.String modelUuid;
-    public void setModelUuid(java.lang.String modelUuid) {
-        this.modelUuid = modelUuid;
+    public java.util.List modelServiceRefs;
+    public void setModelServiceRefs(java.util.List modelServiceRefs) {
+        this.modelServiceRefs = modelServiceRefs;
     }
-    public java.lang.String getModelUuid() {
-        return this.modelUuid;
+    public java.util.List getModelServiceRefs() {
+        return this.modelServiceRefs;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
     }
 
 }
