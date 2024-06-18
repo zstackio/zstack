@@ -44,12 +44,36 @@ public class ModelServiceInstanceInventory  {
         return this.url;
     }
 
+    public java.lang.String vmInstanceUuid;
+    public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
+    public java.lang.String getVmInstanceUuid() {
+        return this.vmInstanceUuid;
+    }
+
     public VmInstanceInventory vm;
     public void setVm(VmInstanceInventory vm) {
         this.vm = vm;
     }
     public VmInstanceInventory getVm() {
         return this.vm;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
     }
 
 }

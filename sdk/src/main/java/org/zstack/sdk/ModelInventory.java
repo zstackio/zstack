@@ -92,4 +92,12 @@ public class ModelInventory  {
         return this.version;
     }
 
+    public java.util.List modelServiceRefs;
+    public void setModelServiceRefs(java.util.List modelServiceRefs) {
+        this.modelServiceRefs = modelServiceRefs;
+    }
+    public java.util.List getModelServiceRefs() {
+        return this.modelServiceRefs;
+    }
+
 }

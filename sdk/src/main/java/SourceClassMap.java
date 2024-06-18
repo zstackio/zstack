@@ -12,6 +12,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ModelServiceInstanceGroupInventory", "org.zstack.sdk.ModelServiceInstanceGroupInventory");
 			put("org.zstack.ai.entity.ModelServiceInstanceInventory", "org.zstack.sdk.ModelServiceInstanceInventory");
 			put("org.zstack.ai.entity.ModelServiceInventory", "org.zstack.sdk.ModelServiceInventory");
+			put("org.zstack.ai.entity.ModelServiceRefInventory", "org.zstack.sdk.ModelServiceRefInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemInventory", "org.zstack.sdk.AliyunNasFileSystemInventory");
@@ -1042,6 +1043,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ModelServiceInstanceGroupInventory", "org.zstack.ai.entity.ModelServiceInstanceGroupInventory");
 			put("org.zstack.sdk.ModelServiceInstanceInventory", "org.zstack.ai.entity.ModelServiceInstanceInventory");
 			put("org.zstack.sdk.ModelServiceInventory", "org.zstack.ai.entity.ModelServiceInventory");
+			put("org.zstack.sdk.ModelServiceRefInventory", "org.zstack.ai.entity.ModelServiceRefInventory");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
 			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
 			put("org.zstack.sdk.MttyDeviceInventory", "org.zstack.mttyDevice.MttyDeviceInventory");
