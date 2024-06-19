@@ -1,29 +1,21 @@
 package org.zstack.ldap;
 
 import java.sql.SQLIntegrityConstraintViolationException;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.HardcodedFilter;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.login.*;
@@ -36,28 +28,27 @@ import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
+import org.zstack.identity.imports.message.DestroyThirdPartyAccountSourceMsg;
 import org.zstack.identity.imports.message.SyncThirdPartyAccountMsg;
 import org.zstack.ldap.api.*;
 import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.ldap.entity.LdapServerVO_;
-import org.zstack.tag.PatternedSystemTag;
-import org.zstack.tag.SystemTagCreator;
-import org.zstack.tag.SystemTagUtils;
-import org.zstack.utils.CollectionDSL;
+import org.zstack.ldap.header.LdapAccountSourceSpec;
+import org.zstack.ldap.message.CreateLdapAccountSourceMsg;
+import org.zstack.ldap.message.UpdateLdapAccountSourceMsg;
+import org.zstack.ldap.message.UpdateLdapAccountSourceReply;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
-import java.sql.Timestamp;
 import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.ldap.LdapConstant.CURRENT_LDAP_UUID_NONE;
 
 /**
  * Created by miao on 16-9-6.
@@ -65,7 +56,6 @@ import static org.zstack.utils.CollectionDSL.map;
 public class LdapManagerImpl extends AbstractService implements LdapManager, LoginBackend {
     private static final CLogger logger = Utils.getLogger(LdapManagerImpl.class);
 
-    private static final LdapEffectiveScope scope = new LdapEffectiveScope(AccountConstant.LOGIN_TYPE);
     private static final LoginType loginType = new LoginType(LdapConstant.LOGIN_TYPE);
 
     @Autowired
@@ -125,18 +115,30 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         return bus.makeLocalServiceId(LdapConstant.SERVICE_ID);
     }
 
-    @Transactional(readOnly = true)
-    private Timestamp getCurrentSqlDate() {
-        Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
-        return (Timestamp) query.getSingleResult();
-    }
-
     public boolean start() {
+        installGlobalConfigValidator();
         return true;
     }
 
     public boolean stop() {
         return true;
+    }
+
+    private void installGlobalConfigValidator() {
+        LdapGlobalConfig.CURRENT_LDAP_SERVER_UUID.installValidateExtension((category, name, oldValue, newValue) -> {
+            if (CURRENT_LDAP_UUID_NONE.equals(newValue)) {
+                return;
+            }
+
+            boolean exists = Q.New(LdapServerVO.class)
+                    .eq(LdapServerVO_.uuid, newValue)
+                    .isExists();
+            if (!exists) {
+                throw new GlobalConfigException(String.format(
+                        "failed to update GlobalConfig[%s]: invalid LdapServer[uuid=%s]",
+                        LdapGlobalConfig.CURRENT_LDAP_SERVER_UUID.getName(), newValue));
+            }
+        });
     }
 
     @Override
@@ -145,173 +147,57 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     }
 
     private void handle(APIAddLdapServerMsg msg) {
-        APIAddLdapServerEvent evt = new APIAddLdapServerEvent(msg.getId());
+        APIAddLdapServerEvent event = new APIAddLdapServerEvent(msg.getId());
 
-        if (Q.New(LdapServerVO.class).count() == 1) {
-            evt.setError(err(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
-                    "There has been a LDAP/AD server record. " +
-                            "You'd better remove it before adding a new one!"));
-            bus.publish(evt);
-            return;
+        LdapAccountSourceSpec spec = new LdapAccountSourceSpec();
+        spec.setUuid(Platform.getUuid());
+        spec.setServerName(msg.getName());
+        spec.setDescription(msg.getDescription());
+        spec.setType(LdapConstant.LOGIN_TYPE);
+        spec.setUrl(msg.getUrl());
+        spec.setBaseDn(msg.getBase());
+        spec.setLogInUserName(msg.getUsername());
+        spec.setLogInPassword(msg.getPassword());
+        spec.setEncryption(LdapEncryptionType.valueOf(msg.getEncryption()));
+        spec.setServerType(LdapServerType.valueOf(msg.getServerType()));
+        spec.setCreateAccountStrategy(SyncCreatedAccountStrategy.valueOf(msg.getSyncCreatedAccountStrategy()));
+        spec.setDeleteAccountStrategy(SyncDeletedAccountStrategy.valueOf(msg.getSyncDeletedAccountStrategy()));
+        spec.setUsernameProperty(msg.getUsernameProperty());
+        if (msg.getFilter() != null) {
+            spec.setFilter(msg.getFilter());
         }
 
-        LdapServerVO ldapServerVO = new LdapServerVO();
-        ldapServerVO.setUuid(Platform.getUuid());
-        ldapServerVO.setResourceName(msg.getName());
-        ldapServerVO.setDescription(msg.getDescription());
-        ldapServerVO.setType(LdapConstant.LOGIN_TYPE);
-        ldapServerVO.setUrl(msg.getUrl());
-        ldapServerVO.setBase(msg.getBase());
-        ldapServerVO.setUsername(msg.getUsername());
-        ldapServerVO.setPassword(msg.getPassword());
-        ldapServerVO.setEncryption(msg.getEncryption());
-        ldapServerVO.setServerType(LdapServerType.valueOf(msg.getServerType()));
-        ldapServerVO.setFilter(msg.getFilter());
-        ldapServerVO.setUsernameProperty(msg.getUsernameProperty());
-        ldapServerVO.setCreateAccountStrategy(SyncCreatedAccountStrategy.valueOf(msg.getSyncCreatedAccountStrategy()));
-        ldapServerVO.setDeleteAccountStrategy(SyncDeletedAccountStrategy.valueOf(msg.getSyncDeletedAccountStrategy()));
-
-        ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
-        LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
-        evt.setInventory(inv);
-
-        this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
-        this.saveLdapAllowListFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
-        this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
-        this.saveLdapUseAsLoginNameTag(msg.getSystemTags(), ldapServerVO.getUuid());
-
-        for (AddLdapExtensionPoint ext : pluginRgty.getExtensionList(AddLdapExtensionPoint.class)) {
-            ext.afterAddLdapServer(msg, ldapServerVO.getUuid());
-        }
-
-        bus.publish(evt);
-    }
-
-    private void saveLdapCleanBindingFilterTag(List<String> systemTags, String uuid) {
-        if(systemTags == null || systemTags.isEmpty()) {
-            return;
-        }
-
-        PatternedSystemTag tag =  LdapSystemTags.LDAP_CLEAN_BINDING_FILTER;
-        String token = LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN;
-
-        String tagValue = SystemTagUtils.findTagValue(systemTags, tag, token);
-        if(StringUtils.isEmpty(tagValue)){
-            return;
-        }
-
-        SystemTagCreator creator = tag.newSystemTagCreator(uuid);
-        creator.recreate = true;
-        creator.setTagByTokens(map(CollectionDSL.e(token, tagValue)));
-        creator.create();
-    }
-
-    private void saveLdapAllowListFilterTag(List<String> systemTags, String uuid){
-        if(systemTags == null || systemTags.isEmpty()){
-            return;
-        }
-
-        PatternedSystemTag tag = LdapSystemTags.LDAP_ALLOW_LIST_FILTER;
-        String token = LdapSystemTags.LDAP_ALLOW_LIST_FILTER_TOKEN;
-
-        String tagValue = SystemTagUtils.findTagValue(systemTags, tag, token);
-        if(StringUtils.isEmpty(tagValue)){
-            return;
-        }
-
-        SystemTagCreator creator = tag.newSystemTagCreator(uuid);
-        creator.recreate = true;
-        creator.setTagByTokens(map(CollectionDSL.e(token, tagValue)));
-        creator.create();
-    }
-
-    private void saveLdapServerTypeTag(List<String> systemTags, String uuid) {
-        if(systemTags == null || systemTags.isEmpty()) {
-            return;
-        }
-
-        PatternedSystemTag tag =  LdapSystemTags.LDAP_SERVER_TYPE;
-        String token = LdapSystemTags.LDAP_SERVER_TYPE_TOKEN;
-
-        String tagValue = SystemTagUtils.findTagValue(systemTags, tag, token);
-        if(StringUtils.isEmpty(tagValue)){
-            return;
-        }
-
-        SystemTagCreator creator = tag.newSystemTagCreator(uuid);
-        creator.recreate = true;
-        creator.setTagByTokens(map(CollectionDSL.e(token, tagValue)));
-        creator.create();
-    }
-
-    private void saveLdapUseAsLoginNameTag(List<String> systemTags, String uuid) {
-        if(systemTags == null || systemTags.isEmpty()) {
-            return;
-        }
-
-        PatternedSystemTag tag =  LdapSystemTags.LDAP_USE_AS_LOGIN_NAME;
-        String token = LdapSystemTags.LDAP_USE_AS_LOGIN_NAME_TOKEN;
-
-        String tagValue = SystemTagUtils.findTagValue(systemTags, tag, token);
-        if(StringUtils.isEmpty(tagValue)){
-            return;
-        }
-
-        SystemTagCreator creator = tag.newSystemTagCreator(uuid);
-        creator.recreate = true;
-        creator.setTagByTokens(map(CollectionDSL.e(token, tagValue)));
-        creator.create();
+        CreateLdapAccountSourceMsg innerMsg = new CreateLdapAccountSourceMsg();
+        innerMsg.setSpec(spec);
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountImportsConstant.SERVICE_ID, LdapServerVO.class.getName());
+        bus.send(innerMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    final LdapServerVO server = dbf.findByUuid(spec.getUuid(), LdapServerVO.class);
+                    event.setInventory(LdapServerInventory.valueOf(server));
+                } else {
+                    event.setError(reply.getError());
+                }
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIDeleteLdapServerMsg msg) {
-        APIDeleteLdapServerEvent evt = new APIDeleteLdapServerEvent(msg.getId());
-
-        FlowChain chain = new SimpleFlowChain();
-        chain.setName("delete-ldap-server");
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "before-delete-ldap-server";
-
+        APIDeleteLdapServerEvent event = new APIDeleteLdapServerEvent(msg.getId());
+        DestroyThirdPartyAccountSourceMsg innerMsg = new DestroyThirdPartyAccountSourceMsg();
+        innerMsg.setUuid(msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountImportsConstant.SERVICE_ID, msg.getUuid());
+        bus.send(innerMsg, new CloudBusCallBack(msg) {
             @Override
-            public void run(FlowTrigger trigger, Map data) {
-                new While<>(pluginRgty.getExtensionList(DeleteLdapServerExtensionPoint.class)).each((ext, whileCompletion) -> {
-                    ext.beforeDeleteLdapServer(msg.getUuid(), new NoErrorCompletion(whileCompletion) {
-                        @Override
-                        public void done() {
-                            whileCompletion.done();
-                        }
-                    });
-                }).run(new WhileDoneCompletion(trigger) {
-                    @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        trigger.next();
-                    }
-                });
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setError(reply.getError());
+                }
+                bus.publish(event);
             }
-        }).done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        if (!q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).isExists()) {
-                            return;
-                        }
-
-                        LdapServerVO vo = q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).find();
-                        remove(vo);
-                        flush();
-                    }
-                }.execute();
-
-                bus.publish(evt);
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errCode);
-                bus.publish(evt);
-            }
-        }).start();
+        });
     }
 
     private void handle(APIGetLdapEntryMsg msg) {
@@ -396,52 +282,40 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     }
 
     private void handle(APIUpdateLdapServerMsg msg) {
-        APIUpdateLdapServerEvent evt = new APIUpdateLdapServerEvent(msg.getId());
+        APIUpdateLdapServerEvent event = new APIUpdateLdapServerEvent(msg.getId());
 
-        LdapServerVO ldapServerVO = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
-        if (ldapServerVO == null) {
-            evt.setError(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
-                    "Cannot find the specified LDAP/AD server[uuid:%s] in database.",
-                    msg.getLdapServerUuid()));
-            bus.publish(evt);
-            return;
-        }
+        LdapAccountSourceSpec spec = new LdapAccountSourceSpec();
+        spec.setUuid(msg.getLdapServerUuid());
+        spec.setServerName(msg.getName());
+        spec.setDescription(msg.getDescription());
+        spec.setType(LdapConstant.LOGIN_TYPE);
+        spec.setUrl(msg.getUrl());
+        spec.setBaseDn(msg.getBase());
+        spec.setLogInUserName(msg.getUsername());
+        spec.setLogInPassword(msg.getPassword());
+        spec.setEncryption(msg.getEncryption() == null ? null : LdapEncryptionType.valueOf(msg.getEncryption()));
+        spec.setServerType(msg.getServerType() == null ? null : LdapServerType.valueOf(msg.getServerType()));
+        spec.setCreateAccountStrategy(msg.getSyncCreatedAccountStrategy() == null ? null :
+                SyncCreatedAccountStrategy.valueOf(msg.getSyncCreatedAccountStrategy()));
+        spec.setDeleteAccountStrategy(msg.getSyncDeletedAccountStrategy() == null ? null :
+                SyncDeletedAccountStrategy.valueOf(msg.getSyncDeletedAccountStrategy()));
+        spec.setUsernameProperty(msg.getUsernameProperty());
+        spec.setFilter(msg.getFilter());
 
-        //
-        if (msg.getName() != null) {
-            ldapServerVO.setResourceName(msg.getName());
-        }
-        if (msg.getDescription() != null) {
-            ldapServerVO.setDescription(msg.getDescription());
-        }
-        if (msg.getUrl() != null) {
-            ldapServerVO.setUrl(msg.getUrl());
-        }
-        if (msg.getBase() != null) {
-            ldapServerVO.setBase(msg.getBase());
-        }
-        if (msg.getUsername() != null) {
-            ldapServerVO.setUsername(msg.getUsername());
-        }
-        if (msg.getPassword() != null) {
-            ldapServerVO.setPassword(msg.getPassword());
-        }
-        if (msg.getEncryption() != null) {
-            ldapServerVO.setEncryption(msg.getEncryption());
-        }
-
-        ldapServerVO = dbf.updateAndRefresh(ldapServerVO);
-        evt.setInventory(LdapServerInventory.valueOf(ldapServerVO));
-
-        this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
-        this.saveLdapAllowListFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
-        this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
-        this.saveLdapUseAsLoginNameTag(msg.getSystemTags(), ldapServerVO.getUuid());
-        for (UpdateLdapServerExtensionPoint ext : pluginRgty.getExtensionList(UpdateLdapServerExtensionPoint.class)) {
-            ext.afterUpdateLdapServer(msg);
-        }
-
-        bus.publish(evt);
+        UpdateLdapAccountSourceMsg innerMsg = new UpdateLdapAccountSourceMsg();
+        innerMsg.setSpec(spec);
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountImportsConstant.SERVICE_ID, spec.getUuid());
+        bus.send(innerMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    event.setInventory(((UpdateLdapAccountSourceReply) reply).getInventory());
+                } else {
+                    event.setError(reply.getError());
+                }
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APISyncAccountsFromLdapServerMsg msg) {

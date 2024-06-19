@@ -8,7 +8,6 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -78,13 +77,11 @@ public abstract class AbstractAccountSourceBase {
     private static final CLogger logger = Utils.getLogger(AbstractAccountSourceBase.class);
 
     @Autowired
-    private CloudBus bus;
+    protected CloudBus bus;
     @Autowired
-    private DatabaseFacade databaseFacade;
+    protected DatabaseFacade databaseFacade;
     @Autowired
-    private PluginRegistry pluginRegistry;
-    @Autowired
-    private ThreadFacade threadFacade;
+    protected ThreadFacade threadFacade;
 
     protected AbstractAccountSourceBase(ThirdPartyAccountSourceVO self) {
         this.self = Objects.requireNonNull(self);

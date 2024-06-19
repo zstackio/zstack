@@ -1,6 +1,5 @@
 package org.zstack.ldap;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.AuthenticationException;
 import org.springframework.ldap.CommunicationException;
@@ -18,16 +17,13 @@ import org.zstack.ldap.api.APIAddLdapServerMsg;
 import org.zstack.ldap.api.APICreateLdapBindingMsg;
 import org.zstack.ldap.api.APIGetCandidateLdapEntryForBindingMsg;
 import org.zstack.ldap.api.APIGetLdapEntryMsg;
-import org.zstack.ldap.api.APIUpdateLdapServerMsg;
 import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.ldap.entity.LdapServerVO_;
-import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.*;
@@ -55,8 +51,6 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddLdapServerMsg) {
             validate((APIAddLdapServerMsg) msg);
-        } else if(msg instanceof APIUpdateLdapServerMsg){
-            validate((APIUpdateLdapServerMsg) msg);
         } else if(msg instanceof APICreateLdapBindingMsg){
             validate((APICreateLdapBindingMsg) msg);
         } else if(msg instanceof APIGetLdapEntryMsg){
@@ -79,13 +73,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         inv.setUsername(msg.getUsername());
         inv.setPassword(msg.getPassword());
         inv.setEncryption(msg.getEncryption());
-        validate(inv);
-
-        validateLdapType(msg.getSystemTags());
-    }
-
-    private void validate(APIUpdateLdapServerMsg msg){
-        validateLdapType(msg.getSystemTags());
+        validateLdapServer(inv);
     }
 
     private void validate(APICreateLdapBindingMsg msg){
@@ -100,11 +88,11 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
                     .eq(LdapServerVO_.uuid, msg.getLdapServerUuid())
                     .find();
             LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
-            validate(inv);
+            validateLdapServer(inv);
         }
     }
 
-    private void validate(LdapServerInventory inv) {
+    private void validateLdapServer(LdapServerInventory inv) {
         ErrorCode errorCode = testAddLdapServerConnection(inv);
         if (errorCode != null) {
             throw new ApiMessageInterceptionException(
@@ -115,23 +103,6 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIGetCandidateLdapEntryForBindingMsg msg){
         validateLdapServerExist();
-    }
-
-    private void validateLdapType(List<String> systemTags){
-        if(systemTags == null || systemTags.isEmpty()){
-            return;
-        }
-
-        String type = SystemTagUtils.findTagValue(systemTags, LdapSystemTags.LDAP_SERVER_TYPE, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
-        if(StringUtils.isEmpty(type)){
-            return;
-        }
-
-        if(!(LdapConstant.OpenLdap.TYPE.equals(type) || LdapConstant.WindowsAD.TYPE.equals(type))){
-            throw new ApiMessageInterceptionException(
-                    argerr("Wrong LdapServerType[%s], valid values: [%,%s]", type, LdapConstant.OpenLdap.TYPE, LdapConstant.WindowsAD.TYPE)
-            );
-        }
     }
 
     private void validateLdapServerExist(){

@@ -92,4 +92,20 @@ public class LdapServerInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String filter;
+    public void setFilter(java.lang.String filter) {
+        this.filter = filter;
+    }
+    public java.lang.String getFilter() {
+        return this.filter;
+    }
+
+    public java.lang.String usernameProperty;
+    public void setUsernameProperty(java.lang.String usernameProperty) {
+        this.usernameProperty = usernameProperty;
+    }
+    public java.lang.String getUsernameProperty() {
+        return this.usernameProperty;
+    }
+
 }

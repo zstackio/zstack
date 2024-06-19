@@ -34,5 +34,7 @@ public interface LdapConstant {
 
     String LOGIN_TYPE = "ldap";
 
+    String CURRENT_LDAP_UUID_NONE = "NONE";
+
     String DEFAULT_PERSON_FILTER = "(objectClass=person)";
 }
