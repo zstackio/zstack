@@ -79,6 +79,17 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
 --    PRIMARY KEY  (`uuid`)
 --) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`SSOServerTokenVO`(
+    `uuid` varchar(32) not null unique,
+    `accessToken` text DEFAULT NULL,
+    `idToken` text DEFAULT NULL,
+    `refreshToken` text DEFAULT NULL,
+    `userUuid` varchar(32) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT INTO `TagPatternVO` VALUES
 ('3e88dfda748f4706a497143ff0c9d8bc','AI::Others','AI::Others','System Defined tag',"#9A3BE4",'simple','2024-06-18 09:52:59','2024-06-18 09:52:59'),
 ('402ce2d5dc614bd5a583254768369682','AI::Image-Generation','AI::Image-Generation','System Defined tag',"#DFFCC6",'simple','2024-06-18 09:51:45','2024-06-18 09:51:45'),

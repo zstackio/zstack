@@ -3,9 +3,7 @@ package org.zstack.header.identity.login;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.identity.LoginType;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Login implementation interface.
@@ -29,5 +27,9 @@ public interface LoginBackend {
 
     default Set<String> possibleUserUuidSetForGettingProcedures(LoginContext loginContext) {
         return Collections.emptySet();
+    }
+
+    default Map<String, Object> generateJwtTokenClaims(LoginContext loginContext, LoginSessionInfo info) {
+        return new HashMap<>();
     }
 }
