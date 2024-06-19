@@ -29,6 +29,7 @@ import org.zstack.identity.imports.header.CreateAccountSpec;
 import org.zstack.identity.imports.header.ImportAccountSpec;
 import org.zstack.identity.imports.message.ImportThirdPartyAccountMsg;
 import org.zstack.ldap.LdapConstant;
+import org.zstack.ldap.driver.LdapSearchSpec;
 import org.zstack.ldap.driver.LdapUtil;
 import org.zstack.ldap.header.LdapSyncTaskSpec;
 import org.zstack.utils.Utils;
@@ -78,11 +79,17 @@ public class LdapSyncHelper {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String[] returnAttributes = buildReturnAttribute();
                 String userFilter = buildFilter();
                 logger.debug("user filter is " + userFilter);
 
-                List<Object> results = ldapUtil.searchLdapEntry(userFilter, taskSpec.getMaxAccountCount(), returnAttributes, null, false);
+                LdapSearchSpec searchSpec = new LdapSearchSpec();
+                searchSpec.setLdapServerUuid(importSpec.getSourceUuid());
+                searchSpec.setFilter(userFilter);
+                searchSpec.setCount(taskSpec.getMaxAccountCount());
+                searchSpec.setReturningAttributes(buildReturnAttribute());
+                searchSpec.setSearchAllAttributes(false);
+
+                List<Object> results = ldapUtil.searchLdapEntry(searchSpec);
                 for (Object ldapEntry : results) {
                     try {
                         importSpec.accountList.add(generateAccountSpec(ldapEntry));

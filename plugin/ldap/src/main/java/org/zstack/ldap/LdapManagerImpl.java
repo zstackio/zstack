@@ -16,6 +16,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.login.*;
@@ -31,6 +32,7 @@ import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
 import org.zstack.identity.imports.message.DestroyThirdPartyAccountSourceMsg;
 import org.zstack.identity.imports.message.SyncThirdPartyAccountMsg;
 import org.zstack.ldap.api.*;
+import org.zstack.ldap.driver.LdapSearchSpec;
 import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
@@ -49,6 +51,7 @@ import java.util.*;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.ldap.LdapConstant.CURRENT_LDAP_UUID_NONE;
+import static org.zstack.ldap.LdapErrors.MORE_THAN_ONE_LDAP_SERVER;
 
 /**
  * Created by miao on 16-9-6.
@@ -203,13 +206,23 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private void handle(APIGetLdapEntryMsg msg) {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
-        List<Object> result;
-        if (msg.getLdapServerUuid() != null) {
-            result = ldapUtil.searchLdapEntry(msg.getLdapServerUuid(), msg.getLdapFilter(), msg.getLimit(), null);
+        LdapSearchSpec spec = new LdapSearchSpec();
+        if (msg.getLdapServerUuid() == null) {
+            final ErrorableValue<String> currentLdapServerUuid = findCurrentLdapServerUuid();
+            if (currentLdapServerUuid.isSuccess()) {
+                spec.setLdapServerUuid(currentLdapServerUuid.result);
+            } else {
+                reply.setError(currentLdapServerUuid.error);
+                bus.reply(msg, reply);
+                return;
+            }
         } else {
-            result = ldapUtil.searchLdapEntry(msg.getLdapFilter(), msg.getLimit(), null);
+            spec.setLdapServerUuid(msg.getLdapServerUuid());
         }
-        reply.setInventories(result);
+
+        spec.setFilter(msg.getLdapFilter());
+        spec.setCount(msg.getLimit());
+        reply.setInventories(ldapUtil.searchLdapEntry(spec));
 
         bus.reply(msg, reply);
     }
@@ -217,21 +230,30 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private void handle(APIGetCandidateLdapEntryForBindingMsg msg) {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
-        AndFilter andFilter = new AndFilter();
-        andFilter.and(new HardcodedFilter(msg.getLdapFilter()));
+        LdapSearchSpec spec = new LdapSearchSpec();
+        if (msg.getLdapServerUuid() == null) {
+            final ErrorableValue<String> currentLdapServerUuid = findCurrentLdapServerUuid();
+            if (currentLdapServerUuid.isSuccess()) {
+                spec.setLdapServerUuid(currentLdapServerUuid.result);
+            } else {
+                reply.setError(currentLdapServerUuid.error);
+                bus.reply(msg, reply);
+                return;
+            }
+        } else {
+            spec.setLdapServerUuid(msg.getLdapServerUuid());
+        }
 
         List<String> boundLdapEntryList = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, spec.getLdapServerUuid())
                 .select(AccountThirdPartyAccountSourceRefVO_.credentials)
                 .listValues();
+        Set<String> boundLdapEntrySet = new HashSet<>(boundLdapEntryList);
 
-        List<Object> result = ldapUtil.searchLdapEntry(andFilter.toString(), msg.getLimit(), new ResultFilter() {
-            @Override
-            public boolean needSelect(String dn) {
-                return !boundLdapEntryList.contains(dn);
-            }
-        });
-
-        reply.setInventories(result);
+        spec.setFilter(new AndFilter().and(new HardcodedFilter(msg.getLdapFilter())).toString());
+        spec.setCount(msg.getLimit());
+        spec.setResultFilter(dn -> !boundLdapEntrySet.contains(dn));
+        reply.setInventories(ldapUtil.searchLdapEntry(spec));
 
         bus.reply(msg, reply);
     }
@@ -332,6 +354,21 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
                 bus.publish(event);
             }
         });
+    }
+
+    private ErrorableValue<String> findCurrentLdapServerUuid() {
+        final List<String> ldapServerUuidList = Q.New(LdapServerVO.class)
+                .select(LdapServerVO_.uuid)
+                .listValues();
+        if (ldapServerUuidList.size() > 1) {
+            return ErrorableValue.ofErrorCode(err(MORE_THAN_ONE_LDAP_SERVER,
+                    "failed to find ldap server: System has more than one ldap server, but no LDAP server specified"));
+        }
+        if (ldapServerUuidList.isEmpty()) {
+            return ErrorableValue.ofErrorCode(operr("failed to find ldap server: no LDAP server exists"));
+        }
+
+        return ErrorableValue.of(ldapServerUuidList.get(0));
     }
 
     @Override

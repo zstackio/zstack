@@ -22,7 +22,6 @@ import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.ldap.entity.LdapServerVO_;
-import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -36,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -229,24 +229,6 @@ public class LdapUtil {
                 .findValue();
     }
 
-    public String getDnKey(){
-        String ldapServerUuid = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.uuid)
-                .findValue();
-        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
-
-        if(LdapConstant.WindowsAD.TYPE.equals(type)){
-            return LdapConstant.WindowsAD.DN_KEY;
-        }
-
-        if(LdapConstant.OpenLdap.TYPE.equals(type)){
-            return LdapConstant.OpenLdap.DN_KEY;
-        }
-
-        // default WindowsAD
-        return LdapConstant.WindowsAD.DN_KEY;
-    }
-
     public Map<String, Object> getBaseEnvProperties(LdapServerInventory inv) {
         LdapServerType type = Q.New(LdapServerVO.class)
                 .select(LdapServerVO_.serverType)
@@ -359,7 +341,7 @@ public class LdapUtil {
         return attributesResultList.get(0).remove(dotOid);
     }
 
-    private LdapSearchedResult searchWithoutProcessor(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, ResultFilter resultFilter, Integer count) {
+    private LdapSearchedResult searchWithoutProcessor(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, Predicate<String> resultFilter, Integer count) {
         LdapSearchedResult ldapSearchedResult = new LdapSearchedResult();
         ldapSearchedResult.setResult(new ArrayList<>());
 
@@ -368,7 +350,7 @@ public class LdapUtil {
             searchResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
                 @Override
                 protected Object doMapFromContext(DirContextOperations ctx) {
-                    if (resultFilter != null && !resultFilter.needSelect(ctx.getNameInNamespace())){
+                    if (resultFilter != null && !resultFilter.test(ctx.getNameInNamespace())){
                         return null;
                     }
 
@@ -408,7 +390,7 @@ public class LdapUtil {
         return ldapSearchedResult;
     }
 
-    private LdapSearchedResult pagedSearch(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, ResultFilter resultFilter, Integer count) {
+    private LdapSearchedResult pagedSearch(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, Predicate<String> resultFilter, Integer count) {
         LdapSearchedResult ldapSearchedResult = new LdapSearchedResult();
         ldapSearchedResult.setResult(new ArrayList<>());
 
@@ -418,7 +400,7 @@ public class LdapUtil {
                 List<Object> subResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
                     @Override
                     protected Object doMapFromContext(DirContextOperations ctx) {
-                        if (resultFilter != null && !resultFilter.needSelect(ctx.getNameInNamespace())){
+                        if (resultFilter != null && !resultFilter.test(ctx.getNameInNamespace())){
                             return null;
                         }
 
@@ -461,12 +443,14 @@ public class LdapUtil {
         return ldapSearchedResult;
     }
 
-    public List<Object> searchLdapEntry(String filter, Integer count, String[] returningAttributes, ResultFilter resultFilter, boolean searchAllAttributes) {
-        LdapServerVO ldapServerVO = getLdapServer();
-        return searchLdapEntry(ldapServerVO.getUuid(), filter, count, returningAttributes, resultFilter, searchAllAttributes);
-    }
+    public List<Object> searchLdapEntry(LdapSearchSpec spec) {
+        String ldapServerUuid = spec.getLdapServerUuid();
+        String filter = spec.getFilter();
+        Integer count = spec.getCount();
+        String[] returningAttributes = spec.getReturningAttributes();
+        Predicate<String> resultFilter = spec.getResultFilter();
+        boolean searchAllAttributes = spec.isSearchAllAttributes();
 
-    public List<Object> searchLdapEntry(String ldapServerUuid, String filter, Integer count, String[] returningAttributes, ResultFilter resultFilter, boolean searchAllAttributes) {
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldapServerUuid);
         LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
         ldapTemplate.setContextSource(new SingleContextSource(ldapTemplateContextSource.getLdapContextSource().getReadOnlyContext()));
@@ -520,23 +504,6 @@ public class LdapUtil {
         }
 
         throw new OperationFailureException(operr("query ldap entry[filter: %s] fail, because %s", filter, errorMessage));
-    }
-
-    /**
-     * @param filter
-     * @param count
-     *           count is null, return all
-     * @param resultFilter
-     *           resultFilter is null, do not check result
-     *
-     * @return
-     */
-    public List<Object> searchLdapEntry(String filter, Integer count, ResultFilter resultFilter){
-        return searchLdapEntry(filter, count, null,resultFilter, false);
-    }
-
-    public List<Object> searchLdapEntry(String ldapServerUuid, String filter, Integer count, ResultFilter resultFilter){
-        return searchLdapEntry(ldapServerUuid, filter, count, null,resultFilter, false);
     }
 
     private String[] getReturningAttributes() {
