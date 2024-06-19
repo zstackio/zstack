@@ -34,6 +34,7 @@ import org.zstack.identity.imports.message.DestroyThirdPartyAccountSourceMsg;
 import org.zstack.identity.imports.message.SyncThirdPartyAccountMsg;
 import org.zstack.ldap.api.*;
 import org.zstack.ldap.driver.LdapTemplateContextSource;
+import org.zstack.ldap.driver.LdapSearchSpec;
 import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerType;
@@ -209,13 +210,11 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private void handle(APIGetLdapEntryMsg msg) {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
-        List<Object> result;
-        if (msg.getLdapServerUuid() != null) {
-            result = ldapUtil.searchLdapEntry(msg.getLdapServerUuid(), msg.getLdapFilter(), msg.getLimit(), null);
-        } else {
-            result = ldapUtil.searchLdapEntry(msg.getLdapFilter(), msg.getLimit(), null);
-        }
-        reply.setInventories(result);
+        LdapSearchSpec spec = new LdapSearchSpec();
+        spec.setLdapServerUuid(msg.getLdapServerUuid());
+        spec.setFilter(msg.getLdapFilter());
+        spec.setCount(msg.getLimit());
+        reply.setInventories(createDriver().searchLdapEntry(spec));
 
         bus.reply(msg, reply);
     }
@@ -223,21 +222,19 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private void handle(APIGetCandidateLdapEntryForBindingMsg msg) {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
-        AndFilter andFilter = new AndFilter();
-        andFilter.and(new HardcodedFilter(msg.getLdapFilter()));
+        LdapSearchSpec spec = new LdapSearchSpec();
+        spec.setLdapServerUuid(msg.getLdapServerUuid());
 
         List<String> boundLdapEntryList = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, spec.getLdapServerUuid())
                 .select(AccountThirdPartyAccountSourceRefVO_.credentials)
                 .listValues();
+        Set<String> boundLdapEntrySet = new HashSet<>(boundLdapEntryList);
 
-        List<Object> result = ldapUtil.searchLdapEntry(andFilter.toString(), msg.getLimit(), new ResultFilter() {
-            @Override
-            public boolean needSelect(String dn) {
-                return !boundLdapEntryList.contains(dn);
-            }
-        });
-
-        reply.setInventories(result);
+        spec.setFilter(new AndFilter().and(new HardcodedFilter(msg.getLdapFilter())).toString());
+        spec.setCount(msg.getLimit());
+        spec.setResultFilter(dn -> !boundLdapEntrySet.contains(dn));
+        reply.setInventories(createDriver().searchLdapEntry(spec));
 
         bus.reply(msg, reply);
     }

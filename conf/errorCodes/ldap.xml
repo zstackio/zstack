@@ -42,6 +42,11 @@
     </code>
 
     <code>
+        <id>1008</id>
+        <description>Failed to bind ldap user to the specific account</description>
+    </code>
+
+    <code>
         <id>1009</id>
         <description>No LDAP/AD server is currently enabled</description>
     </code>

@@ -12,7 +12,10 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.message.APIMessage;
+import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
+import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.ldap.api.APIAddLdapServerMsg;
 import org.zstack.ldap.api.APICreateLdapBindingMsg;
 import org.zstack.ldap.api.APIGetCandidateLdapEntryForBindingMsg;
@@ -28,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.ldap.LdapErrors.LDAP_BINDING_ACCOUNT_ERROR;
 
 /**
  */
@@ -40,6 +44,8 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private LdapManager ldapManager;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof LdapMessage) {
@@ -78,18 +84,18 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateLdapBindingMsg msg){
-        validateLdapServerExist();
-    }
+        final LdapServerVO ldap;
+        if (msg.getLdapServerUuid() == null) {
+            ldap = findCurrentLdapServerOrThrow();
+            msg.setLdapServerUuid(ldap.getUuid());
+        }
 
-    private void validate(APIGetLdapEntryMsg msg){
-        validateLdapServerExist();
-
-        if (msg.getLdapServerUuid() != null) {
-            LdapServerVO ldapServerVO = Q.New(LdapServerVO.class)
-                    .eq(LdapServerVO_.uuid, msg.getLdapServerUuid())
-                    .find();
-            LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
-            validateLdapServer(inv);
+        boolean refExists = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                .eq(AccountThirdPartyAccountSourceRefVO_.accountUuid, msg.getAccountUuid())
+                .isExists();
+        if (refExists) {
+            throw new ApiMessageInterceptionException(err(LDAP_BINDING_ACCOUNT_ERROR,
+                    "the ldap uid has already been bound to account[uuid=%s]", msg.getAccountUuid()));
         }
     }
 
@@ -102,13 +108,19 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validate(APIGetCandidateLdapEntryForBindingMsg msg){
-        validateLdapServerExist();
+    private void validate(APIGetLdapEntryMsg msg){
+        final LdapServerVO ldap;
+        if (msg.getLdapServerUuid() == null) {
+            ldap = findCurrentLdapServerOrThrow();
+            msg.setLdapServerUuid(ldap.getUuid());
+        }
     }
 
-    private void validateLdapServerExist(){
-        if(!Q.New(LdapServerVO.class).isExists()){
-            throw new ApiMessageInterceptionException(argerr("There is no LDAP/AD server in the system, Please add a LDAP/AD server first."));
+    private void validate(APIGetCandidateLdapEntryForBindingMsg msg){
+        final LdapServerVO ldap;
+        if (msg.getLdapServerUuid() == null) {
+            ldap = findCurrentLdapServerOrThrow();
+            msg.setLdapServerUuid(ldap.getUuid());
         }
     }
 
@@ -138,4 +150,11 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         return null;
     }
 
+    private LdapServerVO findCurrentLdapServerOrThrow() {
+        final ErrorableValue<LdapServerVO> ldapServer = ldapManager.findCurrentLdapServer();
+        if (!ldapServer.isSuccess()) {
+            throw new ApiMessageInterceptionException(ldapServer.error);
+        }
+        return ldapServer.result;
+    }
 }

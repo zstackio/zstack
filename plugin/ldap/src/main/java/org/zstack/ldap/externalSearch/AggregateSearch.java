@@ -8,7 +8,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.ldap.LdapConstant;
 import org.zstack.ldap.driver.LdapExternalSearchExtensionPoint;
 import org.zstack.ldap.driver.LdapSearchedResult;
-import org.zstack.ldap.ResultFilter;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -16,6 +15,7 @@ import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.SearchControls;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static org.zstack.core.Platform.operr;
 
@@ -23,7 +23,7 @@ public class AggregateSearch implements LdapExternalSearchExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AggregateSearch.class);
 
     @Override
-    public LdapSearchedResult trySearch(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, ResultFilter resultFilter, Integer count) {
+    public LdapSearchedResult trySearch(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, Predicate<String> resultFilter, Integer count) {
         LdapSearchedResult ldapSearchedResult = new LdapSearchedResult();
 
         AggregateDirContextProcessor aggregateDirContextProcessor = new AggregateDirContextProcessor();
@@ -31,7 +31,7 @@ public class AggregateSearch implements LdapExternalSearchExtensionPoint {
             List<Object> aggregateResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
                 @Override
                 protected Object doMapFromContext(DirContextOperations ctx) {
-                    if (resultFilter != null && !resultFilter.needSelect(ctx.getNameInNamespace())){
+                    if (resultFilter != null && !resultFilter.test(ctx.getNameInNamespace())){
                         return null;
                     }
 
