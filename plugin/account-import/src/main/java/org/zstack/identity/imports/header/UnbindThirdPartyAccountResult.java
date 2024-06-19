@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode;
 
 public class UnbindThirdPartyAccountResult {
     private String accountUuid;
-    private ErrorCode errorForDeleteAccount;
+    private ErrorCode error;
 
     public String getAccountUuid() {
         return accountUuid;
@@ -14,11 +14,11 @@ public class UnbindThirdPartyAccountResult {
         this.accountUuid = accountUuid;
     }
 
-    public ErrorCode getErrorForDeleteAccount() {
-        return errorForDeleteAccount;
+    public ErrorCode getError() {
+        return error;
     }
 
-    public void setErrorForDeleteAccount(ErrorCode errorForDeleteAccount) {
-        this.errorForDeleteAccount = errorForDeleteAccount;
+    public void setError(ErrorCode errorForDeleteAccount) {
+        this.error = errorForDeleteAccount;
     }
 }

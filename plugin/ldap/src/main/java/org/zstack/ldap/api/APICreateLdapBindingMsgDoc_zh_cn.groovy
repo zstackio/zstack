@@ -40,6 +40,15 @@ doc {
 					since "4.3.0"
 				}
 				column {
+					name "ldapServerUuid"
+					enclosedIn "params"
+					desc "LDAP服务器UUID。如果不指定，系统会选择当前正在使用的LDAP服务器的UUID"
+					location "body"
+					type "String"
+					optional true
+					since "4.3.0"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

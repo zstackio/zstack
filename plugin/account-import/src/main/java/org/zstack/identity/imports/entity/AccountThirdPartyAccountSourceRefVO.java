@@ -1,7 +1,6 @@
 package org.zstack.identity.imports.entity;
 
 import org.zstack.header.identity.AccountVO;
-import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.Column;
@@ -18,7 +17,6 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-@AutoDeleteTag
 public class AccountThirdPartyAccountSourceRefVO {
     @Id
     @Column

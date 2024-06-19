@@ -31,6 +31,9 @@ public class CreateLdapBindingAction extends AbstractAction {
     @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String accountUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ldapServerUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 

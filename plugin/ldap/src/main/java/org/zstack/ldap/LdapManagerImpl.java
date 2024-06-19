@@ -1,6 +1,5 @@
 package org.zstack.ldap;
 
-import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.HardcodedFilter;
@@ -16,8 +15,8 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorableValue;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.login.*;
 import org.zstack.header.message.APIMessage;
@@ -29,8 +28,16 @@ import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
+import org.zstack.identity.imports.header.ImportAccountResult;
+import org.zstack.identity.imports.header.UnbindThirdPartyAccountResult;
+import org.zstack.identity.imports.header.UnbindThirdPartyAccountSpecItem;
+import org.zstack.identity.imports.header.UnbindThirdPartyAccountsSpec;
+import org.zstack.identity.imports.message.BindThirdPartyAccountMsg;
+import org.zstack.identity.imports.message.BindThirdPartyAccountReply;
 import org.zstack.identity.imports.message.DestroyThirdPartyAccountSourceMsg;
 import org.zstack.identity.imports.message.SyncThirdPartyAccountMsg;
+import org.zstack.identity.imports.message.UnbindThirdPartyAccountMsg;
+import org.zstack.identity.imports.message.UnbindThirdPartyAccountReply;
 import org.zstack.ldap.api.*;
 import org.zstack.ldap.driver.LdapSearchSpec;
 import org.zstack.ldap.entity.LdapServerInventory;
@@ -41,16 +48,15 @@ import org.zstack.ldap.header.LdapAccountSourceSpec;
 import org.zstack.ldap.message.CreateLdapAccountSourceMsg;
 import org.zstack.ldap.message.UpdateLdapAccountSourceMsg;
 import org.zstack.ldap.message.UpdateLdapAccountSourceReply;
-import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.PersistenceException;
 import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.ldap.LdapConstant.CURRENT_LDAP_UUID_NONE;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by miao on 16-9-6.
@@ -239,56 +245,79 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     }
 
     private void handle(APICreateLdapBindingMsg msg) {
-        APICreateLdapBindingEvent evt = new APICreateLdapBindingEvent(msg.getId());
+        APICreateLdapBindingEvent event = new APICreateLdapBindingEvent(msg.getId());
+        LdapServerVO ldap = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
 
-        final ErrorableValue<LdapServerVO> currentLdapServer = findCurrentLdapServer();
-        if (!currentLdapServer.isSuccess()) {
-            evt.setError(operr("failed to find current LdapServer"));
-            bus.publish(evt);
-            return;
-        }
-        final LdapServerVO ldap = currentLdapServer.result;
-
-        // account check
-        SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
-        sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getAccountUuid());
-        AccountVO avo = sq.find();
-        if (avo == null) {
-            evt.setError(err(LdapErrors.CANNOT_FIND_ACCOUNT,
-                    String.format("cannot find the specified account[uuid:%s]", msg.getAccountUuid())));
-            bus.publish(evt);
+        final ErrorCode errorCode = ldapUtil.validateDnExist(msg.getLdapUid(), ldap);
+        if (errorCode != null) {
+            event.setError(errorCode);
+            bus.publish(event);
             return;
         }
 
-        // bind op
-        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration(ldap);
-        String fullDn = msg.getLdapUid();
-        if (!ldapUtil.validateDnExist(ldapTemplateContextSource, fullDn)) {
-            throw new OperationFailureException(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                    "cannot find dn[%s] on LDAP/AD server[Address:%s, BaseDN:%s].", fullDn,
-                    String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
-                    ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString()));
-        }
-        try {
-            evt.setInventory(bindLdapAccount(msg.getAccountUuid(), fullDn));
-            logger.info(String.format("create ldap binding[ldapUid=%s, account=%s] success", fullDn, msg.getAccountUuid()));
-        } catch (PersistenceException e) {
-            if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
-                evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
-                        "The ldap uid has been bound to an account. "));
-            } else {
-                throw e;
+        BindThirdPartyAccountMsg innerMsg = new BindThirdPartyAccountMsg();
+        innerMsg.setSourceUuid(msg.getLdapServerUuid());
+        innerMsg.setAccountUuid(msg.getAccountUuid());
+        innerMsg.setCredentials(msg.getLdapUid());
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountImportsConstant.SERVICE_ID, msg.getLdapServerUuid());
+        bus.send(innerMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setError(reply.getError());
+                    bus.publish(event);
+                    return;
+                }
+
+                final ImportAccountResult result = ((BindThirdPartyAccountReply) reply).getResults().get(0);
+                if (result.getRef() != null) {
+                    event.setInventory(result.getRef());
+                    bus.publish(event);
+                    return;
+                }
+
+                event.setError(result.getError());
+                bus.publish(event);
             }
-        }
-        bus.publish(evt);
+        });
     }
 
     private void handle(APIDeleteLdapBindingMsg msg) {
-        APIDeleteLdapBindingEvent evt = new APIDeleteLdapBindingEvent(msg.getId());
+        APIDeleteLdapBindingEvent event = new APIDeleteLdapBindingEvent(msg.getId());
 
-        dbf.removeByPrimaryKey(msg.getUuid(), AccountThirdPartyAccountSourceRefVO.class);
+        if (msg.getLdapServerUuid() == null) {
+            bus.publish(event);
+            return;
+        }
 
-        bus.publish(evt);
+        UnbindThirdPartyAccountsSpec spec = new UnbindThirdPartyAccountsSpec();
+        spec.setSourceUuid(msg.getLdapServerUuid());
+        spec.setSourceType(LdapConstant.LOGIN_TYPE);
+
+        UnbindThirdPartyAccountSpecItem item = new UnbindThirdPartyAccountSpecItem();
+        item.setAccountUuid(msg.getAccountUuid());
+        item.setStrategy(SyncDeletedAccountStrategy.NoAction);
+        spec.setItems(list(item));
+
+        UnbindThirdPartyAccountMsg innerMsg = new UnbindThirdPartyAccountMsg();
+        innerMsg.setSpec(spec);
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountImportsConstant.SERVICE_ID, msg.getLdapServerUuid());
+        bus.send(innerMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setError(reply.getError());
+                    bus.publish(event);
+                    return;
+                }
+
+                final UnbindThirdPartyAccountResult result = ((UnbindThirdPartyAccountReply) reply).getResults().get(0);
+                if (result.getError() != null) {
+                    event.setError(result.getError());
+                }
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIUpdateLdapServerMsg msg) {

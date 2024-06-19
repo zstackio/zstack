@@ -5,8 +5,7 @@ import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefInven
 
 public class ImportAccountResult {
     private AccountThirdPartyAccountSourceRefInventory ref;
-    private ErrorCode errorForValidation;
-    private ErrorCode errorForCreatingAccount;
+    private ErrorCode error;
 
     public AccountThirdPartyAccountSourceRefInventory getRef() {
         return ref;
@@ -16,19 +15,11 @@ public class ImportAccountResult {
         this.ref = ref;
     }
 
-    public ErrorCode getErrorForValidation() {
-        return errorForValidation;
+    public ErrorCode getError() {
+        return error;
     }
 
-    public void setErrorForValidation(ErrorCode errorForValidation) {
-        this.errorForValidation = errorForValidation;
-    }
-
-    public ErrorCode getErrorForCreatingAccount() {
-        return errorForCreatingAccount;
-    }
-
-    public void setErrorForCreatingAccount(ErrorCode errorForCreatingAccount) {
-        this.errorForCreatingAccount = errorForCreatingAccount;
+    public void setError(ErrorCode error) {
+        this.error = error;
     }
 }
