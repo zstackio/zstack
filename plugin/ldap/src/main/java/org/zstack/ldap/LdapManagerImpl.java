@@ -111,7 +111,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private AccountThirdPartyAccountSourceRefInventory bindLdapAccount(String accountUuid, String ldapUid) {
         AccountThirdPartyAccountSourceRefVO ref = new AccountThirdPartyAccountSourceRefVO();
         ref.setAccountUuid(accountUuid);
-        ref.setAccountSourceUuid(ldapUtil.getLdapServer().getUuid());
+        ref.setAccountSourceUuid(createDriver().getLdapServer().getUuid());
         ref.setCredentials(ldapUid);
         ref = dbf.persistAndRefresh(ref);
         return AccountThirdPartyAccountSourceRefInventory.valueOf(ref);
@@ -150,7 +150,11 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public boolean isValid(String uid, String password) {
-        return ldapUtil.isValid(uid, password);
+        final ErrorableValue<LdapServerVO> ldap = findCurrentLdapServer();
+        if (!ldap.isSuccess()) {
+            return false;
+        }
+        return createDriver().isValid(uid, password, ldap.result);
     }
 
     private void handle(APIAddLdapServerMsg msg) {
@@ -242,6 +246,14 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private void handle(APICreateLdapBindingMsg msg) {
         APICreateLdapBindingEvent evt = new APICreateLdapBindingEvent(msg.getId());
 
+        final ErrorableValue<LdapServerVO> currentLdapServer = findCurrentLdapServer();
+        if (!currentLdapServer.isSuccess()) {
+            evt.setError(operr("failed to find current LdapServer"));
+            bus.publish(evt);
+            return;
+        }
+        final LdapServerVO ldap = currentLdapServer.result;
+
         // account check
         SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
         sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getAccountUuid());
@@ -254,9 +266,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         }
 
         // bind op
-        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
+        LdapTemplateContextSource ldapTemplateContextSource = createDriver().readLdapServerConfiguration(ldap);
         String fullDn = msg.getLdapUid();
-        if (!ldapUtil.validateDnExist(ldapTemplateContextSource, fullDn)) {
+        if (!createDriver().validateDnExist(ldapTemplateContextSource, fullDn)) {
             throw new OperationFailureException(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
                     "cannot find dn[%s] on LDAP/AD server[Address:%s, BaseDN:%s].", fullDn,
                     String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
@@ -380,6 +392,15 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
+        final ErrorableValue<LdapServerVO> currentLdapServer = findCurrentLdapServer();
+        if (!currentLdapServer.isSuccess()) {
+            logger.debug("failed to login by LDAP: failed to find current LdapServer: " + currentLdapServer.error.getDetails());
+            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
+                    "Login validation failed in LDAP"));
+            return;
+        }
+        final LdapServerVO ldap = currentLdapServer.result;
+
         String ldapLoginName = loginContext.getUsername();
         if (!isValid(ldapLoginName, loginContext.getPassword())) {
             completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
@@ -387,9 +408,11 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
             return;
         }
 
-        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
-        String dn = ldapUtil.getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUtil.getLdapUseAsLoginName(), ldapLoginName);
-        AccountThirdPartyAccountSourceRefVO vo = ldapUtil.findLdapAccountRefVO(dn);
+        String dn = createDriver().getFullUserDn(ldap, ldap.getUsernameProperty(), ldapLoginName);
+        AccountThirdPartyAccountSourceRefVO vo = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                .eq(AccountThirdPartyAccountSourceRefVO_.credentials, dn)
+                .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, ldap.getUuid())
+                .find();
 
         if (vo == null) {
             completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
@@ -415,12 +438,20 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public boolean authenticate(String username, String password) {
-        return ldapUtil.isValid(username, password);
+        final ErrorableValue<LdapServerVO> ldap = findCurrentLdapServer();
+        if (ldap.isSuccess()) {
+            return createDriver().isValid(username, password, ldap.result);
+        }
+        return false;
     }
 
     @Override
     public String getUserIdByName(String username) {
-        return ldapUtil.getFullUserDn(username);
+        final ErrorableValue<LdapServerVO> property = findCurrentLdapServer();
+        if (property.isSuccess()) {
+            return createDriver().getFullUserDn(username, property.result);
+        }
+        return null;
     }
 
     @Override
