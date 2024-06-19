@@ -3,7 +3,7 @@
 
     <code>
         <id>1000</id>
-        <description>Failed to connect LDAP/AD server.</description>
+        <description>LDAP/AD general error</description>
     </code>
 
     <code>
@@ -13,27 +13,12 @@
 
     <code>
         <id>1002</id>
-        <description>Cannot find entry on LDAP/AD server.</description>
-    </code>
-
-    <code>
-        <id>1003</id>
-        <description>Cannot bind the same ldap uid to more than one account.</description>
-    </code>
-
-    <code>
-        <id>1004</id>
-        <description>Cannot find the specified account.</description>
-    </code>
-
-    <code>
-        <id>1005</id>
-        <description>Cannot bind ldap uid to admin account.</description>
+        <description>Failed to find entry on LDAP/AD server</description>
     </code>
 
     <code>
         <id>1006</id>
-        <description>Test LDAP/AD server connection failed.</description>
+        <description>Test LDAP/AD server connection failed</description>
     </code>
 
     <code>
@@ -49,6 +34,11 @@
     <code>
         <id>1009</id>
         <description>No LDAP/AD server is currently enabled</description>
+    </code>
+
+    <code>
+        <id>1010</id>
+        <description>Failed to sync users from LDAP/AD server</description>
     </code>
 </error>
 

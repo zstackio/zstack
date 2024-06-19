@@ -14,9 +14,11 @@ import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.ldap.api.APIAddLdapServerMsg;
 import org.zstack.ldap.api.APICreateLdapBindingMsg;
+import org.zstack.ldap.api.APIDeleteLdapBindingMsg;
 import org.zstack.ldap.api.APIGetCandidateLdapEntryForBindingMsg;
 import org.zstack.ldap.api.APIGetLdapEntryMsg;
 import org.zstack.ldap.entity.LdapServerVO;
+import org.zstack.ldap.entity.LdapServerVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -37,26 +39,19 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private LdapManager ldapManager;
 
-    private void setServiceId(APIMessage msg) {
-        if (msg instanceof LdapMessage) {
-            LdapMessage emsg = (LdapMessage) msg;
-            bus.makeTargetServiceIdByResourceUuid(msg, LdapConstant.SERVICE_ID, emsg.getEipUuid());
-        }
-    }
-
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddLdapServerMsg) {
             validate((APIAddLdapServerMsg) msg);
         } else if(msg instanceof APICreateLdapBindingMsg){
             validate((APICreateLdapBindingMsg) msg);
+        } else if(msg instanceof APIDeleteLdapBindingMsg){
+            validate((APIDeleteLdapBindingMsg) msg);
         } else if(msg instanceof APIGetLdapEntryMsg){
             validate((APIGetLdapEntryMsg) msg);
         } else if(msg instanceof APIGetCandidateLdapEntryForBindingMsg){
             validate((APIGetCandidateLdapEntryForBindingMsg) msg);
         }
-
-        setServiceId(msg);
 
         return msg;
     }
@@ -90,6 +85,27 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(err(LDAP_BINDING_ACCOUNT_ERROR,
                     "the ldap uid has already been bound to account[uuid=%s]", msg.getAccountUuid()));
         }
+    }
+
+    private void validate(APIDeleteLdapBindingMsg msg) {
+        String accountSourceUuid = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                .select(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid)
+                .eq(AccountThirdPartyAccountSourceRefVO_.accountUuid, msg.getAccountUuid())
+                .findValue();
+        if (accountSourceUuid == null) {
+            logger.debug(String.format("maybe account[uuid=%s] has been already unbound from third party account source",
+                    msg.getAccountUuid()));
+            return;
+        }
+
+        boolean exists = Q.New(LdapServerVO.class)
+                .eq(LdapServerVO_.uuid, accountSourceUuid)
+                .isExists();
+        if (!exists) {
+            throw new ApiMessageInterceptionException(err(LDAP_BINDING_ACCOUNT_ERROR,
+                    "account[uuid=%s] is binding to non-LDAP third party account source", msg.getAccountUuid()));
+        }
+        msg.setLdapServerUuid(accountSourceUuid);
     }
 
     private void validate(APIGetLdapEntryMsg msg) {

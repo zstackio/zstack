@@ -480,21 +480,34 @@ public class LdapUtil {
         return ldapDn.replace("/", "\\2f");
     }
 
-    public boolean validateDnExist(LdapTemplateContextSource ldapTemplateContextSource, String fullDn){
+    public ErrorCode validateDnExist(String fullDn, LdapServerVO ldap) {
+        LdapTemplateContextSource context = readLdapServerConfiguration(ldap);
+
         try {
-            String dn = fullDn.replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
+            String dn = fullDn.replace("," + context.getLdapContextSource().getBaseLdapPathAsString(), "");
             dn = LdapEscape(dn);
-            Object result = ldapTemplateContextSource.getLdapTemplate().lookup(dn, new AbstractContextMapper<Object>() {
+            Object result = context.getLdapTemplate().lookup(dn, new AbstractContextMapper<Object>() {
                 @Override
                 protected Object doMapFromContext(DirContextOperations ctx) {
-                    Attributes group = ctx.getAttributes();
-                    return group;
+                    return ctx.getAttributes();
                 }
             });
-            return result != null;
-        }catch (Exception e){
-            logger.warn(String.format("validateDnExist[%s] fail", fullDn), e);
-            return false;
+
+            if (result != null) {
+                return null;
+            }
+            return err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+                    "user[%s] is not exists on LDAP/AD server[address:%s, baseDN:%s]",
+                    fullDn,
+                    String.join(", ", context.getLdapContextSource().getUrls()),
+                    context.getLdapContextSource().getBaseLdapPathAsString());
+        } catch (Exception e){
+            return err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+                    "failed to find dn[%s] on LDAP/AD server[address:%s, baseDN:%s]: %s",
+                    fullDn,
+                    String.join(", ", context.getLdapContextSource().getUrls()),
+                    context.getLdapContextSource().getBaseLdapPathAsString(),
+                    e.getMessage());
         }
     }
 
