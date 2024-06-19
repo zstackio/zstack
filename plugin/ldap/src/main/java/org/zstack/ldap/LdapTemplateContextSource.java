@@ -10,7 +10,7 @@ public class LdapTemplateContextSource {
     private LdapTemplate ldapTemplate;
     private LdapContextSource ldapContextSource;
 
-    LdapTemplateContextSource(LdapTemplate ldapTemplate, LdapContextSource ldapContextSource) {
+    public LdapTemplateContextSource(LdapTemplate ldapTemplate, LdapContextSource ldapContextSource) {
         this.ldapTemplate = ldapTemplate;
         this.ldapContextSource = ldapContextSource;
     }

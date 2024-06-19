@@ -12,10 +12,21 @@ import org.zapodot.junit.ldap.EmbeddedLdapRule;
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.header.identity.APILogInReply;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.identity.login.APILogInMsg;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
+import org.zstack.ldap.api.APIAddLdapServerEvent;
+import org.zstack.ldap.api.APIAddLdapServerMsg;
+import org.zstack.ldap.api.APICreateLdapBindingEvent;
+import org.zstack.ldap.api.APICreateLdapBindingMsg;
+import org.zstack.ldap.api.APIDeleteLdapBindingEvent;
+import org.zstack.ldap.api.APIDeleteLdapBindingMsg;
+import org.zstack.ldap.api.APIQueryLdapServerMsg;
+import org.zstack.ldap.api.APIQueryLdapServerReply;
+import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
@@ -98,7 +109,7 @@ public class TestLdapBindUnbind {
             msg22.setLdapUid("Not exist");
             msg22.setSession(session);
             APICreateLdapBindingEvent evt22 = sender.send(msg22, APICreateLdapBindingEvent.class);
-            logger.debug(evt22.getInventory().getUuid());
+            logger.debug("" + evt22.getInventory().getId());
         } catch (Exception e) {
             logger.trace("bind account with a non-existent uid", e);
         }
@@ -110,7 +121,7 @@ public class TestLdapBindUnbind {
             msg22.setLdapUid("Not exist");
             msg22.setSession(session);
             APICreateLdapBindingEvent evt22 = sender.send(msg22, APICreateLdapBindingEvent.class);
-            logger.debug(evt22.getInventory().getUuid());
+            logger.debug("" + evt22.getInventory().getId());
         } catch (Exception e) {
             logger.trace("bind account with a non-existent uid", e);
         }
@@ -122,7 +133,7 @@ public class TestLdapBindUnbind {
         msg2.setLdapUid("sclaus");
         msg2.setSession(session);
         APICreateLdapBindingEvent evt2 = sender.send(msg2, APICreateLdapBindingEvent.class);
-        logger.debug(evt2.getInventory().getUuid());
+        logger.debug("" + evt2.getInventory().getId());
 
         // bind another account with the same uid
         try {
@@ -132,50 +143,50 @@ public class TestLdapBindUnbind {
             msg22.setLdapUid("sclaus");
             msg22.setSession(session);
             APICreateLdapBindingEvent evt22 = sender.send(msg22, APICreateLdapBindingEvent.class);
-            logger.debug(evt22.getInventory().getUuid());
+            logger.debug("" + evt22.getInventory().getId());
         } catch (Exception e) {
             logger.trace("bind account the same uid", e);
         }
 
 
         // login with right ldap uid and right ldap password
-        APILogInByLdapMsg msg3 = new APILogInByLdapMsg();
-        msg3.setUid("sclaus");
+        APILogInMsg msg3 = new APILogInMsg();
+        msg3.setUsername("sclaus");
         msg3.setPassword("password");
+        msg3.setLoginType(LdapConstant.LOGIN_TYPE);
         msg3.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
-        APILogInByLdapReply reply3 = sender.call(msg3, APILogInByLdapReply.class);
+        APILogInReply reply3 = sender.call(msg3, APILogInReply.class);
         logger.debug(reply3.getInventory().getAccountUuid());
-        logger.debug(reply3.getAccountInventory().getName());
 
         // login with right ldap uid and wrong ldap password
         try {
-            APILogInByLdapMsg msg31 = new APILogInByLdapMsg();
-            msg31.setUid("sclaus");
+            APILogInMsg msg31 = new APILogInMsg();
+            msg31.setUsername("sclaus");
             msg31.setPassword("wrong password");
+            msg31.setLoginType(LdapConstant.LOGIN_TYPE);
             msg31.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
-            APILogInByLdapReply reply31 = sender.call(msg31, APILogInByLdapReply.class);
+            APILogInReply reply31 = sender.call(msg31, APILogInReply.class);
             logger.debug(reply31.getInventory().getAccountUuid());
-            logger.debug(reply31.getAccountInventory().getName());
         } catch (Exception e) {
 
         }
 
         // login with wrong ldap uid
         try {
-            APILogInByLdapMsg msg31 = new APILogInByLdapMsg();
-            msg31.setUid("wrong ldap uid");
+            APILogInMsg msg31 = new APILogInMsg();
+            msg31.setUsername("wrong ldap uid");
             msg31.setPassword("wrong password");
+            msg31.setLoginType(LdapConstant.LOGIN_TYPE);
             msg31.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
-            APILogInByLdapReply reply31 = sender.call(msg31, APILogInByLdapReply.class);
+            APILogInReply reply31 = sender.call(msg31, APILogInReply.class);
             logger.debug(reply31.getInventory().getAccountUuid());
-            logger.debug(reply31.getAccountInventory().getName());
         } catch (Exception e) {
 
         }
 
         // unbind account
         APIDeleteLdapBindingMsg msg4 = new APIDeleteLdapBindingMsg();
-        msg4.setUuid(evt2.getInventory().getUuid());
+        msg4.setUuid("" + evt2.getInventory().getId());
         msg4.setSession(session);
         APIDeleteLdapBindingEvent evt4 = sender.send(msg4, APIDeleteLdapBindingEvent.class);
         Assert.assertTrue(evt4.getError() == null);

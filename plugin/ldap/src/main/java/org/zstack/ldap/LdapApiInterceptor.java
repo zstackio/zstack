@@ -14,6 +14,14 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
+import org.zstack.ldap.api.APIAddLdapServerMsg;
+import org.zstack.ldap.api.APICreateLdapBindingMsg;
+import org.zstack.ldap.api.APIGetCandidateLdapEntryForBindingMsg;
+import org.zstack.ldap.api.APIGetLdapEntryMsg;
+import org.zstack.ldap.api.APIUpdateLdapServerMsg;
+import org.zstack.ldap.entity.LdapServerInventory;
+import org.zstack.ldap.entity.LdapServerVO;
+import org.zstack.ldap.entity.LdapServerVO_;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -63,10 +71,6 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddLdapServerMsg msg) {
-        if (!LdapEffectiveScope.hasScope(msg.getScope())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported LDAP/AD server scope"));
-        }
-
         LdapServerInventory inv = new LdapServerInventory();
         inv.setName(msg.getName());
         inv.setDescription(msg.getDescription());

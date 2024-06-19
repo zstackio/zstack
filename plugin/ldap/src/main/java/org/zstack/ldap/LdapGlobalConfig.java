@@ -28,4 +28,8 @@ public class LdapGlobalConfig {
     @GlobalConfigDef(defaultValue = "AUTO", description = "set ldap preferred search mode")
     public static GlobalConfig LDAP_ENTRY_SEARCH_MODE = new GlobalConfig(CATEGORY, "ldap.entry.search.mode");
 
+    @GlobalConfigValidation
+    @GlobalConfigDef(defaultValue = "NONE", description = "The currently enabled ldap server uuid, or NONE indicates that all ldap servers are currently disabled")
+    public static GlobalConfig CURRENT_LDAP_SERVER_UUID = new GlobalConfig(CATEGORY, "current.ldap.server.uuid");
+
 }

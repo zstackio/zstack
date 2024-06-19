@@ -6,6 +6,8 @@ import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
@@ -20,6 +22,7 @@ import java.sql.Timestamp;
 public class AccountThirdPartyAccountSourceRefVO {
     @Id
     @Column
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column

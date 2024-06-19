@@ -7,6 +7,8 @@ import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.ldap.LdapConstant
 import org.zstack.ldap.LdapSystemTags
 import org.zstack.sdk.*
+import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
+import org.zstack.sdk.identity.ldap.entity.LdapServerInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.stabilisation.StabilityTestCase
 import org.zstack.test.integration.stabilisation.TestCaseStabilityTest

@@ -24,3 +24,15 @@ CREATE TABLE `zstack`.`AccountThirdPartyAccountSourceRefVO` (
     CONSTRAINT `fkAccountSourceRefVOThirdPartyAccountSourceVO` FOREIGN KEY (`accountSourceUuid`) REFERENCES ThirdPartyAccountSourceVO (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkAccountSourceRefVOAccountVO` FOREIGN KEY (`accountUuid`) REFERENCES AccountVO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`LdapServerVO`
+    DROP COLUMN `scope`,
+    DROP COLUMN `lastOpDate`,
+    DROP COLUMN `createDate`,
+    DROP COLUMN `description`,
+    DROP COLUMN `name`;
+ALTER TABLE `zstack`.`LdapServerVO` ADD COLUMN `serverType` varchar(32) NOT NULL default 'WindowsAD';
+ALTER TABLE `zstack`.`LdapServerVO` ADD COLUMN `filter` varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`LdapServerVO` ADD COLUMN `usernameProperty` varchar(255) NOT NULL default 'cn';
+DROP TABLE `zstack`.`LdapAccountRefVO`;
+DROP TABLE `zstack`.`LdapResourceRefVO`;
