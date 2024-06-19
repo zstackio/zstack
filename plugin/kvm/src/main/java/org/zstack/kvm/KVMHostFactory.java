@@ -10,10 +10,12 @@ import org.zstack.compute.vm.VmNicManager;
 import org.zstack.core.config.GuestOsExtensionPoint;
 import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
@@ -42,7 +44,6 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
@@ -50,6 +51,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
 import org.zstack.kvm.KVMAgentCommands.TransmitVmOperationToMnCmd;
+import org.zstack.header.host.HostNetworkInterfaceServiceType;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.SizeUtils;
@@ -493,6 +495,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
 
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_HOST_PHYSICAL_NIC_ALARM_EVENT, KVMAgentCommands.PhysicalNicAlarmEventCmd.class, cmd -> {
+            if (!isNeedAlarmNic(cmd.host, cmd.nic, cmd.bond)) {
+                return null;
+            }
             HostCanonicalEvents.HostPhysicalNicStatusData cData = new HostCanonicalEvents.HostPhysicalNicStatusData();
             cData.setHostUuid(cmd.host);
             cData.setInterfaceName(cmd.nic);
@@ -909,5 +914,40 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         if (!vmNicManager.getSupportNicDriverTypes().contains(config.getNicDriver())) {
             throw new CloudRuntimeException(String.format("Invalid nic driver of config %s, valid values are %s", JSONObjectUtil.toJsonString(config), vmNicManager.getSupportNicDriverTypes()));
         }
+    }
+
+    private Boolean isNeedAlarmNic(String hostUuid, String nicName, String bondName) {
+        boolean inUse = false;
+        String interfaceName;
+        List<HostNetworkInterfaceServiceType> needAlarmServiceTypeList =
+                HostNetworkInterfaceServiceType.fromStrings(KVMGlobalProperty.HOST_NETWORK_NEED_ALARM_INTERFACE_SERVICE);
+
+        if (StringUtils.isEmpty(bondName) || bondName.equals(KVMConstant.KVM_HOST_NETWORK_INTERFACE_DEFAULT)) {
+            if (StringUtils.isEmpty(nicName) || nicName.equals(KVMConstant.KVM_HOST_NETWORK_INTERFACE_DEFAULT)) {
+                return inUse;
+            }
+            interfaceName = nicName;
+        } else {
+            interfaceName = bondName;
+        }
+        logger.debug(String.format("Checking if alarm is needed for interface: %s on host: %s", interfaceName, hostUuid));
+        for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+            inUse = ext.checkHostServiceTypeExtensionPoint(hostUuid, interfaceName, needAlarmServiceTypeList);
+        }
+        if (inUse) {
+            return inUse;
+        }
+
+        String hostClusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
+        List<String> l2Uuids = Q.New(L2NetworkClusterRefVO.class)
+                .select(L2NetworkClusterRefVO_.l2NetworkUuid)
+                .eq(L2NetworkClusterRefVO_.clusterUuid, hostClusterUuid)
+                .listValues();
+        if (l2Uuids.isEmpty()) {
+            return inUse;
+        }
+        inUse = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, interfaceName).in(L2NetworkVO_.uuid, l2Uuids).isExists();
+
+        return inUse;
     }
 }

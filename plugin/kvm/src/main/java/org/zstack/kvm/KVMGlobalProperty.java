@@ -2,6 +2,7 @@ package org.zstack.kvm;
 
 import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
+import org.zstack.core.propertyvalidator.AvailableValues;
 
 import java.util.List;
 
@@ -33,5 +34,9 @@ public class KVMGlobalProperty {
     public static String SKIP_PACKAGES;
     @GlobalProperty(name = "host.stop.shutdown.vm", defaultValue = "false")
     public static boolean HOST_STOP_SHUTDOWN_VM;
+
+    @GlobalProperty(name = "host.network.need.alarm.interface.service", defaultListValue = {"ManagementNetwork", "MigrationNetwork"})
+    @AvailableValues(value = {"ManagementNetwork", "TenantNetwork", "StorageNetwork", "BackupNetwork", "MigrationNetwork"})
+    public static List<String> HOST_NETWORK_NEED_ALARM_INTERFACE_SERVICE;
 
 }
