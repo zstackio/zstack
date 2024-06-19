@@ -51,7 +51,6 @@ import java.util.*;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.ldap.LdapConstant.CURRENT_LDAP_UUID_NONE;
-import static org.zstack.ldap.LdapErrors.MORE_THAN_ONE_LDAP_SERVER;
 
 /**
  * Created by miao on 16-9-6.
@@ -146,7 +145,11 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public boolean isValid(String uid, String password) {
-        return ldapUtil.isValid(uid, password);
+        final ErrorableValue<LdapServerVO> ldap = findCurrentLdapServer();
+        if (!ldap.isSuccess()) {
+            return false;
+        }
+        return ldapUtil.isValid(uid, password, ldap.result);
     }
 
     private void handle(APIAddLdapServerMsg msg) {
@@ -207,19 +210,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
         LdapSearchSpec spec = new LdapSearchSpec();
-        if (msg.getLdapServerUuid() == null) {
-            final ErrorableValue<String> currentLdapServerUuid = findCurrentLdapServerUuid();
-            if (currentLdapServerUuid.isSuccess()) {
-                spec.setLdapServerUuid(currentLdapServerUuid.result);
-            } else {
-                reply.setError(currentLdapServerUuid.error);
-                bus.reply(msg, reply);
-                return;
-            }
-        } else {
-            spec.setLdapServerUuid(msg.getLdapServerUuid());
-        }
-
+        spec.setLdapServerUuid(msg.getLdapServerUuid());
         spec.setFilter(msg.getLdapFilter());
         spec.setCount(msg.getLimit());
         reply.setInventories(ldapUtil.searchLdapEntry(spec));
@@ -231,18 +222,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
         LdapSearchSpec spec = new LdapSearchSpec();
-        if (msg.getLdapServerUuid() == null) {
-            final ErrorableValue<String> currentLdapServerUuid = findCurrentLdapServerUuid();
-            if (currentLdapServerUuid.isSuccess()) {
-                spec.setLdapServerUuid(currentLdapServerUuid.result);
-            } else {
-                reply.setError(currentLdapServerUuid.error);
-                bus.reply(msg, reply);
-                return;
-            }
-        } else {
-            spec.setLdapServerUuid(msg.getLdapServerUuid());
-        }
+        spec.setLdapServerUuid(msg.getLdapServerUuid());
 
         List<String> boundLdapEntryList = Q.New(AccountThirdPartyAccountSourceRefVO.class)
                 .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, spec.getLdapServerUuid())
@@ -261,6 +241,14 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private void handle(APICreateLdapBindingMsg msg) {
         APICreateLdapBindingEvent evt = new APICreateLdapBindingEvent(msg.getId());
 
+        final ErrorableValue<LdapServerVO> currentLdapServer = findCurrentLdapServer();
+        if (!currentLdapServer.isSuccess()) {
+            evt.setError(operr("failed to find current LdapServer"));
+            bus.publish(evt);
+            return;
+        }
+        final LdapServerVO ldap = currentLdapServer.result;
+
         // account check
         SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
         sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getAccountUuid());
@@ -273,7 +261,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         }
 
         // bind op
-        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
+        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration(ldap);
         String fullDn = msg.getLdapUid();
         if (!ldapUtil.validateDnExist(ldapTemplateContextSource, fullDn)) {
             throw new OperationFailureException(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
@@ -356,19 +344,30 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         });
     }
 
-    private ErrorableValue<String> findCurrentLdapServerUuid() {
-        final List<String> ldapServerUuidList = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.uuid)
-                .listValues();
-        if (ldapServerUuidList.size() > 1) {
-            return ErrorableValue.ofErrorCode(err(MORE_THAN_ONE_LDAP_SERVER,
-                    "failed to find ldap server: System has more than one ldap server, but no LDAP server specified"));
+    @Override
+    public ErrorableValue<String> findCurrentLdapServerUuid() {
+        final String currentLdapUuid = LdapGlobalConfig.CURRENT_LDAP_SERVER_UUID.value(String.class);
+        if (CURRENT_LDAP_UUID_NONE.equals(currentLdapUuid)) {
+            return ErrorableValue.ofErrorCode(operr("No LDAP services are currently enabled"));
         }
-        if (ldapServerUuidList.isEmpty()) {
-            return ErrorableValue.ofErrorCode(operr("failed to find ldap server: no LDAP server exists"));
+        return ErrorableValue.of(currentLdapUuid);
+    }
+
+    @Override
+    public ErrorableValue<LdapServerVO> findCurrentLdapServer() {
+        ErrorableValue<String> errorableValue = findCurrentLdapServerUuid();
+        if (!errorableValue.isSuccess()) {
+            return ErrorableValue.ofErrorCode(errorableValue.error);
         }
 
-        return ErrorableValue.of(ldapServerUuidList.get(0));
+        LdapServerVO ldap = dbf.findByUuid(errorableValue.result, LdapServerVO.class);
+        if (ldap == null) {
+            return ErrorableValue.ofErrorCode(
+                    operr("GlobalConfig[%s] is invalid: LdapServer[uuid=%s] is not exists",
+                            LdapGlobalConfig.CURRENT_LDAP_SERVER_UUID.getName(),
+                            errorableValue.result));
+        }
+        return ErrorableValue.of(ldap);
     }
 
     @Override
@@ -378,6 +377,15 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
+        final ErrorableValue<LdapServerVO> currentLdapServer = findCurrentLdapServer();
+        if (!currentLdapServer.isSuccess()) {
+            logger.debug("failed to login by LDAP: failed to find current LdapServer: " + currentLdapServer.error.getDetails());
+            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
+                    "Login validation failed in LDAP"));
+            return;
+        }
+        final LdapServerVO ldap = currentLdapServer.result;
+
         String ldapLoginName = loginContext.getUsername();
         if (!isValid(ldapLoginName, loginContext.getPassword())) {
             completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
@@ -385,9 +393,11 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
             return;
         }
 
-        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
-        String dn = ldapUtil.getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUtil.getLdapUseAsLoginName(), ldapLoginName);
-        AccountThirdPartyAccountSourceRefVO vo = ldapUtil.findLdapAccountRefVO(dn);
+        String dn = ldapUtil.getFullUserDn(ldap, ldap.getUsernameProperty(), ldapLoginName);
+        AccountThirdPartyAccountSourceRefVO vo = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                .eq(AccountThirdPartyAccountSourceRefVO_.credentials, dn)
+                .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, ldap.getUuid())
+                .find();
 
         if (vo == null) {
             completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
@@ -413,12 +423,20 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public boolean authenticate(String username, String password) {
-        return ldapUtil.isValid(username, password);
+        final ErrorableValue<LdapServerVO> ldap = findCurrentLdapServer();
+        if (ldap.isSuccess()) {
+            return ldapUtil.isValid(username, password, ldap.result);
+        }
+        return false;
     }
 
     @Override
     public String getUserIdByName(String username) {
-        return ldapUtil.getFullUserDn(username);
+        final ErrorableValue<LdapServerVO> property = findCurrentLdapServer();
+        if (property.isSuccess()) {
+            return ldapUtil.getFullUserDn(username, property.result);
+        }
+        return null;
     }
 
     @Override

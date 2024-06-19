@@ -1,4 +1,4 @@
-package org.zstack.ldap;
+package org.zstack.ldap.driver;
 
 /**
  * Created by miao on 16-9-14.

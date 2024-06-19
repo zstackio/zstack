@@ -1,6 +1,8 @@
 package org.zstack.ldap.driver;
 
 import org.apache.commons.lang.StringUtils;
+import org.springframework.ldap.AuthenticationException;
+import org.springframework.ldap.CommunicationException;
 import org.springframework.ldap.NamingException;
 import org.springframework.ldap.control.PagedResultsDirContextProcessor;
 import org.springframework.ldap.core.DirContextOperations;
@@ -9,16 +11,13 @@ import org.springframework.ldap.core.NameAwareAttribute;
 import org.springframework.ldap.core.support.*;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
-import org.springframework.ldap.filter.Filter;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
-import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.ldap.*;
-import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.ldap.entity.LdapServerVO_;
@@ -36,7 +35,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -114,35 +112,30 @@ public class LdapUtil {
         // set tls
         logger.debug("Ldap TLS enabled.");
         DefaultTlsDirContextAuthenticationStrategy tls = new DefaultTlsDirContextAuthenticationStrategy();
-        tls.setHostnameVerifier(new HostnameVerifier() {
-            @Override
-            public boolean verify(String hostname, SSLSession session) {
-                return true;
-            }
-        });
+        tls.setHostnameVerifier((hostname, session) -> true);
         tls.setSslSocketFactory(new DummySSLSocketFactory());
         ldapContextSource.setAuthenticationStrategy(tls);
     }
 
-    LdapContextSource buildLdapContextSource(LdapServerInventory inv, Map<String, Object> baseEnvironmentProperties) {
+    LdapContextSource buildLdapContextSource(LdapServerVO vo, Map<String, Object> baseEnvironmentProperties) {
         LdapContextSource ldapContextSource;
         ldapContextSource = new LdapContextSource();
 
         List<String> urls = new ArrayList<>();
-        urls.add(inv.getUrl());
+        urls.add(vo.getUrl());
 
-        if (LdapSystemTags.LDAP_URLS.hasTag(inv.getUuid())) {
-            String standbyUrls = LdapSystemTags.LDAP_URLS.getTokenByResourceUuid(inv.getUuid(), LdapSystemTags.LDAP_URLS_TOKEN);
+        if (LdapSystemTags.LDAP_URLS.hasTag(vo.getUuid())) {
+            String standbyUrls = LdapSystemTags.LDAP_URLS.getTokenByResourceUuid(vo.getUuid(), LdapSystemTags.LDAP_URLS_TOKEN);
 
             urls.addAll(list(standbyUrls.split(",")));
         }
 
         ldapContextSource.setUrls(urls.toArray(new String[]{}));
-        ldapContextSource.setBase(inv.getBase());
-        ldapContextSource.setUserDn(inv.getUsername());
-        ldapContextSource.setPassword(inv.getPassword());
+        ldapContextSource.setBase(vo.getBase());
+        ldapContextSource.setUserDn(vo.getUsername());
+        ldapContextSource.setPassword(vo.getPassword());
         ldapContextSource.setDirObjectFactory(DefaultDirObjectFactory.class);
-        if (inv.getEncryption().equals(LdapEncryptionType.TLS.toString())) {
+        if (vo.getEncryption().equals(LdapEncryptionType.TLS.toString())) {
             if (urls.get(0).contains(LdapConstant.LDAP_SSL_PREFIX)) {
                 try {
                     setSsl();
@@ -172,68 +165,29 @@ public class LdapUtil {
         return ldapContextSource;
     }
 
-    LdapTemplateContextSource doLoadLdap(LdapServerInventory inv, boolean emptyBase) {
-        LdapContextSource ldapContextSource = buildLdapContextSource(inv, getBaseEnvProperties(inv));
+    LdapTemplateContextSource loadRootLdap(LdapServerVO ldap) {
+        LdapContextSource ldapContextSource = buildLdapContextSource(ldap, getBaseEnvProperties(ldap));
+        ldapContextSource.setBase("");
+        return buildLdapTemplateContextSource(ldapContextSource);
+    }
 
-        if (emptyBase) {
-            ldapContextSource.setBase("");
-        }
+    public LdapTemplateContextSource loadLdap(LdapServerVO ldap) {
+        return buildLdapTemplateContextSource(buildLdapContextSource(ldap, getBaseEnvProperties(ldap)));
+    }
 
-        LdapTemplate ldapTemplate;
-        ldapTemplate = new LdapTemplate();
+    public LdapTemplateContextSource loadLdap(LdapServerVO ldap, Map<String, Object> baseEnvironmentProperties) {
+        return buildLdapTemplateContextSource(buildLdapContextSource(ldap, baseEnvironmentProperties));
+    }
+
+    private LdapTemplateContextSource buildLdapTemplateContextSource(LdapContextSource ldapContextSource) {
+        LdapTemplate ldapTemplate = new LdapTemplate();
         ldapTemplate.setIgnorePartialResultException(true);
         ldapTemplate.setContextSource(ldapContextSource);
-
         return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
     }
 
-    LdapTemplateContextSource loadRootLdap(LdapServerInventory inv) {
-        return doLoadLdap(inv, true);
-    }
-
-    public LdapTemplateContextSource loadLdap(LdapServerInventory inv) {
-        return doLoadLdap(inv, false);
-    }
-
-    public LdapTemplateContextSource loadLdap(LdapServerInventory inv, Map<String, Object> baseEnvironmentProperties) {
-        LdapContextSource ldapContextSource = buildLdapContextSource(inv, baseEnvironmentProperties);
-
-        LdapTemplate ldapTemplate;
-        ldapTemplate = new LdapTemplate();
-        ldapTemplate.setIgnorePartialResultException(true);
-        ldapTemplate.setContextSource(ldapContextSource);
-
-        return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
-    }
-
-    public String getMemberKey(){
-        LdapServerType type = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.serverType)
-                .findValue();
-
-        if (type == LdapServerType.WindowsAD) {
-            return LdapConstant.WindowsAD.MEMBER_KEY;
-        }
-
-        if (type == LdapServerType.OpenLdap) {
-            return LdapConstant.OpenLdap.MEMBER_KEY;
-        }
-
-        // default WindowsAD
-        return LdapConstant.WindowsAD.MEMBER_KEY;
-    }
-
-    public String getLdapUseAsLoginName(){
-        return Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.usernameProperty)
-                .findValue();
-    }
-
-    public Map<String, Object> getBaseEnvProperties(LdapServerInventory inv) {
-        LdapServerType type = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.serverType)
-                .eq(LdapServerVO_.uuid, inv.getUuid())
-                .findValue();
+    public Map<String, Object> getBaseEnvProperties(LdapServerVO ldap) {
+        LdapServerType type = ldap.getServerType();
 
         Map<String, Object> properties = new HashMap<>();
         if(type == LdapServerType.WindowsAD){
@@ -451,7 +405,11 @@ public class LdapUtil {
         Predicate<String> resultFilter = spec.getResultFilter();
         boolean searchAllAttributes = spec.isSearchAllAttributes();
 
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldapServerUuid);
+        LdapServerVO ldap = Q.New(LdapServerVO.class)
+                .eq(LdapServerVO_.uuid, ldapServerUuid)
+                .find();
+
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldap);
         LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
         ldapTemplate.setContextSource(new SingleContextSource(ldapTemplateContextSource.getLdapContextSource().getReadOnlyContext()));
 
@@ -461,7 +419,7 @@ public class LdapUtil {
         if (searchAllAttributes) {
             searchCtls.setReturningAttributes(null);
         } else {
-            searchCtls.setReturningAttributes(returningAttributes == null ? getReturningAttributes() : returningAttributes);
+            searchCtls.setReturningAttributes(returningAttributes == null ? getReturningAttributes(ldap) : returningAttributes);
         }
 
         String errorMessage = "";
@@ -506,7 +464,7 @@ public class LdapUtil {
         throw new OperationFailureException(operr("query ldap entry[filter: %s] fail, because %s", filter, errorMessage));
     }
 
-    private String[] getReturningAttributes() {
+    private String[] getReturningAttributes(LdapServerVO ldap) {
         Set<String> returnedAttSet = new HashSet<>();
 
         String queryLdapEntryReturnAttributes = LdapGlobalConfig.QUERY_LDAP_ENTRY_RETURN_ATTRIBUTES.value();
@@ -520,23 +478,13 @@ public class LdapUtil {
 
         returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES));
 
-        returnedAttSet.add(getLdapUseAsLoginName());
+        returnedAttSet.add(ldap.getUsernameProperty());
 
         return returnedAttSet.toArray(new String[]{});
     }
 
-    public LdapTemplateContextSource readLdapServerConfiguration() {
-        LdapServerVO ldapServerVO = getLdapServer();
-        LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-        return loadLdap(ldapServerInventory);
-    }
-
-    public LdapTemplateContextSource readLdapServerConfiguration(String ldapServerUuid) {
-        LdapServerVO ldapServerVO = Q.New(LdapServerVO.class)
-                .eq(LdapServerVO_.uuid, ldapServerUuid)
-                .find();
-        LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-        return loadLdap(ldapServerInventory);
+    public LdapTemplateContextSource readLdapServerConfiguration(LdapServerVO ldap) {
+        return loadLdap(ldap);
     }
 
     // set LdapContextSource base as empty
@@ -544,8 +492,7 @@ public class LdapUtil {
         LdapServerVO ldapServerVO = Q.New(LdapServerVO.class)
                 .eq(LdapServerVO_.uuid, ldapServerUuid)
                 .find();
-        LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-        return loadRootLdap(ldapServerInventory);
+        return loadRootLdap(ldapServerVO);
     }
 
     @Transactional(readOnly = true)
@@ -558,62 +505,6 @@ public class LdapUtil {
             throw new CloudRuntimeException("More than one LDAP/AD server record in database.");
         }
         return ldapServers.get(0);
-    }
-
-    public List<String> getUserDnGroups(List<String> ldapDnList, String ldapDn) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
-
-        List<String> groupDnList = new ArrayList();
-        findLdapDnMemberOfList(ldapTemplate, ldapDn, groupDnList, new ArrayList<>());
-
-        if(groupDnList.isEmpty()){
-            return null;
-        }
-
-        ldapDnList.retainAll(groupDnList);
-
-        if(ldapDnList.isEmpty()){
-            return null;
-        }
-
-        return ldapDnList;
-    }
-
-    void findLdapDnMemberOfList(LdapTemplate ldapTemplate, String ldapDn, List<String> resultDnList, List<String> dnIgnoreList){
-        if(dnIgnoreList.contains(ldapDn)){
-            return;
-        }
-
-        AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter(getMemberKey(), ldapDn));
-
-        List<Object> groupList = ldapTemplate.search("", filter.toString(), new AbstractContextMapper<Object>() {
-            @Override
-            protected Object doMapFromContext(DirContextOperations ctx) {
-                return ctx.getNameInNamespace();
-            }
-        });
-
-        if(groupList.isEmpty()){
-            dnIgnoreList.add(ldapDn);
-            return;
-        }
-
-        for(Object groupObj : groupList){
-            if(groupObj == null || !(groupObj instanceof String)){
-                continue;
-            }
-
-            String groupDn = (String)groupObj;
-
-            if(resultDnList.contains(groupDn)){
-                continue;
-            }
-
-            resultDnList.add(groupDn);
-            findLdapDnMemberOfList(ldapTemplate, groupDn, resultDnList, dnIgnoreList);
-        }
     }
 
     private String LdapEscape(String ldapDn) {
@@ -638,34 +529,11 @@ public class LdapUtil {
         }
     }
 
-    public boolean validateDnExist(LdapTemplateContextSource ldapTemplateContextSource, String fullDn, Filter filter){
-        try {
-            String dn = fullDn.replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
-            dn = LdapEscape(dn);
-            List<Object> result = ldapTemplateContextSource.getLdapTemplate().search(dn, filter.toString(), new AbstractContextMapper<Object>() {
-                @Override
-                protected Object doMapFromContext(DirContextOperations ctx) {
-                    return ctx.getNameInNamespace();
-                }
-            });
-            return result.contains(fullDn);
-        }catch (Exception e){
-            logger.warn(String.format("validateDnExist[dn=%s, filter=%s] fail", fullDn, filter.toString()), e);
-            return false;
-        }
-    }
-
-    String getPartialUserDn(LdapTemplateContextSource ldapTemplateContextSource,String key, String value) {
-        return getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), key, value).
-                replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
-    }
-
-    public String getFullUserDn(String uid) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        String ldapUseAsLoginName = getLdapUseAsLoginName();
+    public String getFullUserDn(String uid, LdapServerVO ldap) {
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldap);
         String fullUserDn = null;
         try {
-            fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUseAsLoginName, uid);
+            fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldap.getUsernameProperty(), uid);
 
             if (fullUserDn.equals("")) {
                 return null;
@@ -677,12 +545,15 @@ public class LdapUtil {
         return fullUserDn;
     }
 
-    public String getFullUserDn(LdapTemplate ldapTemplate, String key, String val) {
-        EqualsFilter f = new EqualsFilter(key, val);
-        return getFullUserDn(ldapTemplate, f.toString());
+    public String getFullUserDn(LdapServerVO ldap, String key, String val) {
+        LdapTemplateContextSource context = readLdapServerConfiguration(ldap);
+        return getFullUserDn(context.getLdapTemplate(), key, val);
     }
 
-    private String getFullUserDn(LdapTemplate ldapTemplate, String filter) {
+    private String getFullUserDn(LdapTemplate ldapTemplate, String key, String val) {
+        EqualsFilter f = new EqualsFilter(key, val);
+        String filter = f.toString();
+
         String dn;
         try {
             List<Object> result = ldapTemplate.search("", filter, new AbstractContextMapper<Object>() {
@@ -711,9 +582,9 @@ public class LdapUtil {
         return dn;
     }
 
-    public boolean isValid(String uid, String password) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        String ldapUseAsLoginName = getLdapUseAsLoginName();
+    public boolean isValid(String uid, String password, LdapServerVO ldap) {
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldap);
+        String ldapUseAsLoginName = ldap.getUsernameProperty();
         try {
             boolean valid;
             String fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUseAsLoginName, uid);
@@ -722,8 +593,7 @@ public class LdapUtil {
             }
 
             LdapServerVO ldapServerVO = getLdapServer();
-            LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-            LdapTemplateContextSource ldapTemplateContextSource2 = loadLdap(ldapServerInventory);
+            LdapTemplateContextSource ldapTemplateContextSource2 = loadLdap(ldapServerVO);
 
             AndFilter filter = new AndFilter();
             filter.and(new EqualsFilter(ldapUseAsLoginName, uid));
@@ -740,52 +610,29 @@ public class LdapUtil {
         }
     }
 
-    public AccountThirdPartyAccountSourceRefVO findLdapAccountRefVO(String ldapDn){
-        AccountThirdPartyAccountSourceRefVO ldapAccountRefVO = Q.New(AccountThirdPartyAccountSourceRefVO.class)
-                .eq(AccountThirdPartyAccountSourceRefVO_.credentials, ldapDn)
-                .find();
+    public ErrorCode testLdapServerConnection(LdapServerVO ldap) {
+        Map<String, Object> properties = new HashMap<>();
+        String timeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_CONNECT_TIMEOUT);
+        properties.put("com.sun.jndi.ldap.connect.timeout", timeout);
+        LdapTemplateContextSource ldapTemplateContextSource = LdapManager.ldapUtil.loadLdap(ldap, properties);
 
-        if(ldapAccountRefVO != null){
-            return ldapAccountRefVO;
+        try {
+            AndFilter filter = new AndFilter();
+            // Any search conditions
+            filter.and(new EqualsFilter(LdapConstant.LDAP_UID_KEY, ""));
+            ldapTemplateContextSource.getLdapTemplate().authenticate("", filter.toString(), "");
+            logger.info("LDAP connection was successful");
+        } catch (AuthenticationException e) {
+            logger.debug("Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password", e);
+            return operr("Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password");
+        } catch (CommunicationException e) {
+            logger.debug("Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN", e);
+            return operr("Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN");
+        } catch (Exception e) {
+            logger.debug("Cannot connect to LDAP/AD server", e);
+            return operr("Cannot connect to LDAP/AD server, %s", e.toString());
         }
 
-        ldapAccountRefVO = findLdapAccountRefByAffiliatedGroup(ldapDn);
-        return ldapAccountRefVO;
-    }
-
-    /**
-     * step 1: Query the ldap group where the ldap user is located（all group）
-     * step 2: Check if there is a ldap group bound to the ZStack account
-     *              No ZStackAccount-LdapGroup binding，return null
-     *              Only one ZStackAccount-LdapGroup binding，return it
-     *              Multiple ZStackAccount-LdapGroup bindings，throw exception
-     */
-    private AccountThirdPartyAccountSourceRefVO findLdapAccountRefByAffiliatedGroup(String ldapDn){
-
-        List<String> ldapDnList = Q.New(AccountThirdPartyAccountSourceRefVO.class)
-                .select(AccountThirdPartyAccountSourceRefVO_.credentials)
-                .listValues();
-
-        if(ldapDnList.isEmpty()){
-            return null;
-        }
-
-        List<String> dnGroups = getUserDnGroups(ldapDnList, ldapDn);
-
-        if(dnGroups == null){
-            return null;
-        }
-
-        List<AccountThirdPartyAccountSourceRefVO> vos = Q.New(AccountThirdPartyAccountSourceRefVO.class)
-                .in(AccountThirdPartyAccountSourceRefVO_.credentials, dnGroups)
-                .list();
-
-        if(vos.size() == 1){
-            return vos.get(0);
-        }
-
-        List<String> accountList = vos.stream().map(AccountThirdPartyAccountSourceRefVO::getAccountUuid).distinct().collect(Collectors.toList());
-        throw new CloudRuntimeException(String.format("The ldapUid[%s] is bound to multiple accounts: %s", ldapDn, accountList.toString()));
-
+        return null;
     }
 }

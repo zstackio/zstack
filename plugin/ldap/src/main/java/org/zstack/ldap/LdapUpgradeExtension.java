@@ -9,8 +9,8 @@ import org.springframework.ldap.filter.EqualsFilter;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
-import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -24,6 +24,8 @@ public class LdapUpgradeExtension implements Component {
 
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private LdapManager ldapManager;
 
     @Override
     public boolean start() {
@@ -97,9 +99,8 @@ public class LdapUpgradeExtension implements Component {
     }
 
     private LdapTemplateContextSource readLdapServerConfiguration() {
-        LdapServerVO ldapServerVO = Q.New(LdapServerVO.class).find();
-        LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-        return LdapManager.ldapUtil.loadLdap(ldapServerInventory);
+        final ErrorableValue<LdapServerVO> currentLdapServer = ldapManager.findCurrentLdapServer();
+        return LdapManager.ldapUtil.loadLdap(currentLdapServer.result);
     }
 
     @Override
