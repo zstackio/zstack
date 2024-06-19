@@ -8,7 +8,7 @@
 
     <code>
         <id>1001</id>
-        <description>There shouldn't be more than one LDAP/AD server.</description>
+        <description>Failed to add the same LDAP/AD server: The server already exists</description>
     </code>
 
     <code>
@@ -38,7 +38,12 @@
 
     <code>
         <id>1007</id>
-        <description>Unable to find specified LDAP/AD server record in database.</description>
+        <description>Failed to find specific LDAP/AD server</description>
+    </code>
+
+    <code>
+        <id>1009</id>
+        <description>No LDAP/AD server is currently enabled</description>
     </code>
 </error>
 

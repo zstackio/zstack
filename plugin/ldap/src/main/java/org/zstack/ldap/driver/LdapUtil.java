@@ -20,6 +20,7 @@ import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.ldap.*;
 import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapServerInventory;
+import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.ldap.entity.LdapServerVO_;
 import org.zstack.tag.PatternedSystemTag;
@@ -173,7 +174,7 @@ public class LdapUtil {
     }
 
     LdapTemplateContextSource doLoadLdap(LdapServerInventory inv, boolean emptyBase) {
-        LdapContextSource ldapContextSource = buildLdapContextSource(inv, getBaseEnvProperties());
+        LdapContextSource ldapContextSource = buildLdapContextSource(inv, getBaseEnvProperties(inv));
 
         if (emptyBase) {
             ldapContextSource.setBase("");
@@ -207,16 +208,15 @@ public class LdapUtil {
     }
 
     public String getMemberKey(){
-        String ldapServerUuid = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.uuid)
+        LdapServerType type = Q.New(LdapServerVO.class)
+                .select(LdapServerVO_.serverType)
                 .findValue();
-        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
 
-        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+        if (type == LdapServerType.WindowsAD) {
             return LdapConstant.WindowsAD.MEMBER_KEY;
         }
 
-        if(LdapConstant.OpenLdap.TYPE.equals(type)){
+        if (type == LdapServerType.OpenLdap) {
             return LdapConstant.OpenLdap.MEMBER_KEY;
         }
 
@@ -225,15 +225,9 @@ public class LdapUtil {
     }
 
     public String getLdapUseAsLoginName(){
-        String ldapServerUuid = Q.New(LdapServerVO.class).select(LdapServerVO_.uuid)
+        return Q.New(LdapServerVO.class)
+                .select(LdapServerVO_.usernameProperty)
                 .findValue();
-
-        PatternedSystemTag tag = LdapSystemTags.LDAP_USE_AS_LOGIN_NAME;
-        if(!tag.hasTag(ldapServerUuid)){
-            return LdapConstant.LDAP_UID_KEY;
-        }
-
-        return tag.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_USE_AS_LOGIN_NAME_TOKEN);
     }
 
     public String getDnKey(){
@@ -254,14 +248,14 @@ public class LdapUtil {
         return LdapConstant.WindowsAD.DN_KEY;
     }
 
-    public Map<String, Object> getBaseEnvProperties() {
-        String ldapServerUuid = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.uuid)
+    public Map<String, Object> getBaseEnvProperties(LdapServerInventory inv) {
+        LdapServerType type = Q.New(LdapServerVO.class)
+                .select(LdapServerVO_.serverType)
+                .eq(LdapServerVO_.uuid, inv.getUuid())
                 .findValue();
-        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
 
         Map<String, Object> properties = new HashMap<>();
-        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+        if(type == LdapServerType.WindowsAD){
             properties.put("java.naming.ldap.attributes.binary","objectGUID");
         }
         // add socket timeout
@@ -272,13 +266,13 @@ public class LdapUtil {
         return properties;
     }
 
-    public String decodeGlobalUuid(NameAwareAttribute attribute) throws javax.naming.NamingException {
-        String ldapServerUuid = Q.New(LdapServerVO.class)
-                .select(LdapServerVO_.uuid)
+    public String decodeGlobalUuid(NameAwareAttribute attribute, String ldapServerUuid) throws javax.naming.NamingException {
+        LdapServerType type = Q.New(LdapServerVO.class)
+                .eq(LdapServerVO_.uuid, ldapServerUuid)
+                .select(LdapServerVO_.serverType)
                 .findValue();
-        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
 
-        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+        if (type == LdapServerType.WindowsAD) {
             byte[] GUID = (byte[]) attribute.get();
 
             String strGUID;
