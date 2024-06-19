@@ -37,6 +37,8 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -68,6 +70,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String QUERY_VOLUME_PATH = "/zbs/primarystorage/volume/query";
     public static final String EXPAND_VOLUME_PATH = "/zbs/primarystorage/volume/expand";
     public static final String CBD_TO_NBD_PATH = "/zbs/primarystorage/volume/cbdtonbd";
+    public static final String CLEAN_NBD_PATH = "/zbs/primarystorage/volume/cleannbd";
     public static final String CREATE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/create";
     public static final String DELETE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/delete";
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
@@ -87,6 +90,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         capabilities.setSupportStorageQos(false);
         capabilities.setSupportLiveExpandVolume(false);
         capabilities.setSupportedImageFormats(Collections.singletonList("raw"));
+        capabilities.setDefaultIsoActiveProtocol(VolumeProtocol.CBD);
+        capabilities.setDefaultImageExportProtocol(VolumeProtocol.NBD);
     }
 
     @Override
@@ -596,8 +601,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             return;
         }
 
-        if (protocol != VolumeProtocol.CBD) {
-            throw new RuntimeException("unsupported target " + protocol.name());
+        if (protocol != VolumeProtocol.NBD) {
+            comp.fail(operr("unsupported protocol %s", protocol.name()));
+            return;
         }
 
         CbdToNbdCmd cmd = new CbdToNbdCmd();
@@ -620,19 +626,43 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public void unexport(ExportSpec espec, VolumeProtocol protocol, Completion comp) {
+    public void unexport(ExportSpec espec, RemoteTarget remoteTarget, VolumeProtocol protocol, Completion comp) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             comp.success();
             return;
         }
 
-        if (protocol == VolumeProtocol.CBD) {
-            unexportCbd(espec.getInstallPath());
-        } else {
+        if (protocol != VolumeProtocol.NBD) {
             comp.fail(operr("unsupported protocol %s", protocol.name()));
             return;
         }
-        comp.success();
+
+        if (remoteTarget == null || remoteTarget.getResourceURI() == null) {
+            logger.debug("remote target or the uri does not exist");
+            comp.success();
+            return;
+        }
+
+        try {
+            URI uri = new URI(remoteTarget.getResourceURI());
+
+            CleanNbdCmd cmd = new CleanNbdCmd();
+            cmd.setNbdAddr(uri.getHost());
+            cmd.setPort(uri.getPort());
+            new HttpCaller<>(CLEAN_NBD_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(comp) {
+                @Override
+                public void success(AgentResponse returnValue) {
+                    comp.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    comp.fail(errorCode);
+                }
+            }).setTargetMds(uri.getHost()).call();
+        } catch (URISyntaxException e) {
+            comp.fail(operr("Invalid URI syntax: %s", e.getMessage()));
+        }
     }
 
     @Override
@@ -711,10 +741,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void setTrashExpireTime(int timeInSeconds, Completion completion) {
-
-    }
-
-    private synchronized void unexportCbd(String source) {
 
     }
 
@@ -806,6 +832,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         private boolean tryNext = false;
 
+        public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
+            this(path, cmd, retClass, callback, null, 0);
+        }
+
         public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
             this.path = path;
             this.cmd = cmd;
@@ -820,6 +850,19 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             prepareMdsIterator();
             prepareCmd();
             doCall();
+        }
+
+        HttpCaller<T> setTargetMds(String mdsAddr) {
+            logger.debug(String.format("target mds[ip:%s]", mdsAddr));
+
+            mdsInfos.removeIf(it -> !it.getMdsAddr().equals(mdsAddr));
+            if (mdsInfos.isEmpty()) {
+                throw new OperationFailureException(operr(
+                        "not found mds[ip:%s] of zbs primary storage[uuid:%s] node", mdsAddr, self.getUuid())
+                );
+            }
+
+            return this;
         }
 
         private void prepareCmd() {
@@ -1253,6 +1296,27 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setLunName(String lunName) {
             this.lunName = lunName;
+        }
+    }
+
+    public static class CleanNbdCmd extends AgentCommand {
+        private String nbdAddr;
+        private int port;
+
+        public String getNbdAddr() {
+            return nbdAddr;
+        }
+
+        public void setNbdAddr(String nbdAddr) {
+            this.nbdAddr = nbdAddr;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
         }
     }
 

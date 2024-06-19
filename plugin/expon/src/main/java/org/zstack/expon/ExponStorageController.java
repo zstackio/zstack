@@ -1182,7 +1182,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public void unexport(ExportSpec espec, VolumeProtocol protocol, Completion comp) {
+    public void unexport(ExportSpec espec, RemoteTarget remoteTarget, VolumeProtocol protocol, Completion comp) {
         if (protocol == VolumeProtocol.NVMEoF) {
             unexportNvmf(espec.getInstallPath());
         } else if (protocol == VolumeProtocol.iSCSI) {
