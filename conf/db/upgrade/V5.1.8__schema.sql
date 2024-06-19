@@ -131,3 +131,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ReservedIpRangeVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`PciDeviceVO` ADD `rev` varchar(32) DEFAULT '';
+
+DELETE FROM `zstack`.`ResourceConfigVO` WHERE `category`='sharedblock' AND `name`='qcow2.allocation';
