@@ -42,7 +42,7 @@ public interface PrimaryStorageControllerSvc {
     void setVolumeQos(BaseVolumeInfo v, Completion comp);
 
     void export(ExportSpec espec, VolumeProtocol protocol, ReturnValueCompletion<RemoteTarget> comp);
-    void unexport(ExportSpec espec, VolumeProtocol protocol, Completion comp);
+    void unexport(ExportSpec espec, RemoteTarget remoteTarget, VolumeProtocol protocol, Completion comp);
 
     void createSnapshot(CreateVolumeSnapshotSpec spec, ReturnValueCompletion<VolumeSnapshotStats> comp);
     void deleteSnapshot(String installPath, Completion comp);
