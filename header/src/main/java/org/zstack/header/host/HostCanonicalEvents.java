@@ -4,6 +4,9 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.NeedJsonSchema;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created by xing5 on 2016/3/22.
  */
@@ -23,6 +26,106 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_DISK_STATUS_ABNORMAL = "/host/physicalDisk/status/abnormal";
     public static final String HOST_PHYSICAL_DISK_INSERT_TRIGGERED = "/host/physicalDisk/insert/triggered";
     public static final String HOST_PHYSICAL_DISK_REMOVE_TRIGGERED = "/host/physicalDisk/remove/triggered";
+    public static final String HOST_PHYSICAL_POWER_SUPPLY_STATUS_ABNORMAL = "/host/physicalPowerSupply/status/abnormal";
+    public static final String HOST_PHYSICAL_GPU_REMOVE_TRIGGERED = "/host/physicalGpu/remove/triggered";
+    public static final String HOST_PHYSICAL_GPU_STATUS_ABNORMAL = "/host/physicalGpu/status/abnormal";
+    public static final String HOST_PHYSICAL_VGPU_STATUS_ABNORMAL = "/host/physicalVGpu/status/abnormal";
+    public static final String HOST_PHYSICAL_RAID_STATUS_ABNORMAL = "/host/physicalRaid/status/abnormal";
+
+
+    @NeedJsonSchema
+    public static class HostPhysicalGpuRemoveTriggeredData {
+        private String hostUuid;
+        private String pcideviceAddress;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getPcideviceAddress() {
+            return pcideviceAddress;
+        }
+
+        public void setPcideviceAddress(String pcideviceAddress) {
+            this.pcideviceAddress = pcideviceAddress;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalVGpuStatusAbnormalData {
+        private String hostUuid;
+        private String uuid;
+        private String name;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+
+    @NeedJsonSchema
+    public static class HostPhysicalGpuStatusAbnormalData {
+        private String hostUuid;
+        private String pcideviceAddress;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getPcideviceAddress() {
+            return pcideviceAddress;
+        }
+
+        public void setPcideviceAddress(String pcideviceAddress) {
+            this.pcideviceAddress = pcideviceAddress;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
 
     @NeedJsonSchema
     public static class HostPhysicalCpuStatusAbnormalData {
@@ -106,6 +209,68 @@ public class HostCanonicalEvents {
 
         public void setFanName(String fanName) {
             this.fanName = fanName;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalPowerSupplyStatusAbnormalData {
+        private String hostUuid;
+        private String name;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalRaidStatusAbnormalData {
+        private String hostUuid;
+        private String targetId;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getTargetId() {
+            return targetId;
+        }
+
+        public void setTargetId(String targetId) {
+            this.targetId = targetId;
         }
 
         public String getStatus() {

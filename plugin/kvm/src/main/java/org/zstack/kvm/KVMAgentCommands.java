@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.zstack.core.upgrade.GrayUpgradeAgent;
 import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.validation.ConditionalValidation;
@@ -4641,4 +4642,101 @@ public class KVMAgentCommands {
 
     public static class SyncIpsetRsp extends AgentResponse {
     }
+
+    public static class HardwareMonitorCmd extends KVMAgentCommands.AgentCommand {
+    }
+
+    public static class HostPhysicalCpuStatusAlarmEventCmd {
+        public String host;
+        public String cpuName;
+        public String status;
+    }
+
+    public static class HostPhysicalMemoryStatusAlarmEventCmd {
+        public String host;
+        public String locator;
+        public String status;
+    }
+
+    public static class HostPhysicalFanStatusAlarmEventCmd {
+        public String host;
+        public String fan_name;
+        public String status;
+    }
+
+    public static class HostPhysicalPowerSupplyStatusAlarmEventCmd {
+        public String host;
+        public String name;
+        public String status;
+    }
+
+    public static class HostPhysicalDiskStatusAlarmEventCmd {
+        public String host;
+        public String slot_number;
+        public String enclosure_device_id;
+        public String drive_state;
+        public String serial_number;
+    }
+
+    public static class HostPhysicalDiskInsertAlarmEventCmd {
+        public String host;
+        public String slot_number;
+        public String enclosure_device_id;
+        public String serial_number;
+    }
+
+    public static class HostPhysicalDiskRemoveAlarmEventCmd {
+        public String host;
+        public String slot_number;
+        public String enclosure_device_id;
+        public String serial_number;
+    }
+
+    public static class PhysicalMemoryEccErrorAlarmEventCmd {
+        public String host;
+        public String detail;
+    }
+
+    public static class PhysicalGpuStatusAlarmEventCmd {
+        public String host;
+        public String pcideviceAddress;
+        public String status;
+    }
+
+    public static class PhysicalGpuRemoveAlarmEventCmd {
+        public String host;
+        public String pcideviceAddress;
+    }
+
+    public static class HostPhysicalDeviceStatusAlarmEventCmd {
+        private String host;
+        private String type;
+        private Map<String, Object> additionalProperties = new HashMap<>();
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public Map<String, Object> getAdditionalProperties() {
+            return additionalProperties;
+        }
+
+        @JsonAnySetter
+        public void setAdditionalProperties(Map<String, Object> additionalProperties) {
+            this.additionalProperties = additionalProperties;
+        }
+    }
+
 }

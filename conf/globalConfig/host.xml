@@ -126,4 +126,13 @@
         <defaultValue>30</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <category>host</category>
+        <name>sync.host.hw.monitor.interval</name>
+        <description>The interval to sync host hw monitor, in seconds</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
 </globalConfig>
