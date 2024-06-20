@@ -9,7 +9,6 @@ import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.header.identity.IdentityErrors
 import org.zstack.identity.IdentityGlobalConfig
 import org.zstack.ldap.LdapConstant
-import org.zstack.ldap.LdapSystemTags
 import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
 import org.zstack.sdk.identity.ldap.api.AddLdapServerResult
 import org.zstack.sdk.ApiResult
@@ -37,7 +36,7 @@ class LdapBasicCase extends SubCase {
     public static EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder.newInstance().bindingToPort(1888).
             usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build()
 
-    String LdapUuid
+    String ldapUuid
 
     @Override
     void setup() {
@@ -176,7 +175,7 @@ class LdapBasicCase extends SubCase {
 
         result = getLdapEntry {
             ldapFilter = "(objectClass=person)"
-            ldapServerUuid = LdapUuid
+            ldapServerUuid = ldapUuid
         }
         assert 3 == result.size()
     }
@@ -267,11 +266,16 @@ class LdapBasicCase extends SubCase {
             username = ""
             password = ""
             encryption = "None"
-            systemTags = [LdapSystemTags.LDAP_SERVER_TYPE.instantiateTag([(LdapSystemTags.LDAP_SERVER_TYPE_TOKEN): LdapConstant.OpenLdap.TYPE]),
-                          LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.instantiateTag([(LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN): "(cn=Micha Kops)"])]
-            sessionId = Test.currentEnvSpec.session.uuid
+            serverType = "OpenLdap"
+            filter = "(!(cn=Micha Kops))"
         } as LdapServerInventory
-        LdapUuid = result.uuid
+        ldapUuid = result.uuid
+
+        updateGlobalConfig {
+            delegate.category = "ldap"
+            delegate.name = "current.ldap.server.uuid"
+            delegate.value = ldapUuid
+        }
 
         AddLdapServerAction addLdapServerAction = new AddLdapServerAction(
                 name : "ldap0",
@@ -331,7 +335,7 @@ class LdapBasicCase extends SubCase {
 
     void testDeleteLdapServer(){
         deleteLdapServer {
-            uuid = LdapUuid
+            uuid = ldapUuid
             sessionId = Test.currentEnvSpec.session.uuid
         }
     }

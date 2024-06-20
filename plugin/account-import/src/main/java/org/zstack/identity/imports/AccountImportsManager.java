@@ -8,6 +8,8 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.message.Message;
 import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
@@ -74,6 +76,14 @@ public class AccountImportsManager extends AbstractService {
         return ErrorableValue.ofErrorCode(operr("failed to find account import source by type[%s]", type));
     }
 
+    public static String accountSourceSyncTaskSignature() {
+        return ThirdPartyAccountSourceVO.class.getSimpleName() + "-syncing";
+    }
+
+    public static String accountSourceCreatingSyncSignature() {
+        return ThirdPartyAccountSourceVO.class.getSimpleName() + "-creating";
+    }
+
     public static String accountSourceQueueSyncSignature(String sourceUuid) {
         return ThirdPartyAccountSourceVO.class.getSimpleName() + "-" + sourceUuid;
     }
@@ -92,16 +102,25 @@ public class AccountImportsManager extends AbstractService {
         thdf.chainSubmit(new ChainTask(message) {
             @Override
             public void run(SyncTaskChain chain) {
-                final ErrorableValue<ThirdPartyAccountSourceVO> vo = factory.createAccountSource(message.getSpec());
-                if (!vo.isSuccess()) {
-                    reply.setError(vo.error);
-                }
-                bus.reply(message, reply);
+                factory.createAccountSource(message.getSpec(), new ReturnValueCompletion<ThirdPartyAccountSourceVO>(chain) {
+                    @Override
+                    public void success(ThirdPartyAccountSourceVO returnValue) {
+                        chain.next();
+                        bus.reply(message, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        chain.next();
+                        reply.setError(errorCode);
+                        bus.reply(message, reply);
+                    }
+                });
             }
 
             @Override
             public String getSyncSignature() {
-                return accountSourceQueueSyncSignature(message.getSpec().getUuid());
+                return accountSourceCreatingSyncSignature();
             }
 
             @Override

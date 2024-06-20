@@ -1,6 +1,6 @@
 package org.zstack.identity.imports.source;
 
-import org.zstack.header.errorcode.ErrorableValue;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.identity.imports.header.AbstractAccountSourceSpec;
 import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
 
@@ -10,5 +10,5 @@ import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
 public interface AccountSourceFactory {
     String type();
     AbstractAccountSourceBase createBase(ThirdPartyAccountSourceVO vo);
-    ErrorableValue<ThirdPartyAccountSourceVO> createAccountSource(AbstractAccountSourceSpec spec);
+    void createAccountSource(AbstractAccountSourceSpec spec, ReturnValueCompletion<ThirdPartyAccountSourceVO> completion);
 }

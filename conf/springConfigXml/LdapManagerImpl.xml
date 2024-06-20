@@ -38,7 +38,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="LdapUserSourceFactory" class="org.zstack.ldap.source.LdapAccountSourceFactory">
+    <bean id="LdapUserSourceFactory" class="org.zstack.ldap.compute.LdapAccountSourceFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.identity.imports.source.AccountSourceFactory"/>
         </zstack:plugin>
