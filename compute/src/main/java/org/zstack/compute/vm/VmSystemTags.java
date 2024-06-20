@@ -222,6 +222,12 @@ public class VmSystemTags {
     public static PatternedSystemTag VM_ATTACH_USB = new PatternedSystemTag(String.format("usbDeviceUuid::{%s}::attachType::{%s}",
             USBDEVICE_UUID_TOKEN, usbDevice_attach_type_token), VmInstanceVO.class);
 
+    public static final String MARKET_PLACE_TOKEN = "marketplace::true";
+
+    public static PatternedSystemTag CREATED_BY_MARKETPLACE = new PatternedSystemTag(
+            MARKET_PLACE_TOKEN, VmInstanceVO.class
+    );
+
     public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
         private final String chpasswd = "chpasswd";
         private final String list = "list";
