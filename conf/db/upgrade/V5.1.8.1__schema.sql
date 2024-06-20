@@ -91,11 +91,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SSOServerTokenVO`(
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `TagPatternVO` VALUES
-('3e88dfda748f4706a497143ff0c9d8bc','AI::Others','AI::Others','System Defined tag',"#9A3BE4",'simple','2024-06-18 09:52:59','2024-06-18 09:52:59'),
-('402ce2d5dc614bd5a583254768369682','AI::Image-Generation','AI::Image-Generation','System Defined tag',"#DFFCC6",'simple','2024-06-18 09:51:45','2024-06-18 09:51:45'),
-('730bbcd2e7a44d1687a56d518313c726','AI::Text-Generation','AI::Text-Generation','System Defined tag',"#CEEFFF",'simple','2024-06-18 09:51:05','2024-06-18 09:51:05'),
-('7396ea323f9f474dace9b634bc634e76','AI::Text-to-Video','AI::Text-to-Video','System Defined tag',"#FFE4D8",'simple','2024-06-18 09:52:18','2024-06-18 09:52:18'),
-('c093252e47794e428e634c084c45b19b','AI::Text-to-Audio','AI::Text-to-Audio','System Defined tag',"#F3FCB0",'simple','2024-06-18 09:52:40','2024-06-18 09:52:40');
+('3e88dfda748f4706a497143ff0c9d8bc','AI::Others','AI::Others','System Defined tag',"red",'simple','2024-06-18 09:52:59','2024-06-18 09:52:59'),
+('402ce2d5dc614bd5a583254768369682','AI::Image-Generation','AI::Image-Generation','System Defined tag',"green",'simple','2024-06-18 09:51:45','2024-06-18 09:51:45'),
+('730bbcd2e7a44d1687a56d518313c726','AI::Text-Generation','AI::Text-Generation','System Defined tag',"blue",'simple','2024-06-18 09:51:05','2024-06-18 09:51:05'),
+('7396ea323f9f474dace9b634bc634e76','AI::Text-to-Video','AI::Text-to-Video','System Defined tag',"purple",'simple','2024-06-18 09:52:18','2024-06-18 09:52:18'),
+('c093252e47794e428e634c084c45b19b','AI::Text-to-Audio','AI::Text-to-Audio','System Defined tag',"yellow-green",'simple','2024-06-18 09:52:40','2024-06-18 09:52:40');
 
 INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`) VALUES
  ('3e88dfda748f4706a497143ff0c9d8bc', 'AI::Others', 'TagPatternVO', 'org.zstack.header.tag.TagPatternVO'),
