@@ -2234,6 +2234,16 @@ public class KVMAgentCommands {
         private boolean useColoBinary;
         @GrayVersion(value = "5.0.0")
         private String vmCpuVendorId;
+        @GrayVersion(value = "5.0.0")
+        private boolean qemu64BitPciMmioSetup;
+
+        public boolean isQemu64BitPciMmioSetup() {
+            return qemu64BitPciMmioSetup;
+        }
+
+        public void setQemu64BitPciMmioSetup(boolean qemu64BitPciMmioSetup) {
+            this.qemu64BitPciMmioSetup = qemu64BitPciMmioSetup;
+        }
 
         public void setSocketNum(Integer socketNum) {
             this.socketNum = socketNum;
