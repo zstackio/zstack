@@ -675,6 +675,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     @Transactional
     private void rollbackSnapshot(String uuid) {
         VolumeSnapshotVO vo = dbf.getEntityManager().find(VolumeSnapshotVO.class, uuid);
+        if (vo == null) {
+            return;
+        }
 
         dbf.getEntityManager().remove(vo);
 
