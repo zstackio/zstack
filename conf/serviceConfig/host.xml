@@ -60,4 +60,12 @@
     <message>
         <name>org.zstack.header.host.APIGetHostPowerStatusMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetPhysicalMachineBlockDevicesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIMountBlockDeviceMsg</name>
+    </message>
 </service>
