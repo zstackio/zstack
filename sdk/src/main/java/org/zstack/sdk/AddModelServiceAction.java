@@ -52,6 +52,9 @@ public class AddModelServiceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String zoneUuid;
 
+    @Param(required = false, validValues = {"Endpoint","FineTune"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type = "Endpoint";
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
