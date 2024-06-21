@@ -482,8 +482,9 @@ public class KVMHost extends HostBase implements Host {
         }
 
         void call(String resourceUuid, ReturnValueCompletion<T> completion) {
-            if (upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), commandName)) {
-                completion.fail(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+            ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), commandName);
+            if (errorCode != null) {
+                completion.fail(errorCode);
                 return;
             }
             
@@ -2342,11 +2343,11 @@ public class KVMHost extends HostBase implements Host {
         if (!msg.isNoStatusCheck()) {
             checkStatus();
         }
-        
-        if (upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName())) {
-            throw new OperationFailureException(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+
+        ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName());
+        if (errorCode != null) {
+            throw new OperationFailureException(errorCode);
         }
-        
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
         Map<String, String> headers = new HashMap<>();

@@ -28,6 +28,14 @@ public class VersionComparator {
         return compare(c);
     }
 
+    public boolean lessThan(String ver) {
+        return compare(ver) < 0;
+    }
+
+    public boolean greaterThan(String ver) {
+        return compare(ver) > 0;
+    }
+
     public int compare(VersionComparator v) {
         List<Integer> him = new ArrayList<Integer>();
         him.addAll(v.elements);
