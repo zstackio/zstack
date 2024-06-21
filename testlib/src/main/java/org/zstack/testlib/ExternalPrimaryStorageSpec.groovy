@@ -134,13 +134,13 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(ZbsStorageController.COPY_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
-                ZbsStorageController.CopySnapshotCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CopySnapshotCmd.class)
+            simulator(ZbsStorageController.COPY_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.CopyCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CopyCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
                 assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
-                def rsp = new ZbsStorageController.CopySnapshotRsp()
-                rsp.setInstallPath("cbd:pool1/lpool1/copy_snapshot")
+                def rsp = new ZbsStorageController.CopyRsp()
+                rsp.setInstallPath("cbd:pool1/lpool1/copy")
                 rsp.setSize(actualSize)
 
                 return rsp
