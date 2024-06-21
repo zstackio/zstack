@@ -9,9 +9,14 @@ import org.zstack.ldap.entity.LdapServerVO;
  * Created by miao on 16-9-6.
  */
 public interface LdapManager {
+    @Deprecated
     LdapUtil ldapUtil = Platform.New(LdapUtil::new);
     boolean isValid(String uid, String password);
 
     ErrorableValue<String> findCurrentLdapServerUuid();
     ErrorableValue<LdapServerVO> findCurrentLdapServer();
+
+    default LdapUtil createDriver() {
+        return Platform.New(LdapUtil::new);
+    }
 }

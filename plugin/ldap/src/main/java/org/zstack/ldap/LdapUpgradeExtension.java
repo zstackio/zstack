@@ -101,7 +101,7 @@ public class LdapUpgradeExtension implements Component {
 
     private LdapTemplateContextSource readLdapServerConfiguration() {
         final ErrorableValue<LdapServerVO> currentLdapServer = ldapManager.findCurrentLdapServer();
-        return LdapManager.ldapUtil.loadLdap(currentLdapServer.result);
+        return ldapManager.createDriver().loadLdap(currentLdapServer.result);
     }
 
     @Override

@@ -63,7 +63,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         ldap.setPassword(msg.getPassword());
         ldap.setEncryption(msg.getEncryption());
 
-        ErrorCode errorCode = LdapManager.ldapUtil.testLdapServerConnection(ldap);
+        ErrorCode errorCode = ldapManager.createDriver().testLdapServerConnection(ldap);
         if (errorCode != null) {
             throw new ApiMessageInterceptionException(
                     err(LdapErrors.TEST_LDAP_CONNECTION_FAILED, errorCode.getDetails()));
