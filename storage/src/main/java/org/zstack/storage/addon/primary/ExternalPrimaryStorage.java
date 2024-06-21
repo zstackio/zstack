@@ -762,8 +762,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             RemoteTarget remoteTarget;
             ExportSpec espec = new ExportSpec();
-            final String exportProtocol = rcf.getResourceConfigValue(
-                    ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+            final String exportProtocol = controller.reportCapabilities().getDefaultImageExportProtocol() != null
+                    ? controller.reportCapabilities().getDefaultImageExportProtocol().toString()
+                    : rcf.getResourceConfigValue(ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
 
             String snapshotPath;
             String bsInstallPath;
@@ -861,7 +862,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             return;
                         }
 
-                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
+                        controller.unexport(espec, remoteTarget, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -907,7 +908,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
+                        controller.unexport(espec, remoteTarget, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 // prevent to rollback again.
@@ -1068,9 +1069,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             VolumeStats volume;
 
             final String bsUuid = image.getBackupStorageRefs().get(0).getBackupStorageUuid();
-
-            final String exportProtocol = rcf.getResourceConfigValue(
-                    ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+            final String exportProtocol = controller.reportCapabilities().getDefaultImageExportProtocol() != null
+                    ? controller.reportCapabilities().getDefaultImageExportProtocol().toString()
+                    : rcf.getResourceConfigValue(ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -1142,7 +1143,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             return;
                         }
 
-                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
+                        controller.unexport(espec, remoteTarget, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -1187,7 +1188,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.unexport(espec, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
+                        controller.unexport(espec, remoteTarget, VolumeProtocol.valueOf(exportProtocol), new Completion(trigger) {
                             @Override
                             public void success() {
                                 // prevent to rollback again.
@@ -1343,7 +1344,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         downloadImageCache(msg.getIsoSpec().getInventory(), new ReturnValueCompletion<ImageCacheInventory>(msg) {
             @Override
             public void success(ImageCacheInventory cache) {
-                String isoProtocol = ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL.value(String.class);
+                String isoProtocol = controller.reportCapabilities().getDefaultIsoActiveProtocol() != null
+                        ? controller.reportCapabilities().getDefaultIsoActiveProtocol().toString()
+                        : ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL.value(String.class);
 
                 HostInventory host = HostInventory.valueOf(dbf.findByUuid(msg.getDestHostUuid(), HostVO.class));
                 node.activate(BaseVolumeInfo.valueOf(cache, isoProtocol), host, true, new ReturnValueCompletion<ActiveVolumeTO>(msg) {
