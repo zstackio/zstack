@@ -10,6 +10,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -23,11 +25,16 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.identity.imports.AccountImportsConstant;
+import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
+import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
 import org.zstack.identity.imports.header.CreateAccountSpec;
 import org.zstack.identity.imports.header.ImportAccountSpec;
+import org.zstack.identity.imports.header.UnbindThirdPartyAccountSpecItem;
+import org.zstack.identity.imports.header.UnbindThirdPartyAccountsSpec;
 import org.zstack.identity.imports.message.ImportThirdPartyAccountMsg;
+import org.zstack.identity.imports.message.UnbindThirdPartyAccountMsg;
 import org.zstack.ldap.LdapConstant;
 import org.zstack.ldap.driver.LdapSearchSpec;
 import org.zstack.ldap.driver.LdapUtil;
@@ -35,8 +42,11 @@ import org.zstack.ldap.header.LdapSyncTaskSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -172,8 +182,121 @@ public class LdapSyncHelper {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                logger.warn("TODO : clean-stale-ldap-entry"); // TODO : clean-stale-ldap-entry
-                trigger.next();
+                long totalSize = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                        .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, importSpec.getSourceUuid())
+                        .count();
+
+                Map<String, String> credentialsAccountMap = new HashMap<>(((int) totalSize) << 1);
+
+                SQL.New("select " +
+                            "ref.credentials, ref.accountUuid " +
+                        "from " +
+                            "AccountThirdPartyAccountSourceRefVO ref " +
+                        "where " +
+                            "accountSourceUuid = (:ldapUuid)", Tuple.class)
+                        .param("ldapUuid", importSpec.getSourceUuid())
+                        .limit(100)
+                        .paginate(totalSize, (List<Tuple> tuples) -> {
+                            for (Tuple tuple : tuples) {
+                                credentialsAccountMap.put(tuple.get(0, String.class), tuple.get(1, String.class));
+                            }
+                        });
+
+                final Set<String> credentials =
+                        transformToSet(importSpec.accountList, CreateAccountSpec::getCredentials);
+                credentials.forEach(credentialsAccountMap::remove);
+
+                if (credentialsAccountMap.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+                printUnbindingList(credentialsAccountMap);
+
+                AtomicBoolean anySuccess = new AtomicBoolean(false);
+                new While<>(splitMessages(credentialsAccountMap)).each((msg, whileCompletion) -> {
+                    bus.makeTargetServiceIdByResourceUuid(msg, AccountImportsConstant.SERVICE_ID, msg.getSourceUuid());
+                    bus.send(msg, new CloudBusCallBack(whileCompletion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                anySuccess.set(true);
+                            } else {
+                                whileCompletion.addError(reply.getError());
+                            }
+                            whileCompletion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!anySuccess.get()) {
+                            trigger.fail(operr(errorCodeList, "all ldap account unbinding attempt is failed. ldapServerUuid=%s",
+                                    importSpec.getSourceUuid()));
+                            return;
+                        } else if (!errorCodeList.getCauses().isEmpty()) {
+                            logger.warn("ldap account unbinding occur some errors: " +
+                                    errorCodeList.getCauses().get(0).getDetails());
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+
+            private void printUnbindingList(Map<String, String> credentialsAccountMapNeedDelete) {
+                StringBuilder builder = new StringBuilder(128 + credentialsAccountMapNeedDelete.size() << 7);
+                builder.append(String.format(
+                        "LDAP[uuid=%s, deleteStrategy=%s] unbinding account list below:\n",
+                        importSpec.getSourceUuid(), taskSpec.getDeleteAccountStrategy()));
+                for (Map.Entry<String, String> entry : credentialsAccountMapNeedDelete.entrySet()) {
+                    builder.append(String.format("\taccountUuid=%s, credentials=%s\n", entry.getValue(), entry.getKey()));
+                }
+                logger.info(builder.toString());
+            }
+
+            private List<UnbindThirdPartyAccountMsg> splitMessages(Map<String, String> credentialsAccountMapNeedDelete) {
+                int accountCount = credentialsAccountMapNeedDelete.size();
+
+                if (accountCount <= 100) {
+                    UnbindThirdPartyAccountsSpec spec = new UnbindThirdPartyAccountsSpec();
+                    spec.setSourceUuid(importSpec.getSourceUuid());
+                    spec.setSourceType(LdapConstant.LOGIN_TYPE);
+                    spec.setItems(buildUnbindItemList(credentialsAccountMapNeedDelete.values()));
+
+                    UnbindThirdPartyAccountMsg msg = new UnbindThirdPartyAccountMsg();
+                    msg.setSpec(spec);
+                    return list(msg);
+                }
+
+                int count = 0;
+                List<UnbindThirdPartyAccountMsg> list = new ArrayList<>();
+                List<Map.Entry<String, String>> entries = new ArrayList<>(credentialsAccountMapNeedDelete.entrySet());
+
+                while (count < accountCount) {
+                    int toIndexExclude = Math.min(accountCount, count + 100);
+
+                    UnbindThirdPartyAccountsSpec splitSpec = new UnbindThirdPartyAccountsSpec();
+                    splitSpec.setSourceUuid(importSpec.getSourceUuid());
+                    splitSpec.setSourceType(LdapConstant.LOGIN_TYPE);
+
+                    Collection<String> accountUuids = transform(entries.subList(count, toIndexExclude), Map.Entry::getValue);
+                    splitSpec.setItems(buildUnbindItemList(accountUuids));
+
+                    UnbindThirdPartyAccountMsg msg = new UnbindThirdPartyAccountMsg();
+                    msg.setSpec(splitSpec);
+                    list.add(msg);
+
+                    count += 100;
+                }
+                return list;
+            }
+
+            private List<UnbindThirdPartyAccountSpecItem> buildUnbindItemList(Collection<String> accountUuids) {
+                return transform(accountUuids, uuid -> {
+                    UnbindThirdPartyAccountSpecItem item = new UnbindThirdPartyAccountSpecItem();
+                    item.setAccountUuid(uuid);
+                    item.setStrategy(taskSpec.getDeleteAccountStrategy());
+                    return item;
+                });
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
