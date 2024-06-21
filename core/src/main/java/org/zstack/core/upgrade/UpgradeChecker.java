@@ -34,7 +34,7 @@ public class UpgradeChecker implements Component {
     @Autowired
     protected PluginRegistry pluginRgty;
 
-    Map<String, Map<String, String>> grayUpgradeConfigMap = new HashMap<>();
+    private static Map<String, Map<String, String>> grayUpgradeConfigMap = new HashMap<>();
 
     @Override
     public boolean start() {
@@ -97,6 +97,7 @@ public class UpgradeChecker implements Component {
 
     public ErrorCode checkAgentHttpParamChanges(String agentUuid, String commandName) {
         if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            logger.trace("grayscale upgrade is not enabled, skip http param check");
             return null;
         }
 
@@ -162,19 +163,37 @@ public class UpgradeChecker implements Component {
             agentVersionVO.setCurrentVersion(currentVersion);
             agentVersionVO.setExpectVersion(expectVersion);
             dbf.persist(agentVersionVO);
+            logger.trace(String.format("Create agent[uuid: %s] version\n" +
+                            "From:\n" +
+                            "expected version: null, current version: null\n" +
+                            "To:\n" +
+                            "expected version: %s, current version: %s\n",
+                    agentUuid,
+                    agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
             return;
         }
 
         if (currentVersion == null) {
+            logger.trace(String.format("Update agent[uuid: %s] version to null is not supported, skip updating", agentUuid));
             return;
         }
 
         if (Objects.equals(agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion())) {
+            logger.trace(String.format("Agent[uuid: %s] version expected version: %s, current version: %s, not changed", agentUuid, agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
             return;
         }
 
         if (!Objects.equals(agentVersionVO.getCurrentVersion(), currentVersion)) {
+            String originCurrentVersion = agentVersionVO.getCurrentVersion();
             agentVersionVO.setCurrentVersion(currentVersion);
+            logger.trace(String.format("Update agent[uuid: %s] version\n" +
+                    "From:\n" +
+                    "expected version: %s, current version: %s\n" +
+                    "To:\n" +
+                    "expected version: %s, current version: %s\n",
+                    agentUuid,
+                    agentVersionVO.getExpectVersion(), originCurrentVersion,
+                    agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
             dbf.update(agentVersionVO);
         }
     }
