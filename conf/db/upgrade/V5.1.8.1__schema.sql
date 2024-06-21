@@ -106,3 +106,10 @@ INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourc
  ('730bbcd2e7a44d1687a56d518313c726', 'AI::Text-Generation', 'TagPatternVO', 'org.zstack.header.tag.TagPatternVO'),
  ('7396ea323f9f474dace9b634bc634e76', 'AI::Text-to-Video', 'TagPatternVO', 'org.zstack.header.tag.TagPatternVO'),
  ('c093252e47794e428e634c084c45b19b', 'AI::Text-to-Audio', 'TagPatternVO', 'org.zstack.header.tag.TagPatternVO');
+
+ INSERT INTO `AccountResourceRefVO` (accountUuid,ownerAccountUuid,resourceUuid,resourceType,permission,isShared,concreteResourceType) VALUES
+ ('36c27e8ff05c4780bf6d2fa65700f22e','36c27e8ff05c4780bf6d2fa65700f22e','3e88dfda748f4706a497143ff0c9d8bc','TagPatternVO',2,0,"org.zstack.header.tag.TagPatternVO"),
+ ('36c27e8ff05c4780bf6d2fa65700f22e','36c27e8ff05c4780bf6d2fa65700f22e','402ce2d5dc614bd5a583254768369682','TagPatternVO',2,0,"org.zstack.header.tag.TagPatternVO"),
+ ('36c27e8ff05c4780bf6d2fa65700f22e','36c27e8ff05c4780bf6d2fa65700f22e','730bbcd2e7a44d1687a56d518313c726','TagPatternVO',2,0,"org.zstack.header.tag.TagPatternVO"),
+ ('36c27e8ff05c4780bf6d2fa65700f22e','36c27e8ff05c4780bf6d2fa65700f22e','7396ea323f9f474dace9b634bc634e76','TagPatternVO',2,0,"org.zstack.header.tag.TagPatternVO"),
+ ('36c27e8ff05c4780bf6d2fa65700f22e','36c27e8ff05c4780bf6d2fa65700f22e','c093252e47794e428e634c084c45b19b','TagPatternVO',2,0,"org.zstack.header.tag.TagPatternVO");
