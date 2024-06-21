@@ -3,7 +3,6 @@ package org.zstack.ldap.compute;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.ldap.core.NameAwareAttribute;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.HardcodedFilter;
 import org.zstack.core.Platform;
@@ -32,6 +31,8 @@ import org.zstack.identity.imports.message.ImportThirdPartyAccountMsg;
 import org.zstack.ldap.LdapConstant;
 import org.zstack.ldap.driver.LdapSearchSpec;
 import org.zstack.ldap.driver.LdapUtil;
+import org.zstack.ldap.entity.LdapEntryAttributeInventory;
+import org.zstack.ldap.entity.LdapEntryInventory;
 import org.zstack.ldap.header.LdapSyncTaskSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -94,8 +95,8 @@ public class LdapSyncHelper {
                 searchSpec.setReturningAttributes(buildReturnAttribute());
                 searchSpec.setSearchAllAttributes(false);
 
-                List<Object> results = ldapUtil.searchLdapEntry(searchSpec);
-                for (Object ldapEntry : results) {
+                List<LdapEntryInventory> results = ldapUtil.searchLdapEntry(searchSpec);
+                for (LdapEntryInventory ldapEntry : results) {
                     try {
                         importSpec.accountList.add(generateAccountSpec(ldapEntry));
                     } catch (Exception e) {
@@ -200,22 +201,20 @@ public class LdapSyncHelper {
         }).start();
     }
 
-    @SuppressWarnings({"unchecked"})
-    private ImportAccountItem generateAccountSpec(Object ldapEntry) {
+    private ImportAccountItem generateAccountSpec(LdapEntryInventory ldapEntry) {
         ImportAccountItem account = new ImportAccountItem();
-        Map<String, Object> map = (Map<String, Object>) ldapEntry;
 
-        List<NameAwareAttribute> attributes = (List<NameAwareAttribute>) map.get("attributes");
+        List<LdapEntryAttributeInventory> attributes = ldapEntry.getAttributes();
         String usernameProperty = taskSpec.getUsernameProperty();
-        NameAwareAttribute usernameAttribute = findOneOrNull(attributes,
-                attribute -> Objects.equals(attribute.getID(), usernameProperty));
+        LdapEntryAttributeInventory usernameAttribute = findOneOrNull(attributes,
+                attribute -> Objects.equals(attribute.getId(), usernameProperty));
 
-        String dn = (String) map.get(LdapConstant.LDAP_DN_KEY); // entryDN
+        String dn = ldapEntry.getDn(); // entryDN
         final String username;
-        if (usernameAttribute == null) {
+        if (usernameAttribute == null || usernameAttribute.getValues().isEmpty()) {
             username = dn;
         } else {
-            Object value = usernameAttribute.get();
+            Object value = usernameAttribute.getValues().get(0);
             username = value == null ? dn : value.toString();
         }
 

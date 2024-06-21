@@ -8,12 +8,13 @@ import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.header.identity.IdentityErrors
 import org.zstack.identity.IdentityGlobalConfig
-import org.zstack.ldap.LdapConstant
 import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
 import org.zstack.sdk.identity.ldap.api.AddLdapServerResult
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.LogInAction
 import org.zstack.sdk.ZSClient
+import org.zstack.sdk.identity.ldap.entity.LdapEntryAttributeInventory
+import org.zstack.sdk.identity.ldap.entity.LdapEntryInventory
 import org.zstack.sdk.identity.ldap.entity.LdapServerInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.stabilisation.StabilityTestCase
@@ -141,67 +142,64 @@ class LdapBasicCase extends SubCase {
 
     void testGetLdapEntry(){
 
-        List result = getLdapEntry {
+        def result = getLdapEntry {
             ldapFilter = "(cn=nobody)"
-        }
+        } as List<LdapEntryInventory>
         assert 0 == result.size()
 
         result = getLdapEntry {
             ldapFilter = "(objectClass=person)"
-        }
+        } as List<LdapEntryInventory>
         assert 3 == result.size()
 
         result = getLdapEntry {
             ldapFilter = "(objectClass=person)"
             limit = 1
-        }
+        } as List<LdapEntryInventory>
         assert 1 == result.size()
 
         String cn = "Micha Kops"
         result = getLdapEntry {
             ldapFilter = "(cn=${cn})"
             limit = 2
-        }
+        } as List<LdapEntryInventory>
         assert 1 == result.size()
 
-        List<Map> attributes =  result.get(0).get("attributes")
-        for(Map map : attributes){
-            if(map.get("cn") == null){
-                continue
-            }
-            assert 1 == map.get("values").size()
-            assert cn == map.get("values").get(0)
-        }
+        def attributes = result[0].attributes as List<LdapEntryAttributeInventory>
+        def attribute = attributes.find { it.id == "cn" }
+        assert attribute != null
+        assert 1 == attribute.values.size()
+        assert cn == attribute.values[0]
 
         result = getLdapEntry {
             ldapFilter = "(objectClass=person)"
             ldapServerUuid = ldapUuid
-        }
+        } as List<LdapEntryInventory>
         assert 3 == result.size()
     }
 
     void testGetCandidateLdapEntryForBinding(){
 
-        List result = getCandidateLdapEntryForBinding {
+        def result = getCandidateLdapEntryForBinding {
             ldapFilter = "(cn=nobody)"
-        }
+        } as List<LdapEntryInventory>
         assert 0 == result.size()
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
-        }
+        } as List<LdapEntryInventory>
         assert 3 == result.size()
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
             limit = 2
-        }
+        } as List<LdapEntryInventory>
         assert 2 == result.size()
 
         String cn = "Micha Kops"
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(cn=${cn})"
-        }
+        } as List<LdapEntryInventory>
         assert 1 == result.size()
     }
 
@@ -216,7 +214,7 @@ class LdapBasicCase extends SubCase {
 
         List result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
-        }
+        } as List<LdapEntryInventory>
         assert 3 == result.size()
 
         String dn = "cn=Micha Kops,ou=Users,dc=example,dc=com"
@@ -228,26 +226,26 @@ class LdapBasicCase extends SubCase {
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
             limit = 10000
-        }
+        } as List<LdapEntryInventory>
         assert 2 == result.size()
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
-        }
+        } as List<LdapEntryInventory>
         assert 2 == result.size()
-        for(Map map : result){
-            assert dn != map.get(LdapConstant.LDAP_DN_KEY)
+        for(LdapEntryInventory map : result){
+            assert dn != map.dn
         }
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(cn=Micha Kop)"
-        }
+        } as List<LdapEntryInventory>
         assert 0 == result.size()
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(cn=Micha Kop)"
             limit = 1
-        }
+        } as List<LdapEntryInventory>
         assert 0 == result.size()
 
         testGetLdapEntry()

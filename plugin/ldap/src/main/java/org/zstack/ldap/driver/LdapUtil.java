@@ -19,13 +19,13 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.ldap.*;
 import org.zstack.ldap.entity.LdapEncryptionType;
+import org.zstack.ldap.entity.LdapEntryInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.ldap.entity.LdapServerVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.SearchControls;
 import javax.net.ssl.*;
@@ -39,6 +39,7 @@ import java.util.function.Predicate;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.ldap.LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -300,35 +301,10 @@ public class LdapUtil {
         LdapSearchedResult ldapSearchedResult = new LdapSearchedResult();
         ldapSearchedResult.setResult(new ArrayList<>());
 
-        List<Object> searchResult = new ArrayList<>();
+        List<LdapEntryInventory> searchResult = new ArrayList<>();
         try {
-            searchResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
-                @Override
-                protected Object doMapFromContext(DirContextOperations ctx) {
-                    if (resultFilter != null && !resultFilter.test(ctx.getNameInNamespace())){
-                        return null;
-                    }
-
-                    Map<String, Object> result = new HashMap<>();
-                    result.put(LdapConstant.LDAP_DN_KEY, ctx.getNameInNamespace());
-
-                    List<Object> list = new ArrayList<>();
-                    result.put("attributes", list);
-
-                    Attributes attributes = ctx.getAttributes();
-                    NamingEnumeration it = attributes.getAll();
-                    try {
-                        while (it.hasMore()){
-                            list.add(it.next());
-                        }
-                    } catch (javax.naming.NamingException e){
-                        logger.error("query ldap entry attributes fail", e.getCause());
-                        throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
-                    }
-
-                    return result;
-                }
-            });
+            LdapEntryContextMapper mapper = new LdapEntryContextMapper().withResultFilter(resultFilter);
+            searchResult = ldapTemplate.search("", filter, searchCtls, mapper);
         } catch (Exception e){
             logger.error("legacy query ldap entry fail", e);
             ldapSearchedResult.setSuccess(false);
@@ -351,35 +327,9 @@ public class LdapUtil {
 
         PagedResultsDirContextProcessor processor = new PagedResultsDirContextProcessor(1000);
         try {
+            LdapEntryContextMapper mapper = new LdapEntryContextMapper().withResultFilter(resultFilter);
             do {
-                List<Object> subResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
-                    @Override
-                    protected Object doMapFromContext(DirContextOperations ctx) {
-                        if (resultFilter != null && !resultFilter.test(ctx.getNameInNamespace())){
-                            return null;
-                        }
-
-                        Map<String, Object> result = new HashMap<>();
-                        result.put(LdapConstant.LDAP_DN_KEY, ctx.getNameInNamespace());
-
-                        List<Object> list = new ArrayList<>();
-                        result.put("attributes", list);
-
-                        Attributes attributes = ctx.getAttributes();
-                        NamingEnumeration it = attributes.getAll();
-                        try {
-                            while (it.hasMore()){
-                                list.add(it.next());
-                            }
-                        } catch (javax.naming.NamingException e){
-                            logger.error("query ldap entry attributes fail", e.getCause());
-                            throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
-                        }
-
-                        return result;
-                    }
-                }, processor);
-
+                List<LdapEntryInventory> subResult = ldapTemplate.search("", filter, searchCtls, mapper, processor);
                 subResult.removeIf(Objects::isNull);
                 ldapSearchedResult.getResult().addAll(subResult);
 
@@ -398,7 +348,7 @@ public class LdapUtil {
         return ldapSearchedResult;
     }
 
-    public List<Object> searchLdapEntry(LdapSearchSpec spec) {
+    public List<LdapEntryInventory> searchLdapEntry(LdapSearchSpec spec) {
         String ldapServerUuid = spec.getLdapServerUuid();
         String filter = spec.getFilter();
         Integer count = spec.getCount();
@@ -462,7 +412,8 @@ public class LdapUtil {
             }
         }
 
-        throw new OperationFailureException(operr("query ldap entry[filter: %s] fail, because %s", filter, errorMessage));
+        throw new OperationFailureException(err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+                "query ldap entry[filter: %s] fail, because %s", filter, errorMessage));
     }
 
     private String[] getReturningAttributes(LdapServerVO ldap) {
@@ -478,8 +429,16 @@ public class LdapUtil {
         }
 
         returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES));
-
         returnedAttSet.add(ldap.getUsernameProperty());
+
+        switch (ldap.getServerType()) {
+        case OpenLdap:
+            returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_OPEN_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES));
+            break;
+        case WindowsAD: default:
+            returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_WINDOWS_AD_ENTRY_MUST_RETURN_ATTRIBUTES));
+            break;
+        }
 
         return returnedAttSet.toArray(new String[]{});
     }
@@ -567,7 +526,7 @@ public class LdapUtil {
                 dn = result.get(0).toString();
             } else if (result.size() > 1) {
                 throw new OperationFailureException(err(
-                        LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "More than one ldap search result"));
+                        UNABLE_TO_GET_SPECIFIED_LDAP_UID, "More than one ldap search result"));
             } else {
                 return "";
             }
@@ -575,7 +534,7 @@ public class LdapUtil {
         } catch (NamingException e) {
             LdapServerVO ldapServerVO = getLdapServer();
             throw new OperationFailureException(err(
-                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the LDAP/AD server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
+                    UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the LDAP/AD server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
                             " configuration and test connection first.getDn error filter:%s",
                     ldapServerVO.getUrl(), ldapServerVO.getBase(),
                     ldapServerVO.getEncryption(), ldapServerVO.getUsername(), filter));

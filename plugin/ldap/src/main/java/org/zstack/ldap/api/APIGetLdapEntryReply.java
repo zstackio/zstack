@@ -1,8 +1,9 @@
 package org.zstack.ldap.api;
 
 import org.zstack.header.message.APIReply;
-import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.ldap.entity.LdapEntryInventory;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,20 +12,19 @@ import java.util.List;
  */
 @RestResponse(allTo = "inventories")
 public class APIGetLdapEntryReply extends APIReply {
-    @NoJsonSchema
-    private List inventories;
+    private List<LdapEntryInventory> inventories;
 
-    public List getInventories() {
+    public List<LdapEntryInventory> getInventories() {
         return inventories;
     }
 
-    public void setInventories(List inventories) {
+    public void setInventories(List<LdapEntryInventory> inventories) {
         this.inventories = inventories;
     }
  
     public static APIGetLdapEntryReply __example__() {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
-        reply.setInventories(new ArrayList());
+        reply.setInventories(new ArrayList<>());
         return reply;
     }
 
