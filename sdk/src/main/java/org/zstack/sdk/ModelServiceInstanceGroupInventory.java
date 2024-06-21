@@ -20,6 +20,14 @@ public class ModelServiceInstanceGroupInventory  {
         return this.modelServiceUuid;
     }
 
+    public java.lang.String modelUuid;
+    public void setModelUuid(java.lang.String modelUuid) {
+        this.modelUuid = modelUuid;
+    }
+    public java.lang.String getModelUuid() {
+        return this.modelUuid;
+    }
+
     public java.util.List instances;
     public void setInstances(java.util.List instances) {
         this.instances = instances;
