@@ -7,7 +7,9 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.utils.Utils;
+import org.zstack.utils.VersionComparator;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -16,6 +18,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 public class UpgradeChecker implements Component {
     private static final CLogger logger = Utils.getLogger(UpgradeChecker.class);
@@ -29,7 +34,7 @@ public class UpgradeChecker implements Component {
     @Autowired
     protected PluginRegistry pluginRgty;
 
-    private Set<String> grayScaleConfigChangeSet = new HashSet<>();
+    Map<String, Map<String, String>> grayUpgradeConfigMap = new HashMap<>();
 
     @Override
     public boolean start() {
@@ -46,44 +51,24 @@ public class UpgradeChecker implements Component {
     }
 
     public void initGrayScaleConfig() {
-        File oldGrayUpgradeFile = PathUtil.findFileOnClassPath("grayUpgrade/old_grayUpgrade.json", true);
         File grayUpgradeFile = PathUtil.findFileOnClassPath("grayUpgrade/grayUpgrade.json", true);
-
-        Map<String, Map<String, String>> grayUpgradeConfigMap;
-        Map<String, Map<String, String>> oldGrayUpgradeConfigMap;
         ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            oldGrayUpgradeConfigMap = objectMapper.readValue(oldGrayUpgradeFile, new TypeReference<Map<String, Map<String, String>>>() {
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(String.format("unable to parse grayUpgrade json file[%s], exception: %s", oldGrayUpgradeFile.getAbsolutePath(), e.getMessage()));
-        }
-
         try {
             grayUpgradeConfigMap = objectMapper.readValue(grayUpgradeFile, new TypeReference<Map<String, Map<String, String>>>() {
             });
         } catch (IOException e) {
             throw new RuntimeException(String.format("unable to parse grayUpgrade json file[%s], exception: %s", grayUpgradeFile.getAbsolutePath(), e.getMessage()));
         }
-
-        grayUpgradeConfigMap.keySet().stream()
-                .filter(key -> !oldGrayUpgradeConfigMap.containsKey(key) || !oldGrayUpgradeConfigMap.get(key).equals(grayUpgradeConfigMap.get(key)))
-                .forEach(grayScaleConfigChangeSet::add);
     }
 
-    public Boolean checkAgentHttpParamChanges(String agentUuid, String commandName) {
-        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            return false;
+    private List<Map<String, String>> findCommandAndResponseFields(String commandName) {
+        Map<String, String> commandFields = grayUpgradeConfigMap.get(commandName);
+        if (commandFields == null) {
+            return null;
         }
 
-        AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
-        if (agentVersionVO != null && agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
-            return false;
-        }
-        
-        if (grayScaleConfigChangeSet.contains(commandName)) {
-            return true;
-        }
+        List<Map<String, String>> resultList = new ArrayList<>();
+        resultList.add(commandFields);
 
         String rspName;
         String responseName;
@@ -97,11 +82,71 @@ public class UpgradeChecker implements Component {
             responseName = commandName.concat("Response");
         }
 
-        if (grayScaleConfigChangeSet.contains(rspName) || grayScaleConfigChangeSet.contains(responseName)) {
-            return true;
+        Map<String, String> rspFields = grayUpgradeConfigMap.get(rspName);
+        if (rspFields != null) {
+            resultList.add(rspFields);
         }
 
-        return false;
+        Map<String, String> responseFields = grayUpgradeConfigMap.get(responseName);
+        if (responseFields != null) {
+            resultList.add(responseFields);
+        }
+
+        return resultList;
+    }
+
+    public ErrorCode checkAgentHttpParamChanges(String agentUuid, String commandName) {
+        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            return null;
+        }
+
+        AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
+        if (agentVersionVO == null) {
+            return operr("No agent[uuid: %s] version found, do not support grayscale upgrade", agentUuid);
+        }
+
+        // if agent version not changed skip gray scale check
+        if (agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
+            logger.trace(String.format("agent[uuid: %s] expected version: %s, current version :%s matched," +
+                            " skip grayscale upgrade check",
+                    agentUuid,
+                    agentVersionVO.getCurrentVersion(),
+                    agentVersionVO.getCurrentVersion()));
+            return null;
+        }
+
+        List<Map<String, String>> relatedFieldsVersionMap = findCommandAndResponseFields(commandName);
+        if (relatedFieldsVersionMap == null || relatedFieldsVersionMap.isEmpty()) {
+            return operr("No command %s not found, do not support grayscale upgrade", commandName);
+        }
+
+        for (Map<String, String> fields : relatedFieldsVersionMap) {
+            // check if current command has unexpected versions
+            VersionComparator currentVersion = new VersionComparator(agentVersionVO.getCurrentVersion());
+            Set<Map.Entry<String, String>> entries = fields.entrySet()
+                    .stream()
+                    .filter(entry -> currentVersion.lessThan(entry.getValue()))
+                    .collect(Collectors.toSet());
+
+            // do not have new version changes
+            if (entries.isEmpty()) {
+                if (logger.isTraceEnabled()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(String.format("agent[uuid: %s] current version: %s\n", agentUuid, agentVersionVO.getCurrentVersion()));
+                    fields.forEach((key, value) -> sb.append(String.format("field: %s, support version: %s\n", key, value)));
+                    sb.append("all fields is supported by current agent, allow operations");
+                    logger.trace(sb.toString());
+                }
+                continue;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("This operation is not allowed on host[uuid:%s] during grayscale upgrade: \n", agentUuid));
+            entries.forEach(entry -> sb.append(String.format("field: %s, current agent version %s, support version: %s\n", entry.getKey(), agentVersionVO.getCurrentVersion(), entry.getValue())));
+            return operr(sb.toString());
+        }
+
+        return null;
     }
 
     public void updateAgentVersion(String agentUuid, String agentType, String expectVersion, String currentVersion) {
