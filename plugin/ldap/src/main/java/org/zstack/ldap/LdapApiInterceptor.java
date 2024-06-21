@@ -38,13 +38,6 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private LdapManager ldapManager;
 
-    private void setServiceId(APIMessage msg) {
-        if (msg instanceof LdapMessage) {
-            LdapMessage emsg = (LdapMessage) msg;
-            bus.makeTargetServiceIdByResourceUuid(msg, LdapConstant.SERVICE_ID, emsg.getEipUuid());
-        }
-    }
-
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddLdapServerMsg) {
@@ -58,8 +51,6 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         } else if(msg instanceof APIGetCandidateLdapEntryForBindingMsg){
             validate((APIGetCandidateLdapEntryForBindingMsg) msg);
         }
-
-        setServiceId(msg);
 
         return msg;
     }

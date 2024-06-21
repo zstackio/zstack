@@ -11,6 +11,7 @@ import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
+import org.zstack.ldap.driver.LdapTemplateContextSource;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;

@@ -627,7 +627,7 @@ public class LdapUtil {
         Map<String, Object> properties = new HashMap<>();
         String timeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_CONNECT_TIMEOUT);
         properties.put("com.sun.jndi.ldap.connect.timeout", timeout);
-        LdapTemplateContextSource ldapTemplateContextSource = LdapManager.ldapUtil.loadLdap(ldap, properties);
+        LdapTemplateContextSource ldapTemplateContextSource = loadLdap(ldap, properties);
 
         try {
             AndFilter filter = new AndFilter();

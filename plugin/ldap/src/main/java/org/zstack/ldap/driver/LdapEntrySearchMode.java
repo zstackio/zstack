@@ -1,4 +1,4 @@
-package org.zstack.ldap;
+package org.zstack.ldap.driver;
 
 public enum LdapEntrySearchMode {
     AUTO,

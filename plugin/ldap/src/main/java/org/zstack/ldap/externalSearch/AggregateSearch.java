@@ -6,8 +6,8 @@ import org.springframework.ldap.core.support.AbstractContextMapper;
 import org.springframework.ldap.core.support.AggregateDirContextProcessor;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.ldap.LdapConstant;
-import org.zstack.ldap.LdapExternalSearchExtensionPoint;
-import org.zstack.ldap.LdapSearchedResult;
+import org.zstack.ldap.driver.LdapExternalSearchExtensionPoint;
+import org.zstack.ldap.driver.LdapSearchedResult;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
