@@ -1,5 +1,7 @@
 package org.zstack.network.l2;
 
+import com.google.gson.JsonSyntaxException;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
@@ -11,11 +13,16 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.HostParam;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
+import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -29,8 +36,6 @@ import static org.zstack.core.Platform.operr;
  * To change this template use File | Settings | File Templates.
  */
 public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
-    private static final L2NetworkHostHelper l2NetworkHostHelper = new L2NetworkHostHelper();
-
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -65,6 +70,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
+    @SuppressWarnings("unchecked")
     private void validate(final APIAttachL2NetworkToClusterMsg msg) {
         SimpleQuery<L2NetworkClusterRefVO> q = dbf.createQuery(L2NetworkClusterRefVO.class);
         q.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
@@ -92,6 +98,20 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (msg.getL2ProviderType() == null && !L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE.equals(l2.getvSwitchType())) {
             msg.setL2ProviderType(l2.getvSwitchType());
         }
+
+        if (!StringUtils.isEmpty(msg.getHostParams())) {
+            List<HostParam> hostParams;
+            try {
+                hostParams = JSONObjectUtil.toCollection(msg.getHostParams(), ArrayList.class, HostParam.class);
+            } catch (JsonSyntaxException e) {
+                throw new ApiMessageInterceptionException(operr("invalid json format, causes: %s", e.getMessage()));
+            }
+
+            ErrorCode err = L2NetworkHostUtils.validateHostParams(hostParams, msg.getClusterUuid(), null);
+            if (err != null) {
+                throw new ApiMessageInterceptionException(err);
+            }
+        }
     }
 
     private void validate(APIDetachL2NetworkFromClusterMsg msg) {
@@ -117,7 +137,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has not attached to cluster of host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
         }
 
-        if (l2NetworkHostHelper.checkIfL2NetworkHostRefNotExist(msg.getL2NetworkUuid(), msg.getHostUuid())) {
+        if (L2NetworkHostUtils.checkIfL2NetworkHostRefNotExist(msg.getL2NetworkUuid(), msg.getHostUuid())) {
             throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] does not supported to attach to host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
         }
 
@@ -125,6 +145,21 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (asList(HostState.PreMaintenance, HostState.Maintenance).contains(host.getState())) {
             throw new ApiMessageInterceptionException(operr("could not attach l2Network[uuid:%s] to host[uuid:%s] " +
                     "which is in the premaintenance or maintenance state", msg.getL2NetworkUuid(), msg.getHostUuid()));
+        }
+
+        if (!StringUtils.isEmpty(msg.getHostParam())) {
+            HostParam hostParam;
+            try {
+                hostParam = JSONObjectUtil.toObject(msg.getHostParam(), HostParam.class);
+            } catch (JsonSyntaxException e) {
+                throw new ApiMessageInterceptionException(operr("invalid json format, causes: %s", e.getMessage()));
+            }
+
+
+            ErrorCode err = L2NetworkHostUtils.validateHostParams(Collections.singletonList(hostParam), null, msg.getHostUuid());
+            if (err != null) {
+                throw new ApiMessageInterceptionException(err);
+            }
         }
     }
 
@@ -142,7 +177,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has not attached to cluster of host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
         }
 
-        if (!l2NetworkHostHelper.checkIfL2AttachedToHost(msg.getL2NetworkUuid(), msg.getHostUuid())) {
+        if (!L2NetworkHostUtils.checkIfL2AttachedToHost(msg.getL2NetworkUuid(), msg.getHostUuid())) {
             throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has not attached to host[uuid:%s]", msg.getL2NetworkUuid(), msg.getHostUuid()));
         }
     }

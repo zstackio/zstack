@@ -56,6 +56,9 @@ public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2Netw
     @APIParam(required = false, validValues = {L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE})
     private String l2ProviderType;
 
+    @APIParam(required = false)
+    private String hostParams;
+
     @Override
     public String getL2NetworkUuid() {
         return l2NetworkUuid;
@@ -79,6 +82,14 @@ public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2Netw
 
     public void setL2ProviderType(String l2ProviderType) {
         this.l2ProviderType = l2ProviderType;
+    }
+
+    public String getHostParams() {
+        return hostParams;
+    }
+
+    public void setHostParams(String hostParams) {
+        this.hostParams = hostParams;
     }
 
     public static APIAttachL2NetworkToClusterMsg __example__() {

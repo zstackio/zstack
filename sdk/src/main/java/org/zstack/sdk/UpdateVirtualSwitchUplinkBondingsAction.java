@@ -28,7 +28,10 @@ public class UpdateVirtualSwitchUplinkBondingsAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, validValues = {"802.3ad","active-backup"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String bondingName;
+
+    @Param(required = true, validValues = {"802.3ad","active-backup"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String mode;
 
     @Param(required = false, validValues = {"layer2","layer2+3","layer3+4"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

@@ -12,6 +12,14 @@ public class L2VirtualSwitchNetworkInventory extends org.zstack.sdk.L2NetworkInv
         return this.isDistributed;
     }
 
+    public java.lang.Integer vSwitchIndex;
+    public void setVSwitchIndex(java.lang.Integer vSwitchIndex) {
+        this.vSwitchIndex = vSwitchIndex;
+    }
+    public java.lang.Integer getVSwitchIndex() {
+        return this.vSwitchIndex;
+    }
+
     public java.util.List portGroups;
     public void setPortGroups(java.util.List portGroups) {
         this.portGroups = portGroups;
