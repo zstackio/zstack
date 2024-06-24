@@ -18,5 +18,13 @@
             <zstack:extension interface="org.zstack.header.Service"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="AccountSourceSyncingExtensions" class="org.zstack.identity.imports.source.AccountSourceSyncingExtensions">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.identity.imports.source.CreateAccountSourceExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
 
