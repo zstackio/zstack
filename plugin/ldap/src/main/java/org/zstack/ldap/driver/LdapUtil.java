@@ -17,12 +17,14 @@ import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.identity.imports.AccountImportsGlobalConfig;
 import org.zstack.ldap.*;
 import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapEntryInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.ldap.entity.LdapServerVO_;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -194,10 +196,18 @@ public class LdapUtil {
             properties.put("java.naming.ldap.attributes.binary","objectGUID");
         }
         // add socket timeout
-        String timeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_CONNECT_TIMEOUT);
-        properties.put("com.sun.jndi.ldap.connect.timeout", timeout);
-        String readTimeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_READ_TIMEOUT );
-        properties.put("com.sun.jndi.ldap.read.timeout", readTimeout);
+        ResourceConfigFacade resourceConfigFacade = Platform.getComponentLoader().getComponent(ResourceConfigFacade.class);
+        Long connectTimeout = resourceConfigFacade.getResourceConfigValue(
+                AccountImportsGlobalConfig.SOURCE_CONNECT_TIMEOUT_MILLIS,
+                ldap.getUuid(),
+                Long.class);
+        Long readTimeout = resourceConfigFacade.getResourceConfigValue(
+                AccountImportsGlobalConfig.SOURCE_READ_TIMEOUT_MILLIS,
+                ldap.getUuid(),
+                Long.class);
+
+        properties.put("com.sun.jndi.ldap.connect.timeout", connectTimeout.toString());
+        properties.put("com.sun.jndi.ldap.read.timeout", readTimeout.toString());
         return properties;
     }
 
@@ -573,9 +583,14 @@ public class LdapUtil {
     }
 
     public ErrorCode testLdapServerConnection(LdapServerVO ldap) {
+        ResourceConfigFacade resourceConfigFacade = Platform.getComponentLoader().getComponent(ResourceConfigFacade.class);
+        Long connectTimeout = resourceConfigFacade.getResourceConfigValue(
+                AccountImportsGlobalConfig.SOURCE_CONNECT_TIMEOUT_MILLIS,
+                ldap.getUuid(),
+                Long.class);
+
         Map<String, Object> properties = new HashMap<>();
-        String timeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_CONNECT_TIMEOUT);
-        properties.put("com.sun.jndi.ldap.connect.timeout", timeout);
+        properties.put("com.sun.jndi.ldap.connect.timeout", connectTimeout.toString());
         LdapTemplateContextSource ldapTemplateContextSource = loadLdap(ldap, properties);
 
         try {
