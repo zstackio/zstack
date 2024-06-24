@@ -17,7 +17,6 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.identity.imports.header.AbstractAccountSourceSpec;
 import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
-import org.zstack.identity.imports.source.AbstractAccountSourceBase;
 import org.zstack.identity.imports.source.AccountSourceFactory;
 import org.zstack.ldap.LdapConstant;
 import org.zstack.ldap.LdapErrors;
@@ -61,10 +60,9 @@ public class LdapAccountSourceFactory implements AccountSourceFactory {
             String __name__ = "pre-create-check";
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (Q.New(LdapServerVO.class).count() == 1) {
-                    trigger.fail(err(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
-                            "There has been a LDAP/AD server record. " +
-                                    "You'd better remove it before adding a new one!"));
+                ErrorCode errorCode = checkSameLdapServerExists(spec);
+                if (errorCode != null) {
+                    trigger.fail(errorCode);
                     return;
                 }
                 if (spec.getUuid() == null) {
@@ -115,5 +113,17 @@ public class LdapAccountSourceFactory implements AccountSourceFactory {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    private ErrorCode checkSameLdapServerExists(LdapAccountSourceSpec spec) {
+        boolean exists = Q.New(LdapServerVO.class)
+                .eq(LdapServerVO_.url, spec.getUrl())
+                .eq(LdapServerVO_.base, spec.getBaseDn())
+                .isExists();
+        if (exists) {
+            return err(LdapErrors.CANNOT_ADD_SAME_LDAP_SERVER,
+                    "The LDAP server[url=%s,base=%s] already exists", spec.getUrl(), spec.getBaseDn());
+        }
+        return null;
     }
 }
