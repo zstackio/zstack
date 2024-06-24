@@ -38,6 +38,7 @@ import org.zstack.identity.imports.message.UnbindThirdPartyAccountMsg;
 import org.zstack.identity.imports.message.UnbindThirdPartyAccountReply;
 import org.zstack.ldap.api.*;
 import org.zstack.ldap.driver.LdapSearchSpec;
+import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;

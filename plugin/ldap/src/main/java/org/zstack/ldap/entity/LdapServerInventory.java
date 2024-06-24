@@ -32,6 +32,8 @@ public class LdapServerInventory implements Serializable {
 
     private String filter;
     private String usernameProperty;
+    private String createAccountStrategy;
+    private String deleteAccountStrategy;
 
     public static LdapServerInventory valueOf(LdapServerVO vo) {
         LdapServerInventory inv = new LdapServerInventory();
@@ -49,6 +51,8 @@ public class LdapServerInventory implements Serializable {
         inv.setServerType(vo.getServerType().toString());
         inv.setFilter(vo.getFilter());
         inv.setUsernameProperty(vo.getUsernameProperty());
+        inv.setCreateAccountStrategy(vo.getCreateAccountStrategy().toString());
+        inv.setDeleteAccountStrategy(vo.getDeleteAccountStrategy().toString());
         return inv;
     }
 
@@ -170,5 +174,21 @@ public class LdapServerInventory implements Serializable {
 
     public void setUsernameProperty(String usernameProperty) {
         this.usernameProperty = usernameProperty;
+    }
+
+    public String getCreateAccountStrategy() {
+        return createAccountStrategy;
+    }
+
+    public void setCreateAccountStrategy(String createAccountStrategy) {
+        this.createAccountStrategy = createAccountStrategy;
+    }
+
+    public String getDeleteAccountStrategy() {
+        return deleteAccountStrategy;
+    }
+
+    public void setDeleteAccountStrategy(String deleteAccountStrategy) {
+        this.deleteAccountStrategy = deleteAccountStrategy;
     }
 }

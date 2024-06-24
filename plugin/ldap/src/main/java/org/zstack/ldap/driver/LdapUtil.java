@@ -18,6 +18,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.ldap.*;
+import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapEntryInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;

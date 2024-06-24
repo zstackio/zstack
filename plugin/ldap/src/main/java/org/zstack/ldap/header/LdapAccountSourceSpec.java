@@ -4,7 +4,7 @@ import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
 import org.zstack.identity.imports.header.AbstractAccountSourceSpec;
 import org.zstack.ldap.LdapConstant;
-import org.zstack.ldap.LdapEncryptionType;
+import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapServerType;
 
 public class LdapAccountSourceSpec extends AbstractAccountSourceSpec {
