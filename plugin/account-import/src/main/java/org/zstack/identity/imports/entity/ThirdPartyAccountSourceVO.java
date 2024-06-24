@@ -1,6 +1,7 @@
 package org.zstack.identity.imports.entity;
 
 import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
@@ -19,6 +20,7 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @AutoDeleteTag
+@BaseResource
 public class ThirdPartyAccountSourceVO extends ResourceVO {
     @Column
     private String description;
