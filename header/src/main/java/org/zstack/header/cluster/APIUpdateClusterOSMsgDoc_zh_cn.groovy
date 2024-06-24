@@ -93,6 +93,15 @@ doc {
 					optional true
 					since "2.3"
 				}
+				column {
+					name "hostUuid"
+					enclosedIn "updateClusterOS"
+					desc "物理机UUID"
+					location "body"
+					type "String"
+					optional true
+					since "4.8.13"
+				}
 			}
         }
 

@@ -73,6 +73,18 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
                     ));
                 }
 
+                if (msg.getHostUuid() != null &&
+                        !q(HostVO.class)
+                        .eq(HostVO_.clusterUuid, msg.getUuid())
+                        .eq(HostVO_.uuid, msg.getHostUuid())
+                        .isExists()) {
+                    throw new ApiMessageInterceptionException(Platform.argerr(
+                            "The host[uuid: %s] is not part of the cluster[uuid: %s]. Please verify the host uuid and ensure it belongs to this cluster.",
+                            msg.getHostUuid(),
+                            msg.getUuid()
+                    ));
+                }
+
                 // all hosts in the cluster must not be in the premaintenance state
                 Long premaintain = q(HostVO.class)
                         .eq(HostVO_.clusterUuid, msg.getUuid())

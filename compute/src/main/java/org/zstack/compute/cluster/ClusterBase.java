@@ -1,5 +1,6 @@
 package org.zstack.compute.cluster;
 
+import edu.emory.mathcs.backport.java.util.Collections;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,9 +42,11 @@ import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -120,8 +123,15 @@ public class ClusterBase extends AbstractCluster {
         excludePackages = msg.getExcludePackages() == null ? "" :String.join(",", msg.getExcludePackages());
         updatePackages = msg.getUpdatePackages() == null ? "" :String.join(",", msg.getUpdatePackages());
         releaseVersion = msg.getReleaseVersion() == null ? "" :msg.getReleaseVersion();
-        jobData = String.format("{'uuid':'%s', 'excludePackages':'%s', 'updatePackages':'%s', 'releaseVersion':'%s'}",
-                    msg.getUuid(), excludePackages, updatePackages, releaseVersion);
+        LinkedHashMap<String, String> jobDataMap = new LinkedHashMap<>();
+        jobDataMap.put("uuid", msg.getUuid());
+        jobDataMap.put("excludePackages", excludePackages);
+        jobDataMap.put("updatePackages", updatePackages);
+        jobDataMap.put("releaseVersion", releaseVersion);
+        if (msg.getHostUuid() != null) {
+            jobDataMap.put("hostUuid", msg.getHostUuid());
+        }
+        jobData = JSONObjectUtil.toJsonString(jobDataMap);
 
         SubmitLongJobMsg smsg = new SubmitLongJobMsg();
         smsg.setJobName(APIUpdateClusterOSMsg.class.getSimpleName());
@@ -320,10 +330,16 @@ public class ClusterBase extends AbstractCluster {
                 extpEmitter.beforeUpdateOS(self);
 
                 // update each hosts os in the cluster
-                List<String> hostUuids = Q.New(HostVO.class)
-                        .select(HostVO_.uuid)
-                        .eq(HostVO_.clusterUuid, msg.getUuid())
-                        .listValues();
+                List<String> hostUuids;
+                if (msg.getHostUuid() != null) {
+                    hostUuids = Collections.singletonList(msg.getHostUuid());
+                } else {
+                    hostUuids = Q.New(HostVO.class)
+                            .select(HostVO_.uuid)
+                            .eq(HostVO_.clusterUuid, msg.getUuid())
+                            .listValues();
+                }
+
                 Boolean enableExpRepo = rcf.getResourceConfigValue(
                         ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, msg.getUuid(), Boolean.class);
                 new While<>(hostUuids).all((hostUuid, completion) -> {

@@ -8,6 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class UpdateClusterOSMsg extends NeedReplyMessage implements ClusterMessage {
     private String uuid;
+    private String hostUuid;
     private String excludePackages;
     private String updatePackages;
     private String releaseVersion;
@@ -47,5 +48,13 @@ public class UpdateClusterOSMsg extends NeedReplyMessage implements ClusterMessa
     @Override
     public String getClusterUuid() {
         return uuid;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }

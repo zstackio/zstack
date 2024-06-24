@@ -1,6 +1,7 @@
 package org.zstack.header.cluster;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
@@ -23,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 public class APIUpdateClusterOSMsg extends APICreateMessage implements ClusterMessage {
     @APIParam(resourceType = ClusterVO.class)
     private String uuid;
+    @APIParam(resourceType = HostVO.class, required = false)
+    private String hostUuid;
     @APIParam(required = false, nonempty = true)
     private List<String> excludePackages;
     @APIParam(required = false, nonempty = true)
@@ -64,6 +67,14 @@ public class APIUpdateClusterOSMsg extends APICreateMessage implements ClusterMe
     @Override
     public String getClusterUuid() {
         return uuid;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 
     public static APIUpdateClusterOSMsg __example__() {
