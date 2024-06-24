@@ -1,10 +1,12 @@
 package org.zstack.ldap.driver;
 
+import org.zstack.ldap.entity.LdapEntryInventory;
+
 import java.util.List;
 
 public class LdapSearchedResult {
     private boolean success = true;
-    private List<Object> result;
+    private List<LdapEntryInventory> result;
     private String error;
 
     public boolean isSuccess() {
@@ -15,11 +17,11 @@ public class LdapSearchedResult {
         this.success = success;
     }
 
-    public List<Object> getResult() {
+    public List<LdapEntryInventory> getResult() {
         return result;
     }
 
-    public void setResult(List<Object> result) {
+    public void setResult(List<LdapEntryInventory> result) {
         this.result = result;
     }
 

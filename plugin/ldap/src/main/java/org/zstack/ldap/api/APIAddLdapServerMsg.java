@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
 import org.zstack.ldap.LdapConstant;
-import org.zstack.ldap.LdapEncryptionType;
+import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
 

@@ -3,7 +3,6 @@ package org.zstack.ldap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.HardcodedFilter;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -23,7 +22,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.identity.imports.AccountImportsConstant;
-import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
@@ -40,6 +38,7 @@ import org.zstack.identity.imports.message.UnbindThirdPartyAccountMsg;
 import org.zstack.identity.imports.message.UnbindThirdPartyAccountReply;
 import org.zstack.ldap.api.*;
 import org.zstack.ldap.driver.LdapSearchSpec;
+import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.ldap.entity.LdapServerType;
 import org.zstack.ldap.entity.LdapServerVO;
@@ -108,17 +107,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         }
     }
 
-    @Transactional
-    private AccountThirdPartyAccountSourceRefInventory bindLdapAccount(String accountUuid, String ldapUid) {
-        AccountThirdPartyAccountSourceRefVO ref = new AccountThirdPartyAccountSourceRefVO();
-        ref.setAccountUuid(accountUuid);
-        ref.setAccountSourceUuid(ldapUtil.getLdapServer().getUuid());
-        ref.setCredentials(ldapUid);
-        ref = dbf.persistAndRefresh(ref);
-        return AccountThirdPartyAccountSourceRefInventory.valueOf(ref);
-    }
-
-
     public String getId() {
         return bus.makeLocalServiceId(LdapConstant.SERVICE_ID);
     }
@@ -155,7 +143,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         if (!ldap.isSuccess()) {
             return false;
         }
-        return ldapUtil.isValid(uid, password, ldap.result);
+        return createDriver().isValid(uid, password, ldap.result);
     }
 
     private void handle(APIAddLdapServerMsg msg) {
@@ -219,7 +207,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         spec.setLdapServerUuid(msg.getLdapServerUuid());
         spec.setFilter(msg.getLdapFilter());
         spec.setCount(msg.getLimit());
-        reply.setInventories(ldapUtil.searchLdapEntry(spec));
+        reply.setInventories(createDriver().searchLdapEntry(spec));
 
         bus.reply(msg, reply);
     }
@@ -239,7 +227,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         spec.setFilter(new AndFilter().and(new HardcodedFilter(msg.getLdapFilter())).toString());
         spec.setCount(msg.getLimit());
         spec.setResultFilter(dn -> !boundLdapEntrySet.contains(dn));
-        reply.setInventories(ldapUtil.searchLdapEntry(spec));
+        reply.setInventories(createDriver().searchLdapEntry(spec));
 
         bus.reply(msg, reply);
     }
@@ -248,7 +236,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         APICreateLdapBindingEvent event = new APICreateLdapBindingEvent(msg.getId());
         LdapServerVO ldap = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
 
-        final ErrorCode errorCode = ldapUtil.validateDnExist(msg.getLdapUid(), ldap);
+        final ErrorCode errorCode = createDriver().validateDnExist(msg.getLdapUid(), ldap);
         if (errorCode != null) {
             event.setError(errorCode);
             bus.publish(event);
@@ -422,7 +410,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
             return;
         }
 
-        String dn = ldapUtil.getFullUserDn(ldap, ldap.getUsernameProperty(), ldapLoginName);
+        String dn = createDriver().getFullUserDn(ldap, ldap.getUsernameProperty(), ldapLoginName);
         AccountThirdPartyAccountSourceRefVO vo = Q.New(AccountThirdPartyAccountSourceRefVO.class)
                 .eq(AccountThirdPartyAccountSourceRefVO_.credentials, dn)
                 .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, ldap.getUuid())
@@ -454,7 +442,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     public boolean authenticate(String username, String password) {
         final ErrorableValue<LdapServerVO> ldap = findCurrentLdapServer();
         if (ldap.isSuccess()) {
-            return ldapUtil.isValid(username, password, ldap.result);
+            return createDriver().isValid(username, password, ldap.result);
         }
         return false;
     }
@@ -463,7 +451,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     public String getUserIdByName(String username) {
         final ErrorableValue<LdapServerVO> property = findCurrentLdapServer();
         if (property.isSuccess()) {
-            return ldapUtil.getFullUserDn(username, property.result);
+            return createDriver().getFullUserDn(username, property.result);
         }
         return null;
     }

@@ -1,4 +1,4 @@
-package org.zstack.ldap;
+package org.zstack.ldap.entity;
 
 /**
  * Created by miao on 16-9-18.

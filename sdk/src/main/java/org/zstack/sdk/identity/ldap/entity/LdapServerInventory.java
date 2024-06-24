@@ -108,4 +108,20 @@ public class LdapServerInventory  {
         return this.usernameProperty;
     }
 
+    public java.lang.String createAccountStrategy;
+    public void setCreateAccountStrategy(java.lang.String createAccountStrategy) {
+        this.createAccountStrategy = createAccountStrategy;
+    }
+    public java.lang.String getCreateAccountStrategy() {
+        return this.createAccountStrategy;
+    }
+
+    public java.lang.String deleteAccountStrategy;
+    public void setDeleteAccountStrategy(java.lang.String deleteAccountStrategy) {
+        this.deleteAccountStrategy = deleteAccountStrategy;
+    }
+    public java.lang.String getDeleteAccountStrategy() {
+        return this.deleteAccountStrategy;
+    }
+
 }
