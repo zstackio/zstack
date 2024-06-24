@@ -207,7 +207,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2ChassisPciDeviceVO` (
     `device` varchar(128) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    PRIMARY KEY (`uuid`)
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkBareMetal2ChassisPciDeviceVOChassisVO` FOREIGN KEY (`chassisUuid`) REFERENCES `BareMetal2ChassisVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2ChassisGpuDeviceVO` (
