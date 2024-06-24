@@ -6,5 +6,6 @@ package org.zstack.header.storage.backup;
  */
 public enum RemoteTargetProtocol {
     NBD,
-    HTTP
+    HTTP,
+    LOCAL,
 }
