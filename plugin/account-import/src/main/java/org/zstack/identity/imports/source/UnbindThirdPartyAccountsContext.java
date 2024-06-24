@@ -12,7 +12,7 @@ public class UnbindThirdPartyAccountsContext {
     public UnbindThirdPartyAccountResult makeResult() {
         UnbindThirdPartyAccountResult result = new UnbindThirdPartyAccountResult();
         result.setAccountUuid(specItem.getAccountUuid());
-        result.setErrorForDeleteAccount(errorForDeleteAccount);
+        result.setError(errorForDeleteAccount);
         return result;
     }
 }

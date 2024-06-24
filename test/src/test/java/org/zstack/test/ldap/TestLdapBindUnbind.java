@@ -186,7 +186,7 @@ public class TestLdapBindUnbind {
 
         // unbind account
         APIDeleteLdapBindingMsg msg4 = new APIDeleteLdapBindingMsg();
-        msg4.setUuid("" + evt2.getInventory().getId());
+        msg4.setAccountUuid("" + evt2.getInventory().getAccountUuid());
         msg4.setSession(session);
         APIDeleteLdapBindingEvent evt4 = sender.send(msg4, APIDeleteLdapBindingEvent.class);
         Assert.assertTrue(evt4.getError() == null);

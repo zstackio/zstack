@@ -27,7 +27,7 @@ public class ImportThirdPartyAccountContext {
     public ImportAccountResult makeResult() {
         ImportAccountResult result = new ImportAccountResult();
         result.setRef(AccountThirdPartyAccountSourceRefInventory.valueOf(this.ref));
-        result.setErrorForCreatingAccount(this.errorForCreatingAccount);
+        result.setError(errorForValidation == null ? errorForCreatingAccount : errorForValidation);
         return result;
     }
 }

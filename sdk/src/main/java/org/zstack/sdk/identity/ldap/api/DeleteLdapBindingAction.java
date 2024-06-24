@@ -25,8 +25,8 @@ public class DeleteLdapBindingAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accountUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -91,7 +91,7 @@ public class DeleteLdapBindingAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/ldap/bindings/{uuid}";
+        info.path = "/ldap/bindings/{accountUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

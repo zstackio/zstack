@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "DELETE /v1/ldap/bindings/{uuid}"
+			url "DELETE /v1/ldap/bindings/{accountUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -22,9 +22,9 @@ doc {
 			params {
 
 				column {
-					name "uuid"
+					name "accountUuid"
 					enclosedIn ""
-					desc "资源的UUID，唯一标示该资源"
+					desc "账户UUID"
 					location "url"
 					type "String"
 					optional false

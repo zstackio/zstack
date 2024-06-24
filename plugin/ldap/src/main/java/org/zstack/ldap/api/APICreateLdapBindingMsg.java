@@ -5,6 +5,7 @@ import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.ldap.entity.LdapServerVO;
 
 @RestRequest(
         path = "/ldap/bindings",
@@ -18,6 +19,9 @@ public class APICreateLdapBindingMsg extends APIMessage {
 
     @APIParam(resourceType = AccountVO.class, maxLength = 32)
     private String accountUuid;
+
+    @APIParam(resourceType = LdapServerVO.class, required = false)
+    private String ldapServerUuid;
 
     public String getLdapUid() {
         return ldapUid;
@@ -34,7 +38,15 @@ public class APICreateLdapBindingMsg extends APIMessage {
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
     }
- 
+
+    public String getLdapServerUuid() {
+        return ldapServerUuid;
+    }
+
+    public void setLdapServerUuid(String ldapServerUuid) {
+        this.ldapServerUuid = ldapServerUuid;
+    }
+
     public static APICreateLdapBindingMsg __example__() {
         APICreateLdapBindingMsg msg = new APICreateLdapBindingMsg();
         msg.setAccountUuid(uuid());

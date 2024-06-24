@@ -1,4 +1,4 @@
-package org.zstack.ldap;
+package org.zstack.ldap.driver;
 
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
