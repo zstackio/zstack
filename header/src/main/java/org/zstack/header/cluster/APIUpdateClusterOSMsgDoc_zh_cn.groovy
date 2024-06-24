@@ -101,7 +101,16 @@ doc {
 					type "boolean"
 					optional true
 					since "5.2.0"
-					values ("true","false")
+					values("true", "false")
+				}
+				column {
+					name "hostUuid"
+					enclosedIn "updateClusterOS"
+					desc "物理机UUID"
+					location "body"
+					type "String"
+					optional true
+					since "4.8.13"
 				}
 			}
         }
