@@ -37,7 +37,7 @@ public class UpdateVirtualSwitchUplinkGroupAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List slaveNames;
 
-    @Param(required = true, validValues = {"LinuxBonding","OvsBonding"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"LinuxBonding","OvsBonding"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type = "LinuxBonding";
 
     @Param(required = false)

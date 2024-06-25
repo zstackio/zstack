@@ -94,7 +94,7 @@ public class L2NetworkHostUtils {
 
         for (HostParam hostParam : hostParams) {
             if (StringUtils.isEmpty(hostParam.getHostUuid())) {
-                return argerr("hostUuid can not be null");
+                return argerr("hostUuid can not be null in HostParam");
             }
 
             if (!CollectionUtils.isEmpty(hostUuids) && !hostUuids.contains(hostParam.getHostUuid())) {
@@ -102,11 +102,11 @@ public class L2NetworkHostUtils {
             }
 
             if (!StringUtils.isEmpty(hostUuid) && !hostUuid.equals(hostParam.getHostUuid())) {
-                return argerr("hostUuid in hostParams is inconsistent with the hostUuid in APIMsg");
+                return argerr("hostUuid in HostParam is inconsistent with the hostUuid in APIMsg");
             }
 
             if (StringUtils.isEmpty(hostParam.getPhysicalInterface())) {
-                return argerr("physical interface can not be null");
+                return argerr("physical interface can not be null in HostParam");
             }
         }
 
