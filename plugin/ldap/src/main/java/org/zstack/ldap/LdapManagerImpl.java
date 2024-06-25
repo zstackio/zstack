@@ -350,6 +350,14 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private void handle(APISyncAccountsFromLdapServerMsg msg) {
         SyncThirdPartyAccountMsg innerMsg = new SyncThirdPartyAccountMsg();
         innerMsg.setSourceUuid(msg.getUuid());
+
+        if (msg.getCreateAccountStrategy() != null) {
+            innerMsg.setCreateAccountStrategy(SyncCreatedAccountStrategy.valueOf(msg.getCreateAccountStrategy()));
+        }
+        if (msg.getDeleteAccountStrategy() != null) {
+            innerMsg.setDeleteAccountStrategy(SyncDeletedAccountStrategy.valueOf(msg.getDeleteAccountStrategy()));
+        }
+
         bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountImportsConstant.SERVICE_ID, msg.getUuid());
         bus.send(innerMsg, new CloudBusCallBack(msg) {
             @Override
