@@ -22,8 +22,9 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.Objects;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.identity.imports.AccountImportsManager.accountSourceQueueSyncSignature;
+import static org.zstack.ldap.LdapErrors.UNABLE_TO_FIND_LDAP_SERVER;
 import static org.zstack.ldap.LdapGlobalConfig.*;
 
 /**
@@ -44,7 +45,8 @@ public class LdapAccountSource extends AbstractAccountSourceBase {
         final LdapServerVO serverVO = databaseFacade.findByUuid(self.getUuid(), LdapServerVO.class);
         if (serverVO == null) {
             throw new OperationFailureException(
-                    operr("ldapServer[uuid:%s, name:%s] has been deleted", self.getUuid(), self.getResourceName()));
+                    err(UNABLE_TO_FIND_LDAP_SERVER, "ldapServer[uuid:%s, name:%s] has been deleted",
+                    self.getUuid(), self.getResourceName()));
         }
         self = serverVO;
         return serverVO;

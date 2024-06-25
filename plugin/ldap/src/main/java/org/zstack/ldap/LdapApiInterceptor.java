@@ -23,6 +23,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.ldap.LdapErrors.LDAP_BINDING_ACCOUNT_ERROR;
 
 /**
  */
@@ -81,8 +82,8 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
                 .eq(AccountThirdPartyAccountSourceRefVO_.accountUuid, msg.getAccountUuid())
                 .isExists();
         if (refExists) {
-            throw new ApiMessageInterceptionException(
-                    argerr("the ldap uid has already been bound to account[uuid=%s]", msg.getAccountUuid()));
+            throw new ApiMessageInterceptionException(err(LDAP_BINDING_ACCOUNT_ERROR,
+                    "the ldap uid has already been bound to account[uuid=%s]", msg.getAccountUuid()));
         }
     }
 
@@ -101,7 +102,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
                 .eq(LdapServerVO_.uuid, accountSourceUuid)
                 .isExists();
         if (!exists) {
-            throw new ApiMessageInterceptionException(argerr(
+            throw new ApiMessageInterceptionException(err(LDAP_BINDING_ACCOUNT_ERROR,
                     "account[uuid=%s] is binding to non-LDAP third party account source", msg.getAccountUuid()));
         }
         msg.setLdapServerUuid(accountSourceUuid);
