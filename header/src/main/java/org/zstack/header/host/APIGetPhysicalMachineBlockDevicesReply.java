@@ -5,6 +5,7 @@ import org.zstack.header.rest.RestResponse;
 import org.zstack.utils.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.zstack.header.host.BlockDevicesParser.blockDevicesExample;
@@ -44,6 +45,15 @@ public class APIGetPhysicalMachineBlockDevicesReply extends APIReply {
             return blockDevices;
         }
 
+        public void filter(List<String> excludedBlockDevicesType) {
+            if (CollectionUtils.isEmpty(excludedBlockDevicesType)) {
+                return;
+            }
+
+            unusedBlockDevices.removeIf(blockDevice -> excludedBlockDevicesType.contains(blockDevice.getType()));
+            usedBlockDevices.removeIf(blockDevice -> excludedBlockDevicesType.contains(blockDevice.getType()));
+        }
+
         public static class BlockDevice {
             private String name;
             private String type;
@@ -66,7 +76,7 @@ public class APIGetPhysicalMachineBlockDevicesReply extends APIReply {
                 device.physicalSector = blockDevice.getPhysicalSector();
                 device.logicalSector = blockDevice.getLogicalSector();
                 device.mountPoint = blockDevice.getMountPoint();
-                device.partitionTable = blockDevice.getPartitionTable();
+                device.partitionTable = blockDevice.getPartitionTable() != null ? blockDevice.getPartitionTable() : "unknown";
                 if (!CollectionUtils.isEmpty(blockDevice.getChildren())) {
                     device.children = new ArrayList<>();
                     for (BlockDevicesParser.BlockDevice child : blockDevice.getChildren()) {
@@ -159,7 +169,9 @@ public class APIGetPhysicalMachineBlockDevicesReply extends APIReply {
 
     public static APIGetPhysicalMachineBlockDevicesReply __example__() {
         APIGetPhysicalMachineBlockDevicesReply reply = new APIGetPhysicalMachineBlockDevicesReply();
-        reply.setBlockDevices(BlockDevices.valueOf(BlockDevicesParser.parse(blockDevicesExample)));
+        BlockDevices blockDevices = BlockDevices.valueOf(BlockDevicesParser.parse(blockDevicesExample));
+        blockDevices.filter(Collections.singletonList("rom"));
+        reply.setBlockDevices(blockDevices);
         return reply;
     }
 }

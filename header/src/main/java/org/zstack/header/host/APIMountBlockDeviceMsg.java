@@ -4,7 +4,10 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.concurrent.TimeUnit;
 
 @RestRequest(
         path = "/host/mount-block-device",
@@ -26,8 +29,19 @@ public class APIMountBlockDeviceMsg extends APIMessage {
     private String blockDevicePath;
     @APIParam(maxLength = 2048)
     private String mountPoint;
-    @APIParam(required = false, maxLength = 255, validValues = {"btrfs", "cramfs", "ext2", "ext3", "ext4", "fat", "minix", "msdos", "ntfs", "vfat", "xfs"})
+    @APIParam(required = false, maxLength = 255, validValues = {"ext4", "xfs"})
     private String filesystemType = "xfs";
+
+    public static class mkfsCommd {
+        public static String buildMkfsCommd(String filesystemType, String blockDevicePath) {
+            if (filesystemType.equals("ext4")) {
+                return "mkfs.ext4 -F " + blockDevicePath;
+            } else if (filesystemType.equals("xfs")) {
+                return "mkfs.xfs -f " + blockDevicePath;
+            }
+            throw new IllegalArgumentException("unsupported filesystem type: " + filesystemType);
+        }
+    }
 
     public String getUsername() {
         return username;
