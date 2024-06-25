@@ -1,13 +1,17 @@
 package org.zstack.testlib.identity.ldap
 
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.ldap.driver.LdapSearchSpec
 import org.zstack.ldap.driver.LdapUtil
+import org.zstack.ldap.entity.LdapEntryInventory
 import org.zstack.ldap.entity.LdapServerVO
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Spec
 import org.zstack.testlib.SpecID
 import org.zstack.testlib.SpecParam
 
+import java.util.function.BiFunction
+import java.util.function.Function
 import java.util.function.Supplier
 
 class LdapVirtualEndpointSpec extends Spec {
@@ -28,6 +32,12 @@ class LdapVirtualEndpointSpec extends Spec {
 
     Supplier<ErrorCode> defaultTestConnectionHandler = { null }
     Supplier<ErrorCode> testConnectionHandler = defaultTestConnectionHandler
+    Function<LdapSearchSpec, List<LdapEntryInventory>> defaultSearchHandler = { return [] }
+    Function<LdapSearchSpec, List<LdapEntryInventory>> searchHandler = defaultSearchHandler
+    BiFunction<String, String, Boolean> defaultAuthenticateHandler = { true }
+    BiFunction<String, String, Boolean> authenticateHandler = defaultAuthenticateHandler
+    BiFunction<String, String, String> defaultFullDnGetter = { "" }
+    BiFunction<String, String, String> fullDnGetter = defaultFullDnGetter
 
     LdapVirtualEndpointSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -80,7 +90,11 @@ class LdapVirtualEndpointSpec extends Spec {
 
     @Override
     void delete(String sessionId) {
-        //
+        // do-nothing
+    }
+
+    LdapEntryInventoryBuilder ldapEntry() {
+        return new LdapEntryInventoryBuilder()
     }
 
     void installTestConnectionHandler(Supplier<ErrorCode> handler) {
@@ -89,5 +103,29 @@ class LdapVirtualEndpointSpec extends Spec {
 
     void clearTestConnectionHandler() {
         this.testConnectionHandler = defaultTestConnectionHandler
+    }
+
+    void installSearchHandler(Function<LdapSearchSpec, List<LdapEntryInventory>> handler) {
+        this.searchHandler = handler
+    }
+
+    void clearSearchHandler() {
+        this.searchHandler = defaultSearchHandler
+    }
+
+    void installAuthenticateHandler(BiFunction<String, String, Boolean> handler) {
+        this.authenticateHandler = handler
+    }
+
+    void clearAuthenticateHandler() {
+        this.authenticateHandler = defaultAuthenticateHandler
+    }
+
+    void installFullDnGetter(BiFunction<String, String, String> getter) {
+        this.fullDnGetter = getter
+    }
+
+    void clearFullDnGetter() {
+        this.fullDnGetter = defaultFullDnGetter
     }
 }
