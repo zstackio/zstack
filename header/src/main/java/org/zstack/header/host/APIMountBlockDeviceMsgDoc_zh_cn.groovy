@@ -83,7 +83,7 @@ doc {
 					type "String"
 					optional true
 					since "zsv 4.3.0"
-					values ("btrfs","cramfs","ext2","ext3","ext4","fat","minix","msdos","ntfs","vfat","xfs")
+					values ("ext4","xfs")
 				}
 				column {
 					name "systemTags"

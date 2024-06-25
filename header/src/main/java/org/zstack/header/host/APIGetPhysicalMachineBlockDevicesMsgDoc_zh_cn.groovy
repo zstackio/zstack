@@ -58,6 +58,15 @@ doc {
 					since "zsv 4.3.0"
 				}
 				column {
+					name "excludedBlockDevicesType"
+					enclosedIn ""
+					desc "指定排除的磁盘类型"
+					location "query"
+					type "List"
+					optional true
+					since "zsv 4.3.0"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
