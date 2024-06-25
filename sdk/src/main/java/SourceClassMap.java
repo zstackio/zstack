@@ -439,6 +439,8 @@ public class SourceClassMap {
 			put("org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory", "org.zstack.sdk.L2VirtualSwitchNetworkInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.PortGroupInventory", "org.zstack.sdk.PortGroupInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.PortGroupVlanMode", "org.zstack.sdk.PortGroupVlanMode");
+			put("org.zstack.network.l2.virtualSwitch.header.UplinkGroupInventory", "org.zstack.sdk.UplinkGroupInventory");
+			put("org.zstack.network.l2.virtualSwitch.header.UplinkGroupType", "org.zstack.sdk.UplinkGroupType");
 			put("org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory", "org.zstack.sdk.RemoteVtepInventory");
 			put("org.zstack.network.l2.vxlan.vtep.VtepInventory", "org.zstack.sdk.VtepInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory", "org.zstack.sdk.L2VxlanNetworkInventory");
@@ -1209,6 +1211,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");
 			put("org.zstack.sdk.UKeyInventory", "org.zstack.license.UKeyInventory");
 			put("org.zstack.sdk.UKeyStatus", "org.zstack.license.UKeyStatus");
+			put("org.zstack.sdk.UplinkGroupInventory", "org.zstack.network.l2.virtualSwitch.header.UplinkGroupInventory");
+			put("org.zstack.sdk.UplinkGroupType", "org.zstack.network.l2.virtualSwitch.header.UplinkGroupType");
 			put("org.zstack.sdk.UsageReport", "org.zstack.header.storage.primary.UsageReport");
 			put("org.zstack.sdk.UsbDeviceInventory", "org.zstack.usbDevice.UsbDeviceInventory");
 			put("org.zstack.sdk.UsbDeviceState", "org.zstack.usbDevice.UsbDeviceState");

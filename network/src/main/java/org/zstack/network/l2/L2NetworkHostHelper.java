@@ -1,20 +1,28 @@
 package org.zstack.network.l2;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HostParam;
 import org.zstack.header.network.l2.L2NetworkAttachStatus;
 import org.zstack.header.network.l2.L2NetworkHostRefVO;
 import org.zstack.header.network.l2.L2NetworkHostRefVO_;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.core.Platform.argerr;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -86,66 +94,5 @@ public class L2NetworkHostHelper {
             logger.debug(String.format("update L2NetworkHostRefVO, %s", JSONObjectUtil.toJsonString(oldVos)));
             dbf.updateCollection(oldVos);
         }
-    }
-
-    public void deleteL2NetworkHostRef(String l2NetworkUuid, List<String> hostUuids) {
-        logger.debug(String.format("del L2NetworkHostRefVO, l2NetworkUuid:%s, hostUuids:%s",
-                l2NetworkUuid, hostUuids));
-        SQL.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .in(L2NetworkHostRefVO_.hostUuid, hostUuids)
-                .delete();
-    }
-
-    public void changeL2NetworkToHostRefDetached(String l2NetworkUuid, String hostUuid) {
-        if (checkIfL2NetworkHostRefNotExist(l2NetworkUuid, hostUuid)) {
-            logger.warn(String.format("can not find host l2 network ref[l2NetworkUuid: %s, hostUuid: %s]",
-                    l2NetworkUuid, hostUuid));
-            return;
-        }
-
-        logger.debug(String.format("change L2NetworkHostRefVO to Detached, l2NetworkUuid:%s, hostUuid:%s",
-                l2NetworkUuid, hostUuid));
-        SQL.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .set(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Detached).update();
-    }
-
-    public void changeL2NetworkToHostRefAttached(String l2NetworkUuid, String hostUuid) {
-        if (checkIfL2NetworkHostRefNotExist(l2NetworkUuid, hostUuid)) {
-            logger.warn(String.format("can not find host l2 network ref[l2NetworkUuid: %s, hostUuid: %s]",
-                    l2NetworkUuid, hostUuid));
-            return;
-        }
-
-        logger.debug(String.format("change L2NetworkHostRefVO to Attached, l2NetworkUuid:%s, hostUuid:%s",
-                l2NetworkUuid, hostUuid));
-        SQL.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .set(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Attached).update();
-    }
-
-    public List<String> getAttachedHostUuidsRefToL2NetworkUuid(String l2NetworkUuid) {
-        return Q.New(L2NetworkHostRefVO.class).select(L2NetworkHostRefVO_.hostUuid)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .eq(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Attached)
-                .listValues();
-    }
-
-    public boolean checkIfL2NetworkHostRefNotExist(String l2NetworkUuid, String hostUuid) {
-        return !Q.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
-                .isExists();
-    }
-
-    public boolean checkIfL2AttachedToHost(String l2NetworkUuid, String hostUuid) {
-        return Q.New(L2NetworkHostRefVO.class)
-                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2NetworkUuid)
-                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
-                .eq(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Attached)
-                .isExists();
     }
 }

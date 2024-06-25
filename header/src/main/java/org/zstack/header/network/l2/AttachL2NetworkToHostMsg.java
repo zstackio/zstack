@@ -6,6 +6,7 @@ public class AttachL2NetworkToHostMsg extends NeedReplyMessage implements L2Netw
     private String l2NetworkUuid;
     private String hostUuid;
     private String l2ProviderType;
+    private String hostParam;
 
     public String getL2NetworkUuid() {
         return l2NetworkUuid;
@@ -29,5 +30,13 @@ public class AttachL2NetworkToHostMsg extends NeedReplyMessage implements L2Netw
 
     public void setL2ProviderType(String l2ProviderType) {
         this.l2ProviderType = l2ProviderType;
+    }
+
+    public String getHostParam() {
+        return hostParam;
+    }
+
+    public void setHostParam(String hostParam) {
+        this.hostParam = hostParam;
     }
 }
