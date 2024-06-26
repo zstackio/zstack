@@ -27,6 +27,7 @@ public class AccountInventory {
     private String name;
     private String description;
     private String type;
+    private String state;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -36,6 +37,7 @@ public class AccountInventory {
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
         inv.setType(vo.getType().toString());
+        inv.setState(vo.getState().toString());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -79,6 +81,14 @@ public class AccountInventory {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public Timestamp getCreateDate() {
