@@ -43,7 +43,7 @@ public class MountBlockDeviceAction extends AbstractAction {
     @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String mountPoint;
 
-    @Param(required = false, validValues = {"btrfs","cramfs","ext2","ext3","ext4","fat","minix","msdos","ntfs","vfat","xfs"}, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"ext4","xfs"}, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String filesystemType = "xfs";
 
     @Param(required = false)
