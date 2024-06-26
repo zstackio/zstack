@@ -6,6 +6,8 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
 @RestRequest(
         path = "/host/get-block-devices",
         method = HttpMethod.GET,
@@ -21,6 +23,8 @@ import org.zstack.header.rest.RestRequest;
     private Integer sshPort;
     @APIParam(maxLength = 255)
     private String hostName;
+    @APIParam(required = false)
+    List<String> excludedTypes;
 
     public String getUsername() {
         return username;
@@ -52,6 +56,14 @@ import org.zstack.header.rest.RestRequest;
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public List<String> getExcludedTypes() {
+        return excludedTypes;
+    }
+
+    public void setExcludedTypes(List<String> excludedTypes) {
+        this.excludedTypes = excludedTypes;
     }
 
     public static APIGetPhysicalMachineBlockDevicesMsg __example__() {

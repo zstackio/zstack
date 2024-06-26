@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.header.host.APIMountBlockDeviceMsg.mkfsCommd.buildMkfsCommd;
 import static org.zstack.header.host.BlockDevicesParser.*;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 
@@ -493,7 +494,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final APIGetPhysicalMachineBlockDevicesMsg msg) {
         APIGetPhysicalMachineBlockDevicesReply reply = new APIGetPhysicalMachineBlockDevicesReply();
         if (CoreGlobalProperty.UNIT_TEST_ON) {
-            reply.setBlockDevices(BlockDevices.valueOf(BlockDevicesParser.parse(blockDevicesExample)));
+            BlockDevices blockDevices = BlockDevices.valueOf(BlockDevicesParser.parse(blockDevicesExample));
+            blockDevices.filter(msg.getExcludedTypes());
+            reply.setBlockDevices(blockDevices);
             bus.reply(msg, reply);
             return;
         }
@@ -509,7 +512,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                         "because [stderr:%s, stdout:%s]", ret.getStderr(), ret.getStdout()));
                 reply.setSuccess(false);
             } else {
-                reply.setBlockDevices(BlockDevices.valueOf(BlockDevicesParser.parse(ret.getStdout())));
+                BlockDevices blockDevices = BlockDevices.valueOf(BlockDevicesParser.parse(ret.getStdout()));
+                blockDevices.filter(msg.getExcludedTypes());
+                reply.setBlockDevices(blockDevices);
             }
 
             bus.reply(msg, reply);
@@ -527,17 +532,22 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
         List<String> commands = new ArrayList<>();
         commands.add(String.format("mkdir -p '%s'", msg.getMountPoint()));
+        commands.add(buildMkfsCommd(msg.getFilesystemType(), msg.getBlockDevicePath()));
         commands.add(String.format("mkfs.%s -f '%s'", msg.getFilesystemType(), msg.getBlockDevicePath()));
-        commands.add(String.format("mount | grep '%s' | grep '%s' || mount '%s' '%s'",
+        commands.add(String.format("mount | grep -w '%s' | grep -w '%s' || mount '%s' '%s'",
                 msg.getBlockDevicePath(), msg.getMountPoint(), msg.getBlockDevicePath(), msg.getMountPoint()));
-        commands.add(String.format("grep '%s' /etc/fstab | grep '%s' || echo '%s %s %s defaults 0 2' >> /etc/fstab",
+        commands.add(String.format("grep -w '%s' /etc/fstab | grep -w '%s' || echo '%s %s %s defaults 0 2' >> /etc/fstab",
                 msg.getBlockDevicePath(), msg.getMountPoint(), msg.getBlockDevicePath(), msg.getMountPoint(), msg.getFilesystemType()));
 
         Ssh ssh = new Ssh();
         ssh.setUsername(msg.getUsername()).setPassword(msg.getPassword()).setPort(msg.getSshPort())
-                .setHostname(msg.getHostName()).setTimeout(120);
+                .setHostname(msg.getHostName()).setTimeout(20);
         try {
             for (String command : commands) {
+                if (command.startsWith("mkfs")) {
+                    long timeout = (msg.getMessageDeadline() - new Date().getTime()) / 1000 - 30;
+                    command = String.format("timeout %d %s", timeout, command);
+                }
                 SshResult ret = ssh.command(command).run();
                 ssh.reset();
                 if (ret.getReturnCode() != 0) {

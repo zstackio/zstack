@@ -2,13 +2,13 @@ package org.zstack.header.host;
 
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.internal.LinkedTreeMap;
+import org.zstack.utils.CollectionDSL;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.*;
 
 public class BlockDevicesParser {
-    private final List<BlockDevice> allBlockDevices = new ArrayList<>();
-
     public static class BlockDevice {
         private String name;
         private String type;
@@ -109,10 +109,10 @@ public class BlockDevicesParser {
             "   ]\n" +
             "}\n" +
             "===\r\n" +
-            "/dev/sr0:unknown\r\n" +
-            "/dev/vda:msdos\r\n" +
-            "/dev/vdb:loop\r\n" +
-            "/dev/vdc:unknown";
+            "/dev/sr0:unknown\r\n\r\n" +
+            "/dev/vda:\r\n" +
+            "/dev/vdb:loop\r\n\r\n" +
+            "/dev/vdc:unknown\r\n";
 
     public static List<BlockDevice> parse(String blockDevices) {
         List<BlockDevice> allBlockDevices = new ArrayList<>();
@@ -123,7 +123,13 @@ public class BlockDevicesParser {
         blockDeviceList.forEach(blockDevice -> allBlockDevices.add(JSONObjectUtil.toObject(JSONObjectUtil.toJsonString(blockDevice), BlockDevice.class)));
 
         Map<String, String> blockDevicePartitionTable = new HashMap<>();
-        Arrays.asList(splits.get(1).split("\\r\\n")).forEach(it -> blockDevicePartitionTable.put(it.split(":")[0], it.split(":")[1]));
+        Arrays.asList(splits.get(1).split("\\r\\n")).forEach(it -> {
+            List<String> blockDeviceAndPartitionTable = Arrays.asList(it.split(":"));
+            if (blockDeviceAndPartitionTable.size() != 2) {
+                return;
+            }
+            blockDevicePartitionTable.put(blockDeviceAndPartitionTable.get(0), blockDeviceAndPartitionTable.get(1));
+        });
         allBlockDevices.forEach(blockDevice -> blockDevice.setPartitionTable(blockDevicePartitionTable.get(blockDevice.getName())));
 
         return allBlockDevices;
@@ -132,7 +138,7 @@ public class BlockDevicesParser {
     public static String getBlockDevicesCommand() {
         String blockDevicesCommand = "lsblk -p -b -o NAME,TYPE,SIZE,PHY-SEC,LOG-SEC,MOUNTPOINT -J";
         String partitionTableInfoCommand = "for disk in $(lsblk -d -p -n -o NAME); do echo -n \"$disk:\"; " +
-                "parted $disk print 2>/dev/null | awk '/Partition Table/ {print $3}'; done";
+                "parted -s $disk print 2>/dev/null | awk '/Partition Table/ {print $3} END{print \"\"}'; done";
         return String.format("%s ; echo === ; %s", blockDevicesCommand, partitionTableInfoCommand);
     }
 }

@@ -37,6 +37,9 @@ public class GetPhysicalMachineBlockDevicesAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String hostName;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List excludedTypes;
+
     @Param(required = false)
     public java.util.List systemTags;
 
