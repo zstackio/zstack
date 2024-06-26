@@ -104,6 +104,9 @@ public class AccountBase extends AbstractAccount {
         if (msg.getDescription() != null) {
             account.setDescription(msg.getDescription());
         }
+        if (msg.getState() != null) {
+            account.setState(AccountState.valueOf(msg.getState()));
+        }
 
         boolean passwordUpdated = false;
         String oldPassword = null;

@@ -36,3 +36,5 @@ CALL ADD_COLUMN('LdapServerVO', 'filter', 'varchar(2048)', 1, NULL);
 CALL ADD_COLUMN('LdapServerVO', 'usernameProperty', 'varchar(255)', 0, 'cn');
 DROP TABLE IF EXISTS `zstack`.`LdapAccountRefVO`;
 DROP TABLE IF EXISTS `zstack`.`LdapResourceRefVO`;
+
+CALL ADD_COLUMN('AccountVO', 'state', 'varchar(128)', 0, 'Enabled');

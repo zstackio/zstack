@@ -84,6 +84,16 @@ doc {
 					optional true
 					since "3.6.0"
 				}
+				column {
+					name "state"
+					enclosedIn "updateAccount"
+					desc "账户状态"
+					location "body"
+					type "String"
+					optional true
+					since "4.3.0"
+					values ("Enabled","Disabled","Staled")
+				}
 			}
         }
 

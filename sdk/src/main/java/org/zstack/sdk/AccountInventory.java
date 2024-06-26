@@ -36,6 +36,14 @@ public class AccountInventory  {
         return this.type;
     }
 
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
+    }
+    public java.lang.String getState() {
+        return this.state;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
