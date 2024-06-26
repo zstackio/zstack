@@ -7,7 +7,7 @@ import org.zstack.core.db.Q;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.BeforeCreateAccountExtensionPoint;
 import org.zstack.header.identity.BeforeDeleteAccountExtensionPoint;
-import org.zstack.header.identity.BeforeUpdateAccountExtensionPoint;
+import org.zstack.header.identity.AfterUpdateAccountExtensionPoint;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.SdnControllerVO;
@@ -18,13 +18,16 @@ import org.zstack.sdnController.header.SdnControllerVO_;
  * @author: liupt@sugon.com
  * @create: 2022-10-09
  **/
-public class AccountSync implements BeforeCreateAccountExtensionPoint, BeforeUpdateAccountExtensionPoint, BeforeDeleteAccountExtensionPoint {
+public class AccountSync implements BeforeCreateAccountExtensionPoint, AfterUpdateAccountExtensionPoint, BeforeDeleteAccountExtensionPoint {
     @Autowired
     SdnControllerManager sdnControllerManager;
 
     @Override
     public void beforeCreateAccount(AccountInventory account)  {
         SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
+        if (sdn == null) {
+            return;
+        }
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
         SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
         sugonSdnController.createAccount(account);
@@ -33,14 +36,20 @@ public class AccountSync implements BeforeCreateAccountExtensionPoint, BeforeUpd
     @Override
     public void beforeDeleteAccount(AccountInventory account) {
         SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
+        if (sdn == null) {
+            return;
+        }
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
         SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
         sugonSdnController.deleteAccount(account);
     }
 
     @Override
-    public void beforeUpdateAccount(AccountInventory account)  {
+    public void afterUpdateAccount(AccountInventory account)  {
         SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
+        if (sdn == null) {
+            return;
+        }
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
         SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
         sugonSdnController.updateAccount(account);
