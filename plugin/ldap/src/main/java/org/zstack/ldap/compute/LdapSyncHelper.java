@@ -114,6 +114,11 @@ public class LdapSyncHelper {
             String __name__ = "import-accounts";
 
             @Override
+            public boolean skip(Map data) {
+                return taskSpec.getCreateAccountStrategy() == SyncCreatedAccountStrategy.NoAction;
+            }
+
+            @Override
             public void run(FlowTrigger trigger, Map data) {
                 AtomicBoolean anySuccess = new AtomicBoolean(false);
 
@@ -330,7 +335,7 @@ public class LdapSyncHelper {
         }
 
         account.setCredentials(dn);
-        account.setAccountType(AccountType.Normal);
+        account.setAccountType(AccountType.ThirdParty);
         account.setUsername(username);
         account.setPassword(Platform.getUuid() + Platform.getUuid());
         account.setCreateIfNotExist(taskSpec.getCreateAccountStrategy() == SyncCreatedAccountStrategy.CreateAccount);
