@@ -1254,7 +1254,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         return !targetClz.equals(ImageCacheVO.class.getSimpleName())
                                 || controller.reportCapabilities().isSupportCloneFromVolume()
                                 || (ImageConstant.ImageMediaType.ISO.toString().equals(image.getMediaType())
-                                    && controller.reportCapabilities().isSupportExportVolumeSnapshot());
+                                    && !controller.reportCapabilities().isSupportExportVolumeSnapshot());
                     }
 
                     @Override
