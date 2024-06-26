@@ -655,7 +655,7 @@ public class VirtualRouter extends ApplianceVmBase {
             public void run(final SyncTaskChain chain) {
                 refreshVO();
 
-                ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName());
+                ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName(), msg.getCommand());
                 if (errorCode != null) {
                     throw new OperationFailureException(errorCode);
                 }
