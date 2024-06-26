@@ -8,8 +8,11 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VersionComparator;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -95,7 +98,7 @@ public class UpgradeChecker implements Component {
         return resultList;
     }
 
-    public ErrorCode checkAgentHttpParamChanges(String agentUuid, String commandName) {
+    public ErrorCode checkAgentHttpParamChanges(String agentUuid, String commandName, Object cmd) {
         if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
             logger.trace("grayscale upgrade is not enabled, skip http param check");
             return null;
@@ -121,6 +124,17 @@ public class UpgradeChecker implements Component {
             return operr("No command %s not found, do not support grayscale upgrade", commandName);
         }
 
+        final Object commandObj;
+        if (cmd instanceof String) {
+            try {
+                commandObj = JSONObjectUtil.toObject((String) cmd, Class.forName(commandName));
+            } catch (Exception e) {
+                throw new CloudRuntimeException(String.format("Failed to transform string: %s\n to \n object class: %s", cmd, commandName));
+            }
+        } else {
+            commandObj = cmd;
+        }
+
         for (Map<String, String> fields : relatedFieldsVersionMap) {
             // check if current command has unexpected versions
             VersionComparator currentVersion = new VersionComparator(agentVersionVO.getCurrentVersion());
@@ -136,6 +150,36 @@ public class UpgradeChecker implements Component {
                     sb.append(String.format("agent[uuid: %s] current version: %s\n", agentUuid, agentVersionVO.getCurrentVersion()));
                     fields.forEach((key, value) -> sb.append(String.format("field: %s, support version: %s\n", key, value)));
                     sb.append("all fields is supported by current agent, allow operations");
+                    logger.trace(sb.toString());
+                }
+                continue;
+            }
+
+            // check if field used in command
+            entries = entries.stream().filter(entry -> {
+                Object value = FieldUtils.getFieldValue(entry.getKey(), commandObj);
+                // not used return
+                if (value == null) {
+                    logger.trace(String.format("Command obj do not use field %s, allow the usage", entry.getKey()));
+                    return false;
+                }
+
+                if (value instanceof Collection) {
+                    if (((Collection<?>) value).isEmpty()) {
+                        logger.trace(String.format("Command obj use empty field %s, allow the usage", entry.getKey()));
+                        return false;
+                    }
+                }
+
+                return true;
+            }).collect(Collectors.toSet());
+
+            if (entries.isEmpty()) {
+                if (logger.isTraceEnabled()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(String.format("agent[uuid: %s] current version: %s\n", agentUuid, agentVersionVO.getCurrentVersion()));
+                    fields.forEach((key, value) -> sb.append(String.format("field: %s, support version: %s\n", key, value)));
+                    sb.append("after check those fields' usage in command, allow operations");
                     logger.trace(sb.toString());
                 }
                 continue;

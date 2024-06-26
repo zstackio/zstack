@@ -2108,7 +2108,7 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private long maxMemory;
         @GrayVersion(value = "5.0.0")
-        private long reservedMemory;
+        private Long reservedMemory;
         @GrayVersion(value = "5.0.0")
         private int cpuNum;
         @GrayVersion(value = "5.0.0")
@@ -2473,11 +2473,11 @@ public class KVMAgentCommands {
             this.maxMemory = maxMemory;
         }
 
-        public long getReservedMemory() {
+        public Long getReservedMemory() {
             return reservedMemory;
         }
 
-        public void setReservedMemory(long reservedMemory) {
+        public void setReservedMemory(Long reservedMemory) {
             this.reservedMemory = reservedMemory;
         }
 

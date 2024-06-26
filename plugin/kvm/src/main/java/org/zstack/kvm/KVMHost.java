@@ -475,7 +475,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         void call(String resourceUuid, ReturnValueCompletion<T> completion) {
-            ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), commandName);
+            ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), commandName, commandStr != null ? commandStr : cmd);
             if (errorCode != null) {
                 completion.fail(errorCode);
                 return;
@@ -2338,7 +2338,7 @@ public class KVMHost extends HostBase implements Host {
             checkStatus();
         }
 
-        ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName());
+        ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName(), msg.getCommand());
         if (errorCode != null) {
             throw new OperationFailureException(errorCode);
         }
