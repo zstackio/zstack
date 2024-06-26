@@ -31,6 +31,24 @@ doc {
 					since "4.3.0"
 				}
 				column {
+					name "createAccountStrategy"
+					enclosedIn "syncAccountsFromLdapServer"
+					desc "从LDAP服务器同步时，对于LDAP服务器中新创建的用户，该虚拟化平台的处理策略，是创建对应的account还是无动作"
+					location "body"
+					type "String"
+					optional true
+					since "4.3.0"
+				}
+				column {
+					name "deleteAccountStrategy"
+					enclosedIn "syncAccountsFromLdapServer"
+					desc "从LDAP服务器同步时，对于LDAP服务器中已删除的用户，该虚拟化平台的处理策略，是删除对应的account还是无动作"
+					location "body"
+					type "String"
+					optional true
+					since "4.3.0"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

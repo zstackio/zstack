@@ -55,8 +55,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.ldap.LdapConstant.DEFAULT_PERSON_FILTER;
+import static org.zstack.ldap.LdapErrors.LDAP_SYNC_ERROR;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.*;
 
@@ -139,7 +140,8 @@ public class LdapSyncHelper {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (!anySuccess.get()) {
-                            trigger.fail(operr(errorCodeList, "all ldap account importing attempt is failed. ldapServerUuid=%s",
+                            trigger.fail(err(LDAP_SYNC_ERROR, errorCodeList,
+                                    "all ldap account importing attempt is failed. ldapServerUuid=%s",
                                     importSpec.getSourceUuid()));
                             return;
                         } else if (!errorCodeList.getCauses().isEmpty()) {
@@ -236,7 +238,8 @@ public class LdapSyncHelper {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (!anySuccess.get()) {
-                            trigger.fail(operr(errorCodeList, "all ldap account unbinding attempt is failed. ldapServerUuid=%s",
+                            trigger.fail(err(LDAP_SYNC_ERROR, errorCodeList,
+                                    "all ldap account unbinding attempt is failed. ldapServerUuid=%s",
                                     importSpec.getSourceUuid()));
                             return;
                         } else if (!errorCodeList.getCauses().isEmpty()) {

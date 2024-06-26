@@ -55,6 +55,8 @@ import java.util.*;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.ldap.LdapConstant.CURRENT_LDAP_UUID_NONE;
+import static org.zstack.ldap.LdapErrors.NONE_LDAP_SERVER_ENABLED;
+import static org.zstack.ldap.LdapErrors.UNABLE_TO_FIND_LDAP_SERVER;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -348,6 +350,14 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     private void handle(APISyncAccountsFromLdapServerMsg msg) {
         SyncThirdPartyAccountMsg innerMsg = new SyncThirdPartyAccountMsg();
         innerMsg.setSourceUuid(msg.getUuid());
+
+        if (msg.getCreateAccountStrategy() != null) {
+            innerMsg.setCreateAccountStrategy(SyncCreatedAccountStrategy.valueOf(msg.getCreateAccountStrategy()));
+        }
+        if (msg.getDeleteAccountStrategy() != null) {
+            innerMsg.setDeleteAccountStrategy(SyncDeletedAccountStrategy.valueOf(msg.getDeleteAccountStrategy()));
+        }
+
         bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountImportsConstant.SERVICE_ID, msg.getUuid());
         bus.send(innerMsg, new CloudBusCallBack(msg) {
             @Override
@@ -365,7 +375,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     public ErrorableValue<String> findCurrentLdapServerUuid() {
         final String currentLdapUuid = LdapGlobalConfig.CURRENT_LDAP_SERVER_UUID.value(String.class);
         if (CURRENT_LDAP_UUID_NONE.equals(currentLdapUuid)) {
-            return ErrorableValue.ofErrorCode(operr("No LDAP services are currently enabled"));
+            return ErrorableValue.ofErrorCode(err(NONE_LDAP_SERVER_ENABLED, "No LDAP server is currently enabled"));
         }
         return ErrorableValue.of(currentLdapUuid);
     }
@@ -380,7 +390,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         LdapServerVO ldap = dbf.findByUuid(errorableValue.result, LdapServerVO.class);
         if (ldap == null) {
             return ErrorableValue.ofErrorCode(
-                    operr("GlobalConfig[%s] is invalid: LdapServer[uuid=%s] is not exists",
+                    err(UNABLE_TO_FIND_LDAP_SERVER, "GlobalConfig[%s] is invalid: LdapServer[uuid=%s] is not exists",
                             LdapGlobalConfig.CURRENT_LDAP_SERVER_UUID.getName(),
                             errorableValue.result));
         }
@@ -451,7 +461,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     public String getUserIdByName(String username) {
         final ErrorableValue<LdapServerVO> property = findCurrentLdapServer();
         if (property.isSuccess()) {
-            return createDriver().getFullUserDn(username, property.result);
+            final String fullUserDn = createDriver().getFullUserDn(property.result, username);
+            return "".equals(fullUserDn) ? null : fullUserDn;
         }
         return null;
     }

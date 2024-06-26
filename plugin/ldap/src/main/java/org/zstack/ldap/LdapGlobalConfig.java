@@ -4,7 +4,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
-import org.zstack.ldap.entity.LdapServerVO;
+import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
@@ -36,6 +36,6 @@ public class LdapGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 1)
     @GlobalConfigDef(type = Integer.class, defaultValue = "10000", description = "maximum users sync from ldap server")
-    @BindResourceConfig({LdapServerVO.class})
+    @BindResourceConfig({ThirdPartyAccountSourceVO.class})
     public static GlobalConfig LDAP_MAXIMUM_SYNC_USERS = new GlobalConfig(CATEGORY, "ldap.maximum.sync.users");
 }

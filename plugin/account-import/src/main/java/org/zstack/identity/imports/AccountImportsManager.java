@@ -17,6 +17,8 @@ import org.zstack.identity.imports.message.CreateThirdPartyAccountSourceMsg;
 import org.zstack.identity.imports.message.CreateThirdPartyAccountSourceReply;
 import org.zstack.identity.imports.message.AccountSourceMessage;
 import org.zstack.identity.imports.source.AccountSourceFactory;
+import org.zstack.identity.imports.source.CreateAccountSourceExtensionPoint;
+import org.zstack.utils.CollectionUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -105,6 +107,7 @@ public class AccountImportsManager extends AbstractService {
                 factory.createAccountSource(message.getSpec(), new ReturnValueCompletion<ThirdPartyAccountSourceVO>(chain) {
                     @Override
                     public void success(ThirdPartyAccountSourceVO returnValue) {
+                        callCreatingAccountSourceExtensions(returnValue);
                         chain.next();
                         bus.reply(message, reply);
                     }
@@ -128,6 +131,13 @@ public class AccountImportsManager extends AbstractService {
                 return "create-import-source-" + message.getSpec().getUuid();
             }
         });
+    }
+
+    private void callCreatingAccountSourceExtensions(ThirdPartyAccountSourceVO accountSource) {
+        final List<CreateAccountSourceExtensionPoint> extensions =
+                pluginRegistry.getExtensionList(CreateAccountSourceExtensionPoint.class);
+
+        CollectionUtils.safeForEach(extensions, extension -> extension.afterCreatingAccountSource(accountSource));
     }
 
     private void passThrough(AccountSourceMessage msg) {
