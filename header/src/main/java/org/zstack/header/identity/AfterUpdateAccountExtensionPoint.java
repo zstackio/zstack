@@ -5,6 +5,6 @@ package org.zstack.header.identity;
  * @author: liupt@sugon.com
  * @time: 2022/10/9
  */
-public interface BeforeUpdateAccountExtensionPoint {
-    void beforeUpdateAccount(AccountInventory account);
+public interface AfterUpdateAccountExtensionPoint {
+    void afterUpdateAccount(AccountInventory account);
 }

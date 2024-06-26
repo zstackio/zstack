@@ -11,7 +11,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -429,12 +428,18 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
             return;
         }
 
-        SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
-        sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, vo.getAccountUuid());
-        AccountVO avo = sq.find();
-        if (avo == null) {
+        final AccountState state = Q.New(AccountVO.class)
+                .eq(AccountVO_.uuid, vo.getAccountUuid())
+                .select(AccountVO_.state)
+                .findValue();
+
+        if (state == null || state == AccountState.Staled) {
             completion.fail(operr(
                     "Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
+            return;
+        }
+        if (state == AccountState.Disabled) {
+            completion.fail(err(IdentityErrors.ACCOUNT_DISABLED, "failed to login: account is disabled"));
             return;
         }
 

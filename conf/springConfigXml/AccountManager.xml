@@ -111,5 +111,12 @@
     <bean id = "RoleUtils" class="org.zstack.identity.rbac.RoleUtils"/>
 
     <bean id="AccountQuotaUpdateChecker" class="org.zstack.identity.AccountQuotaUpdateChecker"/>
+
+    <bean id="SessionExtensions" class="org.zstack.identity.SessionExtensions">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.identity.PasswordUpdateExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.identity.AfterUpdateAccountExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
 

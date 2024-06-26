@@ -126,8 +126,8 @@ public class AccountBase extends AbstractAccount {
 
         // execute tf extension point
         final AccountInventory inventory = AccountInventory.valueOf(account);
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeUpdateAccountExtensionPoint.class),
-                arg -> arg.beforeUpdateAccount(inventory));
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterUpdateAccountExtensionPoint.class),
+                arg -> arg.afterUpdateAccount(inventory));
 
         APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
         evt.setInventory(AccountInventory.valueOf(account));

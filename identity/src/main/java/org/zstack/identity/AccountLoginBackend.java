@@ -43,6 +43,14 @@ public class AccountLoginBackend implements LoginBackend {
         LoginSessionInfo info = new LoginSessionInfo();
         boolean accountLogin = accountType == null || AccountConstant.LOGIN_TYPE.equals(accountType);
         if (vo != null && accountLogin) {
+            if (vo.getState() == AccountState.Disabled) {
+                completion.fail(err(IdentityErrors.ACCOUNT_DISABLED, "failed to login: account is disabled"));
+                return;
+            } else if (vo.getState() == AccountState.Staled) {
+                completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
+                return;
+            }
+
             info.setUserUuid(vo.getUuid());
             info.setAccountUuid(vo.getUuid());
             info.setUserType(AccountVO.class.getSimpleName());
