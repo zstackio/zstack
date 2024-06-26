@@ -2,13 +2,23 @@ package org.zstack.core.upgrade;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
+import org.zstack.header.Constants;
+import org.zstack.header.console.APIRequestConsoleAccessMsg;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.APIReconnectHostMsg;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.APIMigrateVmMsg;
+import org.zstack.header.vm.APIRebootVmInstanceMsg;
+import org.zstack.header.vm.APIStartVmInstanceMsg;
+import org.zstack.header.vm.APIStopVmInstanceMsg;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VersionComparator;
@@ -19,8 +29,10 @@ import org.zstack.utils.path.PathUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -38,6 +50,8 @@ public class UpgradeChecker implements Component {
     protected PluginRegistry pluginRgty;
 
     private static Map<String, Map<String, String>> grayUpgradeConfigMap = new HashMap<>();
+    private static ConcurrentLinkedQueue<String> grayScaleApiWhiteList = new ConcurrentLinkedQueue<>();
+    private static Set<String> predefinedApiClassSet = new HashSet<>();
 
     @Override
     public boolean start() {
@@ -45,12 +59,57 @@ public class UpgradeChecker implements Component {
             return true;
         }
         initGrayScaleConfig();
+        populateGlobalConfigForGrayscaleUpgrade();
         return true;
     }
 
     @Override
     public boolean stop() {
         return true;
+    }
+
+    private void initPredefinedApiClassSet() {
+        predefinedApiClassSet.add(APIStartVmInstanceMsg.class.getSimpleName());
+        predefinedApiClassSet.add(APIStopVmInstanceMsg.class.getSimpleName());
+        predefinedApiClassSet.add(APIRebootVmInstanceMsg.class.getSimpleName());
+        predefinedApiClassSet.add(APIRequestConsoleAccessMsg.class.getSimpleName());
+        predefinedApiClassSet.add(APIMigrateVmMsg.class.getSimpleName());
+        predefinedApiClassSet.add(APIReconnectHostMsg.class.getSimpleName());
+    }
+
+    private void populateGlobalConfigForGrayscaleUpgrade() {
+        initPredefinedApiClassSet();
+        grayScaleApiWhiteList.addAll(predefinedApiClassSet);
+        UpgradeGlobalConfig.ALLOWED_API_LIST_GRAYSCALE_UPGRADING
+                .installValidateExtension((category, name, oldValue, newValue) -> {
+                    List<String> apiClassNames;
+                    try {
+                        apiClassNames = Arrays.asList(newValue.split(","));
+                    } catch (PatternSyntaxException exception) {
+                        throw new GlobalConfigException(String.format("Failed to split config value by ','," +
+                                ", because %s. Please input a string separate api by ','", exception));
+                    }
+
+                    List<String> matchedApiClassName = apiClassNames.stream()
+                            .filter(className -> APIMessage.apiMessageClasses
+                                    .stream()
+                                    .anyMatch(clazz -> clazz.getSimpleName().equals(className)))
+                            .collect(Collectors.toList());
+
+                    apiClassNames.removeAll(matchedApiClassName);
+                    if (!apiClassNames.isEmpty()) {
+                        throw new GlobalConfigException(String.format("Failed to find api class name: %s", apiClassNames));
+                    }
+        });
+
+        UpgradeGlobalConfig.ALLOWED_API_LIST_GRAYSCALE_UPGRADING.installUpdateExtension((oldConfig, newConfig) -> {
+            List<String> apiClassNames = Arrays.asList(newConfig.value().split(","));
+            grayScaleApiWhiteList.clear();
+
+            apiClassNames.removeAll(predefinedApiClassSet);
+            grayScaleApiWhiteList.addAll(predefinedApiClassSet);
+            grayScaleApiWhiteList.addAll(apiClassNames);
+        });
     }
 
     public void initGrayScaleConfig() {
@@ -119,9 +178,22 @@ public class UpgradeChecker implements Component {
             return null;
         }
 
+        // grayscale api white list check
+        if (ThreadContext.containsKey(Constants.THREAD_CONTEXT_API)) {
+            String className = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
+            if (className != null && grayScaleApiWhiteList
+                    .stream()
+                    .noneMatch(className::contains)) {
+                return operr("Api: %s is not allowed by allowedApiListGrayscaleUpgrading: %s.",
+                        className,
+                        grayScaleApiWhiteList);
+            }
+        }
+
         List<Map<String, String>> relatedFieldsVersionMap = findCommandAndResponseFields(commandName);
         if (relatedFieldsVersionMap == null || relatedFieldsVersionMap.isEmpty()) {
-            return operr("No command %s not found, do not support grayscale upgrade", commandName);
+            logger.debug(String.format("Command: %s is not contained in gray scale upgrade check", commandName));
+            return null;
         }
 
         final Object commandObj;
