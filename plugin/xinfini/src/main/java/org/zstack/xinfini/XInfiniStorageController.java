@@ -745,6 +745,12 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
+    public void deleteVolumeQos(BaseVolumeInfo v, Completion comp) {
+        // TODO support qos
+        throw new OperationFailureException(operr("not support set volume qos yet"));
+    }
+
+    @Override
     public void export(ExportSpec espec, VolumeProtocol protocol, ReturnValueCompletion<RemoteTarget> comp) {
         if (protocol == VolumeProtocol.NVMEoF) {
             // TODO
