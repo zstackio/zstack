@@ -12,6 +12,14 @@ public class LdapEntryInventory  {
         return this.dn;
     }
 
+    public boolean enable;
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+    public boolean getEnable() {
+        return this.enable;
+    }
+
     public java.util.List attributes;
     public void setAttributes(java.util.List attributes) {
         this.attributes = attributes;

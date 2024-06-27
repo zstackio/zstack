@@ -29,6 +29,8 @@ public interface LdapConstant {
     }
 
     String[] QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES = {"cn","name","distinguishedname","displayname","userprincipalname","objectclass","entryDN","distinguishedName"};
+    String[] QUERY_WINDOWS_AD_ENTRY_MUST_RETURN_ATTRIBUTES = {"UserAccountControl"};
+    String[] QUERY_OPEN_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES = {};
 
     String QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR = ",";
 
