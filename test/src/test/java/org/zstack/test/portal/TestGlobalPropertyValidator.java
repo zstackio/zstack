@@ -6,7 +6,6 @@ import org.mockito.Mock;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.propertyvalidator.*;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.testlib.SubCase;
 
 import java.util.HashMap;
 import java.util.HashSet;

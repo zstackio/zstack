@@ -2,6 +2,7 @@ package org.zstack.expon.sdk;
 
 
 import org.springframework.http.HttpMethod;
+import org.zstack.externalStorage.sdk.Param;
 
 import java.util.HashMap;
 import java.util.Map;

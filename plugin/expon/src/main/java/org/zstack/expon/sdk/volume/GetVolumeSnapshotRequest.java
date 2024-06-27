@@ -4,7 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.expon.sdk.ExponQuery;
 import org.zstack.expon.sdk.ExponRequest;
 import org.zstack.expon.sdk.ExponRestRequest;
-import org.zstack.expon.sdk.Param;
+import org.zstack.externalStorage.sdk.Param;
 
 import java.util.HashMap;
 import java.util.Map;

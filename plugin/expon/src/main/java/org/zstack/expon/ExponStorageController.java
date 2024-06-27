@@ -97,6 +97,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(true);
         capabilities.setSupportLiveExpandVolume(false);
+        capabilities.setSupportExportVolumeSnapshot(true);
         capabilities.setSupportedImageFormats(Collections.singletonList("raw"));
     }
 
@@ -287,6 +288,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
         target.setDiskId(getDiskId(lunId, lunType));
+        target.setDiskIdType(IscsiRemoteTarget.DiskIdType.wwn.toString());
         to.setInstallPath(target.getResourceURI());
         return to;
     }
@@ -413,6 +415,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
         target.setDiskId(getDiskId(lunId, lunType));
+        target.setDiskIdType(IscsiRemoteTarget.DiskIdType.wwn.toString());
+
         return target;
     }
 
@@ -449,6 +453,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             target.setIqn(iscsi.getIqn());
             target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
             target.setDiskId((getDiskId(lunId, lunType)));
+            target.setDiskIdType(IscsiRemoteTarget.DiskIdType.wwn.toString());
             return target.getResourceURI();
         }
 
@@ -638,6 +643,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
         target.setDiskId(heartbeatVol.getWwn());
+        target.setDiskIdType(IscsiRemoteTarget.DiskIdType.wwn.toString());
         to.setInstallPath(target.getResourceURI());
         to.setHostId(getHostId(h));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
@@ -705,6 +711,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         target.setIqn(iscsi.getIqn());
         target.setIp(nodes.stream().map(IscsiSeverNode::getGatewayIp).collect(Collectors.joining(",")));
         target.setDiskId(heartbeatVol.getWwn());
+        target.setDiskIdType(IscsiRemoteTarget.DiskIdType.wwn.toString());
         to.setInstallPath(target.getResourceURI());
         to.setHostId(getHostId(h));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
