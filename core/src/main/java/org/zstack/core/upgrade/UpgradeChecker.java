@@ -10,6 +10,7 @@ import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.Constants;
+import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.console.APIRequestConsoleAccessMsg;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -75,6 +76,7 @@ public class UpgradeChecker implements Component {
         predefinedApiClassSet.add(APIRequestConsoleAccessMsg.class.getSimpleName());
         predefinedApiClassSet.add(APIMigrateVmMsg.class.getSimpleName());
         predefinedApiClassSet.add(APIReconnectHostMsg.class.getSimpleName());
+        predefinedApiClassSet.add(APIUpdateClusterOSMsg.class.getSimpleName());
     }
 
     private void populateGlobalConfigForGrayscaleUpgrade() {
