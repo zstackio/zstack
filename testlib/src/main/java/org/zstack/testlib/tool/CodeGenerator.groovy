@@ -1,5 +1,7 @@
 package org.zstack.testlib.tool
 
+import org.reflections.Reflections
+import org.zstack.utils.BeanUtils
 import org.zstack.utils.StringTemplateUtils
 
 import javax.persistence.*
@@ -25,7 +27,8 @@ class CodeGenerator {
      *
      * @param entityClass the jpa vo entity class
      */
-    static void generateCodeFromJpaEntity(Class<?> entityClass) {
+    static void generateCodeFromJpaEntity(String entity) {
+        Class<?> entityClass =  BeanUtils.reflections.forClass(entity)
         if (!entityClass.isAnnotationPresent(Entity.class) && !entityClass.isAnnotationPresent(MappedSuperclass.class)) {
             System.out.printf("%s is not a JPA entity class", entityClass.getName())
             return
