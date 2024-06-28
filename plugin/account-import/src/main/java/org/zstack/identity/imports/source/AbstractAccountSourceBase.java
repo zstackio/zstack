@@ -17,6 +17,8 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.Message;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.header.CreateAccountSpec;
@@ -38,6 +40,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -50,18 +53,16 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.CreateAccountMsg;
 import org.zstack.header.identity.CreateAccountReply;
 import org.zstack.header.identity.DeleteAccountMsg;
 import org.zstack.header.message.MessageReply;
 
-import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -146,6 +147,7 @@ public abstract class AbstractAccountSourceBase {
     @SuppressWarnings("rawtypes")
     public final void importAccounts(ImportAccountSpec spec, ReturnValueCompletion<List<ImportAccountResult>> completion) {
         List<ImportThirdPartyAccountContext> contexts = new ArrayList<>(spec.getAccountList().size());
+        List<ImportThirdPartyAccountContext> validContexts = new ArrayList<>(spec.getAccountList().size());
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("chain-with-importing-accounts-from-source-%s", spec.getSourceUuid()));
@@ -154,14 +156,65 @@ public abstract class AbstractAccountSourceBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 buildContextsFromSpec();
+                fillBindingIfExists();
+                fillAccountIfExists();
                 validateIfAccountNotPresent();
                 validateIfAccountBindOtherSource();
                 trigger.next();
             }
 
             private void buildContextsFromSpec() {
+                for (CreateAccountSpec accountSpec : spec.getAccountList()) {
+                    final ImportThirdPartyAccountContext context = new ImportThirdPartyAccountContext();
+                    context.spec = accountSpec;
+                    contexts.add(context);
+                    validContexts.add(context);
+                }
+            }
+
+            private void fillBindingIfExists() {
+                Map<String, ImportThirdPartyAccountContext> credentialsContextMap = toMap(
+                        contexts, context -> context.spec.getCredentials(), Function.identity());
+                int totalSize = credentialsContextMap.size();
+
+                Map<String, AccountThirdPartyAccountSourceRefVO> credentialsRefMap = new HashMap<>();
+                SQL.New("select ref " +
+                        "from AccountThirdPartyAccountSourceRefVO ref " +
+                        "where " +
+                                "credentials in (:credentialsSet) and " +
+                                "accountSourceUuid = :sourceUuid",
+                                AccountThirdPartyAccountSourceRefVO.class)
+                        .param("credentialsSet", credentialsContextMap.keySet())
+                        .param("sourceUuid", self.getUuid())
+                        .limit(25)
+                        .paginate(totalSize, (List<AccountThirdPartyAccountSourceRefVO> refs) -> {
+                            for (AccountThirdPartyAccountSourceRefVO ref : refs) {
+                                credentialsRefMap.put(ref.getCredentials(), ref);
+                            }
+                        });
+
+                credentialsRefMap.forEach((credentials, ref) -> {
+                    ImportThirdPartyAccountContext context = credentialsContextMap.get(credentials);
+                    if (context.spec.getAccountUuid() != null &&
+                            !context.spec.getAccountUuid().equals(ref.getAccountUuid())) {
+                        context.errorForValidation = operr(
+                                "third party user[credentials=%s] has already binding to other account", credentials);
+                        validContexts.remove(context);
+                        return;
+                    }
+
+                    context.ref = ref;
+                    context.bindingExisting = true;
+                    context.spec.setAccountUuid(ref.getAccountUuid());
+                    logger.debug(String.format(
+                            "account[uuid=%s] has already binding third party source[uuid=%s], skip binding execution",
+                            ref.getAccountUuid(), self.getUuid()));
+                });
+            }
+
+            private void fillAccountIfExists() {
                 final Set<String> accountUuidSet =
-                        transformToSetAndRemoveNull(spec.getAccountList(), CreateAccountSpec::getAccountUuid);
+                        transformToSetAndRemoveNull(validContexts, context -> context.spec.getAccountUuid());
 
                 final Map<String, AccountVO> uuidExistingAccountMap = new HashMap<>();
                 if (!accountUuidSet.isEmpty()) {
@@ -169,7 +222,7 @@ public abstract class AbstractAccountSourceBase {
 
                     SQL.New("select account from AccountVO account where uuid in (:uuidSet)", AccountVO.class)
                             .param("uuidSet", accountUuidSet)
-                            .limit(50)
+                            .limit(25)
                             .paginate(totalSize, (List<AccountVO> accounts) -> {
                                 for (AccountVO account : accounts) {
                                     uuidExistingAccountMap.put(account.getUuid(), account);
@@ -177,21 +230,23 @@ public abstract class AbstractAccountSourceBase {
                             });
                 }
 
-                for (CreateAccountSpec accountSpec : spec.getAccountList()) {
-                    final ImportThirdPartyAccountContext context = new ImportThirdPartyAccountContext();
-                    context.spec = accountSpec;
+                for (ImportThirdPartyAccountContext context : contexts) {
+                    String accountUuid = context.spec.getAccountUuid();
+                    if (accountUuid == null) {
+                        continue;
+                    }
 
-                    AccountVO account = uuidExistingAccountMap.get(accountSpec.getAccountUuid());
+                    AccountVO account = uuidExistingAccountMap.get(accountUuid);
                     if (account != null) {
                         context.account = AccountInventory.valueOf(account);
-                        context.bindToExistingAccount = true;
+                        context.accountExisting = true;
                     }
-                    contexts.add(context);
                 }
             }
 
             private void validateIfAccountNotPresent() {
-                for (ImportThirdPartyAccountContext context : contexts) {
+                for (Iterator<ImportThirdPartyAccountContext> it = validContexts.iterator(); it.hasNext();) {
+                    ImportThirdPartyAccountContext context = it.next();
                     final CreateAccountSpec accountSpec = context.spec;
 
                     if (accountSpec.isCreateIfNotExist()) {
@@ -200,54 +255,48 @@ public abstract class AbstractAccountSourceBase {
 
                     if (accountSpec.getAccountUuid() == null) {
                         context.errorForValidation = operr("invalid account spec: accountUuid is null");
+                        it.remove();
                         continue;
                     }
 
                     if (context.account == null) {
                         context.errorForValidation = operr("invalid account spec: failed to find account[uuid=%s]",
                                 accountSpec.getAccountUuid());
+                        it.remove();
                     }
                 }
             }
 
             private void validateIfAccountBindOtherSource() {
-                final List<ImportThirdPartyAccountContext> filteredContexts = contexts.stream()
-                        .filter(context -> !context.hasError())
-                        .filter(context -> context.bindToExistingAccount)
+                final List<ImportThirdPartyAccountContext> filteredContexts = validContexts.stream()
+                        .filter(context -> context.accountExisting)
+                        .filter(context -> context.ref == null)
                         .collect(Collectors.toList());
                 if (filteredContexts.isEmpty()) {
                     return;
                 }
 
                 final List<String> accountUuidList = transform(filteredContexts, context -> context.account.getUuid());
-                final List<Tuple> accountsAlreadyBinding = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                final List<String> accountsBindingToOtherSource = Q.New(AccountThirdPartyAccountSourceRefVO.class)
                         .in(AccountThirdPartyAccountSourceRefVO_.accountUuid, accountUuidList)
-                        .select(AccountThirdPartyAccountSourceRefVO_.accountUuid, AccountThirdPartyAccountSourceRefVO_.accountSourceUuid)
-                        .listTuple();
-                for (Tuple tuple : accountsAlreadyBinding) {
-                    String accountUuid = tuple.get(0, String.class);
-                    String sourceUuid = tuple.get(1, String.class);
+                        .notEq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, self.getUuid())
+                        .select(AccountThirdPartyAccountSourceRefVO_.accountUuid)
+                        .listValues();
+                for (String accountUuid : accountsBindingToOtherSource) {
                     ImportThirdPartyAccountContext context =
                             findOneOrNull(contexts, c -> Objects.equals(c.spec.getAccountUuid(), accountUuid));
-                    if (Objects.equals(sourceUuid, self.getUuid())) {
-                        logger.debug(String.format(
-                                "account[uuid=%s] has already binding third party source[uuid=%s], skip binding execution",
-                                accountUuid, sourceUuid));
-                        context.skipBinding = true;
-                    } else {
-                        context.errorForValidation =
-                                operr("account[uuid=%s] has already binding other third party source[uuid=%s]",
-                                accountUuid, sourceUuid);
-                    }
+                    context.errorForValidation =
+                            operr("account[uuid=%s] has already binding other third party source",
+                            accountUuid);
+                    validContexts.remove(context);
                 }
             }
         }).then(new Flow() {
             String __name__ = "generate-accounts";
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                new While<>(spec.getAccountList()).each((accountSpec, whileCompletion) -> {
-                    final ImportThirdPartyAccountContext context = findOneOrNull(contexts, c -> c.spec == accountSpec);
-                    if (context.hasError() || context.bindToExistingAccount) {
+                new While<>(new ArrayList<>(validContexts)).each((context, whileCompletion) -> {
+                    if (context.accountExisting) {
                         whileCompletion.done();
                         return;
                     }
@@ -257,9 +306,9 @@ public abstract class AbstractAccountSourceBase {
 
                     CreateAccountMsg message = new CreateAccountMsg();
                     message.setUuid(accountUuid);
-                    message.setName(accountSpec.getUsername());
-                    message.setPassword(accountSpec.getPassword());
-                    message.setType(accountSpec.getAccountType().toString());
+                    message.setName(context.spec.getUsername());
+                    message.setPassword(context.spec.getPassword());
+                    message.setType(context.spec.getAccountType().toString());
                     bus.makeLocalServiceId(message, AccountConstant.SERVICE_ID);
                     bus.send(message, new CloudBusCallBack(whileCompletion) {
                         @Override
@@ -268,6 +317,7 @@ public abstract class AbstractAccountSourceBase {
                                 context.account = ((CreateAccountReply) reply).getInventory();
                             } else {
                                 context.errorForCreatingAccount = reply.getError();
+                                validContexts.remove(context);
                             }
                             whileCompletion.done();
                         }
@@ -320,7 +370,7 @@ public abstract class AbstractAccountSourceBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 List<ImportThirdPartyAccountContext> filteredContexts =
-                        filter(contexts, context -> !context.hasError() && !context.skipBinding);
+                        filter(validContexts, context -> !context.bindingExisting);
 
                 if (filteredContexts.isEmpty()) {
                     trigger.next();
