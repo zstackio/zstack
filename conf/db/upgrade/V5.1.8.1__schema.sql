@@ -56,6 +56,7 @@ CREATE TABLE  `zstack`.`ModelServiceInstanceGroupVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `modelServiceUuid` varchar(32) NOT NULL,
     `modelUuid` varchar(32) NOT NULL,
+    `name` varchar(255) DEFAULT NULL,
     `status` varchar(255) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
