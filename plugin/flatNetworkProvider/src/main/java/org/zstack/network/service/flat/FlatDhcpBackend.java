@@ -1599,30 +1599,22 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     }
 
-    private void refreshDhcpInfoForConnectedHost(HostInventory hostInv, L3NetworkInventory l3Inv, Completion completion) {
-        final List<DhcpInfo> dhcpInfoList = getDhcpInfoForConnectedKvmHost(hostInv, l3Inv.getUuid());
-        if (dhcpInfoList == null) {
-            logger.debug(String.format("there is no vm running on host[uuid:%s] for L3 network[uuid:%s]",
-                    hostInv.getUuid(), l3Inv.getUuid()));
-            completion.success();
-            return;
-        }
-
+    private void refreshDhcpInfoForConnectedHost(String hostUuid, List<DhcpInfo> dhcpInfoList, Completion completion) {
         // to flush ebtables
         ConnectCmd cmd = new ConnectCmd();
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-        msg.setHostUuid(hostInv.getUuid());
+        msg.setHostUuid(hostUuid);
         msg.setCommand(cmd);
         msg.setNoStatusCheck(true);
         msg.setPath(DHCP_CONNECT_PATH);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostInv.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
                 } else {
-                    applyDhcpToHosts(dhcpInfoList, hostInv.getUuid(), true, new Completion(completion) {
+                    applyDhcpToHosts(dhcpInfoList, hostUuid, true, new Completion(completion) {
                         @Override
                         public void success() {
                             completion.success();
@@ -2593,8 +2585,24 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        new While<>(hosts).step((hostVO, wcomp) -> {
-            refreshDhcpInfoForConnectedHost(KVMHostInventory.valueOf(hostVO), L3NetworkInventory.valueOf(l3VO), new Completion(wcomp) {
+        Map<String, List<DhcpInfo>> dhcpInfoMap = new HashMap<>();
+        for (HostVO vo : hosts) {
+            List<DhcpInfo> dhcpInfoList = getDhcpInfoForConnectedKvmHost(KVMHostInventory.valueOf(vo), l3VO.getUuid());
+            if (dhcpInfoList != null) {
+                dhcpInfoMap.put(vo.getUuid(), dhcpInfoList);
+            }
+        }
+        if (dhcpInfoMap.isEmpty()) {
+            logger.debug(String.format("there is no host has vm for l3 network[uuid:%s]", l3VO.getUuid()));
+            completion.success();
+            return;
+        }
+
+        
+        new While<>(dhcpInfoMap.entrySet()).step((entry, wcomp) -> {
+            String hostUuid = entry.getKey();
+            List<DhcpInfo> dhcpInfos = entry.getValue();
+            refreshDhcpInfoForConnectedHost(hostUuid, dhcpInfos, new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();
