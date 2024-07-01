@@ -11,13 +11,13 @@ import javax.persistence.metamodel.StaticMetamodel;
 public class HostHwMonitorStatusVO_ {
 
     public static volatile SingularAttribute<HostHwMonitorStatusVO, String> uuid;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> cpuStatus;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> memoryStatus;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> diskStatus;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> nicStatus;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> gpuStatus;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> powerSupplyStatus;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> fanStatus;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> raidStatus;
-    public static volatile SingularAttribute<HostHwMonitorStatusVO, Boolean> temperatureStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> cpuStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> memoryStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> diskStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> nicStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> gpuStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> powerSupplyStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> fanStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> raidStatus;
+    public static volatile SingularAttribute<HostHwMonitorStatusVO, HwMonitorStatus> temperatureStatus;
 }

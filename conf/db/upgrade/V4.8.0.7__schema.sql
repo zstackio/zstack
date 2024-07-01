@@ -42,15 +42,15 @@ DROP PROCEDURE IF EXISTS `MdevDeviceAddVendor`;
 CREATE TABLE IF NOT EXISTS `HostHwMonitorStatusVO`
 (
     `uuid` varchar(32)  NOT NULL UNIQUE,
-    `cpuStatus` TINYINT(1)  unsigned DEFAULT 1,
-    `memoryStatus` TINYINT(1) unsigned DEFAULT 1,
-    `diskStatus` TINYINT(1) unsigned DEFAULT 1,
-    `nicStatus` TINYINT(1) unsigned DEFAULT 1,
-    `gpuStatus` TINYINT(1) unsigned DEFAULT 1,
-    `powerSupplyStatus` TINYINT(1) unsigned DEFAULT 1,
-    `fanStatus` TINYINT(1) unsigned DEFAULT 1,
-    `raidStatus` TINYINT(1) unsigned DEFAULT 1,
-    `temperatureStatus` TINYINT(1) unsigned DEFAULT 1,
+    `cpuStatus` varchar(32) NOT NULL,
+    `memoryStatus` varchar(32) NOT NULL,
+    `diskStatus` varchar(32) NOT NULL,
+    `nicStatus` varchar(32) NOT NULL,
+    `gpuStatus` varchar(32) NOT NULL,
+    `powerSupplyStatus` varchar(32) NOT NULL,
+    `fanStatus` varchar(32) NOT NULL,
+    `raidStatus` varchar(32) NOT NULL,
+    `temperatureStatus` varchar(32) NOT NULL,
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkHostHwMonitorStatusVO` FOREIGN KEY (`uuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8;

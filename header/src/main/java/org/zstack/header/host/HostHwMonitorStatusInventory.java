@@ -16,15 +16,15 @@ import java.util.List;
 @Inventory(mappingVOClass = HostHwMonitorStatusVO.class, collectionValueOfMethod = "valueOf1")
 public class HostHwMonitorStatusInventory implements Serializable {
     private String uuid;
-    private Boolean cpuStatus;
-    private Boolean memoryStatus;
-    private Boolean diskStatus;
-    private Boolean fanStatus;
-    private Boolean powerSupplyStatus;
-    private Boolean raidStatus;
-    private Boolean networkStatus;
-    private Boolean gpuStatus;
-    private Boolean temperatureStatus;
+    private HwMonitorStatus cpuStatus;
+    private HwMonitorStatus memoryStatus;
+    private HwMonitorStatus diskStatus;
+    private HwMonitorStatus fanStatus;
+    private HwMonitorStatus powerSupplyStatus;
+    private HwMonitorStatus raidStatus;
+    private HwMonitorStatus networkStatus;
+    private HwMonitorStatus gpuStatus;
+    private HwMonitorStatus temperatureStatus;
 
     protected HostHwMonitorStatusInventory(HostHwMonitorStatusVO vo) {
         this.setUuid(vo.getUuid());
@@ -63,75 +63,75 @@ public class HostHwMonitorStatusInventory implements Serializable {
         this.uuid = uuid;
     }
 
-    public Boolean getCpuStatus() {
+    public HwMonitorStatus getCpuStatus() {
         return cpuStatus;
     }
 
-    public void setCpuStatus(Boolean cpuStatus) {
+    public void setCpuStatus(HwMonitorStatus cpuStatus) {
         this.cpuStatus = cpuStatus;
     }
 
-    public Boolean getMemoryStatus() {
+    public HwMonitorStatus getMemoryStatus() {
         return memoryStatus;
     }
 
-    public void setMemoryStatus(Boolean memoryStatus) {
+    public void setMemoryStatus(HwMonitorStatus memoryStatus) {
         this.memoryStatus = memoryStatus;
     }
 
-    public Boolean getDiskStatus() {
+    public HwMonitorStatus getDiskStatus() {
         return diskStatus;
     }
 
-    public void setDiskStatus(Boolean diskStatus) {
+    public void setDiskStatus(HwMonitorStatus diskStatus) {
         this.diskStatus = diskStatus;
     }
 
-    public Boolean getFanStatus() {
+    public HwMonitorStatus getFanStatus() {
         return fanStatus;
     }
 
-    public void setFanStatus(Boolean fanStatus) {
+    public void setFanStatus(HwMonitorStatus fanStatus) {
         this.fanStatus = fanStatus;
     }
 
-    public Boolean getPowerSupplyStatus() {
+    public HwMonitorStatus getPowerSupplyStatus() {
         return powerSupplyStatus;
     }
 
-    public void setPowerSupplyStatus(Boolean powerSupplyStatus) {
+    public void setPowerSupplyStatus(HwMonitorStatus powerSupplyStatus) {
         this.powerSupplyStatus = powerSupplyStatus;
     }
 
-    public Boolean getRaidStatus() {
+    public HwMonitorStatus getRaidStatus() {
         return raidStatus;
     }
 
-    public void setRaidStatus(Boolean raidStatus) {
+    public void setRaidStatus(HwMonitorStatus raidStatus) {
         this.raidStatus = raidStatus;
     }
 
-    public Boolean getNetworkStatus() {
+    public HwMonitorStatus getNetworkStatus() {
         return networkStatus;
     }
 
-    public void setNetworkStatus(Boolean networkStatus) {
+    public void setNetworkStatus(HwMonitorStatus networkStatus) {
         this.networkStatus = networkStatus;
     }
 
-    public Boolean getGpuStatus() {
+    public HwMonitorStatus getGpuStatus() {
         return gpuStatus;
     }
 
-    public void setGpuStatus(Boolean gpuStatus) {
+    public void setGpuStatus(HwMonitorStatus gpuStatus) {
         this.gpuStatus = gpuStatus;
     }
 
-    public Boolean getTemperatureStatus() {
+    public HwMonitorStatus getTemperatureStatus() {
         return temperatureStatus;
     }
 
-    public void setTemperatureStatus(Boolean temperatureStatus) {
+    public void setTemperatureStatus(HwMonitorStatus temperatureStatus) {
         this.temperatureStatus = temperatureStatus;
     }
 }
