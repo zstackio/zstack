@@ -254,10 +254,10 @@ public class LdapSyncHelper {
             private void printUnbindingList(Map<String, String> credentialsAccountMapNeedDelete) {
                 StringBuilder builder = new StringBuilder(128 + credentialsAccountMapNeedDelete.size() << 7);
                 builder.append(String.format(
-                        "LDAP[uuid=%s, deleteStrategy=%s] unbinding account list below:\n",
+                        "LDAP[uuid=%s, deleteStrategy=%s] unbinding account list below:%n",
                         importSpec.getSourceUuid(), taskSpec.getDeleteAccountStrategy()));
                 for (Map.Entry<String, String> entry : credentialsAccountMapNeedDelete.entrySet()) {
-                    builder.append(String.format("\taccountUuid=%s, credentials=%s\n", entry.getValue(), entry.getKey()));
+                    builder.append(String.format("\taccountUuid=%s, credentials=%s%n", entry.getValue(), entry.getKey()));
                 }
                 logger.info(builder.toString());
             }

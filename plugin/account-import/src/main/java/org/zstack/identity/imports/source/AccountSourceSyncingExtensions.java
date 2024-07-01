@@ -8,6 +8,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.identity.imports.AccountImportsConstant;
 import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
@@ -26,7 +27,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.identity.imports.AccountImportsGlobalConfig.*;
 
-public class AccountSourceSyncingExtensions implements Component, CreateAccountSourceExtensionPoint {
+public class AccountSourceSyncingExtensions implements Component,
+        CreateAccountSourceExtensionPoint,
+        ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AccountSourceSyncingExtensions.class);
 
     private Map<String, Future<Void>> autoSyncTaskMap = new ConcurrentHashMap<>();
@@ -62,7 +65,6 @@ public class AccountSourceSyncingExtensions implements Component, CreateAccountS
                 .listValues();
 
         for (String sourceUuid : sourceUuids) {
-            startSyncTaskNowIfNeeded(sourceUuid);
             updateAutoSyncTask(sourceUuid);
         }
     }
@@ -83,18 +85,6 @@ public class AccountSourceSyncingExtensions implements Component, CreateAccountS
         }
 
         autoSyncTaskMap.remove(sourceUuid);
-    }
-
-    private void startSyncTaskNowIfNeeded(String sourceUuid) {
-        boolean needSyncWhenMNStart = resourceConfigFacade.getResourceConfigValue(
-                SYNC_ACCOUNTS_ON_START, sourceUuid, Boolean.class);
-
-        boolean manageByMe = resourceDestinationMaker.isManagedByUs(sourceUuid);
-        if (!needSyncWhenMNStart || !manageByMe) {
-            return;
-        }
-
-        sendSyncAccountMessage(sourceUuid);
     }
 
     private void installGlobalConfigValidator() {
@@ -167,5 +157,21 @@ public class AccountSourceSyncingExtensions implements Component, CreateAccountS
     @Override
     public void afterCreatingAccountSource(ThirdPartyAccountSourceVO source) {
         updateAutoSyncTask(source.getUuid());
+    }
+
+    @Override
+    public void managementNodeReady() {
+        List<String> sourceUuids = Q.New(ThirdPartyAccountSourceVO.class)
+                .select(ThirdPartyAccountSourceVO_.uuid)
+                .listValues();
+
+        for (String sourceUuid : sourceUuids) {
+            boolean needSyncWhenMNStart = resourceConfigFacade.getResourceConfigValue(
+                SYNC_ACCOUNTS_ON_START, sourceUuid, Boolean.class);
+
+            if (needSyncWhenMNStart) {
+                sendSyncAccountMessage(sourceUuid);
+            }
+        }
     }
 }

@@ -15,8 +15,8 @@ public class ImportThirdPartyAccountContext {
     public CreateAccountSpec spec;
     public AccountThirdPartyAccountSourceRefVO ref;
     public boolean readyToCreateAccount;
-    public boolean bindToExistingAccount;
-    public boolean skipBinding;
+    public boolean accountExisting;
+    public boolean bindingExisting;
     public ErrorCode errorForValidation;
     public ErrorCode errorForCreatingAccount;
 
@@ -26,8 +26,11 @@ public class ImportThirdPartyAccountContext {
 
     public ImportAccountResult makeResult() {
         ImportAccountResult result = new ImportAccountResult();
-        result.setRef(AccountThirdPartyAccountSourceRefInventory.valueOf(this.ref));
-        result.setError(errorForValidation == null ? errorForCreatingAccount : errorForValidation);
+        if (hasError()) {
+            result.setError(errorForValidation == null ? errorForCreatingAccount : errorForValidation);
+        } else {
+            result.setRef(AccountThirdPartyAccountSourceRefInventory.valueOf(this.ref));
+        }
         return result;
     }
 }

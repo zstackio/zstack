@@ -438,8 +438,16 @@ public class LdapUtil {
         }
 
         returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES));
-
         returnedAttSet.add(ldap.getUsernameProperty());
+
+        switch (ldap.getServerType()) {
+        case OpenLdap:
+            returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_OPEN_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES));
+            break;
+        case WindowsAD: default:
+            returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_WINDOWS_AD_ENTRY_MUST_RETURN_ATTRIBUTES));
+            break;
+        }
 
         return returnedAttSet.toArray(new String[]{});
     }

@@ -16,9 +16,16 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.*;
 
 public class LdapEntryContextMapper extends AbstractContextMapper<LdapEntryInventory> {
     private static final CLogger logger = Utils.getLogger(LdapEntryContextMapper.class);
+
+    private static final String WINDOWS_AD_USER_ACCOUNT_CONTROL = "userAccountControl";
+    /**
+     * see https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/useraccountcontrol-manipulate-account-properties
+     */
+    private static final int CONTROL_FLAG_DISABLE = 0x0002;
 
     private Predicate<String> resultFilter;
 
@@ -28,7 +35,7 @@ public class LdapEntryContextMapper extends AbstractContextMapper<LdapEntryInven
     }
 
     @Override
-    protected LdapEntryInventory doMapFromContext(DirContextOperations ctx) {
+    public LdapEntryInventory doMapFromContext(DirContextOperations ctx) {
         if (resultFilter != null && !resultFilter.test(ctx.getNameInNamespace())){
             return null;
         }
@@ -56,6 +63,7 @@ public class LdapEntryContextMapper extends AbstractContextMapper<LdapEntryInven
             throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
         }
 
+        fillUserState(result);
         return result;
     }
 
@@ -76,5 +84,23 @@ public class LdapEntryContextMapper extends AbstractContextMapper<LdapEntryInven
         }
         logger.debug("skip buildAttribute from class: " + attribute.getClass().getName());
         return null;
+    }
+
+    private void fillUserState(LdapEntryInventory inventory) {
+        LdapEntryAttributeInventory attribute = findOneOrNull(inventory.getAttributes(),
+                item -> WINDOWS_AD_USER_ACCOUNT_CONTROL.equals(item.getId()));
+        if (attribute == null) {
+            inventory.setEnable(true);
+            return;
+        }
+
+        try {
+            int flag = Integer.parseInt(attribute.getValues().get(0).toString());
+            inventory.setEnable((flag & CONTROL_FLAG_DISABLE) == 0);
+        } catch (RuntimeException e) {
+            logger.info(String.format("failed to parse attribute %s=%s for ldap entry[dn=%s]: %s",
+                    WINDOWS_AD_USER_ACCOUNT_CONTROL, attribute.getValues(), inventory.getDn(), e.getMessage()));
+            inventory.setEnable(true);
+        }
     }
 }
