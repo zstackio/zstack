@@ -219,3 +219,26 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2ChassisGpuDeviceVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkBm2ChassisGpuDeviceVOBm2ChassisPciDeviceVO` FOREIGN KEY (`uuid`) REFERENCES `BareMetal2ChassisPciDeviceVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP PROCEDURE IF EXISTS `CreateGpuDeviceVO`;
+DELIMITER $$
+CREATE PROCEDURE CreateGpuDeviceVO()
+    BEGIN
+        DECLARE uuid VARCHAR(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT pci.uuid FROM PciDeviceVO pci where pci.type in ('GPU_Video_Controller', 'GPU_3D_Controller');
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO uuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+            insert into GpuDeviceVO (uuid) values (uuid);
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+call CreateGpuDeviceVO;
+DROP PROCEDURE IF EXISTS `CreateGpuDeviceVO`;
