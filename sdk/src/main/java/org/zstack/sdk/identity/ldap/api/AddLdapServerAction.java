@@ -46,19 +46,19 @@ public class AddLdapServerAction extends AbstractAction {
     @Param(required = true, validValues = {"None","TLS"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String encryption;
 
-    @Param(required = true, validValues = {"OpenLdap","WindowsAD","Unknown"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"OpenLdap","WindowsAD","Unknown"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String serverType = "Unknown";
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String usernameProperty = "cn";
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String filter;
 
-    @Param(required = true, validValues = {"NoAction","CreateAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"NoAction","CreateAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String syncCreatedAccountStrategy = "CreateAccount";
 
-    @Param(required = true, validValues = {"NoAction","DeleteAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"NoAction","DeleteAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String syncDeletedAccountStrategy = "NoAction";
 
     @Param(required = false)
