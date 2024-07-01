@@ -3,10 +3,7 @@ package org.zstack.header.host;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * @Author: qiuyu.zhang
@@ -26,31 +23,40 @@ public class HostHwMonitorStatusVO {
     private String uuid;
 
     @Column
-    private Boolean cpuStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus cpuStatus;
 
     @Column
-    private Boolean memoryStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus memoryStatus;
 
     @Column
-    private Boolean diskStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus diskStatus;
 
     @Column
-    private Boolean nicStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus nicStatus;
 
     @Column
-    private Boolean gpuStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus gpuStatus;
 
     @Column
-    private Boolean powerSupplyStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus powerSupplyStatus;
 
     @Column
-    private Boolean fanStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus fanStatus;
 
     @Column
-    private Boolean raidStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus raidStatus;
 
     @Column
-    private Boolean temperatureStatus;
+    @Enumerated(EnumType.STRING)
+    private HwMonitorStatus temperatureStatus;
 
     public String getUuid() {
         return uuid;
@@ -60,75 +66,75 @@ public class HostHwMonitorStatusVO {
         this.uuid = uuid;
     }
 
-    public Boolean getCpuStatus() {
+    public HwMonitorStatus getCpuStatus() {
         return cpuStatus;
     }
 
-    public void setCpuStatus(Boolean cpuStatus) {
+    public void setCpuStatus(HwMonitorStatus cpuStatus) {
         this.cpuStatus = cpuStatus;
     }
 
-    public Boolean getMemoryStatus() {
+    public HwMonitorStatus getMemoryStatus() {
         return memoryStatus;
     }
 
-    public void setMemoryStatus(Boolean memoryStatus) {
+    public void setMemoryStatus(HwMonitorStatus memoryStatus) {
         this.memoryStatus = memoryStatus;
     }
 
-    public Boolean getDiskStatus() {
+    public HwMonitorStatus getDiskStatus() {
         return diskStatus;
     }
 
-    public void setDiskStatus(Boolean diskStatus) {
+    public void setDiskStatus(HwMonitorStatus diskStatus) {
         this.diskStatus = diskStatus;
     }
 
-    public Boolean getNicStatus() {
+    public HwMonitorStatus getNicStatus() {
         return nicStatus;
     }
 
-    public void setNicStatus(Boolean nicStatus) {
+    public void setNicStatus(HwMonitorStatus nicStatus) {
         this.nicStatus = nicStatus;
     }
 
-    public Boolean getGpuStatus() {
+    public HwMonitorStatus getGpuStatus() {
         return gpuStatus;
     }
 
-    public void setGpuStatus(Boolean gpuStatus) {
+    public void setGpuStatus(HwMonitorStatus gpuStatus) {
         this.gpuStatus = gpuStatus;
     }
 
-    public Boolean getPowerSupplyStatus() {
+    public HwMonitorStatus getPowerSupplyStatus() {
         return powerSupplyStatus;
     }
 
-    public void setPowerSupplyStatus(Boolean powerSupplyStatus) {
+    public void setPowerSupplyStatus(HwMonitorStatus powerSupplyStatus) {
         this.powerSupplyStatus = powerSupplyStatus;
     }
 
-    public Boolean getFanStatus() {
+    public HwMonitorStatus getFanStatus() {
         return fanStatus;
     }
 
-    public void setFanStatus(Boolean fanStatus) {
+    public void setFanStatus(HwMonitorStatus fanStatus) {
         this.fanStatus = fanStatus;
     }
 
-    public Boolean getRaidStatus() {
+    public HwMonitorStatus getRaidStatus() {
         return raidStatus;
     }
 
-    public void setRaidStatus(Boolean raidStatus) {
+    public void setRaidStatus(HwMonitorStatus raidStatus) {
         this.raidStatus = raidStatus;
     }
 
-    public Boolean getTemperatureStatus() {
+    public HwMonitorStatus getTemperatureStatus() {
         return temperatureStatus;
     }
 
-    public void setTemperatureStatus(Boolean temperatureStatus) {
+    public void setTemperatureStatus(HwMonitorStatus temperatureStatus) {
         this.temperatureStatus = temperatureStatus;
     }
 }
