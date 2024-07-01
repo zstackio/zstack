@@ -67,11 +67,11 @@ CREATE TABLE  `zstack`.`ModelServiceInstanceGroupVO` (
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `description` varchar(2048) DEFAULT NULL,
-    `yaml` mediumtext NOT NULL,
+    `yaml` mediumtext DEFAULT NULL,
     `status` varchar(255) NOT NULL,
     `url` varchar(2048) NOT NULL,
     `modelServiceGroupUuid` varchar(32) NOT NULL,
-    `vmInstanceUuid` varchar(32) NOT NULL,
+    `vmInstanceUuid` varchar(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`),
