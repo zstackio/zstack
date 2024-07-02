@@ -32,11 +32,11 @@ class LdapVirtualEndpointSpec extends Spec {
 
     Supplier<ErrorCode> defaultTestConnectionHandler = { null }
     Supplier<ErrorCode> testConnectionHandler = defaultTestConnectionHandler
-    Function<LdapSearchSpec, List<LdapEntryInventory>> defaultSearchHandler = { return [] }
+    Function<LdapSearchSpec, List<LdapEntryInventory>> defaultSearchHandler = { spec -> return [] }
     Function<LdapSearchSpec, List<LdapEntryInventory>> searchHandler = defaultSearchHandler
-    BiFunction<String, String, Boolean> defaultAuthenticateHandler = { true }
+    BiFunction<String, String, Boolean> defaultAuthenticateHandler = { username, password -> true }
     BiFunction<String, String, Boolean> authenticateHandler = defaultAuthenticateHandler
-    BiFunction<String, String, String> defaultFullDnGetter = { "" }
+    BiFunction<String, String, String> defaultFullDnGetter = { usernameProperty, username -> "" }
     BiFunction<String, String, String> fullDnGetter = defaultFullDnGetter
 
     LdapVirtualEndpointSpec(EnvSpec envSpec) {

@@ -104,6 +104,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     vo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
                     vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
                     vo.setType(AccountType.SystemAdmin);
+                    vo.setState(AccountState.Enabled);
                     persist(vo);
                     flush();
 
@@ -572,6 +573,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 vo.setDescription(msg.getDescription());
                 vo.setPassword(msg.getPassword());
                 vo.setType(msg.getType() != null ? AccountType.valueOf(msg.getType()) : AccountType.Normal);
+                vo.setState(msg.getState() == null ? AccountState.Enabled : msg.getState());
                 persist(vo);
                 reload(vo);
 
@@ -626,6 +628,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         accountMsg.setDescription(msg.getDescription());
         accountMsg.setPassword(msg.getPassword());
         accountMsg.setType(msg.getType());
+        accountMsg.setState(AccountState.valueOf(msg.getState()));
         bus.makeTargetServiceIdByResourceUuid(accountMsg, AccountConstant.SERVICE_ID, accountMsg.getUuid());
         bus.send(accountMsg, new CloudBusCallBack(msg) {
             @Override
@@ -1705,6 +1708,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (msg.getName() != null && (msg.getUuid() == null || msg.getUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID))) {
                 throw new OperationFailureException(operr(
                         "the name of admin account cannot be updated"
+                ));
+            }
+
+            if (msg.getState() != null && (msg.getUuid() == null || msg.getUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID))) {
+                throw new OperationFailureException(operr(
+                        "the state of admin account cannot be updated"
                 ));
             }
 

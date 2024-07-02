@@ -44,19 +44,19 @@ public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
     @APIParam(maxLength = 1024, validEnums = {LdapEncryptionType.class})
     private String encryption;
 
-    @APIParam(validEnums = {LdapServerType.class})
+    @APIParam(validEnums = {LdapServerType.class}, required = false)
     private String serverType = "Unknown";
 
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, required = false)
     private String usernameProperty = LdapConstant.LDAP_UID_KEY;
 
     @APIParam(maxLength = 2048, required = false)
     private String filter;
 
-    @APIParam(validEnums = {SyncCreatedAccountStrategy.class})
+    @APIParam(validEnums = {SyncCreatedAccountStrategy.class}, required = false)
     private String syncCreatedAccountStrategy = "CreateAccount";
 
-    @APIParam(validEnums = {SyncDeletedAccountStrategy.class})
+    @APIParam(validEnums = {SyncDeletedAccountStrategy.class}, required = false)
     private String syncDeletedAccountStrategy = "NoAction";
 
     public String getName() {

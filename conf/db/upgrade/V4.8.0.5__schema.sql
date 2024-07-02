@@ -1,7 +1,7 @@
 -- in version zsv_4.3.0
 -- Feature: LDAP Enhance | ZSV-5531
 
-CREATE TABLE `zstack`.`ThirdPartyAccountSourceVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`ThirdPartyAccountSourceVO` (
     `uuid` char(32) not null unique,
     `description` varchar(2048) default null,
     `type` varchar(32) not null,
@@ -12,7 +12,7 @@ CREATE TABLE `zstack`.`ThirdPartyAccountSourceVO` (
     primary key (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `zstack`.`AccountThirdPartyAccountSourceRefVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`AccountThirdPartyAccountSourceRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `credentials` varchar(255) not null,
     `accountSourceUuid` char(32) not null,
@@ -25,14 +25,16 @@ CREATE TABLE `zstack`.`AccountThirdPartyAccountSourceRefVO` (
     CONSTRAINT `fkAccountSourceRefVOAccountVO` FOREIGN KEY (`accountUuid`) REFERENCES AccountVO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `zstack`.`LdapServerVO`
-    DROP COLUMN `scope`,
-    DROP COLUMN `lastOpDate`,
-    DROP COLUMN `createDate`,
-    DROP COLUMN `description`,
-    DROP COLUMN `name`;
-ALTER TABLE `zstack`.`LdapServerVO` ADD COLUMN `serverType` varchar(32) NOT NULL default 'WindowsAD';
-ALTER TABLE `zstack`.`LdapServerVO` ADD COLUMN `filter` varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`LdapServerVO` ADD COLUMN `usernameProperty` varchar(255) NOT NULL default 'cn';
-DROP TABLE `zstack`.`LdapAccountRefVO`;
-DROP TABLE `zstack`.`LdapResourceRefVO`;
+CALL DROP_COLUMN('LdapServerVO', 'scope');
+CALL DROP_COLUMN('LdapServerVO', 'lastOpDate');
+CALL DROP_COLUMN('LdapServerVO', 'createDate');
+CALL DROP_COLUMN('LdapServerVO', 'description');
+CALL DROP_COLUMN('LdapServerVO', 'name');
+
+CALL ADD_COLUMN('LdapServerVO', 'serverType', 'varchar(32)', 0, 'WindowsAD');
+CALL ADD_COLUMN('LdapServerVO', 'filter', 'varchar(2048)', 1, NULL);
+CALL ADD_COLUMN('LdapServerVO', 'usernameProperty', 'varchar(255)', 0, 'cn');
+DROP TABLE IF EXISTS `zstack`.`LdapAccountRefVO`;
+DROP TABLE IF EXISTS `zstack`.`LdapResourceRefVO`;
+
+CALL ADD_COLUMN('AccountVO', 'state', 'varchar(128)', 0, 'Enabled');

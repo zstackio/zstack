@@ -104,6 +104,9 @@ public class AccountBase extends AbstractAccount {
         if (msg.getDescription() != null) {
             account.setDescription(msg.getDescription());
         }
+        if (msg.getState() != null) {
+            account.setState(AccountState.valueOf(msg.getState()));
+        }
 
         boolean passwordUpdated = false;
         String oldPassword = null;
@@ -123,8 +126,8 @@ public class AccountBase extends AbstractAccount {
 
         // execute tf extension point
         final AccountInventory inventory = AccountInventory.valueOf(account);
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeUpdateAccountExtensionPoint.class),
-                arg -> arg.beforeUpdateAccount(inventory));
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterUpdateAccountExtensionPoint.class),
+                arg -> arg.afterUpdateAccount(inventory));
 
         APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
         evt.setInventory(AccountInventory.valueOf(account));

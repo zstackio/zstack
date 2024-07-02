@@ -23,6 +23,8 @@ public class APICreateAccountMsg extends APICreateMessage implements APIAuditor 
     private String password;
     @APIParam(validValues = {"SystemAdmin", "Normal"}, required = false)
     private String type;
+    @APIParam(validEnums = {AccountState.class}, required = false)
+    private String state = AccountState.Enabled.toString();
     @APIParam(maxLength = 2048, required = false)
     private String description;
 
@@ -40,6 +42,14 @@ public class APICreateAccountMsg extends APICreateMessage implements APIAuditor 
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public String getName() {

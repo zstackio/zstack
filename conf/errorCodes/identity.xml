@@ -37,6 +37,11 @@
     </code>
 
     <code>
+        <id>1007</id>
+        <description>The user is disabled</description>
+    </code>
+
+    <code>
         <id>2000</id>
         <description>Addition authentication error</description>
     </code>

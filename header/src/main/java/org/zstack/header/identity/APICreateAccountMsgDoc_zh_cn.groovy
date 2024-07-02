@@ -94,6 +94,16 @@ doc {
 					optional true
 					since "3.4.0"
 				}
+				column {
+					name "state"
+					enclosedIn "params"
+					desc "账户状态"
+					location "body"
+					type "String"
+					optional true
+					since "4.3.0"
+					values ("Enabled","Disabled","Staled")
+				}
 			}
         }
 
