@@ -10,6 +10,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -32,6 +33,7 @@ import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
@@ -90,6 +92,33 @@ public class AccountBase extends AbstractAccount {
     }
 
     private void handle(APIUpdateAccountMsg msg) {
+        APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
+
+        UpdateAccountMsg innerMsg = new UpdateAccountMsg();
+        innerMsg.setUuid(msg.getUuid());
+        innerMsg.setName(msg.getName());
+        innerMsg.setPassword(msg.getPassword());
+        innerMsg.setDescription(msg.getDescription());
+        if (msg.getState() != null) {
+            innerMsg.setState(AccountState.valueOf(msg.getState()));
+        }
+
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, AccountConstant.SERVICE_ID, msg.getUuid());
+        bus.send(innerMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    evt.setInventory(((UpdateAccountReply) reply).getInventory());
+                } else {
+                    evt.setError(reply.getError());
+                }
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(UpdateAccountMsg msg) {
+        UpdateAccountReply reply = new UpdateAccountReply();
         AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
 
         if (msg.getPassword() != null) {
@@ -105,7 +134,7 @@ public class AccountBase extends AbstractAccount {
             account.setDescription(msg.getDescription());
         }
         if (msg.getState() != null) {
-            account.setState(AccountState.valueOf(msg.getState()));
+            account.setState(msg.getState());
         }
 
         boolean passwordUpdated = false;
@@ -129,14 +158,15 @@ public class AccountBase extends AbstractAccount {
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterUpdateAccountExtensionPoint.class),
                 arg -> arg.afterUpdateAccount(inventory));
 
-        APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
-        evt.setInventory(AccountInventory.valueOf(account));
-        bus.publish(evt);
+        reply.setInventory(AccountInventory.valueOf(account));
+        bus.reply(msg, reply);
     }
 
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AccountDeletionMsg) {
             handle((AccountDeletionMsg) msg);
+        } else if (msg instanceof UpdateAccountMsg) {
+            handle((UpdateAccountMsg) msg);
         } else if (msg instanceof DeleteAccountMsg) {
             handle((DeleteAccountMsg) msg);
         } else {
