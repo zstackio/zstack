@@ -16,7 +16,7 @@ import java.util.List;
     public class APIGetPhysicalMachineBlockDevicesMsg extends APISyncCallMessage {
     @APIParam(maxLength = 255)
     private String username;
-    @APIParam(maxLength = 255)
+    @APIParam(required = false, maxLength = 255)
     @NoLogging
     private String password;
     @APIParam(numberRange = {1, 65535})
