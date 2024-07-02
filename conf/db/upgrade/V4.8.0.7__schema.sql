@@ -77,3 +77,33 @@ CREATE PROCEDURE CreateGpuDeviceVO()
 DELIMITER ;
 call CreateGpuDeviceVO;
 DROP PROCEDURE IF EXISTS `CreateGpuDeviceVO`;
+
+DROP PROCEDURE IF EXISTS `addPciDeviceVendor`;
+DELIMITER $$
+CREATE PROCEDURE addPciDeviceVendor()
+    BEGIN
+        DECLARE pciUuid VARCHAR(32);
+        DECLARE vendorId VARCHAR(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT pci.uuid, pci.vendorId FROM PciDeviceVO pci where pci.type in ('GPU_Video_Controller', 'GPU_3D_Controller');
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO pciUuid, vendorId;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+            IF vendorId = '1d94' then
+                update PciDeviceVO set vendor = 'Haiguang' where uuid = pciUuid;
+            ELSEIF vendorId = '10de' then
+                update PciDeviceVO set vendor = 'NVIDIA' where uuid = pciUuid;
+            ELSEIF vendorId = '8086' then
+                update PciDeviceVO set vendor = 'AMD' where uuid = pciUuid;
+            END IF;
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+call addPciDeviceVendor;
+DROP PROCEDURE IF EXISTS `addPciDeviceVendor`;
