@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class ImportAccountItem {
     private String accountUuid;
+    private boolean enable = true;
 
     private String credentials;
     private AccountType accountType;
@@ -22,6 +23,14 @@ public class ImportAccountItem {
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public boolean isEnable() {
+        return enable;
+    }
+
+    public void setEnable(boolean enable) {
+        this.enable = enable;
     }
 
     public String getCredentials() {

@@ -18,6 +18,11 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountState;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.UpdateAccountMsg;
+import org.zstack.header.identity.UpdateAccountReply;
 import org.zstack.header.message.Message;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
@@ -58,8 +63,6 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.CreateAccountMsg;
 import org.zstack.header.identity.CreateAccountReply;
 import org.zstack.header.identity.DeleteAccountMsg;
@@ -73,6 +76,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.identity.AccountState.*;
 import static org.zstack.identity.imports.AccountImportsManager.accountSourceQueueSyncSignature;
 import static org.zstack.identity.imports.AccountImportsManager.accountSourceSyncTaskSignature;
 import static org.zstack.utils.CollectionUtils.*;
@@ -157,6 +161,10 @@ public abstract class AbstractAccountSourceBase {
     public final void importAccounts(ImportAccountSpec spec, ReturnValueCompletion<List<ImportAccountResult>> completion) {
         List<ImportThirdPartyAccountContext> contexts = new ArrayList<>(spec.getAccountList().size());
         List<ImportThirdPartyAccountContext> validContexts = new ArrayList<>(spec.getAccountList().size());
+
+        SyncAccountStateHelper stateMachine = new SyncAccountStateHelper();
+        stateMachine.setSyncCreateStrategy(spec.getSyncCreateStrategy());
+        stateMachine.setSyncUpdateStrategy(spec.getSyncUpdateStrategy());
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("chain-with-importing-accounts-from-source-%s", spec.getSourceUuid()));
@@ -325,12 +333,19 @@ public abstract class AbstractAccountSourceBase {
             private void createAccount(ImportThirdPartyAccountContext context, WhileCompletion whileCompletion) {
                 String accountUuid = context.spec.getAccountUuid() == null ?
                         Platform.getUuid() : context.spec.getAccountUuid();
+                AccountState stateInAccountSource = context.spec.isEnable() ? Enabled : Disabled;
+                AccountState stateUpdateTo = stateMachine.transformForNewCreateAccount(stateInAccountSource);
+
+                logger.info(String.format(
+                        "account[uuid=%s] newlyCreate stateInAccountSource=%s stateUpdateTo=%s %s",
+                        accountUuid, stateInAccountSource, stateUpdateTo, stateMachine));
 
                 CreateAccountMsg message = new CreateAccountMsg();
                 message.setUuid(accountUuid);
                 message.setName(context.spec.getUsername());
                 message.setPassword(generatePassword());
                 message.setType(context.spec.getAccountType().toString());
+                message.setState(stateUpdateTo);
 
                 bus.makeTargetServiceIdByResourceUuid(message, AccountConstant.SERVICE_ID, accountUuid);
                 bus.send(message, new CloudBusCallBack(whileCompletion) {
@@ -348,8 +363,42 @@ public abstract class AbstractAccountSourceBase {
             }
 
             private void updateAccountIfNeeded(ImportThirdPartyAccountContext context, WhileCompletion whileCompletion) {
-                // TODO update account state
-                whileCompletion.done();
+                final AccountInventory account = context.account;
+                boolean updated = false;
+                UpdateAccountMsg message = new UpdateAccountMsg();
+
+                AccountState originalState = AccountState.valueOf(account.getState());
+                AccountState stateInAccountSource = context.spec.isEnable() ? Enabled : Disabled;
+                AccountState stateUpdateTo = stateMachine.transform(originalState, stateInAccountSource);
+                logger.info(String.format(
+                        "account[uuid=%s] originalState=%s stateInAccountSource=%s stateUpdateTo=%s %s",
+                        account.getUuid(), originalState, stateInAccountSource, stateUpdateTo, stateMachine));
+
+                if (originalState != stateUpdateTo) {
+                    message.setState(stateUpdateTo);
+                    updated = true;
+                }
+
+                if (!updated) {
+                    whileCompletion.done();
+                    return;
+                }
+
+                context.readyToUpdateAccount = true;
+                message.setUuid(account.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(message, AccountConstant.SERVICE_ID, account.getUuid());
+                bus.send(message, new CloudBusCallBack(whileCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            context.account = ((UpdateAccountReply) reply).getInventory();
+                        } else {
+                            context.errorForAccountExecution = reply.getError();
+                            validContexts.remove(context);
+                        }
+                        whileCompletion.done();
+                    }
+                });
             }
 
             @Override
@@ -519,10 +568,24 @@ public abstract class AbstractAccountSourceBase {
             contexts.add(context);
         }
 
+        SyncAccountStateHelper stateMachine = new SyncAccountStateHelper();
+        stateMachine.setSyncDeleteStrategy(spec.getSyncDeleteStrategy());
+        AccountState stateUpdateTo = stateMachine.transformForDeletedAccount(Enabled);
+
+        logger.info(String.format(
+                "account[uuid=%s] deletedInAccountSource stateUpdateTo=%s %s",
+                spec.getAccountUuidList(), stateUpdateTo, stateMachine));
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("chain-with-unbinding-accounts-from-source-%s", self.getUuid()));
         chain.then(new NoRollbackFlow() {
             String __name__ = "unbinding-account";
+
+            @Override
+            public boolean skip(Map data) {
+                return !spec.isRemoveBindingOnly();
+            }
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 final List<String> accountUuidList = spec.getAccountUuidList();
@@ -539,7 +602,7 @@ public abstract class AbstractAccountSourceBase {
 
             @Override
             public boolean skip(Map data) {
-                return spec.isRemoveBindingOnly();
+                return spec.isRemoveBindingOnly() || stateUpdateTo != null;
             }
 
             @Override
@@ -565,6 +628,44 @@ public abstract class AbstractAccountSourceBase {
                     public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {
                             logger.warn("failed to delete accounts but still continue: "
+                                    + errorCodeList.getCauses().get(0).getDetails());
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "update-account-state-if-needed";
+
+            @Override
+            public boolean skip(Map data) {
+                return spec.isRemoveBindingOnly() || stateUpdateTo == null;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(contexts).each((context, whileCompletion) -> {
+                    final String accountUuid = context.accountUuid;
+
+                    UpdateAccountMsg message = new UpdateAccountMsg();
+                    message.setUuid(accountUuid);
+                    message.setState(stateUpdateTo);
+                    bus.makeTargetServiceIdByResourceUuid(message, AccountConstant.SERVICE_ID, accountUuid);
+                    bus.send(message, new CloudBusCallBack(whileCompletion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(String.format("update account[uuid=%s] state failed, still continue", accountUuid));
+                                context.errorForAccountExecution = reply.getError();
+                            }
+                            whileCompletion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            logger.warn("failed to update account states but still continue: "
                                     + errorCodeList.getCauses().get(0).getDetails());
                         }
                         trigger.next();

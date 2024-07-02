@@ -339,6 +339,7 @@ public class LdapSyncHelper {
         account.setCredentials(dn);
         account.setAccountType(AccountType.ThirdParty);
         account.setUsername(username);
+        account.setEnable(ldapEntry.isEnable());
         return account;
     }
 

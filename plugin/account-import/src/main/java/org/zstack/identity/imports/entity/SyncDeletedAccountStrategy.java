@@ -10,14 +10,17 @@ import org.zstack.identity.imports.message.SyncThirdPartyAccountMsg;
  */
 public enum SyncDeletedAccountStrategy {
     /**
-     * Do not destroy AccountVO.
+     * Do not destroy or disable AccountVO.
      */
     NoAction,
     /**
-     * Destroy AccountVO.
+     * Stale AccountVO if third party users deleted;
+     * Disable AccountVO if third party users disabled;
+     */
+    StaleAccount,
+    /**
+     * Destroy AccountVO if third party users deleted;
+     * Disable AccountVO if third party users disabled;
      */
     DeleteAccount,
-    /*
-     * Only disable AccountVO (not support now) TODO
-     */
 }

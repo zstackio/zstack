@@ -10,6 +10,8 @@ public enum SyncUpdateAccountStateStrategy {
         switch (createStrategy) {
         case NoAction:
             return NoAction;
+        case CreateDisabledAccount:
+            return EnableNeedChecking;
         case CreateAccount: default:
             return KeepSameWithSource;
         }

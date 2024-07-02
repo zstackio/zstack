@@ -58,10 +58,10 @@ public class UpdateLdapServerAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String filter;
 
-    @Param(required = false, validValues = {"NoAction","CreateAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"NoAction","CreateDisabledAccount","CreateAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String syncCreatedAccountStrategy;
 
-    @Param(required = false, validValues = {"NoAction","DeleteAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"NoAction","StaleAccount","DeleteAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String syncDeletedAccountStrategy;
 
     @Param(required = false)
