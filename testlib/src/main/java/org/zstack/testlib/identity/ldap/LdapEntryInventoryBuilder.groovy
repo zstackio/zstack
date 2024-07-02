@@ -9,6 +9,17 @@ class LdapEntryInventoryBuilder {
     {
         inventory = new LdapEntryInventory()
         inventory.attributes = []
+        inventory.enable = true
+    }
+
+    LdapEntryInventoryBuilder enable() {
+        inventory.enable = true
+        return this
+    }
+
+    LdapEntryInventoryBuilder disable() {
+        inventory.enable = false
+        return this
     }
 
     LdapEntryInventoryBuilder withDn(String dn) {

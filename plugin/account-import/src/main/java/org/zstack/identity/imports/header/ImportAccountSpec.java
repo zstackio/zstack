@@ -1,5 +1,8 @@
 package org.zstack.identity.imports.header;
 
+import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
+import org.zstack.identity.imports.entity.SyncUpdateAccountStateStrategy;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +12,10 @@ import java.util.List;
 public class ImportAccountSpec {
     private String sourceUuid;
     private String sourceType;
-    public List<CreateAccountSpec> accountList = new ArrayList<>();
+    public List<ImportAccountItem> accountList = new ArrayList<>();
+    private boolean createIfNotExist = true;
+    private SyncCreatedAccountStrategy syncCreateStrategy = SyncCreatedAccountStrategy.NoAction;
+    private SyncUpdateAccountStateStrategy syncUpdateStrategy = SyncUpdateAccountStateStrategy.NoAction;
 
     public String getSourceUuid() {
         return sourceUuid;
@@ -27,11 +33,35 @@ public class ImportAccountSpec {
         this.sourceType = sourceType;
     }
 
-    public List<CreateAccountSpec> getAccountList() {
+    public List<ImportAccountItem> getAccountList() {
         return accountList;
     }
 
-    public void setAccountList(List<CreateAccountSpec> accountList) {
+    public void setAccountList(List<ImportAccountItem> accountList) {
         this.accountList = accountList;
+    }
+
+    public boolean isCreateIfNotExist() {
+        return createIfNotExist;
+    }
+
+    public void setCreateIfNotExist(boolean createIfNotExist) {
+        this.createIfNotExist = createIfNotExist;
+    }
+
+    public SyncCreatedAccountStrategy getSyncCreateStrategy() {
+        return syncCreateStrategy;
+    }
+
+    public void setSyncCreateStrategy(SyncCreatedAccountStrategy syncCreateStrategy) {
+        this.syncCreateStrategy = syncCreateStrategy;
+    }
+
+    public SyncUpdateAccountStateStrategy getSyncUpdateStrategy() {
+        return syncUpdateStrategy;
+    }
+
+    public void setSyncUpdateStrategy(SyncUpdateAccountStateStrategy syncUpdateStrategy) {
+        this.syncUpdateStrategy = syncUpdateStrategy;
     }
 }

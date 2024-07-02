@@ -28,10 +28,10 @@ public class SyncAccountsFromLdapServerAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, validValues = {"NoAction","CreateAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"NoAction","CreateDisabledAccount","CreateAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String createAccountStrategy;
 
-    @Param(required = false, validValues = {"NoAction","DeleteAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"NoAction","StaleAccount","DeleteAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String deleteAccountStrategy;
 
     @Param(required = false)

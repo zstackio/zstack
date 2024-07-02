@@ -30,7 +30,7 @@ class LdapServerSpec extends Spec {
     @SpecParam
     String syncCreatedAccountStrategy = "CreateAccount"
     @SpecParam
-    String syncDeletedAccountStrategy = "NoAction"
+    String syncDeletedAccountStrategy = "StaleAccount"
 
     LdapServerInventory inventory
 

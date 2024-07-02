@@ -42,7 +42,7 @@ doc {
 				column {
 					name "deleteAccountStrategy"
 					enclosedIn "syncAccountsFromLdapServer"
-					desc "从LDAP服务器同步时，对于LDAP服务器中已删除的用户，该虚拟化平台的处理策略，是删除对应的account还是无动作"
+					desc "从LDAP服务器同步时，对于LDAP服务器中已删除的用户，该虚拟化平台的处理策略，是删除对应的account、标记已删除还是无动作"
 					location "body"
 					type "String"
 					optional true

@@ -4,7 +4,7 @@ import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
 
 /**
- * {@link SyncTaskSpec} -> {@link ImportAccountSpec} and {@link CreateAccountSpec} ->
+ * {@link SyncTaskSpec} -> {@link ImportAccountSpec} and {@link ImportAccountItem} ->
  * {@link ImportAccountResult}
  */
 public class SyncTaskSpec {

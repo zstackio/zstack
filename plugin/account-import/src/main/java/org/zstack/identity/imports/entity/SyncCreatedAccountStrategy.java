@@ -15,6 +15,12 @@ public enum SyncCreatedAccountStrategy {
     NoAction,
     /**
      * Create AccountVO binding to the newly created users from third party import source.
+     * this account is Disabled
+     */
+    CreateDisabledAccount,
+    /**
+     * Create AccountVO binding to the newly created users from third party import source.
+     * this account is Enabled
      */
     CreateAccount,
 }

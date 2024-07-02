@@ -16,13 +16,16 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountState;
 import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.UpdateAccountMsg;
+import org.zstack.header.identity.UpdateAccountReply;
 import org.zstack.header.message.Message;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
-import org.zstack.identity.imports.header.CreateAccountSpec;
-import org.zstack.identity.imports.header.UnbindThirdPartyAccountSpecItem;
+import org.zstack.identity.imports.header.ImportAccountItem;
 import org.zstack.identity.imports.header.ImportAccountResult;
 import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
 import org.zstack.identity.imports.header.ImportAccountSpec;
@@ -66,6 +69,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.identity.AccountState.*;
 import static org.zstack.identity.imports.AccountImportsManager.accountSourceQueueSyncSignature;
 import static org.zstack.identity.imports.AccountImportsManager.accountSourceSyncTaskSignature;
 import static org.zstack.utils.CollectionUtils.*;
@@ -149,6 +153,10 @@ public abstract class AbstractAccountSourceBase {
         List<ImportThirdPartyAccountContext> contexts = new ArrayList<>(spec.getAccountList().size());
         List<ImportThirdPartyAccountContext> validContexts = new ArrayList<>(spec.getAccountList().size());
 
+        SyncAccountStateHelper stateMachine = new SyncAccountStateHelper();
+        stateMachine.setSyncCreateStrategy(spec.getSyncCreateStrategy());
+        stateMachine.setSyncUpdateStrategy(spec.getSyncUpdateStrategy());
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("chain-with-importing-accounts-from-source-%s", spec.getSourceUuid()));
         chain.then(new NoRollbackFlow() {
@@ -164,7 +172,7 @@ public abstract class AbstractAccountSourceBase {
             }
 
             private void buildContextsFromSpec() {
-                for (CreateAccountSpec accountSpec : spec.getAccountList()) {
+                for (ImportAccountItem accountSpec : spec.getAccountList()) {
                     final ImportThirdPartyAccountContext context = new ImportThirdPartyAccountContext();
                     context.spec = accountSpec;
                     contexts.add(context);
@@ -247,9 +255,9 @@ public abstract class AbstractAccountSourceBase {
             private void validateIfAccountNotPresent() {
                 for (Iterator<ImportThirdPartyAccountContext> it = validContexts.iterator(); it.hasNext();) {
                     ImportThirdPartyAccountContext context = it.next();
-                    final CreateAccountSpec accountSpec = context.spec;
+                    final ImportAccountItem accountSpec = context.spec;
 
-                    if (accountSpec.isCreateIfNotExist()) {
+                    if (spec.isCreateIfNotExist()) {
                         continue;
                     }
 
@@ -297,31 +305,10 @@ public abstract class AbstractAccountSourceBase {
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(new ArrayList<>(validContexts)).each((context, whileCompletion) -> {
                     if (context.accountExisting) {
-                        whileCompletion.done();
-                        return;
+                        updateAccountIfNeeded(context, whileCompletion);
+                    } else {
+                        createAccount(context, whileCompletion);
                     }
-
-                    context.readyToCreateAccount = true;
-                    String accountUuid = Platform.getUuid();
-
-                    CreateAccountMsg message = new CreateAccountMsg();
-                    message.setUuid(accountUuid);
-                    message.setName(context.spec.getUsername());
-                    message.setPassword(context.spec.getPassword());
-                    message.setType(context.spec.getAccountType().toString());
-                    bus.makeLocalServiceId(message, AccountConstant.SERVICE_ID);
-                    bus.send(message, new CloudBusCallBack(whileCompletion) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (reply.isSuccess()) {
-                                context.account = ((CreateAccountReply) reply).getInventory();
-                            } else {
-                                context.errorForCreatingAccount = reply.getError();
-                                validContexts.remove(context);
-                            }
-                            whileCompletion.done();
-                        }
-                    });
                 }).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
@@ -330,6 +317,77 @@ public abstract class AbstractAccountSourceBase {
                                     + errorCodeList.getCauses().get(0).getDetails());
                         }
                         trigger.next();
+                    }
+                });
+            }
+
+            private void createAccount(ImportThirdPartyAccountContext context, WhileCompletion whileCompletion) {
+                String accountUuid = context.spec.getAccountUuid() == null ?
+                        Platform.getUuid() : context.spec.getAccountUuid();
+                AccountState stateInAccountSource = context.spec.isEnable() ? Enabled : Disabled;
+                AccountState stateUpdateTo = stateMachine.transformForNewCreateAccount(stateInAccountSource);
+
+                logger.info(String.format(
+                        "account[uuid=%s] newlyCreate stateInAccountSource=%s stateUpdateTo=%s %s",
+                        accountUuid, stateInAccountSource, stateUpdateTo, stateMachine));
+
+                CreateAccountMsg message = new CreateAccountMsg();
+                message.setUuid(accountUuid);
+                message.setName(context.spec.getUsername());
+                message.setPassword(generatePassword());
+                message.setType(context.spec.getAccountType().toString());
+                message.setState(stateUpdateTo);
+
+                bus.makeTargetServiceIdByResourceUuid(message, AccountConstant.SERVICE_ID, accountUuid);
+                bus.send(message, new CloudBusCallBack(whileCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            context.account = ((CreateAccountReply) reply).getInventory();
+                        } else {
+                            context.errorForAccountExecution = reply.getError();
+                            validContexts.remove(context);
+                        }
+                        whileCompletion.done();
+                    }
+                });
+            }
+
+            private void updateAccountIfNeeded(ImportThirdPartyAccountContext context, WhileCompletion whileCompletion) {
+                final AccountInventory account = context.account;
+                boolean updated = false;
+                UpdateAccountMsg message = new UpdateAccountMsg();
+
+                AccountState originalState = AccountState.valueOf(account.getState());
+                AccountState stateInAccountSource = context.spec.isEnable() ? Enabled : Disabled;
+                AccountState stateUpdateTo = stateMachine.transform(originalState, stateInAccountSource);
+                logger.info(String.format(
+                        "account[uuid=%s] originalState=%s stateInAccountSource=%s stateUpdateTo=%s %s",
+                        account.getUuid(), originalState, stateInAccountSource, stateUpdateTo, stateMachine));
+
+                if (originalState != stateUpdateTo) {
+                    message.setState(stateUpdateTo);
+                    updated = true;
+                }
+
+                if (!updated) {
+                    whileCompletion.done();
+                    return;
+                }
+
+                context.readyToUpdateAccount = true;
+                message.setUuid(account.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(message, AccountConstant.SERVICE_ID, account.getUuid());
+                bus.send(message, new CloudBusCallBack(whileCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            context.account = ((UpdateAccountReply) reply).getInventory();
+                        } else {
+                            context.errorForAccountExecution = reply.getError();
+                            validContexts.remove(context);
+                        }
+                        whileCompletion.done();
                     }
                 });
             }
@@ -364,6 +422,10 @@ public abstract class AbstractAccountSourceBase {
                         trigger.rollback();
                     }
                 });
+            }
+
+            private String generatePassword() {
+                return Platform.getUuid() + Platform.getUuid();
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "bind-accounts-with-import-source";
@@ -409,10 +471,10 @@ public abstract class AbstractAccountSourceBase {
         ImportAccountSpec batch = new ImportAccountSpec();
         batch.setSourceUuid(sourceUuid);
         batch.setSourceType(this.type());
+        batch.setCreateIfNotExist(false);
 
-        CreateAccountSpec spec = new CreateAccountSpec();
+        ImportAccountItem spec = new ImportAccountItem();
         spec.setAccountUuid(message.getAccountUuid());
-        spec.setCreateIfNotExist(false);
         spec.setCredentials(Objects.requireNonNull(message.getCredentials()));
         batch.getAccountList().add(spec);
 
@@ -484,21 +546,40 @@ public abstract class AbstractAccountSourceBase {
 
     @SuppressWarnings("rawtypes")
     private void unbindingAccount(UnbindThirdPartyAccountsSpec spec, ReturnValueCompletion<List<UnbindThirdPartyAccountResult>> completion) {
-        if (spec.getItems().isEmpty()) {
+        if (spec.getAccountUuidList().isEmpty()) {
             completion.success(new ArrayList<>());
             return;
         }
 
         List<UnbindThirdPartyAccountsContext> contexts = new ArrayList<>();
+        for (String accountUuid : spec.getAccountUuidList()) {
+            UnbindThirdPartyAccountsContext context = new UnbindThirdPartyAccountsContext();
+            context.accountUuid = accountUuid;
+            context.sourceUuid = self.getUuid();
+            contexts.add(context);
+        }
+
+        SyncAccountStateHelper stateMachine = new SyncAccountStateHelper();
+        stateMachine.setSyncDeleteStrategy(spec.getSyncDeleteStrategy());
+        AccountState stateUpdateTo = stateMachine.transformForDeletedAccount(Enabled);
+
+        logger.info(String.format(
+                "account[uuid=%s] deletedInAccountSource stateUpdateTo=%s %s",
+                spec.getAccountUuidList(), stateUpdateTo, stateMachine));
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("chain-with-unbinding-accounts-from-source-%s", self.getUuid()));
         chain.then(new NoRollbackFlow() {
             String __name__ = "unbinding-account";
+
+            @Override
+            public boolean skip(Map data) {
+                return !spec.isRemoveBindingOnly();
+            }
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                final List<String> accountUuidList = transform(spec.getItems(),
-                        UnbindThirdPartyAccountSpecItem::getAccountUuid);
+                final List<String> accountUuidList = spec.getAccountUuidList();
 
                 SQL.New(AccountThirdPartyAccountSourceRefVO.class)
                         .in(AccountThirdPartyAccountSourceRefVO_.accountUuid, accountUuidList)
@@ -511,21 +592,14 @@ public abstract class AbstractAccountSourceBase {
             String __name__ = "delete-account-if-needed";
 
             @Override
+            public boolean skip(Map data) {
+                return spec.isRemoveBindingOnly() || stateUpdateTo != null;
+            }
+
+            @Override
             public void run(FlowTrigger trigger, Map data) {
-                for (UnbindThirdPartyAccountSpecItem item : spec.getItems()) {
-                    UnbindThirdPartyAccountsContext context = new UnbindThirdPartyAccountsContext();
-                    context.specItem = item;
-                    context.sourceUuid = self.getUuid();
-                    contexts.add(context);
-                }
-
                 new While<>(contexts).each((context, whileCompletion) -> {
-                    if (!context.specItem.needDeleteAccount()) {
-                        whileCompletion.done();
-                        return;
-                    }
-
-                    final String accountUuid = context.specItem.getAccountUuid();
+                    final String accountUuid = context.accountUuid;
 
                     DeleteAccountMsg message = new DeleteAccountMsg();
                     message.setUuid(accountUuid);
@@ -535,7 +609,7 @@ public abstract class AbstractAccountSourceBase {
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
                                 logger.warn(String.format("destroy account[uuid=%s] failed, still continue", accountUuid));
-                                context.errorForDeleteAccount = reply.getError();
+                                context.errorForAccountExecution = reply.getError();
                             }
                             whileCompletion.done();
                         }
@@ -545,6 +619,44 @@ public abstract class AbstractAccountSourceBase {
                     public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {
                             logger.warn("failed to delete accounts but still continue: "
+                                    + errorCodeList.getCauses().get(0).getDetails());
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "update-account-state-if-needed";
+
+            @Override
+            public boolean skip(Map data) {
+                return spec.isRemoveBindingOnly() || stateUpdateTo == null;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(contexts).each((context, whileCompletion) -> {
+                    final String accountUuid = context.accountUuid;
+
+                    UpdateAccountMsg message = new UpdateAccountMsg();
+                    message.setUuid(accountUuid);
+                    message.setState(stateUpdateTo);
+                    bus.makeTargetServiceIdByResourceUuid(message, AccountConstant.SERVICE_ID, accountUuid);
+                    bus.send(message, new CloudBusCallBack(whileCompletion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(String.format("update account[uuid=%s] state failed, still continue", accountUuid));
+                                context.errorForAccountExecution = reply.getError();
+                            }
+                            whileCompletion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            logger.warn("failed to update account states but still continue: "
                                     + errorCodeList.getCauses().get(0).getDetails());
                         }
                         trigger.next();

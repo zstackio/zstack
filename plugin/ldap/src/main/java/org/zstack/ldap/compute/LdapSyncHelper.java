@@ -28,9 +28,9 @@ import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
-import org.zstack.identity.imports.header.CreateAccountSpec;
+import org.zstack.identity.imports.entity.SyncUpdateAccountStateStrategy;
+import org.zstack.identity.imports.header.ImportAccountItem;
 import org.zstack.identity.imports.header.ImportAccountSpec;
-import org.zstack.identity.imports.header.UnbindThirdPartyAccountSpecItem;
 import org.zstack.identity.imports.header.UnbindThirdPartyAccountsSpec;
 import org.zstack.identity.imports.message.ImportThirdPartyAccountMsg;
 import org.zstack.identity.imports.message.UnbindThirdPartyAccountMsg;
@@ -78,6 +78,10 @@ public class LdapSyncHelper {
         importSpec = new ImportAccountSpec();
         importSpec.setSourceType(LdapConstant.LOGIN_TYPE);
         importSpec.setSourceUuid(spec.sourceUuid);
+        importSpec.setSyncCreateStrategy(taskSpec.getCreateAccountStrategy());
+        importSpec.setSyncUpdateStrategy(SyncUpdateAccountStateStrategy.from(taskSpec.getCreateAccountStrategy()));
+        importSpec.setCreateIfNotExist(
+                taskSpec.getCreateAccountStrategy() != SyncCreatedAccountStrategy.NoAction);
 
         ldapUtil = Platform.New(LdapUtil::new);
     }
@@ -171,6 +175,8 @@ public class LdapSyncHelper {
                     splitSpec.setSourceUuid(importSpec.getSourceUuid());
                     splitSpec.setSourceType(importSpec.getSourceType());
                     splitSpec.setAccountList(importSpec.getAccountList().subList(count, toIndexExclude));
+                    splitSpec.setSyncCreateStrategy(importSpec.getSyncCreateStrategy());
+                    splitSpec.setSyncUpdateStrategy(importSpec.getSyncUpdateStrategy());
 
                     ImportThirdPartyAccountMsg msg = new ImportThirdPartyAccountMsg();
                     msg.setSpec(splitSpec);
@@ -211,7 +217,7 @@ public class LdapSyncHelper {
                         });
 
                 final Set<String> credentials =
-                        transformToSet(importSpec.accountList, CreateAccountSpec::getCredentials);
+                        transformToSet(importSpec.accountList, ImportAccountItem::getCredentials);
                 credentials.forEach(credentialsAccountMap::remove);
 
                 if (credentialsAccountMap.isEmpty()) {
@@ -269,7 +275,8 @@ public class LdapSyncHelper {
                     UnbindThirdPartyAccountsSpec spec = new UnbindThirdPartyAccountsSpec();
                     spec.setSourceUuid(importSpec.getSourceUuid());
                     spec.setSourceType(LdapConstant.LOGIN_TYPE);
-                    spec.setItems(buildUnbindItemList(credentialsAccountMapNeedDelete.values()));
+                    spec.setAccountUuidList(new ArrayList<>(credentialsAccountMapNeedDelete.values()));
+                    spec.setSyncDeleteStrategy(taskSpec.deleteAccountStrategy);
 
                     UnbindThirdPartyAccountMsg msg = new UnbindThirdPartyAccountMsg();
                     msg.setSpec(spec);
@@ -286,9 +293,10 @@ public class LdapSyncHelper {
                     UnbindThirdPartyAccountsSpec splitSpec = new UnbindThirdPartyAccountsSpec();
                     splitSpec.setSourceUuid(importSpec.getSourceUuid());
                     splitSpec.setSourceType(LdapConstant.LOGIN_TYPE);
+                    splitSpec.setSyncDeleteStrategy(taskSpec.deleteAccountStrategy);
 
                     Collection<String> accountUuids = transform(entries.subList(count, toIndexExclude), Map.Entry::getValue);
-                    splitSpec.setItems(buildUnbindItemList(accountUuids));
+                    splitSpec.setAccountUuidList(new ArrayList<>(accountUuids));
 
                     UnbindThirdPartyAccountMsg msg = new UnbindThirdPartyAccountMsg();
                     msg.setSpec(splitSpec);
@@ -297,15 +305,6 @@ public class LdapSyncHelper {
                     count += 100;
                 }
                 return list;
-            }
-
-            private List<UnbindThirdPartyAccountSpecItem> buildUnbindItemList(Collection<String> accountUuids) {
-                return transform(accountUuids, uuid -> {
-                    UnbindThirdPartyAccountSpecItem item = new UnbindThirdPartyAccountSpecItem();
-                    item.setAccountUuid(uuid);
-                    item.setStrategy(taskSpec.getDeleteAccountStrategy());
-                    return item;
-                });
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
@@ -320,8 +319,8 @@ public class LdapSyncHelper {
         }).start();
     }
 
-    private CreateAccountSpec generateAccountSpec(LdapEntryInventory ldapEntry) {
-        CreateAccountSpec account = new CreateAccountSpec();
+    private ImportAccountItem generateAccountSpec(LdapEntryInventory ldapEntry) {
+        ImportAccountItem account = new ImportAccountItem();
 
         List<LdapEntryAttributeInventory> attributes = ldapEntry.getAttributes();
         String usernameProperty = taskSpec.getUsernameProperty();
@@ -340,8 +339,7 @@ public class LdapSyncHelper {
         account.setCredentials(dn);
         account.setAccountType(AccountType.ThirdParty);
         account.setUsername(username);
-        account.setPassword(Platform.getUuid() + Platform.getUuid());
-        account.setCreateIfNotExist(taskSpec.getCreateAccountStrategy() == SyncCreatedAccountStrategy.CreateAccount);
+        account.setEnable(ldapEntry.isEnable());
         return account;
     }
 

@@ -57,7 +57,7 @@ public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
     private String syncCreatedAccountStrategy = "CreateAccount";
 
     @APIParam(validEnums = {SyncDeletedAccountStrategy.class}, required = false)
-    private String syncDeletedAccountStrategy = "NoAction";
+    private String syncDeletedAccountStrategy = "StaleAccount";
 
     public String getName() {
         return name;
