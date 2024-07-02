@@ -117,4 +117,20 @@ public class SizeUtils {
 
         throw new RuntimeException("should not be here," + str);
     }
+
+    /**
+     * Align the given size to the nearest multiple of alignment.
+     *
+     * @param size the original size in bytes
+     * @param alignment the alignment in bytes
+     * @return the aligned size in bytes
+     */
+    public static long alignSizeTo(long size, int alignment) {
+        if (size % alignment == 0) {
+            return size;
+        }
+        return ((size / alignment) + 1) * alignment;
+    }
+    
+    
 }
