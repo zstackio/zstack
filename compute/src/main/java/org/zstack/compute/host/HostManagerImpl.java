@@ -533,7 +533,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         List<String> commands = new ArrayList<>();
         commands.add(String.format("mkdir -p '%s'", msg.getMountPoint()));
         commands.add(buildMkfsCommd(msg.getFilesystemType(), msg.getBlockDevicePath()));
-        commands.add(String.format("mkfs.%s -f '%s'", msg.getFilesystemType(), msg.getBlockDevicePath()));
         commands.add(String.format("mount | grep -w '%s' | grep -w '%s' || mount '%s' '%s'",
                 msg.getBlockDevicePath(), msg.getMountPoint(), msg.getBlockDevicePath(), msg.getMountPoint()));
         commands.add(String.format("grep -w '%s' /etc/fstab | grep -w '%s' || echo '%s %s %s defaults 0 2' >> /etc/fstab",
