@@ -149,39 +149,39 @@ public class HostInventory implements Serializable {
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "cpuStatus"))
-    private Boolean cpuStatus;
+    private HwMonitorStatus cpuStatus;
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "memoryStatus"))
-    private Boolean memoryStatus;
+    private HwMonitorStatus memoryStatus;
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "diskStatus"))
-    private Boolean diskStatus;
+    private HwMonitorStatus diskStatus;
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "nicStatus"))
-    private Boolean nicStatus;
+    private HwMonitorStatus nicStatus;
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "gpuStatus"))
-    private Boolean gpuStatus;
+    private HwMonitorStatus gpuStatus;
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
-            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "gpuStatus"))
-    private Boolean powerSupplyStatus;
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "powerSupplyStatus"))
+    private HwMonitorStatus powerSupplyStatus;
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "fanStatus"))
-    private Boolean fanStatus;
+    private HwMonitorStatus fanStatus;
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "raidStatus"))
-    private Boolean raidStatus;
+    private HwMonitorStatus raidStatus;
 
     @Queryable(mappingClass = HostHwMonitorStatusInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "temperatureStatus"))
-    private Boolean temperatureStatus;
+    private HwMonitorStatus temperatureStatus;
 
     private String architecture;
 
@@ -427,75 +427,75 @@ public class HostInventory implements Serializable {
         this.ipmiPowerStatus = ipmiPowerStatus;
     }
 
-    public Boolean getCpuStatus() {
+    public HwMonitorStatus getCpuStatus() {
         return cpuStatus;
     }
 
-    public void setCpuStatus(Boolean cpuStatus) {
+    public void setCpuStatus(HwMonitorStatus cpuStatus) {
         this.cpuStatus = cpuStatus;
     }
 
-    public Boolean getMemoryStatus() {
+    public HwMonitorStatus getMemoryStatus() {
         return memoryStatus;
     }
 
-    public void setMemoryStatus(Boolean memoryStatus) {
+    public void setMemoryStatus(HwMonitorStatus memoryStatus) {
         this.memoryStatus = memoryStatus;
     }
 
-    public Boolean getDiskStatus() {
+    public HwMonitorStatus getDiskStatus() {
         return diskStatus;
     }
 
-    public void setDiskStatus(Boolean diskStatus) {
+    public void setDiskStatus(HwMonitorStatus diskStatus) {
         this.diskStatus = diskStatus;
     }
 
-    public Boolean getNicStatus() {
+    public HwMonitorStatus getNicStatus() {
         return nicStatus;
     }
 
-    public void setNicStatus(Boolean nicStatus) {
+    public void setNicStatus(HwMonitorStatus nicStatus) {
         this.nicStatus = nicStatus;
     }
 
-    public Boolean getGpuStatus() {
+    public HwMonitorStatus getGpuStatus() {
         return gpuStatus;
     }
 
-    public void setGpuStatus(Boolean gpuStatus) {
+    public void setGpuStatus(HwMonitorStatus gpuStatus) {
         this.gpuStatus = gpuStatus;
     }
 
-    public Boolean getPowerSupplyStatus() {
+    public HwMonitorStatus getPowerSupplyStatus() {
         return powerSupplyStatus;
     }
 
-    public void setPowerSupplyStatus(Boolean powerSupplyStatus) {
+    public void setPowerSupplyStatus(HwMonitorStatus powerSupplyStatus) {
         this.powerSupplyStatus = powerSupplyStatus;
     }
 
-    public Boolean getFanStatus() {
+    public HwMonitorStatus getFanStatus() {
         return fanStatus;
     }
 
-    public void setFanStatus(Boolean fanStatus) {
+    public void setFanStatus(HwMonitorStatus fanStatus) {
         this.fanStatus = fanStatus;
     }
 
-    public Boolean getRaidStatus() {
+    public HwMonitorStatus getRaidStatus() {
         return raidStatus;
     }
 
-    public void setRaidStatus(Boolean raidStatus) {
+    public void setRaidStatus(HwMonitorStatus raidStatus) {
         this.raidStatus = raidStatus;
     }
 
-    public Boolean getTemperatureStatus() {
+    public HwMonitorStatus getTemperatureStatus() {
         return temperatureStatus;
     }
 
-    public void setTemperatureStatus(Boolean temperatureStatus) {
+    public void setTemperatureStatus(HwMonitorStatus temperatureStatus) {
         this.temperatureStatus = temperatureStatus;
     }
 }
