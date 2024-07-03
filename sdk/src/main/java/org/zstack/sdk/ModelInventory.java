@@ -100,6 +100,14 @@ public class ModelInventory  {
         return this.type;
     }
 
+    public java.lang.Long minGpuMemory;
+    public void setMinGpuMemory(java.lang.Long minGpuMemory) {
+        this.minGpuMemory = minGpuMemory;
+    }
+    public java.lang.Long getMinGpuMemory() {
+        return this.minGpuMemory;
+    }
+
     public java.util.List modelServiceRefs;
     public void setModelServiceRefs(java.util.List modelServiceRefs) {
         this.modelServiceRefs = modelServiceRefs;
