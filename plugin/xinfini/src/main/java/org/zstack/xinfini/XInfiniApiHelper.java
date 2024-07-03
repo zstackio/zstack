@@ -226,6 +226,17 @@ public class XInfiniApiHelper {
                 (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
+    public VolumeModule expandVolume(int volId, long size) {
+        ExpandVolumeRequest req = new ExpandVolumeRequest();
+        req.setId(volId);
+        req.setSizeMb(size);
+        callErrorOut(req, ExpandVolumeResponse.class);
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(volId);
+        return retryUtilStateActive(gReq, GetVolumeResponse.class,
+                (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
     private <T extends XInfiniResponse> void retryUtilResourceDeleted(XInfiniRequest req,
                                                                       Class<T> rsp) {
         new Retry<Void>() {

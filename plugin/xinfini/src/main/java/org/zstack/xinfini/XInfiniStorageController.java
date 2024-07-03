@@ -683,6 +683,9 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         int snapId = getSnapIdFromPath(srcInstallPath);
         VolumeModule vol = apiHelper.cloneVolume(snapId, dst.getName(), null, false);
 
+        if (SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()) < dst.getSize()) {
+            vol = apiHelper.expandVolume(vol.getSpec().getId(), SizeUnit.BYTE.toMegaByte(dst.getSize()));
+        }
         // TODO support expand volume size
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(buildXInfiniPath(getPoolIdFromPath(srcInstallPath), vol.getSpec().getId()));
@@ -734,8 +737,18 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void expandVolume(String installPath, long size, ReturnValueCompletion<VolumeStats> comp) {
-        // TODO
-        throw new OperationFailureException(operr("not support expand volume yet"));
+        int id = getVolIdFromPath(installPath);
+        List<BdcBdevModule> bdcBdevs = apiHelper.queryBdcBdevByVolumeId(id);
+        if (!bdcBdevs.isEmpty()) {
+            comp.fail(operr("volume has related bdevs, not support live expand yet"));
+            return;
+        }
+
+        VolumeModule vol = apiHelper.expandVolume(id, SizeUnit.BYTE.toMegaByte(size));
+        VolumeStats stats = new VolumeStats();
+        stats.setInstallPath(installPath);
+        stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
+        comp.success(stats);
     }
 
     @Override
