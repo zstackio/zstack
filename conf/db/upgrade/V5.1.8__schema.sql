@@ -262,7 +262,7 @@ CREATE PROCEDURE addPciDeviceVendor()
                 update PciDeviceVO set vendor = 'Haiguang' where uuid = pciUuid;
             ELSEIF vendorId = '10de' then
                 update PciDeviceVO set vendor = 'NVIDIA' where uuid = pciUuid;
-            ELSEIF vendorId = '8086' then
+            ELSEIF vendorId = '1002' then
                 update PciDeviceVO set vendor = 'AMD' where uuid = pciUuid;
             END IF;
         END LOOP;
