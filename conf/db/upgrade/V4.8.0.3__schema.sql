@@ -87,3 +87,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`EthernetVfPciDeviceVO` (
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `virtStatus` VARCHAR(32) DEFAULT NULL AFTER `offloadStatus`;
 
 ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD COLUMN `zoneUuid` VARCHAR(32) DEFAULT NULL;
+
+ALTER TABLE `zstack`.`SchedulerJobGroupJobRefVO` ADD COLUMN `priority` int DEFAULT 0;
+
+ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD COLUMN `managementNodeUuid` VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD CONSTRAINT `fkSchedulerJobGroupVOManagementNodeVO` FOREIGN KEY (`managementNodeUuid`) REFERENCES `ManagementNodeVO` (`uuid`) ON DELETE SET NULL;
