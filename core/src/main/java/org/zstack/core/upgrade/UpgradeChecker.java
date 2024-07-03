@@ -8,8 +8,11 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.Constants;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.console.APIRequestConsoleAccessMsg;
 import org.zstack.header.errorcode.ErrorCode;
@@ -36,9 +39,10 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
-public class UpgradeChecker implements Component {
+public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(UpgradeChecker.class);
 
     @Autowired
@@ -338,5 +342,50 @@ public class UpgradeChecker implements Component {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APIUpdateClusterOSMsg) {
+            validate((APIUpdateClusterOSMsg) msg);
+        }
+
+        return msg;
+    }
+
+    private void validate(APIUpdateClusterOSMsg msg) {
+        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            return;
+        }
+
+        if (msg.getHostUuid() == null) {
+            throw new ApiMessageInterceptionException(
+                    argerr("Disable grayscale upgrade by %s \n before you want to update whole cluster's hosts' os." +
+                            " Or try update cluster os with specific hostUuid instead.", UpgradeGlobalConfig.GRAYSCALE_UPGRADE.toString())
+            );
+        }
+
+        AgentVersionVO agent = Q.New(AgentVersionVO.class)
+                .eq(AgentVersionVO_.uuid, msg.getHostUuid())
+                .find();
+
+        if (agent == null) {
+            throw new ApiMessageInterceptionException(
+                    argerr("Can not found agent version, upgrade cluster os is not supported during grayscale upgrade")
+            );
+        }
+
+        if (agent.getCurrentVersion().equals(agent.getExpectVersion())) {
+            return;
+        }
+
+        throw new ApiMessageInterceptionException(
+                argerr("Host[uuid: %s] agent version is not upgraded, please reconnect host before update os", msg.getHostUuid())
+        );
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return Arrays.asList(APIUpdateClusterOSMsg.class);
     }
 }
