@@ -4,4 +4,6 @@ public enum VolumeProtocol {
     NVMEoF,
     iSCSI,
     Vhost,
+    CBD,
+    NBD
 }

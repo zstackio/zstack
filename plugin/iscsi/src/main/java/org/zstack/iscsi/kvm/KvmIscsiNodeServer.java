@@ -194,10 +194,9 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
         cmd.iso = convertIsoIfNeeded(cmd.iso, host);
     }
 
-    // TODO hardcode, move it
     @Override
     public String kvmSetupSelfFencerStorageType() {
-        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE;
+        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_ISCSI_PROTOCOL_TYPE;
     }
 
     @Override

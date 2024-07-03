@@ -13,6 +13,8 @@ class PrimaryStorageTest extends Test {
         sftpBackupStorage()
         smp()
         ceph()
+        externalPrimaryStorage()
+        zbs()
         virtualRouter()
         vyos()
         kvm()
