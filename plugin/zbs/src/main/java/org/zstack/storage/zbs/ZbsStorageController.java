@@ -111,6 +111,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
+    public void deactivate(String installPath, String protocol, ActiveVolumeClient client, Completion comp) {
+
+    }
+
+    @Override
     public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
 
     }
@@ -593,6 +598,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
+    public void deleteVolumeQos(BaseVolumeInfo v, Completion comp) {
+
+    }
+
+    @Override
     public void export(ExportSpec espec, VolumeProtocol protocol, ReturnValueCompletion<RemoteTarget> comp) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             NbdRemoteTarget target = new NbdRemoteTarget();
@@ -708,6 +718,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 comp.fail(errorCode);
             }
         });
+    }
+
+    @Override
+    public void expungeSnapshot(String installPath, Completion comp) {
+
     }
 
     @Override
