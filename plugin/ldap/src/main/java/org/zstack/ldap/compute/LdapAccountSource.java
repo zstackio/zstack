@@ -3,9 +3,11 @@ package org.zstack.ldap.compute;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.Message;
+import org.zstack.identity.imports.header.SyncTaskResult;
 import org.zstack.identity.imports.header.SyncTaskSpec;
 import org.zstack.identity.imports.source.AbstractAccountSourceBase;
 import org.zstack.ldap.LdapConstant;
@@ -133,7 +135,7 @@ public class LdapAccountSource extends AbstractAccountSourceBase {
     }
 
     @Override
-    protected void syncAccountsFromSource(SyncTaskSpec spec, Completion completion) {
+    protected void syncAccountsFromSource(SyncTaskSpec spec, ReturnValueCompletion<SyncTaskResult> completion) {
         final LdapServerVO vo = getSelf();
 
         final LdapSyncTaskSpec ldapSpec = new LdapSyncTaskSpec(spec);
@@ -143,10 +145,10 @@ public class LdapAccountSource extends AbstractAccountSourceBase {
         ldapSpec.setMaxAccountCount(resourceConfigFacade.getResourceConfigValue(
                 LDAP_MAXIMUM_SYNC_USERS, self.getUuid(), Integer.class));
 
-        new LdapSyncHelper(ldapSpec).run(new Completion(completion) {
+        new LdapSyncHelper(ldapSpec).run(new ReturnValueCompletion<SyncTaskResult>(completion) {
             @Override
-            public void success() {
-                completion.success();
+            public void success(SyncTaskResult result) {
+                completion.success(result);
             }
 
             @Override
