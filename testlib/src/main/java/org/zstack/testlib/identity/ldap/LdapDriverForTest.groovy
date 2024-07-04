@@ -2,6 +2,8 @@ package org.zstack.testlib.identity.ldap
 
 import org.zstack.core.db.Q
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.errorcode.ErrorableValue
+import org.zstack.ldap.LdapConstant
 import org.zstack.ldap.driver.LdapSearchSpec
 import org.zstack.ldap.driver.LdapUtil
 import org.zstack.ldap.entity.LdapEntryInventory
@@ -48,9 +50,34 @@ class LdapDriverForTest extends LdapUtil {
     @Override
     String getFullUserDn(LdapServerVO ldap, String key, String val) {
         def endpoint = findEndpointByLdapVOFunction.apply(ldap)
-        if (endpoint != null) {
-            return endpoint.fullDnGetter.apply(key, val)
+        if (endpoint == null) {
+            return super.getFullUserDn(ldap, key, val)
         }
-        return super.getFullUserDn(ldap, key, val)
+
+        LdapSearchSpec spec = new LdapSearchSpec()
+        spec.ldapServerUuid = ldap.uuid
+        spec.filter = LdapConstant.DEFAULT_PERSON_FILTER
+        spec.returningAttributes = ["entryDN"]
+        def list = endpoint.searchHandler.apply(spec)
+        def matchedEntry = list.find { entry ->
+            entry.attributes.any { attribute -> attribute.id == key && attribute.values.contains(val) }
+        }
+
+        return matchedEntry?.dn
+    }
+
+    @Override
+    protected ErrorableValue<LdapEntryInventory> findLdapEntryByDn(String fullDn, LdapServerVO ldap) {
+        def endpoint = findEndpointByLdapVOFunction.apply(ldap)
+        if (endpoint == null) {
+            return super.findLdapEntryByDn(fullDn, ldap)
+        }
+
+        LdapSearchSpec spec = new LdapSearchSpec()
+        spec.ldapServerUuid = ldap.uuid
+        spec.filter = LdapConstant.DEFAULT_PERSON_FILTER
+        spec.returningAttributes = ["entryDN"]
+        def list = endpoint.searchHandler.apply(spec)
+        return ErrorableValue.of(list.find { it -> it.dn == fullDn })
     }
 }
