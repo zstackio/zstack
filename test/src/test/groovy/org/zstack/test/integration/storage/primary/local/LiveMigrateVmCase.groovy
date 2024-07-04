@@ -92,19 +92,12 @@ class LiveMigrateVmCase extends SubCase {
         } as List<HostInventory>
         def targetHostUuid = invs.find { i -> i.uuid != vm1.getHostUuid() }.getUuid()
 
-        // default false
+        // default true
         capRes = getVmCapabilities {
             uuid = vm1.getUuid()
         } as GetVmCapabilitiesResult
-        assert !capRes.capabilities.get(VmInstanceConstant.Capability.LiveMigration.toString()) as Boolean
+        assert capRes.capabilities.get(VmInstanceConstant.Capability.LiveMigration.toString()) as Boolean
         assert !capRes.capabilities.get(VmInstanceConstant.Capability.VolumeMigration.toString()) as Boolean
-
-        // set true
-        LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue(Boolean.TRUE.toString())
-        GetVmCapabilitiesResult capRes2 = getVmCapabilities {
-            uuid = vm1.getUuid()
-        } as GetVmCapabilitiesResult
-        assert capRes2.capabilities.get(VmInstanceConstant.Capability.LiveMigration.toString()) as Boolean
 
         // record create empty volume cmd
         LocalStorageKvmBackend.CreateEmptyVolumeCmd cmd = null

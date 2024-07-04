@@ -3,7 +3,7 @@
 	<config>
 		<name>liveMigrationWithStorage.allow</name>
 		<description>Enable to do live migration on local storage primary storage.</description>
-		<defaultValue>false</defaultValue>
+		<defaultValue>true</defaultValue>
 		<category>localStoragePrimaryStorage</category>
 		<type>java.lang.Boolean</type>
 	</config>
