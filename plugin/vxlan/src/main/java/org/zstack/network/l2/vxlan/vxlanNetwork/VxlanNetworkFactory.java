@@ -101,7 +101,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
                 vo.setPoolUuid((amsg.getPoolUuid()));
                 if (vo.getPhysicalInterface() == null) {
-                    vo.setPhysicalInterface("");
+                    vo.setPhysicalInterface(L2NetworkConstant.PHYSICAL_INTERFACE_EMPTY);
                 }
                 dbf.getEntityManager().persist(vo);
 
