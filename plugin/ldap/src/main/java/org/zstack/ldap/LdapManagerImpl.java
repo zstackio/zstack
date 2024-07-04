@@ -463,7 +463,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     public String getUserIdByName(String username) {
         final ErrorableValue<LdapServerVO> property = findCurrentLdapServer();
         if (property.isSuccess()) {
-            return createDriver().getFullUserDn(username, property.result);
+            final String fullUserDn = createDriver().getFullUserDn(property.result, username);
+            return "".equals(fullUserDn) ? null : fullUserDn;
         }
         return null;
     }

@@ -2,6 +2,7 @@ package org.zstack.testlib.identity.ldap
 
 import org.zstack.core.db.Q
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.errorcode.ErrorableValue
 import org.zstack.ldap.LdapConstant
 import org.zstack.ldap.driver.LdapSearchSpec
 import org.zstack.ldap.driver.LdapUtil
@@ -63,5 +64,20 @@ class LdapDriverForTest extends LdapUtil {
         }
 
         return matchedEntry?.dn
+    }
+
+    @Override
+    protected ErrorableValue<LdapEntryInventory> findLdapEntryByDn(String fullDn, LdapServerVO ldap) {
+        def endpoint = findEndpointByLdapVOFunction.apply(ldap)
+        if (endpoint == null) {
+            return super.findLdapEntryByDn(fullDn, ldap)
+        }
+
+        LdapSearchSpec spec = new LdapSearchSpec()
+        spec.ldapServerUuid = ldap.uuid
+        spec.filter = LdapConstant.DEFAULT_PERSON_FILTER
+        spec.returningAttributes = ["entryDN"]
+        def list = endpoint.searchHandler.apply(spec)
+        return ErrorableValue.of(list.find { it -> it.dn == fullDn })
     }
 }

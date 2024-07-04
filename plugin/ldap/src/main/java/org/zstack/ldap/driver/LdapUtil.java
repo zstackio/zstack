@@ -11,10 +11,10 @@ import org.springframework.ldap.core.NameAwareAttribute;
 import org.springframework.ldap.core.support.*;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.identity.imports.AccountImportsGlobalConfig;
@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.ldap.LdapErrors.TEST_LDAP_CONNECTION_FAILED;
 import static org.zstack.ldap.LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -464,77 +465,54 @@ public class LdapUtil {
         return loadRootLdap(ldapServerVO);
     }
 
-    @Transactional(readOnly = true)
-    public LdapServerVO getLdapServer() {
-        final List<LdapServerVO> ldapServers = Q.New(LdapServerVO.class).list();
-        if (ldapServers.isEmpty()) {
-            throw new CloudRuntimeException("No LDAP/AD server record in database.");
-        }
-        if (ldapServers.size() > 1) {
-            throw new CloudRuntimeException("More than one LDAP/AD server record in database.");
-        }
-        return ldapServers.get(0);
-    }
-
     private String LdapEscape(String ldapDn) {
         return ldapDn.replace("/", "\\2f");
     }
 
     public ErrorCode validateDnExist(String fullDn, LdapServerVO ldap) {
+        final ErrorableValue<LdapEntryInventory> value = findLdapEntryByDn(fullDn, ldap);
+        if (!value.isSuccess()) {
+            return value.error;
+        }
+        final LdapEntryInventory result = value.result;
+        if (result != null) {
+            return null;
+        }
+
+        return err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+                "user[%s] is not exists on LDAP/AD server[address:%s, baseDN:%s]",
+                fullDn, ldap.getUrl(), ldap.getBase());
+    }
+
+    protected ErrorableValue<LdapEntryInventory> findLdapEntryByDn(String fullDn, LdapServerVO ldap) {
         LdapTemplateContextSource context = readLdapServerConfiguration(ldap);
 
         try {
             String dn = fullDn.replace("," + context.getLdapContextSource().getBaseLdapPathAsString(), "");
             dn = LdapEscape(dn);
-            Object result = context.getLdapTemplate().lookup(dn, new AbstractContextMapper<Object>() {
-                @Override
-                protected Object doMapFromContext(DirContextOperations ctx) {
-                    return ctx.getAttributes();
-                }
-            });
-
-            if (result != null) {
-                return null;
-            }
-            return err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                    "user[%s] is not exists on LDAP/AD server[address:%s, baseDN:%s]",
-                    fullDn,
-                    String.join(", ", context.getLdapContextSource().getUrls()),
-                    context.getLdapContextSource().getBaseLdapPathAsString());
-        } catch (Exception e){
-            return err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+            return ErrorableValue.of(context.getLdapTemplate().lookup(dn, new LdapEntryContextMapper()));
+        } catch (Exception e) {
+            return ErrorableValue.ofErrorCode(err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
                     "failed to find dn[%s] on LDAP/AD server[address:%s, baseDN:%s]: %s",
                     fullDn,
                     String.join(", ", context.getLdapContextSource().getUrls()),
                     context.getLdapContextSource().getBaseLdapPathAsString(),
-                    e.getMessage());
+                    e.getMessage()));
         }
     }
 
-    public String getFullUserDn(String uid, LdapServerVO ldap) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldap);
-        String fullUserDn = null;
+    public String getFullUserDn(LdapServerVO ldap, String uid) {
         try {
-            fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldap.getUsernameProperty(), uid);
-
-            if (fullUserDn.equals("")) {
-                return null;
-            }
+            return getFullUserDn(ldap, ldap.getUsernameProperty(), uid);
         } catch (Exception e) {
             logger.debug(String.format("Get user dn of uid[%s] failed ", uid));
+            return null;
         }
-
-        return fullUserDn;
     }
 
     public String getFullUserDn(LdapServerVO ldap, String key, String val) {
-        LdapTemplateContextSource context = readLdapServerConfiguration(ldap);
-        return getFullUserDn(context.getLdapTemplate(), key, val);
-    }
-
-    private String getFullUserDn(LdapTemplate ldapTemplate, String key, String val) {
-        EqualsFilter f = new EqualsFilter(key, val);
-        String filter = f.toString();
+        LdapTemplate ldapTemplate = readLdapServerConfiguration(ldap).getLdapTemplate();
+        String filter = new EqualsFilter(key, val).toString();
 
         String dn;
         try {
@@ -554,33 +532,27 @@ public class LdapUtil {
             }
             logger.info(String.format("getDn success filter:%s, dn:%s", filter, dn));
         } catch (NamingException e) {
-            LdapServerVO ldapServerVO = getLdapServer();
             throw new OperationFailureException(err(
-                    UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the LDAP/AD server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
-                            " configuration and test connection first.getDn error filter:%s",
-                    ldapServerVO.getUrl(), ldapServerVO.getBase(),
-                    ldapServerVO.getEncryption(), ldapServerVO.getUsername(), filter));
+                    TEST_LDAP_CONNECTION_FAILED,
+                    "failed to connect LDAP/AD server[uuid=%s] with filter[%s]: %s",
+                    ldap.getUuid(), filter, e.getMessage()));
         }
         return dn;
     }
 
     public boolean isValid(String uid, String password, LdapServerVO ldap) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldap);
         String ldapUseAsLoginName = ldap.getUsernameProperty();
         try {
             boolean valid;
-            String fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUseAsLoginName, uid);
+            String fullUserDn = getFullUserDn(ldap, ldapUseAsLoginName, uid);
             if (fullUserDn.equals("") || password.equals("")) {
                 return false;
             }
 
-            LdapServerVO ldapServerVO = getLdapServer();
-            LdapTemplateContextSource ldapTemplateContextSource2 = loadLdap(ldapServerVO);
+            LdapTemplateContextSource source = loadLdap(ldap);
+            String filter = new AndFilter().and(new EqualsFilter(ldapUseAsLoginName, uid)).toString();
 
-            AndFilter filter = new AndFilter();
-            filter.and(new EqualsFilter(ldapUseAsLoginName, uid));
-            valid = ldapTemplateContextSource2.getLdapTemplate().
-                    authenticate("", filter.toString(), password);
+            valid = source.getLdapTemplate().authenticate("", filter, password);
             logger.info(String.format("isValid[%s:%s, dn:%s, valid:%s]", ldapUseAsLoginName, uid, fullUserDn, valid));
             return valid;
         } catch (NamingException e) {
