@@ -37468,5 +37468,15 @@
     "arguments": [],
     "line": 83,
     "fileName": "src/test/java/org/zstack/test/core/asyncbackup/TestSafeCompletion.java"
+  },
+  {
+    "raw": "unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; the error list is %s",
+    "en_US": "unable to allocate hosts,the error list is [{0}]",
+    "zh_CN": "无法分配主机,以下是错误列表[{0}]",
+    "arguments": [
+      "seriesErrorWhenPagination.stream().map(ErrorCode::getDetails).collect(Collectors.toList())"
+    ],
+    "line": 223,
+    "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorChain.java"
   }
 ]
