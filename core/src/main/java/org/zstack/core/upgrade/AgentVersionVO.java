@@ -15,7 +15,6 @@ import java.sql.Timestamp;
 public class AgentVersionVO {
     @Id
     @Column
-    @ForeignKey(parentEntityClass = ResourceVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String uuid;
 
     @Column
