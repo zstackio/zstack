@@ -329,19 +329,33 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         }
     }
 
-    public boolean skipConnectAgent(String agentUuid) {
+    /**
+     * check weather need to skip agent deployment or other initialize operation on current agent
+     *
+     * During agent ping, agent version will be recorded as a metadata and combine with agent
+     * cmd param version checking if its using new params could be checked to avoid incompatible
+     * operations.
+     *
+     * But some early versions cloud do not prepared agent version in db record which should wait
+     * for the first ping to take back the result. So this method is used to avoid unexpected agent
+     * deployment or init is triggered during (the version initializing). So if an agent do not
+     * have agent version or version mismatched will be avoided to do the upgrade until a manual
+     * api is used to upgrade the agent.
+     *
+     * @param agentUuid the uuid of used agent
+     * @return true means skip the operations
+     */
+    public boolean skipInnerDeployOrInitOnCurrentAgent(String agentUuid) {
         if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
             return false;
         }
-        
+
         AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
         if (agentVersionVO == null) {
             return true;
         }
-        if (!agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
-            return true;
-        }
-        return false;
+
+        return !agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion());
     }
 
     @Override

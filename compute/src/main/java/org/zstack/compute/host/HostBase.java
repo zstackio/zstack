@@ -1028,15 +1028,14 @@ public abstract class HostBase extends AbstractHost {
             return false;
         }
 
-        return upgradeChecker.skipConnectAgent(self.getUuid());
+        return upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(self.getUuid());
     }
 
     private boolean skipConnectHost(final ConnectHostMsg msg) {
         if (msg.isNewAdd() || msg.isCalledByAPI()) {
             return false;
         }
-
-        return upgradeChecker.skipConnectAgent(self.getUuid());
+        return upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(self.getUuid());
     }
 
     private void reconnectHost(final ReconnectHostMsg msg, final NoErrorCompletion completion) {
