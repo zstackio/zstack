@@ -599,7 +599,7 @@ public class VirtualRouter extends ApplianceVmBase {
             public void run(final SyncTaskChain chain) {
                 final ReconnectVirtualRouterVmReply reply = new ReconnectVirtualRouterVmReply();
 
-                if (upgradeChecker.skipConnectAgent(self.getUuid())) {
+                if (upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(self.getUuid())) {
                     bus.reply(msg, reply);
                     chain.next();
                     return;

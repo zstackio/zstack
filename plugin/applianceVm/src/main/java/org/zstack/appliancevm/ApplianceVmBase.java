@@ -819,7 +819,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
 
     private FlowChain addBootstrapFlows(FlowChain chain, HypervisorType hvType) {
-        if (upgradeChecker.skipConnectAgent(self.getUuid())) {
+        if (upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(self.getUuid())) {
             return chain;
         }
         
