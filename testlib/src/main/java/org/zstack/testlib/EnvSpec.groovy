@@ -102,7 +102,7 @@ class EnvSpec extends ApiHelper implements Node  {
     private ConcurrentHashMap<String, Closure> defaultHttpPostHandlers = [:]
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
     protected ConcurrentHashMap<Class, Integer> messageHandlerCounters = [:]
-    protected ConcurrentHashMap<Class, List<Closure>> notifiersOfReceivedMessages = [:]
+    protected ConcurrentHashMap<Class, List<Test.MessageNotifier>> notifiersOfReceivedMessages = [:]
     protected ConcurrentHashMap<Class, List<Closure>> messagesWithoutReplies = [:]
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private ConcurrentHashMap<String, List<Tuple>> httpConditionHandlers = [:]
