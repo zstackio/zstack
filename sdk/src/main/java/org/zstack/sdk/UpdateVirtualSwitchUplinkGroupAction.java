@@ -12,7 +12,7 @@ public class UpdateVirtualSwitchUplinkGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateVirtualSwitchUplinkGroupsResult value;
+        public org.zstack.sdk.UpdateVirtualSwitchUplinkGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -72,8 +72,8 @@ public class UpdateVirtualSwitchUplinkGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateVirtualSwitchUplinkGroupsResult value = res.getResult(org.zstack.sdk.UpdateVirtualSwitchUplinkGroupsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateVirtualSwitchUplinkGroupsResult() : value; 
+        org.zstack.sdk.UpdateVirtualSwitchUplinkGroupResult value = res.getResult(org.zstack.sdk.UpdateVirtualSwitchUplinkGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVirtualSwitchUplinkGroupResult() : value; 
 
         return ret;
     }
