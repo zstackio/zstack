@@ -507,6 +507,10 @@ abstract class Test extends ApiHelper implements Retry {
             counter.set(0)
         }
 
+        void assertCalled() {
+            assert counter.get() > 0
+        }
+
         void assertCalledOnce() {
             assert counter.get() == 1
         }
