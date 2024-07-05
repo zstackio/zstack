@@ -58,6 +58,8 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
     private static ConcurrentLinkedQueue<String> grayScaleApiWhiteList = new ConcurrentLinkedQueue<>();
     private static Set<String> predefinedApiClassSet = new HashSet<>();
 
+    private static String INITIAL_AGENT_VERSION = "3.10.38";
+
     @Override
     public boolean start() {
         if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
@@ -178,9 +180,14 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             return null;
         }
 
-        AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
-        if (agentVersionVO == null) {
-            return operr("No agent[uuid: %s] version found, do not support grayscale upgrade", agentUuid);
+        final AgentVersionVO agentVersionVO;
+        AgentVersionVO versionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
+        if (versionVO == null) {
+            agentVersionVO = new AgentVersionVO();
+            agentVersionVO.setCurrentVersion(INITIAL_AGENT_VERSION);
+            agentVersionVO.setExpectVersion(dbf.getDbVersion());
+        } else {
+            agentVersionVO = versionVO;
         }
 
         // if agent version not changed skip gray scale check
