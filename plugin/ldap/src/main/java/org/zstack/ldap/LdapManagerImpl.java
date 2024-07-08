@@ -27,7 +27,6 @@ import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
 import org.zstack.identity.imports.header.ImportAccountResult;
 import org.zstack.identity.imports.header.UnbindThirdPartyAccountResult;
-import org.zstack.identity.imports.header.UnbindThirdPartyAccountSpecItem;
 import org.zstack.identity.imports.header.UnbindThirdPartyAccountsSpec;
 import org.zstack.identity.imports.message.BindThirdPartyAccountMsg;
 import org.zstack.identity.imports.message.BindThirdPartyAccountReply;
@@ -282,11 +281,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         UnbindThirdPartyAccountsSpec spec = new UnbindThirdPartyAccountsSpec();
         spec.setSourceUuid(msg.getLdapServerUuid());
         spec.setSourceType(LdapConstant.LOGIN_TYPE);
-
-        UnbindThirdPartyAccountSpecItem item = new UnbindThirdPartyAccountSpecItem();
-        item.setAccountUuid(msg.getAccountUuid());
-        item.setStrategy(SyncDeletedAccountStrategy.NoAction);
-        spec.setItems(list(item));
+        spec.setRemoveBindingOnly(true);
+        spec.setSyncDeleteStrategy(SyncDeletedAccountStrategy.NoAction);
+        spec.setAccountUuidList(list(msg.getAccountUuid()));
 
         UnbindThirdPartyAccountMsg innerMsg = new UnbindThirdPartyAccountMsg();
         innerMsg.setSpec(spec);

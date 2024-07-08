@@ -1,7 +1,6 @@
 package org.zstack.identity.imports.header;
 
 import org.zstack.header.identity.AccountType;
-import org.zstack.header.log.NoLogging;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,15 +8,13 @@ import java.util.List;
 /**
  * Created by Wenhao.Zhang on 2024/06/12
  */
-public class CreateAccountSpec {
+public class ImportAccountItem {
     private String accountUuid;
-    private boolean createIfNotExist = true;
+    private boolean enable = true;
 
     private String credentials;
     private AccountType accountType;
     private String username;
-    @NoLogging
-    private String password;
     private List<String> systemTags = new ArrayList<>();
 
     public String getAccountUuid() {
@@ -28,12 +25,12 @@ public class CreateAccountSpec {
         this.accountUuid = accountUuid;
     }
 
-    public boolean isCreateIfNotExist() {
-        return createIfNotExist;
+    public boolean isEnable() {
+        return enable;
     }
 
-    public void setCreateIfNotExist(boolean createIfNotExist) {
-        this.createIfNotExist = createIfNotExist;
+    public void setEnable(boolean enable) {
+        this.enable = enable;
     }
 
     public String getCredentials() {
@@ -58,14 +55,6 @@ public class CreateAccountSpec {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public List<String> getSystemTags() {

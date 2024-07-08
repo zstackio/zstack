@@ -14,6 +14,7 @@ import org.springframework.ldap.filter.EqualsFilter;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.identity.imports.AccountImportsGlobalConfig;
@@ -469,33 +470,34 @@ public class LdapUtil {
     }
 
     public ErrorCode validateDnExist(String fullDn, LdapServerVO ldap) {
+        final ErrorableValue<LdapEntryInventory> value = findLdapEntryByDn(fullDn, ldap);
+        if (!value.isSuccess()) {
+            return value.error;
+        }
+        final LdapEntryInventory result = value.result;
+        if (result != null) {
+            return null;
+        }
+
+        return err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+                "user[%s] is not exists on LDAP/AD server[address:%s, baseDN:%s]",
+                fullDn, ldap.getUrl(), ldap.getBase());
+    }
+
+    protected ErrorableValue<LdapEntryInventory> findLdapEntryByDn(String fullDn, LdapServerVO ldap) {
         LdapTemplateContextSource context = readLdapServerConfiguration(ldap);
 
         try {
             String dn = fullDn.replace("," + context.getLdapContextSource().getBaseLdapPathAsString(), "");
             dn = LdapEscape(dn);
-            Object result = context.getLdapTemplate().lookup(dn, new AbstractContextMapper<Object>() {
-                @Override
-                protected Object doMapFromContext(DirContextOperations ctx) {
-                    return ctx.getAttributes();
-                }
-            });
-
-            if (result != null) {
-                return null;
-            }
-            return err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                    "user[%s] is not exists on LDAP/AD server[address:%s, baseDN:%s]",
-                    fullDn,
-                    String.join(", ", context.getLdapContextSource().getUrls()),
-                    context.getLdapContextSource().getBaseLdapPathAsString());
-        } catch (Exception e){
-            return err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+            return ErrorableValue.of(context.getLdapTemplate().lookup(dn, new LdapEntryContextMapper()));
+        } catch (Exception e) {
+            return ErrorableValue.ofErrorCode(err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
                     "failed to find dn[%s] on LDAP/AD server[address:%s, baseDN:%s]: %s",
                     fullDn,
                     String.join(", ", context.getLdapContextSource().getUrls()),
                     context.getLdapContextSource().getBaseLdapPathAsString(),
-                    e.getMessage());
+                    e.getMessage()));
         }
     }
 

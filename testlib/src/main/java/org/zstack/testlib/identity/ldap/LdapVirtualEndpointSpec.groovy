@@ -36,8 +36,6 @@ class LdapVirtualEndpointSpec extends Spec {
     Function<LdapSearchSpec, List<LdapEntryInventory>> searchHandler = defaultSearchHandler
     BiFunction<String, String, Boolean> defaultAuthenticateHandler = { username, password -> true }
     BiFunction<String, String, Boolean> authenticateHandler = defaultAuthenticateHandler
-    BiFunction<String, String, String> defaultFullDnGetter = { usernameProperty, username -> "" }
-    BiFunction<String, String, String> fullDnGetter = defaultFullDnGetter
 
     LdapVirtualEndpointSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -119,13 +117,5 @@ class LdapVirtualEndpointSpec extends Spec {
 
     void clearAuthenticateHandler() {
         this.authenticateHandler = defaultAuthenticateHandler
-    }
-
-    void installFullDnGetter(BiFunction<String, String, String> getter) {
-        this.fullDnGetter = getter
-    }
-
-    void clearFullDnGetter() {
-        this.fullDnGetter = defaultFullDnGetter
     }
 }
