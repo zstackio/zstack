@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 public class ReconnectHostMsg extends NeedReplyMessage implements HostMessage, ConfigurableTimeoutMessage {
     private String hostUuid;
     private boolean skipIfHostConnected;
+    private boolean calledByAPI;
 
     public boolean isSkipIfHostConnected() {
         return skipIfHostConnected;
@@ -26,5 +27,13 @@ public class ReconnectHostMsg extends NeedReplyMessage implements HostMessage, C
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public boolean isCalledByAPI() {
+        return calledByAPI;
+    }
+
+    public void setCalledByAPI(boolean calledByAPI) {
+        this.calledByAPI = calledByAPI;
     }
 }

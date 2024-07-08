@@ -12,6 +12,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -83,6 +84,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private EventFacade eventf;
     @Autowired
     private LocalStorageHostUsageReport localForecaster;
+    @Autowired
+    private UpgradeChecker upgradeChecker;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -1940,7 +1943,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 HostInventory host = HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class));
-                checkLocalStoragePrimaryStorageInitilized(CollectionDSL.list(host), true, new Completion(trigger) {
+                LocalStorageInitParam param = new LocalStorageInitParam();
+                param.setNewAdded(false);
+                param.setNeedInitOnHost(true);
+                checkLocalStoragePrimaryStorageInitilized(param, CollectionDSL.list(host),  new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -2834,8 +2840,52 @@ public class LocalStorageBase extends PrimaryStorageBase {
         return new ArrayList<FactoryCluster>(m.values());
     }
 
+    enum ConnectReason {
+        Reconnect,
+        Other
+    }
+
+    static class LocalStorageInitParam {
+        private boolean isNewAdded;
+        private boolean needInitOnHost;
+        private ConnectReason reason;
+
+        public boolean isNewAdded() {
+            return isNewAdded;
+        }
+
+        public void setNewAdded(boolean newAdded) {
+            isNewAdded = newAdded;
+        }
+
+        public ConnectReason getReason() {
+            return reason;
+        }
+
+        public void setReason(ConnectReason reason) {
+            this.reason = reason;
+        }
+
+        public boolean isNeedInitOnHost() {
+            return needInitOnHost;
+        }
+
+        public void setNeedInitOnHost(boolean needInitOnHost) {
+            this.needInitOnHost = needInitOnHost;
+        }
+
+        static LocalStorageInitParam fromConnectParam(ConnectParam param) {
+            LocalStorageInitParam localStorageInitParam = new LocalStorageInitParam();
+            localStorageInitParam.isNewAdded = param.isNewAdded();
+            return localStorageInitParam;
+        }
+    }
+
     @Override
     protected void connectHook(final ConnectParam param, final Completion completion) {
+        LocalStorageInitParam localStorageInitParam = LocalStorageInitParam.fromConnectParam(param);
+        localStorageInitParam.setReason(ConnectReason.Reconnect);
+        localStorageInitParam.setNeedInitOnHost(true);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("connect localstorage host hook");
         chain.then(new NoRollbackFlow() {
@@ -2843,7 +2893,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                checkLocalStoragePrimaryStorageInitilized(param.isNewAdded(), true, new Completion(trigger) {
+                checkLocalStoragePrimaryStorageInitilized(localStorageInitParam, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -2915,17 +2965,22 @@ public class LocalStorageBase extends PrimaryStorageBase {
         return false;
     }
 
-    private void checkLocalStoragePrimaryStorageInitilized(boolean isNewAdded, boolean initialized, Completion completion) {
+    private void checkLocalStoragePrimaryStorageInitilized(LocalStorageInitParam param, Completion completion) {
         List<HostInventory> hosts = getLocalStorageHosts();
-        if (!isNewAdded && hosts.size() == 0) {
+        if (!param.isNewAdded && hosts.size() == 0) {
             completion.fail(operr("No Host state is Enabled, Please check the availability of the host"));
         } else {
-            checkLocalStoragePrimaryStorageInitilized(hosts, initialized, completion);
+            checkLocalStoragePrimaryStorageInitilized(param, hosts, completion);
         }
     }
 
-    private void checkLocalStoragePrimaryStorageInitilized(List<HostInventory> hosts, boolean initialized, Completion completion) {
+    private void checkLocalStoragePrimaryStorageInitilized(LocalStorageInitParam param, List<HostInventory> hosts, Completion completion) {
         new While<>(hosts).all((host, com) -> {
+            if (upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(host.getUuid())) {
+                com.done();
+                return;
+            }
+
             if (hostHasInitializedTag(host.getUuid())) {
                 LocalStorageHypervisorFactory f = getHypervisorBackendFactory(host.getHypervisorType());
                 LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
@@ -2942,7 +2997,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
             } else {
-                if (initialized) {
+                if (param.isNeedInitOnHost()) {
                     LocalStorageHypervisorFactory f = getHypervisorBackendFactory(host.getHypervisorType());
                     LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
                     bkd.initializeHostAttachedPSMountPath(host.getUuid(), new Completion(com) {
@@ -2976,7 +3031,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void pingHook(Completion completion) {
-        checkLocalStoragePrimaryStorageInitilized(true, false, completion);
+        LocalStorageInitParam param = new LocalStorageInitParam();
+        param.setNewAdded(true);
+        param.setNeedInitOnHost(false);
+        checkLocalStoragePrimaryStorageInitilized(param, completion);
     }
 
     @Override

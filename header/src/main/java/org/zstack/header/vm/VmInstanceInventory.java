@@ -296,7 +296,11 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setCpuNum(vo.getCpuNum());
         this.setCpuSpeed(vo.getCpuSpeed());
         this.setMemorySize(vo.getMemorySize());
-        this.setReservedMemorySize(vo.getReservedMemorySize());
+        if (vo.getReservedMemorySize() == 0) {
+            this.setReservedMemorySize(null);
+        } else {
+            this.setReservedMemorySize(vo.getReservedMemorySize());
+        }
         this.setAllocatorStrategy(vo.getAllocatorStrategy());
         this.setPlatform(vo.getPlatform());
         this.setArchitecture(vo.getArchitecture());

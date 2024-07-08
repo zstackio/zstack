@@ -95,6 +95,7 @@ public class SourceClassMap {
 			put("org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder", "org.zstack.sdk.ExternalServiceCapabilitiesBuilder");
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
+			put("org.zstack.core.upgrade.AgentVersionInventory", "org.zstack.sdk.AgentVersionInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateInventory", "org.zstack.sdk.CCSCertificateInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
@@ -733,6 +734,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AddressPoolInventory", "org.zstack.header.network.l3.AddressPoolInventory");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
+			put("org.zstack.sdk.AgentVersionInventory", "org.zstack.core.upgrade.AgentVersionInventory");
 			put("org.zstack.sdk.AiSiNoSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
 			put("org.zstack.sdk.AliyunDiskInventory", "org.zstack.header.aliyun.storage.disk.AliyunDiskInventory");

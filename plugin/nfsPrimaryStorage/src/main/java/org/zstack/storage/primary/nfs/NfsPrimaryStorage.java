@@ -1654,6 +1654,33 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    public static class NfsConnectParam {
+        private StorageRemountReason reason;
+        private boolean newAdded;
+
+        public StorageRemountReason getReason() {
+            return reason;
+        }
+
+        public void setReason(StorageRemountReason reason) {
+            this.reason = reason;
+        }
+
+        public boolean isNewAdded() {
+            return newAdded;
+        }
+
+        public void setNewAdded(boolean newAdded) {
+            this.newAdded = newAdded;
+        }
+
+        public static NfsConnectParam fromConnectParam(ConnectParam param) {
+            NfsConnectParam nfsConnectParam = new NfsConnectParam();
+            nfsConnectParam.setNewAdded(param.isNewAdded());
+            return nfsConnectParam;
+        }
+    }
+
     @Override
     protected void connectHook(ConnectParam param, final Completion completion) {
         final NfsPrimaryStorageBackend backend = getUsableBackend();
@@ -1677,6 +1704,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             return;
         }
 
+        NfsConnectParam nfsConnectParam = NfsConnectParam.fromConnectParam(param);
+        nfsConnectParam.setReason(StorageRemountReason.PrimaryStorageConnection);
         PrimaryStorageInventory inv = getSelfInventory();
         new LoopAsyncBatch<String>(completion) {
             boolean success;
@@ -1692,7 +1721,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     @Override
                     public void run(NoErrorCompletion completion) {
                         NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
-                        bkd.remount(inv, cuuid, new Completion(completion) {
+                        bkd.remount(inv, cuuid, nfsConnectParam, new Completion(completion) {
                             @Override
                             public void success() {
                                 success = true;

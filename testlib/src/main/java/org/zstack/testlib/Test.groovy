@@ -415,7 +415,7 @@ abstract class Test extends ApiHelper implements Retry {
                         if (msgClz.isAssignableFrom(msg.getClass())) {
                             synchronized (cs) {
                                 cs.each {
-                                    it(msg)
+                                    it.getC()(msg)
                                 }
                             }
                         }
@@ -494,17 +494,76 @@ abstract class Test extends ApiHelper implements Retry {
         }
     }
 
+    class MessageNotifier {
+        Closure c
+        AtomicInteger counter = new AtomicInteger(0)
+        Closure cleanup
+
+        void delete() {
+            cleanup()
+        }
+
+        void resetNotifier() {
+            counter.set(0)
+        }
+
+        void assertCalled() {
+            assert counter.get() > 0
+        }
+
+        void assertCalledOnce() {
+            assert counter.get() == 1
+        }
+
+        Closure getC() {
+            return c
+        }
+
+        void setC(Closure c) {
+            this.c = c
+        }
+
+        AtomicInteger getCounter() {
+            return counter
+        }
+
+        void setCounter(AtomicInteger counter) {
+            this.counter = counter
+        }
+    }
+
+    protected MessageNotifier notifyWhenReceivedMessage(Class msgClz) {
+        assert currentEnvSpec != null
+
+        MessageNotifier notifier = new MessageNotifier()
+        notifier.c = {}
+        List<MessageNotifier> cs = currentEnvSpec.notifiersOfReceivedMessages.computeIfAbsent(msgClz, { Collections.synchronizedList([]) })
+        synchronized (cs) {
+            cs.add(notifier)
+        }
+
+        notifier.cleanup = {
+            synchronized (cs) {
+                cs.remove(notifier)
+            }
+        }
+
+        return notifier
+    }
+
     protected Closure notifyWhenReceivedMessage(Class msgClz, Closure c) {
         assert currentEnvSpec != null
 
-        List<Closure> cs = currentEnvSpec.notifiersOfReceivedMessages.computeIfAbsent(msgClz, { Collections.synchronizedList([]) })
+        MessageNotifier notifier = new MessageNotifier()
+        notifier.c = c
+        List<MessageNotifier> cs = currentEnvSpec.notifiersOfReceivedMessages.computeIfAbsent(msgClz, { Collections.synchronizedList([]) })
         synchronized (cs) {
-            cs.add(c)
+            cs.add(notifier)
         }
 
         return {
             synchronized (cs) {
-                cs.remove(c)
+                cs.remove(notifier)
             }
         }
     }

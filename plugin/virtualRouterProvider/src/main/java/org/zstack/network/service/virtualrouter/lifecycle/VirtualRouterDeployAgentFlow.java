@@ -11,6 +11,7 @@ import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -50,6 +51,8 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
 	private RESTFacade restf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private UpgradeChecker upgradeChecker;
 
     private String agentPackageName = VirtualRouterGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -154,6 +157,11 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        if (CoreGlobalProperty.UNIT_TEST_ON) {
+                            // update vyos agent version when open grayScaleUpgrade
+                            upgradeChecker.updateAgentVersion(vr.getUuid(), VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, new VirtualRouterMetadataOperator().getManagementVersion(), new VirtualRouterMetadataOperator().getManagementVersion());
+                        }
+
                         completion.next();
                     }
                 });
