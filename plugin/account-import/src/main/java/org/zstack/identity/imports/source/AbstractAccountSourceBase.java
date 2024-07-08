@@ -20,6 +20,7 @@ import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountState;
+import org.zstack.header.identity.AccountType;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.UpdateAccountMsg;
 import org.zstack.header.identity.UpdateAccountReply;
@@ -46,6 +47,7 @@ import org.zstack.identity.imports.message.SyncThirdPartyAccountMsg;
 import org.zstack.identity.imports.message.SyncThirdPartyAccountReply;
 import org.zstack.identity.imports.message.UnbindThirdPartyAccountMsg;
 import org.zstack.identity.imports.message.UnbindThirdPartyAccountReply;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -78,6 +80,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.identity.AccountState.*;
+import static org.zstack.identity.imports.AccountImportsGlobalConfig.AUTO_SYNC_ENABLE;
 import static org.zstack.identity.imports.AccountImportsManager.accountSourceQueueSyncSignature;
 import static org.zstack.identity.imports.AccountImportsManager.accountSourceSyncTaskSignature;
 import static org.zstack.utils.CollectionUtils.*;
@@ -740,7 +743,7 @@ public abstract class AbstractAccountSourceBase {
         threadFacade.chainSubmit(new ChainTask(message) {
             @Override
             public void run(SyncTaskChain chain) {
-                destroySource(new Completion(chain) {
+                destroySourceAndRemoveThirdPartyAccounts(new Completion(chain) {
                     @Override
                     public void success() {
                         chain.next();
@@ -766,6 +769,135 @@ public abstract class AbstractAccountSourceBase {
                 return "destroy-source-" + self.getUuid();
             }
         });
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void destroySourceAndRemoveThirdPartyAccounts(Completion completion) {
+        List<String> accountUuidList = new ArrayList<>();
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("chain-with-deleting-source-%s", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "disable-syncing-for-deleted-account-source";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ResourceConfig resourceConfig = resourceConfigFacade.getResourceConfig(AUTO_SYNC_ENABLE.getIdentity());
+                resourceConfig.updateValue(self.getUuid(), Boolean.FALSE.toString());
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "gather-related-accounts";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                long totalSize = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                        .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, self.getUuid())
+                        .count();
+
+                // All related accounts with "ThirdParty" type will be destroyed
+                SQL.New("select " +
+                                "account.uuid " +
+                        "from " +
+                                "AccountThirdPartyAccountSourceRefVO ref, " +
+                                "AccountVO account " +
+                        "where " +
+                                "ref.accountSourceUuid = :sourceUuid and " +
+                                "ref.accountUuid = account.uuid and " +
+                                "account.type = :accountType",
+                                String.class)
+                        .param("sourceUuid", self.getUuid())
+                        .param("accountType", AccountType.ThirdParty)
+                        .limit(300)
+                        .paginate(totalSize, (List<String> accountUuids) -> accountUuidList.addAll(accountUuids));
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "destroy-source";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                destroySource(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "destroy-related-accounts";
+
+            @Override
+            public boolean skip(Map data) {
+                return accountUuidList.isEmpty();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(splitAccountLists())
+                        .each(this::cleanStaleAccounts)
+                        .run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            logger.warn("failed to delete related account (for destroy account source) but still continue: "
+                                    + errorCodeList.getCauses().get(0).getDetails());
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+
+            private void cleanStaleAccounts(List<String> accounts, WhileCompletion whileCompletion) {
+                UnbindThirdPartyAccountsSpec spec = new UnbindThirdPartyAccountsSpec();
+                spec.setSourceUuid(self.getUuid());
+                spec.setSourceType(self.getType());
+                spec.setAccountUuidList(accounts);
+                spec.setSyncDeleteStrategy(SyncDeletedAccountStrategy.DeleteAccount);
+                spec.setRemoveBindingOnly(false);
+
+                unbindingAccount(spec, new ReturnValueCompletion<List<UnbindThirdPartyAccountResult>>(whileCompletion) {
+                    @Override
+                    public void success(List<UnbindThirdPartyAccountResult> returnValue) {
+                        whileCompletion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        whileCompletion.addError(errorCode);
+                        whileCompletion.done();
+                    }
+                });
+            }
+
+            private List<List<String>> splitAccountLists() {
+                List<List<String>> results = new ArrayList<>();
+                int offset = 0;
+                int totalSize = accountUuidList.size();
+
+                while (offset <= totalSize) {
+                    results.add(accountUuidList.subList(offset, Math.min(offset + 50, accountUuidList.size())));
+                    offset += 50;
+                }
+                return results;
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(operr(errCode, "failed to delete source[uuid=%s, type=%s]",
+                        self.getUuid(), self.getType()));
+            }
+        }).start();
     }
 
     protected abstract void destroySource(Completion completion);
