@@ -60,30 +60,6 @@ public class ModelCenterInventory  {
         return this.managementPort;
     }
 
-    public java.lang.String storageNetworkUuid;
-    public void setStorageNetworkUuid(java.lang.String storageNetworkUuid) {
-        this.storageNetworkUuid = storageNetworkUuid;
-    }
-    public java.lang.String getStorageNetworkUuid() {
-        return this.storageNetworkUuid;
-    }
-
-    public java.lang.String serviceNetworkUuid;
-    public void setServiceNetworkUuid(java.lang.String serviceNetworkUuid) {
-        this.serviceNetworkUuid = serviceNetworkUuid;
-    }
-    public java.lang.String getServiceNetworkUuid() {
-        return this.serviceNetworkUuid;
-    }
-
-    public java.lang.String containerRegistry;
-    public void setContainerRegistry(java.lang.String containerRegistry) {
-        this.containerRegistry = containerRegistry;
-    }
-    public java.lang.String getContainerRegistry() {
-        return this.containerRegistry;
-    }
-
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
