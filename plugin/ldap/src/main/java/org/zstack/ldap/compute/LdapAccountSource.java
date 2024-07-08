@@ -1,6 +1,5 @@
 package org.zstack.ldap.compute;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.header.core.Completion;
@@ -18,7 +17,6 @@ import org.zstack.ldap.header.LdapAccountSourceSpec;
 import org.zstack.ldap.header.LdapSyncTaskSpec;
 import org.zstack.ldap.message.UpdateLdapAccountSourceMsg;
 import org.zstack.ldap.message.UpdateLdapAccountSourceReply;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -53,9 +51,6 @@ public class LdapAccountSource extends AbstractAccountSourceBase {
         self = serverVO;
         return serverVO;
     }
-
-    @Autowired
-    private ResourceConfigFacade resourceConfigFacade;
 
     @Override
     public String type() {
