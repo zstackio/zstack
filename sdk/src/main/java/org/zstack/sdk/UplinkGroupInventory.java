@@ -44,6 +44,22 @@ public class UplinkGroupInventory  {
         return this.type;
     }
 
+    public java.lang.String bondingUuid;
+    public void setBondingUuid(java.lang.String bondingUuid) {
+        this.bondingUuid = bondingUuid;
+    }
+    public java.lang.String getBondingUuid() {
+        return this.bondingUuid;
+    }
+
+    public java.lang.String interfaceUuid;
+    public void setInterfaceUuid(java.lang.String interfaceUuid) {
+        this.interfaceUuid = interfaceUuid;
+    }
+    public java.lang.String getInterfaceUuid() {
+        return this.interfaceUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
