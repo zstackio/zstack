@@ -643,7 +643,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             poolId = getPoolIdFromPath(v.getAllocatedUrl());
         }
 
-        VolumeModule volModule = apiHelper.createVolume(v.getName(), poolId, SizeUnit.BYTE.toMegaByte(v.getSize()));
+        VolumeModule volModule = apiHelper.createVolume(v.getName(), poolId, convertBytesToMegaBytes(v.getSize()));
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(buildXInfiniPath(poolId, volModule.getSpec().getId()));
         stats.setSize(SizeUnit.MEGABYTE.toByte(volModule.getSpec().getSizeMb()));
@@ -652,6 +652,14 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setRunStatus(volModule.getMetadata().getState().getState());
         comp.success(stats);
+    }
+
+    private long convertBytesToMegaBytes(long bytes) {
+        if (bytes < 0) {
+            throw new IllegalArgumentException("Byte count cannot be negative");
+        }
+        
+        return (long) Math.ceil(bytes / (1024.0 * 1024.0));
     }
 
     @Override
@@ -684,7 +692,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         VolumeModule vol = apiHelper.cloneVolume(snapId, dst.getName(), null, false);
 
         if (SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()) < dst.getSize()) {
-            vol = apiHelper.expandVolume(vol.getSpec().getId(), SizeUnit.BYTE.toMegaByte(dst.getSize()));
+            vol = apiHelper.expandVolume(vol.getSpec().getId(), convertBytesToMegaBytes(dst.getSize()));
         }
         // TODO support expand volume size
         VolumeStats stats = new VolumeStats();
@@ -744,7 +752,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             return;
         }
 
-        VolumeModule vol = apiHelper.expandVolume(id, SizeUnit.BYTE.toMegaByte(size));
+        VolumeModule vol = apiHelper.expandVolume(id, convertBytesToMegaBytes(size));
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(installPath);
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
