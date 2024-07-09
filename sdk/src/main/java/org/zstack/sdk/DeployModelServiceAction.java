@@ -43,6 +43,9 @@ public class DeployModelServiceAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
+    @Param(required = true, validValues = {"VirtualMachine","Container"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Long memorySize;
 
