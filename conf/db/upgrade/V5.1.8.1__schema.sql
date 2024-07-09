@@ -61,6 +61,7 @@ CREATE TABLE  `zstack`.`ModelServiceInstanceGroupVO` (
     `modelUuid` varchar(32) NOT NULL,
     `name` varchar(255) DEFAULT NULL,
     `status` varchar(255) NOT NULL,
+    `type` varchar(128) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     CONSTRAINT fkModelServiceInstanceGroupVOModelServiceModelServiceVO FOREIGN KEY (modelServiceUuid) REFERENCES ModelServiceVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
