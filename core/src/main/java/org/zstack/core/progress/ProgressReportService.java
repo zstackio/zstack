@@ -136,7 +136,9 @@ public class ProgressReportService extends AbstractService implements Management
                 Runnable cleanup = ThreadContextUtils.saveThreadContext();
                 Defer.defer(cleanup);
                 setThreadContext(cmd);
-                taskProgress(TaskType.Progress, cmd.getProgress(), cmd.getDetail());
+                TaskProgressInfo.progress()
+                        .withContent(cmd.getProgress(), cmd.getDetail())
+                        .report();
                 return null;
             }
         });
@@ -413,16 +415,16 @@ public class ProgressReportService extends AbstractService implements Management
         Platform.getComponentLoader().getComponent(DatabaseFacade.class).persist(vo);
     }
 
-    private static void taskProgress(TaskType type, String fmt, Object... args) {
+    private static void taskProgress(TaskProgressInfo info) {
         if (!ProgressGlobalConfig.PROGRESS_ON.value(Boolean.class)) {
             return;
         }
 
         if (!ThreadContext.containsKey(Constants.THREAD_CONTEXT_API)) {
-            if (args != null) {
-                logger.warn(String.format("no task uuid found for:" + fmt, args));
+            if (info.arguments != null) {
+                logger.warn(String.format("no task uuid found for:" + info.content, info.arguments));
             } else {
-                logger.warn("no task uuid found for:" + fmt);
+                logger.warn("no task uuid found for:" + info.content);
             }
             return;
         }
@@ -445,15 +447,18 @@ public class ProgressReportService extends AbstractService implements Management
         vo.setApiId(apiId);
         vo.setTaskUuid(taskUuid);
         vo.setParentUuid(getParentUuid());
-        if (args != null) {
-            vo.setArguments(JSONObjectUtil.toJsonString(args));
+        if (info.arguments != null) {
+            vo.setArguments(JSONObjectUtil.toJsonString(info.arguments));
         }
-        vo.setType(type);
+        if (info.opaque != null) {
+            vo.setOpaque(JSONObjectUtil.toJsonString(info.opaque));
+        }
+        vo.setType(info.type);
         vo.setTime(System.currentTimeMillis());
         vo.setManagementUuid(Platform.getManagementServerId());
         vo.setTaskName(ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME));
 
-        calculateFmtAndPersist(vo, apiId, type, fmt);
+        calculateFmtAndPersist(vo, apiId, info.type, info.content);
     }
 
     public static void taskProgress(String fmt, Object...args) {
@@ -461,7 +466,13 @@ public class ProgressReportService extends AbstractService implements Management
             return;
         }
 
-        taskProgress(TaskType.Task, fmt, args);
+        TaskProgressInfo.task()
+                .withContent(fmt, args)
+                .report();
+    }
+
+    public static TaskProgressInfo taskProgress() {
+        return TaskProgressInfo.task();
     }
 
     public static void reportProgress(String fmt) {
@@ -469,7 +480,9 @@ public class ProgressReportService extends AbstractService implements Management
             return;
         }
 
-        taskProgress(TaskType.Progress, fmt);
+        TaskProgressInfo.progress()
+                .withContent(fmt)
+                .report();
     }
 
     public static void reportProgress(String fmt, Object... args) {
@@ -477,7 +490,13 @@ public class ProgressReportService extends AbstractService implements Management
             return;
         }
 
-        taskProgress(TaskType.Progress, fmt, args);
+        TaskProgressInfo.progress()
+                .withContent(fmt, args)
+                .report();
+    }
+
+    public static TaskProgressInfo reportProgress() {
+        return TaskProgressInfo.progress();
     }
 
     public void reportProgressUntil(String end, int intervalSec) {
@@ -591,5 +610,50 @@ public class ProgressReportService extends AbstractService implements Management
         int exactStart = Math.round(subStage.getStart() * ratio + parentStage.getStart());
         int exactEnd = Math.round(subStage.getEnd() * ratio + parentStage.getStart());
         return new TaskProgressRange(exactStart, exactEnd);
+    }
+
+    public static class TaskProgressInfo {
+        public final TaskType type;
+        String content;
+        Object[] arguments;
+        Object opaque;
+
+        static TaskProgressInfo progress() {
+            return new TaskProgressInfo(TaskType.Progress);
+        }
+
+        static TaskProgressInfo task() {
+            return new TaskProgressInfo(TaskType.Task);
+        }
+
+        private TaskProgressInfo(TaskType type) {
+            this.type = type;
+        }
+
+        public TaskProgressInfo withProgress(int progress) {
+            this.content = Integer.toString(progress);
+            return this;
+        }
+
+        public TaskProgressInfo withContent(String content, Object... arguments) {
+            this.content = content;
+            this.arguments = arguments;
+            return this;
+        }
+
+        public TaskProgressInfo withContent(String content) {
+            this.content = content;
+            this.arguments = null;
+            return this;
+        }
+
+        public TaskProgressInfo withOpaque(Object opaque) {
+            this.opaque = opaque;
+            return this;
+        }
+
+        public void report() {
+            taskProgress(this);
+        }
     }
 }
