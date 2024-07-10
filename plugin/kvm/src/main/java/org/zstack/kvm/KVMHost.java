@@ -4507,10 +4507,18 @@ public class KVMHost extends HostBase implements Host {
             logger.debug("host status is %s, ignore version or host uuid changed issue");
             return;
         }
-        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            changeConnectionState(HostStatusEvent.disconnected);
-            new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            if (ret.getVersion() != null) {
+                logger.debug("skip fire host disconnected event and reconnect host during grayscale upgrade");
+                return;
+            }
+
+            logger.debug("still fire host disconnected event when kvmagent report version is null");
         }
+
+        changeConnectionState(HostStatusEvent.disconnected);
+        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
 
         ReconnectHostMsg rmsg = new ReconnectHostMsg();
         rmsg.setHostUuid(self.getUuid());
