@@ -11,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.message.APIMessage
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
@@ -32,6 +33,7 @@ import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
 /**
@@ -817,6 +819,15 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
             accountName = AccountConstant.INITIAL_SYSTEM_ADMIN_NAME
             password = AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD
         } as SessionInventory
+    }
+
+    protected <T extends APIMessage> Object submitLongJob(Class<T> msgClass, Consumer<T> consumer) {
+        def message = msgClass.newInstance()
+        consumer.accept(message)
+        return submitLongJob {
+            delegate.jobName = msgClass.getSimpleName()
+            delegate.jobData = JSONObjectUtil.toJsonString(message)
+        }
     }
 
     private static boolean getRetryReturnValue(ret, boolean throwError = false) {

@@ -32,6 +32,7 @@ import org.zstack.identity.imports.message.BindThirdPartyAccountMsg;
 import org.zstack.identity.imports.message.BindThirdPartyAccountReply;
 import org.zstack.identity.imports.message.DestroyThirdPartyAccountSourceMsg;
 import org.zstack.identity.imports.message.SyncThirdPartyAccountMsg;
+import org.zstack.identity.imports.message.SyncThirdPartyAccountReply;
 import org.zstack.identity.imports.message.UnbindThirdPartyAccountMsg;
 import org.zstack.identity.imports.message.UnbindThirdPartyAccountReply;
 import org.zstack.ldap.api.*;
@@ -359,7 +360,10 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
             @Override
             public void run(MessageReply reply) {
                 APISyncAccountsFromLdapServerEvent event = new APISyncAccountsFromLdapServerEvent(msg.getId());
-                if (!reply.isSuccess()) {
+                if (reply.isSuccess()) {
+                    SyncThirdPartyAccountReply castReply = reply.castReply();
+                    event.setResult(castReply.getResult());
+                } else {
                     event.setError(reply.getError());
                 }
                 bus.publish(event);

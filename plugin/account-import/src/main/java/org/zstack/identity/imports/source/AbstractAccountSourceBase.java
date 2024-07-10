@@ -31,6 +31,7 @@ import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
 import org.zstack.identity.imports.header.ImportAccountSpec;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
+import org.zstack.identity.imports.header.SyncTaskResult;
 import org.zstack.identity.imports.header.SyncTaskSpec;
 import org.zstack.identity.imports.header.UnbindThirdPartyAccountResult;
 import org.zstack.identity.imports.header.UnbindThirdPartyAccountsSpec;
@@ -694,10 +695,11 @@ public abstract class AbstractAccountSourceBase {
         threadFacade.chainSubmit(new ChainTask(message) {
             @Override
             public void run(SyncTaskChain chain) {
-                syncAccountsFromSource(spec, new Completion(chain) {
+                syncAccountsFromSource(spec, new ReturnValueCompletion<SyncTaskResult>(chain) {
                     @Override
-                    public void success() {
+                    public void success(SyncTaskResult result) {
                         chain.next();
+                        reply.setResult(result);
                         bus.reply(message, reply);
                     }
 
@@ -722,7 +724,7 @@ public abstract class AbstractAccountSourceBase {
         });
     }
 
-    protected abstract void syncAccountsFromSource(SyncTaskSpec spec, Completion completion);
+    protected abstract void syncAccountsFromSource(SyncTaskSpec spec, ReturnValueCompletion<SyncTaskResult> completion);
 
     private void handle(DestroyThirdPartyAccountSourceMsg message) {
         DestroyThirdPartyAccountSourceReply reply = new DestroyThirdPartyAccountSourceReply();
