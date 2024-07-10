@@ -260,9 +260,10 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     @Override
     public String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable) {
         if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
+            String bdevName = buildBdevName(v.getUuid());
             BdcModule bdc = apiHelper.queryBdcByIp(h.getManagementIp());
             VolumeModule volModule = getVolumeModule(v);
-            BdcBdevModule bdev = apiHelper.queryBdcBdevByVolumeIdAndBdcId(volModule.getSpec().getId(), bdc.getSpec().getId());
+            BdcBdevModule bdev = apiHelper.getOrCreateBdcBdevByVolumeIdAndBdcId(volModule.getSpec().getId(), bdc.getSpec().getId(), bdevName);
             return bdev.getSpec().getSocketPath();
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
             if (v.getInstallPath().contains("@")) {

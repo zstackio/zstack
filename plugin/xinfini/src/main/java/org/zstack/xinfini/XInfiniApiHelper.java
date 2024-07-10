@@ -299,6 +299,17 @@ public class XInfiniApiHelper {
         return rsp.getItems().get(0);
     }
 
+    public BdcBdevModule getOrCreateBdcBdevByVolumeIdAndBdcId(int volId, int bdcId, String bdevName) {
+        QueryBdcBdevRequest req = new QueryBdcBdevRequest();
+        req.q = String.format("((spec.bdc_id:%s) AND (spec.bs_volume_id:%s))", bdcId, volId);
+        QueryBdcBdevResponse rsp = queryErrorOut(req, QueryBdcBdevResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return createBdcBdev(bdcId, volId, bdevName);
+        }
+
+        return rsp.getItems().get(0);
+    }
+
     public List<BdcBdevModule> queryBdcBdevByVolumeId(int volId) {
         QueryBdcBdevRequest req = new QueryBdcBdevRequest();
         req.q = String.format("spec.bs_volume_id:%s", volId);
