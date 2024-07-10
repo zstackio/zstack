@@ -7537,6 +7537,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     smsg.setVmInstanceUuid(self.getUuid());
                     smsg.setGcOnFailure(true);
                     smsg.setType(StopVmType.cold.toString());
+                    smsg.setStopHA(true);
                     stopVm(smsg, new Completion(trigger) {
                         @Override
                         public void success() {
