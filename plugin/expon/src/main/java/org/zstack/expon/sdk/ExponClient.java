@@ -159,8 +159,10 @@ public class ExponClient {
 
 
         ApiResult doCall() {
-            if (action.sessionId == null) {
+            if (action.sessionId == null && action.getParameterMap().containsKey("sessionId")) {
+                logger.info("session id is null, refresh it");
                 action.sessionId = sessionRefresher.get();
+                logger.info(String.format("refresh session id[%s] success", action.sessionId));
             }
 
             Request.Builder reqBuilder = new Request.Builder();
