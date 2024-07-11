@@ -4590,8 +4590,22 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    boolean needReconnectHost(PingResponse rsp) {
-        return !self.getUuid().equals(rsp.getHostUuid()) || !dbf.getDbVersion().equals(rsp.getVersion());
+    enum ReconnectHostAction {
+        SkipPingExtensionAndReconnect,
+        DoPingExtensionAndReconnect,
+        DoNothing
+    }
+
+    ReconnectHostAction needReconnectHost(PingResponse rsp) {
+        if (!self.getUuid().equals(rsp.getHostUuid())) {
+            return ReconnectHostAction.SkipPingExtensionAndReconnect;
+        }
+
+        if (!dbf.getDbVersion().equals(rsp.getVersion())) {
+            return ReconnectHostAction.DoPingExtensionAndReconnect;
+        }
+
+        return ReconnectHostAction.DoNothing;
     }
 
     boolean inconsistentHostUuid(PingResponse rsp) {
@@ -4647,10 +4661,14 @@ public class KVMHost extends HostBase implements Host {
                                 // update host agent version when open grayScaleUpgrade
                                 upgradeChecker.updateAgentVersion(self.getUuid(), AnsibleConstant.KVM_AGENT_NAME, dbf.getDbVersion(), ret.getVersion());
 
-                                if (needReconnectHost(ret)) {
+                                ReconnectHostAction action = needReconnectHost(ret);
+                                if (!action.equals(ReconnectHostAction.DoNothing)) {
                                     // reconnect host require many steps which may influence the results
                                     // of extension points, so we skip them here and do it after next ping
-                                    data.put(KVMConstant.KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS, true);
+                                    if (action.equals(ReconnectHostAction.SkipPingExtensionAndReconnect)) {
+                                        data.put(KVMConstant.KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS, true);
+                                    }
+
                                     afterDone.add(() -> doReconnectHostDueToPingResult(ret));
                                 } else if (needUpdateHostConfiguration(ret)) {
                                     afterDone.add(KVMHost.this::doUpdateHostConfiguration);

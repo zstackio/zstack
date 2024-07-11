@@ -400,6 +400,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     @Override
     public void kvmPingAgentNoFailure(KVMHostInventory host, NoErrorCompletion completion) {
         if (!KVMGlobalConfig.VM_SYNC_ON_HOST_PING.value(Boolean.class)) {
+            logger.debug("vmSyncOnHostPing is disabled, skip sync vm state in kvmPingAgentNoFailure");
             completion.done();
             return;
         }
