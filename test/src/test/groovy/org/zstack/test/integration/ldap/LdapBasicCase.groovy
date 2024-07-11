@@ -8,6 +8,7 @@ import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.header.identity.IdentityErrors
 import org.zstack.identity.IdentityGlobalConfig
+import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
 import org.zstack.sdk.identity.ldap.api.AddLdapServerResult
 import org.zstack.sdk.ApiResult
@@ -38,6 +39,7 @@ class LdapBasicCase extends SubCase {
             usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build()
 
     String ldapUuid
+    AccountInventory account1
 
     @Override
     void setup() {
@@ -59,6 +61,7 @@ class LdapBasicCase extends SubCase {
     @Override
     void test() {
         env.create {
+            prepare()
             testAddLdapServer()
             testRepeatToAddLdapServer()
 
@@ -77,6 +80,13 @@ class LdapBasicCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    void prepare() {
+        account1 = createAccount {
+            delegate.name = "username1"
+            delegate.password = "password"
+        } as AccountInventory
     }
 
     LDAPInterface getLdapConn(){
@@ -123,6 +133,12 @@ class LdapBasicCase extends SubCase {
         assert null != action.call().error
 
         IdentityGlobalConfig.MAX_CONCURRENT_SESSION.updateValue(1)
+
+        logIn {
+            username = cn
+            password = rightPassword
+            loginType = "ldap"
+        }
 
         action = new LogInAction()
         action.username = cn
@@ -207,7 +223,7 @@ class LdapBasicCase extends SubCase {
         String notExistCn = "nobody"
         expect (AssertionError.class) {
             createLdapBinding {
-                accountUuid = Test.currentEnvSpec.session.accountUuid
+                accountUuid = account1.uuid
                 ldapUid = notExistCn
             }
         }
@@ -219,7 +235,7 @@ class LdapBasicCase extends SubCase {
 
         String dn = "cn=Micha Kops,ou=Users,dc=example,dc=com"
         createLdapBinding {
-            accountUuid = Test.currentEnvSpec.session.accountUuid
+            accountUuid = account1.uuid
             ldapUid = dn
         }
 
