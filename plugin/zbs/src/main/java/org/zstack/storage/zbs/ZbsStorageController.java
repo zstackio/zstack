@@ -272,11 +272,13 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        String mdsListenAddr = mds.stream().map(m -> m.getSelf().getMdsAddr() + ":" + m.getSelf().getMdsPort()).collect(Collectors.joining(","));
                         List<ErrorCode> errors = new ArrayList<>();
                         new While<>(mds).each((m, comp) -> {
                             GetFactsCmd cmd = new GetFactsCmd();
                             cmd.setUuid(self.getUuid());
                             cmd.setMdsAddr(m.getSelf().getMdsAddr());
+                            cmd.setMdsListenAddr(mdsListenAddr);
                             m.httpCall(GET_FACTS_PATH, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(comp) {
                                 @Override
                                 public void success(GetFactsRsp returnValue) {
@@ -1508,6 +1510,15 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class GetFactsCmd extends AgentCommand {
+        private String mdsListenAddr;
+
+        public String getMdsListenAddr() {
+            return mdsListenAddr;
+        }
+
+        public void setMdsListenAddr(String mdsListenAddr) {
+            this.mdsListenAddr = mdsListenAddr;
+        }
     }
 
     public static class AgentCommand {
