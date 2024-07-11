@@ -159,6 +159,9 @@ public class ExponClient {
 
 
         ApiResult doCall() {
+            if (action.sessionId == null) {
+                action.sessionId = sessionRefresher.get();
+            }
 
             Request.Builder reqBuilder = new Request.Builder();
             action.checkParameters();

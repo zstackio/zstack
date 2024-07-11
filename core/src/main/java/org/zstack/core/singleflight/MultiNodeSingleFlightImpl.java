@@ -38,7 +38,7 @@ public class MultiNodeSingleFlightImpl {
     private static final Map<String, Map<String, Method>> singleFlightMethods = new ConcurrentHashMap<>();
 
     public static void register(SingleFlightExecutor executor) {
-        if (!singleFlightMethods.containsKey(executor.getClass().getName())) {
+        if (!singleFlightExecutors.containsKey(executor.getClass().getName())) {
             Method[] methods = executor.getClass().getDeclaredMethods();
             for (Method method : methods) {
                 if (method.isAnnotationPresent(SingleFlightExecutor.SingleFlight.class)) {
