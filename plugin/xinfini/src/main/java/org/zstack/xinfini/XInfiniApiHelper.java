@@ -36,6 +36,8 @@ public class XInfiniApiHelper {
     private static CLogger logger = Utils.getLogger(XInfiniApiHelper.class);
     XInfiniClient client;
 
+    private final static double POOL_RESERVED_SIZE_RATIO = 0.15;
+
     private static final Cache<String, String> snapshotClientCache = CacheBuilder.newBuilder()
             .maximumSize(1000)
             .build();
@@ -149,8 +151,10 @@ public class XInfiniApiHelper {
     public PoolCapacity getPoolCapacity(PoolModule pool) {
         PoolCapacity capacity = new PoolCapacity();
         long usedCapacity = SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.DATA_KBYTES, pool));
-        capacity.setTotalCapacity(SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.ACTUAL_KBYTES, pool)));
-        capacity.setAvailableCapacity(capacity.getTotalCapacity() - usedCapacity);
+        long totalCapacity = SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.ACTUAL_KBYTES, pool));
+        long reservedCapacity = (long) (totalCapacity * POOL_RESERVED_SIZE_RATIO);
+        capacity.setTotalCapacity(totalCapacity);
+        capacity.setAvailableCapacity(totalCapacity - usedCapacity - reservedCapacity);
         return capacity;
     }
 

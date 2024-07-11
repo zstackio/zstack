@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -70,7 +71,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     private ThreadFacade thdf;
     private ExternalPrimaryStorageVO self;
     private XInfiniConfig config;
-    private  XInfiniAddonInfo addonInfo;
+    private XInfiniAddonInfo addonInfo;
     private final XInfiniApiHelper apiHelper;
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
@@ -102,7 +103,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     public XInfiniStorageController(ExternalPrimaryStorageVO self) {
         this(self.getConfig());
-        this.self = self;
+        this.reloadDbInfo();
     }
 
     public XInfiniStorageController(String config) {
@@ -515,15 +516,27 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     @Override
     public void reportCapacity(ReturnValueCompletion<StorageCapacity> comp) {
         reloadDbInfo();
+        List<XInfiniAddonInfo.Pool> pools = refreshPoolCapacity()
+                .stream()
+                .filter(it -> config.getPoolIds().contains(it.getId()))
+                .collect(Collectors.toList());
 
-        List<PoolModule> pools = getSelfPools();
-        long total = pools.stream().mapToLong(v -> apiHelper.getPoolCapacity(v).getTotalCapacity()).sum();
-        long avail = pools.stream().mapToLong(v -> apiHelper.getPoolCapacity(v).getAvailableCapacity()).sum();
+        long total = pools.stream().mapToLong(XInfiniAddonInfo.Pool::getTotalCapacity).sum();
+        long avail = pools.stream().mapToLong(XInfiniAddonInfo.Pool::getAvailableCapacity).sum();
         StorageCapacity cap = new StorageCapacity();
-        cap.setHealthy(getHealthy(pools));
+        cap.setHealthy(getHealthy(getSelfPools()));
         cap.setAvailableCapacity(avail);
         cap.setTotalCapacity(total);
         comp.success(cap);
+    }
+
+    private List<XInfiniAddonInfo.Pool> refreshPoolCapacity() {
+        addonInfo.setPools(apiHelper.queryPools().stream().map(this::getPoolAddonInfo).collect(Collectors.toList()));
+        SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
+                .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
+                .update();
+
+        return addonInfo.getPools();
     }
 
     private StorageHealthy getHealthy(List<PoolModule> pools) {
@@ -590,11 +603,9 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     private List<PoolModule> getSelfPools() {
         Set<Integer> configPoolIds = config.getPoolIds();
-        Set<Integer> poolIds = addonInfo.getPools().stream().filter(it -> configPoolIds.contains(it.getId()))
-                .map(XInfiniAddonInfo.Pool::getId).collect(Collectors.toSet());
 
         List<PoolModule> pools = apiHelper.queryPools();
-        pools.removeIf(it -> !poolIds.contains(it.getSpec().getId()));
+        pools.removeIf(it -> !configPoolIds.contains(it.getSpec().getId()));
         return pools;
     }
 
