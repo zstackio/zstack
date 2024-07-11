@@ -77,6 +77,7 @@ public class MultiNodeSingleFlightImpl {
 
         boolean unitTestSaySendMsg = CoreGlobalProperty.UNIT_TEST_ON && new Random().nextBoolean();
         if (localSingleFlight && !unitTestSaySendMsg) {
+            logger.info(String.format("start running local single flight task [method:%s,resource:%s]", method, executor.getResourceUuid()));
             thdf.singleFlightSubmit(new SingleFlightTask(null)
                     .setSyncSignature("external-single-flight-" + executor.getResourceUuid())
                     .run(outCompletion -> {
