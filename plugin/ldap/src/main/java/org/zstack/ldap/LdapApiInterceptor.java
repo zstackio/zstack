@@ -9,6 +9,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorableValue;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
 import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO_;
@@ -84,6 +85,11 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         if (refExists) {
             throw new ApiMessageInterceptionException(err(LDAP_BINDING_ACCOUNT_ERROR,
                     "the ldap uid has already been bound to account[uuid=%s]", msg.getAccountUuid()));
+        }
+
+        if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(err(LDAP_BINDING_ACCOUNT_ERROR,
+                    "failed to bind admin to ldap users"));
         }
     }
 
