@@ -34,6 +34,7 @@ public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, Ba
     @Override
     public void discover(String url, String config, ReturnValueCompletion<LinkedHashMap> completion) {
         ExponStorageController controller = new ExponStorageController(url);
+        MultiNodeSingleFlightImpl.register(controller.apiHelper);
         controller.connect(config, url, completion);
     }
 
