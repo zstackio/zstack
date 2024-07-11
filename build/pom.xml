@@ -405,11 +405,6 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>iam2-ldap-plugin</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
                     <artifactId>storage-ha-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>

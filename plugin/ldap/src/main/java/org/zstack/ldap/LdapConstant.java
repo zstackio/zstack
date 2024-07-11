@@ -22,7 +22,7 @@ public interface LdapConstant {
 
     interface OpenLdap{
         String TYPE = "OpenLdap";
-		String MEMBER_KEY = "uniqueMember";
+        String MEMBER_KEY = "uniqueMember";
         String MEMBER_OF_KEY = "memberOf";
         String DN_KEY = "entryDN";
         String GLOBAL_UUID_KEY = "entryUUID";

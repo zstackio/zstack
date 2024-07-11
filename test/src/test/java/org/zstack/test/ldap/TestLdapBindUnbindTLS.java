@@ -8,11 +8,20 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.header.identity.APILogInReply;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.identity.login.APILogInMsg;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
+import org.zstack.ldap.api.APIAddLdapServerEvent;
+import org.zstack.ldap.api.APIAddLdapServerMsg;
+import org.zstack.ldap.api.APICreateLdapBindingEvent;
+import org.zstack.ldap.api.APICreateLdapBindingMsg;
+import org.zstack.ldap.api.APIQueryLdapServerMsg;
+import org.zstack.ldap.api.APIQueryLdapServerReply;
+import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.portal.apimediator.PortalSystemTags;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
@@ -109,31 +118,28 @@ public class TestLdapBindUnbindTLS {
         msg2.setLdapUid(uid);
         msg2.setSession(session);
         APICreateLdapBindingEvent evt2 = sender.send(msg2, APICreateLdapBindingEvent.class);
-        logger.debug(evt2.getInventory().getUuid());
+        logger.debug("" + evt2.getInventory().getId());
 
 
         // login with right password
-        APILogInByLdapMsg msg3 = new APILogInByLdapMsg();
-        msg3.setUid(uid);
+        APILogInMsg msg3 = new APILogInMsg();
+        msg3.setUsername(uid);
         msg3.setPassword(password);
+        msg3.setLoginType(LdapConstant.LOGIN_TYPE);
         msg3.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
-        APILogInByLdapReply reply3 = sender.call(msg3, APILogInByLdapReply.class);
+        APILogInReply reply3 = sender.call(msg3, APILogInReply.class);
         logger.debug(reply3.getInventory().getAccountUuid());
-        logger.debug(reply3.getAccountInventory().getName());
 
         // login with wrong password
         thrown.expect(ApiSenderException.class);
         //thrown.expectMessage("");
 
-        APILogInByLdapMsg msg31 = new APILogInByLdapMsg();
-        msg31.setUid(uid);
+        APILogInMsg msg31 = new APILogInMsg();
+        msg31.setUsername(uid);
         msg31.setPassword("wrong password");
+        msg3.setLoginType(LdapConstant.LOGIN_TYPE);
         msg31.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
-        APILogInByLdapReply reply31 = sender.call(msg31, APILogInByLdapReply.class);
+        APILogInReply reply31 = sender.call(msg31, APILogInReply.class);
         logger.debug(reply31.getInventory().getAccountUuid());
-        logger.debug(reply31.getAccountInventory().getName());
-
-        //
-
     }
 }

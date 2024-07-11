@@ -31,6 +31,8 @@ import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
+import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
+import org.zstack.sdk.identity.ldap.api.DeleteLdapServerAction
 import org.zstack.sdk.identity.role.api.CreateRoleAction
 import org.zstack.sdk.identity.role.api.DeleteRoleAction
 import org.zstack.sdk.sns.CreateSNSTopicAction

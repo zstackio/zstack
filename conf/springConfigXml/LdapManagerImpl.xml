@@ -34,7 +34,7 @@
 
     <bean id="AggregateSearch" class="org.zstack.ldap.externalSearch.AggregateSearch">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.ldap.LdapExternalSearchExtensionPoint"/>
+            <zstack:extension interface="org.zstack.ldap.driver.LdapExternalSearchExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

@@ -9,6 +9,10 @@ import org.springframework.ldap.filter.EqualsFilter;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
+import org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefVO;
+import org.zstack.ldap.driver.LdapTemplateContextSource;
+import org.zstack.ldap.entity.LdapServerInventory;
+import org.zstack.ldap.entity.LdapServerVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import java.util.List;
@@ -33,10 +37,12 @@ public class LdapUpgradeExtension implements Component {
 
     private void updateLdapUidToLdapDn() {
         if(!isLdapServerExist()){
+            logger.info("There is no LDAP/AD server in the system, skip ldap updating");
             return;
         }
 
         if(!isBindingExist()){
+            logger.info("There is no bindings in the system, skip ldap updating");
             return;
         }
 
@@ -44,8 +50,8 @@ public class LdapUpgradeExtension implements Component {
             LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
             LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
 
-            List<LdapAccountRefVO> refs = Q.New(LdapAccountRefVO.class).list();
-            for(LdapAccountRefVO ref : refs){
+            List<AccountThirdPartyAccountSourceRefVO> refs = Q.New(AccountThirdPartyAccountSourceRefVO.class).list();
+            for(AccountThirdPartyAccountSourceRefVO ref : refs){
                 update(ldapTemplate, ref);
             }
 
@@ -54,11 +60,11 @@ public class LdapUpgradeExtension implements Component {
         }
     }
 
-    private void update(LdapTemplate ldapTemplate, LdapAccountRefVO ref){
-        String uid = ref.getLdapUid();
+    private void update(LdapTemplate ldapTemplate, AccountThirdPartyAccountSourceRefVO ref){
+        String uid = ref.getCredentials();
 
         AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter("uid", ref.getLdapUid()));
+        filter.and(new EqualsFilter("uid", ref.getCredentials()));
 
         List<Object> result = ldapTemplate.search("", filter.toString(), new AbstractContextMapper<Object>() {
             @Override
@@ -78,27 +84,17 @@ public class LdapUpgradeExtension implements Component {
         }
 
         String dn = result.get(0).toString();
-        ref.setLdapUid(dn);
+        ref.setCredentials(dn);
         dbf.update(ref);
         logger.info(String.format("update ldapUid[%s] to ldapDn[%s] success", uid, dn));
     }
 
     private boolean isBindingExist(){
-        if(Q.New(LdapAccountRefVO.class).isExists()){
-            logger.warn("update ldapUid to ldapDn fail, There is no bindings in the system");
-            return true;
-        }
-
-        return false;
+        return Q.New(AccountThirdPartyAccountSourceRefVO.class).isExists();
     }
 
     private boolean isLdapServerExist(){
-        if(Q.New(LdapServerVO.class).isExists()){
-            logger.warn("update ldapUid to ldapDn fail, There is no LDAP/AD server in the system");
-            return true;
-        }
-
-        return false;
+        return Q.New(LdapServerVO.class).isExists();
     }
 
     private LdapTemplateContextSource readLdapServerConfiguration() {
