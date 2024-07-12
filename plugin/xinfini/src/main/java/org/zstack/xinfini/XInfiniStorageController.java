@@ -661,7 +661,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         stats.setInstallPath(buildXInfiniPath(poolId, volModule.getSpec().getId()));
         stats.setSize(SizeUnit.MEGABYTE.toByte(volModule.getSpec().getSizeMb()));
         // TODO not support actualSize yet
-        // stats.setActualSize(volModule.getDataSize());
+        stats.setActualSize(SizeUnit.MEGABYTE.toByte(volModule.getSpec().getSizeMb()));
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setRunStatus(volModule.getMetadata().getState().getState());
         comp.success(stats);
@@ -713,7 +713,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
         // TODO not support actualSize yet
-        // stats.setActualSize(volModule.getDataSize());
+        stats.setActualSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
         comp.success(stats);
     }
 
