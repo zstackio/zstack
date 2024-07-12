@@ -33,6 +33,7 @@
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
             <zstack:extension interface="org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.agent.ProxyHardwareFactory" />
         </zstack:plugin>
     </bean>
 
