@@ -107,8 +107,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     public ExponStorageController(ExternalPrimaryStorageVO self) {
         this(self.getUrl());
-        this.self = self;
         this.apiHelper.setStorageUuid(self.getUuid());
+        this.reloadDbInfo();
     }
 
     public ExponStorageController(String url) {
