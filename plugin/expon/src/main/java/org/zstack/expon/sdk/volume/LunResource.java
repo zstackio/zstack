@@ -1,6 +1,6 @@
 package org.zstack.expon.sdk.volume;
 
-import org.zstack.expon.sdk.Param;
+import org.zstack.externalStorage.sdk.Param;
 
 public class LunResource {
     @Param

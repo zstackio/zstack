@@ -45,6 +45,7 @@
     <import resource="springConfigXml/vhost.xml"/>
     <import resource="springConfigXml/iscsi.xml"/>
     <import resource="springConfigXml/expon.xml"/>
+    <import resource="springConfigXml/xinfini.xml"/>
     <import resource="springConfigXml/ExternalPrimaryStorage.xml"/>
     <import resource="springConfigXml/ExternalBackupStorage.xml"/>
     <import resource="springConfigXml/CloudBus.xml"/>

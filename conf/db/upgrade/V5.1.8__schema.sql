@@ -272,3 +272,5 @@ CREATE PROCEDURE addPciDeviceVendor()
 DELIMITER ;
 call addPciDeviceVendor;
 DROP PROCEDURE IF EXISTS `addPciDeviceVendor`;
+
+ALTER TABLE `zstack`.`ExternalPrimaryStorageVO` modify column config varchar(2048) DEFAULT NULL;

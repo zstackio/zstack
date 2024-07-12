@@ -2,7 +2,7 @@ package org.zstack.expon.sdk;
 
 import org.zstack.header.expon.ExponError;
 
-public class ErrorCode {
+public class ExponErrorCode {
     String retCode;
     String message;
 

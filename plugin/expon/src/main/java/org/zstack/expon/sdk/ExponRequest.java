@@ -1,5 +1,7 @@
 package org.zstack.expon.sdk;
 
+import org.zstack.externalStorage.sdk.Param;
+
 /**
  * Created by xing5 on 2016/12/9.
  */
