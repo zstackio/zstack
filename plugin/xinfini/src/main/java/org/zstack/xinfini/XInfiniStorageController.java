@@ -103,6 +103,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     public XInfiniStorageController(ExternalPrimaryStorageVO self) {
         this(self.getConfig());
+        this.self = self;
         this.reloadDbInfo();
     }
 
