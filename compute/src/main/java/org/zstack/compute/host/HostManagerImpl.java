@@ -1,5 +1,6 @@
 package org.zstack.compute.host;
 
+import org.junit.Assert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
@@ -494,6 +495,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final APIGetPhysicalMachineBlockDevicesMsg msg) {
         APIGetPhysicalMachineBlockDevicesReply reply = new APIGetPhysicalMachineBlockDevicesReply();
         if (CoreGlobalProperty.UNIT_TEST_ON) {
+            DebugUtils.Assert(msg.getPassword() != null, "password cannot be null");
             BlockDevices blockDevices = BlockDevices.valueOf(BlockDevicesParser.parse(blockDevicesExample));
             blockDevices.filter(msg.getExcludedTypes());
             reply.setBlockDevices(blockDevices);
