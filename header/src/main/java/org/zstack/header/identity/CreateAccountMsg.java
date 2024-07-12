@@ -14,6 +14,7 @@ public class CreateAccountMsg extends NeedReplyMessage {
     private String password;
     private String type;
     private String description;
+    private AccountState state;
 
     public String getUuid() {
         return uuid;
@@ -53,6 +54,14 @@ public class CreateAccountMsg extends NeedReplyMessage {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public AccountState getState() {
+        return state;
+    }
+
+    public void setState(AccountState state) {
+        this.state = state;
     }
 }
 

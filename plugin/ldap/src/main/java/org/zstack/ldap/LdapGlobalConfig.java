@@ -4,6 +4,8 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.identity.imports.entity.ThirdPartyAccountSourceVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  * Created by lining on 2017/11/03.
@@ -28,4 +30,12 @@ public class LdapGlobalConfig {
     @GlobalConfigDef(defaultValue = "AUTO", description = "set ldap preferred search mode")
     public static GlobalConfig LDAP_ENTRY_SEARCH_MODE = new GlobalConfig(CATEGORY, "ldap.entry.search.mode");
 
+    @GlobalConfigValidation
+    @GlobalConfigDef(defaultValue = "NONE", description = "The currently enabled ldap server uuid, or NONE indicates that all ldap servers are currently disabled")
+    public static GlobalConfig CURRENT_LDAP_SERVER_UUID = new GlobalConfig(CATEGORY, "current.ldap.server.uuid");
+
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigDef(type = Integer.class, defaultValue = "10000", description = "maximum users sync from ldap server")
+    @BindResourceConfig({ThirdPartyAccountSourceVO.class})
+    public static GlobalConfig LDAP_MAXIMUM_SYNC_USERS = new GlobalConfig(CATEGORY, "ldap.maximum.sync.users");
 }

@@ -5,14 +5,14 @@ import org.junit.ClassRule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.ldap.LdapConstant
-import org.zstack.ldap.LdapSystemTags
 import org.zstack.sdk.*
+import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
+import org.zstack.sdk.identity.ldap.entity.LdapServerInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.stabilisation.StabilityTestCase
 import org.zstack.test.integration.stabilisation.TestCaseStabilityTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
 
 /**
  * Created by lining on 2017-11-09.
@@ -27,11 +27,12 @@ class WindowsADCase extends SubCase {
     public static EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder.newInstance().bindingToPort(1888).
             usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build()
 
-    String LdapUuid
+    String ldapUuid
 
     @Override
     void setup() {
         spring {
+            include("accountImport.xml")
             include("LdapManagerImpl.xml")
             include("captcha.xml")
         }
@@ -86,7 +87,13 @@ class WindowsADCase extends SubCase {
     void testAddLdapServer(){
         LDAPInterface ldapConnection = this.getLdapConn()
 
-        AddLdapServerAction addLdapServerAction = new AddLdapServerAction(
+        def configs = queryGlobalConfig {
+            delegate.conditions = ["category=ldap", "name=current.ldap.server.uuid"]
+        } as List<GlobalConfigInventory>
+        assert configs.size() == 1
+        assert configs[0].value == "NONE"
+
+        def addLdapServerAction = new AddLdapServerAction(
                 name : "ldap0",
                 description : "test-ldap0",
                 base : ZStackTest.DOMAIN_DSN,
@@ -94,11 +101,11 @@ class WindowsADCase extends SubCase {
                 username : "",
                 password : "",
                 encryption : "None",
-                systemTags : [LdapSystemTags.LDAP_SERVER_TYPE.instantiateTag([(LdapSystemTags.LDAP_SERVER_TYPE_TOKEN): "ErrorType"])],
-                sessionId : Test.currentEnvSpec.session.uuid
+                serverType : "ErrorType",
         )
-        ApiResult res = ZSClient.call(addLdapServerAction)
-        assert res.error != null
+        expect(ApiException.class) {
+            ZSClient.call(addLdapServerAction)
+        }
 
         def result = addLdapServer {
             name = "ldap0"
@@ -108,26 +115,56 @@ class WindowsADCase extends SubCase {
             username = ""
             password = ""
             encryption = "None"
-            systemTags = [LdapSystemTags.LDAP_SERVER_TYPE.instantiateTag([(LdapSystemTags.LDAP_SERVER_TYPE_TOKEN): LdapConstant.WindowsAD.TYPE])]
+            serverType = "WindowsAD"
         } as LdapServerInventory
-        LdapUuid = result.uuid
+        ldapUuid = result.uuid
 
-        assert LdapConstant.WindowsAD.TYPE == LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(LdapUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN)
+        assert result.serverType == LdapConstant.WindowsAD.TYPE
 
+        updateGlobalConfig {
+            delegate.category = "ldap"
+            delegate.name = "current.ldap.server.uuid"
+            delegate.value = ldapUuid
+        }
     }
 
     void testUpdateLdapServerType(){
         updateLdapServer {
-            ldapServerUuid = LdapUuid
-            systemTags = [LdapSystemTags.LDAP_SERVER_TYPE.instantiateTag([(LdapSystemTags.LDAP_SERVER_TYPE_TOKEN): LdapConstant.OpenLdap.TYPE])]
+            ldapServerUuid = ldapUuid
+            serverType = "OpenLdap"
         }
-        assert LdapConstant.OpenLdap.TYPE == LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(LdapUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN)
+
+        def ldapList = queryLdapServer {
+            conditions = ["uuid=${ldapUuid}".toString()]
+        } as List<LdapServerInventory>
+        assert ldapList.size() == 1
+        assert ldapList[0].serverType == LdapConstant.OpenLdap.TYPE
     }
 
     void testDeleteLdapServer(){
+        def configs = queryGlobalConfig {
+            delegate.conditions = ["category=ldap", "name=current.ldap.server.uuid"]
+        } as List<GlobalConfigInventory>
+        assert configs.size() == 1
+        assert configs[0].value == ldapUuid
+
         deleteLdapServer {
-            uuid = LdapUuid
-            sessionId = Test.currentEnvSpec.session.uuid
+            uuid = ldapUuid
+        }
+
+        configs = queryGlobalConfig {
+            delegate.conditions = ["category=ldap", "name=current.ldap.server.uuid"]
+        } as List<GlobalConfigInventory>
+        assert configs.size() == 1
+        assert configs[0].value == "NONE"
+
+        // delete method can be call more than once
+        deleteLdapServer {
+            delegate.uuid = ldapUuid
+        }
+
+        deleteLdapServer {
+            delegate.uuid = ldapUuid
         }
     }
 }

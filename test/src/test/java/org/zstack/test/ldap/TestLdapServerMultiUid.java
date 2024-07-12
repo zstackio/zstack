@@ -16,6 +16,11 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
+import org.zstack.ldap.api.APIAddLdapServerEvent;
+import org.zstack.ldap.api.APIAddLdapServerMsg;
+import org.zstack.ldap.api.APIQueryLdapServerMsg;
+import org.zstack.ldap.api.APIQueryLdapServerReply;
+import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
@@ -48,6 +53,7 @@ public class TestLdapServerMultiUid {
         DBUtil.reDeployDB();
 
         deployer = new Deployer("deployerXml/ldap/TestLdap.xml");
+        deployer.addSpringConfig("accountImport.xml");
         deployer.addSpringConfig("LdapManagerImpl.xml");
         deployer.build();
         api = deployer.getApi();

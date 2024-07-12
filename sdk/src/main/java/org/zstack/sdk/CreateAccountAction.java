@@ -34,6 +34,9 @@ public class CreateAccountAction extends AbstractAction {
     @Param(required = false, validValues = {"SystemAdmin","Normal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
+    @Param(required = false, validValues = {"Enabled","Disabled","Staled"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state = "Enabled";
+
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 

@@ -23,6 +23,7 @@ public interface Account {
         String description;
         String password;
         AccountType type = AccountType.Normal;
+        AccountState state = AccountState.Enabled;
         Map<String, Long> quota = new HashMap<>();
 
         public static AccountBuilder New() {
@@ -59,6 +60,11 @@ public interface Account {
             return this;
         }
 
+        public AccountBuilder state(AccountState v) {
+            state = v;
+            return this;
+        }
+
         public AccountBuilder build() {
             // nothing, just for builder style
             return this;
@@ -83,6 +89,7 @@ public interface Account {
                 avo.setDescription(builder.description);
                 avo.setPassword(builder.password);
                 avo.setType(builder.type);
+                avo.setState(builder.state);
                 persist(avo);
 
                 List<Tuple> ts = q(GlobalConfigVO.class).select(GlobalConfigVO_.name, GlobalConfigVO_.value)

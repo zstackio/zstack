@@ -6,19 +6,17 @@ import com.unboundid.ldap.sdk.SearchScope
 import org.junit.ClassRule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
-import org.zstack.core.db.Q
 import org.zstack.header.identity.IdentityErrors
-import org.zstack.identity.Account
 import org.zstack.identity.IdentityGlobalConfig
-import org.zstack.ldap.LdapAccountRefVO
-import org.zstack.ldap.LdapConstant
-import org.zstack.ldap.LdapSystemTags
-import org.zstack.sdk.AddLdapServerAction
-import org.zstack.sdk.AddLdapServerResult
+import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
+import org.zstack.sdk.identity.ldap.api.AddLdapServerResult
 import org.zstack.sdk.ApiResult
-import org.zstack.sdk.LdapServerInventory
-import org.zstack.sdk.LogInByLdapAction
+import org.zstack.sdk.LogInAction
 import org.zstack.sdk.ZSClient
+import org.zstack.sdk.identity.ldap.entity.LdapEntryAttributeInventory
+import org.zstack.sdk.identity.ldap.entity.LdapEntryInventory
+import org.zstack.sdk.identity.ldap.entity.LdapServerInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.stabilisation.StabilityTestCase
 import org.zstack.test.integration.stabilisation.TestCaseStabilityTest
@@ -40,7 +38,8 @@ class LdapBasicCase extends SubCase {
     public static EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder.newInstance().bindingToPort(1888).
             usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build()
 
-    String LdapUuid
+    String ldapUuid
+    AccountInventory account1
 
     @Override
     void setup() {
@@ -48,6 +47,7 @@ class LdapBasicCase extends SubCase {
             kvm()
             localStorage()
             sftpBackupStorage()
+            include("accountImport.xml")
             include("LdapManagerImpl.xml")
             include("captcha.xml")
         }
@@ -61,6 +61,7 @@ class LdapBasicCase extends SubCase {
     @Override
     void test() {
         env.create {
+            prepare()
             testAddLdapServer()
             testRepeatToAddLdapServer()
 
@@ -72,8 +73,6 @@ class LdapBasicCase extends SubCase {
 
             testLoginByLdap()
 
-            testCleanInvalidLdapBinding()
-
             testDeleteLdapServer()
         }
     }
@@ -81,6 +80,13 @@ class LdapBasicCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    void prepare() {
+        account1 = createAccount {
+            delegate.name = "username1"
+            delegate.password = "password"
+        } as AccountInventory
     }
 
     LDAPInterface getLdapConn(){
@@ -112,106 +118,104 @@ class LdapBasicCase extends SubCase {
         String wrongPassword = "error"
         String rightPassword = "password"
 
-        LogInByLdapAction action = new LogInByLdapAction(
-                uid: notExistCn,
-                password: rightPassword
+        def action = new LogInAction(
+                username: notExistCn,
+                password: rightPassword,
+                loginType: "ldap"
         )
         assert null != action.call().error
 
-        action = new LogInByLdapAction(
-                uid: cn,
-                password: wrongPassword
+        action = new LogInAction(
+                username: cn,
+                password: wrongPassword,
+                loginType: "ldap"
         )
         assert null != action.call().error
 
         IdentityGlobalConfig.MAX_CONCURRENT_SESSION.updateValue(1)
 
-        action = new LogInByLdapAction()
-        action.uid = cn
+        logIn {
+            username = cn
+            password = rightPassword
+            loginType = "ldap"
+        }
+
+        action = new LogInAction()
+        action.username = cn
         action.password = rightPassword
-        LogInByLdapAction.Result result = action.call()
+        action.loginType = "ldap"
+        LogInAction.Result result = action.call()
         assert result.error.details.contains(IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED.toString())
 
         IdentityGlobalConfig.MAX_CONCURRENT_SESSION.resetValue()
 
-        logInByLdap {
-            uid = cn
+        logIn {
+            username = cn
             password = rightPassword
+            loginType = "ldap"
         }
-    }
-
-    void testCleanInvalidLdapBinding(){
-        assert Q.New(LdapAccountRefVO.class).exists
-
-        cleanInvalidLdapBinding {
-        }
-
-        assert !Q.New(LdapAccountRefVO.class).exists
     }
 
     void testGetLdapEntry(){
 
-        List result = getLdapEntry {
+        def result = getLdapEntry {
             ldapFilter = "(cn=nobody)"
-        }
+        } as List<LdapEntryInventory>
         assert 0 == result.size()
 
         result = getLdapEntry {
             ldapFilter = "(objectClass=person)"
-        }
+        } as List<LdapEntryInventory>
         assert 3 == result.size()
 
         result = getLdapEntry {
             ldapFilter = "(objectClass=person)"
             limit = 1
-        }
+        } as List<LdapEntryInventory>
         assert 1 == result.size()
 
         String cn = "Micha Kops"
         result = getLdapEntry {
             ldapFilter = "(cn=${cn})"
             limit = 2
-        }
+        } as List<LdapEntryInventory>
         assert 1 == result.size()
 
-        List<Map> attributes =  result.get(0).get("attributes")
-        for(Map map : attributes){
-            if(map.get("cn") == null){
-                continue
-            }
-            assert 1 == map.get("values").size()
-            assert cn == map.get("values").get(0)
-        }
+        def attributes = result[0].attributes as List<LdapEntryAttributeInventory>
+        def attribute = attributes.find { it.id == "cn" }
+        assert attribute != null
+        assert 1 == attribute.values.size()
+        assert cn == attribute.values[0]
 
         result = getLdapEntry {
             ldapFilter = "(objectClass=person)"
-            ldapServerUuid = LdapUuid
-        }
+            ldapServerUuid = ldapUuid
+        } as List<LdapEntryInventory>
         assert 3 == result.size()
     }
 
     void testGetCandidateLdapEntryForBinding(){
 
-        List result = getCandidateLdapEntryForBinding {
+        def result = getCandidateLdapEntryForBinding {
             ldapFilter = "(cn=nobody)"
-        }
+        } as List<LdapEntryInventory>
         assert 0 == result.size()
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
-        }
+        } as List<LdapEntryInventory>
         assert 3 == result.size()
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
             limit = 2
-        }
+        } as List<LdapEntryInventory>
         assert 2 == result.size()
 
         String cn = "Micha Kops"
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(cn=${cn})"
-        }
+        } as List<LdapEntryInventory>
         assert 1 == result.size()
     }
 
@@ -219,45 +223,45 @@ class LdapBasicCase extends SubCase {
         String notExistCn = "nobody"
         expect (AssertionError.class) {
             createLdapBinding {
-                accountUuid = Test.currentEnvSpec.session.accountUuid
+                accountUuid = account1.uuid
                 ldapUid = notExistCn
             }
         }
 
         List result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
-        }
+        } as List<LdapEntryInventory>
         assert 3 == result.size()
 
         String dn = "cn=Micha Kops,ou=Users,dc=example,dc=com"
         createLdapBinding {
-            accountUuid = Test.currentEnvSpec.session.accountUuid
+            accountUuid = account1.uuid
             ldapUid = dn
         }
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
             limit = 10000
-        }
+        } as List<LdapEntryInventory>
         assert 2 == result.size()
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(objectClass=person)"
-        }
+        } as List<LdapEntryInventory>
         assert 2 == result.size()
-        for(Map map : result){
-            assert dn != map.get(LdapConstant.LDAP_DN_KEY)
+        for(LdapEntryInventory map : result){
+            assert dn != map.dn
         }
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(cn=Micha Kop)"
-        }
+        } as List<LdapEntryInventory>
         assert 0 == result.size()
 
         result = getCandidateLdapEntryForBinding {
             ldapFilter = "(cn=Micha Kop)"
             limit = 1
-        }
+        } as List<LdapEntryInventory>
         assert 0 == result.size()
 
         testGetLdapEntry()
@@ -276,11 +280,16 @@ class LdapBasicCase extends SubCase {
             username = ""
             password = ""
             encryption = "None"
-            systemTags = [LdapSystemTags.LDAP_SERVER_TYPE.instantiateTag([(LdapSystemTags.LDAP_SERVER_TYPE_TOKEN): LdapConstant.OpenLdap.TYPE]),
-                          LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.instantiateTag([(LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN): "(cn=Micha Kops)"])]
-            sessionId = Test.currentEnvSpec.session.uuid
+            serverType = "OpenLdap"
+            filter = "(!(cn=Micha Kops))"
         } as LdapServerInventory
-        LdapUuid = result.uuid
+        ldapUuid = result.uuid
+
+        updateGlobalConfig {
+            delegate.category = "ldap"
+            delegate.name = "current.ldap.server.uuid"
+            delegate.value = ldapUuid
+        }
 
         AddLdapServerAction addLdapServerAction = new AddLdapServerAction(
                 name : "ldap0",
@@ -340,7 +349,7 @@ class LdapBasicCase extends SubCase {
 
     void testDeleteLdapServer(){
         deleteLdapServer {
-            uuid = LdapUuid
+            uuid = ldapUuid
             sessionId = Test.currentEnvSpec.session.uuid
         }
     }

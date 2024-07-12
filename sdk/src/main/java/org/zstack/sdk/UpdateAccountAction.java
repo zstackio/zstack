@@ -40,6 +40,9 @@ public class UpdateAccountAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String oldPassword;
 
+    @Param(required = false, validValues = {"Enabled","Disabled","Staled"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state;
+
     @Param(required = false)
     public java.util.List systemTags;
 

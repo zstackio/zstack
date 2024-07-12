@@ -15,7 +15,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APIEvent;
-import org.zstack.ldap.APIAddLdapServerMsg;
+import org.zstack.ldap.api.APIAddLdapServerMsg;
 import org.zstack.ldap.LdapManager;
 import org.zstack.portal.apimediator.PortalSystemTags;
 import org.zstack.test.Api;
@@ -48,6 +48,7 @@ public class TestLdapConn {
         DBUtil.reDeployDB();
 
         deployer = new Deployer("deployerXml/ldap/TestLdapConn.xml");
+        deployer.addSpringConfig("accountImport.xml");
         deployer.addSpringConfig("LdapManagerImpl.xml");
         deployer.build();
         api = deployer.getApi();

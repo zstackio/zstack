@@ -7,9 +7,9 @@ import org.junit.ClassRule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.ldap.LdapErrors
-import org.zstack.sdk.AddLdapServerAction
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.ZSClient
+import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.stabilisation.StabilityTestCase
 import org.zstack.test.integration.stabilisation.TestCaseStabilityTest
@@ -32,6 +32,7 @@ class LdapExceptionCase extends SubCase {
             kvm()
             localStorage()
             sftpBackupStorage()
+            include("accountImport.xml")
             include("LdapManagerImpl.xml")
             include("captcha.xml")
         }
@@ -54,7 +55,7 @@ class LdapExceptionCase extends SubCase {
         }
     }
 
-    LDAPInterface getLdapConn(){
+    static LDAPInterface getLdapConn(){
         try{
             return embeddedLdapRule.ldapConnection()
         }catch (Exception e){

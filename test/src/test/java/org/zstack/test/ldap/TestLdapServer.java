@@ -16,6 +16,15 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
+import org.zstack.ldap.api.APIAddLdapServerEvent;
+import org.zstack.ldap.api.APIAddLdapServerMsg;
+import org.zstack.ldap.api.APIDeleteLdapServerEvent;
+import org.zstack.ldap.api.APIDeleteLdapServerMsg;
+import org.zstack.ldap.api.APIQueryLdapServerMsg;
+import org.zstack.ldap.api.APIQueryLdapServerReply;
+import org.zstack.ldap.api.APIUpdateLdapServerEvent;
+import org.zstack.ldap.api.APIUpdateLdapServerMsg;
+import org.zstack.ldap.entity.LdapServerInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
@@ -51,6 +60,7 @@ public class TestLdapServer {
 
         deployer = new Deployer("deployerXml/ldap/TestLdap.xml");
         deployer.addSpringConfig("KVMRelated.xml");
+        deployer.addSpringConfig("accountImport.xml");
         deployer.addSpringConfig("LdapManagerImpl.xml");
         deployer.build();
         api = deployer.getApi();

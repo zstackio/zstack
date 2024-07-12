@@ -27,7 +27,7 @@
     <bean id="AccountSync" class="org.zstack.sugonSdnController.account.AccountSync">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.identity.BeforeCreateAccountExtensionPoint"/>
-            <zstack:extension interface="org.zstack.header.identity.BeforeUpdateAccountExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.identity.AfterUpdateAccountExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.BeforeDeleteAccountExtensionPoint"/>
         </zstack:plugin>
     </bean>

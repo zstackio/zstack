@@ -273,6 +273,12 @@ class AccountCase extends SubCase {
             sessionId = sessionInventory.uuid
         }
 
+        // update password will force logout
+        sessionInventory = logInByAccount {
+            delegate.accountName = "admin"
+            delegate.password = "new"
+        } as SessionInventory
+
         AccountVO accountVO = dbFindByUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountVO.class)
         assert accountVO.password  == "new"
 
@@ -283,6 +289,12 @@ class AccountCase extends SubCase {
             sessionId = sessionInventory.uuid
             oldPassword = "new"
         }
+
+        // update password will force logout
+        sessionInventory = logInByAccount {
+            delegate.accountName = "admin"
+            delegate.password = "new2"
+        } as SessionInventory
 
         accountVO = dbFindByUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountVO.class)
         assert accountVO.password  == "new2"
@@ -385,6 +397,11 @@ class AccountCase extends SubCase {
     }
 
     void testAdminAccountDeleteSystemAdmin() {
+        env.session = logInByAccount {
+            delegate.accountName = "admin"
+            delegate.password = AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD
+        } as SessionInventory
+
         def userpass = "password"
         def newAdmin = createAccount {
             name = "testAdmAccount"

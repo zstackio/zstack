@@ -31,6 +31,10 @@ public class AccountVO extends ResourceVO {
     @Enumerated(EnumType.STRING)
     private AccountType type;
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    private AccountState state;
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
@@ -66,6 +70,14 @@ public class AccountVO extends ResourceVO {
 
     public void setType(AccountType type) {
         this.type = type;
+    }
+
+    public AccountState getState() {
+        return state;
+    }
+
+    public void setState(AccountState state) {
+        this.state = state;
     }
 
     public Timestamp getCreateDate() {

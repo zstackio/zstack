@@ -130,6 +130,10 @@
             <artifactId>retree</artifactId>
             <version>1.0.4</version>
         </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

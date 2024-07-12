@@ -4,48 +4,39 @@
     <interceptor>LdapApiInterceptor</interceptor>
 
     <message>
-        <name>org.zstack.ldap.APIAddLdapServerMsg</name>
+        <name>org.zstack.ldap.api.APIAddLdapServerMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIDeleteLdapServerMsg</name>
+        <name>org.zstack.ldap.api.APIDeleteLdapServerMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIGetLdapEntryMsg</name>
+        <name>org.zstack.ldap.api.APIGetLdapEntryMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIGetCandidateLdapEntryForBindingMsg</name>
+        <name>org.zstack.ldap.api.APIGetCandidateLdapEntryForBindingMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APICreateLdapBindingMsg</name>
+        <name>org.zstack.ldap.api.APICreateLdapBindingMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIDeleteLdapBindingMsg</name>
+        <name>org.zstack.ldap.api.APIDeleteLdapBindingMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIQueryLdapBindingMsg</name>
+        <name>org.zstack.ldap.api.APIQueryLdapServerMsg</name>
         <serviceId>query</serviceId>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIQueryLdapServerMsg</name>
-        <serviceId>query</serviceId>
+        <name>org.zstack.ldap.api.APIUpdateLdapServerMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APILogInByLdapMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.ldap.APIUpdateLdapServerMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.ldap.APICleanInvalidLdapBindingMsg</name>
+        <name>org.zstack.ldap.api.APISyncAccountsFromLdapServerMsg</name>
     </message>
 </service>
