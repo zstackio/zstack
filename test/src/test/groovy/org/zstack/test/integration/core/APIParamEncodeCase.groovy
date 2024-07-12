@@ -39,7 +39,7 @@ class APIParamEncodeCase extends SubCase {
     @Override
     void test() {
         env.create {
-            def testZoneName = "="
+            def testZoneName = "-"
 
             env.message(APICreateZoneMsg.class) { APICreateZoneMsg msg, CloudBus bus ->
                 assert msg.getName() == testZoneName
@@ -60,7 +60,7 @@ class APIParamEncodeCase extends SubCase {
 
             def encodedName = JSONObjectUtil.toJsonString(testZoneName)
 
-            testZoneName = "\"=\""
+            testZoneName = "\"-\""
 
             createZone {
                 name = encodedName

@@ -47,7 +47,7 @@ public class APICreateZoneMsg extends APICreateMessage implements APIAuditor {
      * @desc max length of 255 characters
      * @required
      */
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, validRegexValues = "^(?! )[\\u4e00-\\u9fa5a-zA-Z0-9\\-_.():+\" ]*(?<! )$")
     private String name;
     /**
      * @desc max length of 2048 characters

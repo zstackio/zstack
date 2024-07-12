@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT
 )
 public class APIUpdateZoneMsg extends APIMessage implements ZoneMessage {
-    @APIParam(maxLength = 255, required = false)
+    @APIParam(maxLength = 255, required = false, validRegexValues = "^(?! )[\\u4e00-\\u9fa5a-zA-Z0-9\\-_.():+\" ]*(?<! )$")
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
