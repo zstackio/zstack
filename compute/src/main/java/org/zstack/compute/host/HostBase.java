@@ -340,13 +340,37 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void handle(APIUpdateHostMsg msg) {
-        HostVO vo = updateHost(msg);
-        if (vo != null) {
-            self = dbf.updateAndRefresh(vo);
-        }
         APIUpdateHostEvent evt = new APIUpdateHostEvent(msg.getId());
-        evt.setInventory(getSelfInventory());
-        bus.publish(evt);
+        HostInventory oldHost = getSelfInventory();
+        HostVO vo = updateHost(msg);
+        if (vo == null) {
+            evt.setInventory(getSelfInventory());
+            bus.publish(evt);
+            return;
+        }
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("after-host-%s-updated", self.getUuid()));
+        chain.allowEmptyFlow();
+
+        for (HostAfterUpdatedExtensionPoint ext : pluginRgty.getExtensionList(HostAfterUpdatedExtensionPoint.class)) {
+            chain.then(ext.afterHostUpdated(oldHost, HostInventory.valueOf(vo)));
+        }
+
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                self = dbf.updateAndRefresh(vo);
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private String getVmHostUuid(String vmUuid) {
