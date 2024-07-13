@@ -45,7 +45,7 @@ public class LdapAccountSource extends AbstractAccountSourceBase {
         final LdapServerVO serverVO = databaseFacade.findByUuid(self.getUuid(), LdapServerVO.class);
         if (serverVO == null) {
             throw new OperationFailureException(
-                    err(UNABLE_TO_FIND_LDAP_SERVER, "ldapServer[uuid:%s, name:%s] has been deleted",
+                    err(UNABLE_TO_FIND_LDAP_SERVER, "ldapServer[uuid=%s, name=%s] has been deleted",
                     self.getUuid(), self.getResourceName()));
         }
         self = serverVO;

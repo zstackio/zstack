@@ -75,7 +75,7 @@ public class AccountImportsManager extends AbstractService {
                 return ErrorableValue.of(factory);
             }
         }
-        return ErrorableValue.ofErrorCode(operr("failed to find account import source by type[%s]", type));
+        return ErrorableValue.ofErrorCode(operr("unable to support third party account source of type[%s]", type));
     }
 
     public static String accountSourceSyncTaskSignature() {

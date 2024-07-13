@@ -122,9 +122,6 @@ public class LdapUtil {
     }
 
     LdapContextSource buildLdapContextSource(LdapServerVO vo, Map<String, Object> baseEnvironmentProperties) {
-        LdapContextSource ldapContextSource;
-        ldapContextSource = new LdapContextSource();
-
         List<String> urls = new ArrayList<>();
         urls.add(vo.getUrl());
 
@@ -134,7 +131,8 @@ public class LdapUtil {
             urls.addAll(list(standbyUrls.split(",")));
         }
 
-        ldapContextSource.setUrls(urls.toArray(new String[]{}));
+        LdapContextSource ldapContextSource = new LdapContextSource();
+        ldapContextSource.setUrls(urls.toArray(new String[0]));
         ldapContextSource.setBase(vo.getBase());
         ldapContextSource.setUserDn(vo.getUsername());
         ldapContextSource.setPassword(vo.getPassword());
@@ -423,7 +421,7 @@ public class LdapUtil {
         }
 
         throw new OperationFailureException(err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                "query ldap entry[filter: %s] fail, because %s", filter, errorMessage));
+                "query ldap entry[filter=%s] fail, because %s", filter, errorMessage));
     }
 
     private String[] getReturningAttributes(LdapServerVO ldap) {
@@ -465,7 +463,7 @@ public class LdapUtil {
         return loadRootLdap(ldapServerVO);
     }
 
-    private String LdapEscape(String ldapDn) {
+    private static String ldapEscape(String ldapDn) {
         return ldapDn.replace("/", "\\2f");
     }
 
@@ -480,7 +478,7 @@ public class LdapUtil {
         }
 
         return err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                "user[%s] is not exists on LDAP/AD server[address:%s, baseDN:%s]",
+                "user[%s] is not exists on LDAP/AD server[address=%s, baseDN=%s]",
                 fullDn, ldap.getUrl(), ldap.getBase());
     }
 
@@ -489,11 +487,11 @@ public class LdapUtil {
 
         try {
             String dn = fullDn.replace("," + context.getLdapContextSource().getBaseLdapPathAsString(), "");
-            dn = LdapEscape(dn);
+            dn = ldapEscape(dn);
             return ErrorableValue.of(context.getLdapTemplate().lookup(dn, new LdapEntryContextMapper()));
         } catch (Exception e) {
             return ErrorableValue.ofErrorCode(err(UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                    "failed to find dn[%s] on LDAP/AD server[address:%s, baseDN:%s]: %s",
+                    "failed to find dn[%s] on LDAP/AD server[address=%s, baseDN=%s]: %s",
                     fullDn,
                     String.join(", ", context.getLdapContextSource().getUrls()),
                     context.getLdapContextSource().getBaseLdapPathAsString(),
@@ -534,7 +532,7 @@ public class LdapUtil {
         } catch (NamingException e) {
             throw new OperationFailureException(err(
                     TEST_LDAP_CONNECTION_FAILED,
-                    "failed to connect LDAP/AD server[uuid=%s] with filter[%s]: %s",
+                    "failed to query LDAP/AD server[uuid=%s] with filter[%s]: %s",
                     ldap.getUuid(), filter, e.getMessage()));
         }
         return dn;
