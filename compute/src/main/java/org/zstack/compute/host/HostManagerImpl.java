@@ -527,6 +527,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final APIMountBlockDeviceMsg msg) {
         APIMountBlockDeviceEvent event = new APIMountBlockDeviceEvent(msg.getId());
         if (CoreGlobalProperty.UNIT_TEST_ON) {
+            DebugUtils.Assert(msg.getPassword() != null, "password cannot be null");
             bus.publish(event);
             return;
         }

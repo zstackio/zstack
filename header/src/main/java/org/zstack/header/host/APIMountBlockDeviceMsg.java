@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 public class APIMountBlockDeviceMsg extends APIMessage {
     @APIParam(maxLength = 255)
     private String username;
-    @APIParam(maxLength = 255)
+    @APIParam(required = false, maxLength = 255)
     @NoLogging
     private String password;
     @APIParam(numberRange = {1, 65535})

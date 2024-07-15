@@ -69,6 +69,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetHostWebSshUrlMsg) msg);
         } else if (msg instanceof APIGetPhysicalMachineBlockDevicesMsg) {
             validate((APIGetPhysicalMachineBlockDevicesMsg) msg);
+        } else if (msg instanceof APIMountBlockDeviceMsg) {
+            validate((APIMountBlockDeviceMsg) msg);
         }
 
         return msg;
@@ -137,6 +139,19 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIGetPhysicalMachineBlockDevicesMsg msg) {
+        if (msg.getPassword() != null) {
+            return;
+        }
+        ProxyHardware proxyHardware = getProxyHardware(msg.getHostName());
+        if (proxyHardware == null) {
+            throw new ApiMessageInterceptionException(operr("the password for the physical machine [%s] is empty. " +
+                    "please set a password", msg.getHostName()));
+        }
+        msg.setPassword(proxyHardware.getPassword());
+        msg.setUsername(msg.getUsername() != null ? msg.getUsername() : proxyHardware.getUsername());
+    }
+
+    private void validate(APIMountBlockDeviceMsg msg) {
         if (msg.getPassword() != null) {
             return;
         }
