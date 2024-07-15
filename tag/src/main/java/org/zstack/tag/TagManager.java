@@ -48,9 +48,15 @@ public interface TagManager {
 
     void deleteSystemTag(String uuid);
 
-    void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit);
+    /**
+     * @return true if any tags have been deleted
+     */
+    boolean deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit);
 
-    void deleteSystemTagUseLike(String tag, String resourceUuid, String resourceType, Boolean inherit);
+    /**
+     * @return true if any tags have been deleted
+     */
+    boolean deleteSystemTagUseLike(String tag, String resourceUuid, String resourceType, Boolean inherit);
 
     Collection<String> getManagedEntityNames();
 
