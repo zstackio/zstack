@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.ldap.AuthenticationException;
 import org.springframework.ldap.CommunicationException;
 import org.springframework.ldap.NamingException;
+import org.springframework.ldap.UncategorizedLdapException;
 import org.springframework.ldap.control.PagedResultsDirContextProcessor;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
@@ -580,16 +581,40 @@ public class LdapUtil {
             ldapTemplateContextSource.getLdapTemplate().authenticate("", filter.toString(), "");
             logger.info("LDAP connection was successful");
         } catch (AuthenticationException e) {
-            logger.debug("Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password", e);
-            return operr("Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password");
+            logger.debug(
+                    "Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password", e);
+            return err(LdapErrors.LDAP_ERROR,
+                    "Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password");
         } catch (CommunicationException e) {
-            logger.debug("Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN", e);
-            return operr("Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN");
+            logger.debug(
+                    "Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN", e);
+            return err(LdapErrors.LDAP_ERROR,
+                    "Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN");
+        } catch (UncategorizedLdapException e) {
+            logger.debug("Cannot connect to LDAP/AD server", e);
+            return wrapUncategorizedLdapException(e);
         } catch (Exception e) {
             logger.debug("Cannot connect to LDAP/AD server", e);
-            return operr("Cannot connect to LDAP/AD server, %s", e.toString());
+            return err(LdapErrors.LDAP_ERROR, "%s", e.toString());
         }
 
         return null;
+    }
+
+    private ErrorCode wrapUncategorizedLdapException(UncategorizedLdapException exception) {
+        String errorMessage = exception.getMessage();
+        String innerMessage = exception.getCause() == null ? null : exception.getCause().getMessage();
+        boolean unexpectedClose = false;
+
+        if (errorMessage != null && errorMessage.contains("LDAP connection has been closed")) {
+            unexpectedClose = true;
+        } else if (innerMessage != null && innerMessage.contains("LDAP connection has been closed")) {
+            unexpectedClose = true;
+        }
+
+        if (unexpectedClose) {
+            return err(LdapErrors.LDAP_ERROR, "LDAP connection has been closed unexpected");
+        }
+        return err(LdapErrors.LDAP_ERROR, "%s", exception.toString());
     }
 }
