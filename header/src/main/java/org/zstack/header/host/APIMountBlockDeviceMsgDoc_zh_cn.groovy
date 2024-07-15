@@ -36,7 +36,7 @@ doc {
 					desc "主机密码"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "zsv 4.3.0"
 				}
 				column {
