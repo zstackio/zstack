@@ -316,13 +316,13 @@ public abstract class AbstractAccountSourceBase {
             String __name__ = "generate-accounts";
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                new While<>(new ArrayList<>(validContexts)).each((context, whileCompletion) -> {
+                new While<>(new ArrayList<>(validContexts)).step((context, whileCompletion) -> {
                     if (context.accountExisting) {
                         updateAccountIfNeeded(context, whileCompletion);
                     } else {
                         createAccount(context, whileCompletion);
                     }
-                }).run(new WhileDoneCompletion(trigger) {
+                }, 5).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {
@@ -611,7 +611,7 @@ public abstract class AbstractAccountSourceBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                new While<>(contexts).each((context, whileCompletion) -> {
+                new While<>(contexts).step((context, whileCompletion) -> {
                     final String accountUuid = context.accountUuid;
 
                     DeleteAccountMsg message = new DeleteAccountMsg();
@@ -627,7 +627,7 @@ public abstract class AbstractAccountSourceBase {
                             whileCompletion.done();
                         }
                     });
-                }).run(new WhileDoneCompletion(trigger) {
+                }, 5).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {
