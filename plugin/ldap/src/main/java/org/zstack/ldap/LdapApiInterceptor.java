@@ -68,7 +68,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         ErrorCode errorCode = ldapManager.createDriver().testLdapServerConnection(ldap);
         if (errorCode != null) {
             throw new ApiMessageInterceptionException(
-                    err(LdapErrors.TEST_LDAP_CONNECTION_FAILED, errorCode.getDetails()));
+                    err(LdapErrors.TEST_LDAP_CONNECTION_FAILED, errorCode, "Cannot connect to LDAP/AD server"));
         }
     }
 
