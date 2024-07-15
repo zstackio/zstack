@@ -212,17 +212,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("templated vm cache[uuid:%s] cannot be convert to templated vm",
                     msg.getVmInstanceUuid()));
         }
-
-        List<String> sharedVolumeUuids = Q.New(VolumeVO.class)
-                .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid())
-                .eq(VolumeVO_.isShareable, true)
-                .select(VolumeVO_.uuid)
-                .listValues();
-        if (!sharedVolumeUuids.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr(
-                    "vm[uuid:%s] cannot be convert to templated vm while shared volume[uuids:%s] attached",
-                    msg.getVmInstanceUuid(), sharedVolumeUuids));
-        }
     }
 
     private void validate(APIGetVmUptimeMsg msg) {
