@@ -12,7 +12,7 @@ public class UnbindModelFromServiceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.BindModelToServiceResult value;
+        public org.zstack.sdk.UnbindModelFromServiceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class UnbindModelFromServiceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.BindModelToServiceResult value = res.getResult(org.zstack.sdk.BindModelToServiceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.BindModelToServiceResult() : value; 
+        org.zstack.sdk.UnbindModelFromServiceResult value = res.getResult(org.zstack.sdk.UnbindModelFromServiceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UnbindModelFromServiceResult() : value; 
 
         return ret;
     }
