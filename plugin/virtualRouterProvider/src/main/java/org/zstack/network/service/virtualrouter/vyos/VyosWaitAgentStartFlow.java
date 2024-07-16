@@ -76,6 +76,14 @@ public class VyosWaitAgentStartFlow extends NoRollbackFlow {
         restf.echo(url, new Completion(trigger) {
             @Override
             public void success() {
+                String vrUserTag = VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER.getTokenByResourceUuid(
+                        vrUuid, VirtualRouterVmVO.class, VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER_TOKEN);
+                if (vrUserTag != null) {
+                    /* get user name only happened after create virtual router */
+                    trigger.next();
+                    return;
+                }
+
                 String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_GET_TYPE_PATH);
                 VirtualRouterCommands.GetTypeCommand cmd = new VirtualRouterCommands.GetTypeCommand();
                 cmd.setUuid(vrUuid);
