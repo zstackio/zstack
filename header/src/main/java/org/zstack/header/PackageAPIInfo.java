@@ -16,6 +16,7 @@ public @interface PackageAPIInfo {
      * It contains {@link #PERMISSION_ZSV_ADVANCED_AVAILABLE}
      */
     public static String PERMISSION_ZSV_BASIC_AVAILABLE = "zsv_basic_available";
+    public static String PERMISSION_ZSV_PRO_AVAILABLE = "zsv_pro_available";
     public static String PERMISSION_ZSV_ADVANCED_AVAILABLE = "zsv_advanced_available";
 
     String APICategoryName() default "";
