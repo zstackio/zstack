@@ -125,6 +125,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         amsg.setSize(diskSize);
                         amsg.setVmInstanceUuid(vmUuid);
                         amsg.setRequiredHostUuid(hostUuid);
+                        amsg.setSystemTags(diskAO.getSystemTags());
                         amsg.setDiskOfferingUuid(diskAO.getDiskOfferingUuid());
                         amsg.setRequiredPrimaryStorageUuid(diskAO.getPrimaryStorageUuid());
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
@@ -232,6 +233,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         imsg.setHostUuid(hostUuid);
                         imsg.setSkipIfExisting(true);
                         imsg.setPrimaryStorageAllocated(true);
+                        imsg.setSystemTags(diskAO.getSystemTags());
                         imsg.setVolumeUuid(volumeInventory.getUuid());
                         imsg.setAllocatedInstallUrl(allocatedInstallUrl);
                         imsg.setPrimaryStorageUuid(allocatedPrimaryStorageUuid);
@@ -243,6 +245,8 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                                     innerTrigger.fail(reply.getError());
                                     return;
                                 }
+                                InstantiateVolumeReply cr = reply.castReply();
+                                volumeInventory = cr.getVolume();
                                 innerTrigger.next();
                             }
                         });
