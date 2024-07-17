@@ -84,7 +84,7 @@ public class VolumeModule extends BaseResource {
     public static class VolumeSpec extends BaseSpec {
         private int bsPolicyId;
         private int bsSnapId;
-        private int sizeMb;
+        private long sizeMb;
         private boolean loaded;
         private int poolId;
         private boolean flattened;
@@ -122,11 +122,11 @@ public class VolumeModule extends BaseResource {
             this.bsPolicyId = bsPolicyId;
         }
 
-        public int getSizeMb() {
+        public long getSizeMb() {
             return sizeMb;
         }
 
-        public void setSizeMb(int sizeMb) {
+        public void setSizeMb(long sizeMb) {
             this.sizeMb = sizeMb;
         }
 
@@ -148,18 +148,27 @@ public class VolumeModule extends BaseResource {
     }
 
     public static class VolumeStatus extends BaseStatus {
-        private int sizeMb;
+        private long sizeMb;
+        private long allocatedSizeByte;
         private boolean loaded;
         private int springId;
         private String protocol;
         private int mappingNum;
 
-        public int getSizeMb() {
+        public long getSizeMb() {
             return sizeMb;
         }
 
-        public void setSizeMb(int sizeMb) {
+        public void setSizeMb(long sizeMb) {
             this.sizeMb = sizeMb;
+        }
+
+        public long getAllocatedSizeByte() {
+            return allocatedSizeByte;
+        }
+
+        public void setAllocatedSizeByte(long allocatedSizeByte) {
+            this.allocatedSizeByte = allocatedSizeByte;
         }
 
         public boolean isLoaded() {

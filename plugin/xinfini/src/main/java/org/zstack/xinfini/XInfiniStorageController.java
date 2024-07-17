@@ -660,8 +660,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(buildXInfiniPath(poolId, volModule.getSpec().getId()));
         stats.setSize(SizeUnit.MEGABYTE.toByte(volModule.getSpec().getSizeMb()));
-        // TODO not support actualSize yet
-        stats.setActualSize(SizeUnit.MEGABYTE.toByte(volModule.getSpec().getSizeMb()));
+        stats.setActualSize(volModule.getStatus().getAllocatedSizeByte());
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setRunStatus(volModule.getMetadata().getState().getState());
         comp.success(stats);
@@ -707,13 +706,12 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         if (SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()) < dst.getSize()) {
             vol = apiHelper.expandVolume(vol.getSpec().getId(), convertBytesToMegaBytes(dst.getSize()));
         }
-        // TODO support expand volume size
+
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(buildXInfiniPath(getPoolIdFromPath(srcInstallPath), vol.getSpec().getId()));
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
-        // TODO not support actualSize yet
-        stats.setActualSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
+        stats.setActualSize(vol.getStatus().getAllocatedSizeByte());
         comp.success(stats);
     }
 
@@ -735,8 +733,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(installPath);
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
-        // TODO: not support actual yet
-        stats.setActualSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
+        stats.setActualSize(vol.getStatus().getAllocatedSizeByte());
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         comp.success(stats);
     }
@@ -748,8 +745,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             VolumeStats s = new VolumeStats();
             s.setInstallPath(it);
             s.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
-            // TODO: not support actual yet
-            s.setActualSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
+            s.setActualSize(vol.getStatus().getAllocatedSizeByte());
             s.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
             return s;
         }).collect(Collectors.toList());
@@ -885,7 +881,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         VolumeSnapshotModule snapshot = apiHelper.createVolumeSnapshot(getVolIdFromPath(spec.getVolumeInstallPath()), spec.getName());
         VolumeSnapshotStats stats = new VolumeSnapshotStats();
         stats.setInstallPath(buildXInfiniSnapshotPath(spec.getVolumeInstallPath(), snapshot.getSpec().getId()));
-        stats.setActualSize(snapshot.getSpec().getSizeMb());
+        stats.setActualSize(SizeUnit.MEGABYTE.toByte(snapshot.getSpec().getSizeMb()));
         comp.success(stats);
     }
 
