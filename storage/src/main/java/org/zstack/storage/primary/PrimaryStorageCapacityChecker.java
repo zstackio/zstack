@@ -8,6 +8,8 @@ import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.utils.SizeUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by MaJin on 2021/7/21.
@@ -15,6 +17,8 @@ import org.zstack.utils.SizeUtils;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class PrimaryStorageCapacityChecker {
+    private CLogger logger = Utils.getLogger(PrimaryStorageCapacityChecker.class);
+
     @Autowired
     protected PrimaryStorageOverProvisioningManager psRatioMgr;
     @Autowired
@@ -68,6 +72,17 @@ public class PrimaryStorageCapacityChecker {
                 .checkCapacityByRatio(primaryStorageUuid, totalPhysicalCapacity, availablePhysicalCapacity);
         boolean physicalCapacityMeetTotalRequiredSizeByRatio = physicalCapacityMgr
                 .checkRequiredCapacityByRatio(primaryStorageUuid, totalPhysicalCapacity, totalRequiredSize);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Check required size result:" +
+                    " availableCapacityMeetIncreaseSizeByRatio: %s," +
+                    " physicalCapacityHasFreeSpaceByRatio: %s," +
+                    " physicalCapacityMeetTotalRequiredSizeByRatio: %s",
+                    availableCapacityMeetIncreaseSizeByRatio,
+                    physicalCapacityHasFreeSpaceByRatio,
+                    physicalCapacityMeetTotalRequiredSizeByRatio)
+            );
+        }
 
         return availableCapacityMeetIncreaseSizeByRatio &&
                 physicalCapacityHasFreeSpaceByRatio &&
