@@ -44,31 +44,31 @@ public class PatternedSystemTag extends SystemTag {
     }
 
     @Override
-    public void delete(String resourceUuid, Class resourceClass) {
-        tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
+    public boolean delete(String resourceUuid, Class resourceClass) {
+        return tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
     }
 
-    public void delete(String resourceUuid, String tagFormat) {
-        tagMgr.deleteSystemTagUseLike(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
-    }
-
-    @Override
-    public void delete(String resourceUuid) {
-        tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
+    public boolean delete(String resourceUuid, String tagFormat) {
+        return tagMgr.deleteSystemTagUseLike(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
     }
 
     @Override
-    public void deleteInherentTag(String resourceUuid) {
-        tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);
-    }
-
-    public void deleteInherentTag(String resourceUuid, String tagFormat) {
-        tagMgr.deleteSystemTagUseLike(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
+    public boolean delete(String resourceUuid) {
+        return tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
     }
 
     @Override
-    public void deleteInherentTag(String resourceUuid, Class resourceClass) {
-        tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);
+    public boolean deleteInherentTag(String resourceUuid) {
+        return tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);
+    }
+
+    public boolean deleteInherentTag(String resourceUuid, String tagFormat) {
+        return tagMgr.deleteSystemTagUseLike(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
+    }
+
+    @Override
+    public boolean deleteInherentTag(String resourceUuid, Class resourceClass) {
+        return tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);
     }
 
     public Map<String, String> getTokensByTag(String tag) {

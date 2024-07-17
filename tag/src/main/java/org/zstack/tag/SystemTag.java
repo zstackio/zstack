@@ -211,20 +211,32 @@ public class SystemTag {
         return resourceClass;
     }
 
-    public void delete(String resourceUuid, Class resourceClass) {
-        tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
+    /**
+     * @return true if any tags have been deleted
+     */
+    public boolean delete(String resourceUuid, Class resourceClass) {
+        return tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
     }
 
-    public void delete(String resourceUuid) {
-        tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
+    /**
+     * @return true if any tags have been deleted
+     */
+    public boolean delete(String resourceUuid) {
+        return tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
     }
 
-    public void deleteInherentTag(String resourceUuid) {
-        tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
+    /**
+     * @return true if any tags have been deleted
+     */
+    public boolean deleteInherentTag(String resourceUuid) {
+        return tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
     }
 
-    public void deleteInherentTag(String resourceUuid, Class resourceClass) {
-        tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
+    /**
+     * @return true if any tags have been deleted
+     */
+    public boolean deleteInherentTag(String resourceUuid, Class resourceClass) {
+        return tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
     }
 
     public String instantiateTag(Map tokens) {
