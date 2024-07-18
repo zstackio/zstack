@@ -31,6 +31,9 @@ public class RevertVmFromVmBackupAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String backupStorageUuid;
 
+    @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String strategy = "CreateStopped";
+
     @Param(required = false)
     public java.util.List systemTags;
 
