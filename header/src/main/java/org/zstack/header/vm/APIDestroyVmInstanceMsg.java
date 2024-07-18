@@ -8,6 +8,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * @api destroy a vm instance
  * @cli
@@ -61,7 +65,11 @@ public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInsta
         return getUuid();
     }
 
- 
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
+    }
+
     public static APIDestroyVmInstanceMsg __example__() {
         APIDestroyVmInstanceMsg msg = new APIDestroyVmInstanceMsg();
         msg.setUuid(uuid());

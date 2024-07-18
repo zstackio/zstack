@@ -6,7 +6,10 @@ import org.zstack.header.message.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * @api delete a volume snapshot from primary storage and all its copies from backup stroage
@@ -91,6 +94,11 @@ public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements Dele
 
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteVolumeSnapshotMsg __example__() {

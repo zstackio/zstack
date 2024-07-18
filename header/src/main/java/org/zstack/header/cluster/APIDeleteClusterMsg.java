@@ -2,10 +2,12 @@ package org.zstack.header.cluster;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * @api delete a cluster. All descendant resources, for example hosts/vm are deleted in cascade as well
@@ -63,6 +65,11 @@ public class APIDeleteClusterMsg extends APIDeleteMessage implements ClusterMess
     @Override
     public String getClusterUuid() {
         return getUuid();
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteClusterMsg __example__() {

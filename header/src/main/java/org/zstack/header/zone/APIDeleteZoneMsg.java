@@ -7,6 +7,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * @api delete a zone. All descendant resources, for example cluster/host/vm, are deleted in
  * cascade as well
@@ -65,6 +69,11 @@ public class APIDeleteZoneMsg extends APIDeleteMessage implements ZoneMessage {
     @Override
     public String getZoneUuid() {
         return getUuid();
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteZoneMsg __example__() {

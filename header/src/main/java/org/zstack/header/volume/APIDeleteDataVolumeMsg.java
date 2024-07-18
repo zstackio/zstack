@@ -6,6 +6,10 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * @api delete a data volume
  * @category volume
@@ -58,6 +62,11 @@ public class APIDeleteDataVolumeMsg extends APIDeleteMessage implements VolumeMe
     @Override
     public String getVolumeUuid() {
         return uuid;
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteDataVolumeMsg __example__() {

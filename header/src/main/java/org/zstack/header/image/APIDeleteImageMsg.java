@@ -12,6 +12,8 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import java.util.Collections;
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/images/{uuid}",
@@ -52,6 +54,11 @@ public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage 
     @Override
     public String getImageUuid() {
         return uuid;
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteImageMsg __example__() {
