@@ -9035,6 +9035,33 @@ abstract class ApiHelper {
     }
 
 
+    def createGuestVmScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateGuestVmScriptAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateGuestVmScriptAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createHaiTaiSecretResourcePool(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateHaiTaiSecretResourcePoolAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateHaiTaiSecretResourcePoolAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -10360,33 +10387,6 @@ abstract class ApiHelper {
 
     def createSchedulerTrigger(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateSchedulerTriggerAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateSchedulerTriggerAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def createScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateGuestVmScriptAction.class) Closure c) {
-        def a = new org.zstack.sdk.CreateGuestVmScriptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -13598,6 +13598,33 @@ abstract class ApiHelper {
     }
 
 
+    def deleteGuestVmScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteGuestVmScriptAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteGuestVmScriptAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteHostAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteHostAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15220,33 +15247,6 @@ abstract class ApiHelper {
 
     def deleteSchedulerTrigger(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteSchedulerTriggerAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteSchedulerTriggerAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def deleteScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteGuestVmScriptAction.class) Closure c) {
-        def a = new org.zstack.sdk.DeleteGuestVmScriptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -18053,8 +18053,8 @@ abstract class ApiHelper {
     }
 
 
-    def executeScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ExecuteGuestVmScriptAction.class) Closure c) {
-        def a = new org.zstack.sdk.ExecuteGuestVmScriptAction()
+    def executeGuestVmCommand(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ExecuteGuestVmCommandAction.class) Closure c) {
+        def a = new org.zstack.sdk.ExecuteGuestVmCommandAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -18080,8 +18080,8 @@ abstract class ApiHelper {
     }
 
 
-    def executeVmCommand(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ExecuteGuestVmCommandAction.class) Closure c) {
-        def a = new org.zstack.sdk.ExecuteGuestVmCommandAction()
+    def executeGuestVmScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ExecuteGuestVmScriptAction.class) Closure c) {
+        def a = new org.zstack.sdk.ExecuteGuestVmScriptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -28827,6 +28827,93 @@ abstract class ApiHelper {
     }
 
 
+    def queryGuestVmScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryGuestVmScriptAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryGuestVmScriptAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryGuestVmScriptExecutedRecord(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryGuestVmScriptExecutedRecordAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryGuestVmScriptExecutedRecordAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryGuestVmScriptExecutedRecordDetail(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryGuestVmScriptExecutedRecordDetailAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryGuestVmScriptExecutedRecordDetailAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryHostAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryHostAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -31323,93 +31410,6 @@ abstract class ApiHelper {
 
     def querySchedulerTrigger(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QuerySchedulerTriggerAction.class) Closure c) {
         def a = new org.zstack.sdk.QuerySchedulerTriggerAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-        a.conditions = a.conditions.collect { it.toString() }
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def queryScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryGuestVmScriptAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryGuestVmScriptAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-        a.conditions = a.conditions.collect { it.toString() }
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def queryScriptExecutedRecord(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryGuestVmScriptExecutedRecordAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryGuestVmScriptExecutedRecordAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-        a.conditions = a.conditions.collect { it.toString() }
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def queryScriptExecutedRecordDetail(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryGuestVmScriptExecutedRecordDetailAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryGuestVmScriptExecutedRecordDetailAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -40775,6 +40775,33 @@ abstract class ApiHelper {
     }
 
 
+    def updateGuestVmScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateGuestVmScriptAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateGuestVmScriptAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateHaStrategyCondition(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateHaStrategyConditionAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateHaStrategyConditionAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -42262,33 +42289,6 @@ abstract class ApiHelper {
 
     def updateSchedulerTrigger(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateSchedulerTriggerAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateSchedulerTriggerAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def updateScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateGuestVmScriptAction.class) Closure c) {
-        def a = new org.zstack.sdk.UpdateGuestVmScriptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
