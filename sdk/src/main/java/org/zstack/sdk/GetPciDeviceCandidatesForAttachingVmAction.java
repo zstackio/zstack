@@ -31,6 +31,9 @@ public class GetPciDeviceCandidatesForAttachingVmAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List types;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List pciSpecUuids;
+
     @Param(required = false)
     public java.util.List systemTags;
 
