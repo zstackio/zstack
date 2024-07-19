@@ -869,6 +869,16 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>container</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>iam2-container</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>snmp</artifactId>
             <version>${project.version}</version>
         </dependency>
