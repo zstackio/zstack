@@ -94,6 +94,7 @@ public class SourceClassMap {
 			put("org.zstack.cloudformation.template.struct.ActionStruct", "org.zstack.sdk.ActionStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceStruct", "org.zstack.sdk.ResourceStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceType", "org.zstack.sdk.ResourceType");
+			put("org.zstack.container.entity.ContainerManagementVmInventory", "org.zstack.sdk.ContainerManagementVmInventory");
 			put("org.zstack.core.config.GlobalConfigInventory", "org.zstack.sdk.GlobalConfigInventory");
 			put("org.zstack.core.config.GlobalConfigOptions", "org.zstack.sdk.GlobalConfigOptions");
 			put("org.zstack.core.config.GuestOsCharacterInventory", "org.zstack.sdk.GuestOsCharacterInventory");
@@ -874,6 +875,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ConnectionRelationShipProperty", "org.zstack.header.aliyun.network.connection.ConnectionRelationShipProperty");
 			put("org.zstack.sdk.ConsoleInventory", "org.zstack.header.console.ConsoleInventory");
 			put("org.zstack.sdk.ConsoleProxyAgentInventory", "org.zstack.header.console.ConsoleProxyAgentInventory");
+			put("org.zstack.sdk.ContainerManagementVmInventory", "org.zstack.container.entity.ContainerManagementVmInventory");
 			put("org.zstack.sdk.ControlStrategy", "org.zstack.loginControl.entity.ControlStrategy");
 			put("org.zstack.sdk.CpuMemoryCapacityData", "org.zstack.header.allocator.datatypes.CpuMemoryCapacityData");
 			put("org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure");

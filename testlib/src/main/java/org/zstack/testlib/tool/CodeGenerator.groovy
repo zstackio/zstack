@@ -1,6 +1,10 @@
 package org.zstack.testlib.tool
 
 import org.reflections.Reflections
+import org.reflections.scanners.Scanners
+import org.reflections.util.ClasspathHelper
+import org.reflections.util.ConfigurationBuilder
+import org.reflections.util.FilterBuilder
 import org.zstack.utils.BeanUtils
 import org.zstack.utils.StringTemplateUtils
 
@@ -28,6 +32,14 @@ class CodeGenerator {
      * @param entityClass the jpa vo entity class
      */
     static void generateCodeFromJpaEntity(String entity) {
+        ConfigurationBuilder builder = ConfigurationBuilder.build()
+                .setUrls(ClasspathHelper.forPackage("org.zstack"))
+                .setScanners(Scanners.SubTypes, Scanners.MethodsAnnotated,
+                        Scanners.FieldsAnnotated, Scanners.TypesAnnotated,
+                        Scanners.MethodsParameter)
+                .setExpandSuperTypes(false)
+                .filterInputsBy(new FilterBuilder().includePackage("org.zstack"));
+        BeanUtils.reflections = new Reflections(builder)
         Class<?> entityClass =  BeanUtils.reflections.forClass(entity)
         if (!entityClass.isAnnotationPresent(Entity.class) && !entityClass.isAnnotationPresent(MappedSuperclass.class)) {
             System.out.printf("%s is not a JPA entity class", entityClass.getName())
