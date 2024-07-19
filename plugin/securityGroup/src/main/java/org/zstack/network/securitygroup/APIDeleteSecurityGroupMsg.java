@@ -8,6 +8,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * @api
  * delete security group
@@ -70,6 +74,11 @@ public class APIDeleteSecurityGroupMsg extends APIDeleteMessage implements Secur
     @Override
     public String getSecurityGroupUuid() {
         return uuid;
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteSecurityGroupMsg __example__() {

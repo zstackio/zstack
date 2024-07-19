@@ -9,6 +9,10 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * @api delete ip range
  * @category l3Network
@@ -84,6 +88,11 @@ public class APIDeleteIpRangeMsg extends APIDeleteMessage implements L3NetworkMe
     @Override
     public String getIpRangeUuid() {
         return uuid;
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteIpRangeMsg __example__() {

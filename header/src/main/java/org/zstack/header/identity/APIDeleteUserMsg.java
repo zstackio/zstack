@@ -7,6 +7,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 7/9/2015.
  */
@@ -32,6 +36,11 @@ public class APIDeleteUserMsg extends APIDeleteMessage implements AccountMessage
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteUserMsg __example__() {

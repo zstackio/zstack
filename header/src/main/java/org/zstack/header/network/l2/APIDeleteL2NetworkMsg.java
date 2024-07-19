@@ -8,6 +8,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * @api delete l2Network
  * @category l2Network
@@ -60,6 +64,11 @@ public class APIDeleteL2NetworkMsg extends APIDeleteMessage implements L2Network
     @Override
     public String getL2NetworkUuid() {
         return uuid;
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteL2NetworkMsg __example__() {

@@ -6,6 +6,10 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.ldap.entity.LdapServerVO;
 
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 
 @RestRequest(
         path = "/ldap/servers/{uuid}",
@@ -24,7 +28,11 @@ public class APIDeleteLdapServerMsg extends APIDeleteMessage {
         this.uuid = uuid;
     }
 
- 
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
+    }
+
     public static APIDeleteLdapServerMsg __example__() {
         APIDeleteLdapServerMsg msg = new APIDeleteLdapServerMsg();
         msg.setUuid(uuid());

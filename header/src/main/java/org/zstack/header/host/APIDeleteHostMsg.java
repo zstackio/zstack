@@ -7,7 +7,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
 import static org.zstack.header.message.APIDeleteMessage.DeletionMode.Permissive;
+import static org.zstack.utils.CollectionDSL.list;
 
 
 /**
@@ -66,6 +69,11 @@ public class APIDeleteHostMsg extends APIDeleteMessage implements HostMessage {
     @Override
     public String getHostUuid() {
         return getUuid();
+    }
+
+    @Override
+    public List<String> getDeletedResourceUuidList() {
+        return list(getUuid());
     }
  
     public static APIDeleteHostMsg __example__() {
