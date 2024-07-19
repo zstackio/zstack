@@ -719,6 +719,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH, new EventCallback() {
             @Override
             protected void run(Map tokens, Object data) {
+                if (!HostGlobalConfig.HOST_STATUS_COMBINE_PRIMARY_STORAGE_STATUS.value(Boolean.class)) {
+                    return;
+                }
+
                 PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData d =
                         (PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData)data;
                 if (d.getNewStatus() == PrimaryStorageHostStatus.Disconnected &&
