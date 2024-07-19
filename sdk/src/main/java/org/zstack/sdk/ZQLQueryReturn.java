@@ -20,6 +20,14 @@ public class ZQLQueryReturn  {
         return this.inventoryCounts;
     }
 
+    public java.util.LinkedHashMap inventoryAggregateFunctions;
+    public void setInventoryAggregateFunctions(java.util.LinkedHashMap inventoryAggregateFunctions) {
+        this.inventoryAggregateFunctions = inventoryAggregateFunctions;
+    }
+    public java.util.LinkedHashMap getInventoryAggregateFunctions() {
+        return this.inventoryAggregateFunctions;
+    }
+
     public java.lang.Long total;
     public void setTotal(java.lang.Long total) {
         this.total = total;
