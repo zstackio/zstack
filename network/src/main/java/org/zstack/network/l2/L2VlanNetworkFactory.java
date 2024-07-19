@@ -6,12 +6,10 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
-import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -19,12 +17,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
+import static org.zstack.header.network.l2.L2NetworkType.L2NetworkTypeBuilder;
 
 public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFactory, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
     private static CLogger logger = Utils.getLogger(L2VlanNetworkFactory.class);
-    static L2NetworkType type = new L2NetworkType(L2NetworkConstant.L2_VLAN_NETWORK_TYPE, true, true);
-    
+    static L2NetworkType type = new L2NetworkTypeBuilder()
+            .typeName(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)
+            .sriovSupported(true)
+            .build();
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
