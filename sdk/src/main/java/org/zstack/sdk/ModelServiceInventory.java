@@ -52,12 +52,92 @@ public class ModelServiceInventory  {
         return this.requestMemory;
     }
 
+    public java.lang.String modelCenterUuid;
+    public void setModelCenterUuid(java.lang.String modelCenterUuid) {
+        this.modelCenterUuid = modelCenterUuid;
+    }
+    public java.lang.String getModelCenterUuid() {
+        return this.modelCenterUuid;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;
     }
     public java.lang.String getType() {
         return this.type;
+    }
+
+    public java.lang.String framework;
+    public void setFramework(java.lang.String framework) {
+        this.framework = framework;
+    }
+    public java.lang.String getFramework() {
+        return this.framework;
+    }
+
+    public java.lang.String dockerImage;
+    public void setDockerImage(java.lang.String dockerImage) {
+        this.dockerImage = dockerImage;
+    }
+    public java.lang.String getDockerImage() {
+        return this.dockerImage;
+    }
+
+    public java.lang.Boolean system;
+    public void setSystem(java.lang.Boolean system) {
+        this.system = system;
+    }
+    public java.lang.Boolean getSystem() {
+        return this.system;
+    }
+
+    public java.lang.String vmImageUuid;
+    public void setVmImageUuid(java.lang.String vmImageUuid) {
+        this.vmImageUuid = vmImageUuid;
+    }
+    public java.lang.String getVmImageUuid() {
+        return this.vmImageUuid;
+    }
+
+    public java.lang.String gpuComputeCapability;
+    public void setGpuComputeCapability(java.lang.String gpuComputeCapability) {
+        this.gpuComputeCapability = gpuComputeCapability;
+    }
+    public java.lang.String getGpuComputeCapability() {
+        return this.gpuComputeCapability;
+    }
+
+    public java.lang.String installPath;
+    public void setInstallPath(java.lang.String installPath) {
+        this.installPath = installPath;
+    }
+    public java.lang.String getInstallPath() {
+        return this.installPath;
+    }
+
+    public java.lang.String pythonVersion;
+    public void setPythonVersion(java.lang.String pythonVersion) {
+        this.pythonVersion = pythonVersion;
+    }
+    public java.lang.String getPythonVersion() {
+        return this.pythonVersion;
+    }
+
+    public java.lang.String condaVersion;
+    public void setCondaVersion(java.lang.String condaVersion) {
+        this.condaVersion = condaVersion;
+    }
+    public java.lang.String getCondaVersion() {
+        return this.condaVersion;
+    }
+
+    public java.lang.String startCommand;
+    public void setStartCommand(java.lang.String startCommand) {
+        this.startCommand = startCommand;
+    }
+    public java.lang.String getStartCommand() {
+        return this.startCommand;
     }
 
     public java.util.List modelServiceRefs;
