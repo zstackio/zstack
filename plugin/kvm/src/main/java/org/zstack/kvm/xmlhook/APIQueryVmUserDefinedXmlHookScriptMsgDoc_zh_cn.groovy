@@ -19,7 +19,7 @@ doc {
 
             clz APIQueryVmUserDefinedXmlHookScriptMsg.class
 
-            desc """"""
+            desc """查询用户自定义xml hook脚本"""
             
 			params APIQueryMessage.class
         }

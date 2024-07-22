@@ -17,7 +17,7 @@ doc {
 
             clz APIExpungeVmUserDefinedXmlHookScriptMsg.class
 
-            desc """"""
+            desc """彻底删除用户自定义xml hook脚本"""
             
 			params {
 

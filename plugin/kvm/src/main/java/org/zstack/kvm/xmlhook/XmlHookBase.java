@@ -4,29 +4,30 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.util.StringUtils;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.directory.*;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.vo.ResourceVO;
-import org.zstack.header.vo.ResourceVO_;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.CheckAndStartVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.utils.CollectionUtils;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.zstack.core.Platform.operr;
+import java.util.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class XmlHookBase {
@@ -105,8 +106,7 @@ public class XmlHookBase {
     }
 
     private void expungeVmUserDefinedXmlHook(APIExpungeVmUserDefinedXmlHookScriptMsg msg, Completion completion) {
-        XmlHookVO vo = dbf.findByUuid(msg.getUuid(), XmlHookVO.class);
-        dbf.remove(vo);
+        dbf.remove(self);
         completion.success();
     }
 
@@ -120,9 +120,10 @@ public class XmlHookBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                updateVmUserDefinedXmlHook(msg, event, new Completion(chain) {
+                updateVmUserDefinedXmlHook(msg, new ReturnValueCompletion<XmlHookInventory>(chain) {
                     @Override
-                    public void success() {
+                    public void success(XmlHookInventory inv) {
+                        event.setInventory(inv);
                         bus.publish(event);
                         chain.next();
                     }
@@ -143,20 +144,82 @@ public class XmlHookBase {
         });
     }
 
-    private void updateVmUserDefinedXmlHook(APIUpdateVmUserDefinedXmlHookScriptMsg msg, APIUpdateVmUserDefinedXmlHookScriptEvent event, Completion completion) {
-        XmlHookVO vo = Q.New(XmlHookVO.class).eq(XmlHookVO_.uuid, msg.getUuid()).find();
-        if (msg.getName() != null) {
-            vo.setName(msg.getName());
-        }
-        if (msg.getDescription() != null) {
-            vo.setName(msg.getDescription());
-        }
-        if (msg.getHookScript() != null) {
-            vo.setHookScript(msg.getHookScript());
-        }
-        XmlHookVO updateVO = dbf.updateAndRefresh(vo);
-        event.setInventory(XmlHookInventory.valueOf(updateVO));
-        completion.success();
+    private void updateVmUserDefinedXmlHook(APIUpdateVmUserDefinedXmlHookScriptMsg msg, ReturnValueCompletion<XmlHookInventory> completion) {
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("update-user-defined-xml-hook-%s-script", msg.getXmlHookUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "refresh-db";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (msg.getName() != null) {
+                    self.setName(msg.getName());
+                }
+                if (msg.getDescription() != null) {
+                    self.setDescription(msg.getDescription());
+                }
+                if (msg.getHookScript() != null) {
+                    self.setHookScript(msg.getHookScript());
+                }
+                dbf.updateAndRefresh(self);
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "startup-vm-instances";
+
+            @Override
+            public boolean skip(Map data) {
+                return !Objects.equals(msg.getStartupStrategy(), VmInstanceConstant.VmOperation.Reboot.toString());
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<String> vmUuids = Q.New(XmlHookVmInstanceRefVO.class)
+                        .select(XmlHookVmInstanceRefVO_.vmInstanceUuid)
+                        .eq(XmlHookVmInstanceRefVO_.xmlHookUuid, msg.getXmlHookUuid()).listValues();
+                if (CollectionUtils.isEmpty(vmUuids)) {
+                    trigger.next();
+                    return;
+                }
+
+                List<ErrorCode> errs = new ArrayList<>();
+                new While<>(vmUuids).each((vmUuid, wcompl) -> {
+                    CheckAndStartVmInstanceMsg msg = new CheckAndStartVmInstanceMsg();
+                    msg.setVmInstanceUuid(vmUuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                    bus.send(msg, new CloudBusCallBack(wcompl) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                errs.add(reply.getError());
+                            } else {
+                                wcompl.done();
+                            }
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errs.isEmpty()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(errs.get(0));
+                        }
+                    }
+                });
+            }
+        });
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success(XmlHookInventory.valueOf(dbf.findByUuid(msg.getXmlHookUuid(), XmlHookVO.class)));
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 }
 

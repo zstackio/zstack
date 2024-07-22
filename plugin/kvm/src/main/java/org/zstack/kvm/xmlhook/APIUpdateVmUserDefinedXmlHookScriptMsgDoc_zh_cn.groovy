@@ -17,7 +17,7 @@ doc {
 
             clz APIUpdateVmUserDefinedXmlHookScriptMsg.class
 
-            desc """"""
+            desc """更新用户自定义xml hook"""
             
 			params {
 
@@ -74,6 +74,16 @@ doc {
 					type "List"
 					optional true
 					since "4.7.21"
+				}
+				column {
+					name "startupStrategy"
+					enclosedIn "updateVmUserDefinedXmlHookScript"
+					desc "启动策略"
+					location "body"
+					type "String"
+					optional true
+					since "5.2.0"
+					values ("Reboot","None")
 				}
 			}
         }
