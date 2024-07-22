@@ -850,7 +850,14 @@ public class ExponApiHelper implements SingleFlightExecutor {
         callErrorOut(req, AddVolumePathToBlacklistResponse.class);
     }
 
-    public void removeVolumePathFromBlacklist(String path) {
+    public void removeVolumePathFromBlacklist(String path, String volId) {
+        GetVolumeBoundPathRequest gReq = new GetVolumeBoundPathRequest();
+        gReq.setVolId(volId);
+        GetVolumeBoundPathResponse gRsp = callErrorOut(gReq, GetVolumeBoundPathResponse.class);
+        if (!gRsp.getPath().contains(path)) {
+            return;
+        }
+
         RemoveVolumePathFromBlacklistRequest req = new RemoveVolumePathFromBlacklistRequest();
         req.setPath(path);
 

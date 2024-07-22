@@ -40,8 +40,6 @@ import org.zstack.header.volume.VolumeStats;
 import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
-import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
-import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -196,7 +194,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         // TODO not remove every time
-        apiHelper.removeVolumePathFromBlacklist(buildExponVolumeBoundPath(uss, exponVol.getVolumeName()));
+        apiHelper.removeVolumePathFromBlacklist(buildExponVolumeBoundPath(uss, exponVol.getVolumeName()), exponVol.getId());
 
         VhostVolumeTO to = new VhostVolumeTO();
         to.setInstallPath(vhost.getPath());
@@ -712,8 +710,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         retry(() -> apiHelper.removeVhostVolumeFromUss(volId, vhost.getId(), uss.getId()));
-    }
 
+        apiHelper.removeVolumePathFromBlacklist(buildExponVolumeBoundPath(uss, volUuid), volId);
+}
     private void deactivateIscsi(String installPath, HostInventory h) {
         IscsiClientGroupModule client = getLunAttachedIscsiClient(installPath);
         if (client == null) {
@@ -1187,14 +1186,25 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String volId = getVolIdFromPath(snapshotInstallPath);
         String snapId = getSnapIdFromPath(snapshotInstallPath);
         String poolName = getPoolNameFromPath(snapshotInstallPath);
-        VolumeModule vol = apiHelper.recoverySnapshot(volId, snapId);
+        // hardcode: clean blacklist before recovery snapshot
+        List<String> paths = apiHelper.getVolumeBoundPath(volId);
+        for (String path : paths) {
+            apiHelper.removeVolumePathFromBlacklist(path, volId);
+        }
 
-        VolumeStats stats = new VolumeStats();
-        stats.setInstallPath(buildExponPath(poolName, volId));
-        stats.setSize(vol.getVolumeSize());
-        stats.setActualSize(vol.getDataSize());
-        stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
-        comp.success(stats);
+        try {
+            VolumeModule vol = apiHelper.recoverySnapshot(volId, snapId);
+            VolumeStats stats = new VolumeStats();
+            stats.setInstallPath(buildExponPath(poolName, volId));
+            stats.setSize(vol.getVolumeSize());
+            stats.setActualSize(vol.getDataSize());
+            stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+            comp.success(stats);
+        } finally {
+            for (String path : paths) {
+                apiHelper.addVolumePathToBlacklist(path);
+            }
+        }
     }
 
     @Override
