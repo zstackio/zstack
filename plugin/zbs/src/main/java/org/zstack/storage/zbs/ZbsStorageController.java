@@ -398,7 +398,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 stats.setInstallPath(returnValue.installPath);
                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 stats.setSize(returnValue.getSize());
-                stats.setActualSize(returnValue.getSize());
+                stats.setActualSize(returnValue.getActualSize());
                 comp.success(stats);
             }
 
@@ -450,7 +450,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 stats.setInstallPath(returnValue.installPath);
                                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                                 stats.setSize(returnValue.getSize());
-                                stats.setActualSize(returnValue.getSize());
+                                stats.setActualSize(returnValue.getActualSize());
                                 trigger.next();
                             }
 
@@ -526,7 +526,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 stats.setInstallPath(returnValue.getInstallPath());
                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 stats.setSize(returnValue.getSize());
-                stats.setActualSize(returnValue.getSize());
+                stats.setActualSize(returnValue.getActualSize());
                 comp.success(stats);
             }
 
@@ -554,7 +554,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 VolumeStats stats = new VolumeStats();
                 stats.setInstallPath(installPath);
                 stats.setSize(returnValue.getSize());
-                stats.setActualSize(returnValue.getSize());
+                stats.setActualSize(returnValue.getActualSize());
                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 comp.success(stats);
             }
@@ -691,7 +691,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             public void success(CreateSnapshotRsp returnValue) {
                 VolumeSnapshotStats stats = new VolumeSnapshotStats();
                 stats.setInstallPath(returnValue.getInstallPath());
-                stats.setActualSize(returnValue.getSize());
+                stats.setActualSize(returnValue.getActualSize());
                 comp.success(stats);
             }
 
@@ -740,7 +740,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 VolumeStats stats = new VolumeStats();
                 stats.setInstallPath(returnValue.getInstallPath());
                 stats.setSize(returnValue.getSize());
-                stats.setActualSize(returnValue.getSize());
+                stats.setActualSize(returnValue.getActualSize());
                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 comp.success(stats);
             }
@@ -962,6 +962,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static class CopyRsp extends AgentResponse {
         private String installPath;
         private long size;
+        private long actualSize;
 
         public String getInstallPath() {
             return installPath;
@@ -977,12 +978,21 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
         }
     }
 
     public static class RollbackSnapshotRsp extends AgentResponse {
         private String installPath;
         private long size;
+        private long actualSize;
 
         public String getInstallPath() {
             return installPath;
@@ -998,6 +1008,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
         }
     }
 
@@ -1007,6 +1025,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static class QueryVolumeRsp extends AgentResponse {
         private long size;
+        private long actualSize;
 
         public long getSize() {
             return size;
@@ -1014,6 +1033,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
         }
     }
 
@@ -1040,6 +1067,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static class CloneVolumeRsp extends AgentResponse {
         private long size;
+        private long actualSize;
         private String installPath;
 
         public long getSize() {
@@ -1048,6 +1076,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
         }
 
         public String getInstallPath() {
@@ -1062,6 +1098,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static class CreateSnapshotRsp extends AgentResponse {
         private String installPath;
         private long size;
+        private long actualSize;
 
         public String getInstallPath() {
             return installPath;
@@ -1077,6 +1114,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
         }
     }
 
