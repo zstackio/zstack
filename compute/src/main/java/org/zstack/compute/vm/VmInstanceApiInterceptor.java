@@ -283,6 +283,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
+        new StaticIpOperator().validateSystemTagInApiMessage(msg);
         Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
         if (msg.getRequiredIpMap() != null) {
             staticIps.computeIfAbsent(msg.getDestL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
@@ -895,6 +896,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
+        new StaticIpOperator().validateSystemTagInApiMessage(msg);
         Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
         msg.setNicNetworkInfo(new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags()).entrySet()
                 .stream()
