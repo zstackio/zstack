@@ -19,6 +19,7 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.TagUtils;
@@ -259,6 +260,16 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         }
 
         return false;
+    }
+
+    public Boolean checkIpRangeConflict(VmNicVO nicVO){
+        if (Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, nicVO.getL3NetworkUuid()).list().isEmpty()) {
+            return Boolean.FALSE;
+        }
+        if (getIpRangeUuid(nicVO.getL3NetworkUuid(), nicVO.getIp()) == null) {
+            return Boolean.TRUE;
+        }
+        return Boolean.FALSE;
     }
 
     public String getIpRangeUuid(String l3Uuid, String ip) {
