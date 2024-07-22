@@ -281,11 +281,25 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                     if (clientHost != null) {
                         logger.debug(String.format("because volume[uuid:%s, installPath:%s] is in use by other KVM " +
                                         "host[uuid:%s, ip:%s], but to start on host[uuid:%s, ip:%s], " +
-                                        "add it to blacklist",
+                                        "add it to blacklist if deactivate failed",
                                 vol.getUuid(), vol.getInstallPath(),
                                 clientHost.getUuid(), clientHost.getManagementIp(),
                                 host.getUuid(), host.getManagementIp()));
-                        nodeSvc.blacklist(vol.getInstallPath(), vol.getProtocol(), HostInventory.valueOf(clientHost), new NopeCompletion());;
+
+                        nodeSvc.deactivate(vol.getInstallPath(), vol.getProtocol(), client, new Completion(null) {
+                            @Override
+                            public void success() {
+                                logger.info(String.format("successfully deactivate volume[uuid:%s, installPath:%s] on host[uuid:%s, ip:%s]",
+                                        vol.getUuid(), vol.getInstallPath(), clientHost.getUuid(), clientHost.getManagementIp()));
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to deactivate volume[uuid:%s, installPath:%s] on host[uuid:%s, ip:%s], add it to blacklist",
+                                        vol.getUuid(), vol.getInstallPath(), clientHost.getUuid(), clientHost.getManagementIp()));
+                                nodeSvc.blacklist(vol.getInstallPath(), vol.getProtocol(), HostInventory.valueOf(clientHost), new NopeCompletion());
+                            }
+                        });
                     }
                 }
             });

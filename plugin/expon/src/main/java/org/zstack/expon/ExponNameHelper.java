@@ -61,4 +61,8 @@ public class ExponNameHelper {
                 uss.getUssId(),
                 volumeName);
     }
+
+    public static String getVolumeNameFromBoundPath(String path) {
+        return path.split("/")[3];
+    }
 }
