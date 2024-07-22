@@ -106,64 +106,8 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
         return bus.makeLocalServiceId(SERVICE_ID);
     }
 
-    String getGpuXmlHoolName(String version) {
-        return String.format("%s (for libvirt %s)", XmlHookConstant.SET_GPU_MEMORY, version);
-    }
-
     @Override
     public void prepareDbInitialValue() {
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                String name = getGpuXmlHoolName(XmlHookConstant.LIBVIT_VERSION_4_9_0);
-                if (!q(XmlHookVO.class)
-                        .eq(XmlHookVO_.name, name)
-                        .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
-                    XmlHookVO vo = new XmlHookVO();
-                    vo.setUuid(Platform.getUuid());
-                    vo.setName(name);
-                    vo.setType(XmlHookType.System);
-                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK);
-                    vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_4_9_0);
-                    persist(vo);
-                    flush();
-
-                    logger.debug(String.format("Created initial system xml hook[name:%s]", name));
-                }
-
-                name = getGpuXmlHoolName(XmlHookConstant.LIBVIT_VERSION_6_0_0);
-                if (!q(XmlHookVO.class)
-                        .eq(XmlHookVO_.name, name)
-                        .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
-                    XmlHookVO vo = new XmlHookVO();
-                    vo.setUuid(Platform.getUuid());
-                    vo.setName(name);
-                    vo.setType(XmlHookType.System);
-                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK);
-                    vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_6_0_0);
-                    persist(vo);
-                    flush();
-
-                    logger.debug(String.format("Created initial system xml hook[name:%s]", name));
-                }
-
-                name = getGpuXmlHoolName(XmlHookConstant.LIBVIT_VERSION_8_0_0);
-                if (!q(XmlHookVO.class)
-                        .eq(XmlHookVO_.name, name)
-                        .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
-                    XmlHookVO vo = new XmlHookVO();
-                    vo.setUuid(Platform.getUuid());
-                    vo.setName(name);
-                    vo.setType(XmlHookType.System);
-                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK);
-                    vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_8_0_0);
-                    persist(vo);
-                    flush();
-
-                    logger.debug(String.format("Created initial system xml hook[name:%s]", name));
-                }
-            }
-        }.execute();
     }
 
     @Override

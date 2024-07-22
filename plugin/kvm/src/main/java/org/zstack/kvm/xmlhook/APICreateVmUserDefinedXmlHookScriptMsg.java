@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.*;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.tag.TagResourceType;
 
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +58,7 @@ public class APICreateVmUserDefinedXmlHookScriptMsg extends APICreateMessage imp
 
     @Override
     public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(((APICreateVmUserDefinedXmlHookScriptMsg) msg).getName(), XmlHookVO.class);
+        APICreateVmUserDefinedXmlHookScriptEvent event = (APICreateVmUserDefinedXmlHookScriptEvent) rsp;
+        return new APIAuditor.Result(rsp.isSuccess() ? event.getInventory().getUuid() : "", XmlHookVO.class);
     }
 }

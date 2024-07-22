@@ -1,16 +1,19 @@
 package org.zstack.kvm.xmlhook;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
+
 @RestRequest(
         path = "/vm-instances/xml-hook-script",
         method = HttpMethod.PUT,
         isAction = true,
         responseClass = APIUpdateVmUserDefinedXmlHookScriptEvent.class
 )
-public class APIUpdateVmUserDefinedXmlHookScriptMsg extends APIMessage implements XmlHookMessage {
+public class APIUpdateVmUserDefinedXmlHookScriptMsg extends APIMessage implements APIAuditor, XmlHookMessage {
     @APIParam(resourceType = XmlHookVO.class)
     private String uuid;
 
@@ -22,6 +25,9 @@ public class APIUpdateVmUserDefinedXmlHookScriptMsg extends APIMessage implement
 
     @APIParam(required = false)
     private String hookScript;
+
+    @APIParam(validValues = {"Reboot", "None"}, required = false)
+    private String startupStrategy;
 
     public String getUuid() {
         return uuid;
@@ -65,5 +71,18 @@ public class APIUpdateVmUserDefinedXmlHookScriptMsg extends APIMessage implement
     @Override
     public String getXmlHookUuid() {
         return uuid;
+    }
+
+    public String getStartupStrategy() {
+        return startupStrategy;
+    }
+
+    public void setStartupStrategy(String startupStrategy) {
+        this.startupStrategy = startupStrategy;
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(((APIUpdateVmUserDefinedXmlHookScriptMsg) msg).getUuid(), XmlHookVO.class);
     }
 }

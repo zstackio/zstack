@@ -29,7 +29,7 @@ public class SetVmUserDefinedXmlHookScriptAction extends AbstractAction {
     public java.lang.String vmInstanceUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String xmlHookUuid;
+    public java.lang.String xmlHookScriptBase64;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

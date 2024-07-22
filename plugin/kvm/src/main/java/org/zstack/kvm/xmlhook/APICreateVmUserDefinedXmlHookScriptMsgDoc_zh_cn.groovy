@@ -17,7 +17,7 @@ doc {
 
             clz APICreateVmUserDefinedXmlHookScriptMsg.class
 
-            desc """"""
+            desc """创建用户自定义xml hook"""
             
 			params {
 
