@@ -19,18 +19,14 @@ import java.util.List;
 import java.util.Map;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmStartOnHypervisorFlow implements Flow {
-    private static CLogger logger = Utils.getLogger(VmStartOnHypervisorFlow.class);
+    private static final CLogger logger = Utils.getLogger(VmStartOnHypervisorFlow.class);
 
     @Autowired
     private CloudBus bus;
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private List<VmBeforeStartOnHypervisorExtensionPoint> exts;
-
-    public VmStartOnHypervisorFlow() {
-        exts = pluginRgty.getExtensionList(VmBeforeStartOnHypervisorExtensionPoint.class);
-    }
+    private final List<VmBeforeStartOnHypervisorExtensionPoint> exts = pluginRgty.getExtensionList(VmBeforeStartOnHypervisorExtensionPoint.class);;
 
     private void fireExtensions(VmInstanceSpec spec) {
         for (VmBeforeStartOnHypervisorExtensionPoint ext : exts) {

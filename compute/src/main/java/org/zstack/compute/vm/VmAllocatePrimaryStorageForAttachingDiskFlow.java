@@ -38,7 +38,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
     @Autowired
     protected ErrorFacade errf;
 
-    private String allocatedInstallUrl;
+    private final String ALLOCATED_INSTALL_URL = "allocated_install_url";
 
     @Override
     public void run(final FlowTrigger chain, final Map data) {
@@ -91,9 +91,9 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                    data.put(ALLOCATED_INSTALL_URL, ar.getAllocatedInstallUrl());
                     data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
-                    data.put(VmInstanceConstant.Params.AllocatedUrlForAttachingVolume.toString(), allocatedInstallUrl);
+                    data.put(VmInstanceConstant.Params.AllocatedUrlForAttachingVolume.toString(), ar.getAllocatedInstallUrl());
                     data.put(VmAllocatePrimaryStorageForAttachingDiskFlow.class, ar.getSize());
                     chain.next();
                 } else {
@@ -109,7 +109,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
-            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+            rmsg.setAllocatedInstallUrl((String)data.get(ALLOCATED_INSTALL_URL));
             rmsg.setPrimaryStorageUuid(pri.getUuid());
             rmsg.setDiskSize(size);
             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());

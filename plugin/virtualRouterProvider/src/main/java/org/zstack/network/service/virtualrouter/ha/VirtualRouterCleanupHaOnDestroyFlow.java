@@ -31,7 +31,7 @@ public class VirtualRouterCleanupHaOnDestroyFlow extends NoRollbackFlow {
     @Autowired
     protected VirtualRouterHaBackend haBackend;
 
-    private static CLogger logger = Utils.getLogger(VirtualRouterCleanupHaOnDestroyFlow.class);
+    private static final CLogger logger = Utils.getLogger(VirtualRouterCleanupHaOnDestroyFlow.class);
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {

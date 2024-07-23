@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class PrimaryStorageSortByAvailablePhysicalCapacityFlow extends NoRollbackFlow {
-    private static CLogger logger = Utils.getLogger(PrimaryStorageSortByAvailablePhysicalCapacityFlow.class);
+    private static final CLogger logger = Utils.getLogger(PrimaryStorageSortByAvailablePhysicalCapacityFlow.class);
 
 
     @Override
