@@ -4,6 +4,8 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -18,8 +20,11 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAfterInstantiateVolumeInAttachingVolumeFlow extends NoRollbackFlow {
-    CLogger logger = Utils.getLogger(VmAfterInstantiateVolumeInAttachingVolumeFlow.class);
-
+    private static final CLogger logger = Utils.getLogger(VmAfterInstantiateVolumeInAttachingVolumeFlow.class);
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRegistry;
     @Autowired
     ErrorFacade errf;
     @Autowired

@@ -29,14 +29,9 @@ public class VmInstantiateResourcePreFlow implements Flow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private static List<PreVmInstantiateResourceExtensionPoint> extensions = null;
+    private final List<PreVmInstantiateResourceExtensionPoint> extensions = pluginRgty.getExtensionList(PreVmInstantiateResourceExtensionPoint.class);
     
-    public VmInstantiateResourcePreFlow() {
-        if (extensions == null) {
-            extensions = pluginRgty.getExtensionList(PreVmInstantiateResourceExtensionPoint.class);
-        }
-    }
-    
+
     private void runExtensions(final Iterator<PreVmInstantiateResourceExtensionPoint> it, final VmInstanceSpec spec, final FlowTrigger chain) {
         if (!it.hasNext()) {
             spec.setInstantiateResourcesSuccess(true);

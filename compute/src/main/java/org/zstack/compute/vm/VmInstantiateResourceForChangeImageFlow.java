@@ -25,14 +25,9 @@ public class VmInstantiateResourceForChangeImageFlow implements Flow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private static List<ChangeVmImageExtensionPoint> extensions = null;
+    private final List<ChangeVmImageExtensionPoint> extensions = pluginRgty.getExtensionList(ChangeVmImageExtensionPoint.class);
 
-    public VmInstantiateResourceForChangeImageFlow() {
-        if (extensions == null) {
-            extensions = pluginRgty.getExtensionList(ChangeVmImageExtensionPoint.class);
-        }
-    }
-    
+
     private void runExtensions(final Iterator<ChangeVmImageExtensionPoint> it, final VmInstanceSpec spec, final FlowTrigger chain) {
         if (!it.hasNext()) {
             chain.next();

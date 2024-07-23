@@ -33,11 +33,7 @@ public class VmCreateOnHypervisorFlow implements Flow {
     @Autowired
     private EventFacade evtf;
 
-    private List<VmBeforeCreateOnHypervisorExtensionPoint> exts;
-
-    public VmCreateOnHypervisorFlow() {
-        exts = pluginRgty.getExtensionList(VmBeforeCreateOnHypervisorExtensionPoint.class);
-    }
+    private final List<VmBeforeCreateOnHypervisorExtensionPoint> exts = pluginRgty.getExtensionList(VmBeforeCreateOnHypervisorExtensionPoint.class);
 
     private void fireExtensions(VmInstanceSpec spec) {
         for (VmBeforeCreateOnHypervisorExtensionPoint ext : exts) {
