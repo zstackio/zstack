@@ -15245,7 +15245,7 @@
   {
     "raw": "the KVM host[ip:%s] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[%s]. %s %s",
     "en_US": "the KVM host[ip:{0}] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[{1}]. {2} {3}",
-    "zh_CN": "物理机[ip:{0}] 不能连接到管理节点 。 看起来是这个物理机无法到达管理节点的IP [{1}]. {2} {3}",
+    "zh_CN": "物理机[ip:{0}] 无法连接到管理节点IP [{1}]. {2} {3}",
     "arguments": [
       "self.getManagementIp()",
       "restf.getHostName()",

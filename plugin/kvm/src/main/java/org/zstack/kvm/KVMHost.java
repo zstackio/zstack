@@ -5132,7 +5132,7 @@ public class KVMHost extends HostBase implements Host {
                                     "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                 } else if (ret.getReturnCode() != 0) {
                     throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                    " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), restf.getHostName(),
+                                    " that the KVM host cannot reach the management IP[%s]. %s %s", restf.getHostName(), self.getManagementIp(),
                             ret.getStderr(), ret.getExitErrorMessage()));
                 }
 
