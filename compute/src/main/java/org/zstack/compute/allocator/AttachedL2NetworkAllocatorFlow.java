@@ -4,19 +4,14 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.network.l2.L2NetworkAttachStatus;
-import org.zstack.header.network.l2.L2NetworkClusterRefVO;
-import org.zstack.header.network.l2.L2NetworkHostRefVO;
-import org.zstack.header.network.l2.L2NetworkHostRefVO_;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 
 import javax.persistence.Tuple;
@@ -24,13 +19,9 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.zstack.network.l2.L2NetworkHostUtils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
-import org.zstack.core.db.Q;
 import org.zstack.utils.Utils;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.host.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -92,9 +83,18 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         /* in normal case, there is no L2NetworkHostRefVO  */
-        List<String> excludeHostUuids = Q.New(L2NetworkHostRefVO.class).in(L2NetworkHostRefVO_.l2NetworkUuid, l2uuids)
-                .notEq(L2NetworkHostRefVO_.attachStatus, L2NetworkAttachStatus.Attached)
-                .select(L2NetworkHostRefVO_.hostUuid).listValues();
+        List<Tuple> tuples = Q.New(L2NetworkVO.class)
+                .select(L2NetworkVO_.uuid, L2NetworkVO_.type)
+                .in(L2NetworkVO_.uuid, l2uuids)
+                .listTuple();
+
+        List<String> notAttachToAllHostsL2s = new ArrayList<>();
+        for (Tuple t : tuples) {
+            if (!L2NetworkType.valueOf(t.get(1, String.class)).isAttachToAllHosts()) {
+                notAttachToAllHostsL2s.add(t.get(0, String.class));
+            }
+        }
+        List<String> excludeHostUuids = L2NetworkHostUtils.getExcludeHostUuids(notAttachToAllHostsL2s, retHostUuids);
         retHostUuids.removeAll(excludeHostUuids);
         if (retHostUuids.isEmpty()){
             return new ArrayList<>();

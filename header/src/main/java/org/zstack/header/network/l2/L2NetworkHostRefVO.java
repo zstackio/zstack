@@ -4,11 +4,10 @@ import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.search.SqlTrigger;
 import org.zstack.header.search.TriggerIndex;
+import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
-import org.zstack.header.vo.SoftDeletionCascade;
-import org.zstack.header.vo.SoftDeletionCascades;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -27,7 +26,8 @@ import java.sql.Timestamp;
                 @EntityGraph.Neighbour(type = HostVO.class, myField = "hostUuid", targetField = "uuid"),
         }
 )
-public class L2NetworkHostRefVO {
+@Inheritance(strategy = InheritanceType.JOINED)
+public class L2NetworkHostRefVO implements ToInventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -45,8 +45,7 @@ public class L2NetworkHostRefVO {
     private String l2ProviderType;
 
     @Column
-    @Enumerated(EnumType.STRING)
-    private L2NetworkAttachStatus attachStatus;
+    private String bridgeName;
 
     @Column
     private Timestamp createDate;
@@ -83,12 +82,12 @@ public class L2NetworkHostRefVO {
         this.hostUuid = hostUuid;
     }
 
-    public L2NetworkAttachStatus getAttachStatus() {
-        return attachStatus;
+    public String getBridgeName() {
+        return bridgeName;
     }
 
-    public void setAttachStatus(L2NetworkAttachStatus attachStatus) {
-        this.attachStatus = attachStatus;
+    public void setBridgeName(String bridgeName) {
+        this.bridgeName = bridgeName;
     }
 
     public String getL2NetworkUuid() {
@@ -115,4 +114,9 @@ public class L2NetworkHostRefVO {
         this.lastOpDate = lastOpDate;
     }
 
+    @Override
+    public String toString() {
+        return String.format("L2NetworkHostRefVO[hostUuid:%s, l2NetworkUuid:%s, l2ProviderType:%s, bridgeName:%s]",
+                hostUuid, l2NetworkUuid, l2ProviderType, bridgeName);
+    }
 }

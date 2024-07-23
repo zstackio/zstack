@@ -10,6 +10,7 @@ import org.zstack.header.network.l3.UsedIpTO;
 public class HostKernelInterfaceTO {
     private String interfaceName;
     private int vlanId;
+    private String bridgeName;
     private List<UsedIpTO> ips;
 
     public HostKernelInterfaceTO() {
@@ -30,6 +31,14 @@ public class HostKernelInterfaceTO {
 
     public void setVlanId(int vlanId) {
         this.vlanId = vlanId;
+    }
+
+    public String getBridgeName() {
+        return bridgeName;
+    }
+
+    public void setBridgeName(String bridgeName) {
+        this.bridgeName = bridgeName;
     }
 
     public List<UsedIpTO> getIps() {

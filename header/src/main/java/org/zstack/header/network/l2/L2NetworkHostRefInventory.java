@@ -21,19 +21,24 @@ public class L2NetworkHostRefInventory {
     private String hostUuid;
     private String l2NetworkUuid;
     private String l2ProviderType;
-    private L2NetworkAttachStatus attachStatus;
+    private String bridgeName;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
+    public L2NetworkHostRefInventory() {
+    }
+
+    public L2NetworkHostRefInventory(L2NetworkHostRefVO vo) {
+        this.setHostUuid(vo.getHostUuid());
+        this.setL2NetworkUuid(vo.getL2NetworkUuid());
+        this.setL2ProviderType(vo.getL2ProviderType());
+        this.setBridgeName(vo.getBridgeName());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
+    }
+
     public static L2NetworkHostRefInventory valueOf(L2NetworkHostRefVO vo) {
-        L2NetworkHostRefInventory inv = new L2NetworkHostRefInventory();
-        inv.setHostUuid(vo.getHostUuid());
-        inv.setL2NetworkUuid(vo.getL2NetworkUuid());
-        inv.setL2ProviderType(vo.getL2ProviderType());
-        inv.setAttachStatus(vo.getAttachStatus());
-        inv.setCreateDate(vo.getCreateDate());
-        inv.setLastOpDate(vo.getLastOpDate());
-        return inv;
+        return new L2NetworkHostRefInventory(vo);
     }
 
     public static List<L2NetworkHostRefInventory> valueOf(Collection<L2NetworkHostRefVO> vos) {
@@ -68,6 +73,13 @@ public class L2NetworkHostRefInventory {
         this.l2NetworkUuid = l2NetworkUuid;
     }
 
+    public String getBridgeName() {
+        return bridgeName;
+    }
+
+    public void setBridgeName(String bridgeName) {
+        this.bridgeName = bridgeName;
+    }
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -82,13 +94,5 @@ public class L2NetworkHostRefInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
-    }
-
-    public L2NetworkAttachStatus getAttachStatus() {
-        return attachStatus;
-    }
-
-    public void setAttachStatus(L2NetworkAttachStatus attachStatus) {
-        this.attachStatus = attachStatus;
     }
 }

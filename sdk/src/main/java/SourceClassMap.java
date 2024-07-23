@@ -243,7 +243,6 @@ public class SourceClassMap {
 			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
 			put("org.zstack.header.longjob.LongJobState", "org.zstack.sdk.LongJobState");
 			put("org.zstack.header.managementnode.ManagementNodeInventory", "org.zstack.sdk.ManagementNodeInventory");
-			put("org.zstack.header.network.l2.L2NetworkAttachStatus", "org.zstack.sdk.L2NetworkAttachStatus");
 			put("org.zstack.header.network.l2.L2NetworkData", "org.zstack.sdk.L2NetworkData");
 			put("org.zstack.header.network.l2.L2NetworkHostRefInventory", "org.zstack.sdk.L2NetworkHostRefInventory");
 			put("org.zstack.header.network.l2.L2NetworkInventory", "org.zstack.sdk.L2NetworkInventory");
@@ -961,7 +960,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");
 			put("org.zstack.sdk.KvmHostHypervisorMetadataInventory", "org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataInventory");
 			put("org.zstack.sdk.KvmHypervisorInfoInventory", "org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory");
-			put("org.zstack.sdk.L2NetworkAttachStatus", "org.zstack.header.network.l2.L2NetworkAttachStatus");
 			put("org.zstack.sdk.L2NetworkData", "org.zstack.header.network.l2.L2NetworkData");
 			put("org.zstack.sdk.L2NetworkHostRefInventory", "org.zstack.header.network.l2.L2NetworkHostRefInventory");
 			put("org.zstack.sdk.L2NetworkInventory", "org.zstack.header.network.l2.L2NetworkInventory");

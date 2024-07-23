@@ -12,8 +12,13 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.header.network.l2.L2NetworkType.L2NetworkTypeBuilder;
+
 public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
-    private static L2NetworkType type = new L2NetworkType(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE, true, true);
+    private static L2NetworkType type = new L2NetworkTypeBuilder()
+            .typeName(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)
+            .sriovSupported(true)
+            .build();
     private static CLogger logger = Utils.getLogger(L2NoVlanL2NetworkFactory.class);
     private static FieldPrinter printer = Utils.getFieldPrinter();
     
