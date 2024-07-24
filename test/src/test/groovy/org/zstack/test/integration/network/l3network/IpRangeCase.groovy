@@ -13,6 +13,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.*
 import org.zstack.utils.network.IPv6Constants
+import org.zstack.utils.network.IPv6NetworkUtils
 
 import java.util.stream.Collectors
 
@@ -158,7 +159,7 @@ class IpRangeCase extends SubCase {
         assert res.value.available == true
 
         VmInstanceInventory vm = createVmInstance {
-            name = "vm"
+            name = "vm-l3_3"
             instanceOfferingUuid = ioSpec.inventory.uuid
             imageUuid = iSpec.inventory.uuid
             l3NetworkUuids = asList((l3_3.uuid))
@@ -395,6 +396,63 @@ class IpRangeCase extends SubCase {
         detachNetworkServiceFromL3Network {
             l3NetworkUuid = l3_2.uuid
             service = 'DHCP'
+        }
+
+        VmInstanceInventory vm_l3_3 = queryVmInstance {conditions=["name=vm-l3_3"]} [0]
+        VmNicInventory nicOld = vm_l3_3.vmNics.get(0)
+        FreeIpInventory ipv6 = getFreeIp {
+            l3NetworkUuid = l3_2.uuid
+            ipVersion = IPv6Constants.IPv6
+            limit = 1} [0]
+        FreeIpInventory ipv4 = getFreeIp {
+            l3NetworkUuid = l3_2.uuid
+            ipVersion = IPv6Constants.IPv4
+            limit = 1} [0]
+
+        attachL3NetworkToVm {
+            l3NetworkUuid = l3_2.uuid
+            vmInstanceUuid = vm_l3_3.uuid
+            systemTags = [String.format("staticIp::%s::%s", l3_2.uuid, ipv4.ip),
+                          String.format("staticIp::%s::%s", l3_2.uuid, IPv6NetworkUtils.ipv6AddessToTagValue(ipv6.ip))]
+        }
+        VmNicInventory nic1 = queryVmNic {
+            conditions = ["l3NetworkUuid=${l3_2.uuid}", "vmInstance.uuid=${vm_l3_3.uuid}"]
+        }[0]
+        assert nic1.usedIps.size() == 2
+        for (UsedIpInventory ip : nic1.usedIps) {
+            if (ip.ipVersion == IPv6Constants.IPv4) {
+                assert ip.ip == ipv4.ip
+            } else {
+                assert ip.ip == ipv6.ip
+            }
+        }
+
+        detachL3NetworkFromVm {
+            vmNicUuid = nic1.uuid
+        }
+
+        VmNicInventory nic2 = queryVmNic {
+            conditions = ["l3NetworkUuid=${nicOld.l3NetworkUuid}", "vmInstance.uuid=${vm_l3_3.uuid}"]
+        }[0]
+        changeVmNicNetwork {
+            vmNicUuid = nic2.uuid
+            destL3NetworkUuid = l3_2.uuid
+            systemTags = [String.format("staticIp::%s::%s", l3_2.uuid, ipv4.ip),
+                          String.format("staticIp::%s::%s", l3_2.uuid, IPv6NetworkUtils.ipv6AddessToTagValue(ipv6.ip))]
+        }
+        nic2 = queryVmNic {
+            conditions = ["l3NetworkUuid=${l3_2.uuid}", "vmInstance.uuid=${vm_l3_3.uuid}"]
+        }[0]
+        assert nic2.usedIps.size() == 2
+        for (UsedIpInventory ip : nic2.usedIps) {
+            if (ip.ipVersion == IPv6Constants.IPv4) {
+                assert ip.ip == ipv4.ip
+            } else {
+                assert ip.ip == ipv6.ip
+            }
+        }
+        detachL3NetworkFromVm {
+            vmNicUuid = nic2.uuid
         }
 
         /* enable dhcp to occupy an ip address  */
