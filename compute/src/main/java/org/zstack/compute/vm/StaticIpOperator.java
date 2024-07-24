@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
@@ -300,8 +301,13 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         }
     }
 
+
     @Override
     public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+        validateSystemTagInApiMessage(msg);
+    }
+
+    public void validateSystemTagInApiMessage(APIMessage msg) {
         Map<String, NicIpAddressInfo> staticIps = getNicNetworkInfoBySystemTag(msg.getSystemTags());
         List<String> newSystags = new ArrayList<>();
         for (Map.Entry<String, NicIpAddressInfo> e : staticIps.entrySet()) {
@@ -314,11 +320,6 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
 
             if (!StringUtils.isEmpty(nicIp.ipv6Address)) {
                 checkIpAvailability(l3Uuid, nicIp.ipv6Address);
-            }
-
-            L3NetworkVO l3NetworkVO = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
-            if (l3NetworkVO.enableIpAddressAllocation()) {
-                continue;
             }
 
             if (!StringUtils.isEmpty(nicIp.ipv4Address)) {
