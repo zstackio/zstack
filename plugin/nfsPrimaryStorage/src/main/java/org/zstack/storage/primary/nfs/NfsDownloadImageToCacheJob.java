@@ -3,6 +3,7 @@ package org.zstack.storage.primary.nfs;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -10,13 +11,14 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -24,7 +26,6 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.ImageCacheUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -217,9 +218,29 @@ public class NfsDownloadImageToCacheJob implements Job {
                                 image.getInventory().getUuid(), cvo.getId(), cvo.getInstallUrl()));
 
                         ImageCacheVO finalCvo = cvo;
-                        pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
-                                .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo)));
-                        completion.success(ImageCacheInventory.valueOf(cvo));
+
+                        new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
+                            ext.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo), new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    whileCompletion.addError(errorCode);
+                                    whileCompletion.allDone();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(completion) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    logger.warn(String.format("failed to saveEncryptAfterCreateImageCache: %s", errorCodeList.getCauses().get(0)));
+                                }
+                                completion.success(ImageCacheInventory.valueOf(finalCvo));
+                            }
+                        });
                     }
                 });
 

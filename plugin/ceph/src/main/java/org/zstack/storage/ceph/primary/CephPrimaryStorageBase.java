@@ -2383,10 +2383,29 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cvo = dbf.persistAndRefresh(cvo);
 
                             ImageCacheVO finalCvo = cvo;
-                            pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
-                                    .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo)));
 
-                            completion.success(cvo);
+                            new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
+                                ext.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo), new Completion(whileCompletion) {
+                                    @Override
+                                    public void success() {
+                                        whileCompletion.done();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        whileCompletion.addError(errorCode);
+                                        whileCompletion.allDone();
+                                    }
+                                });
+                            }).run(new WhileDoneCompletion(completion) {
+                                @Override
+                                public void done(ErrorCodeList errorCodeList) {
+                                    if (!errorCodeList.getCauses().isEmpty()) {
+                                        logger.warn(String.format("failed to saveEncryptAfterCreateImageCache: %s", errorCodeList.getCauses().get(0)));
+                                    }
+                                    completion.success(finalCvo);
+                                }
+                            });
                         }
                     });
 
