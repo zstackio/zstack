@@ -190,6 +190,14 @@ abstract class Test extends ApiHelper implements Retry {
         logOut { sessionUuid = s.uuid }
     }
 
+    protected void withAccountSession(String accountName, String password, Closure c) {
+        def session = logInByAccount {
+            delegate.accountName = accountName
+            delegate.password = password
+        } as SessionInventory
+        withSession(session, c)
+    }
+
     protected void onCleanExecute(Closure c) {
         methodsOnClean.add(c)
     }
