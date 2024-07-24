@@ -18,6 +18,7 @@ public class VmCanonicalEvents {
     public static final String VM_LIBVIRT_REPORT_CRASH = "/vm/libvirtReportCrash";
     public static final String VM_NIC_INFO_CHANGED_PATH = "/vm/nicinfo/change";
     public static final String VM_NIC_INFO_DUPLICATE_PATH = "/vm/nicinfo/duplicate";
+    public static final String VM_NIC_INFO_IPRANGE_CONFLICT_PATH = "/vm/nicinfo/iprangeConflict";
 
     @NeedJsonSchema
     public static class VmCrashReportData {
@@ -283,6 +284,37 @@ public class VmCanonicalEvents {
 
         public void setRelateResourceUuid(String relateResourceUuid) {
             this.relateResourceUuid = relateResourceUuid;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class VmInternalIpRangeConflictData {
+        private String vmUuid;
+        private String l3NetworkUuid;
+        private String internalIp;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getL3NetworkUuid() {
+            return l3NetworkUuid;
+        }
+
+        public void setL3NetworkUuid(String l3NetworkUuid) {
+            this.l3NetworkUuid = l3NetworkUuid;
+        }
+
+        public String getInternalIp() {
+            return internalIp;
+        }
+
+        public void setInternalIp(String internalIp) {
+            this.internalIp = internalIp;
         }
     }
 }
