@@ -205,7 +205,7 @@ public class RESTFacadeImpl implements RESTFacade {
             HttpEntity<String> entity = this.httpServletRequestToHttpEntity(req);
             if (commandPath == null) {
                 rsp.sendError(HttpStatus.SC_BAD_REQUEST, "No 'commandPath' found in the header");
-                logger.warn(String.format("Received a command, but no 'taskUuid' found in headers. request body: %s", entity.getBody()));
+                logger.warn(String.format("Received a command, but no 'commandPath' found in headers. request body: %s", entity.getBody()));
                 return;
             }
 
