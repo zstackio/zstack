@@ -62,6 +62,15 @@ public class L2NetworkHostUtils {
                 .findValue();
     }
 
+    public static void changeBridgeNameIfNotEqual(String l2Uuid, String hostUuid, String bridgeName) {
+        SQL.New(L2NetworkHostRefVO.class)
+                .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2Uuid)
+                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
+                .notEq(L2NetworkHostRefVO_.bridgeName, bridgeName)
+                .set(L2NetworkHostRefVO_.bridgeName, bridgeName)
+                .update();
+    }
+
     public static boolean checkIfL2AttachedToHost(String l2Uuid, String hostUuid) {
         return Q.New(L2NetworkHostRefVO.class)
                 .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2Uuid)
