@@ -111,10 +111,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SSOServerTokenVO`(
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ContainerManagementVmVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(255) DEFAULT NULL,
+    `description` varchar(2048) DEFAULT NULL,
     `managementIp` varchar(255) DEFAULT NULL,
     `vendor` varchar(64) DEFAULT NULL,
     `managementPort` int unsigned DEFAULT NULL,
     `vmInstanceUuid` varchar(32) NOT NULL,
+    `accessKeyId` VARCHAR(128) NOT NULL,
+    `accessKeySecret` VARCHAR(128) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
