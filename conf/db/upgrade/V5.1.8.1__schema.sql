@@ -119,3 +119,17 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ContainerManagementVmVO` (
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`DatasetVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(255) NULL,
+    `url` varchar(2048) NULL,
+    `installPath` varchar(2048) NULL,
+    `description` varchar(2048) NULL,
+    `modelCenterUuid` varchar(32) NOT NULL,
+    `size` bigint NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`),
+  CONSTRAINT fkDatasetVOModelCenterVO FOREIGN KEY (modelCenterUuid) REFERENCES ModelCenterVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
