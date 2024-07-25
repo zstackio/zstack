@@ -19,6 +19,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.cluster.ClusterUpdateOSExtensionPoint;
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.UpdateClusterOSStruct;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -711,7 +712,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     }
 
     @Override
-    public String preUpdateClusterOS(ClusterVO cls) {
+    public String preUpdateClusterOS(UpdateClusterOSStruct updateClusterOSStruct) {
         // do not update hosts that also run nfs ps
         List<String> matched = new ArrayList<>();
 
@@ -720,7 +721,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             protected void scripts() {
                 List<String> hostIps = q(HostVO.class)
                         .select(HostVO_.managementIp)
-                        .eq(HostVO_.clusterUuid, cls.getUuid())
+                        .eq(HostVO_.clusterUuid, updateClusterOSStruct.getCluster().getUuid())
                         .listValues();
 
                 for (String hostIp : hostIps) {

@@ -37,6 +37,9 @@ public class UpdateClusterOSAction extends AbstractAction {
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String releaseVersion;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean force = false;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
