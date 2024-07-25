@@ -35,7 +35,10 @@ public class DeployModelServiceAction extends AbstractAction {
     public java.lang.String zoneUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
+    public java.lang.String vmImageUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dockerImage;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer cpuNum;
