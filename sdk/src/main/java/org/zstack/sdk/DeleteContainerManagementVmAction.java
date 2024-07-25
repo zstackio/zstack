@@ -12,7 +12,7 @@ public class DeleteContainerManagementVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddContainerManagementVmResult value;
+        public org.zstack.sdk.DeleteContainerManagementVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class DeleteContainerManagementVmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddContainerManagementVmResult value = res.getResult(org.zstack.sdk.AddContainerManagementVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddContainerManagementVmResult() : value; 
+        org.zstack.sdk.DeleteContainerManagementVmResult value = res.getResult(org.zstack.sdk.DeleteContainerManagementVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteContainerManagementVmResult() : value; 
 
         return ret;
     }
