@@ -160,6 +160,8 @@
 
         <Logger name="org.zstack.kvm" level="TRACE"/>
 
+        <Logger name="org.zstack.iam2.container.zaku" level="TRACE"/>
+
         <Logger name="org.springframework.data.cassandra.core" level="TRACE" />
 
         <Logger name="org.zstack.zwatch.namespace" level="TRACE"/>

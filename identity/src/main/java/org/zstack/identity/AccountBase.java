@@ -12,13 +12,21 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
@@ -435,6 +443,10 @@ public class AccountBase extends AbstractAccount {
     }
 
     private void handle(APIUpdateQuotaMsg msg) {
+        for (QuotaExtensionPoint ext : pluginRgty.getExtensionList(QuotaExtensionPoint.class)) {
+            ext.beforeUpdateQuota(msg.getQuotaVO(), msg.getAccountUuid());
+        }
+
         QuotaVO quota = msg.getQuotaVO();
         quota.setValue(msg.getValue());
         quota = dbf.updateAndRefresh(quota);

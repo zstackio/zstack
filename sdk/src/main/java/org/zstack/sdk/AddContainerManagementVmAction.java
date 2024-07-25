@@ -29,6 +29,12 @@ public class AddContainerManagementVmAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String managementIp;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -36,6 +42,12 @@ public class AddContainerManagementVmAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer managementPort;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String containerAccessKeyId;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String containerAccessKeySecret;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
