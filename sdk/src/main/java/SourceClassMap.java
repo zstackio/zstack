@@ -7,6 +7,7 @@ public class SourceClassMap {
         {
 			put("org.zstack.accessKey.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
 			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
+			put("org.zstack.ai.entity.DatasetInventory", "org.zstack.sdk.DatasetInventory");
 			put("org.zstack.ai.entity.ModelCenterInventory", "org.zstack.sdk.ModelCenterInventory");
 			put("org.zstack.ai.entity.ModelInventory", "org.zstack.sdk.ModelInventory");
 			put("org.zstack.ai.entity.ModelServiceInstanceGroupInventory", "org.zstack.sdk.ModelServiceInstanceGroupInventory");
@@ -886,6 +887,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DataVolumeBillingInventory", "org.zstack.billing.generator.volume.data.DataVolumeBillingInventory");
 			put("org.zstack.sdk.DataVolumeSpending", "org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpending");
 			put("org.zstack.sdk.DataVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpendingInventory");
+			put("org.zstack.sdk.DatasetInventory", "org.zstack.ai.entity.DatasetInventory");
 			put("org.zstack.sdk.DeleteSnapshotGroupResult", "org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult");
 			put("org.zstack.sdk.DirectoryInventory", "org.zstack.directory.DirectoryInventory");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
