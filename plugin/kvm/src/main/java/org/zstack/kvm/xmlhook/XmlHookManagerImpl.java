@@ -1,18 +1,19 @@
 package org.zstack.kvm.xmlhook;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.Q;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.directory.DirectoryMessage;
-import org.zstack.directory.ResourceDirectoryRefVO;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.cluster.ClusterUpdateOSExtensionPoint;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.UpdateClusterOSStruct;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
@@ -20,7 +21,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.VmInstanceBeforeStartExtensionPoint;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.kvm.KVMSystemTags;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
@@ -29,11 +30,12 @@ import org.zstack.utils.logging.CLogger;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 
 public class XmlHookManagerImpl extends AbstractService implements XmlHookManager, Component,
-        PrepareDbInitialValueExtensionPoint, VmInstanceBeforeStartExtensionPoint {
+        PrepareDbInitialValueExtensionPoint, VmInstanceBeforeStartExtensionPoint, ClusterUpdateOSExtensionPoint {
     private static final CLogger logger = Utils.getLogger(XmlHookManagerImpl.class);
 
     @Autowired
@@ -126,5 +128,50 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
         refVO.setCreateDate(new Timestamp(new Date().getTime()));
         dbf.persist(refVO);
         return null;
+    }
+
+    @Override
+    public String preUpdateClusterOS(UpdateClusterOSStruct updateClusterOSStruct) {
+        if (updateClusterOSStruct.isForce()) {
+            return null;
+        }
+        String updatePackages = updateClusterOSStruct.getUpdatePackages();
+        String excludePackages = updateClusterOSStruct.getExcludePackages();
+        ClusterVO cluster = updateClusterOSStruct.getCluster();
+
+        boolean qemuOrLibvirtUpdated = updatePackages != null && (updatePackages.contains("qemu-kvm-ev") || updatePackages.contains("qemu-kvm") || updatePackages.contains("qemu") || updatePackages.contains("libvirt"));
+        boolean qemuOrLibvirtExcluded = excludePackages != null && (excludePackages.contains("qemu-kvm-ev") || excludePackages.contains("qemu-kvm") || excludePackages.contains("qemu") || excludePackages.contains("libvirt"));
+        boolean osUpdatedWithHypervisor = StringUtils.isNotEmpty(updateClusterOSStruct.getReleaseVersion()) && !qemuOrLibvirtExcluded;
+
+        if (qemuOrLibvirtUpdated || osUpdatedWithHypervisor) {
+            //Determine whether the VM in the cluster is bound to XML hook
+            List<VmInstanceVO> vms = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.clusterUuid, cluster.getUuid()).list();
+            if (CollectionUtils.isEmpty(vms)) {
+                return null;
+            }
+            List<VmInstanceVO> vmList = vms.stream()
+                    .filter(it -> Q.New(XmlHookVmInstanceRefVO.class)
+                            .eq(XmlHookVmInstanceRefVO_.vmInstanceUuid, it.getUuid()).isExists())
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(vmList)) {
+                return String.format("detect %s vms in cluster[uuid: %s] have been set XML hook, " +
+                        "if the upgrade QEMU or libvirt, the original XML hook " +
+                        "may be unavailable and the vm service will be affected, " +
+                        "please confirm whether to upgrade, " +
+                        "and if so, add param [force=true] with the api", vmList.size(), cluster.getUuid());
+            }
+
+        }
+        return null;
+    }
+
+    @Override
+    public void beforeUpdateClusterOS(ClusterVO cls) {
+
+    }
+
+    @Override
+    public void afterUpdateClusterOS(ClusterVO cls) {
+
     }
 }

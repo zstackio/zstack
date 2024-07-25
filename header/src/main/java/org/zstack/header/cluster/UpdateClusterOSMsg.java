@@ -11,6 +11,7 @@ public class UpdateClusterOSMsg extends NeedReplyMessage implements ClusterMessa
     private String excludePackages;
     private String updatePackages;
     private String releaseVersion;
+    private boolean force;
 
     public String getUuid() {
         return uuid;
@@ -47,5 +48,13 @@ public class UpdateClusterOSMsg extends NeedReplyMessage implements ClusterMessa
     @Override
     public String getClusterUuid() {
         return uuid;
+    }
+
+    public boolean isForce() {
+        return force;
+    }
+
+    public void setForce(boolean force) {
+        this.force = force;
     }
 }
