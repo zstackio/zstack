@@ -100,7 +100,7 @@ public class UpdateDatasetAction extends AbstractAction {
         info.path = "/ai/datasets/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateDataset";
         return info;
     }
 
