@@ -3,47 +3,53 @@ package org.zstack.utils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.function.Predicate;
+import java.util.Enumeration;
+import java.util.Objects;
 
 public class HttpServletRequestUtils {
     public static String getClientIP(HttpServletRequest req) {
-        Predicate<String> isEmptyOrUnknown = s -> s == null || s.isEmpty() || "unknown".equalsIgnoreCase(s);
+        String ipAddress = req.getHeader("X-Request-Ip");
+        if (isValidClientIP(ipAddress)) {
+            return ipAddress.split(",")[0].trim();
+        }
 
-        String ipAddress = req.getHeader("X-Forwarded-For");
-        if (!isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = ipAddress.split(",")[0].trim();
+        final Enumeration<?> headers = req.getHeaderNames();
+        for (; headers.hasMoreElements();) {
+            Object headerObject = headers.nextElement();
+            if (headerObject == null) {
+                continue;
+            }
+
+            String header = Objects.toString(headerObject);
+            switch (header) {
+            case "X-Forwarded-For":
+                ipAddress = req.getHeader(header).split(",")[0].trim();
+                break;
+            case "X-Request-Ip":
+            case "X-Real-IP":
+            case "Proxy-Client-IP":
+            case "WL-Proxy-Client-IP":
+            case "HTTP_X_FORWARDED_FOR":
+            case "HTTP_X_FORWARDED":
+            case "HTTP_X_CLUSTER_CLIENT_IP":
+            case "HTTP_FORWARDED_FOR":
+            case "HTTP_FORWARDED":
+                ipAddress = req.getHeader(header);
+                break;
+            default:
+                continue;
+            }
+
+            if (isValidClientIP(ipAddress)) {
+                return ipAddress;
+            }
         }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("X-Real-IP");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("Proxy-Client-IP");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("WL-Proxy-Client-IP");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("HTTP_X_FORWARDED_FOR");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("HTTP_X_FORWARDED");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("HTTP_X_CLUSTER_CLIENT_IP");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("HTTP_CLIENT_IP");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("HTTP_FORWARDED_FOR");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getHeader("HTTP_FORWARDED");
-        }
-        if (isEmptyOrUnknown.test(ipAddress)) {
-            ipAddress = req.getRemoteAddr();
-        }
-        return ipAddress;
+
+        return req.getRemoteAddr();
+    }
+
+    private static boolean isValidClientIP(String s) {
+        return s != null && !s.isEmpty() && !"unknown".equalsIgnoreCase(s);
     }
 
     public static String getClientBrowser(HttpServletRequest req) {

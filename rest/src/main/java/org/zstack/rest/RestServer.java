@@ -962,10 +962,6 @@ public class RestServer implements Component, CloudBusEventListener {
             msg = JSONObjectUtil.rehashObject(parameter, (Class<APIMessage>) api.apiClass);
         }
 
-        if (msg != null) {
-            msg.setClientIp(getClientIP(req));
-        }
-
         if (requestInfo.get().headers.containsKey(RestConstants.HEADER_JOB_UUID)) {
             String jobUuid = requestInfo.get().headers.get(RestConstants.HEADER_JOB_UUID).get(0);
             if (jobUuid.length() != 32) {
@@ -1471,28 +1467,6 @@ public class RestServer implements Component, CloudBusEventListener {
                 set.put(a.actionName, a);
             }
         }
-    }
-
-    private String getClientIP(HttpServletRequest request) {
-        if (request == null) return "";
-        String ipAddress = request.getHeader("X-Request-Ip");
-        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
-            ipAddress = request.getHeader("X-Forwarded-For");
-        }
-        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
-            ipAddress = request.getHeader("Proxy-Client-IP");
-        }
-        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
-            ipAddress = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
-            ipAddress = request.getRemoteAddr();
-        }
-        if (ipAddress != null && ipAddress.length() > 15) {
-            String[] ipArray = ipAddress.split(",");
-            ipAddress = ipArray[0].trim();
-        }
-        return ipAddress;
     }
 
     @Override
