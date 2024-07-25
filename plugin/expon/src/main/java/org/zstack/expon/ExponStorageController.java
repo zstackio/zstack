@@ -31,6 +31,7 @@ import org.zstack.header.expon.HealthStatus;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.ImageCacheInventory;
@@ -97,7 +98,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(true);
         capabilities.setSupportLiveExpandVolume(false);
-        capabilities.setSupportedImageFormats(Collections.singletonList("raw"));
+        capabilities.setSupportedImageFormats(Collections.singletonList(ImageConstant.RAW_FORMAT_STRING));
     }
 
     enum LunType {
@@ -845,6 +846,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
         addonInfo = info;
         comp.success(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
+    }
+
+    @Override
+    public void ping(Completion completion) {
+        completion.success();
     }
 
     private void reloadDbInfo() {

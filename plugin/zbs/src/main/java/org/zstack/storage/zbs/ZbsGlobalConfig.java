@@ -14,4 +14,6 @@ public class ZbsGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig ZBS_PS_ALLOW_PORTS = new GlobalConfig(CATEGORY, "zbsps.allow.ports");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE = new GlobalConfig(CATEGORY, "zbsps.mds.ping.max.failure");
 }

@@ -15,6 +15,7 @@ import java.util.List;
 public interface PrimaryStorageControllerSvc {
     String getIdentity();
     void connect(String config, String url, ReturnValueCompletion<LinkedHashMap> comp);
+    void ping(Completion completion);
 
     void reportCapacity(ReturnValueCompletion<StorageCapacity> comp);
     void reportHealthy(ReturnValueCompletion<StorageHealthy> comp);
