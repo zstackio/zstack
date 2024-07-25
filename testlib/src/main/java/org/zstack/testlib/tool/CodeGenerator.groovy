@@ -558,7 +558,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/${LOWER_CASE_RESOURCE_NAME}s/{uuid}",
         method = HttpMethod.PUT,
         responseClass = APIUpdate${RESOURCE_NAME}Event.class,
-        parameterName = "params"
+        isAction = true
 )
 public class APIUpdate${RESOURCE_NAME}Msg extends APIMessage {
     @APIParam(resourceType = ${RESOURCE_NAME}VO.class, checkAccount = true, operationTarget = true)
@@ -597,6 +597,10 @@ public class APIUpdate${RESOURCE_NAME}Event extends APIEvent {
 
     public ${RESOURCE_NAME}Inventory getInventory() {
         return inventory;
+    }
+
+    public void setInventory(${RESOURCE_NAME}Inventory inventory) {
+        this.inventory = inventory;
     }
 
     public static APIUpdate${RESOURCE_NAME}Event __example__() {

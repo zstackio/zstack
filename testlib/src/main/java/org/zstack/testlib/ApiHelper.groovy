@@ -8576,6 +8576,33 @@ abstract class ApiHelper {
     }
 
 
+    def createDataset(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateDatasetAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateDatasetAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createDirectory(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateDirectoryAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateDirectoryAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -13060,6 +13087,33 @@ abstract class ApiHelper {
 
     def deleteDataVolume(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteDataVolumeAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteDataVolumeAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteDataset(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteDatasetAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteDatasetAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -28146,6 +28200,35 @@ abstract class ApiHelper {
     }
 
 
+    def queryDataset(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryDatasetAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryDatasetAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryDirectory(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryDirectoryAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryDirectoryAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -40403,6 +40486,33 @@ abstract class ApiHelper {
 
     def updateContainerManagementVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateContainerManagementVmAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateContainerManagementVmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateDataset(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateDatasetAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateDatasetAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

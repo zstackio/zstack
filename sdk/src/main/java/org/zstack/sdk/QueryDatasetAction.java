@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteContainerManagementVmAction extends AbstractAction {
+public class QueryDatasetAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteContainerManagementVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteContainerManagementVmResult value;
+        public org.zstack.sdk.QueryDatasetResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,6 @@ public class DeleteContainerManagementVmAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -63,8 +34,8 @@ public class DeleteContainerManagementVmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteContainerManagementVmResult value = res.getResult(org.zstack.sdk.DeleteContainerManagementVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteContainerManagementVmResult() : value; 
+        org.zstack.sdk.QueryDatasetResult value = res.getResult(org.zstack.sdk.QueryDatasetResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryDatasetResult() : value; 
 
         return ret;
     }
@@ -93,10 +64,10 @@ public class DeleteContainerManagementVmAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/container/management/vm/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/ai/datasets";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }
