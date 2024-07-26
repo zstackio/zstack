@@ -527,6 +527,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((KvmReportVmShutdownEventMsg) msg);
         } else if (msg instanceof KvmReportVmShutdownFromGuestEventMsg) {
             handle((KvmReportVmShutdownFromGuestEventMsg) msg);
+        } else if (msg instanceof CheckAndStartVmInstanceMsg) {
+            handle((CheckAndStartVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -558,6 +560,26 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return syncThreadName;
+            }
+        });
+    }
+
+    protected void handle(final CheckAndStartVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+
+            @Override
+            public String getSyncSignature() {
+                return String.format("check-and-start-vm-%s", msg.getVmInstanceUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                checkStateAndStartVmInstance(msg, chain);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("check-and-start-vm-%s", msg.getVmInstanceUuid());
             }
         });
     }
@@ -8108,6 +8130,61 @@ public class VmInstanceBase extends AbstractVmInstance {
                 evt.setError(err(VmErrors.RESUME_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
                 taskChain.next();
+            }
+        });
+    }
+
+    protected void checkStateAndStartVmInstance(final CheckAndStartVmInstanceMsg msg, final SyncTaskChain taskChain) {
+        checkStateAndStartVmInstance(new Completion(taskChain) {
+            @Override
+            public void success() {
+                VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+                CheckAndStartVmInstanceReply reply = new CheckAndStartVmInstanceReply();
+                reply.setInventory(inv);
+                bus.reply(msg, reply);
+                taskChain.next();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CheckAndStartVmInstanceReply reply = new CheckAndStartVmInstanceReply();
+                reply.setError(err(VmErrors.START_ERROR, errorCode, errorCode.getDetails()));
+                bus.reply(msg, reply);
+                taskChain.next();
+            }
+        });
+    }
+
+    private NeedReplyMessage fillMsg(VmInstanceState vmState) {
+        if (vmState == VmInstanceState.Running) {
+            RebootVmInstanceMsg msg = new RebootVmInstanceMsg();
+            msg.setVmInstanceUuid(self.getUuid());
+            return msg;
+        } else if (vmState == VmInstanceState.Stopped) {
+            StartVmInstanceMsg msg = new StartVmInstanceMsg();
+            msg.setVmInstanceUuid(self.getUuid());
+            return msg;
+        } else {
+            throw new RuntimeException(String.format("support vm instance states are [Running, Stopped, Paused], current vm instance state is %s", vmState));
+        }
+    }
+
+    private void checkStateAndStartVmInstance(Completion completion) {
+        VmInstanceState vmState = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.state)
+                .eq(VmInstanceVO_.uuid, self.getUuid())
+                .findValue();
+
+        NeedReplyMessage msg = fillMsg(vmState);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, self.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(reply.getError());
+                }
             }
         });
     }
