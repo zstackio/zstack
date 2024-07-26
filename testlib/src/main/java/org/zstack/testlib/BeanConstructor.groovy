@@ -35,7 +35,8 @@ class BeanConstructor {
             "rest.xml",
             "eventlog.xml",
             "Progress.xml",
-            "externalService.xml"
+            "externalService.xml",
+            "cas.xml"
     ]
 
     private List<String> xmls = []
