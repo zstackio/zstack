@@ -23857,33 +23857,6 @@ abstract class ApiHelper {
     }
 
 
-    def loginByCas(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.LoginByCasAction.class) Closure c) {
-        def a = new org.zstack.sdk.LoginByCasAction()
-        
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def mergeDataOnBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.MergeDataOnBackupStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.MergeDataOnBackupStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -33861,33 +33834,6 @@ abstract class ApiHelper {
 
     def revokeResourceSharing(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RevokeResourceSharingAction.class) Closure c) {
         def a = new org.zstack.sdk.RevokeResourceSharingAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def runIAM2Script(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RunIAM2ScriptAction.class) Closure c) {
-        def a = new org.zstack.sdk.RunIAM2ScriptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

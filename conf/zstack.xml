@@ -105,7 +105,6 @@
     <import resource="springConfigXml/captcha.xml"/>
     <import resource="springConfigXml/log.xml"/>
     <import resource="springConfigXml/sdnController.xml"/>
-    <import resource="springConfigXml/cas.xml"/>
     <import resource="springConfigXml/directoryManager.xml"/>
     <import resource="springConfigXml/sshKeyPair.xml"/>
     <import resource="springConfigXml/sugonSdnController.xml"/>
