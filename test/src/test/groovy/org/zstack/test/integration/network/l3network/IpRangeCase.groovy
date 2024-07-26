@@ -451,6 +451,33 @@ class IpRangeCase extends SubCase {
                 assert ip.ip == ipv6.ip
             }
         }
+
+        FreeIpInventory ipv61 = getFreeIp {
+            l3NetworkUuid = l3_2.uuid
+            ipVersion = IPv6Constants.IPv6
+            limit = 1} [0]
+        FreeIpInventory ipv41 = getFreeIp {
+            l3NetworkUuid = l3_2.uuid
+            ipVersion = IPv6Constants.IPv4
+            limit = 1} [0]
+        setVmStaticIp {
+            vmInstanceUuid = vm_l3_3.uuid
+            l3NetworkUuid = l3_2.uuid
+            ip = ipv41.ip
+            ip6 = ipv61.ip
+        }
+        nic2 = queryVmNic {
+            conditions = ["l3NetworkUuid=${l3_2.uuid}", "vmInstance.uuid=${vm_l3_3.uuid}"]
+        }[0]
+        assert nic2.usedIps.size() == 2
+        for (UsedIpInventory ip : nic2.usedIps) {
+            if (ip.ipVersion == IPv6Constants.IPv4) {
+                assert ip.ip == ipv41.ip
+            } else {
+                assert ip.ip == ipv61.ip
+            }
+        }
+
         detachL3NetworkFromVm {
             vmNicUuid = nic2.uuid
         }

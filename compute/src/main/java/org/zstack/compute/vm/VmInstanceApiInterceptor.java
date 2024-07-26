@@ -628,6 +628,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("could not set ip address, due to no ip address is specified"));
             }
         }
+        List<NormalIpRangeVO> ipv4Ranges = Q.New(NormalIpRangeVO.class)
+                .eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
+        List<NormalIpRangeVO> ipv6Ranges = Q.New(NormalIpRangeVO.class)
+                .eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         List<VmNicVO> vmNics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
         boolean l3Found = false;
         for (VmNicVO nic : vmNics) {
@@ -652,7 +658,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (msg.getIp() != null && !l3NetworkVO.enableIpAddressAllocation()) {
             l3Found = true;
             if (msg.getNetmask() == null) {
-                throw new ApiMessageInterceptionException(argerr("ipv4 address need a netmask"));
+                if (ipv4Ranges.isEmpty()) {
+                    throw new ApiMessageInterceptionException(argerr("ipv4 address need a netmask"));
+                } else {
+                    msg.setNetmask(ipv6Ranges.get(0).getNetmask());
+                }
             }
             if (msg.getGateway() == null) {
                 msg.setGateway("");
@@ -664,7 +674,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (msg.getIp6() != null && !l3NetworkVO.enableIpAddressAllocation()) {
             l3Found = true;
             if (msg.getIpv6Prefix() == null) {
-                throw new ApiMessageInterceptionException(argerr("ipv6 address need a prefix"));
+                if (ipv6Ranges.isEmpty()) {
+                    throw new ApiMessageInterceptionException(argerr("ipv6 address need a prefix"));
+                } else {
+                    msg.setIpv6Prefix(ipv6Ranges.get(0).getPrefixLen().toString());
+                }
             }
             if (msg.getIpv6Gateway() == null) {
                 msg.setIpv6Gateway("");
