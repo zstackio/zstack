@@ -32,10 +32,16 @@ public class UpdateModelServiceAction extends AbstractAction {
     public java.lang.String name;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dockerImage;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String yaml;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmImageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer requestCpu;
@@ -44,7 +50,19 @@ public class UpdateModelServiceAction extends AbstractAction {
     public java.lang.Long requestMemory;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String modelUuid;
+    public java.lang.String gpuComputeCapability;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String startCommand;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String pythonVersion;
+
+    @Param(required = false, validValues = {"Endpoint","FineTune"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
+    @Param(required = false, validValues = {"Other","Bentoml","HuggingFace"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String framework;
 
     @Param(required = false)
     public java.util.List systemTags;
