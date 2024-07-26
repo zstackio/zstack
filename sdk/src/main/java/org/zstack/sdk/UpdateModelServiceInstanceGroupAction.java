@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateModelServiceAction extends AbstractAction {
+public class UpdateModelServiceInstanceGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateModelServiceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateModelServiceResult value;
+        public org.zstack.sdk.UpdateModelServiceInstanceGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,41 +28,8 @@ public class UpdateModelServiceAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dockerImage;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String yaml;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmImageUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer requestCpu;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long requestMemory;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gpuComputeCapability;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String startCommand;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String pythonVersion;
-
-    @Param(required = false, validValues = {"Endpoint","FineTune"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, validValues = {"Other","Bentoml","HuggingFace"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String framework;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -96,8 +63,8 @@ public class UpdateModelServiceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateModelServiceResult value = res.getResult(org.zstack.sdk.UpdateModelServiceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateModelServiceResult() : value; 
+        org.zstack.sdk.UpdateModelServiceInstanceGroupResult value = res.getResult(org.zstack.sdk.UpdateModelServiceInstanceGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateModelServiceInstanceGroupResult() : value; 
 
         return ret;
     }
@@ -127,10 +94,10 @@ public class UpdateModelServiceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ai/model-services/{uuid}";
+        info.path = "/model-service-instance-groups/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateModelService";
+        info.parameterName = "updateModelServiceInstanceGroup";
         return info;
     }
 
