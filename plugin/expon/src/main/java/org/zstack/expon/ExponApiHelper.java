@@ -2,6 +2,7 @@ package org.zstack.expon;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -837,11 +838,20 @@ public class ExponApiHelper implements SingleFlightExecutor {
         errorOut(rsp);
     }
 
-    public List<String> getVolumeBoundPath(String volId) {
-        GetVolumeBoundPathRequest req = new GetVolumeBoundPathRequest();
-        req.setVolId(volId);
-        GetVolumeBoundPathResponse rsp = callErrorOut(req, GetVolumeBoundPathResponse.class);
-        return rsp.getPath();
+    public List<String> getVolumeBoundPath(String volId, List<FailureDomainModule> pools) {
+        VolumeModule volume = getVolume(volId);
+        List<String> paths = Lists.newArrayList();
+        for (FailureDomainModule pool : pools) {
+            GetFailureDomainBlacklistRequest req = new GetFailureDomainBlacklistRequest();
+            req.setId(pool.getId());
+            GetFailureDomainBlacklistResponse rsp = callErrorOut(req, GetFailureDomainBlacklistResponse.class);
+            paths.addAll(rsp.getEntries().stream()
+                    .map(BlacklistModule::getPath)
+                    .filter(path -> ExponNameHelper.getVolumeNameFromBoundPath(path).equals(volume.getVolumeName()))
+                    .collect(Collectors.toList()));
+        }
+
+        return paths;
     }
 
     public void addVolumePathToBlacklist(String path) {
@@ -850,11 +860,9 @@ public class ExponApiHelper implements SingleFlightExecutor {
         callErrorOut(req, AddVolumePathToBlacklistResponse.class);
     }
 
-    public void removeVolumePathFromBlacklist(String path, String volId) {
-        GetVolumeBoundPathRequest gReq = new GetVolumeBoundPathRequest();
-        gReq.setVolId(volId);
-        GetVolumeBoundPathResponse gRsp = callErrorOut(gReq, GetVolumeBoundPathResponse.class);
-        if (!gRsp.getPath().contains(path)) {
+    public void removeVolumePathFromBlacklist(String path, String volId, List<FailureDomainModule> pools) {
+        List<String> paths = getVolumeBoundPath(volId, pools);
+        if (!paths.contains(path)) {
             return;
         }
 
@@ -868,6 +876,24 @@ public class ExponApiHelper implements SingleFlightExecutor {
         }
 
         errorOut(rsp);
+    }
+
+    public void removeVolumePathsFromBlacklist(List<String> paths) {
+        if (paths.isEmpty()) {
+            return;
+        }
+        for (String p : paths) {
+            RemoveVolumePathFromBlacklistRequest req = new RemoveVolumePathFromBlacklistRequest();
+            req.setPath(p);
+
+            RemoveVolumePathFromBlacklistResponse rsp = call(req, RemoveVolumePathFromBlacklistResponse.class);
+            // {\"code\":200502,\"msg\":\"Black list not exist\"}
+            if (rsp.isError(ExponError.BLACK_LIST_OPERATION_FAILED) && rsp.getMessage().contains("list not exist")) {
+                return;
+            }
+
+            errorOut(rsp);
+        }
     }
 
     public List<BlacklistModule> getFailureDomainBlacklist() {

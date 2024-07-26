@@ -194,7 +194,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         }
 
         // TODO not remove every time
-        apiHelper.removeVolumePathFromBlacklist(buildExponVolumeBoundPath(uss, exponVol.getVolumeName()), exponVol.getId());
+        apiHelper.removeVolumePathFromBlacklist(buildExponVolumeBoundPath(uss, exponVol.getVolumeName()), exponVol.getId(), getSelfPools());
 
         VhostVolumeTO to = new VhostVolumeTO();
         to.setInstallPath(vhost.getPath());
@@ -711,7 +711,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
         retry(() -> apiHelper.removeVhostVolumeFromUss(volId, vhost.getId(), uss.getId()));
 
-        apiHelper.removeVolumePathFromBlacklist(buildExponVolumeBoundPath(uss, volUuid), volId);
+        apiHelper.removeVolumePathFromBlacklist(buildExponVolumeBoundPath(uss, vol.getVolumeName()), volId, getSelfPools());
 }
     private void deactivateIscsi(String installPath, HostInventory h) {
         IscsiClientGroupModule client = getLunAttachedIscsiClient(installPath);
@@ -1187,10 +1187,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         String snapId = getSnapIdFromPath(snapshotInstallPath);
         String poolName = getPoolNameFromPath(snapshotInstallPath);
         // hardcode: clean blacklist before recovery snapshot
-        List<String> paths = apiHelper.getVolumeBoundPath(volId);
-        for (String path : paths) {
-            apiHelper.removeVolumePathFromBlacklist(path, volId);
-        }
+        List<String> paths = apiHelper.getVolumeBoundPath(volId, getSelfPools());
+        apiHelper.removeVolumePathsFromBlacklist(paths);
 
         try {
             VolumeModule vol = apiHelper.recoverySnapshot(volId, snapId);
