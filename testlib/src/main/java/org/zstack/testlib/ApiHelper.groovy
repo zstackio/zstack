@@ -47017,6 +47017,33 @@ abstract class ApiHelper {
     }
 
 
+    def getIAM2ProjectContainerClusterCandidates(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.container.GetIAM2ProjectContainerClusterCandidatesAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.container.GetIAM2ProjectContainerClusterCandidatesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def addPolicyStatementsToRole(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.AddPolicyStatementsToRoleAction.class) Closure c) {
         def a = new org.zstack.sdk.identity.role.api.AddPolicyStatementsToRoleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
