@@ -67,6 +67,15 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "hostParams"
+					enclosedIn ""
+					desc "主机参数列表"
+					location "body"
+					type "String"
+					optional true
+					since "4.3.0"
+				}
 			}
         }
 

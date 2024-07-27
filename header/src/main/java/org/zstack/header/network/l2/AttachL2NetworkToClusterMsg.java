@@ -8,6 +8,7 @@ public class AttachL2NetworkToClusterMsg extends NeedReplyMessage implements L2N
     private String l2NetworkUuid;
     private String clusterUuid;
     private String l2ProviderType;
+    private String hostParams;
 
     public String getL2NetworkUuid() {
         return l2NetworkUuid;
@@ -31,5 +32,13 @@ public class AttachL2NetworkToClusterMsg extends NeedReplyMessage implements L2N
 
     public void setL2ProviderType(String l2ProviderType) {
         this.l2ProviderType = l2ProviderType;
+    }
+
+    public String getHostParams() {
+        return hostParams;
+    }
+
+    public void setHostParams(String hostParams) {
+        this.hostParams = hostParams;
     }
 }

@@ -12,6 +12,10 @@ public interface L2NetworkRealizationExtensionPoint {
 
     void check(L2NetworkInventory l2Network, String hostUuid, Completion completion);
 
+    default void update(L2NetworkInventory oldL2Network, L2NetworkInventory newL2Network, String hostUuid, Completion completion) {
+        completion.success();
+    }
+
     L2NetworkType getSupportedL2NetworkType();
 
     HypervisorType getSupportedHypervisorType();

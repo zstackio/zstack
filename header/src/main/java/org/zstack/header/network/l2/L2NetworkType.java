@@ -1,12 +1,16 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.utils.DebugUtils;
+
 import java.util.*;
 
 public class L2NetworkType {
     private static Map<String, L2NetworkType> types = Collections.synchronizedMap(new HashMap<String, L2NetworkType>());
     private final String typeName;
-    private boolean exposed = true;
-    private boolean sriovSupported = false;
+    private boolean exposed;
+    private boolean sriovSupported;
+    // whether the l2 is attached to all hosts in the cluster at once
+    private boolean attachToAllHosts = true;
 
     public static boolean hasType(String typeName) {
         return types.containsKey(typeName);
@@ -17,14 +21,13 @@ public class L2NetworkType {
         types.put(typeName, this);
     }
 
-    public L2NetworkType(String typeName, boolean exposed) {
-        this(typeName);
-        this.exposed = exposed;
-    }
-
-    public L2NetworkType(String typeName, boolean exposed, boolean sriovSupported) {
-        this(typeName, exposed);
-        this.sriovSupported = sriovSupported;
+    static L2NetworkType buildL2NetworkType(String typeName, boolean exposed,
+                                            boolean sriovSupported, boolean attachToHostSupported) {
+        L2NetworkType type = new L2NetworkType(typeName);
+        type.exposed = exposed;
+        type.sriovSupported = sriovSupported;
+        type.attachToAllHosts = attachToHostSupported;
+        return type;
     }
 
     public boolean isExposed() {
@@ -41,6 +44,14 @@ public class L2NetworkType {
 
     public void setSriovSupported(boolean isSupportSriov) {
         this.sriovSupported = isSupportSriov;
+    }
+
+    public boolean isAttachToAllHosts() {
+        return attachToAllHosts;
+    }
+
+    public void setAttachToAllHosts(boolean attachToAllHosts) {
+        this.attachToAllHosts = attachToAllHosts;
     }
 
     public static L2NetworkType valueOf(String typeName) {
@@ -72,7 +83,7 @@ public class L2NetworkType {
     }
 
     public static Set<String> getAllTypeNames() {
-        HashSet<String> exposedTypes = new HashSet<String>();
+        HashSet<String> exposedTypes = new HashSet<>();
         for (L2NetworkType type : types.values()) {
             if (type.isExposed()) {
                 exposedTypes.add(type.toString());
@@ -81,13 +92,45 @@ public class L2NetworkType {
         return exposedTypes;
     }
 
-    public static Set<String> getSriovSupportedTypeName() {
-        HashSet<String> supportedTypes = new HashSet<String>();
+    public static Set<String> getSriovSupportedTypeNames() {
+        HashSet<String> supportedTypes = new HashSet<>();
         for (L2NetworkType type : types.values()) {
             if (type.isSriovSupported()) {
                 supportedTypes.add(type.toString());
             }
         }
         return supportedTypes;
+    }
+
+    public static class L2NetworkTypeBuilder {
+        private String typeName;
+        private boolean exposed = true;
+        private boolean sriovSupported = false;
+        private boolean attachToAllHosts = true;
+
+        public L2NetworkTypeBuilder typeName(String typeName) {
+            this.typeName = typeName;
+            return this;
+        }
+
+        public L2NetworkTypeBuilder exposed(boolean exposed) {
+            this.exposed = exposed;
+            return this;
+        }
+
+        public L2NetworkTypeBuilder sriovSupported(boolean sriovSupported) {
+            this.sriovSupported = sriovSupported;
+            return this;
+        }
+
+        public L2NetworkTypeBuilder attachToAllHosts(boolean attachToAllHosts) {
+            this.attachToAllHosts = attachToAllHosts;
+            return this;
+        }
+
+        public L2NetworkType build() {
+            DebugUtils.Assert(typeName != null, "type name is mandatory");
+            return buildL2NetworkType(typeName, exposed, sriovSupported, attachToAllHosts);
+        }
     }
 }

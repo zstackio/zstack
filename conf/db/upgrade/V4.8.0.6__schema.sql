@@ -37,14 +37,32 @@ CALL ADD_COLUMN('LdapServerVO', 'usernameProperty', 'varchar(255)', 0, 'cn');
 DROP TABLE IF EXISTS `zstack`.`LdapAccountRefVO`;
 DROP TABLE IF EXISTS `zstack`.`LdapResourceRefVO`;
 
-CALL ADD_COLUMN('AccountVO', 'state', 'varchar(128)', 0, 'Enabled');
+CALL INSERT_COLUMN('AccountVO', 'state', 'varchar(128)', 0, 'Enabled', 'type');
 
 -- Feature: Backup Management | ZSV-5764
 
-CALL ADD_COLUMN('SchedulerJobGroupVO', 'zoneUuid', 'varchar(32)', 1, NULL);
-CALL ADD_COLUMN('SchedulerJobGroupVO', 'managementNodeUuid', 'varchar(32)', 1, NULL);
+CALL INSERT_COLUMN('SchedulerJobGroupVO', 'zoneUuid', 'varchar(32)', 1, NULL, 'state');
+CALL INSERT_COLUMN('SchedulerJobGroupVO', 'managementNodeUuid', 'varchar(32)', 1, NULL, 'zoneUuid');
 ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD CONSTRAINT `fkSchedulerJobGroupVOManagementNodeVO` FOREIGN KEY (`managementNodeUuid`) REFERENCES `ManagementNodeVO` (`uuid`) ON DELETE SET NULL;
-CALL ADD_COLUMN('SchedulerJobGroupJobRefVO', 'priority', 'int', 0, 0);
+CALL INSERT_COLUMN('SchedulerJobGroupJobRefVO', 'priority', 'int', 0, 0, 'schedulerJobGroupUuid');
+
+-- Feature: support host without bond to attach | ZSV-5925
+
+CALL INSERT_COLUMN('L2VirtualSwitchNetworkVO', 'vSwitchIndex', 'INT unsigned', 1, NULL, 'uuid');
+DELETE FROM `zstack`.`L2NetworkHostRefVO` WHERE `attachStatus` = 'Detached';
+call DROP_COLUMN('L2NetworkHostRefVO', 'attachStatus');
+CALL INSERT_COLUMN('L2NetworkHostRefVO', 'bridgeName', 'varchar(16)', 1, NULL, 'l2ProviderType');
+
+CREATE TABLE IF NOT EXISTS `zstack`.`UplinkGroupVO` (
+    `id` bigint unsigned NOT NULL UNIQUE,
+    `interfaceName` varchar(32) NOT NULL,
+    `type` varchar(32) NOT NULL,
+    `bondingUuid` varchar(32) DEFAULT NULL,
+    `interfaceUuid` varchar(32) DEFAULT NULL,
+    PRIMARY KEY  (`id`),
+    CONSTRAINT `fkUplinkGroupVOHostNetworkBondingVO` FOREIGN KEY (`bondingUuid`) REFERENCES HostNetworkBondingVO (`uuid`) ON DELETE SET NULL,
+    CONSTRAINT `fkUplinkGroupVOHostNetworkInterfaceVO` FOREIGN KEY (`interfaceUuid`) REFERENCES HostNetworkInterfaceVO (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Other
 

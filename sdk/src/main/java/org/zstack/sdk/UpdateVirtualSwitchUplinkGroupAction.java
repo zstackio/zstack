@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachL2NetworkToHostAction extends AbstractAction {
+public class UpdateVirtualSwitchUplinkGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachL2NetworkToHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachL2NetworkToHostResult value;
+        public org.zstack.sdk.UpdateVirtualSwitchUplinkGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,16 +26,19 @@ public class AttachL2NetworkToHostAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l2NetworkUuid;
+    public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String hostUuid;
 
-    @Param(required = false, validValues = {"LinuxBridge"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l2ProviderType;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List slaveUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostParam;
+    public java.util.List slaveNames;
+
+    @Param(required = false, validValues = {"LinuxBonding","OvsBonding"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type = "LinuxBonding";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -69,8 +72,8 @@ public class AttachL2NetworkToHostAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachL2NetworkToHostResult value = res.getResult(org.zstack.sdk.AttachL2NetworkToHostResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachL2NetworkToHostResult() : value; 
+        org.zstack.sdk.UpdateVirtualSwitchUplinkGroupResult value = res.getResult(org.zstack.sdk.UpdateVirtualSwitchUplinkGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVirtualSwitchUplinkGroupResult() : value; 
 
         return ret;
     }
@@ -99,11 +102,11 @@ public class AttachL2NetworkToHostAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/l2-networks/{l2NetworkUuid}/hosts/{hostUuid}";
+        info.httpMethod = "PUT";
+        info.path = "/l2-networks/virtual-switch/{uuid}/uplink-group";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateVirtualSwitchUplinkGroup";
         return info;
     }
 
