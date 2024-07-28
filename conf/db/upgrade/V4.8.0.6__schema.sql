@@ -39,7 +39,14 @@ DROP TABLE IF EXISTS `zstack`.`LdapResourceRefVO`;
 
 CALL ADD_COLUMN('AccountVO', 'state', 'varchar(128)', 0, 'Enabled');
 
+-- Feature: Backup Management | ZSV-5764
+
 ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD COLUMN `zoneUuid` VARCHAR(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD COLUMN `managementNodeUuid` VARCHAR(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD CONSTRAINT `fkSchedulerJobGroupVOManagementNodeVO` FOREIGN KEY (`managementNodeUuid`) REFERENCES `ManagementNodeVO` (`uuid`) ON DELETE SET NULL;
 ALTER TABLE `zstack`.`SchedulerJobGroupJobRefVO` ADD COLUMN `priority` int DEFAULT 0;
+
+-- Other
+
+DELETE FROM `zstack`.`EncryptEntityMetadataVO` WHERE `entityName` = 'IAM2VirtualIDVO';
+DELETE FROM `zstack`.`EncryptEntityMetadataVO` WHERE `entityName` = 'IAM2ProjectAttributeVO';
