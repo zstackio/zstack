@@ -1,0 +1,1 @@
+ALTER TABLE BareMetal2InstanceProvisionNicVO MODIFY mac varchar(17) NULL;
