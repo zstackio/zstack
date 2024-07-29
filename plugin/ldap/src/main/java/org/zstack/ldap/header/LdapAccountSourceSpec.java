@@ -3,7 +3,6 @@ package org.zstack.ldap.header;
 import org.zstack.identity.imports.entity.SyncCreatedAccountStrategy;
 import org.zstack.identity.imports.entity.SyncDeletedAccountStrategy;
 import org.zstack.identity.imports.header.AbstractAccountSourceSpec;
-import org.zstack.ldap.LdapConstant;
 import org.zstack.ldap.entity.LdapEncryptionType;
 import org.zstack.ldap.entity.LdapServerType;
 
@@ -13,11 +12,11 @@ public class LdapAccountSourceSpec extends AbstractAccountSourceSpec {
     private String logInUserName;
     private String logInPassword;
     private String serverName;
-    private String filter = LdapConstant.DEFAULT_PERSON_FILTER;
-    private LdapEncryptionType encryption = LdapEncryptionType.None;
-    private LdapServerType serverType = LdapServerType.Unknown;
-    private SyncCreatedAccountStrategy createAccountStrategy = SyncCreatedAccountStrategy.CreateAccount;
-    private SyncDeletedAccountStrategy deleteAccountStrategy = SyncDeletedAccountStrategy.NoAction;
+    private String filter;
+    private LdapEncryptionType encryption;
+    private LdapServerType serverType;
+    private SyncCreatedAccountStrategy createAccountStrategy;
+    private SyncDeletedAccountStrategy deleteAccountStrategy;
 
     /**
      * Which field in LDAP server does the user use as the username for logging in?

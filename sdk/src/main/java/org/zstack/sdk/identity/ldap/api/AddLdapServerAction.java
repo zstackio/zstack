@@ -53,7 +53,7 @@ public class AddLdapServerAction extends AbstractAction {
     public java.lang.String usernameProperty = "cn";
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String filter;
+    public java.lang.String filter = "(objectClass=person)";
 
     @Param(required = false, validValues = {"NoAction","CreateDisabledAccount","CreateAccount"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String syncCreatedAccountStrategy = "CreateAccount";
