@@ -41,10 +41,10 @@ CALL ADD_COLUMN('AccountVO', 'state', 'varchar(128)', 0, 'Enabled');
 
 -- Feature: Backup Management | ZSV-5764
 
-ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD COLUMN `zoneUuid` VARCHAR(32) DEFAULT NULL;
-ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD COLUMN `managementNodeUuid` VARCHAR(32) DEFAULT NULL;
+CALL ADD_COLUMN('SchedulerJobGroupVO', 'zoneUuid', 'varchar(32)', 1, NULL);
+CALL ADD_COLUMN('SchedulerJobGroupVO', 'managementNodeUuid', 'varchar(32)', 1, NULL);
 ALTER TABLE `zstack`.`SchedulerJobGroupVO` ADD CONSTRAINT `fkSchedulerJobGroupVOManagementNodeVO` FOREIGN KEY (`managementNodeUuid`) REFERENCES `ManagementNodeVO` (`uuid`) ON DELETE SET NULL;
-ALTER TABLE `zstack`.`SchedulerJobGroupJobRefVO` ADD COLUMN `priority` int DEFAULT 0;
+CALL ADD_COLUMN('SchedulerJobGroupJobRefVO', 'priority', 'int', 0, 0);
 
 -- Other
 
