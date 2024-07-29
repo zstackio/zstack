@@ -51,7 +51,7 @@ public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
     private String usernameProperty = LdapConstant.LDAP_UID_KEY;
 
     @APIParam(maxLength = 2048, required = false)
-    private String filter;
+    private String filter = LdapConstant.DEFAULT_PERSON_FILTER;
 
     @APIParam(validEnums = {SyncCreatedAccountStrategy.class}, required = false)
     private String syncCreatedAccountStrategy = "CreateAccount";
