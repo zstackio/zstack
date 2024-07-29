@@ -661,7 +661,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 if (ipv4Ranges.isEmpty()) {
                     throw new ApiMessageInterceptionException(argerr("ipv4 address need a netmask"));
                 } else {
-                    msg.setNetmask(ipv6Ranges.get(0).getNetmask());
+                    msg.setNetmask(ipv4Ranges.get(0).getNetmask());
                 }
             }
             if (msg.getGateway() == null) {
