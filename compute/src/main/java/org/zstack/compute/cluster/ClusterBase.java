@@ -37,6 +37,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.AddBackupStorageStruct;
 import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
@@ -120,8 +121,8 @@ public class ClusterBase extends AbstractCluster {
         excludePackages = msg.getExcludePackages() == null ? "" :String.join(",", msg.getExcludePackages());
         updatePackages = msg.getUpdatePackages() == null ? "" :String.join(",", msg.getUpdatePackages());
         releaseVersion = msg.getReleaseVersion() == null ? "" :msg.getReleaseVersion();
-        jobData = String.format("{'uuid':'%s', 'excludePackages':'%s', 'updatePackages':'%s', 'releaseVersion':'%s'}",
-                    msg.getUuid(), excludePackages, updatePackages, releaseVersion);
+        jobData = String.format("{'uuid':'%s', 'excludePackages':'%s', 'updatePackages':'%s', 'releaseVersion':'%s', 'force':%s}",
+                msg.getUuid(), excludePackages, updatePackages, releaseVersion, msg.isForce());
 
         SubmitLongJobMsg smsg = new SubmitLongJobMsg();
         smsg.setJobName(APIUpdateClusterOSMsg.class.getSimpleName());
@@ -294,8 +295,14 @@ public class ClusterBase extends AbstractCluster {
     private void handle(UpdateClusterOSMsg msg) {
         UpdateClusterOSReply reply = new UpdateClusterOSReply();
         reply.setResults(new ConcurrentHashMap<>());
+        UpdateClusterOSStruct updateClusterOSStruct = new UpdateClusterOSStruct();
+        updateClusterOSStruct.setCluster(self);
+        updateClusterOSStruct.setForce(msg.isForce());
+        updateClusterOSStruct.setUpdatePackages(msg.getUpdatePackages());
+        updateClusterOSStruct.setExcludePackages(msg.getExcludePackages());
+        updateClusterOSStruct.setReleaseVersion(msg.getReleaseVersion());
 
-        ErrorCode error = extpEmitter.preUpdateOS(self);
+        ErrorCode error = extpEmitter.preUpdateOS(updateClusterOSStruct);
         if (error != null) {
             reply.setError(error);
             bus.reply(msg, reply);

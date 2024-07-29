@@ -100,13 +100,13 @@ class ClusterExtensionPointEmitter implements Component {
         });
 	}
 
-    ErrorCode preUpdateOS(final ClusterVO cls) {
+    ErrorCode preUpdateOS(UpdateClusterOSStruct updateClusterOSStruct) {
         if (updateOSExts == null || updateOSExts.isEmpty()) {
             return null;
         }
 
         for (ClusterUpdateOSExtensionPoint ext : updateOSExts) {
-            String error = ext.preUpdateClusterOS(cls);
+            String error = ext.preUpdateClusterOS(updateClusterOSStruct);
             if (error != null) {
                 return operr(error);
             }
