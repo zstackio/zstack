@@ -16,7 +16,7 @@ public class Form<T> {
     private Map<String, ListConverter> columnListConverter = new HashMap<>();
     private Map<String, Consumer<T>> columnConsumer = new HashMap<>();
     private List<Converter> headerConverter = new ArrayList<>();
-    private ValidateFunction<? super T> validator = null;
+    private List<ValidateFunction<? super T>> validators = null;
     private String[] columns;
 
     private final int limit;
@@ -66,8 +66,8 @@ public class Form<T> {
         return this;
     }
 
-    public Form<T> withValidator(ValidateFunction<? super T> validator) {
-        this.validator = validator;
+    public Form<T> withValidator(List<ValidateFunction<? super T>> validators) {
+        this.validators = validators;
         return this;
     }
 
@@ -182,8 +182,10 @@ public class Form<T> {
             }
         }
 
-        if (validator != null) {
-            validator.validate(object);
+        if (validators != null) {
+            for (ValidateFunction<? super T> validator : validators) {
+                validator.validate(object);
+            }
         }
         return object;
     }
