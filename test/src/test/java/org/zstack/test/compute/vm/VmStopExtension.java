@@ -51,11 +51,6 @@ public class VmStopExtension implements VmInstanceStopExtensionPoint {
         }
     }
 
-    @Override
-    public void afterFailedToStopVm(VmInstanceInventory inv, ErrorCode reason) {
-
-    }
-
     public boolean isPreventStop() {
         return preventStop;
     }

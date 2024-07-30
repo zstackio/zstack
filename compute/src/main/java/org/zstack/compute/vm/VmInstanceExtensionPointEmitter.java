@@ -177,15 +177,6 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
-    public void afterFailedToStopVm(final VmInstanceInventory inv, final ErrorCode reason) {
-        CollectionUtils.forEach(stopVmExtensions, new ForEachFunction<VmInstanceStopExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStopExtensionPoint arg) {
-                arg.afterFailedToStopVm(inv, reason);
-            }
-        });
-    }
-
     public ErrorCode preRebootVm(final VmInstanceInventory inv) {
         for (VmInstanceRebootExtensionPoint ext : rebootVmExtensions) {
             try {

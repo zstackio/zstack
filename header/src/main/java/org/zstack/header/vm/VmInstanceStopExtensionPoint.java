@@ -10,6 +10,4 @@ public interface VmInstanceStopExtensionPoint {
     void afterStopVm(VmInstanceInventory inv);
 
     void failedToStopVm(VmInstanceInventory inv, ErrorCode reason);
-
-    void afterFailedToStopVm(VmInstanceInventory inv, ErrorCode reason);
 }

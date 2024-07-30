@@ -8123,7 +8123,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-                extEmitter.failedToStopVm(inv, errCode);
                 if (HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
                     checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
                         @Override
@@ -8133,11 +8132,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                             extEmitter.failedToStopVm(inv, errCode);
                         }
                     });
-                } else if (HostErrors.OPERATION_FAILURE_GC_ELIGIBLE.isEqual(errCode.getCode()) && !spec.isGcOnStopFailure()) {
-                    self.setState(originState);
-                    self = dbf.updateAndRefresh(self);
-                    completion.fail(errCode);
-                    extEmitter.failedToStopVm(inv, errCode);
                 } else {
                     self.setState(HostErrors.HOST_IS_DISCONNECTED.isEqual(errCode.getCode()) ? VmInstanceState.Unknown : originState);
                     self = dbf.updateAndRefresh(self);
