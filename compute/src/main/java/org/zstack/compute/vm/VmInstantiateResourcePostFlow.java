@@ -28,13 +28,8 @@ public class VmInstantiateResourcePostFlow implements Flow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private static List<PostVmInstantiateResourceExtensionPoint> extensions;
+    private final List<PostVmInstantiateResourceExtensionPoint> extensions = pluginRgty.getExtensionList(PostVmInstantiateResourceExtensionPoint.class);
 
-    public VmInstantiateResourcePostFlow() {
-        if (extensions == null) {
-            extensions = pluginRgty.getExtensionList(PostVmInstantiateResourceExtensionPoint.class);
-        }
-    }
 
     public void run(FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());

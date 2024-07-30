@@ -32,7 +32,7 @@ import static org.zstack.utils.CollectionUtils.distinctByKey;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
-    private static CLogger logger = Utils.getLogger(PrimaryStorageMainAllocatorFlow.class);
+    private static final CLogger logger = Utils.getLogger(PrimaryStorageMainAllocatorFlow.class);
 
     @Autowired
     protected DatabaseFacade dbf;

@@ -31,7 +31,7 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
-    CLogger logger = Utils.getLogger(VmAssignDeviceIdToAttachingVolumeFlow.class);
+    private static final CLogger logger = Utils.getLogger(VmAssignDeviceIdToAttachingVolumeFlow.class);
     @Autowired
     private DatabaseFacade dbf;
     @Autowired

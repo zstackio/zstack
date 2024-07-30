@@ -34,7 +34,7 @@ import static org.zstack.core.Platform.err;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAfterInstantiateVolumeInAttachingVolumeFlow implements Flow {
-    CLogger logger = Utils.getLogger(VmAfterInstantiateVolumeInAttachingVolumeFlow.class);
+    private static final CLogger logger = Utils.getLogger(VmAfterInstantiateVolumeInAttachingVolumeFlow.class);
     @Autowired
     private DatabaseFacade dbf;
     @Autowired

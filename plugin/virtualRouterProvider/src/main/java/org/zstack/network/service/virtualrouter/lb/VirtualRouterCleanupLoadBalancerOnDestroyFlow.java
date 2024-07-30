@@ -20,7 +20,7 @@ import java.util.Map;
 public class VirtualRouterCleanupLoadBalancerOnDestroyFlow extends NoRollbackFlow {
     @Autowired
     private DatabaseFacade dbf;
-    private static CLogger logger = Utils.getLogger(VirtualRouterCleanupLoadBalancerOnDestroyFlow.class);
+    private static final CLogger logger = Utils.getLogger(VirtualRouterCleanupLoadBalancerOnDestroyFlow.class);
 
     @Override
     public void run(FlowTrigger trigger, Map data) {

@@ -46,7 +46,7 @@ import static org.zstack.core.Platform.operr;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncEipOnStartFlow implements Flow {
-    private static CLogger logger = Utils.getLogger(VirtualRouterSyncEipOnStartFlow.class);
+    private static final CLogger logger = Utils.getLogger(VirtualRouterSyncEipOnStartFlow.class);
 
     @Autowired
     private DatabaseFacade dbf;
