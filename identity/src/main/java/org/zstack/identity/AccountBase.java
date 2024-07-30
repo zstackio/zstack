@@ -444,7 +444,7 @@ public class AccountBase extends AbstractAccount {
 
     private void handle(APIUpdateQuotaMsg msg) {
         for (QuotaExtensionPoint ext : pluginRgty.getExtensionList(QuotaExtensionPoint.class)) {
-            ext.beforeUpdateQuota(msg.getQuotaVO(), msg.getAccountUuid());
+            ext.beforeUpdateQuota(msg.getQuotaVO(), msg.getIdentityUuid());
         }
 
         QuotaVO quota = msg.getQuotaVO();
