@@ -67,14 +67,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceRefVO` (
 
 CREATE TABLE  `zstack`.`ModelServiceInstanceGroupVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
-    `modelServiceUuid` varchar(32) NOT NULL,
+    `modelServiceUuid` varchar(32) DEFAULT NULL,
     `modelUuid` varchar(32) NOT NULL,
     `name` varchar(255) DEFAULT NULL,
     `status` varchar(255) NOT NULL,
     `type` varchar(128) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    CONSTRAINT fkModelServiceInstanceGroupVOModelServiceModelServiceVO FOREIGN KEY (modelServiceUuid) REFERENCES ModelServiceVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
+    CONSTRAINT fkModelServiceInstanceGroupVOModelServiceModelServiceVO FOREIGN KEY (modelServiceUuid) REFERENCES ModelServiceVO (uuid) ON DELETE SET NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
