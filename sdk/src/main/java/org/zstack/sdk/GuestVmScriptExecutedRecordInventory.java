@@ -68,6 +68,14 @@ public class GuestVmScriptExecutedRecordInventory  {
         return this.version;
     }
 
+    public java.lang.String scriptContent;
+    public void setScriptContent(java.lang.String scriptContent) {
+        this.scriptContent = scriptContent;
+    }
+    public java.lang.String getScriptContent() {
+        return this.scriptContent;
+    }
+
     public java.sql.Timestamp startTime;
     public void setStartTime(java.sql.Timestamp startTime) {
         this.startTime = startTime;
