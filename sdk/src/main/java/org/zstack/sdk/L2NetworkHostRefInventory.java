@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.L2NetworkAttachStatus;
+
 
 public class L2NetworkHostRefInventory  {
 
@@ -28,12 +28,12 @@ public class L2NetworkHostRefInventory  {
         return this.l2ProviderType;
     }
 
-    public L2NetworkAttachStatus attachStatus;
-    public void setAttachStatus(L2NetworkAttachStatus attachStatus) {
-        this.attachStatus = attachStatus;
+    public java.lang.String bridgeName;
+    public void setBridgeName(java.lang.String bridgeName) {
+        this.bridgeName = bridgeName;
     }
-    public L2NetworkAttachStatus getAttachStatus() {
-        return this.attachStatus;
+    public java.lang.String getBridgeName() {
+        return this.bridgeName;
     }
 
     public java.sql.Timestamp createDate;

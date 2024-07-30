@@ -235,3 +235,41 @@ BEGIN
 SELECT CURTIME();
 END$$
 DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE `INSERT_COLUMN`(
+    IN tb_name VARCHAR(64),
+    IN col_name VARCHAR(64),
+    IN col_data_type VARCHAR(64),
+    IN allow_null BOOL,
+    IN default_value VARCHAR(255),
+    IN col_name_to_after VARCHAR(64)
+)
+BEGIN
+	DECLARE alter_sql VARCHAR(1000);
+    IF NOT EXISTS( SELECT 1
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE table_name = tb_name
+            AND table_schema = 'zstack'
+            AND column_name = col_name) THEN
+        SET @alter_sql = CONCAT('ALTER TABLE zstack.', tb_name, ' ADD COLUMN ', col_name, ' ', col_data_type);
+        IF NOT allow_null THEN
+            SET @alter_sql = CONCAT(@alter_sql, ' NOT NULL');
+        END IF;
+        IF default_value IS NOT NULL THEN
+        	SET @alter_sql = CONCAT(@alter_sql, ' DEFAULT ''', default_value, '''');
+        ELSE
+        	SET @alter_sql = CONCAT(@alter_sql, ' DEFAULT NULL');
+        END IF;
+        IF col_name_to_after IS NOT NULL THEN
+            SET @alter_sql = CONCAT(@alter_sql, ' AFTER ', col_name_to_after);
+        END IF;
+        SELECT @alter_sql;
+        PREPARE stmt FROM @alter_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+
+SELECT CURTIME();
+END$$
+DELIMITER ;
