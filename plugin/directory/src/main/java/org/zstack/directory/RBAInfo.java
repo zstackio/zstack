@@ -10,6 +10,7 @@ public class RBAInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("vm-directory")
                 .adminOnlyAPIs("org.zstack.directory.**")
                 .build();
     }

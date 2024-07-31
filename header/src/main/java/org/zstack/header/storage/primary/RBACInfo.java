@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("primary-storage")
                 .adminOnlyAPIs("org.zstack.header.storage.primary.**")
                 .normalAPIs(APIQueryPrimaryStorageMsg.class)
                 .build();

@@ -10,6 +10,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("core")
                 .adminOnlyAPIs(APIDebugSignalMsg.class, APIGetDebugSignalMsg.class, APICleanQueueMsg.class,
                         APIGetChainTaskMsg.class)
                 .build();

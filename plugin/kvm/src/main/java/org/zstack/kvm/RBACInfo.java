@@ -8,6 +8,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("kvm-host")
                 .normalAPIs(APIQueryHostOsCategoryMsg.class, APIQueryKvmHypervisorInfoMsg.class)
                 .adminOnlyAPIs("org.zstack.kvm.**")
                 .build();

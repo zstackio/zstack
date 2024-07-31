@@ -6,7 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .name("sugonSdnController")
+                .name("sugon-sdn-controller")
                 .adminOnlyAPIs("org.zstack.sugonSdnController.**")
                 .build();
     }

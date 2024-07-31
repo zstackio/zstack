@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -64,6 +65,23 @@ public class RBAC {
 
         List<String> missingInPermission = new ArrayList<>();
         List<String> missingInRole = new ArrayList<>();
+        List<String> invalidPermissionNames = new ArrayList<>();
+        List<String> invalidRoleNames = new ArrayList<>();
+
+        for (Permission permission : permissions) {
+            if (permission.name == null) {
+                continue; // TODO: permission.name must not be null
+            }
+            if (!permission.name.matches("[a-z0-9\\-]*")) {
+                invalidPermissionNames.add(permission.name);
+            }
+        }
+
+        for (Role role : roles) {
+            if (!role.name.matches("[a-z0-9\\-]*")) {
+                invalidRoleNames.add(role.name);
+            }
+        }
 
         APIMessage.apiMessageClasses.forEach(clz -> {
             if (clz.isAnnotationPresent(Deprecated.class) || clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
@@ -87,7 +105,10 @@ public class RBAC {
 
         Collections.sort(missingInPermission);
         Collections.sort(missingInRole);
-        if (missingInPermission.isEmpty() && missingInRole.isEmpty()) {
+        Collections.sort(invalidPermissionNames);
+        Collections.sort(invalidRoleNames);
+        if (missingInPermission.isEmpty() && missingInRole.isEmpty()
+                && invalidPermissionNames.isEmpty() && invalidRoleNames.isEmpty()) {
             return;
         }
 
@@ -98,6 +119,16 @@ public class RBAC {
 
         if (!missingInRole.isEmpty()) {
             sb.append(String.format("Below APIs:\n %s not referred in any RBACInfo's role\n", StringUtils.join(missingInRole, "\n")));
+        }
+
+        if (!invalidPermissionNames.isEmpty()) {
+            sb.append(String.format("Below Permission Names:\n %s are invalid. permission names must be lower case and connect by '-'\n",
+                    StringUtils.join(invalidPermissionNames, "\n")));
+        }
+
+        if (!invalidRoleNames.isEmpty()) {
+            sb.append(String.format("Below Role Names:\n %s are invalid. role names must be lower case and connect by '-'\n",
+                    StringUtils.join(invalidRoleNames, "\n")));
         }
 
         throw new CloudRuntimeException(sb.toString());
@@ -401,6 +432,8 @@ public class RBAC {
         }
 
         public Permission build() {
+            Objects.requireNonNull(permission.getName(), "permission.name can not be null");
+
             permission = RBACDescriptionHelper.flatten(permission);
             DebugUtils.Assert(permissions.stream().noneMatch(it -> it.name != null && it.name.equals(permission.name)),
                     String.format("RBAC already has a permission named: %s", permission.name));

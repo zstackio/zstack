@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("host-allocator")
                 .adminOnlyAPIs("org.zstack.header.allocator.**")
                 .normalAPIs(APIGetCpuMemoryCapacityMsg.class)
                 .build();

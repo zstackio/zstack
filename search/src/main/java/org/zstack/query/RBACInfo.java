@@ -7,6 +7,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("query")
                 .normalAPIs(APIBatchQueryMsg.class, APIZQLQueryMsg.class, APIRefreshSearchIndexesMsg.class)
                 .build();
     }

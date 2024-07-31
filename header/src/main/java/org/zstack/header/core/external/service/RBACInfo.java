@@ -7,6 +7,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("external-service")
                 .adminOnlyAPIs(
                         APIGetExternalServicesMsg.class,
                         APIReloadExternalServiceMsg.class

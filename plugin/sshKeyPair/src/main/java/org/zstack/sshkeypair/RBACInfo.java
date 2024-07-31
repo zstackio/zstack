@@ -7,7 +7,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .name("sshKeyPair")
+                .name("ssh-key-pair")
                 .normalAPIs(
                         "org.zstack.sshkeypair.**",
                         "org.zstack.header.sshkeypair.**")
@@ -24,8 +24,8 @@ public class RBACInfo implements RBACDescription {
     public void roles() {
         roleBuilder()
                 .uuid("2ae2f3bdb0ff4296bda2447aa7b334e7")
-                .name("sshKeyPair")
-                .permissionsByName("sshKeyPair")
+                .name("ssh-key-pair")
+                .permissionsByName("ssh-key-pair")
                 .build();
     }
 
