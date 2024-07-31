@@ -137,3 +137,12 @@ CREATE TABLE IF NOT EXISTS `zstack`.`DatasetVO` (
   PRIMARY KEY (`uuid`),
   CONSTRAINT fkDatasetVOModelCenterVO FOREIGN KEY (modelCenterUuid) REFERENCES ModelCenterVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceGroupDatasetRefVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `datasetUuid` varchar(32) NOT NULL,
+    `modelServiceInstanceGroupUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkDatasetRefVO FOREIGN KEY (datasetUuid) REFERENCES DatasetVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
+    CONSTRAINT fkModelServiceInstanceGroupVORefVO FOREIGN KEY (modelServiceInstanceGroupUuid) REFERENCES ModelServiceInstanceGroupVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

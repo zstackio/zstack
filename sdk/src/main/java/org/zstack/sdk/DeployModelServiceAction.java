@@ -38,6 +38,12 @@ public class DeployModelServiceAction extends AbstractAction {
     public java.lang.String vmImageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String primaryStorageUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List datasetUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dockerImage;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
