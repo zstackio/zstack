@@ -403,6 +403,7 @@ public class L2NoVlanNetwork implements L2Network {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    afterDetachL2NetworkFromHost(msg);
                     reply.setError(errorCode);
                     bus.reply(msg, reply);
                 }
