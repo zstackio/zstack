@@ -21,6 +21,7 @@ public class RBACInfo implements RBACDescription {
                         APIDetachRoleFromAccountMsg.class,
                         APICheckResourcePermissionMsg.class
                 ).normalAPIs("org.zstack.header.identity.**")
+                .normalAPIs("org.zstack.core.captcha.**")
                 .targetResources(AccountVO.class, PolicyVO.class, RoleVO.class)
                 .build();
     }

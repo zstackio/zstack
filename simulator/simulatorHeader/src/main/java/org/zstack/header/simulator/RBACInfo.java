@@ -9,6 +9,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("simulator")
                 .adminOnlyAPIs("org.zstack.header.simulator.**")
                 .build();
     }

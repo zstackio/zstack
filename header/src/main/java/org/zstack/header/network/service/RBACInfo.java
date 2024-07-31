@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("network-service")
                 .adminOnlyAPIs("org.zstack.header.network.service.**")
                 .normalAPIs(
                         APIAttachNetworkServiceToL3NetworkMsg.class,

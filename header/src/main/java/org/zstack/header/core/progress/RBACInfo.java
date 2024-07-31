@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("task-progress")
                 .normalAPIs(APIGetTaskProgressMsg.class)
                 .build();
     }
