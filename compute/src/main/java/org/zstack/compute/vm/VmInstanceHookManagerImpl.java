@@ -424,11 +424,6 @@ public class VmInstanceHookManagerImpl implements VmInstanceHookManager, VmInsta
     }
 
     @Override
-    public void afterFailedToStopVm(VmInstanceInventory inv, ErrorCode reason) {
-        
-    }
-
-    @Override
     public void hookStartEvent(Supplier<VmInstanceStartHook> supplier) {
         vmStartHookSuppliers.add(supplier);
     }

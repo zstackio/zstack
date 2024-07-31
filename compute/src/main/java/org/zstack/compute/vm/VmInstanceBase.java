@@ -8123,34 +8123,15 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-                extEmitter.failedToStopVm(inv, errCode);
                 if (HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
                     checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
                         @Override
                         public void done() {
                             self = dbf.reload(self);
-                            if (self.getState() == VmInstanceState.Running) {
-                                for (DeleteInhibitHASystemTagExtensionPoint ext : pluginRgty.getExtensionList(DeleteInhibitHASystemTagExtensionPoint.class)) {
-                                    ext.deleteInhibitHaSystemTag(self.getUuid());
-                                }
-                            }
-
                             completion.fail(errCode);
                             extEmitter.failedToStopVm(inv, errCode);
                         }
                     });
-                } else if (HostErrors.OPERATION_FAILURE_GC_ELIGIBLE.isEqual(errCode.getCode()) && !spec.isGcOnStopFailure()) {
-                    self.setState(originState);
-                    self = dbf.updateAndRefresh(self);
-
-                    if (self.getState() == VmInstanceState.Running) {
-                        for (DeleteInhibitHASystemTagExtensionPoint ext : pluginRgty.getExtensionList(DeleteInhibitHASystemTagExtensionPoint.class)) {
-                            ext.deleteInhibitHaSystemTag(self.getUuid());
-                        }
-                    }
-
-                    completion.fail(errCode);
-                    extEmitter.failedToStopVm(inv, errCode);
                 } else {
                     self.setState(HostErrors.HOST_IS_DISCONNECTED.isEqual(errCode.getCode()) ? VmInstanceState.Unknown : originState);
                     self = dbf.updateAndRefresh(self);

@@ -10,12 +10,15 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
 
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmStopOnHypervisorFlow extends NoRollbackFlow {
@@ -50,21 +53,32 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     chain.next();
-                } else {
-                    if (spec.isGcOnStopFailure() && reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-
-                        StopVmGC gc = new StopVmGC();
-                        gc.inventory = spec.getVmInventory();
-                        gc.hostUuid = spec.getVmInventory().getHostUuid();
-                        gc.NAME = String.format("gc-stop-vm-%s-%s-on-host-%s", gc.inventory.getUuid(),
-                                gc.inventory.getName(), gc.hostUuid);
-                        gc.submit();
-
-                        chain.next();
-                    } else {
-                        chain.fail(reply.getError());
-                    }
+                    return;
                 }
+
+                if (!spec.isGcOnStopFailure() && reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                    ErrorCode realError = reply.getError().getCause();
+                    if (realError == null) {
+                        realError = operr(reply.getError().getDetails());
+                    }
+                    chain.fail(realError);
+                    return;
+                }
+
+                if (spec.isGcOnStopFailure() && reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+
+                    StopVmGC gc = new StopVmGC();
+                    gc.inventory = spec.getVmInventory();
+                    gc.hostUuid = spec.getVmInventory().getHostUuid();
+                    gc.NAME = String.format("gc-stop-vm-%s-%s-on-host-%s", gc.inventory.getUuid(),
+                            gc.inventory.getName(), gc.hostUuid);
+                    gc.submit();
+
+                    chain.next();
+                    return;
+                }
+
+                chain.fail(reply.getError());
             }
         });
     }
