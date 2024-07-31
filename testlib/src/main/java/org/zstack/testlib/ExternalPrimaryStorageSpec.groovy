@@ -62,7 +62,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
 
                 def rsp = new ZbsStorageController.GetCapacityRsp()
                 rsp.setCapacity(536870912000)
-                rsp.setStoredSize(4194304)
+                rsp.setUsedSize(4194304)
 
                 return rsp
             }
