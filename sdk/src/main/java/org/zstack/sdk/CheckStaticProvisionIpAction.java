@@ -87,11 +87,11 @@ public class CheckStaticProvisionIpAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
+        info.httpMethod = "POST";
         info.path = "/baremetal2/bm-instances/static/provision/ip/check";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
