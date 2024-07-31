@@ -337,8 +337,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             @Override
             public void success(GetCapacityRsp returnValue) {
                 StorageCapacity cap = new StorageCapacity();
-                long total = returnValue.capacity;
-                long avail = total != 0 ? total - returnValue.storedSize : 0;
+                long total = returnValue.getCapacity();
+                long avail = total != 0 ? total - returnValue.getUsedSize() : 0;
                 cap.setHealthy(StorageHealthy.Ok);
                 cap.setTotalCapacity(total);
                 cap.setAvailableCapacity(avail);
@@ -1160,7 +1160,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static class GetCapacityRsp extends AgentResponse {
         private long capacity;
-        private long storedSize;
+        private long usedSize;
 
         public long getCapacity() {
             return capacity;
@@ -1170,12 +1170,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             this.capacity = capacity;
         }
 
-        public long getStoredSize() {
-            return storedSize;
+        public long getUsedSize() {
+            return usedSize;
         }
 
-        public void setStoredSize(long storedSize) {
-            this.storedSize = storedSize;
+        public void setUsedSize(long usedSize) {
+            this.usedSize = usedSize;
         }
     }
 
