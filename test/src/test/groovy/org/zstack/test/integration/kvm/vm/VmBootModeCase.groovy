@@ -4,6 +4,8 @@ import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.Q
 import org.zstack.header.tag.SystemTagVO
 import org.zstack.header.tag.SystemTagVO_
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO_
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
@@ -42,6 +44,10 @@ class VmBootModeCase extends SubCase{
     void testSetVmBootMode() {
         def vm = env.inventoryByName("vm") as VmInstanceInventory
 
+        assert Q.New(VmInstanceDeviceAddressVO.class)
+                .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vm.uuid)
+                .count() != 0
+
         assert !VmSystemTags.BOOT_MODE.hasTag(vm.uuid)
 
         setVmBootMode {
@@ -50,6 +56,9 @@ class VmBootModeCase extends SubCase{
         }
 
         assert VmSystemTags.BOOT_MODE.hasTag(vm.uuid)
+        assert Q.New(VmInstanceDeviceAddressVO.class)
+                .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vm.uuid)
+                .count() == 0
 
         setVmBootMode {
             uuid = vm.uuid
