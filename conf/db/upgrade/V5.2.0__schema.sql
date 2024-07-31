@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`GuestVmScriptExecutedRecordVO` (
     `version` INT UNSIGNED NOT NULL,
     `Executor` VARCHAR(256) NOT NULL ,
     `ExecutionCount` INT UNSIGNED NOT NULL,
+    `scriptContent` MEDIUMTEXT,
     `startTime` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
     `endTime` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`),
