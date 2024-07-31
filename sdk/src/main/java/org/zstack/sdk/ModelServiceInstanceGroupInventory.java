@@ -36,6 +36,14 @@ public class ModelServiceInstanceGroupInventory  {
         return this.instances;
     }
 
+    public java.util.List datasetRefInventories;
+    public void setDatasetRefInventories(java.util.List datasetRefInventories) {
+        this.datasetRefInventories = datasetRefInventories;
+    }
+    public java.util.List getDatasetRefInventories() {
+        return this.datasetRefInventories;
+    }
+
     public java.lang.String status;
     public void setStatus(java.lang.String status) {
         this.status = status;
