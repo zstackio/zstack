@@ -6,6 +6,7 @@ public enum PciDeviceType {
 	GPU_USB_Controller,
 	GPU_Serial_Controller,
 	GPU_3D_Controller,
+	GPU_Processing_Accelerators,
 	Ethernet_Controller,
 	Audio_Controller,
 	USB_Controller,
