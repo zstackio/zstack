@@ -5,15 +5,22 @@ import org.zstack.header.image.ImageVO;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "storage-backup";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("storage-backup")
-                .adminOnlyAPIs("org.zstack.header.storage.backup.**")
+                .adminOnlyForAll()
                 .normalAPIs(
                         APIQueryBackupStorageMsg.class,
                         APIExportImageFromBackupStorageMsg.class,
                         APIDeleteExportedImageFromBackupStorageMsg.class
                 )
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .targetResources(ImageVO.class)
                 .build();
     }
@@ -26,14 +33,9 @@ public class RBACInfo implements RBACDescription {
                 .build();
 
         roleContributorBuilder()
-                .roleName("other")
+                .toOtherRole()
                 .actions(APIQueryBackupStorageMsg.class)
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
     }
 
     @Override

@@ -4,28 +4,21 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "portal";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("portal")
-                .normalAPIs("org.zstack.header.apimediator.**")
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-        roleContributorBuilder()
-                .roleName("other")
-                .actionsByPermissionName("portal")
-                .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
+        contributeNormalApiToOtherRole();
     }
 }

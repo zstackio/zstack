@@ -75,11 +75,4 @@ public class RBACDescriptionHelper {
 
         return ret;
     }
-
-    static RBAC.Permission flatten(RBAC.Permission permission) {
-        FlattenResult fr = _flatten(permission.get_adminOnlyAPIs(), permission.get_normalAPIs());
-        permission.setAdminOnlyAPIs(fr.adminOnly);
-        permission.setNormalAPIs(fr.normal);
-        return permission;
-    }
 }

@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface RBACDescription {
     default RBAC.PermissionBuilder permissionBuilder() {
-        return new RBAC.PermissionBuilder();
+        return new RBAC.PermissionBuilder(this);
     }
 
     default RBAC.ExpendedFieldPermissionBuilder expandedpermissionBuilder() {
@@ -15,11 +15,15 @@ public interface RBACDescription {
     }
 
     default RBAC.RoleContributorBuilder roleContributorBuilder() {
-        return new RBAC.RoleContributorBuilder();
+        return new RBAC.RoleContributorBuilder(this);
+    }
+
+    default void contributeNormalApiToOtherRole() {
+        roleContributorBuilder().toOtherRole().actionsInThisPermission().build();
     }
 
     default RBAC.RoleBuilder roleBuilder() {
-        return new RBAC.RoleBuilder();
+        return new RBAC.RoleBuilder(this);
     }
 
     default RBAC.GlobalReadableResourceBuilder globalReadableResourceBuilder() {
@@ -51,11 +55,13 @@ public interface RBACDescription {
         return null;
     }
 
+    String permissionName();
+
     void permissions();
 
-    void contributeToRoles();
+    default void contributeToRoles() {}
 
-    void roles();
+    default void roles() {}
 
-    void globalReadableResources();
+    default void globalReadableResources() {}
 }

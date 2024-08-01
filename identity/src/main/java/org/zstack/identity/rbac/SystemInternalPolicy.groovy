@@ -17,8 +17,11 @@ class SystemInternalPolicy implements InternalPolicy {
                     name = "normal-account-allowed-apis"
                     effect = StatementEffect.Allow
 
-                    RBAC.permissions.each { info ->
-                        info.normalAPIs.each { action(it) }
+                    RBAC.apiBuckets.each { apiName, bucket ->
+                        if (bucket.adminOnly) {
+                            return
+                        }
+                        action(apiName)
                     }
                 }
 

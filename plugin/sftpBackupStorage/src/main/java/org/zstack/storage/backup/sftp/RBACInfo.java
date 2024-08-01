@@ -4,11 +4,18 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "sftp";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("sftp")
-                .adminOnlyAPIs("org.zstack.storage.backup.sftp.**")
+                .adminOnlyForAll()
                 .normalAPIs(APIQuerySftpBackupStorageMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -16,17 +23,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("image")
-                .actionsByPermissionName("sftp")
+                .actionsInThisPermission()
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

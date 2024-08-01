@@ -10,6 +10,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.APIDeleteL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.network.l2.vxlan.vxlanNetwork.APIDeleteVxlanL2Network;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APIQueryL2VxlanNetworkPoolMsg;
@@ -47,13 +48,24 @@ public class RBACInfo implements RBACDescription {
     }
 
     @Override
+    public String permissionName() {
+        return "vxlan";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("vxlan")
-                .normalAPIs("org.zstack.network.l2.vxlan.vxlanNetwork.**", DELETE_VXLAN_NETWORK_API_NAME)
-                .normalAPIs(APIQueryVniRangeMsg.class, APIQueryL2VxlanNetworkPoolMsg.class, APIDeleteL2NetworkMsg.class)
-                .adminOnlyAPIs("org.zstack.network.l2.vxlan.vtep.**", "org.zstack.network.l2.vxlan.vxlanNetworkPool.**")
+                .normalAPIs(
+                        APIQueryVniRangeMsg.class,
+                        APIQueryL2VxlanNetworkPoolMsg.class,
+                        APIDeleteL2NetworkMsg.class,
+                        APIDeleteVxlanL2Network.class
+                )
+                .normalAPIs("org.zstack.network.l2.vxlan.vxlanNetwork.**")
+                .adminOnlyForAll()
                 .targetResources(VxlanNetworkVO.class)
+                .communityAvailable()
+                .zsvAdvancedAvailable()
                 .build();
     }
 
@@ -61,15 +73,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("networks")
-                .actionsByPermissionName("vxlan")
+                .actionsInThisPermission()
                 .build();
-    }
-
-    @Override
-    public void roles() {
-    }
-
-    @Override
-    public void globalReadableResources() {
     }
 }

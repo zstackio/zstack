@@ -1,6 +1,7 @@
 package org.zstack.header.identity.rbac;
 
 import org.apache.commons.lang.StringUtils;
+import org.zstack.header.PackageAPIInfo;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.PolicyStatement;
@@ -8,7 +9,9 @@ import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.data.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,13 +21,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
     public static List<Role> roles = new ArrayList<>();
+    public static Map<String, ApiPermissionBucket> apiBuckets = new HashMap<>();
     public static List<GlobalReadableResource> readableResources = new ArrayList<>();
     public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
     private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
@@ -41,25 +44,6 @@ public class RBAC {
         APIPermissionChecker checker;
     }
 
-    public static void checkMergeTo() {
-        DebugUtils.Assert(permissions.stream().anyMatch(p -> p.mergeTo != null), "No RBAC permission has mergeTo field");
-
-        permissions.forEach(p -> {
-            if (p.mergeTo != null) {
-                Optional<Permission> opt = permissions.stream().filter(it -> it.name != null && it.name.equals(p.mergeTo)).findFirst();
-                if (!opt.isPresent()) {
-                    throw new CloudRuntimeException(String.format("cannot find permission[name:%s] to merge to", p.mergeTo));
-                }
-
-                Permission target = opt.get();
-
-                DebugUtils.Assert(target.getAdminOnlyAPIs().containsAll(p.getAdminOnlyAPIs()), String.format("permission[name:%s] merge to permission[name:%s], but adminOnlyAPIs not match", p.name, target.name));
-                DebugUtils.Assert(target.getNormalAPIs().containsAll(p.getNormalAPIs()), String.format("permission[name:%s] merge to permission[name:%s], but normalAPIs not match", p.name, target.name));
-                DebugUtils.Assert(new HashSet<>(target.getTargetResources()).containsAll(p.getTargetResources()), String.format("permission[name:%s] merge to permission[name:%s], but targetResources not match", p.name, target.name));
-            }
-        });
-    }
-
     public static void checkMissingRBACInfo() {
         PolicyMatcher matcher = new PolicyMatcher();
 
@@ -69,9 +53,6 @@ public class RBAC {
         List<String> invalidRoleNames = new ArrayList<>();
 
         for (Permission permission : permissions) {
-            if (permission.name == null) {
-                continue; // TODO: permission.name must not be null
-            }
             if (!permission.name.matches("[a-z0-9\\-]*")) {
                 invalidPermissionNames.add(permission.name);
             }
@@ -90,7 +71,7 @@ public class RBAC {
 
             String clzName = clz.getName();
             boolean has = permissions.parallelStream()
-                    .anyMatch(p -> p.normalAPIs.stream().anyMatch(s -> matcher.match(s, clzName)) || p.adminOnlyAPIs.stream().anyMatch(s -> matcher.match(s, clzName)));
+                    .anyMatch(p -> p.normalPolicies.stream().anyMatch(s -> matcher.match(s, clzName)) || p.adminOnlyPolicies.stream().anyMatch(s -> matcher.match(s, clzName)));
 
             if (!has) {
                 missingInPermission.add(clzName);
@@ -137,9 +118,12 @@ public class RBAC {
     public static class RoleBuilder {
         private Role role = new Role();
         private List<String> permissionsByNames = new ArrayList<>();
+        private String basePermission;
 
-        {
+        public RoleBuilder(RBACDescription description) {
+            basePermission = description.permissionName();
             role.setPredefine(true);
+            role.setName(basePermission);
         }
 
         public RoleBuilder uuid(String v) {
@@ -167,6 +151,10 @@ public class RBAC {
         public RoleBuilder permissionsByName(String...pnames) {
             permissionsByNames.addAll(Arrays.asList(pnames));
             return this;
+        }
+
+        public RoleBuilder permissionBaseOnThis() {
+            return permissionsByName(this.basePermission);
         }
 
         public RoleBuilder allow() {
@@ -293,28 +281,30 @@ public class RBAC {
     }
 
     public static class Permission {
-        private Set<String> adminOnlyAPIs = new HashSet<>();
-        private Set<String> normalAPIs = new HashSet<>();
+        private Set<Class> adminOnlyAPIs = new HashSet<>();
+        private Set<Class> normalAPIs = new HashSet<>();
+        private Set<String> adminOnlyPolicies = new HashSet<>();
+        private Set<String> normalPolicies = new HashSet<>();
         private List<Class> targetResources = new ArrayList<>();
-        private Set<String> _adminOnlyAPIs = new HashSet<>();
-        private Set<String> _normalAPIs = new HashSet<>();
-        private String mergeTo;
         private String name;
+        private String basePackage;
+        private List<String> requirementList = new ArrayList<>();
+        private List<String> productList = new ArrayList<>();
 
-        public Set<String> getAdminOnlyAPIs() {
+        public Set<Class> getAdminOnlyAPIs() {
             return adminOnlyAPIs;
         }
 
-        public void setAdminOnlyAPIs(Set<String> adminOnlyAPIs) {
-            this.adminOnlyAPIs = adminOnlyAPIs;
-        }
-
-        public Set<String> getNormalAPIs() {
+        public Set<Class> getNormalAPIs() {
             return normalAPIs;
         }
 
-        public void setNormalAPIs(Set<String> normalAPIs) {
-            this.normalAPIs = normalAPIs;
+        public Set<String> getAdminOnlyPolicies() {
+            return adminOnlyPolicies;
+        }
+
+        public Set<String> getNormalPolicies() {
+            return normalPolicies;
         }
 
         public List<Class> getTargetResources() {
@@ -325,28 +315,28 @@ public class RBAC {
             this.targetResources = targetResources;
         }
 
-        public Set<String> get_adminOnlyAPIs() {
-            return _adminOnlyAPIs;
-        }
-
-        public void set_adminOnlyAPIs(Set<String> _adminOnlyAPIs) {
-            this._adminOnlyAPIs = _adminOnlyAPIs;
-        }
-
-        public Set<String> get_normalAPIs() {
-            return _normalAPIs;
-        }
-
-        public void set_normalAPIs(Set<String> _normalAPIs) {
-            this._normalAPIs = _normalAPIs;
-        }
-
         public String getName() {
             return name;
         }
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public String getBasePackage() {
+            return basePackage;
+        }
+
+        public void setBasePackage(String basePackage) {
+            this.basePackage = basePackage;
+        }
+
+        public List<String> getRequirementList() {
+            return requirementList;
+        }
+
+        public List<String> getProductList() {
+            return productList;
         }
     }
 
@@ -380,41 +370,42 @@ public class RBAC {
 
     public static class PermissionBuilder {
         Permission permission = new Permission();
+        Package currentPackage;
+        boolean defaultAdminOnly = false;
 
-        public PermissionBuilder name(String v) {
-            permission.setName(v);
-            return this;
+        private List<Class> normalAPIList = new ArrayList<>();
+        private List<Class> adminOnlyAPIList = new ArrayList<>();
+        private List<String> normalAPITexts = new ArrayList<>();
+        private List<String> adminOnlyAPITexts = new ArrayList<>();
+
+        public PermissionBuilder(RBACDescription description) {
+            currentPackage = description.getClass().getPackage();
+            permission.setName(description.permissionName());
+            permission.setBasePackage(this.currentPackage.getName());
         }
 
         public PermissionBuilder normalAPIs(String...vs) {
-            for (String v : vs) {
-                permission.get_normalAPIs().add(v);
-            }
-
+            Collections.addAll(normalAPITexts, vs);
             return this;
         }
 
         public PermissionBuilder adminOnlyAPIs(String...vs) {
-            for (String v : vs) {
-                permission.get_adminOnlyAPIs().add(v);
-            }
+            Collections.addAll(adminOnlyAPITexts, vs);
+            return this;
+        }
 
+        public PermissionBuilder adminOnlyForAll() {
+            defaultAdminOnly = true;
             return this;
         }
 
         public PermissionBuilder normalAPIs(Class...clzs) {
-            for (Class clz : clzs) {
-                permission.get_normalAPIs().add(clz.getName());
-            }
-
+            Collections.addAll(normalAPIList, clzs);
             return this;
         }
 
         public PermissionBuilder adminOnlyAPIs(Class...clzs) {
-            for (Class clz : clzs) {
-                permission.get_adminOnlyAPIs().add(clz.getName());
-            }
-
+            Collections.addAll(adminOnlyAPIList, clzs);
             return this;
         }
 
@@ -426,15 +417,47 @@ public class RBAC {
             return this;
         }
 
-        public PermissionBuilder mergeTo(String targetPermissionName) {
-            permission.mergeTo = targetPermissionName;
+        public PermissionBuilder communityAvailable() {
+            permission.getRequirementList().add(PackageAPIInfo.PERMISSION_COMMUNITY_AVAILABLE);
+            return this;
+        }
+
+        public PermissionBuilder zsvBasicAvailable() {
+            permission.getRequirementList().add(PackageAPIInfo.PERMISSION_ZSV_BASIC_AVAILABLE);
+            return this;
+        }
+
+        public PermissionBuilder zsvProAvailable() {
+            permission.getRequirementList().add(PackageAPIInfo.PERMISSION_ZSV_PRO_AVAILABLE);
+            return this;
+        }
+
+        public PermissionBuilder zsvAdvancedAvailable() {
+            permission.getRequirementList().add(PackageAPIInfo.PERMISSION_ZSV_ADVANCED_AVAILABLE);
+            return this;
+        }
+
+        public PermissionBuilder productName(String product) {
+            permission.getProductList().add(product);
             return this;
         }
 
         public Permission build() {
-            Objects.requireNonNull(permission.getName(), "permission.name can not be null");
+            String packagePermission = permission.getBasePackage() + ".**";
+            normalAPITexts.remove(packagePermission);
+            adminOnlyAPITexts.remove(packagePermission);
 
-            permission = RBACDescriptionHelper.flatten(permission);
+            if (defaultAdminOnly) {
+                adminOnlyAPITexts.add(packagePermission);
+            } else {
+                normalAPITexts.add(packagePermission);
+            }
+
+            permission.getNormalPolicies().addAll(normalAPITexts);
+            permission.getAdminOnlyPolicies().addAll(adminOnlyAPITexts);
+            permission.getNormalAPIs().addAll(normalAPIList);
+            permission.getAdminOnlyAPIs().addAll(adminOnlyAPIList);
+
             DebugUtils.Assert(permissions.stream().noneMatch(it -> it.name != null && it.name.equals(permission.name)),
                     String.format("RBAC already has a permission named: %s", permission.name));
 
@@ -475,10 +498,19 @@ public class RBAC {
 
     public static class RoleContributorBuilder {
         private RoleContributor contributor = new RoleContributor();
+        private String basePermission;
+
+        public RoleContributorBuilder(RBACDescription description) {
+            this.basePermission = description.permissionName();
+        }
 
         public RoleContributorBuilder actionsByPermissionName(String v) {
             contributor.normalActionsByPermissionName.add(v);
             return this;
+        }
+
+        public RoleContributorBuilder actionsInThisPermission() {
+            return actionsByPermissionName(basePermission);
         }
 
         public RoleContributorBuilder actions(String...vs) {
@@ -496,6 +528,10 @@ public class RBAC {
         public RoleContributorBuilder roleName(String v) {
             contributor.roleName = v;
             return this;
+        }
+
+        public RoleContributorBuilder toOtherRole() {
+            return roleName("other");
         }
 
         public RoleContributor build() {
@@ -538,10 +574,6 @@ public class RBAC {
             throw new CloudRuntimeException(String.format("cannot find permission[name:%s]", name));
         }
 
-        if (opt.get().mergeTo != null) {
-            return findPermissionByName(opt.get().mergeTo);
-        }
-
         return opt.get();
     }
 
@@ -581,24 +613,13 @@ public class RBAC {
             }
         });
 
-        // merge permissions
-        permissions.stream().sorted(Comparator.comparing(p -> p.mergeTo != null))
-                .forEach(p -> {
-                    if (p.mergeTo == null) {
-                        return;
-                    }
-
-                    Permission target = findPermissionByName(p.mergeTo);
-                    target.getAdminOnlyAPIs().addAll(p.getAdminOnlyAPIs());
-                    target.getAdminOnlyAPIs().removeAll(p.getNormalAPIs());
-                    target.getNormalAPIs().addAll(p.getNormalAPIs());
-                    target.getTargetResources().addAll(p.getTargetResources());
-                });
+        buildApiBuckets();
 
         roleBuilders.forEach(rb -> {
             rb.permissionsByNames.forEach(pname -> {
                 Permission permission = findPermissionByName(pname);
-                rb.role.allowedActions.addAll(permission.getNormalAPIs());
+                rb.role.allowedActions.addAll(CollectionUtils.transform(permission.getNormalAPIs(), Class::getName));
+                rb.role.allowedActions.addAll(permission.getNormalPolicies());
             });
 
             roles.add(rb.role);
@@ -608,7 +629,8 @@ public class RBAC {
             Role role = findRoleByName(rc.roleName);
             rc.normalActionsByPermissionName.forEach(pname -> {
                 Permission permission = findPermissionByName(pname);
-                role.allowedActions.addAll(permission.getNormalAPIs());
+                role.allowedActions.addAll(CollectionUtils.transform(permission.getNormalAPIs(), Class::getName));
+                role.allowedActions.addAll(permission.getNormalPolicies());
             });
             role.allowedActions.addAll(rc.actions);
         });
@@ -673,6 +695,53 @@ public class RBAC {
     }
 
     public static boolean isAdminOnlyAPI(String apiName) {
-        return permissions.stream().anyMatch(permission -> permission.getAdminOnlyAPIs().stream().anyMatch(api -> matcher.match(api, apiName)));
+        return apiBuckets.get(apiName).adminOnly;
+    }
+
+    public static class ApiPermissionBucket {
+        public final Permission permission;
+        public final boolean adminOnly;
+
+        public ApiPermissionBucket(Permission permission, boolean adminOnly) {
+            this.permission = permission;
+            this.adminOnly = adminOnly;
+        }
+    }
+
+    private static void buildApiBuckets() {
+        List<Pair<String, Permission>> matchingList = new ArrayList<>();
+
+        for (Permission permission : permissions) {
+            for (Class<?> apiClass : permission.getNormalAPIs()) {
+                apiBuckets.put(apiClass.getName(), new ApiPermissionBucket(permission, false));
+            }
+            for (Class<?> apiClass : permission.getAdminOnlyAPIs()) {
+                apiBuckets.put(apiClass.getName(), new ApiPermissionBucket(permission, true));
+            }
+
+            for (String normalAPI : permission.getNormalPolicies()) {
+                matchingList.add(new Pair<>(normalAPI, permission));
+            }
+            for (String adminOnlyAPI : permission.getAdminOnlyPolicies()) {
+                matchingList.add(new Pair<>(adminOnlyAPI, permission));
+            }
+        }
+        matchingList.sort(Comparator.comparingInt(it -> -it.first().length()));
+
+        final PolicyMatcher matcher = new PolicyMatcher();
+        for (Class<?> api : APIMessage.apiMessageClasses) {
+            if (apiBuckets.containsKey(api.getName())) {
+                continue;
+            }
+
+            String apiName = api.getName();
+            Pair<String, Permission> matched = matchingList.stream()
+                    .filter(pair -> matcher.match(pair.first(), apiName))
+                    .findFirst()
+                    .orElseThrow(() -> new CloudRuntimeException("failed to find matched permission for API:" + apiName));
+            Permission permission = matched.second();
+            apiBuckets.put(apiName,
+                    new ApiPermissionBucket(permission, permission.getAdminOnlyPolicies().contains(matched.first())));
+        }
     }
 }
