@@ -1,21 +1,22 @@
-package org.zstack.identity.imports;
+package org.zstack.core.captcha;
 
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.rbac.RBACDescription;
-import org.zstack.header.rest.SDKPackage;
-import org.zstack.identity.imports.api.APIQueryThirdPartyAccountSourceBindingMsg;
+import org.zstack.header.identity.role.RoleVO;
 
-@SDKPackage(packageName = "org.zstack.sdk.identity.imports")
 public class RBACInfo implements RBACDescription {
     @Override
     public String permissionName() {
-        return "account-imports";
+        return "identity-captcha-refresh";
     }
 
     @Override
     public void permissions() {
         permissionBuilder()
-                .normalAPIs(APIQueryThirdPartyAccountSourceBindingMsg.class)
+                .targetResources(AccountVO.class, PolicyVO.class, RoleVO.class)
                 .communityAvailable()
+                .zsvBasicAvailable()
                 .zsvProAvailable()
                 .build();
     }
@@ -24,7 +25,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("identity")
-                .actionsInThisPermission()
+                .actionsByPermissionName("identity-captcha-refresh")
                 .build();
     }
 }

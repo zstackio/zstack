@@ -4,30 +4,26 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
-    public void permissions() {
-        permissionBuilder()
-                .name("console")
-                .adminOnlyAPIs("org.zstack.header.console.**")
-                .normalAPIs(APIRequestConsoleAccessMsg.class)
-                .build();
+    public String permissionName() {
+        return "console";
     }
 
     @Override
-    public void contributeToRoles() {
-
+    public void permissions() {
+        permissionBuilder()
+                .adminOnlyForAll()
+                .normalAPIs(APIRequestConsoleAccessMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
+                .build();
     }
 
     @Override
     public void roles() {
         roleBuilder()
-                .name("console")
                 .uuid("6f5a7d6d2da9499da9e4bdb079f65adf")
-                .permissionsByName("console")
+                .permissionBaseOnThis()
                 .build();
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

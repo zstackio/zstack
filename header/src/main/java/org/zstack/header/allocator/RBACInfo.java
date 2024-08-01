@@ -4,29 +4,23 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "host-allocator";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("host-allocator")
-                .adminOnlyAPIs("org.zstack.header.allocator.**")
+                .adminOnlyForAll()
                 .normalAPIs(APIGetCpuMemoryCapacityMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-        roleContributorBuilder()
-                .roleName("other")
-                .actions(APIGetCpuMemoryCapacityMsg.class)
-                .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
+        contributeNormalApiToOtherRole();
     }
 }

@@ -4,30 +4,25 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
-    public void permissions() {
-        permissionBuilder()
-                .name("image")
-                .normalAPIs("org.zstack.header.image.**")
-                .targetResources(ImageVO.class)
-                .build();
+    public String permissionName() {
+        return "image";
     }
 
     @Override
-    public void contributeToRoles() {
-
+    public void permissions() {
+        permissionBuilder()
+                .targetResources(ImageVO.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
+                .build();
     }
 
     @Override
     public void roles() {
         roleBuilder()
-                .name("image")
                 .uuid("d55b63dc06b14ad1b62448fa6899729b")
-                .permissionsByName("image")
+                .permissionBaseOnThis()
                 .build();
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

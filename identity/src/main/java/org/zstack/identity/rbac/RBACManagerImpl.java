@@ -126,7 +126,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
             boolean deny = denyStatements.values().stream().anyMatch(states -> states.stream().anyMatch(s -> s.getActions().stream().anyMatch(action -> matcher.match(PolicyUtils.apiNamePatternFromAction(action), apiClz.getName()))));
             boolean allow = allowStatements.values().stream().anyMatch(states -> states.stream().anyMatch(s -> s.getActions().stream().anyMatch(action -> matcher.match(PolicyUtils.apiNamePatternFromAction(action), apiClz.getName()))));
 
-            boolean matched = permissions.stream().anyMatch(p -> p.getNormalAPIs().stream().anyMatch(api -> matcher.match(api, apiClz.getName())));
+            boolean matched = permissions.stream().anyMatch(p -> p.getNormalPolicies().stream().anyMatch(api -> matcher.match(api, apiClz.getName())));
 
             if (allow && !deny && matched) {
                 apis.add(apiClz.getSimpleName());
