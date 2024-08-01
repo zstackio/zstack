@@ -7,6 +7,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("ceph-storage")
                 .adminOnlyAPIs("org.zstack.storage.ceph.**")
                 .normalAPIs(APIQueryCephBackupStorageMsg.class)
                 .build();

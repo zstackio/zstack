@@ -9,6 +9,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("webhooks")
                 .adminOnlyAPIs("org.zstack.header.core.webhooks.**")
                 .build();
     }

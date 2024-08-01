@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("core-error-code")
                 .adminOnlyAPIs("org.zstack.core.errorcode.**")
                 .build();
     }

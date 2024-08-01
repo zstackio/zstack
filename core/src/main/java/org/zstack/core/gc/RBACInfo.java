@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("core-gc")
                 .adminOnlyAPIs("org.zstack.core.gc.**")
                 .build();
     }

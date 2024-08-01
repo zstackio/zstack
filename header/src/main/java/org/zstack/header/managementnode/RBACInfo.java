@@ -9,6 +9,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("management-node")
                 .adminOnlyAPIs("org.zstack.header.managementnode.**")
                 .build();
     }

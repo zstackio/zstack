@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("core-event-log")
                 .adminOnlyAPIs("org.zstack.core.eventlog.**")
                 .build();
     }

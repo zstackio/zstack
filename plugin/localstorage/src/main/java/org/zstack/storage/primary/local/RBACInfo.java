@@ -7,6 +7,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("local-storage")
                 .adminOnlyAPIs("org.zstack.storage.primary.local.**")
                 .normalAPIs(APILocalStorageGetVolumeMigratableHostsMsg.class, APILocalStorageMigrateVolumeMsg.class,
                         APIQueryLocalStorageResourceRefMsg.class)
