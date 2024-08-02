@@ -84,6 +84,14 @@ public class ModelServiceInventory  {
         return this.dockerImage;
     }
 
+    public java.lang.Long size;
+    public void setSize(java.lang.Long size) {
+        this.size = size;
+    }
+    public java.lang.Long getSize() {
+        return this.size;
+    }
+
     public java.lang.Boolean system;
     public void setSystem(java.lang.Boolean system) {
         this.system = system;
