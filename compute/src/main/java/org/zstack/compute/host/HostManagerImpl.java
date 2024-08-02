@@ -29,7 +29,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply.BlockDevices;
 import org.zstack.header.managementnode.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
