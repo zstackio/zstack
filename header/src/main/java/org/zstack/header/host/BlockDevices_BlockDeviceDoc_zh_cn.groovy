@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-import org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply.BlockDevices.BlockDevice
+import org.zstack.header.host.BlockDevices.BlockDevice
 
 doc {
 
@@ -44,7 +44,7 @@ doc {
 	}
 	ref {
 		name "children"
-		path "org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply.BlockDevices.BlockDevice.children"
+		path "org.zstack.header.host.BlockDevices.BlockDevice.children"
 		desc "子分区"
 		type "List"
 		since "zsv 4.3.0"

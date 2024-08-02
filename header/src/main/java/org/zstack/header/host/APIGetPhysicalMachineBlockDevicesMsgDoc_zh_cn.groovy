@@ -58,7 +58,7 @@ doc {
 					since "zsv 4.3.0"
 				}
 				column {
-					name "excludedBlockDevicesType"
+					name "excludedTypes"
 					enclosedIn ""
 					desc "指定排除的磁盘类型"
 					location "query"
