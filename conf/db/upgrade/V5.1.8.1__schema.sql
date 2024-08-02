@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceVO` (
     `framework` varchar(255) DEFAULT 'Other',
     `condaVersion` varchar(32) DEFAULT NULL,
     `dockerImage` varchar(255) DEFAULT NULL,
+    `size` bigint(20) DEFAULT 0,
     `gpuComputeCapability` varchar(32) DEFAULT NULL,
     `system` tinyint(1) DEFAULT 0,
     `modelCenterUuid` varchar(32) NOT NULL,
