@@ -21,13 +21,13 @@ public interface LoginBackend {
 
     boolean authenticate(String username, String password);
 
-    String getUserIdByName(String username);
+    String getAccountIdByName(String username);
 
     void collectUserInfoIntoContext(LoginContext loginContext);
 
     List<AdditionalAuthFeature> getRequiredAdditionalAuthFeature();
 
-    default Set<String> possibleUserUuidSetForGettingProcedures(LoginContext loginContext) {
+    default Set<String> possibleAccountUuidSetForGettingProcedures(LoginContext loginContext) {
         return Collections.emptySet();
     }
 }

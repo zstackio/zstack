@@ -45,9 +45,6 @@ public class IAMIdentityResourceGenerator implements IdentityResourceGenerateExt
             }
         });
 
-
-        readAPIs.add(APIUpdateUserMsg.class.getName());
-
         PolicyStatement s = PolicyStatement.builder().name("read-apis-for-normal-account")
                 .effect(StatementEffect.Allow)
                 .actions(readAPIs)

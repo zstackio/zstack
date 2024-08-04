@@ -5,14 +5,14 @@ import org.zstack.header.rest.APINoSee;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
 
 @PythonClassInventory
 public class SessionInventory implements Serializable {
     private String uuid;
     private String accountUuid;
+    @Deprecated
     private String userUuid;
+    @Deprecated
     private String userType;
     private Timestamp expiredDate;
     private Timestamp createDate;
@@ -53,10 +53,12 @@ public class SessionInventory implements Serializable {
         this.accountUuid = accountUuid;
     }
 
+    @Deprecated
     public String getUserUuid() {
         return userUuid;
     }
 
+    @Deprecated
     public void setUserUuid(String userUuid) {
         this.userUuid = userUuid;
     }
@@ -85,10 +87,12 @@ public class SessionInventory implements Serializable {
         this.noSessionEvaluation = noSessionEvaluation;
     }
 
+    @Deprecated
     public String getUserType() {
         return userType;
     }
 
+    @Deprecated
     public void setUserType(String userType) {
         this.userType = userType;
     }

@@ -46,15 +46,18 @@ public class Session implements Component {
 
     private static Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
 
-    public static SessionInventory login(String accountUuid, String userUuid) {
+    public static SessionInventory loginByAdmin() {
+        return login(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+    }
+
+    public static SessionInventory login(String accountUuid) {
         if (IdentityGlobalConfig.ENABLE_UNIQUE_SESSION.value(Boolean.class)) {
             List<String> currentSessionUuids = Q.New(SessionVO.class)
                     .select(SessionVO_.uuid)
-                    .eq(SessionVO_.userUuid, userUuid)
+                    .eq(SessionVO_.accountUuid, accountUuid)
                     .listValues();
             IdentityCanonicalEvents.SessionForceLogoutData data = new IdentityCanonicalEvents.SessionForceLogoutData();
             data.setAccountUuid(accountUuid);
-            data.setUserUuid(userUuid);
 
             PluginRegistry pluginRgty = getComponentLoader().getComponent(PluginRegistry.class);
             EventFacade evtf = getComponentLoader().getComponent(EventFacade.class);
@@ -78,14 +81,14 @@ public class Session implements Component {
 
             @Override
             protected SessionInventory scripts() {
-                if (q(SessionVO.class).eq(SessionVO_.userUuid, userUuid).count() >= IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class)) {
+                if (q(SessionVO.class).eq(SessionVO_.accountUuid, accountUuid).count() >= IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class)) {
                     throw new OperationFailureException(err(IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED, "Login sessions hit limit of max allowed concurrent login sessions"));
                 }
 
                 SessionVO vo = new SessionVO();
                 vo.setUuid(Platform.getUuid());
                 vo.setAccountUuid(accountUuid);
-                vo.setUserUuid(userUuid);
+                vo.setUserUuid(accountUuid); // for compatibility
                 long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(IdentityGlobalConfig.SESSION_TIMEOUT.value(Long.class));
                 vo.setExpiredDate(new Timestamp(expiredTime));
                 persist(vo);
@@ -383,27 +386,6 @@ public class Session implements Component {
                     logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]",
                             suuids.size(),
                             d.getAccountUuid()));
-                }
-            }
-        });
-
-        evtf.on(IdentityCanonicalEvents.USER_DELETED_PATH, new EventCallback() {
-            @Override
-            public void run(Map tokens, Object data) {
-                IdentityCanonicalEvents.UserDeletedData d = (IdentityCanonicalEvents.UserDeletedData) data;
-
-                SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
-                q.select(SessionVO_.uuid);
-                q.add(SessionVO_.userUuid, SimpleQuery.Op.EQ, d.getUserUuid());
-                List<String> suuids = q.listValue();
-
-                for (String uuid : suuids) {
-                    logout(uuid);
-                }
-
-                if (!suuids.isEmpty()) {
-                    logger.debug(String.format("successfully removed %s sessions for the deleted user[%s]", suuids.size(),
-                            d.getUserUuid()));
                 }
             }
         });

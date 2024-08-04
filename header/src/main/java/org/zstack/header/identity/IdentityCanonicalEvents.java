@@ -9,7 +9,6 @@ import java.util.Date;
  */
 public class IdentityCanonicalEvents {
     public static final String ACCOUNT_DELETED_PATH = "/account/delete";
-    public static final String USER_DELETED_PATH = "/user/delete";
     public static final String ACCOUNT_LOGIN_PATH = "/account/login";
     public static final String SESSION_FORCE_LOGOUT_PATH = "/session/logout";
 
@@ -19,7 +18,6 @@ public class IdentityCanonicalEvents {
     public static class SessionForceLogoutData {
         private String sessionUuid;
         private String accountUuid;
-        private String userUuid;
         private String name = SESSION_FORCE_LOGOUT;
         private Date date = new Date();
 
@@ -45,14 +43,6 @@ public class IdentityCanonicalEvents {
 
         public void setAccountUuid(String accountUuid) {
             this.accountUuid = accountUuid;
-        }
-
-        public String getUserUuid() {
-            return userUuid;
-        }
-
-        public void setUserUuid(String userUuid) {
-            this.userUuid = userUuid;
         }
 
         public String getName() {
@@ -96,40 +86,8 @@ public class IdentityCanonicalEvents {
     }
 
     @NeedJsonSchema
-    public static class UserDeletedData {
-        private String userUuid;
-        private UserInventory inventory;
-        private Date date = new Date();
-
-        public String getUserUuid() {
-            return userUuid;
-        }
-
-        public void setUserUuid(String userUuid) {
-            this.userUuid = userUuid;
-        }
-
-        public UserInventory getInventory() {
-            return inventory;
-        }
-
-        public void setInventory(UserInventory inventory) {
-            this.inventory = inventory;
-        }
-
-        public Date getDate() {
-            return date;
-        }
-
-        public void setDate(Date date) {
-            this.date = date;
-        }
-    }
-
-    @NeedJsonSchema
     public static class AccountLoginData {
         private String accountUuid;
-        private String userUuid;
 
         public String getAccountUuid() {
             return accountUuid;
@@ -137,14 +95,6 @@ public class IdentityCanonicalEvents {
 
         public void setAccountUuid(String accountUuid) {
             this.accountUuid = accountUuid;
-        }
-
-        public String getUserUuid() {
-            return userUuid;
-        }
-
-        public void setUserUuid(String userUuid) {
-            this.userUuid = userUuid;
         }
     }
 }

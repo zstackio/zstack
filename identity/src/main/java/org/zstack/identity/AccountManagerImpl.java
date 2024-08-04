@@ -201,8 +201,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APICreateAccountMsg) msg);
         } else if (msg instanceof APILogInByAccountMsg) {
             handle((APILogInByAccountMsg) msg);
-        } else if (msg instanceof APILogInByUserMsg) {
-            handle((APILogInByUserMsg) msg);
         } else if (msg instanceof APILogOutMsg) {
             handle((APILogOutMsg) msg);
         } else if (msg instanceof APIValidateSessionMsg) {
@@ -397,47 +395,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.reply(msg, reply);
     }
 
-    private SessionInventory getSession(String accountUuid, String userUuid) {
-        return Session.login(accountUuid, userUuid);
-    }
-
-    private void handle(APILogInByUserMsg msg) {
-        APILogInReply reply = new APILogInReply();
-
-        String accountUuid;
-        if (msg.getAccountUuid() != null) {
-            accountUuid = msg.getAccountUuid();
-        } else {
-            SimpleQuery<AccountVO> accountq = dbf.createQuery(AccountVO.class);
-            accountq.select(AccountVO_.uuid);
-            accountq.add(AccountVO_.name, Op.EQ, msg.getAccountName());
-            accountUuid = accountq.findValue();
-            if (accountUuid == null) {
-                reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account or username or password"));
-                bus.reply(msg, reply);
-                return;
-            }
-        }
-
-        SimpleQuery<UserVO> q = dbf.createQuery(UserVO.class);
-        q.add(UserVO_.accountUuid, Op.EQ, accountUuid);
-        q.add(UserVO_.password, Op.EQ, msg.getPassword());
-        q.add(UserVO_.name, Op.EQ, msg.getUserName());
-        UserVO user = q.find();
-
-        if (user == null) {
-            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR,
-                    "wrong account or username or password"
-            ));
-            bus.reply(msg, reply);
-            return;
-        }
-        SessionInventory session = getSession(user.getAccountUuid(), user.getUuid());
-        msg.setSession(session);
-        reply.setInventory(session);
-        bus.reply(msg, reply);
-    }
-
     private void handle(APILogInByAccountMsg msg) {
         APILogInReply reply = new APILogInReply();
 
@@ -463,7 +420,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 LogInReply logInReply = r.castReply();
                 IdentityCanonicalEvents.AccountLoginData data = new IdentityCanonicalEvents.AccountLoginData();
                 data.setAccountUuid(logInReply.getSession().getAccountUuid());
-                data.setUserUuid(logInReply.getSession().getUserUuid());
                 evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
 
                 reply.setInventory(logInReply.getSession());
@@ -961,32 +917,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIUpdateAccountMsg) msg);
         } else if (msg instanceof APICreatePolicyMsg) {
             validate((APICreatePolicyMsg) msg);
-        } else if (msg instanceof APIAddUserToGroupMsg) {
-            validate((APIAddUserToGroupMsg) msg);
-        } else if (msg instanceof APIAttachPolicyToUserGroupMsg) {
-            validate((APIAttachPolicyToUserGroupMsg) msg);
-        } else if (msg instanceof APIAttachPolicyToUserMsg) {
-            validate((APIAttachPolicyToUserMsg) msg);
-        } else if (msg instanceof APIDetachPolicyFromUserGroupMsg) {
-            validate((APIDetachPolicyFromUserGroupMsg) msg);
-        } else if (msg instanceof APIDetachPolicyFromUserMsg) {
-            validate((APIDetachPolicyFromUserMsg) msg);
         } else if (msg instanceof APIShareResourceMsg) {
             validate((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
             validate((APIRevokeResourceSharingMsg) msg);
-        } else if (msg instanceof APIUpdateUserMsg) {
-            validate((APIUpdateUserMsg) msg);
         } else if (msg instanceof APIDeleteAccountMsg) {
             validate((APIDeleteAccountMsg) msg);
         } else if (msg instanceof APICreateAccountMsg) {
             validate((APICreateAccountMsg) msg);
-        } else if (msg instanceof APICreateUserMsg) {
-            validate((APICreateUserMsg) msg);
-        } else if (msg instanceof APICreateUserGroupMsg) {
-            validate((APICreateUserGroupMsg) msg);
-        } else if (msg instanceof APILogInByUserMsg) {
-            validate((APILogInByUserMsg) msg);
         } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
             validate((APIGetAccountQuotaUsageMsg) msg);
         } else if (msg instanceof APIUpdateQuotaMsg) {
@@ -1001,34 +939,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void validate(APIGetAccountQuotaUsageMsg msg) {
         if (msg.getUuid() == null) {
             msg.setUuid(msg.getSession().getAccountUuid());
-        }
-    }
-
-    private void validate(APILogInByUserMsg msg) {
-        if (msg.getAccountName() == null && msg.getAccountUuid() == null) {
-            throw new ApiMessageInterceptionException(argerr(
-                    "accountName and accountUuid cannot both be null, you must specify at least one"
-            ));
-        }
-    }
-
-    private void validate(APICreateUserGroupMsg msg) {
-        SimpleQuery<UserGroupVO> q = dbf.createQuery(UserGroupVO.class);
-        q.add(UserGroupVO_.accountUuid, Op.EQ, msg.getAccountUuid());
-        q.add(UserGroupVO_.name, Op.EQ, msg.getName());
-        if (q.isExists()) {
-            throw new ApiMessageInterceptionException(argerr("unable to create a group. A group called %s is already under the account[uuid:%s]",
-                            msg.getName(), msg.getAccountUuid()));
-        }
-    }
-
-    private void validate(APICreateUserMsg msg) {
-        SimpleQuery<UserVO> q = dbf.createQuery(UserVO.class);
-        q.add(UserVO_.accountUuid, Op.EQ, msg.getAccountUuid());
-        q.add(UserVO_.name, Op.EQ, msg.getName());
-        if (q.isExists()) {
-            throw new ApiMessageInterceptionException(argerr("unable to create a user. A user called %s is already under the account[uuid:%s]",
-                            msg.getName(), msg.getAccountUuid()));
         }
     }
 
@@ -1061,29 +971,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    private void validate(APIUpdateUserMsg msg) {
-        if (msg.getUuid() == null && msg.getSession().isAccountSession()) {
-            throw new ApiMessageInterceptionException(argerr(
-                    "the current session is an account session. You need to specify the field 'uuid' of the user" +
-                            " you want to update"
-            ));
-        }
-
-        if (msg.getSession().isAccountSession()) {
-            return;
-        }
-
-        if (AccountConstant.isAdminPermission(msg.getSession())) {
-            return;
-        }
-
-        if (msg.getUuid() != null && !msg.getSession().getUserUuid().equals(msg.getUuid())) {
-            throw new ApiMessageInterceptionException(argerr("your are login as a user, you cannot another user[uuid:%s]", msg.getUuid()));
-        }
-
-        msg.setUuid(msg.getSession().getUserUuid());
-    }
-
     private void validate(APIRevokeResourceSharingMsg msg) {
         if (!msg.isAll() && (msg.getAccountUuids() == null || msg.getAccountUuids().isEmpty())) {
             throw new ApiMessageInterceptionException(argerr(
@@ -1097,72 +984,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             throw new ApiMessageInterceptionException(argerr(
                     "toPublic is set to false, accountUuids cannot be null or empty"
             ));
-        }
-    }
-
-    private void validate(APIDetachPolicyFromUserMsg msg) {
-        PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
-        UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
-        if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid()));
-        }
-        if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid()));
-        }
-    }
-
-    private void validate(APIDetachPolicyFromUserGroupMsg msg) {
-        PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
-        UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
-        if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid()));
-        }
-        if (!group.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid()));
-        }
-    }
-
-    private void validate(APIAttachPolicyToUserMsg msg) {
-        PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
-        UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
-        if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid()));
-        }
-        if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid()));
-        }
-    }
-
-    private void validate(APIAttachPolicyToUserGroupMsg msg) {
-        PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
-        UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
-        if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid()));
-        }
-
-        if (!group.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid()));
-        }
-    }
-
-    private void validate(APIAddUserToGroupMsg msg) {
-        UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
-        UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
-        if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid()));
-        }
-        if (!group.getAccountUuid().equals(msg.getSession().getAccountUuid())) {
-            throw new ApiMessageInterceptionException(argerr("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid()));
         }
     }
 

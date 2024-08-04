@@ -35,7 +35,7 @@ public class APICreatePolicyEvent extends APIEvent {
         PolicyStatement s = new PolicyStatement();
         s.setName(String.format("user-reset-password-%s", inventory.getUuid()));
         s.setEffect(StatementEffect.Allow);
-        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
+        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, "APIUpdateUserMsg"));
         inventory.setStatements(list(s));
 
         event.setInventory(inventory);

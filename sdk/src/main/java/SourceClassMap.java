@@ -225,8 +225,6 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.SessionInventory", "org.zstack.sdk.SessionInventory");
 			put("org.zstack.header.identity.SharedResourceInventory", "org.zstack.sdk.SharedResourceInventory");
 			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
-			put("org.zstack.header.identity.UserGroupInventory", "org.zstack.sdk.UserGroupInventory");
-			put("org.zstack.header.identity.UserInventory", "org.zstack.sdk.UserInventory");
 			put("org.zstack.header.identity.login.LoginAuthenticationProcedureDesc", "org.zstack.sdk.LoginAuthenticationProcedureDesc");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
 			put("org.zstack.header.identity.role.RolePolicyRefInventory", "org.zstack.sdk.identity.role.RolePolicyRefInventory");
@@ -1180,8 +1178,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.UsbDeviceInventory", "org.zstack.usbDevice.UsbDeviceInventory");
 			put("org.zstack.sdk.UsbDeviceState", "org.zstack.usbDevice.UsbDeviceState");
 			put("org.zstack.sdk.UsedIpInventory", "org.zstack.header.network.l3.UsedIpInventory");
-			put("org.zstack.sdk.UserGroupInventory", "org.zstack.header.identity.UserGroupInventory");
-			put("org.zstack.sdk.UserInventory", "org.zstack.header.identity.UserInventory");
 			put("org.zstack.sdk.UserTagInventory", "org.zstack.header.tag.UserTagInventory");
 			put("org.zstack.sdk.VCenterBackupStorageInventory", "org.zstack.vmware.VCenterBackupStorageInventory");
 			put("org.zstack.sdk.VCenterClusterInventory", "org.zstack.vmware.VCenterClusterInventory");
