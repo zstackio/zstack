@@ -593,9 +593,7 @@ public class SourceClassMap {
 			put("org.zstack.tag2.AttachTagResult", "org.zstack.sdk.AttachTagResult");
 			put("org.zstack.templateConfig.GlobalConfigTemplateInventory", "org.zstack.sdk.GlobalConfigTemplateInventory");
 			put("org.zstack.templateConfig.TemplateConfigInventory", "org.zstack.sdk.TemplateConfigInventory");
-			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory", "org.zstack.sdk.TwoFactorAuthenticationInventory");
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory", "org.zstack.sdk.TwoFactorAuthenticationSecretInventory");
-			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus", "org.zstack.sdk.TwoFactorAuthenticationSecretStatus");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
@@ -1175,9 +1173,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TemplatedVmInstanceInventory", "org.zstack.header.vm.TemplatedVmInstanceInventory");
 			put("org.zstack.sdk.Threshold", "org.zstack.drs.api.Threshold");
 			put("org.zstack.sdk.TrashCleanupResult", "org.zstack.header.core.trash.TrashCleanupResult");
-			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
-			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");
 			put("org.zstack.sdk.UKeyInventory", "org.zstack.license.UKeyInventory");
 			put("org.zstack.sdk.UKeyStatus", "org.zstack.license.UKeyStatus");
 			put("org.zstack.sdk.UplinkGroupInventory", "org.zstack.network.l2.virtualSwitch.header.UplinkGroupInventory");
