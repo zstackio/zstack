@@ -147,3 +147,33 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceGroupDatasetRefVO` (
     CONSTRAINT fkDatasetRefVO FOREIGN KEY (datasetUuid) REFERENCES DatasetVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
     CONSTRAINT fkModelServiceInstanceGroupVORefVO FOREIGN KEY (modelServiceInstanceGroupUuid) REFERENCES ModelServiceInstanceGroupVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`UserProxyConfigVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `proxyType` varchar(255) NULL,
+    `proxyHost` varchar(255) NULL,
+    `proxyPort` int NULL,
+    `proxyUsername` varchar(255) NULL,
+    `proxyPassword` varchar(255) NULL,
+    `isEnabled` boolean NULL,
+    `proxyProtocolVersion` varchar(255) NULL,
+    `useSsl` boolean NULL,
+    `noProxy` varchar(255) NULL,
+    `createDate` timestamp NULL,
+    `lastOpDate` timestamp NULL,
+  PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`UserProxyConfigResourceRefVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `resourceUuid` varchar(32) NOT NULL,
+    `proxyUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `id` (`id`),
+    KEY `fkUserProxyConfigResourceRefVOResourceVO` (`resourceUuid`),
+    KEY `fkUserProxyConfigResourceRefVOUserProxyConfigVO` (`proxyUuid`),
+    CONSTRAINT `fUserProxyConfigResourceRefVO` FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkUserProxyConfigResourceRefVO1` FOREIGN KEY (`proxyUuid`) REFERENCES `UserProxyConfigVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
