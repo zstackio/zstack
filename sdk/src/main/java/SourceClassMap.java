@@ -556,6 +556,8 @@ public class SourceClassMap {
 			put("org.zstack.policyRoute.PolicyRouteTableInventory", "org.zstack.sdk.PolicyRouteTableInventory");
 			put("org.zstack.policyRoute.PolicyRouteTableRouteEntryInventory", "org.zstack.sdk.PolicyRouteTableRouteEntryInventory");
 			put("org.zstack.policyRoute.PolicyRouteTableVRouterRefInventory", "org.zstack.sdk.PolicyRouteTableVRouterRefInventory");
+			put("org.zstack.proxy.UserProxyConfigInventory", "org.zstack.sdk.UserProxyConfigInventory");
+			put("org.zstack.proxy.UserProxyConfigResourceRefInventory", "org.zstack.sdk.UserProxyConfigResourceRefInventory");
 			put("org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct", "org.zstack.sdk.ResourceBindableConfigStruct");
 			put("org.zstack.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
 			put("org.zstack.resourceconfig.ResourceConfigStruct", "org.zstack.sdk.ResourceConfigStruct");
@@ -1274,6 +1276,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.UsedIpInventory", "org.zstack.header.network.l3.UsedIpInventory");
 			put("org.zstack.sdk.UserGroupInventory", "org.zstack.header.identity.UserGroupInventory");
 			put("org.zstack.sdk.UserInventory", "org.zstack.header.identity.UserInventory");
+			put("org.zstack.sdk.UserProxyConfigInventory", "org.zstack.proxy.UserProxyConfigInventory");
+			put("org.zstack.sdk.UserProxyConfigResourceRefInventory", "org.zstack.proxy.UserProxyConfigResourceRefInventory");
 			put("org.zstack.sdk.UserTagInventory", "org.zstack.header.tag.UserTagInventory");
 			put("org.zstack.sdk.V2VConversionHostInventory", "org.zstack.v2v.V2VConversionHostInventory");
 			put("org.zstack.sdk.VCenterBackupStorageInventory", "org.zstack.vmware.VCenterBackupStorageInventory");
