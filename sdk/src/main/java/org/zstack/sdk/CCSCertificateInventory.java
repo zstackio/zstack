@@ -84,12 +84,12 @@ public class CCSCertificateInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List userCertificateRefs;
-    public void setUserCertificateRefs(java.util.List userCertificateRefs) {
-        this.userCertificateRefs = userCertificateRefs;
+    public java.util.List accountCertificateRefs;
+    public void setAccountCertificateRefs(java.util.List accountCertificateRefs) {
+        this.accountCertificateRefs = accountCertificateRefs;
     }
-    public java.util.List getUserCertificateRefs() {
-        return this.userCertificateRefs;
+    public java.util.List getAccountCertificateRefs() {
+        return this.accountCertificateRefs;
     }
 
 }
