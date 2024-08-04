@@ -55,24 +55,15 @@ public class LoginContext {
 
     private boolean validateOnly;
 
-    private String userUuid;
-    private String userType;
+    private String accountUuid;
     private Timestamp lastUpdatedTime;
 
-    public String getUserUuid() {
-        return userUuid;
+    public String getAccountUuid() {
+        return accountUuid;
     }
 
-    public void setUserUuid(String userUuid) {
-        this.userUuid = userUuid;
-    }
-
-    public String getUserType() {
-        return userType;
-    }
-
-    public void setUserType(String userType) {
-        this.userType = userType;
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
 
     public Timestamp getLastUpdatedTime() {
@@ -176,8 +167,8 @@ public class LoginContext {
     }
 
     public Set<String> findPossibleUserUuidSet() {
-        if (this.userUuid != null) {
-            return Collections.singleton(userUuid);
+        if (this.accountUuid != null) {
+            return Collections.singleton(accountUuid);
         }
         if (this.possibleUsersGetter == null) {
             return Collections.emptySet();

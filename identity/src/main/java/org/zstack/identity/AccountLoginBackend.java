@@ -9,6 +9,7 @@ import org.zstack.header.identity.login.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -34,41 +35,30 @@ public class AccountLoginBackend implements LoginBackend {
 
     @Override
     public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
-        AccountVO vo = Q.New(AccountVO.class)
+        List<Tuple> accountTuples = Q.New(AccountVO.class)
                 .eq(AccountVO_.name, loginContext.getUsername())
                 .eq(AccountVO_.password, loginContext.getPassword())
-                .find();
+                .select(AccountVO_.uuid, AccountVO_.state)
+                .listTuple();
 
         String accountType = loginContext.getProperties().get(AccountConstant.ACCOUNT_TYPE);
         LoginSessionInfo info = new LoginSessionInfo();
         boolean accountLogin = accountType == null || AccountConstant.LOGIN_TYPE.equals(accountType);
-        if (vo != null && accountLogin) {
-            if (vo.getState() == AccountState.Disabled) {
+        if (accountTuples.size() == 1 && accountLogin) {
+            Tuple tuple = accountTuples.get(0);
+            AccountState state = tuple.get(1, AccountState.class);
+
+            if (state == AccountState.Disabled) {
                 completion.fail(err(IdentityErrors.ACCOUNT_DISABLED, "failed to login: account is disabled"));
                 return;
-            } else if (vo.getState() == AccountState.Staled) {
+            } else if (state == AccountState.Staled) {
                 completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
                 return;
             }
 
-            info.setUserUuid(vo.getUuid());
-            info.setAccountUuid(vo.getUuid());
-            info.setUserType(AccountVO.class.getSimpleName());
+            String accountUuid = tuple.get(0, String.class);
+            info.setAccountUuid(accountUuid);
         } else {
-            logger.debug(String.format("login account type is %s, use AccountLoginExtensionPoint", accountLogin));
-            for (AccountLoginExtensionPoint ext : pluginRgty.getExtensionList(AccountLoginExtensionPoint.class)) {
-                AccountLoginStruct struct = ext.getLoginEntry(loginContext.getUsername(), loginContext.getPassword(), null);
-
-                if (struct != null) {
-                    info.setAccountUuid(struct.getAccountUuid());
-                    info.setUserType(struct.getResourceType());
-                    info.setUserUuid(struct.getUserUuid());
-                    break;
-                }
-            }
-        }
-
-        if (info.getUserUuid() == null) {
             completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
             return;
         }
@@ -77,32 +67,16 @@ public class AccountLoginBackend implements LoginBackend {
     }
 
     @Override
-    public Set<String> possibleUserUuidSetForGettingProcedures(LoginContext loginContext) {
-        List<String> userUuidList = Q.New(AccountVO.class)
+    public Set<String> possibleAccountUuidSetForGettingProcedures(LoginContext loginContext) {
+        List<String> accountUuidList = Q.New(AccountVO.class)
                 .select(AccountVO_.uuid)
                 .eq(AccountVO_.name, loginContext.getUsername())
                 .listValues();
-        return new HashSet<>(userUuidList);
+        return new HashSet<>(accountUuidList);
     }
 
     protected String getResourceIdentity(String name) {
-        String resourceIdentity = Q.New(AccountVO.class).select(AccountVO_.uuid).eq(AccountVO_.name, name).findValue();
-
-        if (resourceIdentity == null) {
-            for(AccountLoginExtensionPoint ext : pluginRgty.getExtensionList(AccountLoginExtensionPoint.class)) {
-                AccountLoginStruct struct = ext.getLoginEntryByName(name, null);
-                if (struct == null) {
-                    continue;
-                }
-
-                resourceIdentity = struct.getUserUuid();
-                if(resourceIdentity != null) {
-                    break;
-                }
-            }
-        }
-
-        return resourceIdentity;
+        return Q.New(AccountVO.class).select(AccountVO_.uuid).eq(AccountVO_.name, name).findValue();
     }
 
     @Override
@@ -112,31 +86,22 @@ public class AccountLoginBackend implements LoginBackend {
     }
 
     @Override
-    public String getUserIdByName(String username) {
+    public String getAccountIdByName(String username) {
         return getResourceIdentity(username);
     }
 
     private AccountLoginStruct getLoginEntryByName(String username, String accountType) {
         AccountVO vo = Q.New(AccountVO.class).eq(AccountVO_.name, username).find();
 
-        AccountLoginStruct struct = null;
         boolean accountLogin = accountType == null || AccountConstant.LOGIN_TYPE.equals(accountType);
         if (vo != null && accountLogin) {
-            struct = new AccountLoginStruct();
-            struct.setUserUuid(vo.getUuid());
+            AccountLoginStruct struct = new AccountLoginStruct();
             struct.setAccountUuid(vo.getUuid());
-            struct.setResourceType(AccountVO.class.getSimpleName());
             struct.setLastOpTime(vo.getLastOpDate());
-        } else {
-            for (AccountLoginExtensionPoint ext : pluginRgty.getExtensionList(AccountLoginExtensionPoint.class)) {
-                struct = ext.getLoginEntryByName(username, accountType);
-                if (struct != null) {
-                    break;
-                }
-            }
+            return struct;
         }
 
-        return struct;
+        return null;
     }
 
     @Override
@@ -148,9 +113,8 @@ public class AccountLoginBackend implements LoginBackend {
             return;
         }
 
-        loginContext.setUserUuid(struct.getUserUuid());
+        loginContext.setAccountUuid(struct.getAccountUuid());
         loginContext.setLastUpdatedTime(struct.getLastOpTime());
-        loginContext.setUserType(struct.getResourceType());
     }
 
     @Override

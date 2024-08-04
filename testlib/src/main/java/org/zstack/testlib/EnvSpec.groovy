@@ -128,8 +128,6 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateInstanceOfferingAction.metaClass, CreateInstanceOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
             [CreateAccountAction.metaClass, CreateAccountAction.Result.metaClass, DeleteAccountAction.class],
             [CreatePolicyAction.metaClass, CreatePolicyAction.Result.metaClass, DeletePolicyAction.class],
-            [CreateUserGroupAction.metaClass, CreateUserGroupAction.Result.metaClass, DeleteUserGroupAction.class],
-            [CreateUserAction.metaClass, CreateUserAction.Result.metaClass, DeleteUserAction.class],
             [CreateRoleAction.metaClass, CreateRoleAction.Result.metaClass, DeleteRoleAction.class],
             [AddImageAction.metaClass, AddImageAction.Result.metaClass, DeleteImageAction.class],
             [CreateDataVolumeTemplateFromVolumeAction.metaClass, CreateDataVolumeTemplateFromVolumeAction.Result.metaClass, DeleteImageAction.class],
