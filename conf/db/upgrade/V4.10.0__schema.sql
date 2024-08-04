@@ -2,3 +2,6 @@
 
 ALTER TABLE `TwoFactorAuthenticationSecretVO` CHANGE COLUMN `userUuid` `accountUuid` char(32) not null;
 call DROP_COLUMN('TwoFactorAuthenticationSecretVO', 'userType');
+
+RENAME TABLE `CCSCertificateUserRefVO` TO `CCSCertificateAccountRefVO`;
+ALTER TABLE `CCSCertificateAccountRefVO` CHANGE COLUMN `userUuid` `accountUuid` char(32) not null;

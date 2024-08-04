@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachCCSCertificateToUserAction extends AbstractAction {
+public class AttachCCSCertificateToAccountAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachCCSCertificateToUserAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachCCSCertificateToUserResult value;
+        public org.zstack.sdk.AttachCCSCertificateToAccountResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,7 +29,7 @@ public class AttachCCSCertificateToUserAction extends AbstractAction {
     public java.lang.String certificateUuid;
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String userUuid;
+    public java.lang.String accountUuid;
 
     @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String state = "enable";
@@ -66,8 +66,8 @@ public class AttachCCSCertificateToUserAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachCCSCertificateToUserResult value = res.getResult(org.zstack.sdk.AttachCCSCertificateToUserResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachCCSCertificateToUserResult() : value; 
+        org.zstack.sdk.AttachCCSCertificateToAccountResult value = res.getResult(org.zstack.sdk.AttachCCSCertificateToAccountResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachCCSCertificateToAccountResult() : value; 
 
         return ret;
     }
@@ -97,7 +97,7 @@ public class AttachCCSCertificateToUserAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/crypto/ccs-certificate/attach-user/{userUuid}";
+        info.path = "/crypto/ccs-certificate/attach-account/{accountUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

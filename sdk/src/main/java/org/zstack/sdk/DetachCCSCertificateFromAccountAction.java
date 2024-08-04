@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateCCSCertificateUserStateAction extends AbstractAction {
+public class DetachCCSCertificateFromAccountAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateCCSCertificateUserStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateCCSCertificateUserStateResult value;
+        public org.zstack.sdk.DetachCCSCertificateFromAccountResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,7 @@ public class UpdateCCSCertificateUserStateAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String userUuid;
-
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String state;
+    public java.lang.String accountUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class UpdateCCSCertificateUserStateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateCCSCertificateUserStateResult value = res.getResult(org.zstack.sdk.UpdateCCSCertificateUserStateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateCCSCertificateUserStateResult() : value; 
+        org.zstack.sdk.DetachCCSCertificateFromAccountResult value = res.getResult(org.zstack.sdk.DetachCCSCertificateFromAccountResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachCCSCertificateFromAccountResult() : value; 
 
         return ret;
     }
@@ -94,7 +91,7 @@ public class UpdateCCSCertificateUserStateAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/crypto/ccs-certificate/update-state/{userUuid}";
+        info.path = "/crypto/ccs-certificate/detach-account/{accountUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
