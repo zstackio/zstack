@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.TwoFactorAuthenticationSecretStatus;
+
 
 public class TwoFactorAuthenticationSecretInventory  {
 
@@ -20,27 +20,11 @@ public class TwoFactorAuthenticationSecretInventory  {
         return this.secret;
     }
 
-    public java.lang.String resourceUuid;
-    public void setResourceUuid(java.lang.String resourceUuid) {
-        this.resourceUuid = resourceUuid;
-    }
-    public java.lang.String getResourceUuid() {
-        return this.resourceUuid;
-    }
-
-    public java.lang.String resourceType;
-    public void setResourceType(java.lang.String resourceType) {
-        this.resourceType = resourceType;
-    }
-    public java.lang.String getResourceType() {
-        return this.resourceType;
-    }
-
-    public TwoFactorAuthenticationSecretStatus status;
-    public void setStatus(TwoFactorAuthenticationSecretStatus status) {
+    public java.lang.String status;
+    public void setStatus(java.lang.String status) {
         this.status = status;
     }
-    public TwoFactorAuthenticationSecretStatus getStatus() {
+    public java.lang.String getStatus() {
         return this.status;
     }
 
@@ -60,20 +44,12 @@ public class TwoFactorAuthenticationSecretInventory  {
         return this.lastOpDate;
     }
 
-    public java.lang.String userUuid;
-    public void setUserUuid(java.lang.String userUuid) {
-        this.userUuid = userUuid;
+    public java.lang.String accountUuid;
+    public void setAccountUuid(java.lang.String accountUuid) {
+        this.accountUuid = accountUuid;
     }
-    public java.lang.String getUserUuid() {
-        return this.userUuid;
-    }
-
-    public java.lang.String userType;
-    public void setUserType(java.lang.String userType) {
-        this.userType = userType;
-    }
-    public java.lang.String getUserType() {
-        return this.userType;
+    public java.lang.String getAccountUuid() {
+        return this.accountUuid;
     }
 
 }
