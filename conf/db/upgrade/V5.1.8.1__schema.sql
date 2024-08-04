@@ -163,3 +163,17 @@ CREATE TABLE IF NOT EXISTS `zstack`.`UserProxyConfigVO` (
     `lastOpDate` timestamp NULL,
   PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`UserProxyConfigResourceRefVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `resourceUuid` varchar(32) NOT NULL,
+    `proxyUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `id` (`id`),
+    KEY `fkUserProxyConfigResourceRefVOResourceVO` (`resourceUuid`),
+    KEY `fkUserProxyConfigResourceRefVOUserProxyConfigVO` (`proxyUuid`),
+    CONSTRAINT `fUserProxyConfigResourceRefVO` FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkUserProxyConfigResourceRefVO1` FOREIGN KEY (`proxyUuid`) REFERENCES `UserProxyConfigVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
