@@ -41,22 +41,6 @@ class AccountSpec extends Spec {
         addChild(spec)
     }
 
-    void user(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = UserSpec.class) Closure c) {
-        def spec = new UserSpec(envSpec)
-        c.delegate = spec
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c()
-        addChild(spec)
-    }
-
-    void group(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = UserGroupSpec.class) Closure c) {
-        def spec = new UserGroupSpec(envSpec)
-        c.delegate = spec
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c()
-        addChild(spec)
-    }
-
     void role(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleSpec.class) Closure c) {
         def spec = new RoleSpec(envSpec)
         c.delegate = spec
