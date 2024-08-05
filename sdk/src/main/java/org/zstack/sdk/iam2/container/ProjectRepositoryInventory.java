@@ -4,11 +4,11 @@ package org.zstack.sdk.iam2.container;
 
 public class ProjectRepositoryInventory  {
 
-    public java.lang.Long zeProjectID;
-    public void setZeProjectID(java.lang.Long zeProjectID) {
+    public java.lang.Integer zeProjectID;
+    public void setZeProjectID(java.lang.Integer zeProjectID) {
         this.zeProjectID = zeProjectID;
     }
-    public java.lang.Long getZeProjectID() {
+    public java.lang.Integer getZeProjectID() {
         return this.zeProjectID;
     }
 

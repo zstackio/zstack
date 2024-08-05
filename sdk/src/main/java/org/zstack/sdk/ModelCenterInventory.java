@@ -84,6 +84,14 @@ public class ModelCenterInventory  {
         return this.containerRegistry;
     }
 
+    public java.lang.String containerNetwork;
+    public void setContainerNetwork(java.lang.String containerNetwork) {
+        this.containerNetwork = containerNetwork;
+    }
+    public java.lang.String getContainerNetwork() {
+        return this.containerNetwork;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

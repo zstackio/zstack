@@ -12,11 +12,11 @@ public class ContainerImageTagInventory  {
         return this.name;
     }
 
-    public java.lang.Integer size;
-    public void setSize(java.lang.Integer size) {
+    public java.lang.Long size;
+    public void setSize(java.lang.Long size) {
         this.size = size;
     }
-    public java.lang.Integer getSize() {
+    public java.lang.Long getSize() {
         return this.size;
     }
 
