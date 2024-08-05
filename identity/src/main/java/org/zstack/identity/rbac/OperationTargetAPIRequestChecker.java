@@ -24,39 +24,14 @@ import static org.zstack.header.errorcode.SysErrors.*;
 public class OperationTargetAPIRequestChecker implements APIRequestChecker {
     protected RBACEntity rbacEntity;
 
-    private static Map<Class, RBAC.Permission> rbacInfos =  Collections.synchronizedMap(new HashMap<>());
-    private static PolicyMatcher policyMatcher = new PolicyMatcher();
-
-
     @Override
     public void check(RBACEntity entity) {
         rbacEntity = entity;
         check();
     }
 
-    protected boolean isMatch(String as) {
-        String ap = PolicyUtils.apiNamePatternFromAction(as, true);
-        return policyMatcher.match(ap, rbacEntity.getApiMessage().getClass().getName());
-    }
-
     protected RBAC.Permission getRBACInfo() {
-        return rbacInfos.computeIfAbsent(rbacEntity.getApiMessage().getClass(), x-> {
-            for (RBAC.Permission permission : RBAC.permissions) {
-                for (String s : permission.getNormalAPIs()) {
-                    if (isMatch(s)) {
-                        return permission;
-                    }
-                }
-
-                for (String s : permission.getAdminOnlyAPIs()) {
-                    if (isMatch(s)) {
-                        return permission;
-                    }
-                }
-            }
-
-            throw new CloudRuntimeException(String.format("cannot find RBACInfo for the API[%s]", rbacEntity.getApiMessage().getClass()));
-        });
+        return RBAC.apiBuckets.get(rbacEntity.getApiMessage().getClass().getName()).permission;
     }
 
     private static class AccountResourceBundle {

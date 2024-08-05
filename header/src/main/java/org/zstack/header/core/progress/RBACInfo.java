@@ -4,28 +4,21 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "task-progress";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("task-progress")
-                .normalAPIs(APIGetTaskProgressMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-        roleContributorBuilder()
-                .roleName("other")
-                .actions(APIGetTaskProgressMsg.class)
-                .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
+        contributeNormalApiToOtherRole();
     }
 }

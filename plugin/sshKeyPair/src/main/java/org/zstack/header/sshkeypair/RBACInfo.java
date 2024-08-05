@@ -1,16 +1,17 @@
-package org.zstack.network.service.virtualrouter;
+package org.zstack.header.sshkeypair;
 
 import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
     public String permissionName() {
-        return "vrouter";
+        return "ssh-key-pair";
     }
 
     @Override
     public void permissions() {
         permissionBuilder()
+                .targetResources(SshKeyPairVO.class)
                 .communityAvailable()
                 .zsvBasicAvailable()
                 .zsvProAvailable()
@@ -20,9 +21,8 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void roles() {
         roleBuilder()
-                .uuid("74a27f7f461e4601877c2728c52ec9e5")
+                .uuid("2ae2f3bdb0ff4296bda2447aa7b334e7")
                 .permissionBaseOnThis()
-                .permissionsByName("vip")
                 .build();
     }
 }

@@ -4,11 +4,15 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "l2";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("l2")
                 .targetResources(L2NetworkVO.class)
-                .adminOnlyAPIs("org.zstack.header.network.l2.**")
+                .adminOnlyForAll()
                 .normalAPIs(
                         APIUpdateL2NetworkMsg.class,
                         APIGetL2NetworkTypesMsg.class,
@@ -16,6 +20,9 @@ public class RBACInfo implements RBACDescription {
                         APIQueryL2NetworkMsg.class,
                         APIQueryL2VlanNetworkMsg.class
                 )
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -23,13 +30,8 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("networks")
-                .actionsByPermissionName("l2")
+                .actionsInThisPermission()
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
     }
 
     @Override

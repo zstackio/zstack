@@ -4,17 +4,18 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
-    public void permissions() {
-        permissionBuilder()
-                .name("l3")
-                .normalAPIs("org.zstack.header.network.l3.**")
-                .targetResources(L3NetworkVO.class)
-                .build();
+    public String permissionName() {
+        return "l3";
     }
 
     @Override
-    public void contributeToRoles() {
-
+    public void permissions() {
+        permissionBuilder()
+                .targetResources(L3NetworkVO.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
+                .build();
     }
 
     @Override
@@ -22,7 +23,7 @@ public class RBACInfo implements RBACDescription {
         roleBuilder()
                 .name("networks")
                 .uuid("884b0fcc99b04120807e64466fd63336")
-                .permissionsByName("l3")
+                .permissionBaseOnThis()
                 .build();
     }
 

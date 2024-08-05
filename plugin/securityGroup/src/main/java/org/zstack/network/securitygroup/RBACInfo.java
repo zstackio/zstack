@@ -4,30 +4,24 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
-    public void permissions() {
-        permissionBuilder()
-                .name("security-group")
-                .normalAPIs("org.zstack.network.securitygroup.**")
-                .targetResources(SecurityGroupVO.class)
-                .build();
+    public String permissionName() {
+        return "security-group";
     }
 
     @Override
-    public void contributeToRoles() {
-
+    public void permissions() {
+        permissionBuilder()
+                .targetResources(SecurityGroupVO.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .build();
     }
 
     @Override
     public void roles() {
         roleBuilder()
-                .name("security-group")
                 .uuid("4266a67e46cb4e68864899458187941e")
-                .permissionsByName("security-group")
+                .permissionBaseOnThis()
                 .build();
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

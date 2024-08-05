@@ -1,28 +1,21 @@
 package org.zstack.ldap;
 
 import org.zstack.header.identity.rbac.RBACDescription;
+import org.zstack.header.rest.SDKPackage;
 
+@SDKPackage(packageName = "org.zstack.sdk.identity.ldap")
 public class RBACInfo implements RBACDescription {
+    @Override
+    public String permissionName() {
+        return "ldap";
+    }
+
     @Override
     public void permissions() {
         permissionBuilder()
-                .name("ldap")
-                .adminOnlyAPIs("org.zstack.ldap.**")
+                .adminOnlyForAll()
+                .communityAvailable()
+                .zsvProAvailable()
                 .build();
-    }
-
-    @Override
-    public void contributeToRoles() {
-
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }
