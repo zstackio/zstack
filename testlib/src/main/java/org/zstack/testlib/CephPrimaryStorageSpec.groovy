@@ -757,6 +757,24 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             simulator(CephPrimaryStorageBase.CLAEN_TRASH_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new CephPrimaryStorageBase.CleanTrashRsp()
             }
+
+            simulator(CephPrimaryStorageBase.DOWNLOAD_BITS_FROM_REMOTE_TARGET_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new CephPrimaryStorageBase.DownloadBitsFromRemoteTargetRsp()
+            }
+
+            VFS.vfsHook(CephPrimaryStorageBase.DOWNLOAD_BITS_FROM_REMOTE_TARGET_PATH, espec) { CephPrimaryStorageBase.AgentResponse rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.DownloadBitsFromRemoteTargetCmd.class)
+                VFS vfs = vfs(cmd, spec)
+
+                def pool = cephPathToVFSPath(cmd.primaryStorageInstallPath).split("/")[1]
+                def dir = cephPathToVFSPath(pool)
+                if (!vfs.exists(dir)) {
+                    vfs.createDirectories(dir)
+                }
+
+                vfs.createCephRaw(cephPathToVFSPath(cmd.primaryStorageInstallPath), 0L)
+                return rsp
+            }
         }
     }
 
