@@ -44,6 +44,12 @@ public class DeployModelServiceAction extends AbstractAction {
     public java.util.List datasetUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List modelServiceGroupUuids;
+
+    @Param(required = true, validValues = {"ModelEval","ModelService"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String serviceType = "ModelService";
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dockerImage;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
