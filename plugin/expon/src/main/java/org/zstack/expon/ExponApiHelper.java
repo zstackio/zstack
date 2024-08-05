@@ -2,6 +2,7 @@ package org.zstack.expon;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -28,7 +29,9 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.expon.ExponError;
 import org.zstack.header.storage.addon.SingleFlightExecutor;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -39,6 +42,7 @@ import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ExponApiHelper implements SingleFlightExecutor {
+    private static CLogger logger = Utils.getLogger(ExponApiHelper.class);
     AccountInfo accountInfo;
     ExponClient client;
     String sessionId;
@@ -304,7 +308,19 @@ public class ExponApiHelper implements SingleFlightExecutor {
         return getVolume(rsp.getId());
     }
 
+    public boolean isVolumeDeleted(String volId) {
+        GetVolumeRequest req = new GetVolumeRequest();
+        req.setVolId(volId);
+        GetVolumeResponse rsp = call(req, GetVolumeResponse.class);
+        return rsp.isResourceDeleted();
+    }
+
     public void deleteVolume(String volId, boolean force) {
+        if (isVolumeDeleted(volId)) {
+            logger.info(String.format("volume id:%s has been deleted, skip delete process", volId));
+            return;
+        }
+        
         DeleteVolumeRequest req = new DeleteVolumeRequest();
         req.setVolId(volId);
         req.setForce(force);
@@ -845,11 +861,20 @@ public class ExponApiHelper implements SingleFlightExecutor {
         errorOut(rsp);
     }
 
-    public List<String> getVolumeBoundPath(String volId) {
-        GetVolumeBoundPathRequest req = new GetVolumeBoundPathRequest();
-        req.setVolId(volId);
-        GetVolumeBoundPathResponse rsp = callErrorOut(req, GetVolumeBoundPathResponse.class);
-        return rsp.getPath();
+    public List<String> getVolumeBoundPath(String volId, List<FailureDomainModule> pools) {
+        VolumeModule volume = getVolume(volId);
+        List<String> paths = Lists.newArrayList();
+        for (FailureDomainModule pool : pools) {
+            GetFailureDomainBlacklistRequest req = new GetFailureDomainBlacklistRequest();
+            req.setId(pool.getId());
+            GetFailureDomainBlacklistResponse rsp = callErrorOut(req, GetFailureDomainBlacklistResponse.class);
+            paths.addAll(rsp.getEntries().stream()
+                    .map(BlacklistModule::getPath)
+                    .filter(path -> ExponNameHelper.getVolumeNameFromBoundPath(path).equals(volume.getVolumeName()))
+                    .collect(Collectors.toList()));
+        }
+
+        return paths;
     }
 
     public void addVolumePathToBlacklist(String path) {
@@ -858,7 +883,12 @@ public class ExponApiHelper implements SingleFlightExecutor {
         callErrorOut(req, AddVolumePathToBlacklistResponse.class);
     }
 
-    public void removeVolumePathFromBlacklist(String path) {
+    public void removeVolumePathFromBlacklist(String path, String volId, List<FailureDomainModule> pools) {
+        List<String> paths = getVolumeBoundPath(volId, pools);
+        if (!paths.contains(path)) {
+            return;
+        }
+
         RemoveVolumePathFromBlacklistRequest req = new RemoveVolumePathFromBlacklistRequest();
         req.setPath(path);
 
@@ -869,6 +899,24 @@ public class ExponApiHelper implements SingleFlightExecutor {
         }
 
         errorOut(rsp);
+    }
+
+    public void removeVolumePathsFromBlacklist(List<String> paths) {
+        if (paths.isEmpty()) {
+            return;
+        }
+        for (String p : paths) {
+            RemoveVolumePathFromBlacklistRequest req = new RemoveVolumePathFromBlacklistRequest();
+            req.setPath(p);
+
+            RemoveVolumePathFromBlacklistResponse rsp = call(req, RemoveVolumePathFromBlacklistResponse.class);
+            // {\"code\":200502,\"msg\":\"Black list not exist\"}
+            if (rsp.isError(ExponError.BLACK_LIST_OPERATION_FAILED) && rsp.getMessage().contains("list not exist")) {
+                return;
+            }
+
+            errorOut(rsp);
+        }
     }
 
     public List<BlacklistModule> getFailureDomainBlacklist() {
