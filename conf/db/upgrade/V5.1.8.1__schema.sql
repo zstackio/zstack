@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterVO` (
     `storageNetworkUuid` varchar(32) DEFAULT NULL,
     `serviceNetworkUuid` varchar(32) DEFAULT NULL,
     `containerRegistry` varchar(2048) DEFAULT NULL,
+    `containerNetwork` varchar(2048) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
