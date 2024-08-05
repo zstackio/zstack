@@ -28,7 +28,9 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.expon.ExponError;
 import org.zstack.header.storage.addon.SingleFlightExecutor;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -39,6 +41,7 @@ import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ExponApiHelper implements SingleFlightExecutor {
+    private static CLogger logger = Utils.getLogger(ExponApiHelper.class);
     AccountInfo accountInfo;
     ExponClient client;
     String sessionId;
@@ -304,7 +307,19 @@ public class ExponApiHelper implements SingleFlightExecutor {
         return getVolume(rsp.getId());
     }
 
+    public boolean isVolumeDeleted(String volId) {
+        GetVolumeRequest req = new GetVolumeRequest();
+        req.setVolId(volId);
+        GetVolumeResponse rsp = call(req, GetVolumeResponse.class);
+        return rsp.isResourceDeleted();
+    }
+
     public void deleteVolume(String volId, boolean force) {
+        if (isVolumeDeleted(volId)) {
+            logger.info(String.format("volume id:%s has been deleted, skip delete process", volId));
+            return;
+        }
+        
         DeleteVolumeRequest req = new DeleteVolumeRequest();
         req.setVolId(volId);
         req.setForce(force);

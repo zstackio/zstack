@@ -46,4 +46,8 @@ public class ExponResponse {
 
         return false;
     }
+
+    public boolean isResourceDeleted() {
+        return retCode.equals("404");
+    }
 }
