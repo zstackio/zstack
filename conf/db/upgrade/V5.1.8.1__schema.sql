@@ -73,6 +73,7 @@ CREATE TABLE  `zstack`.`ModelServiceInstanceGroupVO` (
     `modelUuid` varchar(32) DEFAULT NULL,
     `name` varchar(255) DEFAULT NULL,
     `status` varchar(255) NOT NULL,
+    `modelServiceType` varchar(62) NOT NULL,
     `type` varchar(128) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -149,6 +150,27 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceGroupDatasetRefVO` (
     CONSTRAINT fkModelServiceInstanceGroupVORefVO FOREIGN KEY (modelServiceInstanceGroupUuid) REFERENCES ModelServiceInstanceGroupVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceGroupModelServiceRefVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `modelServiceInstanceGroupUuid` varchar(32) NOT NULL,
+    `dependModelServiceInstanceGroupUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkModelServiceGroupModelServiceRefVOModelServicePrimary FOREIGN KEY (dependModelServiceInstanceGroupUuid) REFERENCES ModelServiceInstanceGroupVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
+    CONSTRAINT fkModelServiceGroupModelServiceRefVOModelServiceDepend FOREIGN KEY (modelServiceInstanceGroupUuid) REFERENCES ModelServiceInstanceGroupVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelEvalServiceInstanceGroupVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `temperature` FLOAT NULL,
+    `topK` INT NULL,
+    `topP` FLOAT NULL,
+    `maxLength` INT NULL,
+    `maxNewTokens` INT NULL,
+    `repetitionPenalty` FLOAT NULL,
+    `limits` INT,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`UserProxyConfigVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `proxyType` varchar(255) NULL,
@@ -177,4 +199,18 @@ CREATE TABLE IF NOT EXISTS `zstack`.`UserProxyConfigResourceRefVO` (
     KEY `fkUserProxyConfigResourceRefVOUserProxyConfigVO` (`proxyUuid`),
     CONSTRAINT `fUserProxyConfigResourceRefVO` FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkUserProxyConfigResourceRefVO1` FOREIGN KEY (`proxyUuid`) REFERENCES `UserProxyConfigVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelEvaluationTaskVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(255) DEFAULT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `percentage` int(3) DEFAULT 0,
+    `status` varchar(64) NOT NULL,
+    `modelServiceGroupUuid` varchar(32) NOT NULL,
+    `datasetUuid` varchar(32) NOT NULL,
+    `opaque` varchar(2048) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

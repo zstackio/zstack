@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeployModelServiceAction extends AbstractAction {
+public class DeployModelEvalServiceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeployModelServiceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeployModelServiceResult value;
+        public org.zstack.sdk.DeployModelEvalServiceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,6 +24,27 @@ public class DeployModelServiceAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer limits;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Float temperature;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer topK;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Float topP;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer maxLength;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer maxNewTokens;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Float repetitionPenalty;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
@@ -96,8 +117,8 @@ public class DeployModelServiceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeployModelServiceResult value = res.getResult(org.zstack.sdk.DeployModelServiceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeployModelServiceResult() : value; 
+        org.zstack.sdk.DeployModelEvalServiceResult value = res.getResult(org.zstack.sdk.DeployModelEvalServiceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeployModelEvalServiceResult() : value; 
 
         return ret;
     }
@@ -127,10 +148,10 @@ public class DeployModelServiceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ai/model-services/{uuid}";
+        info.path = "/ai/model-services/eval/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "deployModelService";
+        info.parameterName = "deployModelEvalService";
         return info;
     }
 
