@@ -19,8 +19,11 @@ public class AccessKeyUtils {
         return now.format(formatter);
     }
 
-    public static String generateAuthorization(String accessKeyId, String accessKeySecret, String method, String date, String uri) throws Exception {
-        String stringToSign = method + "\n" + date + "\n" + uri;
+    public static String generateAuthorization(String accessKeyId, String accessKeySecret, String method, String date, String uriString) throws Exception {
+        int questionMarkIndex = uriString.indexOf('?');
+        String path = (questionMarkIndex != -1) ? uriString.substring(0, questionMarkIndex) : uriString;
+
+        String stringToSign = method + "\n" + date + "\n" + path;
 
         SecretKeySpec signingKey = new SecretKeySpec(accessKeySecret.getBytes(StandardCharsets.UTF_8), "HmacSHA1");
         Mac mac = Mac.getInstance("HmacSHA1");
