@@ -57,7 +57,7 @@ class BeanConstructor {
     protected void generateSpringConfig() {
         try {
             //URL templatePath = this.getClass().getClassLoader().getResource("zstack-template.xml")
-            URL templatePath = this.getClass().getClassLoader().getResource("zstack-template.xml")
+            URI templatePath = this.getClass().getClassLoader().getResource("zstack-template.xml").toURI()
             File template = new File(templatePath.getPath())
             List<String> contents = template.readLines()
 
