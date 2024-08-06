@@ -502,6 +502,8 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private String cpuCache;
         @GrayVersion(value = "5.0.0")
+        private String deployMode;
+        @GrayVersion(value = "5.0.0")
         private List<String> ipAddresses;
         @GrayVersion(value = "5.0.0")
         private List<String> libvirtCapabilities;
@@ -743,6 +745,14 @@ public class KVMAgentCommands {
 
         public void setMemorySlotsMaximum(String memorySlotsMaximum) {
             this.memorySlotsMaximum = memorySlotsMaximum;
+        }
+
+        public String getDeployMode() {
+            return deployMode;
+        }
+
+        public void setDeployMode(String deployMode) {
+            this.deployMode = deployMode;
         }
 
         public String getLibvirtPackageVersion() {
