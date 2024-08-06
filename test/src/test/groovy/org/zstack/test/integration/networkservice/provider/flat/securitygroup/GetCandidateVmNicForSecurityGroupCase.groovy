@@ -1,33 +1,17 @@
 package org.zstack.test.integration.networkservice.provider.flat.securitygroup
 
-import org.springframework.http.HttpEntity
-import org.zstack.compute.vm.VmSystemTags
-import org.zstack.kvm.KVMAgentCommands
-import org.zstack.kvm.KVMSecurityGroupBackend
-import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO
-import org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO
-import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
-import org.zstack.network.securitygroup.VmNicSecurityPolicyVO
-import org.zstack.network.securitygroup.SecurityGroupErrors
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SecurityGroupInventory
-import org.zstack.sdk.SecurityGroupRuleInventory
-import org.zstack.sdk.VmNicSecurityGroupRefInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.ValidateSecurityGroupRuleAction
 import org.zstack.sdk.GetCandidateVmNicForSecurityGroupAction
-import org.zstack.sdk.VmNicSecurityPolicyInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.SessionInventory
-import org.zstack.sdk.UserInventory
-import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.gson.JSONObjectUtil
 
 class GetCandidateVmNicForSecurityGroupCase extends SubCase {
     EnvSpec env
