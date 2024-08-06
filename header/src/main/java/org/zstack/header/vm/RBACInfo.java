@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.identity.rbac.RBACDescription;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.volume.APICreateDataVolumeMsg;
 
 public class RBACInfo implements RBACDescription {
@@ -22,6 +23,15 @@ public class RBACInfo implements RBACDescription {
                 .basicApi(APICreateVmInstanceMsg.class)
                 .fieldName("dataDiskOfferingUuids")
                 .expandTo(APICreateDataVolumeMsg.class)
+                .build();
+    }
+
+    @Override
+    public void contributeToRoles() {
+        resourceEnsembleContributorBuilder()
+                .resource(VmNicVO.class)
+                .resource(VmCdRomVO.class)
+                .contributeTo(VmInstanceVO.class)
                 .build();
     }
 
