@@ -13,12 +13,12 @@
 
     <code>
         <id>2012</id>
-        <description>The CCS certificate or user has not been attached yet</description>
+        <description>The CCS certificate or account has not been attached yet</description>
     </code>
 
     <code>
         <id>2013</id>
-        <description>The CCS certificate or user has already been attached</description>
+        <description>The CCS certificate or account has already been attached</description>
     </code>
 
     <code>

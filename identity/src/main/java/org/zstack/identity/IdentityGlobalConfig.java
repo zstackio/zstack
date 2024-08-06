@@ -19,8 +19,6 @@ public class IdentityGlobalConfig {
     public static GlobalConfig SESSION_CLEANUP_INTERVAL = new GlobalConfig(CATEGORY, "session.cleanup.interval");
     @GlobalConfigValidation
     public static GlobalConfig SHOW_ALL_RESOURCE_TO_ADMIN = new GlobalConfig(CATEGORY, "admin.showAllResource");
-    @GlobalConfigValidation(notEmpty = false)
-    public static GlobalConfig ACCOUNT_API_CONTROL = new GlobalConfig(CATEGORY, "account.api.control");
     @GlobalConfigEncrypt(category = CATEGORY, name = "enable.unique.session")
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_UNIQUE_SESSION = new GlobalConfig(CATEGORY, "enable.unique.session");

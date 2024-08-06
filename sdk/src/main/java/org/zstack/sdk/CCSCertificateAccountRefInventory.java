@@ -1,15 +1,15 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.CCSCertificateUserState;
 
-public class CCSCertificateUserRefInventory  {
 
-    public java.lang.String userUuid;
-    public void setUserUuid(java.lang.String userUuid) {
-        this.userUuid = userUuid;
+public class CCSCertificateAccountRefInventory  {
+
+    public java.lang.String accountUuid;
+    public void setAccountUuid(java.lang.String accountUuid) {
+        this.accountUuid = accountUuid;
     }
-    public java.lang.String getUserUuid() {
-        return this.userUuid;
+    public java.lang.String getAccountUuid() {
+        return this.accountUuid;
     }
 
     public java.lang.String certificateUuid;
@@ -20,11 +20,11 @@ public class CCSCertificateUserRefInventory  {
         return this.certificateUuid;
     }
 
-    public CCSCertificateUserState state;
-    public void setState(CCSCertificateUserState state) {
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
         this.state = state;
     }
-    public CCSCertificateUserState getState() {
+    public java.lang.String getState() {
         return this.state;
     }
 

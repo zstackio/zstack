@@ -144,14 +144,6 @@ public class Session implements Component {
         }
     }
 
-    public static void logoutUser(String userUuid) {
-        logger.debug(String.format("logout user[uuid=%s]", userUuid));
-        List<String> sessionUuids = Q.New(SessionVO.class)
-                .eq(SessionVO_.userUuid, userUuid)
-                .select(SessionVO_.uuid).listValues();
-        sessionUuids.forEach(Session::logout);
-    }
-
     public static void logout(String uuid) {
         synchronized (sessionLock.intern(uuid)) {
             deleteSession(uuid);

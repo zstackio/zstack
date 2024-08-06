@@ -9,6 +9,7 @@ import java.util.Map;
 /**
  * Created by xing5 on 2016/3/10.
  */
+@Deprecated
 @RestResponse(allTo = "inventory")
 public class APICheckApiPermissionReply extends APIReply {
     private Map<String, String> inventory;

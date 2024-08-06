@@ -19,6 +19,7 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APICheckApiPermissionReply.class,
         isAction = true
 )
+@Deprecated
 public class APICheckApiPermissionMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = UserVO.class)
     private String userUuid;

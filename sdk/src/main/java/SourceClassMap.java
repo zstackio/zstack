@@ -95,9 +95,8 @@ public class SourceClassMap {
 			put("org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder", "org.zstack.sdk.ExternalServiceCapabilitiesBuilder");
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
+			put("org.zstack.crypto.ccs.CCSCertificateAccountRefInventory", "org.zstack.sdk.CCSCertificateAccountRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateInventory", "org.zstack.sdk.CCSCertificateInventory");
-			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
-			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory", "org.zstack.sdk.FlkSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory", "org.zstack.sdk.FlkSecSecurityMachineInventory");
@@ -593,9 +592,7 @@ public class SourceClassMap {
 			put("org.zstack.tag2.AttachTagResult", "org.zstack.sdk.AttachTagResult");
 			put("org.zstack.templateConfig.GlobalConfigTemplateInventory", "org.zstack.sdk.GlobalConfigTemplateInventory");
 			put("org.zstack.templateConfig.TemplateConfigInventory", "org.zstack.sdk.TemplateConfigInventory");
-			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory", "org.zstack.sdk.TwoFactorAuthenticationInventory");
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory", "org.zstack.sdk.TwoFactorAuthenticationSecretInventory");
-			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus", "org.zstack.sdk.TwoFactorAuthenticationSecretStatus");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
@@ -781,9 +778,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BlockDevices", "org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices");
 			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BlockVolumeInventory", "org.zstack.header.volume.block.BlockVolumeInventory");
+			put("org.zstack.sdk.CCSCertificateAccountRefInventory", "org.zstack.crypto.ccs.CCSCertificateAccountRefInventory");
 			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");
-			put("org.zstack.sdk.CCSCertificateUserRefInventory", "org.zstack.crypto.ccs.CCSCertificateUserRefInventory");
-			put("org.zstack.sdk.CCSCertificateUserState", "org.zstack.crypto.ccs.CCSCertificateUserState");
 			put("org.zstack.sdk.CasClientInventory", "org.zstack.sso.header.CasClientInventory");
 			put("org.zstack.sdk.CasState", "org.zstack.sso.header.CasState");
 			put("org.zstack.sdk.CdpPolicyInventory", "org.zstack.header.storage.cdp.CdpPolicyInventory");
@@ -1175,9 +1171,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TemplatedVmInstanceInventory", "org.zstack.header.vm.TemplatedVmInstanceInventory");
 			put("org.zstack.sdk.Threshold", "org.zstack.drs.api.Threshold");
 			put("org.zstack.sdk.TrashCleanupResult", "org.zstack.header.core.trash.TrashCleanupResult");
-			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
-			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");
 			put("org.zstack.sdk.UKeyInventory", "org.zstack.license.UKeyInventory");
 			put("org.zstack.sdk.UKeyStatus", "org.zstack.license.UKeyStatus");
 			put("org.zstack.sdk.UplinkGroupInventory", "org.zstack.network.l2.virtualSwitch.header.UplinkGroupInventory");
