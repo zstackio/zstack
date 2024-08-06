@@ -29,8 +29,6 @@ public class IdentityCreator {
     Api api;
 
     AccountInventory account;
-    Map<String, UserInventory> users = new HashMap<String, UserInventory>();
-    Map<String, UserGroupInventory> groups = new HashMap<String, UserGroupInventory>();
     Map<String, PolicyInventory> policies = new HashMap<String, PolicyInventory>();
     SessionInventory accountSession;
 
@@ -69,114 +67,9 @@ public class IdentityCreator {
         return account;
     }
 
-    public UserInventory createUser(String name, String password) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createUser()");
-        UserInventory u = api.createUser(account.getUuid(), name, password, accountSession);
-        users.put(name, u);
-        return u;
-    }
-
-    public UserGroupInventory createGroup(String name) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createGroup()");
-        UserGroupInventory g = api.createGroup(account.getUuid(), name, accountSession);
-        groups.put(name, g);
-        return g;
-    }
-
-    public void addUserToGroup(String user, String group) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserInventory u = users.get(user);
-        UserGroupInventory g = groups.get(group);
-        DebugUtils.Assert(u != null, String.format("cannot find user[%s]", user));
-        DebugUtils.Assert(g != null, String.format("cannot find group[%s]", group));
-        api.addUserToGroup(u.getUuid(), g.getUuid(), accountSession);
-    }
-
-    public void removeUserFromGroup(String user, String group) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserInventory u = users.get(user);
-        UserGroupInventory g = groups.get(group);
-        DebugUtils.Assert(u != null, String.format("cannot find user[%s]", user));
-        DebugUtils.Assert(g != null, String.format("cannot find group[%s]", group));
-        api.removeUserFromGroup(u.getUuid(), g.getUuid(), accountSession);
-    }
-
-    public void attachPoliciesToUser(String user, List<String> puuids) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserInventory u = users.get(user);
-        DebugUtils.Assert(u != null, String.format("cannot find user[%s]", user));
-        api.attachPolicesToUser(u.getUuid(), puuids, accountSession);
-    }
-
-    public void attachPolicyToUser(String user, String policy) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserInventory u = users.get(user);
-        DebugUtils.Assert(u != null, String.format("cannot find user[%s]", user));
-        PolicyInventory p = policies.get(policy);
-        DebugUtils.Assert(p != null, String.format("cannot find policy[%s]", policy));
-        api.attachPolicyToUser(u.getUuid(), p.getUuid(), accountSession);
-    }
-
-    public void detachPolicyFromUser(String user, String policy) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserInventory u = users.get(user);
-        DebugUtils.Assert(u != null, String.format("cannot find user[%s]", user));
-        PolicyInventory p = policies.get(policy);
-        DebugUtils.Assert(p != null, String.format("cannot find policy[%s]", policy));
-        api.detachPolicyFromUser(u.getUuid(), p.getUuid(), accountSession);
-    }
-
-    public void detachPoliciesFromUser(String user, List<String> puuids) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserInventory u = users.get(user);
-        DebugUtils.Assert(u != null, String.format("cannot find user[%s]", user));
-        api.detachPoliciesFromUser(u.getUuid(), puuids, accountSession);
-    }
-
-    public void attachPolicyToGroup(String group, String policy) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        PolicyInventory p = policies.get(policy);
-        DebugUtils.Assert(p != null, String.format("cannot find policy[%s]", policy));
-        UserGroupInventory g = groups.get(group);
-        DebugUtils.Assert(g != null, String.format("cannot find group[%s]", group));
-        api.attachPolicyToGroup(g.getUuid(), p.getUuid(), accountSession);
-    }
-
-    public void detachPolicyFromGroup(String group, String policy) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        PolicyInventory p = policies.get(policy);
-        DebugUtils.Assert(p != null, String.format("cannot find policy[%s]", policy));
-        UserGroupInventory g = groups.get(group);
-        DebugUtils.Assert(g != null, String.format("cannot find group[%s]", group));
-        api.detachPolicyFromGroup(g.getUuid(), p.getUuid(), accountSession);
-    }
-
-    public void resetUserPassword(String user, String password) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserInventory u = users.get(user);
-        DebugUtils.Assert(u != null, String.format("cannot find user[%s]", user));
-
-        api.resetUserPassword(u.getUuid(), password, accountSession);
-    }
-
     public void resetAccountPassword(String password) throws ApiSenderException {
         DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
         api.resetAccountPassword(account.getUuid(), password, accountSession);
-    }
-
-    public void deleteGroup(String group) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserGroupInventory g = groups.get(group);
-        DebugUtils.Assert(g != null, String.format("cannot find group[%s]", group));
-        api.deleteGroup(g.getUuid(), accountSession);
-    }
-
-    public void deleteUser(String user) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        UserInventory u = users.get(user);
-        DebugUtils.Assert(u != null, String.format("cannot find user[%s]", user));
-
-        api.deleteUser(u.getUuid(), accountSession);
     }
 
     public void deletePolicy(String policy) throws ApiSenderException {
@@ -185,11 +78,6 @@ public class IdentityCreator {
         DebugUtils.Assert(p != null, String.format("cannot find policy[%s]", policy));
 
         api.deletePolicy(p.getUuid(), accountSession);
-    }
-
-    public SessionInventory userLogin(String name, String password) throws ApiSenderException {
-        DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
-        return api.loginByUser(name, password, account.getUuid());
     }
 
     public SessionInventory accountLogin(String name, String password) throws ApiSenderException {

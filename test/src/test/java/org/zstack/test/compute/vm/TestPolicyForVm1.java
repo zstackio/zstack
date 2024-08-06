@@ -8,15 +8,10 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.identity.UserInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -59,15 +54,8 @@ public class TestPolicyForVm1 {
 
         IdentityCreator identityCreator = new IdentityCreator(api);
         identityCreator.useAccount("test");
-        UserInventory user = identityCreator.createUser("user", "password");
-        PolicyStatement s = new PolicyStatement();
-        s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
-        s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APICreateVmInstanceMsg.class.getSimpleName()));
-        identityCreator.createPolicy("allow", s);
-        identityCreator.attachPolicyToUser("user", "allow");
 
-        SessionInventory session = identityCreator.userLogin(user.getName(), "password");
+        SessionInventory session = identityCreator.accountLogin("test", "password");
         VmCreator vmCreator = new VmCreator(api);
         vmCreator.imageUuid = img.getUuid();
         vmCreator.addL3Network(l3.getUuid());
