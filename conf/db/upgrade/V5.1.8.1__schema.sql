@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceRefVO` (
 CREATE TABLE  `zstack`.`ModelServiceInstanceGroupVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `modelServiceUuid` varchar(32) DEFAULT NULL,
-    `modelUuid` varchar(32) NOT NULL,
+    `modelUuid` varchar(32) DEFAULT NULL,
     `name` varchar(255) DEFAULT NULL,
     `status` varchar(255) NOT NULL,
     `type` varchar(128) NOT NULL,
