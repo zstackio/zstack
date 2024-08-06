@@ -13,6 +13,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.data.Pair;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,8 +22,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
@@ -31,6 +34,7 @@ public class RBAC {
     public static List<GlobalReadableResource> readableResources = new ArrayList<>();
     public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
     private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
+    public static List<ResourceEnsembleMember> ensembleMembers = new ArrayList<>();
 
     public static Map<Class, List<ExpendedFieldPermission>> expendApiClassForPermissionCheck = new HashMap<>();
 
@@ -565,6 +569,119 @@ public class RBAC {
 
         public void setResources(List<Class> resources) {
             this.resources = resources;
+        }
+    }
+
+    public static class ResourceEnsembleContributorBuilder {
+        private final List<ResourceEnsembleMember> members = new ArrayList<>();
+        private Class<?> master;
+
+        public ResourceEnsembleContributorBuilder resource(Class<?> c) {
+            ResourceEnsembleMember member = new ResourceEnsembleMember();
+            member.clazz = c;
+            members.add(member);
+            return this;
+        }
+
+        public ResourceEnsembleContributorBuilder resourceWithCustomizeFindingMethods(
+                Class<?> c,
+                @Nullable Consumer<Map<String, List<String>>> findChildrenByParentUuid,
+                @Nullable Consumer<Map<String, String>> findParentByChildUuid) {
+            ResourceEnsembleMember member = new ResourceEnsembleMember();
+            member.clazz = c;
+            member.findChildrenByParentUuid = findChildrenByParentUuid;
+            member.findParentByChildUuid = findParentByChildUuid;
+            members.add(member);
+            return this;
+        }
+
+        public ResourceEnsembleContributorBuilder contributeTo(Class<?> c) {
+            master = c;
+            return this;
+        }
+
+        public void build() {
+            Objects.requireNonNull(master);
+
+            ResourceEnsembleMember masterMember = findMemberFromGlobal(master);
+            if (masterMember == null) {
+                masterMember = new ResourceEnsembleMember();
+                masterMember.setClazz(master);
+                ensembleMembers.add(masterMember);
+            }
+
+            for (ResourceEnsembleMember member : members) {
+                ResourceEnsembleMember existsMember = findMemberFromGlobal(member.clazz);
+                if (existsMember == null) {
+                    member.parent = masterMember;
+                    masterMember.children.add(member);
+                    ensembleMembers.add(member);
+                    continue;
+                }
+
+                existsMember.parent = masterMember;
+                masterMember.children.add(existsMember);
+                if (existsMember.findChildrenByParentUuid == null && member.findChildrenByParentUuid != null) {
+                    existsMember.findChildrenByParentUuid = member.findChildrenByParentUuid;
+                }
+                if (existsMember.findParentByChildUuid == null && member.findParentByChildUuid != null) {
+                    existsMember.findParentByChildUuid = member.findParentByChildUuid;
+                }
+            }
+        }
+
+        private ResourceEnsembleMember findMemberFromGlobal(Class<?> clazz) {
+            return ensembleMembers.stream()
+                    .filter(c -> Objects.equals(clazz, c.getClazz()))
+                    .findFirst()
+                    .orElse(null);
+        }
+    }
+
+    public static class ResourceEnsembleMember {
+        private Class<?> clazz;
+        /**
+         * see: DBGraph.EntityVertex#toSQL(String, SimpleQuery.Op, String)
+         */
+        private Consumer<Map<String, List<String>>> findChildrenByParentUuid;
+        private Consumer<Map<String, String>> findParentByChildUuid;
+        private ResourceEnsembleMember parent;
+        private final List<ResourceEnsembleMember> children = new ArrayList<>();
+
+        public Class<?> getClazz() {
+            return clazz;
+        }
+
+        public void setClazz(Class<?> clazz) {
+            this.clazz = clazz;
+        }
+
+        public Consumer<Map<String, List<String>>> getFindChildrenByParentUuid() {
+            return findChildrenByParentUuid;
+        }
+
+        public void setFindChildrenByParentUuid(Consumer<Map<String, List<String>>> findChildrenByParentUuid) {
+            this.findChildrenByParentUuid = findChildrenByParentUuid;
+        }
+
+        public Consumer<Map<String, String>> getFindParentByChildUuid() {
+            return findParentByChildUuid;
+        }
+
+        public void setFindParentByChildUuid(Consumer<Map<String, String>> findParentByChildUuid) {
+            this.findParentByChildUuid = findParentByChildUuid;
+        }
+
+        public ResourceEnsembleMember getParent() {
+            return parent;
+        }
+
+        public void setParent(ResourceEnsembleMember parent) {
+            this.parent = parent;
+        }
+
+        public List<ResourceEnsembleMember> getChildren() {
+            return children;
         }
     }
 

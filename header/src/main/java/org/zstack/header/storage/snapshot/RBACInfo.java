@@ -20,6 +20,14 @@ public class RBACInfo implements RBACDescription {
     }
 
     @Override
+    public void contributeToRoles() {
+        resourceEnsembleContributorBuilder()
+                .resource(VolumeSnapshotVO.class)
+                .contributeTo(VolumeVO.class)
+                .build();
+    }
+
+    @Override
     public void roles() {
         roleBuilder()
                 .uuid("a91363c6b4ba4e58966d17a4257668cd")
