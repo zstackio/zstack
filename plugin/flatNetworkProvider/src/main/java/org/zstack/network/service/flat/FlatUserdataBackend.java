@@ -356,24 +356,14 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
         UserdataStruct struct = makeUserdataStructForMigratingVm(inv, destHostUuid);
         if (struct == null) {
+            completion.success();
             return;
         }
 
-        FutureCompletion completion = new FutureCompletion(null);
         applyUserdata(struct, completion);
-        completion.await();
-
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(completion.getErrorCode());
-        }
-    }
-
-    @Override
-    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
     }
 
     @Override

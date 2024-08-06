@@ -10,14 +10,14 @@ import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
@@ -30,7 +30,8 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
 import org.zstack.network.l2.L2NetworkManager;
-import org.zstack.network.l2.vxlan.vxlanNetwork.*;
+import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
@@ -42,8 +43,10 @@ import org.zstack.sdnController.header.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -354,7 +357,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
     }
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
         List<VmNicInventory> nics = inv.getVmNics();
         List<L3NetworkVO> l3vos = new ArrayList<>();
         /* FIXME: shixin need add ipv6 on vlxan network */
@@ -369,11 +372,11 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
         }
 
         if (vxlanUuids.isEmpty()) {
+            completion.success();
             return;
         }
 
         ErrorCodeList errList = new ErrorCodeList();
-        FutureCompletion completion = new FutureCompletion(null);
 
         new While<>(vxlanUuids).all((uuid, completion1) -> {
             PrepareL2NetworkOnHostMsg msg = new PrepareL2NetworkOnHostMsg();
@@ -397,32 +400,20 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
-                    completion.fail(errList.getCauses().get(0));
+                    completion.fail(operr("cannot configure hardware vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
+                            inv.getUuid(), destHostUuid).causedBy(errorCodeList.getCauses()));
                     return;
                 }
                 logger.info(String.format("check and realize hardware vxlan networks[uuid: %s] for vm[uuid: %s] done", vxlanUuids, inv.getUuid()));
                 completion.success();
             }
         });
-
-        completion.await(TimeUnit.MINUTES.toMillis(30));
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(operr("cannot configure hardware vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
-                    inv.getUuid(), destHostUuid).causedBy(completion.getErrorCode()));
-        }
     }
 
     @Override
-    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
     }
 
-    @Override
-    public void  afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
-    }
-
-    @Override
-    public void  failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
-    }
 
     @Override
     public String getL2NetworkType() {

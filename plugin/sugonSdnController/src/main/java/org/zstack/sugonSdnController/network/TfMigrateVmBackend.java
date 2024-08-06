@@ -103,11 +103,6 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint, VmPr
     }
 
     @Override
-    public void postMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
     public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
 
     }
