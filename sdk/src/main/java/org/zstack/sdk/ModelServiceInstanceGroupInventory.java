@@ -52,6 +52,14 @@ public class ModelServiceInstanceGroupInventory  {
         return this.status;
     }
 
+    public java.lang.String modelServiceType;
+    public void setModelServiceType(java.lang.String modelServiceType) {
+        this.modelServiceType = modelServiceType;
+    }
+    public java.lang.String getModelServiceType() {
+        return this.modelServiceType;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;
