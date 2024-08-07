@@ -1237,46 +1237,49 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     });
                 }
 
-                if (deletionPolicy == VolumeDeletionPolicy.Direct) {
+                boolean deleteFromPs = deletionPolicy == VolumeDeletionPolicy.Direct;
+                if (deleteFromPs) {
+                    for (VolumeBeforeExpungeExtensionPoint ext : pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class)) {
+                       if (ext.skipExpungeVolume(self.toInventory())) {
+                           deleteFromPs = false;
+                           logger.debug(String.format("extension[%s] skip delete volume[uuid:%s] from primary storage",
+                                   ext.getClass().getSimpleName(), self.getUuid()));
+                       }
+                    };
+
+                    // some task will create a NotInstantiated volume but instantiated actually, means the volume is not ready to delete.
+                    if (self.getStatus() != VolumeStatus.Ready || self.getPrimaryStorageUuid() == null) {
+                        deleteFromPs = false;
+                        logger.debug(String.format("volume[uuid:%s] is not ready or has no primary storage, skip delete volume from primary storage", self.getUuid()));
+                    }
+                }
+
+
+                if (deleteFromPs) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-volume-from-primary-storage";
 
                         @Override
-                        public boolean skip(Map data) {
-                            return pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class).stream()
-                                    .anyMatch(ext -> ext.skipExpungeVolume(self.toInventory()));
-                        }
-
-                        @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            if (self.getStatus() == VolumeStatus.Ready &&
-                                 self.getPrimaryStorageUuid() != null) {
-                                DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
-                                dmsg.setVolume(getSelfInventory());
-                                dmsg.setUuid(self.getPrimaryStorageUuid());
-                                bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-                                logger.debug(String.format("Asking primary storage[uuid:%s] to remove data volume[uuid:%s]", self.getPrimaryStorageUuid(),
-                                        self.getUuid()));
-                                bus.send(dmsg, new CloudBusCallBack(trigger) {
-                                    @Override
-                                    public void run(MessageReply reply) {
-                                        if (!reply.isSuccess()) {
-                                            logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s",
-                                                    self.getUuid(), self.getName(), reply.getError()));
-                                        }
-
-                                        trigger.next();
+                            DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
+                            dmsg.setVolume(getSelfInventory());
+                            dmsg.setUuid(self.getPrimaryStorageUuid());
+                            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                            logger.debug(String.format("Asking primary storage[uuid:%s] to remove data volume[uuid:%s]", self.getPrimaryStorageUuid(),
+                                    self.getUuid()));
+                            bus.send(dmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s",
+                                                self.getUuid(), self.getName(), reply.getError()));
                                     }
-                                });
-                            } else {
-                                trigger.next();
-                            }
+
+                                    trigger.next();
+                                }
+                            });
                         }
                     });
-                }
-
-
-                if (self.getPrimaryStorageUuid() != null && deletionPolicy == VolumeDeletionPolicy.Direct) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "return-primary-storage-capacity";
 
