@@ -53,7 +53,7 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
     public String getUserIdByName(String username, String loginType) {
         LoginBackend loginBackend = getLoginBackend(loginType);
 
-        String userId = loginBackend.getUserIdByName(username);
+        String userId = loginBackend.getAccountIdByName(username);
         if (userId != null) {
             return userId;
         }
@@ -81,7 +81,7 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
 
         LoginContext loginContext = LoginContext.fromAPIGetLoginProceduresMsg(msg);
         LoginBackend loginBackend = getLoginBackend(msg.getLoginType());
-        loginContext.setPossibleUsersGetter(loginBackend::possibleUserUuidSetForGettingProcedures);
+        loginContext.setPossibleUsersGetter(loginBackend::possibleAccountUuidSetForGettingProcedures);
         List<LoginAuthExtensionPoint> matchedAuthExtensions =
                 getBackendSupportedLoginAuthExtension(
                         loginBackend.getRequiredAdditionalAuthFeature(),
@@ -182,12 +182,11 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         loginBackend.collectUserInfoIntoContext(loginContext);
 
-        if (loginContext.getUserUuid() != null) {
-            logger.debug(String.format("login user[uuid: %s, type: %s]", loginContext.getUserUuid(), loginContext.getUserType()));
+        if (loginContext.getAccountUuid() != null) {
+            logger.debug(String.format("login account[uuid=%s]", loginContext.getAccountUuid()));
         } else {
-            logger.debug("no user uuid exists," +
-                    " treat this login as a not existing user login operation");
-            loginContext.setUserUuid(String.format(AccountConstant.NO_EXIST_ACCOUNT,
+            logger.debug("no account uuid exists, treat this login as a not existing account login operation");
+            loginContext.setAccountUuid(String.format(AccountConstant.NO_EXIST_ACCOUNT,
                     loginContext.getUsername()));
         }
 
@@ -263,10 +262,8 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
                         if (loginContext.isValidateOnly()) {
                             session = new SessionInventory();
                             session.setAccountUuid(info.getAccountUuid());
-                            session.setUserUuid(info.getUserUuid());
-                            session.setUserType(info.getUserType());
                         } else {
-                            session = Session.login(info.getAccountUuid(), info.getUserUuid());
+                            session = Session.login(info.getAccountUuid());
                         }
 
                         return session;

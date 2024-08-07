@@ -1,7 +1,6 @@
 package org.zstack.identity;
 
 import org.apache.commons.lang.StringUtils;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -16,7 +15,6 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -25,7 +23,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
-import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.identity.role.RolePolicyStatementVO;
 import org.zstack.header.identity.role.RolePolicyStatementVO_;
@@ -35,10 +32,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -64,8 +59,6 @@ public class AccountBase extends AbstractAccount {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private AccountManager acntMgr;
     @Autowired
@@ -277,14 +270,6 @@ public class AccountBase extends AbstractAccount {
                         .eq(QuotaVO_.identityUuid, self.getUuid())
                         .delete();
 
-                sql(UserVO.class)
-                        .eq(UserVO_.accountUuid, self.getUuid())
-                        .delete();
-
-                sql(UserGroupVO.class)
-                        .eq(UserGroupVO_.accountUuid, self.getUuid())
-                        .delete();
-
                 sql(PolicyVO.class)
                         .eq(PolicyVO_.accountUuid, self.getUuid())
                         .delete();
@@ -321,32 +306,10 @@ public class AccountBase extends AbstractAccount {
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIUpdateAccountMsg) {
             handle((APIUpdateAccountMsg) msg);
-        } else if (msg instanceof APICreateUserMsg) {
-            handle((APICreateUserMsg) msg);
         } else if (msg instanceof APICreatePolicyMsg) {
             handle((APICreatePolicyMsg) msg);
-        } else if (msg instanceof APIAttachPolicyToUserMsg) {
-            handle((APIAttachPolicyToUserMsg) msg);
-        } else if (msg instanceof APICreateUserGroupMsg) {
-            handle((APICreateUserGroupMsg) msg);
-        } else if (msg instanceof APIAttachPolicyToUserGroupMsg) {
-            handle((APIAttachPolicyToUserGroupMsg) msg);
-        } else if (msg instanceof APIAddUserToGroupMsg) {
-            handle((APIAddUserToGroupMsg) msg);
-        } else if (msg instanceof APIDeleteUserGroupMsg) {
-            handle((APIDeleteUserGroupMsg) msg);
-        } else if (msg instanceof APIDeleteUserMsg) {
-            handle((APIDeleteUserMsg) msg);
         } else if (msg instanceof APIDeletePolicyMsg) {
             handle((APIDeletePolicyMsg) msg);
-        } else if (msg instanceof APIDetachPolicyFromUserMsg) {
-            handle((APIDetachPolicyFromUserMsg) msg);
-        } else if (msg instanceof APIDetachPolicyFromUserGroupMsg) {
-            handle((APIDetachPolicyFromUserGroupMsg) msg);
-        } else if (msg instanceof APIRemoveUserFromGroupMsg) {
-            handle((APIRemoveUserFromGroupMsg) msg);
-        } else if (msg instanceof APIUpdateUserMsg) {
-            handle((APIUpdateUserMsg) msg);
         } else if (msg instanceof APIShareResourceMsg) {
             handle((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
@@ -357,76 +320,9 @@ public class AccountBase extends AbstractAccount {
             handle((APIDeleteAccountMsg) msg);
         } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
             handle((APIGetAccountQuotaUsageMsg) msg);
-        } else if (msg instanceof APIAttachPoliciesToUserMsg) {
-            handle((APIAttachPoliciesToUserMsg) msg);
-        } else if (msg instanceof APIDetachPoliciesFromUserMsg) {
-            handle((APIDetachPoliciesFromUserMsg) msg);
-        } else if (msg instanceof APIUpdateUserGroupMsg) {
-            handle((APIUpdateUserGroupMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(APIUpdateUserGroupMsg msg) {
-        UserGroupVO group = dbf.findByUuid(msg.getUuid(), UserGroupVO.class);
-
-        if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) &&
-                !group.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new OperationFailureException(argerr("the user group[uuid:%s] does not belong to the account[uuid:%s]", group.getUuid(), msg.getAccountUuid()));
-        }
-
-        boolean update = false;
-        if (msg.getName() != null) {
-            group.setName(msg.getName());
-            update = true;
-        }
-        if (msg.getDescription() != null) {
-            group.setDescription(msg.getDescription());
-            update = true;
-        }
-
-        if (update) {
-            group = dbf.updateAndRefresh(group);
-        }
-
-        APIUpdateUserGroupEvent evt = new APIUpdateUserGroupEvent(msg.getId());
-        evt.setInventory(UserGroupInventory.valueOf(group));
-        bus.publish(evt);
-    }
-
-    @Transactional
-    private void handle(APIDetachPoliciesFromUserMsg msg) {
-        String sql = "delete from UserPolicyRefVO ref where ref.policyUuid in (:puuids) and ref.userUuid = :userUuid";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("puuids", msg.getPolicyUuids());
-        q.setParameter("userUuid", msg.getUserUuid());
-        q.executeUpdate();
-
-        APIDetachPoliciesFromUserEvent evt = new APIDetachPoliciesFromUserEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    @Transactional
-    private void handle(APIAttachPoliciesToUserMsg msg) {
-        for (String puuid : msg.getPolicyUuids()) {
-            try {
-                UserPolicyRefVO refVO = new UserPolicyRefVO();
-                refVO.setUserUuid(msg.getUserUuid());
-                refVO.setPolicyUuid(puuid);
-                dbf.getEntityManager().persist(refVO);
-                dbf.getEntityManager().flush();
-            } catch (Throwable t) {
-                if (!ExceptionDSL.isCausedBy(t, ConstraintViolationException.class)) {
-                    throw t;
-                }
-
-                // the policy is already attached
-            }
-        }
-
-        APIAttachPoliciesToUserEvent evt = new APIAttachPoliciesToUserEvent(msg.getId());
-        bus.publish(evt);
     }
 
     private void handle(APIGetAccountQuotaUsageMsg msg) {
@@ -467,9 +363,7 @@ public class AccountBase extends AbstractAccount {
             u.setTotal(vo == null ? 0 : vo.getValue());
         }
 
-        List<Quota.QuotaUsage> ret = new ArrayList<Quota.QuotaUsage>();
-        ret.addAll(umap.values());
-        reply.setUsages(ret);
+        reply.setUsages(new ArrayList<>(umap.values()));
         bus.reply(msg, reply);
     }
 
@@ -671,174 +565,9 @@ public class AccountBase extends AbstractAccount {
         bus.publish(evt);
     }
 
-    private void handle(APIUpdateUserMsg msg) {
-        UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
-
-        if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) && !user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new OperationFailureException(argerr("the user[uuid:%s] does not belong to the" +
-                    " account[uuid:%s]", user.getUuid(), msg.getAccountUuid()));
-        }
-
-        if (msg.getOldPassword() != null && !msg.getOldPassword().equals(user.getPassword())){
-            throw new OperationFailureException(argerr("old password is not equal to the original password, cannot update the password of user[uuid:%s]", user.getUuid()));
-        }
-
-        boolean update = false;
-        if (msg.getName() != null) {
-            user.setName(msg.getName());
-            update = true;
-        }
-        if (msg.getDescription() != null) {
-            user.setDescription(msg.getDescription());
-            update = true;
-        }
-        if (msg.getPassword() != null) {
-            user.setPassword(msg.getPassword());
-            update = true;
-        }
-        if (update) {
-            user = dbf.updateAndRefresh(user);
-        }
-
-        APIUpdateUserEvent evt = new APIUpdateUserEvent(msg.getId());
-        evt.setInventory(UserInventory.valueOf(user));
-        bus.publish(evt);
-    }
-
-    private void handle(APIRemoveUserFromGroupMsg msg) {
-        SimpleQuery<UserGroupUserRefVO> q = dbf.createQuery(UserGroupUserRefVO.class);
-        q.add(UserGroupUserRefVO_.groupUuid, Op.EQ, msg.getGroupUuid());
-        q.add(UserGroupUserRefVO_.userUuid, Op.EQ, msg.getUserUuid());
-        UserGroupUserRefVO ref = q.find();
-        if (ref != null) {
-            dbf.remove(ref);
-        }
-
-        bus.publish(new APIRemoveUserFromGroupEvent(msg.getId()));
-    }
-
-    private void handle(APIDetachPolicyFromUserGroupMsg msg) {
-        SimpleQuery<UserGroupPolicyRefVO> q = dbf.createQuery(UserGroupPolicyRefVO.class);
-        q.add(UserGroupPolicyRefVO_.groupUuid, Op.EQ, msg.getGroupUuid());
-        q.add(UserGroupPolicyRefVO_.policyUuid, Op.EQ, msg.getPolicyUuid());
-        UserGroupPolicyRefVO ref = q.find();
-        if (ref != null) {
-            dbf.remove(ref);
-        }
-
-        bus.publish(new APIDetachPolicyFromUserGroupEvent(msg.getId()));
-    }
-
-    private void handle(APIDetachPolicyFromUserMsg msg) {
-        SimpleQuery<UserPolicyRefVO> q = dbf.createQuery(UserPolicyRefVO.class);
-        q.add(UserPolicyRefVO_.policyUuid, Op.EQ, msg.getPolicyUuid());
-        q.add(UserPolicyRefVO_.userUuid, Op.EQ, msg.getUserUuid());
-        UserPolicyRefVO ref = q.find();
-        if (ref != null) {
-            dbf.remove(ref);
-        }
-
-        bus.publish(new APIDetachPolicyFromUserEvent(msg.getId()));
-    }
-
     private void handle(APIDeletePolicyMsg msg) {
         dbf.removeByPrimaryKey(msg.getUuid(), PolicyVO.class);
         APIDeletePolicyEvent evt = new APIDeletePolicyEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    private void handle(APIDeleteUserMsg msg) {
-        UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
-        if (user != null) {
-            UserInventory inv = UserInventory.valueOf(user);
-            UserDeletedData d = new UserDeletedData();
-            d.setInventory(inv);
-            d.setUserUuid(inv.getUuid());
-            evtf.fire(IdentityCanonicalEvents.USER_DELETED_PATH, d);
-
-            dbf.remove(user);
-        }
-
-        APIDeleteUserEvent evt = new APIDeleteUserEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    private void handle(APIDeleteUserGroupMsg msg) {
-        dbf.removeByPrimaryKey(msg.getUuid(), UserGroupVO.class);
-        APIDeleteUserGroupEvent evt = new APIDeleteUserGroupEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    private void handle(APIAddUserToGroupMsg msg) {
-        UserGroupUserRefVO ugvo = new UserGroupUserRefVO();
-        ugvo.setGroupUuid(msg.getGroupUuid());
-        ugvo.setUserUuid(msg.getUserUuid());
-        dbf.persist(ugvo);
-        APIAddUserToGroupEvent evt = new APIAddUserToGroupEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    private void handle(APIAttachPolicyToUserGroupMsg msg) {
-        UserGroupPolicyRefVO grvo = new UserGroupPolicyRefVO();
-        grvo.setGroupUuid(msg.getGroupUuid());
-        grvo.setPolicyUuid(msg.getPolicyUuid());
-
-        try {
-            dbf.persist(grvo);
-        } catch (Throwable t) {
-            if (!ExceptionDSL.isCausedBy(t, ConstraintViolationException.class)) {
-                throw t;
-            }
-
-            // the policy is already attached
-        }
-
-        APIAttachPolicyToUserGroupEvent evt = new APIAttachPolicyToUserGroupEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    private void handle(APICreateUserGroupMsg msg) {
-        UserGroupVO gvo = new UserGroupVO();
-        if (msg.getResourceUuid() != null) {
-            gvo.setUuid(msg.getResourceUuid());
-        } else {
-            gvo.setUuid(Platform.getUuid());
-        }
-        gvo.setAccountUuid(self.getUuid());
-        gvo.setDescription(msg.getDescription());
-        gvo.setName(msg.getName());
-
-        UserGroupVO finalGvo = gvo;
-        gvo = new SQLBatchWithReturn<UserGroupVO>() {
-            @Override
-            protected UserGroupVO scripts() {
-                persist(finalGvo);
-                reload(finalGvo);
-                return finalGvo;
-            }
-        }.execute();
-
-        UserGroupInventory inv = UserGroupInventory.valueOf(gvo);
-        APICreateUserGroupEvent evt = new APICreateUserGroupEvent(msg.getId());
-        evt.setInventory(inv);
-        bus.publish(evt);
-    }
-
-    private void handle(APIAttachPolicyToUserMsg msg) {
-        UserPolicyRefVO upvo = new UserPolicyRefVO();
-        upvo.setPolicyUuid(msg.getPolicyUuid());
-        upvo.setUserUuid(msg.getUserUuid());
-        try {
-            dbf.persist(upvo);
-        } catch (Throwable t) {
-            if (!ExceptionDSL.isCausedBy(t, ConstraintViolationException.class)) {
-                throw t;
-            }
-
-            // the policy is already attached
-        }
-
-        APIAttachPolicyToUserEvent evt = new APIAttachPolicyToUserEvent(msg.getId());
         bus.publish(evt);
     }
 
@@ -867,60 +596,6 @@ public class AccountBase extends AbstractAccount {
         PolicyInventory pinv = PolicyInventory.valueOf(pvo);
         APICreatePolicyEvent evt = new APICreatePolicyEvent(msg.getId());
         evt.setInventory(pinv);
-        bus.publish(evt);
-    }
-
-    private void handle(APICreateUserMsg msg) {
-        APICreateUserEvent evt = new APICreateUserEvent(msg.getId());
-
-        UserVO uvo = new SQLBatchWithReturn<UserVO>() {
-            @Override
-            protected UserVO scripts() {
-                UserVO uvo = new UserVO();
-                if (msg.getResourceUuid() != null) {
-                    uvo.setUuid(msg.getResourceUuid());
-                } else {
-                    uvo.setUuid(Platform.getUuid());
-                }
-                uvo.setAccountUuid(self.getUuid());
-                uvo.setName(msg.getName());
-                uvo.setPassword(msg.getPassword());
-                uvo.setDescription(msg.getDescription());
-                persist(uvo);
-                reload(uvo);
-
-                PolicyVO p = Q.New(PolicyVO.class).eq(PolicyVO_.name, "DEFAULT-READ")
-                        .eq(PolicyVO_.accountUuid, self.getUuid()).find();
-                if (p != null) {
-                    UserPolicyRefVO uref = new UserPolicyRefVO();
-                    uref.setPolicyUuid(p.getUuid());
-                    uref.setUserUuid(uvo.getUuid());
-                    persist(uref);
-                }
-
-                p = Q.New(PolicyVO.class).eq(PolicyVO_.name, "USER-RESET-PASSWORD")
-                        .eq(PolicyVO_.accountUuid, self.getUuid()).find();
-                if (p != null) {
-                    UserPolicyRefVO uref = new UserPolicyRefVO();
-                    uref.setPolicyUuid(p.getUuid());
-                    uref.setUserUuid(uvo.getUuid());
-                    persist(uref);
-                }
-
-                return uvo;
-            }
-        }.execute();
-
-        final UserInventory inv = UserInventory.valueOf(uvo);
-
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateUserExtensionPoint.class), new ForEachFunction<AfterCreateUserExtensionPoint>() {
-            @Override
-            public void run(AfterCreateUserExtensionPoint arg) {
-                arg.afterCreateUser(inv);
-            }
-        });
-
-        evt.setInventory(inv);
         bus.publish(evt);
     }
 }

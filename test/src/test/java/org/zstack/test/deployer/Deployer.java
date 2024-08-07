@@ -68,7 +68,6 @@ public class Deployer {
     public Map<String, VmInstanceInventory> vms = new HashMap<String, VmInstanceInventory>();
     public Map<String, AccountInventory> accounts = new HashMap<String, AccountInventory>();
     public Map<String, PolicyInventory> polices = new HashMap<String, PolicyInventory>();
-    public Map<String, UserGroupInventory> groups = new HashMap<String, UserGroupInventory>();
     public Map<String, SecurityGroupInventory> securityGroups = new HashMap<String, SecurityGroupInventory>();
     public Map<String, PortForwardingRuleInventory> portForwardingRules = new HashMap<String, PortForwardingRuleInventory>();
     public Map<String, EipInventory> eips = new HashMap<String, EipInventory>();
@@ -711,53 +710,9 @@ public class Deployer {
         }
     }
 
-    private void attachPolicyToUser(String policyName, UserInventory uinv, SessionInventory session) throws ApiSenderException {
-        PolicyInventory pinv = polices.get(policyName);
-        assert pinv != null;
-        api.attachPolicyToUser(uinv.getAccountUuid(), uinv.getUuid(), pinv.getUuid(), session);
-    }
-
-    private void attachUserToGroup(String groupName, UserInventory uinv, SessionInventory session) throws ApiSenderException {
-        UserGroupInventory ginv = groups.get(groupName);
-        assert ginv != null;
-        api.attachUserToGroup(uinv.getAccountUuid(), uinv.getUuid(), ginv.getUuid(), session);
-    }
-
-    private void deployUser(AccountConfig ac, AccountInventory ainv) throws ApiSenderException {
-        SessionInventory session = api.loginByAccount(ainv.getName(), ac.getPassword());
-        for (UserConfig uc : ac.getUser()) {
-            UserInventory uinv = api.createUser(ainv.getUuid(), uc.getName(), uc.getPassword(), session);
-            for (String policyName : uc.getPolicyRef()) {
-                attachPolicyToUser(policyName, uinv, session);
-            }
-            for (String groupName : uc.getGroupRef()) {
-                attachUserToGroup(groupName, uinv, session);
-            }
-        }
-    }
-
-    private void attachPolicyToGroup(String policyName, UserGroupInventory ginv, SessionInventory session) throws ApiSenderException {
-        PolicyInventory pinv = polices.get(policyName);
-        assert pinv != null;
-        api.attachPolicyToGroup(ginv.getAccountUuid(), ginv.getUuid(), pinv.getUuid(), session);
-    }
-
-    private void deployGroup(AccountConfig ac, AccountInventory ainv) throws ApiSenderException {
-        SessionInventory session = api.loginByAccount(ainv.getName(), ac.getPassword());
-        for (GroupConfig gc : ac.getGroup()) {
-            UserGroupInventory ginv = api.createGroup(ainv.getUuid(), gc.getName(), session);
-            for (String policyName : gc.getPolicyRef()) {
-                attachPolicyToGroup(policyName, ginv, session);
-            }
-            groups.put(ginv.getName(), ginv);
-        }
-    }
-
     private void deployAccount() throws ApiSenderException, IOException {
         for (AccountConfig ac : config.getAccount()) {
             AccountInventory inv = api.createAccount(ac.getName(), ac.getPassword());
-            deployGroup(ac, inv);
-            deployUser(ac, inv);
             this.accounts.put(inv.getName(), inv);
         }
     }

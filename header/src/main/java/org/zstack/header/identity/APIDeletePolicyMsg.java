@@ -2,8 +2,6 @@ package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 

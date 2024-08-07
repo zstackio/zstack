@@ -448,9 +448,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         }
 
         LoginSessionInfo info = new LoginSessionInfo();
-        info.setUserUuid(vo.getAccountUuid());
         info.setAccountUuid(vo.getAccountUuid());
-        info.setUserType(AccountVO.class.getSimpleName());
         completion.success(info);
     }
 
@@ -464,7 +462,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     }
 
     @Override
-    public String getUserIdByName(String username) {
+    public String getAccountIdByName(String username) {
         final ErrorableValue<LdapServerVO> property = findCurrentLdapServer();
         if (property.isSuccess()) {
             final String fullUserDn = createDriver().getFullUserDn(property.result, username);
@@ -475,7 +473,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public void collectUserInfoIntoContext(LoginContext loginContext) {
-        loginContext.setUserUuid(getUserIdByName(loginContext.getUsername()));
+        loginContext.setAccountUuid(getAccountIdByName(loginContext.getUsername()));
     }
 
     @Override
