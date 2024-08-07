@@ -11,4 +11,12 @@ public class GetIAM2ProjectContainerImagesResult {
         return this.inventories;
     }
 
+    public java.lang.Integer total;
+    public void setTotal(java.lang.Integer total) {
+        this.total = total;
+    }
+    public java.lang.Integer getTotal() {
+        return this.total;
+    }
+
 }
