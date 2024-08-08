@@ -29,6 +29,8 @@ import org.zstack.utils.CollectionUtils;
 
 import java.util.*;
 
+import static org.zstack.core.Platform.operr;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class XmlHookBase {
     @Autowired
@@ -184,14 +186,15 @@ public class XmlHookBase {
 
                 List<ErrorCode> errs = new ArrayList<>();
                 new While<>(vmUuids).each((vmUuid, wcompl) -> {
-                    CheckAndStartVmInstanceMsg msg = new CheckAndStartVmInstanceMsg();
-                    msg.setVmInstanceUuid(vmUuid);
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
-                    bus.send(msg, new CloudBusCallBack(wcompl) {
+                    CheckAndStartVmInstanceMsg cmsg = new CheckAndStartVmInstanceMsg();
+                    cmsg.setVmInstanceUuid(vmUuid);
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                    bus.send(cmsg, new CloudBusCallBack(wcompl) {
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
-                                errs.add(reply.getError());
+                                errs.add(operr("xml hook[uuid: %s] updated successfully, but failed to restart vm[uuid:%s]. details is: %s",
+                                        msg.getXmlHookUuid(), vmUuid, reply.getError().getDetails()));
                             } else {
                                 wcompl.done();
                             }
