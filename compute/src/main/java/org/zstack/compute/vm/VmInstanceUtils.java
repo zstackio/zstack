@@ -4,22 +4,23 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.configuration.InstanceOfferingState;
+import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.configuration.InstanceOfferingVO_;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
-import org.zstack.header.vm.APIChangeInstanceOfferingMsg;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
-import org.zstack.header.vm.CreateVmInstanceMsg;
-import org.zstack.header.vm.UpdateVmInstanceMsg;
-import org.zstack.header.vm.UpdateVmInstanceSpec;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.*;
 import org.zstack.tag.SystemTagUtils;
 
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
+import static org.zstack.core.Platform.operr;
+
 /**
  * Created by Wenhao.Zhang on 22/03/10
  */
@@ -137,5 +138,48 @@ public class VmInstanceUtils {
         }
 
         return spec;
+    }
+
+    public static void validateInstanceSettings(NewVmInstanceMessage2 msg) {
+        final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
+
+        if (instanceOfferingUuid == null) {
+            if (msg.getCpuNum() == null || msg.getMemorySize() == null) {
+                throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
+            }
+
+            if (msg.getCpuNum() <= 0 || msg.getMemorySize() <= 0) {
+                throw new ApiMessageInterceptionException(operr("Unexpected CPU/memory settings"));
+            }
+
+            if (msg.getReservedMemorySize() != null) {
+                if (msg.getReservedMemorySize() > msg.getMemorySize()) {
+                    throw new ApiMessageInterceptionException(operr("reserved memory[%s] is greater than memory size[%s]", msg.getReservedMemorySize(), msg.getMemorySize()));
+                }
+            } else {
+                msg.setReservedMemorySize(0L);
+            }
+
+            return;
+        }
+
+        // InstanceOffering takes precedence over CPU/memory settings.
+        InstanceOfferingVO ivo = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, instanceOfferingUuid).find();
+
+        if (ivo.getState() == InstanceOfferingState.Disabled) {
+            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s] is Disabled, can't create vm from it", instanceOfferingUuid));
+        }
+
+        if (!ivo.getType().equals(VmInstanceConstant.USER_VM_TYPE)){
+            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", instanceOfferingUuid, ivo.getType()));
+        }
+
+        msg.setCpuNum(ivo.getCpuNum());
+        msg.setMemorySize(ivo.getMemorySize());
+
+        // Reserved memory should support customize.
+        if (msg.getReservedMemorySize() == null) {
+            msg.setReservedMemorySize(ivo.getReservedMemorySize());
+        }
     }
 }
