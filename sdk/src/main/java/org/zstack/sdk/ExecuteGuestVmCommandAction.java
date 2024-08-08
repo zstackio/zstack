@@ -31,7 +31,7 @@ public class ExecuteGuestVmCommandAction extends AbstractAction {
     @Param(required = true, validValues = {"Windows","Linux"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String platform;
 
-    @Param(required = true, maxLength = 5462, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 65536, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String command;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,60L}, noTrim = false)

@@ -31,7 +31,7 @@ public class CreateGuestVmScriptAction extends AbstractAction {
     @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, maxLength = 4096, minLength = 1, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 65536, minLength = 1, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String scriptContent;
 
     @Param(required = false, maxLength = 5120, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
