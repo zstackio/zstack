@@ -23,6 +23,7 @@ class CodeGenerator {
     private static String LOWER_CASE_RESOURCE_NAME = "LOWER_CASE_RESOURCE_NAME"
     private static String PRIVATE_FIELDS = "PRIVATE_FIELDS"
     private static String GETTER_SETTER = "GETTER_SETTER"
+    private static String INVENTORY_CONSTRUCTOR = "INVENTORY_CONSTRUCTOR"
     private static String IMPORT_PACKAGE = "IMPORT_PACKAGE"
     private static String INVENTORY_NAME = "INVENTORY_NAME"
     private static String ENTITY_CLASS = "ENTITY_CLASS"
@@ -62,7 +63,7 @@ class CodeGenerator {
             PojoField pojoField = new PojoField()
             pojoField.fieldName = field.getName()
             pojoField.fieldType = getJavaTypeFromFieldType(field.getType())
-            pojoField.columnName = convert(field.getType())
+            pojoField.columnName = convert(pojoField.fieldName, field.getType())
             pojoField.field = field
             pojoFields.add(pojoField)
         }
@@ -75,6 +76,12 @@ class CodeGenerator {
 
     private static String generateImportPackage(String packageName) {
         return String.format("import %s;", packageName)
+    }
+
+    private static String generateInventoryConstructor(PojoField field) {
+        String methodName = field.fieldName.substring(0, 1).toUpperCase() + field.fieldName.substring(1)
+        String getterName = String.format("get%s", methodName)
+        return String.format("        this.%s = vo.%s();", field.fieldName, getterName)
     }
 
     private static String generateGetterAndSetter(PojoField field) {
@@ -119,6 +126,9 @@ class CodeGenerator {
 
         // fields for rest api and inventory
         List<String> gettersAndSetters = new ArrayList<>()
+
+        // constructor from vo for inventory
+        List<String> constructorOfFieldsFromVO = new ArrayList<>()
     }
 
     private static PojoClass createInventory(List<PojoField> fields, Class<?> entityClass) {
@@ -135,6 +145,7 @@ class CodeGenerator {
                     "    public void setUuid(String uuid) {\n" +
                     "        this.uuid = uuid;\n" +
                     "    }")
+            pojoClass.constructorOfFieldsFromVO.add("        this.uuid = vo.getUuid();")
         }
 
         pojoClass.importPackages.add("import java.io.Serializable;")
@@ -148,6 +159,7 @@ class CodeGenerator {
                 pojoClass.importPackages.add(generateImportPackage(field.field.getClass().getCanonicalName()))
             }
             pojoClass.gettersAndSetters.add(generateGetterAndSetter(field))
+            pojoClass.constructorOfFieldsFromVO.add(generateInventoryConstructor(field))
             pojoClass.privateFields.add(String.format("    private %s %s;", field.fieldType, field.fieldName))
         }
 
@@ -166,6 +178,7 @@ class CodeGenerator {
         bindings.put(IMPORT_PACKAGE, pojoClass.importPackages.join("\n"))
         bindings.put(INVENTORY_NAME, pojoClass.inventoryClassName)
         bindings.put(ENTITY_CLASS, entityClass.getSimpleName())
+        bindings.put(INVENTORY_CONSTRUCTOR, pojoClass.constructorOfFieldsFromVO.join("\n"))
 
         writeToFile(String.format("%s.java", pojoClass.inventoryClassName),
                 StringTemplateUtils.createStringFromTemplate(INVENTORY_TEMPLATE, bindings))
@@ -188,11 +201,17 @@ class CodeGenerator {
         }
     }
 
-    private static String convert(Class<?> fieldType) {
+    private static String convert(String fieldName, Class<?> fieldType) {
         String javaType = getJavaTypeFromFieldType(fieldType)
 
         if (javaType == "String") {
-            return "varchar(255)"
+            if (fieldName.toLowerCase().contains("uuid")) {
+                return "varchar(32)"
+            } else if (fieldName.toLowerCase().contains("description")) {
+                return "varchar(2048)"
+            } else {
+                return "varchar(255)"
+            }
         } else if (javaType == "Integer" || javaType == "int") {
             return "int"
         } else if (javaType == "Long" || javaType == "long") {
@@ -249,7 +268,7 @@ class CodeGenerator {
 
             ColumnDefinition columnDefinition = new ColumnDefinition()
             columnDefinition.columnName = columnName
-            columnDefinition.columnType = convert(field.getType())
+            columnDefinition.columnType = convert(columnName, field.getType())
             columnDefinition.isPrimaryKey = isPrimaryKey
             columnDefinition.needIndex = needIndex
             columnDefinitions.add(columnDefinition)
@@ -453,7 +472,6 @@ import java.util.List;
 
 @RestResponse(allTo = "inventories")
 public class APIQuery${RESOURCE_NAME}Reply extends APIQueryReply {
-
     private List<${RESOURCE_NAME}Inventory> inventories;
 
     public List<${RESOURCE_NAME}Inventory> getInventories() {
@@ -626,6 +644,14 @@ public class APIDelete${RESOURCE_NAME}Msg extends APIMessage {
     @APIParam(resourceType = ${RESOURCE_NAME}VO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     public static APIDelete${RESOURCE_NAME}Msg __example__() {
         APIDelete${RESOURCE_NAME}Msg msg = new APIDelete${RESOURCE_NAME}Msg();
         msg.setUuid(uuid());
@@ -667,6 +693,25 @@ public class ${INVENTORY_NAME} implements Serializable, Cloneable {
     ${PRIVATE_FIELDS}
 
     ${GETTER_SETTER}
+
+    public ${INVENTORY_NAME}() {}
+
+    public ${INVENTORY_NAME}(${ENTITY_CLASS} vo) {
+${INVENTORY_CONSTRUCTOR}
+    }
+
+    public static ${INVENTORY_NAME} valueOf(${ENTITY_CLASS} vo) {
+        return new ${INVENTORY_NAME}(vo);
+    }
+
+    public static List<${INVENTORY_NAME}> valueOf(Collection<${ENTITY_CLASS}> vos) {
+        List<${INVENTORY_NAME}> invs = new ArrayList<>();
+        for (${ENTITY_CLASS} vo : vos) {
+            invs.add(valueOf(vo));
+        }
+
+        return invs;
+    }
 }
 '''
 
