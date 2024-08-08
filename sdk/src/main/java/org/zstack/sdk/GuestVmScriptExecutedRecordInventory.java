@@ -76,6 +76,14 @@ public class GuestVmScriptExecutedRecordInventory  {
         return this.scriptContent;
     }
 
+    public java.lang.String renderParams;
+    public void setRenderParams(java.lang.String renderParams) {
+        this.renderParams = renderParams;
+    }
+    public java.lang.String getRenderParams() {
+        return this.renderParams;
+    }
+
     public java.sql.Timestamp startTime;
     public void setStartTime(java.sql.Timestamp startTime) {
         this.startTime = startTime;
