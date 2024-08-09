@@ -476,9 +476,14 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         bus.send(smsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply rly) {
-                SubmitLongJobReply reply = rly.castReply();
-                evt.setInventory(reply.getInventory());
-                evt.setNeedAudit(reply.isNeedAudit());
+                if (rly.isSuccess()) {
+                    SubmitLongJobReply reply = rly.castReply();
+                    evt.setInventory(reply.getInventory());
+                    evt.setNeedAudit(reply.isNeedAudit());
+                } else {
+                    evt.setError(rly.getError());
+                }
+
                 bus.publish(evt);
             }
         });
