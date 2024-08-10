@@ -7,6 +7,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.sshkeypair.*;
@@ -24,11 +25,13 @@ public class SshKeyPairUpgradeExtension implements Component {
 
         Long count = Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .count();
 
         SQL.New("select ref.accountUuid, ref.resourceUuid " +
-                "from AccountResourceRefVO ref where ref.resourceType = :resourceType", Tuple.class)
+                "from AccountResourceRefVO ref where ref.resourceType = :resourceType and ref.type = :type", Tuple.class)
                 .param("resourceType", VmInstanceVO.class.getSimpleName())
+                .param("type", AccessLevel.Own)
                 .limit(1000)
                 .paginate(count, (List<Tuple> vmResources) -> {
                     for (Tuple vmResource : vmResources) {
@@ -68,6 +71,7 @@ public class SshKeyPairUpgradeExtension implements Component {
                     .select(AccountResourceRefVO_.resourceUuid)
                     .eq(AccountResourceRefVO_.accountUuid, accountUuid)
                     .eq(AccountResourceRefVO_.resourceType, SshKeyPairVO.class.getSimpleName())
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                     .listValues();
             if (!sshKeyPairUuids.isEmpty()) {
                 sshKeyPairUuid = Q.New(SshKeyPairVO.class)

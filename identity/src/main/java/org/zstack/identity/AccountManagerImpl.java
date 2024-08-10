@@ -170,7 +170,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         ref.setAccountUuid(newOwnerUuid);
-        ref.setOwnerAccountUuid(newOwnerUuid);
         ref = dbf.getEntityManager().merge(ref);
 
         CollectionUtils.safeForEach(
@@ -294,7 +293,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 SimpleQuery<AccountResourceRefVO> queryAccResRefVO = dbf.createQuery(AccountResourceRefVO.class);
                 queryAccResRefVO.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
                 AccountResourceRefVO accResRefVO = queryAccResRefVO.find();
-                String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
+                String resourceOriginalOwnerAccountUuid = accResRefVO.getAccountUuid();
                 if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
                     trigger.fail(err(IdentityErrors.QUOTA_INVALID_OP,
                             "Invalid ChangeResourceOwner operation." +
@@ -710,7 +709,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 // use native SQL instead of JPQL here,
                 // JPQL will join all sub-tables of ResourceVO, which
                 // exceeds the limit of max tables MySQL can join
-                List rvos = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceType, concreteResourceType from ResourceVO where uuid not in (select resourceUuid from AccountResourceRefVO)" +
+                List rvos = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceType from ResourceVO where uuid not in (select resourceUuid from AccountResourceRefVO)" +
                         " and resourceType in (:rtypes)")
                         .setParameter("rtypes", ResourceTypeMetadata.getAllBaseTypes().stream().map(Class::getSimpleName).collect(Collectors.toList()))
                         .getResultList();
@@ -719,16 +718,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     Object[] values = (Object[]) obj;
                     String ruuid = values[0].toString();
                     String rtype = values[1].toString();
-                    String crtype = values[2].toString();
 
                     AccountResourceRefVO ref = new AccountResourceRefVO();
                     ref.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                     ref.setResourceType(rtype);
-                    ref.setConcreteResourceType(crtype);
                     ref.setResourceUuid(ruuid);
-                    ref.setPermission(AccountConstant.RESOURCE_PERMISSION_WRITE);
-                    ref.setOwnerAccountUuid(ref.getAccountUuid());
-                    ref.setShared(false);
+                    ref.setType(AccessLevel.Own);
                     persist(ref);
                     orphanedResources.add(ruuid);
                 });
@@ -852,16 +847,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Override
     public String getOwnerAccountUuidOfResource(String resourceUuid) {
-        try {
-            SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-            q.select(AccountResourceRefVO_.ownerAccountUuid);
-            q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
-            String ownerUuid = q.findValue();
-            DebugUtils.Assert(ownerUuid != null, String.format("cannot find owner uuid for resource[uuid:%s]", resourceUuid));
-            return ownerUuid;
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
+        return Account.getAccountUuidOfResource(resourceUuid);
     }
 
     @Override

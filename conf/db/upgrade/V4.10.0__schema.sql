@@ -61,4 +61,41 @@ alter table `HybridAccountVO` drop foreign key `fkHybridAccountVOUserVO`;
 drop table if exists `UserVO`;
 delete from `ResourceVO` where `resourceType` = 'UserVO';
 
+rename table `AccountResourceRefVO` to `AccountResourceRefVODeprecated`;
+
+create table if not exists `zstack`.`AccountResourceRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `accountUuid` char(32) default null,
+    `resourceUuid` varchar(32) not null,
+    `resourceType` varchar(255) not null,
+    `accountPermissionFrom` char(32) default null,
+    `resourcePermissionFrom` char(32) default null,
+    `type` varchar(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkAccountResourceRefAccountUuid` foreign key (`accountUuid`) references `AccountVO` (`uuid`) on delete cascade,
+    constraint `fkAccountResourceRefResourceUuid` foreign key (`resourceUuid`) references `ResourceVO` (`uuid`) on delete cascade,
+    index `idxAccountResourceRefResourceTypeAccount` (`resourceUuid`, `type`, `accountUuid`)
+) ENGINE=InnoDB default CHARSET=utf8;
+
+insert into `AccountResourceRefVO`
+    (`accountUuid`,`resourceUuid`,`resourceType`,`type`,`lastOpDate`,`createDate`)
+    select t.accountUuid, t.resourceUuid, t.resourceType, 'Own', t.lastOpDate, t.createDate
+        from AccountResourceRefVODeprecated t;
+insert into `AccountResourceRefVO`
+    (`accountUuid`,`resourceUuid`,`resourceType`,`type`,`lastOpDate`,`createDate`)
+    select t.receiverAccountUuid, t.resourceUuid, t.resourceType, 'Share', t.lastOpDate, t.createDate
+        from SharedResourceVO t
+        where t.toPublic = 0;
+insert into `AccountResourceRefVO`
+    (`resourceUuid`,`resourceType`,`type`,`lastOpDate`,`createDate`)
+    select t.resourceUuid, t.resourceType, 'SharePublic', t.lastOpDate, t.createDate
+        from SharedResourceVO t
+        where t.toPublic = 1;
+
+drop table if exists `AccountResourceRefVODeprecated`;
+
+-- Others
+
 CALL INSERT_COLUMN('VmVfNicVO', 'haState', 'varchar(32)', 0, 'Disabled', 'pciDeviceUuid');

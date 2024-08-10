@@ -28,6 +28,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -464,7 +465,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         sqlBuilder.append("select ip, vip.uuid, vip.name as vipName, state, useFor, vip.createDate, ac.name as ownerName ")
                 .append("from (select ip, uuid, name, state, useFor, v.createDate, accountUuid ")
                 .append("from VipVO v, AccountResourceRefVO a where l3NetworkUuid = '")
-                .append(msg.getL3NetworkUuid()).append('\'').append(" and a.resourceType = 'VipVO' ")
+                .append(msg.getL3NetworkUuid()).append('\'').append(" and a.resourceType = 'VipVO' and a.type = 'Own' ")
                 .append("and v.uuid = a.resourceUuid");
         if (StringUtils.isNotEmpty(msg.getIp())) {
             sqlBuilder.append(" and ip like '").append(msg.getIp()).append('\'');
@@ -509,13 +510,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     .find();
         } else {
             String sql = "select count(*) from VipVO v, AccountResourceRefVO a where a.accountUuid = :accUuid " +
-                    "and v.l3NetworkUuid = :l3Uuid and v.uuid = a.resourceUuid";
+                    "and v.l3NetworkUuid = :l3Uuid and v.uuid = a.resourceUuid and a.type = :type";
             if (StringUtils.isNotEmpty(msg.getIp())) {
                 sql += " and ip like '" + msg.getIp() + '\'';
             }
             return SQL.New(sql, Long.class)
                     .param("accUuid", msg.getSession().getAccountUuid())
                     .param("l3Uuid", msg.getL3NetworkUuid())
+                    .param("type", AccessLevel.Own)
                     .find();
         }
     }
@@ -549,8 +551,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("select ip, vm.uuid, vm.name, vm.type, vm.state, vm.createDate, ac.name as ownerName ")
                 .append("from (select n.vmInstanceUuid, u.ip, accountUuid from UsedIpVO u, VmNicVO n, AccountResourceRefVO a ")
-                .append("where u.l3NetworkUuid = '").append(msg.getL3NetworkUuid())
-                .append('\'');
+                .append("where u.l3NetworkUuid = '").append(msg.getL3NetworkUuid()).append('\'')
+                .append(" and a.type = 'Own'");
         if (StringUtils.isNotEmpty(msg.getIp())) {
             sqlBuilder.append(" and u.ip like '").append(msg.getIp()).append('\'');
         }
@@ -673,7 +675,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     .find();
         } else {
             String sql = "select count(*) from UsedIpVO u, VmNicVO n, VmInstanceVO i, AccountResourceRefVO a " +
-                    "where a.accountUuid = :accUuid and u.l3NetworkUuid = :l3Uuid and i.type = 'UserVm'" +
+                    "where a.accountUuid = :accUuid and u.l3NetworkUuid = :l3Uuid and i.type = 'UserVm' and a.type = 'Own' " +
                     "and u.vmNicUuid = n.uuid and n.vmInstanceUuid = i.uuid and n.uuid = a.resourceUuid";
             if (StringUtils.isNotEmpty(msg.getIp())) {
                 sql += " and u.ip like '" + msg.getIp() + '\'';

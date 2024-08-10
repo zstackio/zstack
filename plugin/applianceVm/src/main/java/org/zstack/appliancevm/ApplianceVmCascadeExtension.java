@@ -28,6 +28,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -810,10 +811,11 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Transactional(readOnly = true)
                 public List<ApplianceVmVO> call() {
                     String sql = "select d from ApplianceVmVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                            " r.resourceType = :rtype and r.type = :type and r.accountUuid in (:auuids)";
                     TypedQuery<ApplianceVmVO> q = dbf.getEntityManager().createQuery(sql, ApplianceVmVO.class);
                     q.setParameter("auuids", auuids);
                     q.setParameter("rtype", "VpcRouterVmVO");
+                    q.setParameter("type", AccessLevel.Own);
                     return q.getResultList();
                 }
             }.call();

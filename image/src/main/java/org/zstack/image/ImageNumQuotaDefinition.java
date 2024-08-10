@@ -1,6 +1,7 @@
 package org.zstack.image;
 
 import org.zstack.core.db.SQL;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.image.ImageVO;
 
@@ -21,10 +22,12 @@ public class ImageNumQuotaDefinition implements QuotaDefinition {
                 " from ImageVO image, AccountResourceRefVO ref " +
                 " where image.uuid = ref.resourceUuid " +
                 " and ref.accountUuid = :auuid " +
-                " and ref.resourceType = :rtype ";
+                " and ref.resourceType = :rtype " +
+                " and ref.type = :type ";
         SQL q = SQL.New(sql, Long.class);
         q.param("auuid", accountUuid);
         q.param("rtype", ImageVO.class.getSimpleName());
+        q.param("type", AccessLevel.Own);
         Long imageNum = q.find();
         imageNum = imageNum == null ? 0 : imageNum;
         return imageNum;

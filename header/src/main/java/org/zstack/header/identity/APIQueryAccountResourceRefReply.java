@@ -27,11 +27,9 @@ public class APIQueryAccountResourceRefReply extends APIQueryReply {
         AccountResourceRefInventory inventory = new AccountResourceRefInventory();
         inventory.setAccountUuid(uuid());
         inventory.setId(1);
-        inventory.setOwnerAccountUuid(uuid());
         inventory.setResourceType("ImageVO");
         inventory.setResourceUuid(uuid());
-        inventory.setPermission(1);
-        inventory.setShared(false);
+        inventory.setType("Own");
         reply.setInventories(list(inventory));
         return reply;
     }

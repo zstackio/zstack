@@ -10,6 +10,8 @@ import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.volume.VolumeCanonicalEvents;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
+import org.zstack.identity.Account;
+
 import java.util.Date;
 
 /**
@@ -26,9 +28,7 @@ public class FireVolumeCanonicalEvent {
 
         boolean volumeAccountExists =  Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, vol.getUuid()).isExists();
         if (volumeAccountExists) {
-            accountUuid = Q.New(AccountResourceRefVO.class)
-                    .select(AccountResourceRefVO_.ownerAccountUuid)
-                    .eq(AccountResourceRefVO_.resourceUuid, vol.getUuid()).limit(1).findValue();
+            accountUuid = Account.getAccountUuidOfResource(vol.getUuid());
         }
 
         VolumeCanonicalEvents.VolumeStatusChangedData d = new VolumeCanonicalEvents.VolumeStatusChangedData();
