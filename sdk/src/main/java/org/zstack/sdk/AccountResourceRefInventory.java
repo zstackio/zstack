@@ -28,12 +28,28 @@ public class AccountResourceRefInventory  {
         return this.resourceType;
     }
 
-    public java.lang.String concreteResourceType;
-    public void setConcreteResourceType(java.lang.String concreteResourceType) {
-        this.concreteResourceType = concreteResourceType;
+    public java.lang.String accountPermissionFrom;
+    public void setAccountPermissionFrom(java.lang.String accountPermissionFrom) {
+        this.accountPermissionFrom = accountPermissionFrom;
     }
-    public java.lang.String getConcreteResourceType() {
-        return this.concreteResourceType;
+    public java.lang.String getAccountPermissionFrom() {
+        return this.accountPermissionFrom;
+    }
+
+    public java.lang.String resourcePermissionFrom;
+    public void setResourcePermissionFrom(java.lang.String resourcePermissionFrom) {
+        this.resourcePermissionFrom = resourcePermissionFrom;
+    }
+    public java.lang.String getResourcePermissionFrom() {
+        return this.resourcePermissionFrom;
+    }
+
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
     }
 
     public java.sql.Timestamp createDate;

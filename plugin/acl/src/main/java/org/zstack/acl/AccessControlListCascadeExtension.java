@@ -13,6 +13,7 @@ import org.zstack.header.acl.AccessControlListInventory;
 import org.zstack.header.acl.AccessControlListVO;
 import org.zstack.header.acl.DeleteAccessControlListMsg;
 import org.zstack.header.core.Completion;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -119,11 +120,12 @@ public class AccessControlListCascadeExtension extends AbstractAsyncCascadeExten
                 @Transactional(readOnly = true)
                 public List<AccessControlListVO> call() {
                     String sql = "select d from AccessControlListVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                            " r.resourceType = :rtype and r.type = :type and r.accountUuid in (:auuids)";
 
                     TypedQuery<AccessControlListVO> q = dbf.getEntityManager().createQuery(sql, AccessControlListVO.class);
                     q.setParameter("auuids", auuids);
                     q.setParameter("rtype", AccessControlListVO.class.getSimpleName());
+                    q.setParameter("type", AccessLevel.Own);
                     return q.getResultList();
                 }
             }.call();

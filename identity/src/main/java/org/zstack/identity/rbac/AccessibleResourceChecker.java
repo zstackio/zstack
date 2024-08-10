@@ -2,6 +2,7 @@ package org.zstack.identity.rbac;
 
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
@@ -95,14 +96,16 @@ public class AccessibleResourceChecker {
         return new SQLBatchWithReturn<List<String>>() {
             @Override
             protected List<String> scripts() {
+                // find out all resources the account can access
                 String text = "select ref.resourceUuid from AccountResourceRefVO ref where" +
-                        " ref.ownerAccountUuid = :accountUuid" +
+                        " ref.accountUuid = :accountUuid and type = :accessLevel" +
                         " or ref.resourceUuid in" +
                         " (select sh.resourceUuid from SharedResourceVO sh where sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1)" +
                         " and ref.resourceUuid in (:uuids)";
 
                 List<String> auuids = sql(text, String.class)
                         .param("accountUuid", accountUuid)
+                        .param("accessLevel", AccessLevel.Own)
                         .param("uuids", resourceUuids)
                         .list();
 

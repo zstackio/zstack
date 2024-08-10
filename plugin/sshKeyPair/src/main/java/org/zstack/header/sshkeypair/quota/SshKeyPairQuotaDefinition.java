@@ -1,6 +1,7 @@
 package org.zstack.header.sshkeypair.quota;
 
 import org.zstack.core.db.Q;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.quota.QuotaDefinition;
@@ -27,6 +28,7 @@ public class SshKeyPairQuotaDefinition implements QuotaDefinition {
         Long count = Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.accountUuid, accountUuid)
                 .eq(AccountResourceRefVO_.resourceType, SshKeyPairVO.class.getSimpleName())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .count();
         return count;
     }

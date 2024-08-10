@@ -1,6 +1,7 @@
 package org.zstack.test.integration.image
 
 import org.zstack.core.db.Q
+import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.identity.SharedResourceVO
@@ -55,6 +56,7 @@ class DeleteImageResourceVOCase extends SubCase{
         assert Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.accountUuid, adminUuid)
                 .eq(AccountResourceRefVO_.resourceUuid, img.uuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .isExists()
         assert Q.New(SharedResourceVO.class)
                 .eq(SharedResourceVO_.ownerAccountUuid, adminUuid)
@@ -69,6 +71,7 @@ class DeleteImageResourceVOCase extends SubCase{
         assert Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.accountUuid, adminUuid)
                 .eq(AccountResourceRefVO_.resourceUuid, img.uuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .isExists()
         assert Q.New(SharedResourceVO.class)
                 .eq(SharedResourceVO_.ownerAccountUuid, adminUuid)
@@ -89,6 +92,7 @@ class DeleteImageResourceVOCase extends SubCase{
         assert !Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.accountUuid, adminUuid)
                 .eq(AccountResourceRefVO_.resourceUuid, img.uuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .isExists()
         assert !Q.New(SharedResourceVO.class)
                 .eq(SharedResourceVO_.ownerAccountUuid, adminUuid)

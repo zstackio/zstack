@@ -72,8 +72,11 @@ public interface Account {
     }
 
     static String getAccountUuidOfResource(String resUuid) {
-        return Q.New(AccountResourceRefVO.class).select(AccountResourceRefVO_.ownerAccountUuid)
-                .eq(AccountResourceRefVO_.resourceUuid, resUuid).findValue();
+        return Q.New(AccountResourceRefVO.class)
+                .select(AccountResourceRefVO_.accountUuid)
+                .eq(AccountResourceRefVO_.resourceUuid, resUuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .findValue();
     }
 
     static AccountInventory create(AccountBuilder builder) {

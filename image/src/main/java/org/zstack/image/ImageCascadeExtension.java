@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.image.*;
@@ -176,10 +177,11 @@ public class ImageCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Transactional(readOnly = true)
                 public List<ImageVO> call() {
                     String sql = "select d from ImageVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                            " r.resourceType = :rtype and r.accountUuid in (:auuids) and r.type = :type";
                     TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
                     q.setParameter("auuids", auuids);
                     q.setParameter("rtype", ImageVO.class.getSimpleName());
+                    q.setParameter("type", AccessLevel.Own);
                     return q.getResultList();
                 }
             }.call();

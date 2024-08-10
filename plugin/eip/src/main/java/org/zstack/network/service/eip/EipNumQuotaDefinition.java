@@ -1,6 +1,7 @@
 package org.zstack.network.service.eip;
 
 import org.zstack.core.db.SQL;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.quota.QuotaDefinition;
 
 public class EipNumQuotaDefinition implements QuotaDefinition {
@@ -20,11 +21,13 @@ public class EipNumQuotaDefinition implements QuotaDefinition {
                 " from EipVO eip, AccountResourceRefVO ref" +
                 " where ref.resourceUuid = eip.uuid" +
                 " and ref.accountUuid = :auuid" +
-                " and ref.resourceType = :rtype";
+                " and ref.resourceType = :rtype" +
+                " and ref.type = :type";
 
         SQL q = SQL.New(sql, Long.class);
         q.param("auuid", accountUuid);
         q.param("rtype", EipVO.class.getSimpleName());
+        q.param("type", AccessLevel.Own);
         Long usedEipNum = q.find();
         usedEipNum = usedEipNum == null ? 0 : usedEipNum;
         return usedEipNum;

@@ -1,11 +1,11 @@
 package org.zstack.sshkeypair;
 
-import org.apache.lucene.util.packed.PagedGrowableWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.APIMessage;
@@ -15,7 +15,6 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
-import org.zstack.utils.CharacterUtils;
 
 import java.util.List;
 
@@ -64,6 +63,7 @@ public class SshKeyPairAPIInterceptor implements ApiMessageInterceptor {
                 .eq(AccountResourceRefVO_.accountUuid, msg.getSession().getAccountUuid())
                 .eq(AccountResourceRefVO_.resourceType, SshKeyPairVO.class.getSimpleName())
                 .in(AccountResourceRefVO_.resourceUuid, sshKeyPairUuids)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .isExists();
         if (isExist) {
             throw new ApiMessageInterceptionException(argerr("The sshKeyPair already upload"));

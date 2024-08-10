@@ -9,20 +9,16 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.core.BypassWhenUnitTest;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.image.APIAddImageMsg;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
-import org.zstack.identity.QuotaUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.Map;
 
 /**
  * Created by miao on 16-10-9.
@@ -61,10 +57,12 @@ public class ImageQuotaUtil {
                 " from ImageVO image, AccountResourceRefVO ref " +
                 " where image.uuid = ref.resourceUuid " +
                 " and ref.accountUuid = :auuid " +
-                " and ref.resourceType = :rtype ";
+                " and ref.resourceType = :rtype " +
+                " and ref.type = :type ";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("auuid", accountUuid);
         q.setParameter("rtype", ImageVO.class.getSimpleName());
+        q.setParameter("type", AccessLevel.Own);
         Long imageNum = q.getSingleResult();
         imageNum = imageNum == null ? 0 : imageNum;
         return imageNum;
@@ -76,10 +74,12 @@ public class ImageQuotaUtil {
                 " from ImageVO image ,AccountResourceRefVO ref " +
                 " where image.uuid = ref.resourceUuid " +
                 " and ref.accountUuid = :auuid " +
-                " and ref.resourceType = :rtype ";
+                " and ref.resourceType = :rtype " +
+                " and ref.type = :type ";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("auuid", accountUuid);
         q.setParameter("rtype", ImageVO.class.getSimpleName());
+        q.setParameter("type", AccessLevel.Own);
         Long imageSize = q.getSingleResult();
         imageSize = imageSize == null ? 0 : imageSize;
         return imageSize;

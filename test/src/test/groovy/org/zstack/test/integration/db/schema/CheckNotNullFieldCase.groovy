@@ -60,8 +60,5 @@ class CheckNotNullFieldCase extends SubCase{
 
         long count1 = Q.New(ResourceVO.class).eq(ResourceVO_.concreteResourceType, null).count()
         assert count1 == 0, "Found null on field[ResourceVO.concreteResourceType], but it has not null property"
-
-        long count2 = Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.concreteResourceType, null).count()
-        assert count2 == 0, "Found null on field[AccountResourceRefVO.concreteResourceType], but it has not null property"
     }
 }

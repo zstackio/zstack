@@ -2,6 +2,7 @@ package org.zstack.storage.snapshot;
 
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.quota.QuotaDefinition;
@@ -23,6 +24,7 @@ public class VolumeSnapshotNumQuotaDefinition implements QuotaDefinition {
         return Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.accountUuid, accountUuid)
                 .eq(AccountResourceRefVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .count();
     }
 }

@@ -13,7 +13,6 @@ import org.zstack.sdk.AccountResourceRefInventory
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.LongJobInventory
 import org.zstack.header.longjob.LongJobState
-import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -194,10 +193,10 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
             LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
             assert job.state == LongJobState.Succeeded
         }
-        
-        AccountResourceRefInventory ref = queryAccountResourceRef {
-            conditions = ["resourceUuid=${uuid}"]
-        }[0]
+
+        def ref = (queryAccountResourceRef {
+            conditions = ["resourceUuid=${uuid}", "type=Own"]
+        } as List<AccountResourceRefInventory>)[0]
 
         assert currentEnvSpec.session.accountUuid == ref.accountUuid
     }

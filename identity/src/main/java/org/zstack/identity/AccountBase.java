@@ -188,7 +188,8 @@ public class AccountBase extends AbstractAccount {
         final List<AccountInventory> ctx = list(AccountInventory.valueOf(self));
         List<String> resourceUuids = Q.New(AccountResourceRefVO.class)
                                         .select(AccountResourceRefVO_.resourceUuid)
-                                        .eq(AccountResourceRefVO_.ownerAccountUuid, self.getUuid())
+                                        .eq(AccountResourceRefVO_.accountUuid, self.getUuid())
+                                        .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                                         .listValues();
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-account-%s", self.getUuid()));
@@ -282,6 +283,7 @@ public class AccountBase extends AbstractAccount {
                         .select(AccountResourceRefVO_.resourceUuid)
                         .eq(AccountResourceRefVO_.accountUuid, self.getUuid())
                         .eq(AccountResourceRefVO_.resourceType, RoleVO.class.getSimpleName())
+                        .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                         .listValues();
 
                 if (!resourceUuids.isEmpty()) {
@@ -441,6 +443,7 @@ public class AccountBase extends AbstractAccount {
         List<Tuple> ts = Q.New(AccountResourceRefVO.class)
                 .select(AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType)
                 .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .listTuple();
         Map<String, String> uuidType = new HashMap<>();
         for (Tuple t : ts) {

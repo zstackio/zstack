@@ -28,6 +28,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.APIDeleteMessage;
@@ -492,6 +493,7 @@ public class VipBase {
         String accountUuid = Q.New(AccountResourceRefVO.class)
                 .select(AccountResourceRefVO_.accountUuid)
                 .eq(AccountResourceRefVO_.resourceUuid, msg.getVipUuid())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .findValue();
 
         thdf.chainSubmit(new ChainTask(msg) {
