@@ -76,6 +76,14 @@ public class ModelEvaluationTaskInventory  {
         return this.datasetUuid;
     }
 
+    public java.lang.Integer limits;
+    public void setLimits(java.lang.Integer limits) {
+        this.limits = limits;
+    }
+    public java.lang.Integer getLimits() {
+        return this.limits;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

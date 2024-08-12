@@ -60,6 +60,14 @@ public class DatasetInventory  {
         return this.size;
     }
 
+    public java.lang.Boolean system;
+    public void setSystem(java.lang.Boolean system) {
+        this.system = system;
+    }
+    public java.lang.Boolean getSystem() {
+        return this.system;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
