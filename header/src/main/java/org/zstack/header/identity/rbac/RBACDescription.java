@@ -30,6 +30,10 @@ public interface RBACDescription {
         return new RBAC.GlobalReadableResourceBuilder();
     }
 
+    default RBAC.ResourceEnsembleContributorBuilder resourceEnsembleContributorBuilder() {
+        return new RBAC.ResourceEnsembleContributorBuilder();
+    }
+
     default void registerAPIPermissionChecker(Class aClz, boolean takeOver, APIPermissionChecker checker) {
         List<Class> clzs = new ArrayList<>();
         if (aClz == null) {

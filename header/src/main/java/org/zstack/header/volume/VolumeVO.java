@@ -4,6 +4,7 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vo.BaseResource;
@@ -29,6 +30,7 @@ import java.util.List;
                 @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "vmInstanceUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = ImageVO.class, myField = "rootImageUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = DiskOfferingVO.class, myField = "diskOfferingUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VolumeSnapshotVO.class, myField = "uuid", targetField = "volumeUuid"),
         }
 )
 @AutoDeleteTag

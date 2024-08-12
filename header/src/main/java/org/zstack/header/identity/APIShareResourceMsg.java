@@ -28,6 +28,7 @@ public class APIShareResourceMsg extends APIMessage implements AccountMessage {
     @APIParam(required = false)
     private boolean toPublic;
     @APIParam(required = false, validEnums = {ShareResourcePermission.class})
+    @Deprecated
     private String permission;
 
     public List<String> getResourceUuids() {
@@ -54,10 +55,12 @@ public class APIShareResourceMsg extends APIMessage implements AccountMessage {
         this.toPublic = toPublic;
     }
 
+    @Deprecated
     public String getPermission() {
         return permission;
     }
 
+    @Deprecated
     public void setPermission(String permission) {
         this.permission = permission;
     }

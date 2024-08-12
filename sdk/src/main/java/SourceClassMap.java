@@ -361,6 +361,9 @@ public class SourceClassMap {
 			put("org.zstack.header.zone.ZoneInventory", "org.zstack.sdk.ZoneInventory");
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
+			put("org.zstack.iam1.entity.ensemble.AccountGroupSharingView", "org.zstack.sdk.iam1.ensemble.AccountGroupSharingView");
+			put("org.zstack.iam1.entity.ensemble.AccountSharingView", "org.zstack.sdk.iam1.ensemble.AccountSharingView");
+			put("org.zstack.iam1.entity.ensemble.ResourceEnsembleInventory", "org.zstack.sdk.iam1.ensemble.ResourceEnsembleInventory");
 			put("org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory", "org.zstack.sdk.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory");
 			put("org.zstack.identity.imports.header.SyncTaskResult", "org.zstack.sdk.identity.imports.header.SyncTaskResult");
 			put("org.zstack.identity.imports.header.SyncTaskResult$CleanStage", "org.zstack.sdk.identity.imports.header.CleanStage");
@@ -1284,6 +1287,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");
 			put("org.zstack.sdk.databasebackup.DatabaseType", "org.zstack.header.storage.database.backup.DatabaseType");
+			put("org.zstack.sdk.iam1.ensemble.AccountGroupSharingView", "org.zstack.iam1.entity.ensemble.AccountGroupSharingView");
+			put("org.zstack.sdk.iam1.ensemble.AccountSharingView", "org.zstack.iam1.entity.ensemble.AccountSharingView");
+			put("org.zstack.sdk.iam1.ensemble.ResourceEnsembleInventory", "org.zstack.iam1.entity.ensemble.ResourceEnsembleInventory");
 			put("org.zstack.sdk.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory", "org.zstack.identity.imports.entity.AccountThirdPartyAccountSourceRefInventory");
 			put("org.zstack.sdk.identity.imports.header.CleanStage", "org.zstack.identity.imports.header.SyncTaskResult$CleanStage");
 			put("org.zstack.sdk.identity.imports.header.ImportStage", "org.zstack.identity.imports.header.SyncTaskResult$ImportStage");
