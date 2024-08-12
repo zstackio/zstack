@@ -20,6 +20,14 @@ public class TrainedModelRecordInventory  {
         return this.modelUuid;
     }
 
+    public java.lang.String sourceModelUuid;
+    public void setSourceModelUuid(java.lang.String sourceModelUuid) {
+        this.sourceModelUuid = sourceModelUuid;
+    }
+    public java.lang.String getSourceModelUuid() {
+        return this.sourceModelUuid;
+    }
+
     public java.lang.String modelServiceInstanceGroupUuid;
     public void setModelServiceInstanceGroupUuid(java.lang.String modelServiceInstanceGroupUuid) {
         this.modelServiceInstanceGroupUuid = modelServiceInstanceGroupUuid;
