@@ -1,6 +1,7 @@
 package org.zstack.core.encrypt;
 
 import org.zstack.header.core.encrypt.EncryptConstant;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.exception.CloudRuntimeException;
 
 public class DefaultEncryptDriver implements EncryptDriver {
@@ -32,18 +33,18 @@ public class DefaultEncryptDriver implements EncryptDriver {
     }
 
     @Override
-    public EncryptFacadeResult<String> encrypt(String data, String algType) {
+    public ErrorableValue<String> encrypt(String data, String algType) {
         try {
-            return new EncryptFacadeResult<>(rsa.encrypt(data, algType));
+            return ErrorableValue.of(rsa.encrypt(data, algType));
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
     }
 
     @Override
-    public EncryptFacadeResult<String> decrypt(String data, String algType) {
+    public ErrorableValue<String> decrypt(String data, String algType) {
         try {
-            return new EncryptFacadeResult<>(rsa.decrypt(data, algType));
+            return ErrorableValue.of(rsa.decrypt(data, algType));
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
