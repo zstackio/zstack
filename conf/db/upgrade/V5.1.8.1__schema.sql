@@ -219,6 +219,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelEvaluationTaskVO` (
 CREATE TABLE IF NOT EXISTS `zstack`.`TrainedModelRecordVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `modelUuid` varchar(32) NOT NULL,
+    `sourceModelUuid` varchar(32) DEFAULT NULL,
     `modelServiceInstanceGroupUuid` varchar(32) NOT NULL,
     `datasetUuid` varchar(32) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
