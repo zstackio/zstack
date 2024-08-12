@@ -208,6 +208,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelEvaluationTaskVO` (
     `percentage` int(3) DEFAULT 0,
     `status` varchar(64) NOT NULL,
     `modelServiceGroupUuid` varchar(32) NOT NULL,
+    `evaluatedServiceGroupUuid` varchar(32) NOT NULL,
     `datasetUuid` varchar(32) NOT NULL,
     `opaque` varchar(2048) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
