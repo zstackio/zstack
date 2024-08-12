@@ -11,4 +11,12 @@ public class DeployModelEvalServiceResult {
         return this.inventory;
     }
 
+    public java.util.List tasks;
+    public void setTasks(java.util.List tasks) {
+        this.tasks = tasks;
+    }
+    public java.util.List getTasks() {
+        return this.tasks;
+    }
+
 }
