@@ -57,7 +57,6 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.lang.Integer.parseInt;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -1160,47 +1159,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validateInstanceSettings(NewVmInstanceMessage2 msg) {
-        final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
-
-        if (instanceOfferingUuid == null) {
-            if (msg.getCpuNum() == null || msg.getMemorySize() == null) {
-                throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
-            }
-
-            if (msg.getCpuNum() <= 0 || msg.getMemorySize() <= 0) {
-                throw new ApiMessageInterceptionException(operr("Unexpected CPU/memory settings"));
-            }
-
-            if (msg.getReservedMemorySize() != null) {
-                if (msg.getReservedMemorySize() > msg.getMemorySize()) {
-                    throw new ApiMessageInterceptionException(operr("reserved memory[%s] is greater than memory size[%s]", msg.getReservedMemorySize(), msg.getMemorySize()));
-                }
-            } else {
-                msg.setReservedMemorySize(0L);
-            }
-
-            return;
-        }
-
-        // InstanceOffering takes precedence over CPU/memory settings.
-        InstanceOfferingVO ivo = dbf.findByUuid(instanceOfferingUuid, InstanceOfferingVO.class);
-        if (ivo.getState() == InstanceOfferingState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s] is Disabled, can't create vm from it", instanceOfferingUuid));
-        }
-
-        if (!ivo.getType().equals(VmInstanceConstant.USER_VM_TYPE)){
-            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", instanceOfferingUuid, ivo.getType()));
-        }
-
-        msg.setCpuNum(ivo.getCpuNum());
-        msg.setMemorySize(ivo.getMemorySize());
-        // reserved memory should support customize
-        if (msg.getReservedMemorySize() == null) {
-            msg.setReservedMemorySize(ivo.getReservedMemorySize());
-        }
-    }
-
     private void validateDataDiskSizes(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
         if (CollectionUtils.isEmpty(msg.getDataDiskSizes())) {
             return;
@@ -1390,7 +1348,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(NewVmInstanceMessage2 msg) {
-        validateInstanceSettings(msg);
+        VmInstanceUtils.validateInstanceSettings(msg);
+
         boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
         if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).isExists()) {
             throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
