@@ -60,6 +60,14 @@ public class ModelEvaluationTaskInventory  {
         return this.modelServiceGroupUuid;
     }
 
+    public java.lang.String evaluatedServiceGroupUuid;
+    public void setEvaluatedServiceGroupUuid(java.lang.String evaluatedServiceGroupUuid) {
+        this.evaluatedServiceGroupUuid = evaluatedServiceGroupUuid;
+    }
+    public java.lang.String getEvaluatedServiceGroupUuid() {
+        return this.evaluatedServiceGroupUuid;
+    }
+
     public java.lang.String datasetUuid;
     public void setDatasetUuid(java.lang.String datasetUuid) {
         this.datasetUuid = datasetUuid;
