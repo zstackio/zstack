@@ -31,7 +31,7 @@ public class ExecuteGuestVmScriptAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List vmInstanceUuids;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,86400L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {10L,86400L}, noTrim = false)
     public java.lang.Integer scriptTimeout;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

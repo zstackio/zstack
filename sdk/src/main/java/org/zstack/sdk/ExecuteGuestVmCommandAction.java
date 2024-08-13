@@ -34,7 +34,7 @@ public class ExecuteGuestVmCommandAction extends AbstractAction {
     @Param(required = true, maxLength = 65536, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String command;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,60L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {10L,86400L}, noTrim = false)
     public java.lang.Integer commandTimeout;
 
     @Param(required = false)
