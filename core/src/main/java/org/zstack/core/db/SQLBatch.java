@@ -68,6 +68,10 @@ public abstract class SQLBatch {
         return Q.New(clz);
     }
 
+    protected QueryMore q(Class<?> first, Class<?>... more) {
+        return Q.New(first, more);
+    }
+
     @Transactional
     private void _execute() {
         scripts();
