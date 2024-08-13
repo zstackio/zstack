@@ -93,6 +93,16 @@ doc {
 					optional true
 					since "2.3"
 				}
+				column {
+					name "force"
+					enclosedIn "updateClusterOS"
+					desc "强制"
+					location "body"
+					type "boolean"
+					optional true
+					since "5.2.0"
+					values ("true","false")
+				}
 			}
         }
 

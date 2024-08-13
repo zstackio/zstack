@@ -28,4 +28,26 @@
         <serviceId>query</serviceId>
     </message>
 
+    <message>
+        <name>org.zstack.kvm.xmlhook.APICreateVmUserDefinedXmlHookScriptMsg</name>
+        <interceptor>KVMApiInterceptor</interceptor>
+        <serviceId>xmlhook</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.kvm.xmlhook.APIExpungeVmUserDefinedXmlHookScriptMsg</name>
+        <interceptor>KVMApiInterceptor</interceptor>
+        <serviceId>xmlhook</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.kvm.xmlhook.APIUpdateVmUserDefinedXmlHookScriptMsg</name>
+        <interceptor>KVMApiInterceptor</interceptor>
+        <serviceId>xmlhook</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.kvm.xmlhook.APIQueryVmUserDefinedXmlHookScriptMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>
