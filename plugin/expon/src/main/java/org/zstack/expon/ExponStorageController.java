@@ -489,7 +489,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public List<ActiveVolumeClient> getActiveClients(String installPath, String protocol) {
         if (VolumeProtocol.Vhost.toString().equals(protocol)) {
-            VolumeModule vol = apiHelper.getVolume(getVolIdFromPath(installPath));
+            VolumeModule vol = apiHelper.getVolumeOrElseNull(getVolIdFromPath(installPath));
             if (vol == null) {
                 return Collections.emptyList();
             }
@@ -716,7 +716,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     private void deactivateVhost(String installPath, HostInventory h) {
         String volId = getVolIdFromPath(installPath);
-        VolumeModule vol = apiHelper.getVolume(volId);
+        VolumeModule vol = apiHelper.getVolumeOrElseNull(volId);
         if (vol == null) {
             return;
         }
