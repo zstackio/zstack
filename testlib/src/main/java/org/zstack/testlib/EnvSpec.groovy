@@ -544,7 +544,7 @@ class EnvSpec extends ApiHelper implements Node  {
         logger.debug("Reset all global config started")
         CountDownLatch latch = new CountDownLatch(1)
         List<ErrorCode> errors = []
-        new While<>(getChangedConfig()).all(new While.Do<GlobalConfigInventory>() {
+        new While<>(getChangedConfig()).each(new While.Do<GlobalConfigInventory>() {
             @Override
             void accept(GlobalConfigInventory config, WhileCompletion completion) {
                 def ua = new UpdateGlobalConfigAction()
