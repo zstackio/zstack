@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelEvaluationTaskVO` (
     `evaluatedServiceGroupUuid` varchar(32) NOT NULL,
     `datasetUuid` varchar(32) NOT NULL,
     `limits` int(3) DEFAULT 0,
-    `opaque` varchar(2048) DEFAULT NULL,
+    `opaque` mediumtext DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)
