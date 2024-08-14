@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceInstanceVO` (
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`),
-    CONSTRAINT fkModelServiceInstanceVOVmInstanceVO FOREIGN KEY (vmInstanceUuid) REFERENCES VmInstanceEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+    CONSTRAINT fkModelServiceInstanceVOVmInstanceVO FOREIGN KEY (vmInstanceUuid) REFERENCES VmInstanceEO (uuid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --CREATE TABLE  `zstack`.`VmModelServiceInstanceVO` (
