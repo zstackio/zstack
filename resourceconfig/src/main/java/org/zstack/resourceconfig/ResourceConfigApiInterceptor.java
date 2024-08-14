@@ -94,7 +94,7 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
         }
 
         boolean accessible = AccessibleResourceChecker.forAccount(msg.getSession().getAccountUuid())
-                .checkReadOnlyPermission()
+                .allowGlobalReadableResource()
                 .isAccessible(msg.getResourceUuid());
         if (!accessible) {
             throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
@@ -108,7 +108,7 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
         }
 
         boolean accessible = AccessibleResourceChecker.forAccount(msg.getSession().getAccountUuid())
-                .checkReadOnlyPermission()
+                .allowGlobalReadableResource()
                 .isAccessible(msg.getResourceUuid());
         if (!accessible) {
             throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
