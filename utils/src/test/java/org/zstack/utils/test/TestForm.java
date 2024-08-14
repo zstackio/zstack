@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 
 public class TestForm {
@@ -60,7 +61,7 @@ public class TestForm {
     private void testExcel() throws Exception {
         List<TestClass> results = Form.New(TestClass.class, createExcelContent(), 100)
                 .addColumnConverter("test", it -> Arrays.asList(it.split(",")), TestClass::setValue)
-                .withValidator(ParamValidator::validate)
+                .withValidator(Collections.singletonList(ParamValidator::validate))
                 .load();
         assert results.size() == 4;
         assert results.get(0).aBoolean && results.get(1).aBoolean;
@@ -72,7 +73,7 @@ public class TestForm {
     private void testCsv() throws Exception {
         List<TestClass> results = Form.New(TestClass.class, createCsvContent(), 100)
                 .addColumnConverter("test", it -> Arrays.asList(it.split(",")), TestClass::setValue)
-                .withValidator(ParamValidator::validate)
+                .withValidator(Collections.singletonList(ParamValidator::validate))
                 .load();
         assert results.size() == 4;
         assert results.get(0).aBoolean && results.get(1).aBoolean;
@@ -84,7 +85,7 @@ public class TestForm {
     private void testOtherCsv() throws Exception {
         List<TestClass> results = Form.New(TestClass.class, createOtherCsv(), 100)
                 .addColumnConverter("test", it -> Arrays.asList(it.split("\\|")), TestClass::setValue)
-                .withValidator(ParamValidator::validate)
+                .withValidator(Collections.singletonList(ParamValidator::validate))
                 .load();
         assert results.size() == 4;
         assert results.get(0).aBoolean && results.get(1).aBoolean;
@@ -96,14 +97,14 @@ public class TestForm {
     private void testLimit() throws Exception {
         List<TestClass> results = Form.New(TestClass.class, createOtherCsv(), 4)
                 .addColumnConverter("test", it -> Arrays.asList(it.split("\\|")), TestClass::setValue)
-                .withValidator(ParamValidator::validate)
+                .withValidator(Collections.singletonList(ParamValidator::validate))
                 .load();
 
         boolean called = false;
         try {
             Form.New(TestClass.class, createOtherCsv(), 3)
                     .addColumnConverter("test", it -> Arrays.asList(it.split("\\|")), TestClass::setValue)
-                    .withValidator(ParamValidator::validate)
+                    .withValidator(Collections.singletonList(ParamValidator::validate))
                     .load();
         } catch (Exception e) {
             called = true;
@@ -128,7 +129,7 @@ public class TestForm {
         String csv = "trimValue,noTrimValue,number\n,aa,1";
         boolean failure = false;
         try {
-            Form.New(TestClass2.class, encodeToBase64(csv), 100).withValidator(ParamValidator::validate).load();
+            Form.New(TestClass2.class, encodeToBase64(csv), 100).withValidator(Collections.singletonList(ParamValidator::validate)).load();
         } catch (Exception e) {
             failure = true;
         }
@@ -137,14 +138,14 @@ public class TestForm {
         csv = "trimValue,noTrimValue,number\naa,aa,4\n , , \n";
         failure = false;
         try {
-            Form.New(TestClass2.class, encodeToBase64(csv), 100).withValidator(ParamValidator::validate).load();
+            Form.New(TestClass2.class, encodeToBase64(csv), 100).withValidator(Collections.singletonList(ParamValidator::validate)).load();
         } catch (Exception e) {
             failure = true;
         }
         assert failure;
 
         csv = "trimValue,noTrimValue,number\naa , aa\n,,\n";
-        List<TestClass2> results = Form.New(TestClass2.class, encodeToBase64(csv), 100).withValidator(ParamValidator::validate).load();
+        List<TestClass2> results = Form.New(TestClass2.class, encodeToBase64(csv), 100).withValidator(Collections.singletonList(ParamValidator::validate)).load();
         assert results.get(0).trimValue.equals("aa");
         assert results.get(0).noTrimValue.equals(" aa");
     }

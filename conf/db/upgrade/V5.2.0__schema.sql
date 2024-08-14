@@ -71,3 +71,5 @@ call migrateJsonLabelToXmlHookVO();
 DROP PROCEDURE IF EXISTS migrateJsonLabelToXmlHookVO;
 
 DELETE b FROM HostNetworkInterfaceLldpVO b LEFT JOIN ResourceVO a ON b.uuid = a.uuid WHERE a.uuid IS NULL;
+
+ALTER TABLE BareMetal2InstanceProvisionNicVO MODIFY mac varchar(17) NULL;

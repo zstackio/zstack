@@ -204,7 +204,11 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                     }
                 }));
 
-        return form.withValidator(validator).load();
+
+        if (validator == null) {
+            return form.load();
+        }
+        return form.withValidator(Collections.singletonList(validator)).load();
     }
 
     @Override
