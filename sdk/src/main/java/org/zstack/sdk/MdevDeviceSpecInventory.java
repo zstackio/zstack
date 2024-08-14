@@ -53,6 +53,14 @@ public class MdevDeviceSpecInventory  {
         return this.state;
     }
 
+    public java.lang.String vendor;
+    public void setVendor(java.lang.String vendor) {
+        this.vendor = vendor;
+    }
+    public java.lang.String getVendor() {
+        return this.vendor;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
