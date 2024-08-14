@@ -108,10 +108,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }.execute();
     }
-    static class AccountCheckField {
-        Field field;
-        APIParam param;
-    }
 
     private Future<Void> expiredSessionCollector;
 

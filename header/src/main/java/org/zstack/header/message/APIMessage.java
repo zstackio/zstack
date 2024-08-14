@@ -103,7 +103,7 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
             throw new CloudRuntimeException(e);
         }
 
-        for (Class clz : apiMessageClasses) {
+        for (Class<?> clz : apiMessageClasses) {
             List<Field> fields = FieldUtils.getAllFields(clz);
 
             Map<String, FieldParam> fmap = new HashMap<>();
@@ -142,10 +142,8 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
                                 atp.field(), clz));
                     }
 
-                    FieldParam fp = new FieldParam();
-                    fp.field = f;
-                    fp.param = atp.param();
-                    fmap.put(atp.field(), fp);
+                    FieldParam param = fmap.get(atp.field());
+                    param.param = atp.param();
                 }
             }
 

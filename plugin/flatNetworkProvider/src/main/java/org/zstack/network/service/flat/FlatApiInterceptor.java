@@ -39,7 +39,7 @@ public class FlatApiInterceptor implements ApiMessageInterceptor {
         }
 
         final boolean accessible = AccessibleResourceChecker.forAccount(accountUuid)
-                .checkReadOnlyPermission()
+                .allowGlobalReadableResource()
                 .withResourceType(L3NetworkVO.class)
                 .isAccessible(msg.getL3NetworkUuid());
 
