@@ -41,6 +41,7 @@ public abstract class ZbsMdsBase {
     }
 
     public abstract void connect(Completion completion);
+    public abstract void ping(Completion completion);
     protected abstract String makeHttpPath(String ip, String path);
 
     protected void checkTools() {
@@ -136,6 +137,27 @@ public abstract class ZbsMdsBase {
                 return null;
             }
             return operr("operation error, because:%s", error);
+        }
+    }
+
+    public static class AgentCommand {
+        private String uuid;
+        private String mdsAddr;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getMdsAddr() {
+            return mdsAddr;
+        }
+
+        public void setMdsAddr(String mdsAddr) {
+            this.mdsAddr = mdsAddr;
         }
     }
 }

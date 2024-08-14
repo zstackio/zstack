@@ -6,6 +6,7 @@ import org.zstack.cbd.MdsStatus;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -14,16 +15,22 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -40,6 +47,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
     private ThreadFacade thdf;
 
     public static final String ECHO_PATH = "/zbs/primarystorage/echo";
+    public static final String PING_PATH = "/zbs/primarystorage/ping";
 
     public ZbsPrimaryStorageMdsBase(MdsInfo self) {
         super(self);
@@ -231,6 +239,92 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                 return String.format("mds-%s", getSelf().getMdsAddr());
             }
         });
+    }
+
+    @Override
+    public void ping(Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return syncId;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                pingMds(new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("ping-zbs-primary-storage-mds-%s", getSelf().getMdsAddr());
+            }
+        });
+    }
+
+    private void pingMds(final Completion completion) {
+        final Integer MAX_PING_CNT = ZbsGlobalConfig.PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE.value(Integer.class);
+        final List<Integer> stepCount = new ArrayList<>();
+        for (int i = 1; i <= MAX_PING_CNT; i++) {
+            stepCount.add(i);
+        }
+
+        new While<>(stepCount).each((step, comp) -> {
+            PingCmd cmd = new PingCmd();
+            cmd.setMdsAddr(getSelf().getMdsAddr());
+
+            restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getMdsAddr(), PING_PATH),
+                    cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {
+                        @Override
+                        public void success(PingRsp rsp) {
+                            comp.allDone();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.warn(String.format("ping zbs primary storage mds[%s] failed (%d/%d): %s", getSelf().getMdsAddr(), step, MAX_PING_CNT, errorCode.toString()));
+                            comp.addError(errorCode);
+
+                            if (step.equals(MAX_PING_CNT)) {
+                                comp.allDone();
+                                return;
+                            }
+
+                            comp.done();
+                        }
+
+                        @Override
+                        public Class<PingRsp> getReturnClass() {
+                            return PingRsp.class;
+                        }
+                    }, TimeUnit.SECONDS, 60);
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().size() == MAX_PING_CNT) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+                completion.success();
+            }
+        });
+    }
+
+    public static class PingRsp extends ZbsMdsBase.AgentResponse {
+    }
+
+    public static class PingCmd extends ZbsMdsBase.AgentCommand {
     }
 
     @Override

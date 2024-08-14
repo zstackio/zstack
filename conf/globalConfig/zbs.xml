@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <globalConfig xmlns="http://zstack.org/schema/zstack">
     <config>
+        <category>zbs</category>
         <name>zbsps.allow.ports</name>
         <description>tcp or udp ports allowed by zbs primary storage, udp port start with 'u' like 'u67', port range can be like this: 1100:1200, multiple port or port range can be separated by ”,“</description>
         <defaultValue>7763</defaultValue>
-        <category>zbs</category>
         <type>java.lang.String</type>
+    </config>
+    <config>
+        <category>zbs</category>
+        <name>zbsps.mds.ping.max.failure</name>
+        <description>The maximum count of ping failure before reconnecting primary storage zbs mds</description>
+        <defaultValue>3</defaultValue>
+        <type>java.lang.Integer</type>
     </config>
 </globalConfig>
