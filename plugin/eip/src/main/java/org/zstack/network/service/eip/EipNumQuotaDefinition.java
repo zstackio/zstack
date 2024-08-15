@@ -1,8 +1,7 @@
 package org.zstack.network.service.eip;
 
-import org.zstack.core.db.SQL;
-import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.quota.QuotaDefinition;
+import org.zstack.identity.ResourceHelper;
 
 public class EipNumQuotaDefinition implements QuotaDefinition {
     @Override
@@ -17,19 +16,6 @@ public class EipNumQuotaDefinition implements QuotaDefinition {
 
     @Override
     public Long getQuotaUsage(String accountUuid) {
-        String sql = "select count(eip)" +
-                " from EipVO eip, AccountResourceRefVO ref" +
-                " where ref.resourceUuid = eip.uuid" +
-                " and ref.accountUuid = :auuid" +
-                " and ref.resourceType = :rtype" +
-                " and ref.type = :type";
-
-        SQL q = SQL.New(sql, Long.class);
-        q.param("auuid", accountUuid);
-        q.param("rtype", EipVO.class.getSimpleName());
-        q.param("type", AccessLevel.Own);
-        Long usedEipNum = q.find();
-        usedEipNum = usedEipNum == null ? 0 : usedEipNum;
-        return usedEipNum;
+        return ResourceHelper.countOwnResources(EipVO.class, accountUuid);
     }
 }

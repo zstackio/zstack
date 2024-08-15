@@ -3,6 +3,7 @@ package org.zstack.compute.vm.quota;
 import org.zstack.compute.vm.VmQuotaConstant;
 import org.zstack.compute.vm.VmQuotaGlobalConfig;
 import org.zstack.core.db.SQL;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -27,6 +28,7 @@ public class VmRunningCpuNumQuotaDefinition implements QuotaDefinition {
                 " where vm.uuid = ref.resourceUuid" +
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
+                " and ref.type = :type" +
                 " and not (vm.state = :starting and vm.hostUuid is null)" +
                 " and vm.state not in (:states)" +
                 " and vm.type != :vmtype";
@@ -34,6 +36,7 @@ public class VmRunningCpuNumQuotaDefinition implements QuotaDefinition {
         Long used = SQL.New(sql, Long.class)
                 .param("auuid", accountUuid)
                 .param("rtype", VmInstanceVO.class.getSimpleName())
+                .param("type", AccessLevel.Own)
                 .param("starting", VmInstanceState.Starting)
                 .param("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                         VmInstanceState.Destroyed, VmInstanceState.Created))

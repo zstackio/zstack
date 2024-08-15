@@ -1,7 +1,6 @@
 package org.zstack.network.service.vip;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
@@ -15,7 +14,7 @@ import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -116,12 +115,7 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private List<VipInventory> vipFromAction(CascadeAction action) {
         if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> l3Uuids = CollectionUtils.transformToList((List<L3NetworkInventory>) action.getParentIssuerContext(), new Function<String, L3NetworkInventory>() {
-                @Override
-                public String call(L3NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> l3Uuids = CollectionUtils.transform(action.getParentIssuerContext(), L3NetworkInventory::getUuid);
             if (l3Uuids.isEmpty()) {
                 return null;
             }
@@ -132,12 +126,7 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
 
             return VipInventory.valueOf(vipVOs);
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> iprUuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
-                @Override
-                public String call(IpRangeInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> iprUuids = CollectionUtils.transform(action.getParentIssuerContext(), IpRangeInventory::getUuid);
 
             SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
             q.add(VipVO_.ipRangeUuid, Op.IN, iprUuids);
@@ -147,26 +136,9 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (VipVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
-            List<VipVO> vos = new Callable<List<VipVO>>() {
-                @Override
-                @Transactional(readOnly = true)
-                public List<VipVO> call() {
-                    String sql = "select d from VipVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
-                    TypedQuery<VipVO> q = dbf.getEntityManager().createQuery(sql, VipVO.class);
-                    q.setParameter("auuids", auuids);
-                    q.setParameter("rtype", VipVO.class.getSimpleName());
-                    return q.getResultList();
-                }
-            }.call();
-
+            List<VipVO> vos = ResourceHelper.findOwnResources(VipVO.class, auuids);
             if (!vos.isEmpty()) {
                 return VipInventory.valueOf(vos);
             }

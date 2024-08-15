@@ -9,7 +9,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
-import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.image.*;
@@ -17,6 +16,7 @@ import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -25,7 +25,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.concurrent.Callable;
 
 /**
  */
@@ -165,35 +164,14 @@ public class ImageCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (NAME.equals(action.getParentIssuer())) {
             ret = action.getParentIssuerContext();
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
-            List<ImageVO> imgvos = new Callable<List<ImageVO>>() {
-                @Override
-                @Transactional(readOnly = true)
-                public List<ImageVO> call() {
-                    String sql = "select d from ImageVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids) and r.type = :type";
-                    TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
-                    q.setParameter("auuids", auuids);
-                    q.setParameter("rtype", ImageVO.class.getSimpleName());
-                    q.setParameter("type", AccessLevel.Own);
-                    return q.getResultList();
-                }
-            }.call();
-
+            List<ImageVO> imgvos = ResourceHelper.findOwnResources(ImageVO.class, auuids);
             if (!imgvos.isEmpty()) {
-                ret = CollectionUtils.transformToList(imgvos, new Function<ImageDeletionStruct, ImageVO>() {
-                    @Override
-                    public ImageDeletionStruct call(ImageVO arg) {
-                        ImageDeletionStruct s = new ImageDeletionStruct();
-                        s.setImage(ImageInventory.valueOf(arg));
-                        return s;
-                    }
+                ret = CollectionUtils.transform(imgvos, arg -> {
+                    ImageDeletionStruct s = new ImageDeletionStruct();
+                    s.setImage(ImageInventory.valueOf(arg));
+                    return s;
                 });
             }
         }

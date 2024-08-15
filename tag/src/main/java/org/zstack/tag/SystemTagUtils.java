@@ -1,6 +1,13 @@
 package org.zstack.tag;
 
+import org.zstack.core.db.Q;
+import org.zstack.header.identity.AccessLevel;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.TagAO_;
+import org.zstack.header.tag.UserTagVO;
 
 import java.util.HashMap;
 import java.util.List;
@@ -106,5 +113,24 @@ public class SystemTagUtils {
             creator.ignoreIfExisting = true;
             creator.create();
         }
+    }
+
+    public static String findSystemTagOwner(String tagUuid) {
+        return findTagOwner(tagUuid, SystemTagVO.class);
+    }
+
+    public static String findUserTagOwner(String tagUuid) {
+        return findTagOwner(tagUuid, UserTagVO.class);
+    }
+
+    public static String findTagOwner(String tagUuid, Class<?> tagClass) {
+        return Q.New(tagClass, AccountResourceRefVO.class)
+                .table0()
+                    .eq(TagAO_.uuid, tagUuid)
+                    .eq(TagAO_.resourceUuid).table1(AccountResourceRefVO_.resourceUuid)
+                .table1()
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                    .select(AccountResourceRefVO_.accountUuid)
+                .find();
     }
 }

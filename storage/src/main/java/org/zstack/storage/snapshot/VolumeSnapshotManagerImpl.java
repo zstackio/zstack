@@ -677,10 +677,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
         dbf.getEntityManager().remove(vo);
 
-        String sql = "delete from AccountResourceRefVO where resourceUuid = :vsUuid and resourceType = 'VolumeSnapshotVO'";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("vsUuid", uuid);
-        q.executeUpdate();
+        SQL.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, uuid)
+                .eq(AccountResourceRefVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
+                .delete();
 
         if (vo.getParentUuid() != null) {
             VolumeSnapshotVO parent = dbf.getEntityManager().find(VolumeSnapshotVO.class, vo.getParentUuid());
