@@ -11,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -19,7 +20,6 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -146,12 +146,7 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     private List<L3NetworkInventory> l3NetworkFromAction(CascadeAction action) {
         List<L3NetworkInventory> ret = null;
         if (L2NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> l2uuids = CollectionUtils.transformToList((List<L2NetworkInventory>)action.getParentIssuerContext(), new Function<String, L2NetworkInventory>() {
-                @Override
-                public String call(L2NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> l2uuids = CollectionUtils.transform(action.getParentIssuerContext(), L2NetworkInventory::getUuid);
 
             SimpleQuery<L3NetworkVO> q = dbf.createQuery(L3NetworkVO.class);
             q.add(L3NetworkVO_.l2NetworkUuid, SimpleQuery.Op.IN, l2uuids);
@@ -162,22 +157,18 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (NAME.equals(action.getParentIssuer())) {
             ret = action.getParentIssuerContext();
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
             List<L3NetworkVO> l3vos = new Callable<List<L3NetworkVO>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<L3NetworkVO> call() {
                     String sql = "select d from L3NetworkVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                            " r.resourceType = :rtype and r.type = :type and r.accountUuid in (:auuids)";
                     TypedQuery<L3NetworkVO> q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                     q.setParameter("auuids", auuids);
                     q.setParameter("rtype", L3NetworkVO.class.getSimpleName());
+                    q.setParameter("type", AccessLevel.Own);
                     return q.getResultList();
                 }
             }.call();

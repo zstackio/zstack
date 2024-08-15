@@ -210,10 +210,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!vmNicUuids.isEmpty() && deleteFromDb) {
-                    UpdateQuery q = UpdateQuery.New(AccountResourceRefVO.class)
-                            .condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, vmNicUuids)
-                            .condAnd(AccountResourceRefVO_.resourceType, Op.EQ, VmNicVO.class.getSimpleName());
-                    q.delete();
+                    SQL.New(AccountResourceRefVO.class)
+                            .in(AccountResourceRefVO_.resourceUuid, vmNicUuids)
+                            .eq(AccountResourceRefVO_.resourceType, VmNicVO.class.getSimpleName())
+                            .delete();
                 }
 
                 completion.success();

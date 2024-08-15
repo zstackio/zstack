@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SharedResourceVO;
@@ -137,8 +138,11 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
 
                 List<Tuple> ts = sql(" select avo.name ,arrf.accountUuid ,arrf.resourceUuid ,arrf.resourceType " +
                                 "from AccountResourceRefVO arrf ,AccountVO avo " +
-                                "where arrf.resourceUuid in (:resourceUuids) and avo.uuid = arrf.accountUuid",Tuple.class)
-                        .param("resourceUuids", toCheck).list();
+                                "where arrf.resourceUuid in (:resourceUuids) and arrf.type = :type and avo.uuid = arrf.accountUuid",
+                                Tuple.class)
+                        .param("resourceUuids", toCheck)
+                        .param("type", AccessLevel.Own)
+                        .list();
 
                 ts.forEach(t -> {
                     String resourceOwnerName = t.get(0, String.class);

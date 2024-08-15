@@ -14,6 +14,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
@@ -124,7 +125,8 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
                 List<String> uuids = q(AccountResourceRefVO.class)
                         .select(AccountResourceRefVO_.resourceUuid)
                         .eq(AccountResourceRefVO_.resourceType, SecurityGroupVO.class.getSimpleName())
-                        .in(AccountResourceRefVO_.ownerAccountUuid, accountUuids)
+                        .in(AccountResourceRefVO_.accountUuid, accountUuids)
+                        .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                         .listValues();
 
                 if (uuids.isEmpty()) {

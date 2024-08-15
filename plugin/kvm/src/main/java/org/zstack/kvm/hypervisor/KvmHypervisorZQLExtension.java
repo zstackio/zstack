@@ -43,7 +43,7 @@ public class KvmHypervisorZQLExtension implements MarshalZQLASTTreeExtensionPoin
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(context.getQueryTargetInventoryName());
         return String.format("%s.uuid in (select info.uuid from KvmHypervisorInfoVO info, AccountResourceRefVO ref" +
                         " where info.uuid = ref.resourceUuid" +
-                        " and ref.accountUuid = '%s')",
+                        " and ref.accountUuid = '%s' and ref.type = 'Own')",
                 src.simpleInventoryName(), context.getAPISession().getAccountUuid());
     }
 }

@@ -2,6 +2,7 @@ package org.zstack.test.integration.storage.snapshot
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
@@ -80,7 +81,9 @@ class CreateSnapshotFailureCase extends SubCase{
         ArrayList<String> uuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid).listValues()
         assert !Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.resourceType, VolumeSnapshotVO.class.simpleName)
-                .notIn(AccountResourceRefVO_.resourceUuid, uuids).isExists()
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .notIn(AccountResourceRefVO_.resourceUuid, uuids)
+                .isExists()
 
         deleteVolumeSnapshot {
             uuid = root.getUuid()

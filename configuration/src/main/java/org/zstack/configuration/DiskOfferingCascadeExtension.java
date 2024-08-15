@@ -14,6 +14,7 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -131,9 +132,10 @@ public class DiskOfferingCascadeExtension extends AbstractAsyncCascadeExtension 
         });
 
         String sql = "select d from DiskOfferingVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                " r.resourceType = :rtype and r.type = :type and r.accountUuid in (:auuids)";
         TypedQuery<DiskOfferingVO> q = dbf.getEntityManager().createQuery(sql, DiskOfferingVO.class);
         q.setParameter("rtype", DiskOfferingVO.class.getSimpleName());
+        q.setParameter("type", AccessLevel.Own);
         q.setParameter("auuids", accountUuids);
         List<DiskOfferingVO> vos = q.getResultList();
         return DiskOfferingInventory.valueOf(vos);

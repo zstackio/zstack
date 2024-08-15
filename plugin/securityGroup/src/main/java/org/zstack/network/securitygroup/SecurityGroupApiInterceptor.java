@@ -14,11 +14,11 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.APIChangeResourceOwnerMsg;
-import org.zstack.identity.Account;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
@@ -129,7 +129,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
 
     private void validate(APIChangeResourceOwnerMsg msg) {
-        AccountResourceRefVO ref = Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, msg.getResourceUuid()).find();
+        AccountResourceRefVO ref = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, msg.getResourceUuid())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .find();
         if (ref == null) {
             return;
         }

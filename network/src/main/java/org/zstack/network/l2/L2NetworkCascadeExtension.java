@@ -17,6 +17,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -258,10 +259,11 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Transactional(readOnly = true)
                 public List<L2NetworkVO> call() {
                     String sql = "select d from L2NetworkVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                            " r.resourceType = :rtype and r.type = :type and r.accountUuid in (:auuids)";
                     TypedQuery<L2NetworkVO> q = dbf.getEntityManager().createQuery(sql, L2NetworkVO.class);
                     q.setParameter("auuids", auuids);
                     q.setParameter("rtype", L2NetworkVO.class.getSimpleName());
+                    q.setParameter("type", AccessLevel.Own);
                     return q.getResultList();
                 }
             }.call();

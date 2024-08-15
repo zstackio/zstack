@@ -3,6 +3,7 @@ package org.zstack.test.integration.identity.account
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
@@ -188,6 +189,7 @@ class DeleteNormalAccountCase extends SubCase {
         List<String> resourceUuids = Q.New(AccountResourceRefVO.class)
                 .select(AccountResourceRefVO_.resourceUuid)
                 .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .listValues()
 
         // change one vm's owner to normal account, leave an appliance vm to admin
@@ -199,6 +201,7 @@ class DeleteNormalAccountCase extends SubCase {
         // remove all AccountResourceRefVO records purposely
         Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .list()
                 .stream()
                 .forEach { it ->
@@ -229,6 +232,7 @@ class DeleteNormalAccountCase extends SubCase {
             def size = Q.New(AccountResourceRefVO.class)
                     .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
                     .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                     .count()
             assert size == resourceUuids.size() as Long
         }

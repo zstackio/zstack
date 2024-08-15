@@ -83,7 +83,7 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
 
     protected String getAccountResourceSql(String inventoryName, String primaryKey, String accountStr) {
         return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
-                        "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
+                        "  accountresourcerefvo.accountUuid in (%s) and accountresourcerefvo.type = 'Own' OR (accountresourcerefvo.resourceUuid" +
                         " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
                         " sharedresourcevo.receiverAccountUuid in (%s) OR sharedresourcevo.toPublic = 1))))",
                 inventoryName, primaryKey, accountStr, accountStr);

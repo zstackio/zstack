@@ -35,8 +35,8 @@ public class AccountSubQueryExtension extends AbstractMysqlQuerySubQueryExtensio
         String priKey = QueryUtils.getPrimaryKeyNameFromEntityClass(entityClass);
 
         String resourceType = acntMgr.getBaseResourceType(entityClass).getSimpleName();
-        return String.format("(%s.%s in (select accountresourcerefvo.resourceUuid from AccountResourceRefVO accountresourcerefvo where accountresourcerefvo.ownerAccountUuid = '%s'" +
-                " and accountresourcerefvo.resourceType = '%s') or %s.%s in (select sharedresourcevo.resourceUuid from SharedResourceVO sharedresourcevo where" +
+        return String.format("(%s.%s in (select accountresourcerefvo.resourceUuid from AccountResourceRefVO accountresourcerefvo where accountresourcerefvo.accountUuid = '%s'" +
+                " and accountresourcerefvo.resourceType = '%s' and accountresourcerefvo.type = 'Own') or %s.%s in (select sharedresourcevo.resourceUuid from SharedResourceVO sharedresourcevo where" +
                 " (sharedresourcevo.receiverAccountUuid = '%s' or sharedresourcevo.toPublic = 1) and sharedresourcevo.resourceType = '%s'))",
         inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid(), resourceType,
         inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid(), resourceType);
