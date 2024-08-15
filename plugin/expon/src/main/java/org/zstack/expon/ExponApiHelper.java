@@ -133,6 +133,16 @@ public class ExponApiHelper implements SingleFlightExecutor {
         return rsp;
     }
 
+    public <T extends ExponResponse> T callIgnoringSpecificErrors(ExponRequest req, Class<T> clz, ExponError... specificErrors) {
+        T rsp = callWithExpiredSessionRetry(req, clz);
+        if (rsp.isError(specificErrors)) {
+            return rsp;
+        }
+
+        errorOut(rsp);
+        return rsp;
+    }
+
     public <T extends ExponResponse> void call(ExponRequest req, Completion completion) {
         req.setSessionId(sessionId);
         client.call(req, result -> {
@@ -255,12 +265,16 @@ public class ExponApiHelper implements SingleFlightExecutor {
         return rsp.getVolumes().stream().filter(it -> it.getName().equals(name)).findFirst().orElse(null);
     }
 
+    public VolumeModule getVolumeOrElseNull(String id) {
+        GetVolumeRequest req = new GetVolumeRequest();
+        req.setVolId(id);
+        return callIgnoringSpecificErrors(req, GetVolumeResponse.class, ExponError.VOLUME_NOT_FOUND).getVolumeDetail();
+    }
+
     public VolumeModule getVolume(String id) {
         GetVolumeRequest req = new GetVolumeRequest();
         req.setVolId(id);
-        GetVolumeResponse rsp = callErrorOut(req, GetVolumeResponse.class);
-
-        return rsp.getVolumeDetail();
+        return callErrorOut(req, GetVolumeResponse.class).getVolumeDetail();
     }
 
     public boolean addVhostVolumeToUss(String volumeId, String vhostId, String ussGwId) {
@@ -308,19 +322,7 @@ public class ExponApiHelper implements SingleFlightExecutor {
         return getVolume(rsp.getId());
     }
 
-    public boolean isVolumeDeleted(String volId) {
-        GetVolumeRequest req = new GetVolumeRequest();
-        req.setVolId(volId);
-        GetVolumeResponse rsp = call(req, GetVolumeResponse.class);
-        return rsp.isResourceDeleted();
-    }
-
     public void deleteVolume(String volId, boolean force) {
-        if (isVolumeDeleted(volId)) {
-            logger.info(String.format("volume id:%s has been deleted, skip delete process", volId));
-            return;
-        }
-        
         DeleteVolumeRequest req = new DeleteVolumeRequest();
         req.setVolId(volId);
         req.setForce(force);
@@ -415,7 +417,7 @@ public class ExponApiHelper implements SingleFlightExecutor {
         DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
         req.setSnapshotId(snapId);
         req.setForce(force);
-        callErrorOut(req, DeleteVolumeSnapshotResponse.class);
+        callIgnoringSpecificErrors(req, DeleteVolumeSnapshotResponse.class, ExponError.SNAPSHOT_NOT_FOUND);
     }
 
     public VolumeSnapshotModule queryVolumeSnapshot(String name) {
