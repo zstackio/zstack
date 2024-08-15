@@ -875,7 +875,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                trigger.next();
                             }
                         }));
                     }
