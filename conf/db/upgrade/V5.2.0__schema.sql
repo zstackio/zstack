@@ -48,3 +48,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`GuestVmScriptExecutedRecordDetailVO` (
     PRIMARY KEY (`recordUuid`, `vmInstanceUuid`),
     CONSTRAINT `fkGuestVmScriptExecutedRecordDetailVOScriptExecutedRecordVO` FOREIGN KEY (`recordUuid`) REFERENCES `GuestVmScriptExecutedRecordVO` (`uuid`) ON DELETE CASCADE
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`AuditsVO` MODIFY COLUMN requestDump MEDIUMTEXT, MODIFY COLUMN responseDump MEDIUMTEXT;
