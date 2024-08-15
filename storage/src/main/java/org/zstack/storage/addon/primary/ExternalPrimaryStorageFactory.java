@@ -59,7 +59,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
     protected static Map<String, PrimaryStorageControllerSvc> controllers = new HashMap<>();
     protected static Map<String, PrimaryStorageNodeSvc> nodes = new HashMap<>();
-    private static final List<String> SUPPORT_PROTOCOL = Arrays.asList("Vhost", "iSCSI", "NVMEoF", "Curve", "file");
+    private static final List<String> SUPPORT_PROTOCOL = Arrays.asList("Vhost", "iSCSI", "NVMEoF", "CBD", "file");
 
     public Map<String, NodeHealthyCheckProtocolExtensionPoint> nodeHealthyCheckProtocolExtensions = Collections.synchronizedMap(
             new HashMap<String, NodeHealthyCheckProtocolExtensionPoint>());
