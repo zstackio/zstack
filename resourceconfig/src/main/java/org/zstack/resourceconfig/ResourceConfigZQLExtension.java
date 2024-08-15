@@ -40,7 +40,7 @@ public class ResourceConfigZQLExtension implements MarshalZQLASTTreeExtensionPoi
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(context.getQueryTargetInventoryName());
         return String.format("%s.uuid in (select config.uuid from ResourceConfigVO config, AccountResourceRefVO ref" +
                         " where config.resourceUuid = ref.resourceUuid" +
-                        " and ref.accountUuid = '%s')",
+                        " and ref.accountUuid = '%s' and ref.type = 'Own')",
                 src.simpleInventoryName(), context.getAPISession().getAccountUuid());
     }
 }

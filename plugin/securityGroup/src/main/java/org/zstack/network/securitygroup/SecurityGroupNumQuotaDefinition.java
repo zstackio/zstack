@@ -1,10 +1,7 @@
 package org.zstack.network.securitygroup;
 
-import org.zstack.core.db.Q;
-import org.zstack.header.identity.AccessLevel;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.quota.QuotaDefinition;
+import org.zstack.identity.ResourceHelper;
 
 public class SecurityGroupNumQuotaDefinition implements QuotaDefinition {
     @Override
@@ -19,10 +16,6 @@ public class SecurityGroupNumQuotaDefinition implements QuotaDefinition {
 
     @Override
     public Long getQuotaUsage(String accountUuid) {
-        return Q.New(AccountResourceRefVO.class)
-                .eq(AccountResourceRefVO_.accountUuid, accountUuid)
-                .eq(AccountResourceRefVO_.resourceType, SecurityGroupVO.class.getSimpleName())
-                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
-                .count();
+        return ResourceHelper.countOwnResources(SecurityGroupVO.class, accountUuid);
     }
 }

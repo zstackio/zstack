@@ -1,7 +1,6 @@
 package org.zstack.sdnController;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
@@ -15,20 +14,18 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.sdnController.header.SdnControllerConstant;
 import org.zstack.sdnController.header.SdnControllerDeletionMsg;
 import org.zstack.sdnController.header.SdnControllerInventory;
 import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 public class SdnControllerCascadeExtension extends AbstractAsyncCascadeExtension {
@@ -113,26 +110,9 @@ public class SdnControllerCascadeExtension extends AbstractAsyncCascadeExtension
         if (NAME.equals(action.getParentIssuer())) {
             ret = action.getParentIssuerContext();
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
-            List<SdnControllerVO> vos = new Callable<List<SdnControllerVO>>() {
-                @Override
-                @Transactional(readOnly = true)
-                public List<SdnControllerVO> call() {
-                    String sql = "select d from SdnControllerVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
-                    TypedQuery<SdnControllerVO> q = dbf.getEntityManager().createQuery(sql, SdnControllerVO.class);
-                    q.setParameter("auuids", auuids);
-                    q.setParameter("rtype", SdnControllerVO.class.getSimpleName());
-                    return q.getResultList();
-                }
-            }.call();
-
+            List<SdnControllerVO> vos = ResourceHelper.findOwnResources(SdnControllerVO.class, auuids);
             if (!vos.isEmpty()) {
                 ret = SdnControllerInventory.valueOf(vos);
             }

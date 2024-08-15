@@ -2,6 +2,7 @@ package org.zstack.core.progress;
 
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 
@@ -34,6 +35,7 @@ public abstract class TaskTracker {
     public TaskTracker(String resourceUuid) {
         String accountId = Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.resourceUuid, resourceUuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .select(AccountResourceRefVO_.accountUuid)
                 .findValue();
         this.resourceUuid = resourceUuid;
