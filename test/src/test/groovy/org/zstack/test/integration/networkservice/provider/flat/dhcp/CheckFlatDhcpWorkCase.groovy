@@ -409,6 +409,23 @@ class CheckFlatDhcpWorkCase extends SubCase{
         List<String> services = l32.networkServices.stream().map {ref -> ref.networkServiceType}.collect(Collectors.toList())
         assert services.contains("DHCP")
 
+        UsedIpInventory usedIp4 = queryIpAddress {conditions=["l3NetworkUuid=${l32.uuid}", "ipVersion=4"]
+            limit = 1} [0]
+        UsedIpInventory usedIp6 = queryIpAddress {conditions=["l3NetworkUuid=${l32.uuid}", "ipVersion=6"]
+            limit = 1} [0]
+        expect(AssertionError.class) {
+            changeL3NetworkDhcpIpAddress {
+                l3NetworkUuid = l32.uuid
+                dhcpServerIp = usedIp4.ip
+            }
+        }
+        expect(AssertionError.class) {
+            changeL3NetworkDhcpIpAddress {
+                l3NetworkUuid = l32.uuid
+                dhcpServerIp = usedIp6.ip
+            }
+        }
+
         def freeIp6s = getFreeIp {
             l3NetworkUuid = l32.getUuid()
             ipVersion = IPv6Constants.IPv6
