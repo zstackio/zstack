@@ -40,6 +40,9 @@ public class CreateDatasetAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String token;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean system;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
