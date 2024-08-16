@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.zstack.header.PackageAPIInfo;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.SuppressCredentialCheck;
@@ -31,7 +32,7 @@ public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
     public static List<Role> roles = new ArrayList<>();
     public static Map<String, ApiPermissionBucket> apiBuckets = new HashMap<>();
-    public static List<GlobalReadableResource> readableResources = new ArrayList<>();
+    public static List<Class<?>> readableResources = new ArrayList<>();
     public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
     private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
     public static List<ResourceEnsembleMember> ensembleMembers = new ArrayList<>();
@@ -545,18 +546,15 @@ public class RBAC {
     }
 
     public static class GlobalReadableResourceBuilder {
-        private GlobalReadableResource readableResource = new GlobalReadableResource();
+        private List<Class<?>> readableResource = new ArrayList<>();
 
-        public GlobalReadableResourceBuilder resources(Class...clzs) {
-            for (Class clz : clzs) {
-                readableResource.getResources().add(clz);
-            }
-
+        public GlobalReadableResourceBuilder resources(Class<?>...clzs) {
+            Collections.addAll(readableResource, clzs);
             return this;
         }
 
         public void build() {
-            readableResources.add(readableResource);
+            readableResources.addAll(this.readableResource);
         }
     }
 
@@ -759,14 +757,8 @@ public class RBAC {
     }
 
     public static boolean isResourceGlobalReadable(Class clz) {
-        return readableResources.stream().anyMatch(r->r.resources.contains(clz));
-    }
-
-    public static boolean isResourceGlobalReadable(String resourceType) {
-        return readableResources.stream()
-                .flatMap(resource -> resource.resources.stream())
-                .map(Class::getSimpleName)
-                .anyMatch(className -> className.equals(resourceType));
+        return readableResources.stream().anyMatch(r -> r.isAssignableFrom(clz))
+                || !OwnedByAccount.class.isAssignableFrom(clz);
     }
 
     public static boolean checkAPIPermission(APIMessage msg, boolean policyDecision) {
