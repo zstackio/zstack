@@ -6359,6 +6359,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             @Deferred
             public void run(final SyncTaskChain chain) {
+                self = dbf.reload(self);
                 class SetStaticIp {
                     private boolean isSet = false;
                     Map<String, List<String>> staticIpMap = null;
