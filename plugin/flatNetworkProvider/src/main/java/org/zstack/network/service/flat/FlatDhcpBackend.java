@@ -2420,6 +2420,22 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                         msg.getDhcpv6ServerIp(), ipv6Ranges.get(0).getNetworkCidr()));
             }
         }
+
+        if (msg.getDhcpServerIp() != null) {
+            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getDhcpServerIp())
+                    .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
+                throw new ApiMessageInterceptionException(argerr("could set dhcp server ip, because ip[%s] is used",
+                        msg.getDhcpServerIp()));
+            }
+        }
+
+        if (msg.getDhcpv6ServerIp() != null) {
+            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getDhcpv6ServerIp())
+                    .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
+                throw new ApiMessageInterceptionException(argerr("could set dhcp v6 server ip, because ip[%s] is used",
+                        msg.getDhcpServerIp()));
+            }
+        }
     }
 
     /* when add an iprage, there are 2 cases:
