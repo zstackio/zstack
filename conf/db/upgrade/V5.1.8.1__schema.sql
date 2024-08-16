@@ -131,6 +131,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`DatasetVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(255) NULL,
     `url` varchar(2048) NULL,
+    `code` varchar(255) DEFAULT NULL,
     `installPath` varchar(2048) NULL,
     `description` varchar(2048) NULL,
     `modelCenterUuid` varchar(32) NOT NULL,
