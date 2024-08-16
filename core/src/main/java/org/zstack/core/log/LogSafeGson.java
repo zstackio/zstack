@@ -2,8 +2,11 @@ package org.zstack.core.log;
 
 import com.google.gson.*;
 import org.apache.logging.log4j.util.Strings;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.GsonTransient;
+import org.zstack.header.message.JsonSchemaBuilder;
 import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
@@ -27,7 +30,7 @@ public class LogSafeGson {
     /**
      * class and its need be masked fields
      */
-    private static Map<Class, Set<FieldNoLogging>> maskFields = new HashMap<>();
+    private static final Map<Class, Set<FieldNoLogging>> maskFields = new HashMap<>();
     /**
      * field with annotation @NoLogging(behavior = NoLogging.Behavior.Auto) will be collect to this map
      *
@@ -36,7 +39,7 @@ public class LogSafeGson {
      *
      * this should be used for base abstractions
      */
-    private static Map<Class, Set<FieldNoLogging>> autoFields = new HashMap<>();
+    private static final Map<Class, Set<FieldNoLogging>> autoFields = new HashMap<>();
 
     /**
      * used for class implements Serializable or Message for potential sensitive check
@@ -46,7 +49,7 @@ public class LogSafeGson {
      *
      * all class not annotated with NoLogging will be store in potentialSensitiveFields.
      */
-    private static Map<Class, Set<FieldNoLogging>> potentialSensitiveFields = new HashMap<>();
+    private static final Map<Class, Set<FieldNoLogging>> potentialSensitiveFields = new HashMap<>();
 
     private static final List<Class<?>> searchClasses = Arrays.asList(Serializable.class, Message.class);
     private static final Gson logSafeGson;
@@ -56,7 +59,7 @@ public class LogSafeGson {
         NoLogging annotation;
         Field classNameField;
 
-        private static Pattern uriPattern = Pattern.compile(":[^:]*@");
+        private static final Pattern uriPattern = Pattern.compile(":[^:]*@");
 
         FieldNoLogging(Field field) {
             this.field = field;
@@ -216,20 +219,41 @@ public class LogSafeGson {
         return !maskFields.containsKey(clz) && !autoFields.containsKey(clz);
     }
 
-    public static Object desensitize(Object o) {
+    public static Message desensitize(Message o) {
         if (o == null || mostLikelyCommonClass(o.getClass())) {
             logger.trace(String.format("%s is not class annotated by @NoLogging, skip desensitize",
                     o != null ? o.getClass().getCanonicalName() : null));
             return o;
         }
 
-        Object result = JSONObjectUtil.toObject(toJson(o), o.getClass());
+        buildSchemaIfNeed(o);
+        String retStr = toJson(o);
+        Map raw = JSONObjectUtil.toObject(retStr, LinkedHashMap.class);
+        Message result = JSONObjectUtil.toObject(retStr, o.getClass());
+
+        try {
+            result.restoreFromSchema(raw);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         logger.trace(String.format("object class: %s \ntransform sensitive object: %s \n to insensitive object: %s",
                 o.getClass().getName(),
                 JSONObjectUtil.toJsonString(o),
                 JSONObjectUtil.toJsonString(result)));
 
         return result;
+    }
+
+    private static void buildSchemaIfNeed(Message msg) {
+        if (msg.getHeaderEntry(CloudBus.HEADER_SCHEMA) != null) {
+            return;
+        }
+
+        try {
+            msg.putHeaderEntry(CloudBus.HEADER_SCHEMA, new JsonSchemaBuilder(msg).build());
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     public static Map<String, String> getValuesToMask(Object o) {

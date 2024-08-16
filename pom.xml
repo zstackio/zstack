@@ -51,6 +51,7 @@
         <module>externalservice</module>
         <module>longjob</module>
         <module>resourceconfig</module>
+        <module>plugin/iscsi</module>
     </modules>
 
     <dependencyManagement>

@@ -3,12 +3,12 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
@@ -31,7 +31,6 @@ import javax.persistence.Tuple
 import java.util.concurrent.ConcurrentHashMap
 
 import static org.zstack.kvm.KVMAgentCommands.*
-
 /**
  * Created by xing5 on 2017/6/6.
  */
@@ -156,6 +155,7 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.KVM_HOST_FACT_PATH) { HttpEntity<String> e ->
+            def hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
             def rsp = new HostFactResponse()
 
             rsp.osDistribution = "zstack"
@@ -174,7 +174,7 @@ class KVMSimulator implements Simulator {
             rsp.powerSupplyManufacturer = ""
             rsp.hvmCpuFlag = ""
             rsp.cpuCache = "64.0,4096.0,16384.0"
-            rsp.iscsiInitiatorName = "iqn.2015-01.io.helix:a6e4508d2378"
+            rsp.iscsiInitiatorName = "iqn.1994-05.com.redhat:" + hostUuid.substring(0, 12)
 
             rsp.virtualizerInfo = new VirtualizerInfoTO()
             rsp.virtualizerInfo.version = "4.2.0-627.g36ee592.el7"
@@ -342,6 +342,10 @@ class KVMSimulator implements Simulator {
             }
             rsp.setVmInShutdowns(new ArrayList<String>())
             return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_VOLUME_SYNC_PATH) {
+            return new VolumeSyncRsp()
         }
 
         spec.simulator(KVMConstant.KVM_ATTACH_VOLUME) { HttpEntity<String> e ->

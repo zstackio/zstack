@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>storage.primary</id>
+
+    <message>
+        <name>org.zstack.header.storage.addon.primary.APIUpdateExternalPrimaryStorageMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.storage.addon.primary.APIAddExternalPrimaryStorageMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.storage.addon.primary.APIDiscoverExternalPrimaryStorageMsg</name>
+        <serviceId>externalPrimaryStorage</serviceId>>
+    </message>
+</service>

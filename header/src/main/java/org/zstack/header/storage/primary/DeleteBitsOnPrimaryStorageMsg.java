@@ -7,12 +7,15 @@ import org.zstack.header.message.NeedReplyMessage;
  * we just delete bits
  * @see DeleteVolumeBitsOnPrimaryStorageMsg
  */
+@Deprecated
 public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String installPath;
     private String hostUuid;
     private String format;
     private boolean folder;
+
+    private boolean recycle = true;
 
     @Override
     public String getPrimaryStorageUuid() {
@@ -53,5 +56,13 @@ public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements P
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public boolean isRecycle() {
+        return recycle;
+    }
+
+    public void setRecycle(boolean recycle) {
+        this.recycle = recycle;
     }
 }

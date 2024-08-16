@@ -1,5 +1,6 @@
 package org.zstack.storage.backup;
 
+import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
@@ -14,4 +15,7 @@ public class BackupStorageSystemTags {
 
     public static String EXTRA_IPS_TOKEN = "extraips";
     public static PatternedSystemTag EXTRA_IPS = new PatternedSystemTag(String.format("extraips::{%s}", EXTRA_IPS_TOKEN), BackupStorageVO.class);
+
+    public static final String ISCSI_INITIATOR_NAME_TOKEN = "iscsiInitiatorName";
+    public static PatternedSystemTag ISCSI_INITIATOR_NAME = new PatternedSystemTag(String.format("iscsiInitiatorName::{%s}", ISCSI_INITIATOR_NAME_TOKEN), BackupStorageVO.class);
 }

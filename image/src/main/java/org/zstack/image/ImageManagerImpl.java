@@ -217,40 +217,91 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             imgvo.setUrl(String.format("volumeSnapshot://%s", msg.getSnapshotUuid()));
         });
 
-        createSysTag(msg, vo);
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("create-temporary-volume-template-from-volume-snapshot-%s", msg.getSnapshotUuid()));
+        chain.then(new Flow() {
+            final String __name__ = "create-image-in-database";
 
-        CreateImageCacheFromVolumeSnapshotMsg cmsg = new CreateImageCacheFromVolumeSnapshotMsg();
-        cmsg.setSnapshotUuid(msg.getSnapshotUuid());
-        cmsg.setImageUuid(vo.getUuid());
-        cmsg.setVolumeUuid(volumeUuid);
-        cmsg.setTreeUuid(treeUuid);
-        cmsg.setSystemTags(msg.getSystemTags());
-        String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
-        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
-        bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
-            public void run(MessageReply r) {
-                if (!r.isSuccess()) {
-                    reply.setError(r.getError());
-                    bus.reply(msg, reply);
-                    return;
-                }
+            public void run(FlowTrigger trigger, Map data) {
+                // created before
+                createSysTag(msg, vo);
+                trigger.next();
+            }
 
-                CreateImageCacheFromVolumeSnapshotReply cr = r.castReply();
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                dbf.remove(vo);
+                trigger.rollback();
+            }
+        }).then(new NoRollbackFlow() {
+            final String __name__ = "create-image-cache-from-volume-snapshot";
 
-                vo.setActualSize(cr.getActualSize());
-                vo.setStatus(ImageStatus.Ready);
-                if (cr.getImageUrl() != null) {
-                    vo.setUrl(cr.getImageUrl());
-                }
-                dbf.update(vo);
-                reply.setInventory(ImageInventory.valueOf(vo));
-                reply.setLocateHostUuid(cr.getLocationHostUuid());
-                reply.setLocatePsUuid(volumePsUuid);
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                CreateImageCacheFromVolumeSnapshotMsg cmsg = new CreateImageCacheFromVolumeSnapshotMsg();
+                cmsg.setSnapshotUuid(msg.getSnapshotUuid());
+                cmsg.setImageUuid(vo.getUuid());
+                cmsg.setVolumeUuid(volumeUuid);
+                cmsg.setTreeUuid(treeUuid);
+                cmsg.setSystemTags(msg.getSystemTags());
+                String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
+                bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply r) {
+                        if (!r.isSuccess()) {
+                            trigger.fail(r.getError());
+                            return;
+                        }
 
+                        CreateImageCacheFromVolumeSnapshotReply cr = r.castReply();
+
+                        vo.setActualSize(cr.getActualSize());
+                        vo.setStatus(ImageStatus.Ready);
+                        if (cr.getImageUrl() != null) {
+                            vo.setUrl(cr.getImageUrl());
+                        }
+                        dbf.update(vo);
+                        reply.setInventory(ImageInventory.valueOf(vo));
+                        reply.setLocateHostUuid(cr.getLocationHostUuid());
+                        reply.setLocatePsUuid(volumePsUuid);
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            final String __name__ = "sync-volume-system-tag";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                SyncSystemTagFromVolumeMsg smsg = new SyncSystemTagFromVolumeMsg();
+                smsg.setImageUuid(vo.getUuid());
+                smsg.setVolumeUuid(volumeUuid);
+                bus.makeLocalServiceId(smsg, ImageConstant.SERVICE_ID);
+                bus.send(smsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(String.format("sync image[uuid:%s]system tag fail", volumeUuid));
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errCode);
                 bus.reply(msg, reply);
             }
-        });
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).start();
     }
 
     private void handleLocalMessage(Message msg) {
@@ -260,12 +311,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             handle((CreateRootVolumeTemplateFromRootVolumeMsg) msg);
         } else if (msg instanceof CancelCreateRootVolumeTemplateFromRootVolumeMsg) {
             handle((CancelCreateRootVolumeTemplateFromRootVolumeMsg) msg);
+        } else if (msg instanceof CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg) {
+            handle((CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof CreateRootVolumeTemplateFromVolumeSnapshotMsg) {
             handle((CreateRootVolumeTemplateFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof CreateDataVolumeTemplateFromVolumeMsg){
             handle ((CreateDataVolumeTemplateFromVolumeMsg) msg);
-        } else if (msg instanceof CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg) {
-            handle((CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof CreateTemporaryRootVolumeTemplateFromVolumeMsg) {
             handle((CreateTemporaryRootVolumeTemplateFromVolumeMsg) msg);
         } else if (msg instanceof CreateDataVolumeTemplateFromVolumeSnapshotMsg) {
@@ -1871,7 +1922,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             }
                         });
 
-                        bus.send(cmsgs, new CloudBusListCallBack(null) {
+                        bus.send(cmsgs, new CloudBusListCallBack(trigger) {
                             @Override
                             public void run(List<MessageReply> replies) {
                                 int fail = 0;

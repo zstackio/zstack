@@ -10,8 +10,11 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.header.volume.VolumeProtocol;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class VolumeTO extends BaseVirtualDeviceTO {
@@ -23,6 +26,8 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     public static final String BLOCK = "block";
     public static final String MINISTORAGE = "mini";
     public static final String QUORUM = "quorum";
+    public static final String VHOST = "vhost";
+    public static final Map<VolumeProtocol, String> deviceTypes = new HashMap<>();
     public static List<KVMConvertVolumeExtensionPoint> exts;
 
     private String installPath;
@@ -46,6 +51,10 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private int ioThreadId;
     private String ioThreadPin;
     private int controllerIndex;
+
+    static {
+        deviceTypes.put(VolumeProtocol.Vhost, VHOST);
+    }
 
     public VolumeTO() {
     }

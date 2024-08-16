@@ -50,6 +50,7 @@ public interface KVMConstant {
     String KVM_VM_ONLINE_INCREASE_CPU = "/vm/increase/cpu";
     String KVM_VM_ONLINE_INCREASE_MEMORY = "/vm/increase/mem";
     String KVM_VM_SYNC_PATH = "/vm/vmsync";
+    String KVM_VOLUME_SYNC_PATH = "/vm/volumesync";
     String KVM_ATTACH_VOLUME = "/vm/attachdatavolume";
     String KVM_DETACH_VOLUME = "/vm/detachdatavolume";
     String KVM_ATTACH_NIC_PATH = "/vm/attachnic";

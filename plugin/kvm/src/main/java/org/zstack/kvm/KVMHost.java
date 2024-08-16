@@ -1289,7 +1289,7 @@ public class KVMHost extends HostBase implements Host {
                     reply.setError(err);
                 }
 
-                extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(VmInstanceInventory.valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class)), ret, null);
+                extEmitter.afterReceiveSyncVmDeviceInfoResponse(VmInstanceInventory.valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class)), ret, null);
                 bus.reply(msg, reply);
             }
 
@@ -2241,6 +2241,8 @@ public class KVMHost extends HostBase implements Host {
         iso.setImageUuid(msg.getIsoSpec().getImageUuid());
         iso.setPath(msg.getIsoSpec().getInstallPath());
         iso.setDeviceId(msg.getIsoSpec().getDeviceId());
+        iso.setPrimaryStorageUuid(msg.getIsoSpec().getPrimaryStorageUuid());
+        iso.setProtocol(msg.getIsoSpec().getProtocol());
 
         AttachIsoCmd cmd = new AttachIsoCmd();
         cmd.vmUuid = msg.getVmInstanceUuid();
@@ -3997,6 +3999,9 @@ public class KVMHost extends HostBase implements Host {
     }
 
     static String getVolumeTOType(VolumeInventory vol) {
+        if (vol.getProtocol() != null) {
+            return VolumeTO.deviceTypes.get(VolumeProtocol.valueOf(vol.getProtocol()));
+        }
         DebugUtils.Assert(vol.getInstallPath() != null, String.format("volume [%s] installPath is null, it has not been initialized", vol.getUuid()));
         return vol.getInstallPath().startsWith("iscsi") ? VolumeTO.ISCSI : VolumeTO.FILE;
     }
@@ -4168,9 +4173,10 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
+        rootVolume.setFormat(spec.getDestRootVolume().getFormat());
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setUseVirtio(VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid()));
-        rootVolume.setUseVirtioSCSI(ImagePlatform.Other.toString().equals(platform) ? false : KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
+        rootVolume.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
         rootVolume.setCacheMode(rcf.getResourceConfigValue(KVMGlobalConfig.LIBVIRT_CACHE_MODE, spec.getDestRootVolume().getUuid(), String.class));
 
@@ -4231,6 +4237,8 @@ public class KVMHost extends HostBase implements Host {
             cdRomTO.setImageUuid(cdRomSpec.getImageUuid());
             cdRomTO.setDeviceId(cdRomSpec.getDeviceId());
             cdRomTO.setEmpty(cdRomSpec.getImageUuid() == null);
+            cdRomTO.setPrimaryStorageUuid(cdRomSpec.getPrimaryStorageUuid());
+            cdRomTO.setProtocol(cdRomSpec.getProtocol());
             cmd.getCdRoms().add(cdRomTO);
         }
 
@@ -4284,7 +4292,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(StartVmResponse ret) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
                 if (ret.isSuccess()) {
-                    extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(null, ret, spec);
+                    extEmitter.afterReceiveSyncVmDeviceInfoResponse(null, ret, spec);
 
                     String info = String.format("successfully start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s]",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
@@ -5768,6 +5776,7 @@ public class KVMHost extends HostBase implements Host {
                 createTagWithoutNonValue(HostSystemTags.BIOS_RELEASE_DATE, HostSystemTags.BIOS_RELEASE_DATE_TOKEN, ret.getBiosReleaseDate(), true);
                 createTagWithoutNonValue(HostSystemTags.BMC_VERSION, HostSystemTags.BMC_VERSION_TOKEN, ret.getBmcVersion(), true);
                 createTagWithoutNonValue(HostSystemTags.UPTIME, HostSystemTags.UPTIME_TOKEN, ret.getUptime(), true);
+                createTagWithoutNonValue(HostSystemTags.ISCSI_INITIATOR_NAME, HostSystemTags.ISCSI_INITIATOR_NAME_TOKEN, ret.getIscsiInitiatorName(), true);
 
                 saveHostExtraIps(ret);
 

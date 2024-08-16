@@ -7,18 +7,24 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.*;
+import org.zstack.header.host.AddHostMessage;
+import org.zstack.header.host.FailToAddHostExtensionPoint;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.volume.VolumeInfo;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeStats;
 import org.zstack.kvm.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.utils.Utils;
@@ -189,9 +195,9 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
         LocalStorageHypervisorBackend bkd = getHypervisorBackend(primaryStorageVO);
         String backingFile = cmd.isOnline() ? cmd.getVolumeInstallPath() : null;
-        bkd.createEmptyVolumeWithBackingFile(inv, msg.getHostUuid(), backingFile, new ReturnValueCompletion<VolumeInfo>(completion) {
+        bkd.createEmptyVolumeWithBackingFile(inv, msg.getHostUuid(), backingFile, new ReturnValueCompletion<VolumeStats>(completion) {
             @Override
-            public void success(VolumeInfo returnValue) {
+            public void success(VolumeStats returnValue) {
                 completion.success();
             }
 

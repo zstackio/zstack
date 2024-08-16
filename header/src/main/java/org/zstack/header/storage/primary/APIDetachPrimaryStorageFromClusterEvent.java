@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.log.MaskSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
@@ -33,6 +35,7 @@ import org.zstack.header.rest.RestResponse;
  * @since 0.1.0
  */
 @RestResponse(allTo = "inventory")
+@MaskSensitiveInfo
 public class APIDetachPrimaryStorageFromClusterEvent extends APIEvent {
     public APIDetachPrimaryStorageFromClusterEvent() {
         super(null);
@@ -45,6 +48,7 @@ public class APIDetachPrimaryStorageFromClusterEvent extends APIEvent {
     /**
      * @desc see :ref:`PrimaryStorageInventory`
      */
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     private PrimaryStorageInventory inventory;
 
     public PrimaryStorageInventory getInventory() {

@@ -61,7 +61,7 @@ public class KVMExtensionEmitter implements Component {
         blockCommitExts = pluginRgty.getExtensionList(KVMBlockCommitExtensionPoint.class);
     }
 
-    public void afterReceiveSyncVmDeviceInfoRespoinse(final VmInstanceInventory vm, final KVMAgentCommands.VmDevicesInfoResponse rsp, VmInstanceSpec spec) {
+    public void afterReceiveSyncVmDeviceInfoResponse(final VmInstanceInventory vm, final KVMAgentCommands.VmDevicesInfoResponse rsp, VmInstanceSpec spec) {
         CollectionUtils.safeForEach(syncVmDeviceInfoExts, new ForEachFunction<KVMSyncVmDeviceInfoExtensionPoint>() {
             @Override
             public void run(KVMSyncVmDeviceInfoExtensionPoint arg) {
