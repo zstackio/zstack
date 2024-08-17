@@ -36,6 +36,14 @@ public class ModelCenterInventory  {
         return this.url;
     }
 
+    public java.lang.String status;
+    public void setStatus(java.lang.String status) {
+        this.status = status;
+    }
+    public java.lang.String getStatus() {
+        return this.status;
+    }
+
     public java.lang.String parameters;
     public void setParameters(java.lang.String parameters) {
         this.parameters = parameters;
