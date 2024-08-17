@@ -10,7 +10,7 @@ import org.zstack.header.vo.ResourceVO;
 public abstract class APIAbstractCreateTagMsg extends APIMessage {
     @APIParam
     private String resourceType;
-    @APIParam(checkAccount = true, resourceType = ResourceVO.class)
+    @APIParam(resourceType = ResourceVO.class, scope = APIParam.SCOPE_MUST_OWNER)
     private String resourceUuid;
     @APIParam
     @NoLogging(type = NoLogging.Type.Tag)

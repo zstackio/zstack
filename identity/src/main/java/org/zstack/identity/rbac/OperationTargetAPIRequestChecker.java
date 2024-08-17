@@ -121,8 +121,6 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 try {
                     if (resourceType.equals(AccountVO.class)) {
                         checkAccountAPIParam(param);
-                    } else if (info.getTargetResources().stream().anyMatch( it -> resourceType.isAssignableFrom(it))) {
-                        checkIfTheAccountOwnTheResource(param);
                     } else if (resourceType.equals(SystemTagVO.class)) {
                         checkIfTheAccountOwnTheTaggedResource(param);
                     } else {
@@ -176,11 +174,10 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                final List<String> sharedResourceUuidList = q(SharedResourceVO.class)
-                        .in(SharedResourceVO_.resourceUuid, uuids)
-                        .eq(SharedResourceVO_.toPublic, true)
-                        .eq(SharedResourceVO_.permission, SharedResourceVO.PERMISSION_WRITE)
-                        .select(SharedResourceVO_.resourceUuid)
+                final List<String> sharedResourceUuidList = q(AccountResourceRefVO.class)
+                        .in(AccountResourceRefVO_.resourceUuid, uuids)
+                        .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                        .select(AccountResourceRefVO_.resourceUuid)
                         .listValues();
                 uuids.removeAll(sharedResourceUuidList);
             }
@@ -193,11 +190,12 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                         .listTuple();
 
                 ts.addAll(
-                        q(SharedResourceVO.class).select(SharedResourceVO_.receiverAccountUuid, SharedResourceVO_.resourceUuid)
-                                .in(SharedResourceVO_.resourceUuid, uuids)
-                                .eq(SharedResourceVO_.permission, SharedResourceVO.PERMISSION_WRITE)
-                                .eq(SharedResourceVO_.receiverAccountUuid, rbacEntity.getApiMessage().getSession().getAccountUuid())
-                                .listTuple()
+                    q(AccountResourceRefVO.class)
+                            .select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid)
+                            .in(AccountResourceRefVO_.resourceUuid, uuids)
+                            .eq(AccountResourceRefVO_.type, AccessLevel.Share)
+                            .eq(AccountResourceRefVO_.accountUuid, rbacEntity.getApiMessage().getSession().getAccountUuid())
+                            .listTuple()
                 );
 
                 return toAccountResourceBundles(uuids, ts);
@@ -258,7 +256,20 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
         }.execute();
     }
 
-    public static APIResourceScope apiResourceScope(APIMessage.FieldParam param) {
+    public APIResourceScope apiResourceScope(APIMessage.FieldParam param) {
+        String scope = param.param.scope();
+        if (!APIParam.SCOPE_AUTO.equals(scope)) {
+            return APIResourceScope.valueOf(scope);
+        }
+
+        Class<?> resourceType = param.param.resourceType()[0];
+
+        // TODO: RBACInfo.targetResources will be replaced by "APIParam.scope" soon
+        RBAC.Permission info = getRBACInfo();
+        if (info.getTargetResources().stream().anyMatch(resourceType::isAssignableFrom)) {
+            return APIResourceScope.MustOwner;
+        }
+
         if (param.param.noOwnerCheck()) {
             return APIResourceScope.AllowedAll;
         }
@@ -267,13 +278,6 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
             return APIResourceScope.AllowedSharing;
         }
 
-        String scope = param.param.scope();
-
-        if (!APIParam.SCOPE_AUTO.equals(scope)) {
-            return APIResourceScope.valueOf(scope);
-        }
-
-        Class<?> resourceType = param.param.resourceType()[0];
         return RBAC.isResourceGlobalReadable(resourceType) ?
                 APIResourceScope.AllowedAll :
                 APIResourceScope.AllowedSharing;

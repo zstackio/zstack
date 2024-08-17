@@ -1,8 +1,9 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
 import org.zstack.core.db.Q
-import org.zstack.header.identity.SharedResourceVO
-import org.zstack.header.identity.SharedResourceVO_
+import org.zstack.header.identity.AccessLevel
+import org.zstack.header.identity.AccountResourceRefVO
+import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.sdk.L2VxlanNetworkPoolInventory
 import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.network.NetworkTest
@@ -124,12 +125,18 @@ class VxlanPoolShareCase extends SubCase{
             toPublic = true
         }
 
-        assert Q.New(SharedResourceVO.class).eq(SharedResourceVO_.resourceUuid, poolinv.uuid).isExists()
+        assert Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, poolinv.uuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                .isExists()
 
         deleteL2Network {
             uuid = poolinv.uuid
         }
 
-        assert !Q.New(SharedResourceVO.class).eq(SharedResourceVO_.resourceUuid, poolinv.uuid).isExists()
+        assert !Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, poolinv.uuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                .isExists()
     }
 }

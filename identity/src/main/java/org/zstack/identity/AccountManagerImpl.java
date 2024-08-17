@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.header.identity.AccountConstant.ACCOUNT_REST_AUTHENTICATION_TYPE;
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.isEmpty;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -794,17 +795,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     @Override
-    public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType) {
-        return findAllAccessResources(accountUuid, resourceType, ShareResourcePermission.READ);
-    }
-
-    @Override
-    public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType, ShareResourcePermission permission) {
-        return findAllAccessResources(accountUuid, resourceType, permission);
-    }
-
     @Transactional(readOnly = true)
-    private List<String> findAllAccessResources(String accountUuid, Class resourceType, ShareResourcePermission permission) {
+    public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType) {
         String sql = "select a.type from AccountVO a where a.uuid = :auuid";
         TypedQuery<AccountType> q = dbf.getEntityManager().createQuery(sql, AccountType.class);
         q.setParameter("auuid", accountUuid);
@@ -818,30 +810,20 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             return null;
         }
 
-        List<String> ownResourceUuids = Q.New(AccountResourceRefVO.class)
+        List<String> resourceUuids = Q.New(AccountResourceRefVO.class)
                 .select(AccountResourceRefVO_.resourceUuid)
                 .eq(AccountResourceRefVO_.accountUuid, accountUuid)
                 .eq(AccountResourceRefVO_.resourceType, resourceType.getSimpleName())
-                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .in(AccountResourceRefVO_.type, list(AccessLevel.Own, AccessLevel.Share))
                 .listValues();
+        List<String> sharePublicUuids = Q.New(AccountResourceRefVO.class)
+                .select(AccountResourceRefVO_.resourceUuid)
+                .eq(AccountResourceRefVO_.resourceType, resourceType.getSimpleName())
+                .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                .listValues();
+        sharePublicUuids.addAll(resourceUuids);
 
-        sql =   "select " +
-                    "r.resourceUuid " +
-                "from " +
-                    "SharedResourceVO r " +
-                "where " +
-                    "(r.toPublic = :toPublic or r.receiverAccountUuid = :auuid) " +
-                    "and r.resourceType = :rtype " +
-                    "and r.permission >= :permissionCode";
-        TypedQuery<String> srq = dbf.getEntityManager().createQuery(sql, String.class);
-        srq.setParameter("toPublic", true);
-        srq.setParameter("auuid", accountUuid);
-        srq.setParameter("rtype", resourceType.getSimpleName());
-        srq.setParameter("permissionCode", permission.code);
-        List<String> shared = srq.getResultList();
-        shared.addAll(ownResourceUuids);
-
-        return shared;
+        return sharePublicUuids;
     }
 
     @Override

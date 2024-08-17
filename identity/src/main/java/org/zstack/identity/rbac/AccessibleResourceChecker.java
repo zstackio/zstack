@@ -1,7 +1,6 @@
 package org.zstack.identity.rbac;
 
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccessLevel;
 import org.zstack.header.identity.AccountResourceRefVO;
@@ -10,6 +9,7 @@ import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.message.APIResourceScope;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
+import org.zstack.identity.ResourceHelper;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
@@ -107,25 +107,8 @@ public class AccessibleResourceChecker {
     }
 
     private List<String> findInaccessibleResourcesWithAllowedSharingScope(List<String> resourceUuids) {
-        return new SQLBatchWithReturn<List<String>>() {
-            @Override
-            protected List<String> scripts() {
-                // find out all resources the account can access
-                String text = "select ref.resourceUuid from AccountResourceRefVO ref where" +
-                        " ref.accountUuid = :accountUuid and type = :accessLevel" +
-                        " or ref.resourceUuid in" +
-                        " (select sh.resourceUuid from SharedResourceVO sh where sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1)" +
-                        " and ref.resourceUuid in (:uuids)";
-
-                List<String> auuids = sql(text, String.class)
-                        .param("accountUuid", accountUuid)
-                        .param("accessLevel", AccessLevel.Own)
-                        .param("uuids", resourceUuids)
-                        .list();
-
-                return resourceUuids.stream().filter(uuid -> !auuids.contains(uuid)).collect(Collectors.toList());
-            }
-        }.execute();
+        List<String> auuids = ResourceHelper.filterAccessibleResources(resourceUuids, accountUuid);
+        return resourceUuids.stream().filter(uuid -> !auuids.contains(uuid)).collect(Collectors.toList());
     }
 
     private List<String> findInaccessibleResourcesWithMustOwnerScope(List<String> resourceUuids) {
@@ -133,6 +116,7 @@ public class AccessibleResourceChecker {
                 .select(AccountResourceRefVO_.resourceUuid)
                 .eq(AccountResourceRefVO_.accountUuid, accountUuid)
                 .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .listValues();
         final ArrayList<String> results = new ArrayList<>(resourceUuids);
         results.removeAll(ownResources);

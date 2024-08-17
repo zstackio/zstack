@@ -3,7 +3,6 @@ package org.zstack.identity;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -14,8 +13,6 @@ import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.AccountVO_;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.identity.SharedResourceVO;
-import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.identity.rbac.RBACEntity;
 import static org.zstack.core.Platform.*;
@@ -94,8 +91,8 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
 
         SessionInventory session = rbacEntity.getApiMessage().getSession();
 
-        Set checkAccountResourceUuids = new HashSet();
-        Set operationTargetResourceUuids = new HashSet();
+        Set<String> checkAccountResourceUuids = new HashSet<>();
+        Set<String> operationTargetResourceUuids = new HashSet<>();
 
         for (CheckAccountAPIField cf : fields) {
             Object value = cf.field.get(rbacEntity.getApiMessage());
@@ -111,9 +108,9 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
                 }
             } else {
                 if (cf.operationTarget) {
-                    operationTargetResourceUuids.add(value);
+                    operationTargetResourceUuids.add(value.toString());
                 } else if (cf.checkAccount) {
-                    checkAccountResourceUuids.add(value);
+                    checkAccountResourceUuids.add(value.toString());
                 }
             }
         }
@@ -127,9 +124,11 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
             protected void scripts() {
                 if (!checkAccountResourceUuids.isEmpty()) {
                     // rule out resources that shared as public
-                    List<String> shared = q(SharedResourceVO.class).select(SharedResourceVO_.resourceUuid)
-                            .in(SharedResourceVO_.resourceUuid, checkAccountResourceUuids)
-                            .eq(SharedResourceVO_.toPublic, true).listValues();
+                    List<String> shared = q(AccountResourceRefVO.class)
+                            .select(AccountResourceRefVO_.resourceUuid)
+                            .in(AccountResourceRefVO_.resourceUuid, checkAccountResourceUuids)
+                            .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                            .listValues();
                     checkAccountResourceUuids.removeAll(shared);
                 }
 
@@ -141,7 +140,7 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                List<Tuple> ts = Q.New(AccountResourceRefVO.class, AccountVO.class)
+                List<Tuple> ts = q(AccountResourceRefVO.class, AccountVO.class)
                         .table0().in(AccountResourceRefVO_.resourceUuid, toCheck)
                         .table0().eq(AccountResourceRefVO_.type, AccessLevel.Own)
                         .table1().eq(AccountVO_.uuid).table1(AccountResourceRefVO_.accountUuid)

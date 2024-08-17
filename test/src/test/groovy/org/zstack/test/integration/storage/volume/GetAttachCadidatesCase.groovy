@@ -3,7 +3,9 @@ package org.zstack.test.integration.storage.volume
 import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
-import org.zstack.header.identity.SharedResourceVO
+import org.zstack.header.identity.AccessLevel
+import org.zstack.header.identity.AccountResourceRefVO
+import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImagePlatform
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
@@ -232,7 +234,9 @@ class GetAttachCadidatesCase extends SubCase {
 
     @Override
     void clean() {
-        SQL.New(SharedResourceVO.class).hardDelete()
+        SQL.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                .hardDelete()
         env.delete()
     }
 }
