@@ -21,7 +21,7 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APIRevokeResourceSharingEvent.class
 )
 public class APIRevokeResourceSharingMsg extends APIMessage implements AccountMessage {
-    @APIParam(resourceType = ResourceVO.class, nonempty = true)
+    @APIParam(resourceType = ResourceVO.class, nonempty = true, scope = APIParam.SCOPE_MUST_OWNER)
     private List<String> resourceUuids;
     private boolean toPublic;
     @APIParam(resourceType = AccountVO.class, required = false)
