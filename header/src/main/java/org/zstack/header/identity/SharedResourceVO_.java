@@ -7,6 +7,7 @@ import java.sql.Timestamp;
 /**
  * Created by frank on 7/13/2015.
  */
+@Deprecated
 @StaticMetamodel(SharedResourceVO.class)
 public class SharedResourceVO_ {
     public static volatile SingularAttribute<SharedResourceVO, Long> id;

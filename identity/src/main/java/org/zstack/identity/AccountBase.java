@@ -271,9 +271,10 @@ public class AccountBase extends AbstractAccount {
                         .eq(PolicyVO_.accountUuid, self.getUuid())
                         .delete();
 
-                sql("delete from SharedResourceVO s where s.ownerAccountUuid = :uuid or s.receiverAccountUuid = :uuid")
-                        .param("uuid", self.getUuid())
-                        .execute();
+                sql(AccountResourceRefVO.class)
+                        .eq(AccountResourceRefVO_.accountUuid, self.getUuid())
+                        .eq(AccountResourceRefVO_.type, AccessLevel.Share)
+                        .delete();
 
                 List<String> resourceUuids = q(AccountResourceRefVO.class)
                         .select(AccountResourceRefVO_.resourceUuid)

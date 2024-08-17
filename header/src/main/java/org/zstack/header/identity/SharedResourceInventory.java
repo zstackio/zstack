@@ -13,6 +13,7 @@ import java.util.List;
  */
 @Inventory(mappingVOClass = SharedResourceVO.class)
 @PythonClassInventory
+@Deprecated
 public class SharedResourceInventory {
     private String ownerAccountUuid;
     private String receiverAccountUuid;

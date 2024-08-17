@@ -15,6 +15,7 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
+@Deprecated
 public class SharedResourceVO {
     public static final int PERMISSION_READ = 1;
     public static final int PERMISSION_WRITE = 1 << 1;

@@ -206,8 +206,6 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         new SQLBatch() {
             @Override
             protected void scripts() {
-                List<NewPredefinedRoleExtensionPoint> exts = pluginRgty.getExtensionList(NewPredefinedRoleExtensionPoint.class);
-
                 RBAC.roles.stream().filter(RBAC.Role::isPredefine).forEach(role -> {
                     if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
                         SystemRoleVO rvo = new SystemRoleVO();
@@ -218,11 +216,10 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                         rvo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                         persist(rvo);
 
-                        SharedResourceVO sh = new SharedResourceVO();
-                        sh.setOwnerAccountUuid(rvo.getAccountUuid());
+                        AccountResourceRefVO sh = new AccountResourceRefVO();
                         sh.setResourceType(RoleVO.class.getSimpleName());
                         sh.setResourceUuid(rvo.getUuid());
-                        sh.setToPublic(true);
+                        sh.setType(AccessLevel.SharePublic);
                         persist(sh);
 
                         role.toStatements().forEach(s -> {
@@ -232,10 +229,6 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                             rp.setStatement(JSONObjectUtil.toJsonString(s));
                             persist(rp);
                         });
-
-//                        for (NewPredefinedRoleExtensionPoint ext : exts) {
-//                            ext.predefinedNewRole(reload(rvo));
-//                        }
                     } else {
                         role.toStatements().forEach(s -> {
                             String statementString = JSONObjectUtil.toJsonString(s);
