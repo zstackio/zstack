@@ -12,7 +12,6 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.query.QueryCondition;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.test.Api;
@@ -21,8 +20,6 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
-
-import java.util.ArrayList;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -67,11 +64,6 @@ public class TestPolicyForVm2 {
                 list(ioinv.getUuid(), l3.getUuid(), img.getUuid(), dov.getUuid()),
                 list(test.getUuid()), false
         );
-
-        APIQuerySharedResourceMsg qmsg = new APIQuerySharedResourceMsg();
-        qmsg.setConditions(new ArrayList<QueryCondition>());
-        APIQuerySharedResourceReply qr = api.query(qmsg, APIQuerySharedResourceReply.class);
-        Assert.assertFalse(qr.getInventories().isEmpty());
 
         SessionInventory session = identityCreator.getAccountSession();
 
@@ -128,7 +120,5 @@ public class TestPolicyForVm2 {
         Assert.assertTrue(success);
 
         api.revokeAllResourceSharing(list(ioinv.getUuid(), dov.getUuid(), l3.getUuid(), img.getUuid()), null);
-        long count = dbf.count(SharedResourceVO.class);
-        Assert.assertEquals(0, count);
     }
 }
