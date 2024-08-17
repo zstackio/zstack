@@ -1,8 +1,9 @@
 package org.zstack.header.identity;
 
+@Deprecated
 public enum ShareResourcePermission {
-    READ(SharedResourceVO.PERMISSION_READ),
-    WRITE(SharedResourceVO.PERMISSION_WRITE);
+    READ(1),
+    WRITE(1 << 1);
 
     public final int code;
     ShareResourcePermission(int code) {

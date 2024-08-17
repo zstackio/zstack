@@ -76,11 +76,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.identity.APIQuerySharedResourceMsg</name>
-        <serviceId>query</serviceId>
-    </message>
-
-    <message>
         <name>org.zstack.header.identity.APIGetResourceAccountMsg</name>
     </message>
 
