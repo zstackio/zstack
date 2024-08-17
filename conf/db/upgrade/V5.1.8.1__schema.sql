@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterVO` (
     `description` varchar(2048) DEFAULT NULL,
     `url` varchar(2048) DEFAULT NULL,
     `parameters` varchar(128) DEFAULT NULL,
+    `status` varchar(255) NOT NULL,
     `managementIp` varchar(128) NOT NULL,
     `managementPort` int(16) not NULL,
     `storageNetworkUuid` varchar(32) DEFAULT NULL,
