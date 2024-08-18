@@ -20,4 +20,12 @@ public class GetOAuth2TokenResult {
         return this.serverTokenInventory;
     }
 
+    public java.util.Map additionalTokenInventory;
+    public void setAdditionalTokenInventory(java.util.Map additionalTokenInventory) {
+        this.additionalTokenInventory = additionalTokenInventory;
+    }
+    public java.util.Map getAdditionalTokenInventory() {
+        return this.additionalTokenInventory;
+    }
+
 }

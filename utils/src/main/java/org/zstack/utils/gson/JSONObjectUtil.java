@@ -57,6 +57,10 @@ public class JSONObjectUtil {
         return gson.fromJson(content, clazz);
     }
 
+    public static <T> T toObject(JsonElement content, Class<T> clazz) {
+        return gson.fromJson(content, clazz);
+    }
+
     // Only supports converting content to List, for example: new TypeToken<List<T>>() {}.getType()
     public static <T> List<T> toList(String content, Type type){
         return gson.fromJson(content, type);

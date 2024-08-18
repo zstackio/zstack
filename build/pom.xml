@@ -359,6 +359,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>proxy</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>zstack-ticket</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -860,6 +865,21 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>sshKeyPair</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>ai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>container</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>iam2-container</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
