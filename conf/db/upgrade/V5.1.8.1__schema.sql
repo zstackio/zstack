@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`DatasetVO` (
     `description` varchar(2048) NULL,
     `modelCenterUuid` varchar(32) NOT NULL,
     `system` tinyint(1) DEFAULT 0,
-    `size` bigint NULL,
+    `size` bigint(20) DEFAULT 0,
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
