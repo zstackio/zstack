@@ -24,6 +24,7 @@ public class DhcpStruct implements Serializable {
     private String dnsDomain;
     private Integer mtu;
     private String  raMode;
+    private boolean enableRa;
     private String  firstIp;
     private String  endIP;
     private Integer prefixLength;
@@ -139,6 +140,14 @@ public class DhcpStruct implements Serializable {
 
     public void setRaMode(String raMode) {
         this.raMode = raMode;
+    }
+
+    public boolean isEnableRa() {
+        return enableRa;
+    }
+
+    public void setEnableRa(boolean enableRa) {
+        this.enableRa = enableRa;
     }
 
     public String getFirstIp() {
