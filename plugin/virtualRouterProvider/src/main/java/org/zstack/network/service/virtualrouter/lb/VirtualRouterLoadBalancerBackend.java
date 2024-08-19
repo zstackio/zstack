@@ -274,7 +274,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         boolean enableFullLog;
 
-        static class ServerGroup {
+        public static class ServerGroup {
             private String name;
             private String serverGroupUuid;
             private List<BackendServer> backendServers;
@@ -313,7 +313,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             }
         }
 
-        static class BackendServer {
+        public static class BackendServer {
             private String ip;
             private long weight;
 
@@ -339,7 +339,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             }
         }
 
-        static class RedirectRule {
+        public static class RedirectRule {
             private String redirectRuleUuid;
             private String aclUuid;
             private String redirectRule;
