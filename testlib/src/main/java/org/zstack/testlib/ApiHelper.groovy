@@ -39036,7 +39036,6 @@ abstract class ApiHelper {
 
     def tokenIntrospection(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.TokenIntrospectionAction.class) Closure c) {
         def a = new org.zstack.sdk.TokenIntrospectionAction()
-        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()

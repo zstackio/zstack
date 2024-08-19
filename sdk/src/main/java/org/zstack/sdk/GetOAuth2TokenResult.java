@@ -27,5 +27,4 @@ public class GetOAuth2TokenResult {
     public java.util.Map getAdditionalTokenInventory() {
         return this.additionalTokenInventory;
     }
-
 }
