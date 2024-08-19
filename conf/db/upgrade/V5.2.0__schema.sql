@@ -61,10 +61,10 @@ BEGIN
             INSERT zstack.XmlHookVmInstanceRefVO(xmlHookUuid, vmInstanceUuid, lastOpDate, createDate)
             VALUES (hookUuid, vmUuid, NOW(), NOW());
         END IF;
-        END LOOP;
-        CLOSE cur;
+    END LOOP;
+    CLOSE cur;
 
-        SELECT CURTIME();
+    SELECT CURTIME();
 END $$
 DELIMITER ;
 call migrateJsonLabelToXmlHookVO();
