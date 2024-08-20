@@ -195,6 +195,7 @@ public class XmlHookBase {
                             if (!reply.isSuccess()) {
                                 errs.add(operr("xml hook[uuid: %s] updated successfully, but failed to restart vm[uuid:%s]. details is: %s",
                                         msg.getXmlHookUuid(), vmUuid, reply.getError().getDetails()));
+                                wcompl.allDone();
                             } else {
                                 wcompl.done();
                             }

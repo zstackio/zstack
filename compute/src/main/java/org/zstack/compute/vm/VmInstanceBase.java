@@ -8165,7 +8165,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             msg.setVmInstanceUuid(self.getUuid());
             return msg;
         } else {
-            throw new RuntimeException(String.format("support vm instance states are [Running, Stopped, Paused], current vm instance state is %s", vmState));
+            throw new RuntimeException(String.format("support vm instance states are [Running, Stopped], current vm instance state is %s", vmState));
         }
     }
 
