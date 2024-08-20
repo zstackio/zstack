@@ -28,9 +28,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccessLevel;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -41,6 +38,7 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -490,11 +488,7 @@ public class VipBase {
     protected void handle(VipDeletionMsg msg) {
         VipDeletionReply reply = new VipDeletionReply();
         VipInventory inventory = VipInventory.valueOf(self);
-        String accountUuid = Q.New(AccountResourceRefVO.class)
-                .select(AccountResourceRefVO_.accountUuid)
-                .eq(AccountResourceRefVO_.resourceUuid, msg.getVipUuid())
-                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
-                .findValue();
+        String accountUuid = ResourceHelper.findResourceOwner(msg.getVipUuid());
 
         thdf.chainSubmit(new ChainTask(msg) {
             @Override

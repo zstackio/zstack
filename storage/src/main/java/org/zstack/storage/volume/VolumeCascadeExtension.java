@@ -1,7 +1,6 @@
 package org.zstack.storage.volume;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
@@ -19,8 +18,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.DetachDataVolumeFromHostMsg;
 import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -30,14 +27,13 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 /**
@@ -135,12 +131,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                 return null;
             }
 
-            List<String> psUuids = CollectionUtils.transformToList(pinvs, new Function<String, PrimaryStorageInventory>() {
-                @Override
-                public String call(PrimaryStorageInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> psUuids = CollectionUtils.transform(pinvs, PrimaryStorageInventory::getUuid);
 
             volumeUuids = Q.New(VolumeEO.class)
                     .in(VolumeAO_.primaryStorageUuid, psUuids)
@@ -148,27 +139,13 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                     .listValues();
             return volumeUuids;
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
-
-            if (auuids == null || auuids.isEmpty()) {
+            final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
+            if (CollectionUtils.isEmpty(auuids)) {
                 return null;
             }
 
-            volumeUuids = SQL.New("select d.uuid" +
-                    " from VolumeEO d, AccountResourceRefVO r" +
-                    " where d.uuid = r.resourceUuid" +
-                    " and r.resourceType = :rtype" +
-                    " and r.accountUuid in (:auuids)" +
-                    " and d.type = :dtype")
-                    .param("auuids", auuids)
-                    .param("rtype", VolumeVO.class.getSimpleName())
-                    .param("dtype", VolumeType.Data)
-                    .list();
+            volumeUuids = ResourceHelper.findOwnResourceUuidList(VolumeEO.class, auuids,
+                    q -> q.eq(VolumeVO_.type, VolumeType.Data));
             return volumeUuids;
         }
 
@@ -192,12 +169,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                 return action.getParentIssuerContext();
             } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
                 List<PrimaryStorageInventory> pinvs = action.getParentIssuerContext();
-                List<String> psUuids = CollectionUtils.transformToList(pinvs, new Function<String, PrimaryStorageInventory>() {
-                    @Override
-                    public String call(PrimaryStorageInventory arg) {
-                        return arg.getUuid();
-                    }
-                });
+                List<String> psUuids = CollectionUtils.transform(pinvs, PrimaryStorageInventory::getUuid);
 
                 SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
                 q.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
@@ -205,30 +177,10 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                 List<VolumeVO> vos = q.list();
                 return toVolumeDeletionStruct(action, vos);
             } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-                final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                    @Override
-                    public String call(AccountInventory arg) {
-                        return arg.getUuid();
-                    }
-                });
+                final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
-                List<VolumeVO> vos = new Callable<List<VolumeVO>>() {
-                    @Override
-                    @Transactional(readOnly = true)
-                    public List<VolumeVO> call() {
-                        String sql = "select d" +
-                                " from VolumeVO d, AccountResourceRefVO r" +
-                                " where d.uuid = r.resourceUuid" +
-                                " and r.resourceType = :rtype" +
-                                " and r.accountUuid in (:auuids)" +
-                                " and d.type = :dtype";
-                        TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
-                        q.setParameter("auuids", auuids);
-                        q.setParameter("rtype", VolumeVO.class.getSimpleName());
-                        q.setParameter("dtype", VolumeType.Data);
-                        return q.getResultList();
-                    }
-                }.call();
+                List<VolumeVO> vos = ResourceHelper.findOwnResources(VolumeVO.class, auuids);
+                vos.removeIf(volume -> volume.getType() != VolumeType.Data);
 
                 if (!vos.isEmpty()) {
                     return toVolumeDeletionStruct(action, vos);

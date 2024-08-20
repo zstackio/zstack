@@ -13,6 +13,7 @@ import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.tag.*;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.identity.ResourceHelper;
 
 import javax.persistence.TypedQuery;
 
@@ -132,13 +133,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
 
     @Transactional(readOnly = true)
     private void checkAccountForSystemTag(APIDeleteTagMsg msg) {
-        String sql = "select ref.accountUuid" +
-                " from SystemTagVO tag, AccountResourceRefVO ref" +
-                " where tag.resourceUuid = ref.resourceUuid" +
-                " and tag.uuid = :tuuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("tuuid", msg.getUuid());
-        String accountUuid = q.getSingleResult();
+        String accountUuid = SystemTagUtils.findSystemTagOwner(msg.getUuid());
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
             throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
                     "permission denied. The system tag[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
@@ -149,10 +144,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
 
     @Transactional(readOnly = true)
     private void checkAccountForUserTag(APIDeleteTagMsg msg) {
-        String sql = "select ref.accountUuid from UserTagVO tag, AccountResourceRefVO ref where tag.resourceUuid = ref.resourceUuid and tag.uuid = :tuuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("tuuid", msg.getUuid());
-        String accountUuid = q.getSingleResult();
+        String accountUuid = SystemTagUtils.findUserTagOwner(msg.getUuid());
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
             throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
                     "permission denied. The user tag[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
@@ -162,10 +154,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void checkAccountForTagPattern(APIDeleteTagMsg msg) {
-        String sql = "select ref.accountUuid from TagPatternVO tag, AccountResourceRefVO ref where tag.uuid = ref.resourceUuid and tag.uuid = :tuuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("tuuid", msg.getUuid());
-        String accountUuid = q.getSingleResult();
+        String accountUuid = ResourceHelper.findResourceOwner(msg.getUuid());
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
             throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
                     "permission denied. The tag pattern[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",

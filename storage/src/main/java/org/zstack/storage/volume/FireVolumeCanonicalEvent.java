@@ -4,9 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.EventFacade;
-import org.zstack.core.db.Q;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.volume.VolumeCanonicalEvents;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
@@ -23,13 +20,8 @@ public class FireVolumeCanonicalEvent {
     private EventFacade evtf;
 
     public void fireVolumeStatusChangedEvent(VolumeStatus oldStatus, VolumeInventory vol) {
-
-        String accountUuid = null;
-
-        boolean volumeAccountExists =  Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, vol.getUuid()).isExists();
-        if (volumeAccountExists) {
-            accountUuid = Account.getAccountUuidOfResource(vol.getUuid());
-        }
+        // may be null
+        String accountUuid = Account.getAccountUuidOfResource(vol.getUuid());
 
         VolumeCanonicalEvents.VolumeStatusChangedData d = new VolumeCanonicalEvents.VolumeStatusChangedData();
         d.setInventory(vol);

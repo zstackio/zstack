@@ -3,10 +3,15 @@ package org.zstack.identity;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccessLevel;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.AccountVO_;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SharedResourceVO;
@@ -136,13 +141,13 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                List<Tuple> ts = sql(" select avo.name ,arrf.accountUuid ,arrf.resourceUuid ,arrf.resourceType " +
-                                "from AccountResourceRefVO arrf ,AccountVO avo " +
-                                "where arrf.resourceUuid in (:resourceUuids) and arrf.type = :type and avo.uuid = arrf.accountUuid",
-                                Tuple.class)
-                        .param("resourceUuids", toCheck)
-                        .param("type", AccessLevel.Own)
-                        .list();
+                List<Tuple> ts = Q.New(AccountResourceRefVO.class, AccountVO.class)
+                        .table0().in(AccountResourceRefVO_.resourceUuid, toCheck)
+                        .table0().eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                        .table1().eq(AccountVO_.uuid).table1(AccountResourceRefVO_.accountUuid)
+                        .table1().select(AccountVO_.name)
+                        .table0().select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType)
+                        .listTuple();
 
                 ts.forEach(t -> {
                     String resourceOwnerName = t.get(0, String.class);

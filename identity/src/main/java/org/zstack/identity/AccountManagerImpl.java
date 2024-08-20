@@ -49,7 +49,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -149,10 +148,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Override
     @Transactional
     public AccountResourceRefInventory changeResourceOwner(String resourceUuid, String newOwnerUuid) {
-        String sql = "select ref from AccountResourceRefVO ref where ref.resourceUuid = :resUuid";
-        TypedQuery<AccountResourceRefVO> q = dbf.getEntityManager().createQuery(sql, AccountResourceRefVO.class);
-        q.setParameter("resUuid", resourceUuid);
-        List<AccountResourceRefVO> refs = q.getResultList();
+        List<AccountResourceRefVO> refs = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, resourceUuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .list();
         if (refs.isEmpty()) {
             throw new OperationFailureException(argerr("cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
                             resourceUuid));
@@ -286,10 +285,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     return;
                 }
                 // check if change resource owner to self
-                SimpleQuery<AccountResourceRefVO> queryAccResRefVO = dbf.createQuery(AccountResourceRefVO.class);
-                queryAccResRefVO.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
-                AccountResourceRefVO accResRefVO = queryAccResRefVO.find();
-                String resourceOriginalOwnerAccountUuid = accResRefVO.getAccountUuid();
+                 String resourceOriginalOwnerAccountUuid = Q.New(AccountResourceRefVO.class)
+                        .select(AccountResourceRefVO_.accountUuid)
+                        .eq(AccountResourceRefVO_.resourceUuid, msg.getResourceUuid())
+                        .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                        .findValue();
                 if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
                     trigger.fail(err(IdentityErrors.QUOTA_INVALID_OP,
                             "Invalid ChangeResourceOwner operation." +
@@ -330,13 +330,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Transactional(readOnly = true)
     private void handle(APIGetResourceAccountMsg msg) {
-        String sql = "select a, ref.resourceUuid" +
-                " from AccountResourceRefVO ref, AccountVO a" +
-                " where a.uuid = ref.accountUuid" +
-                " and ref.resourceUuid in (:uuids)";
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("uuids", msg.getResourceUuids());
-        List<Tuple> tuples = q.getResultList();
+        List<Tuple> tuples = Q.New(AccountResourceRefVO.class, AccountVO.class)
+                .table1()
+                    .selectThisTable()
+                    .eq(AccountVO_.uuid).table0(AccountResourceRefVO_.accountUuid)
+                .table0()
+                    .select(AccountResourceRefVO_.resourceUuid)
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                    .in(AccountResourceRefVO_.resourceUuid, msg.getResourceUuids())
+                .listTuple();
         Map<String, AccountInventory> ret = new HashMap<>();
         for (Tuple t : tuples) {
             String resUuid = t.get(1, String.class);
@@ -705,7 +707,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 // use native SQL instead of JPQL here,
                 // JPQL will join all sub-tables of ResourceVO, which
                 // exceeds the limit of max tables MySQL can join
-                List rvos = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceType from ResourceVO where uuid not in (select resourceUuid from AccountResourceRefVO)" +
+                List rvos = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceType from ResourceVO where uuid not in" +
+                        " (select resourceUuid from AccountResourceRefVO where type = 'Own')" +
                         " and resourceType in (:rtypes)")
                         .setParameter("rtypes", ResourceTypeMetadata.getAllBaseTypes().stream().map(Class::getSimpleName).collect(Collectors.toList()))
                         .getResultList();
@@ -815,12 +818,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             return null;
         }
 
-        sql = "select r.resourceUuid from AccountResourceRefVO r where r.accountUuid = :auuid" +
-                " and r.resourceType = :rtype";
-        TypedQuery<String> rq = dbf.getEntityManager().createQuery(sql, String.class);
-        rq.setParameter("auuid", accountUuid);
-        rq.setParameter("rtype", resourceType.getSimpleName());
-        List<String> ownResourceUuids = rq.getResultList();
+        List<String> ownResourceUuids = Q.New(AccountResourceRefVO.class)
+                .select(AccountResourceRefVO_.resourceUuid)
+                .eq(AccountResourceRefVO_.accountUuid, accountUuid)
+                .eq(AccountResourceRefVO_.resourceType, resourceType.getSimpleName())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .listValues();
 
         sql =   "select " +
                     "r.resourceUuid " +

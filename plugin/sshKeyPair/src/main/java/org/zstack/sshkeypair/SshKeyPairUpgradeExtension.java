@@ -12,6 +12,7 @@ import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.sshkeypair.*;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.identity.ResourceHelper;
 
 import javax.persistence.Tuple;
 import java.sql.Timestamp;
@@ -67,12 +68,7 @@ public class SshKeyPairUpgradeExtension implements Component {
 
             // NOTE(ywang): Check the ssh key pair was uploaded by the account
             String sshKeyPairUuid = null;
-            List<String> sshKeyPairUuids = Q.New(AccountResourceRefVO.class)
-                    .select(AccountResourceRefVO_.resourceUuid)
-                    .eq(AccountResourceRefVO_.accountUuid, accountUuid)
-                    .eq(AccountResourceRefVO_.resourceType, SshKeyPairVO.class.getSimpleName())
-                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
-                    .listValues();
+            List<String> sshKeyPairUuids = ResourceHelper.findOwnResourceUuidList(SshKeyPairVO.class, accountUuid);
             if (!sshKeyPairUuids.isEmpty()) {
                 sshKeyPairUuid = Q.New(SshKeyPairVO.class)
                         .select(SshKeyPairVO_.uuid)
