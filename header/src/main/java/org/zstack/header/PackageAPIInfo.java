@@ -17,6 +17,7 @@ public @interface PackageAPIInfo {
      */
     public static String PERMISSION_ZSV_BASIC_AVAILABLE = "zsv_basic_available";
     public static String PERMISSION_ZSV_ADVANCED_AVAILABLE = "zsv_advanced_available";
+    public static String PERMISSION_CLOUD_AIOS_AVAILABLE = "cloud_aios_available";
 
     String APICategoryName() default "";
 
