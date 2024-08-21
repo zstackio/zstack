@@ -7,7 +7,7 @@ doc {
 
     category "rbac"
 
-    desc """在这里填写API描述"""
+    desc """创建角色"""
 
     rest {
         request {
@@ -24,47 +24,47 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "角色名称"
 					location "body"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "角色的详细描述"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
-					name "statements"
+					name "policies"
 					enclosedIn "params"
-					desc ""
+					desc "角色初始的权限条目, 列表形式。可以是 '.header.image.APIAddImageMsg' 表示有该角色的账户能上传镜像"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
-					name "policyUuids"
+					name "baseOnRole"
 					enclosedIn "params"
-					desc ""
+					desc "新创建的角色基于哪个已存在角色的, 传入这个已存在角色的 UUID"
 					location "body"
-					type "List"
+					type "String"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "新创建的角色使用哪个UUID"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "systemTags"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "userTags"
@@ -82,16 +82,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
-				}
-				column {
-					name "identity"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "tagUuids"
@@ -100,7 +91,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.4.0"
+					since "4.10.0"
 				}
 			}
         }

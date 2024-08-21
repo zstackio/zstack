@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 public class RoleAccountRefVO_ {
     public static volatile SingularAttribute<RoleAccountRefVO, String> roleUuid;
     public static volatile SingularAttribute<RoleAccountRefVO, String> accountUuid;
+    public static volatile SingularAttribute<RoleAccountRefVO, String> accountPermissionFrom;
     public static volatile SingularAttribute<RoleAccountRefVO, Timestamp> createDate;
     public static volatile SingularAttribute<RoleAccountRefVO, Timestamp> lastOpDate;
 }

@@ -31,6 +31,7 @@ public interface AccountConstant {
 
     String LOGIN_TYPE = "account";
     String LOGIN_TYPE_AUTHENTICATIONS_KEY = "authentications";
+    String POLICY_BASE_PACKAGE = "org.zstack.";
 
     String NO_EXIST_ACCOUNT ="no-exist-account:::%s";
 

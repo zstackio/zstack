@@ -59,10 +59,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.identity.APIGetSupportedIdentityModelsMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.identity.APIGetResourceAccountMsg</name>
     </message>
 

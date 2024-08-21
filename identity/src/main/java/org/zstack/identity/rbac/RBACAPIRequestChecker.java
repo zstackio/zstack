@@ -6,7 +6,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.identity.rbac.RBACEntity;
 import org.zstack.header.identity.rbac.SuppressRBACCheck;
-import org.zstack.header.identity.role.RolePolicyStatementVO;
+import org.zstack.header.identity.role.RolePolicyVO;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -47,7 +47,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return policyMatcher.match(ap, msgName);
     }
 
-    protected List<RolePolicyStatementVO> getPoliciesForAPI() {
+    protected List<RolePolicyVO> getPoliciesForAPI() {
         return new ArrayList<>(); // TODO
     }
 
@@ -58,7 +58,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
      * 5. then deny by default
      */
     protected void check() {
-        List<RolePolicyStatementVO> policies = getPoliciesForAPI();
+        List<RolePolicyVO> policies = getPoliciesForAPI();
 
         if (evalAllowStatements(policies)) {
             // allowed
@@ -77,13 +77,13 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return CloudBusGson.toLogSafeJson(rbacEntity.getApiMessage());
     }
 
-    protected boolean evalAllowStatements(List<RolePolicyStatementVO> policies) {
+    protected boolean evalAllowStatements(List<RolePolicyVO> policies) {
         // TODO
         return true;
     }
 
     public Map<String, Boolean> evalAPIPermission(List<Class> classes, SessionInventory session) {
-        List<RolePolicyStatementVO> policies = getPoliciesForAPI();
+        List<RolePolicyVO> policies = getPoliciesForAPI();
         // TODO
         return new HashMap<>();
     }

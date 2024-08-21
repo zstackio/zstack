@@ -7,7 +7,7 @@ doc {
 
     category "rbac"
 
-    desc """在这里填写API描述"""
+    desc """删除角色"""
 
     rest {
         request {
@@ -24,20 +24,20 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn ""
-					desc "资源的UUID，唯一标示该资源"
+					desc "角色的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "deleteMode"
 					enclosedIn ""
-					desc ""
+					desc "删除模式。'Permissive' 是删除前检查模式, 如果这个角色还绑定着账户, 删除会失败; 'Enforcing' 是强制删除模式, 如果这个角色还绑定着账户，哪些账户自动解绑角色"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "userTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 			}
         }

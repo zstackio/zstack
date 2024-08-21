@@ -7,7 +7,7 @@ doc {
 
     category "rbac"
 
-    desc """在这里填写API描述"""
+    desc """解绑角色和账户"""
 
     rest {
         request {
@@ -24,47 +24,47 @@ doc {
 				column {
 					name "roleUuid"
 					enclosedIn ""
-					desc ""
+					desc "角色 UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "accountUuid"
 					enclosedIn ""
-					desc "账户UUID"
+					desc "账户 UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "deleteMode"
 					enclosedIn ""
-					desc ""
+					desc "删除模式, 当前 API 该字段无效"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 			}
         }
