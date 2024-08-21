@@ -7,6 +7,7 @@ import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshCmdHelper;
 import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
 
@@ -47,7 +48,7 @@ public class CallBackNetworkChecker implements AnsibleChecker {
      * if failed, use nmap to try again.
      */
     private ErrorCode useNcatAndNmapToTestConnection(Ssh ssh) {
-        String srcScript = script.format(password, callBackPort, callbackIp);
+        String srcScript = script.format(SshCmdHelper.shellQuote(password), callBackPort, callbackIp);
 
         SshResult ret = ssh.setExecTimeout(60).shell(srcScript).setTimeout(60).runAndClose();
         ret.raiseExceptionIfFailed();
