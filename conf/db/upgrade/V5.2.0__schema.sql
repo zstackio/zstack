@@ -128,3 +128,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`GuestVmScriptExecutedRecordDetailVO` (
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`AuditsVO` MODIFY COLUMN requestDump MEDIUMTEXT, MODIFY COLUMN responseDump MEDIUMTEXT;
+
+update EventSubscriptionVO set name = 'VM NIC IP Changed (GuestTools Is Required)' where uuid='98536fa94e3f4481a38331a989132b7c';
+update EventSubscriptionVO set name = 'NIC IP Configured in VM has been Occupied or in the Reserved Range (GuestTools Is Required)' where uuid='4a3494bcdbac4eaab9e9e56e27d74a2a';
