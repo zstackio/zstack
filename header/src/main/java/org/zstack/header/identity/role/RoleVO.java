@@ -8,7 +8,6 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table
@@ -19,55 +18,20 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String description;
     @Column
-    private String identity;
-    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
     @Column
     @Enumerated(EnumType.STRING)
-    private RoleState state = RoleState.Enabled;
-    @Column
-    @Enumerated(EnumType.STRING)
     private RoleType type;
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "roleUuid", insertable = false, updatable = false)
-    private Set<RolePolicyStatementVO> statements = new HashSet<>();
+    private Set<RolePolicyVO> policies = new HashSet<>();
 
     @Transient
     private String accountUuid;
 
-    public RoleVO copy() {
-        RoleVO vo = new RoleVO();
-        vo.name = name;
-        vo.uuid = UUID.randomUUID().toString().replace("-", "");
-        vo.state = RoleState.Enabled;
-        vo.description = description;
-        vo.type = type;
-        vo.identity = identity;
-        return vo;
-    }
-
     public RoleVO() {
-    }
-
-    protected RoleVO(RoleVO vo) {
-        this.name = vo.getName();
-        this.uuid = vo.getUuid();
-        this.state = vo.getState();
-        this.description = vo.getDescription();
-        this.type = vo.getType();
-        this.identity = vo.getIdentity();
-        this.createDate = vo.getCreateDate();
-        this.lastOpDate = vo.getLastOpDate();
-    }
-
-    public RoleState getState() {
-        return state;
-    }
-
-    public void setState(RoleState state) {
-        this.state = state;
     }
 
     @PreUpdate
@@ -85,12 +49,12 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
         this.accountUuid = accountUuid;
     }
 
-    public Set<RolePolicyStatementVO> getStatements() {
-        return statements;
+    public Set<RolePolicyVO> getPolicies() {
+        return policies;
     }
 
-    public void setStatements(Set<RolePolicyStatementVO> statements) {
-        this.statements = statements;
+    public void setPolicies(Set<RolePolicyVO> policies) {
+        this.policies = policies;
     }
 
     public RoleType getType() {
@@ -131,13 +95,5 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
-    }
-
-    public String getIdentity() {
-        return identity;
-    }
-
-    public void setIdentity(String identity) {
-        this.identity = identity;
     }
 }

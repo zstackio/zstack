@@ -1,40 +1,23 @@
 package org.zstack.header.identity.role;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.sql.Timestamp;
 
+/**
+ * RoleAccountRefVO: if account HAS this role;
+ * AccountResourceRefVO(resourceType='RoleVO'): if account OWN this role;
+ */
 @Table
 @Entity
-@IdClass(RoleAccountRefVO.CompositeID.class)
 public class RoleAccountRefVO {
-    static class CompositeID implements Serializable {
-        private String roleUuid;
-        private String accountUuid;
-
-        public String getRoleUuid() {
-            return roleUuid;
-        }
-
-        public void setRoleUuid(String roleUuid) {
-            this.roleUuid = roleUuid;
-        }
-
-        public String getAccountUuid() {
-            return accountUuid;
-        }
-
-        public void setAccountUuid(String accountUuid) {
-            this.accountUuid = accountUuid;
-        }
-    }
-
     @Id
+    private Long id;
     @Column
     private String roleUuid;
-    @Id
     @Column
     private String accountUuid;
+    @Column
+    private String accountPermissionFrom;
     @Column
     private Timestamp createDate;
     @Column
@@ -43,6 +26,14 @@ public class RoleAccountRefVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getRoleUuid() {
@@ -59,6 +50,14 @@ public class RoleAccountRefVO {
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public String getAccountPermissionFrom() {
+        return accountPermissionFrom;
+    }
+
+    public void setAccountPermissionFrom(String accountPermissionFrom) {
+        this.accountPermissionFrom = accountPermissionFrom;
     }
 
     public Timestamp getCreateDate() {

@@ -24,47 +24,56 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "updateRole"
-					desc "资源的UUID，唯一标示该资源"
+					desc "角色的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "name"
 					enclosedIn "updateRole"
-					desc "资源名称"
+					desc "角色名称"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "description"
 					enclosedIn "updateRole"
-					desc "资源的详细描述"
+					desc "角色的详细描述"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
-					name "statements"
+					name "createPolicies"
 					enclosedIn "updateRole"
-					desc "角色权限描述"
+					desc "为角色创建新的权限条目"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
-					name "policyUuids"
+					name "clearPoliciesBeforeUpdate"
 					enclosedIn "updateRole"
-					desc "角色权限uuid"
+					desc "是否在更新角色之前清理掉所有的角色权限条目"
+					location "body"
+					type "boolean"
+					optional true
+					since "4.10.0"
+				}
+				column {
+					name "deletePolicies"
+					enclosedIn "updateRole"
+					desc "删除角色已有的权限条目"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "systemTags"
@@ -73,7 +82,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "userTags"
@@ -82,7 +91,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 			}
         }

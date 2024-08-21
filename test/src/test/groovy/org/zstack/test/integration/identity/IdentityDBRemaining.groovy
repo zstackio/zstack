@@ -24,8 +24,8 @@ class IdentityDBRemaining extends AllowedDBRemaining {
         }
 
         table {
-            tableVOClass = RolePolicyStatementVO.class
-            checker = { List<RolePolicyStatementVO> vos ->
+            tableVOClass = RolePolicyVO.class
+            checker = { List<RolePolicyVO> vos ->
                 List<String> roleUuids = vos.collect { it.roleUuid }
 
                 return Q.New(RoleVO.class).notEq(RoleVO_.type, RoleType.Predefined)

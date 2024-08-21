@@ -1,11 +1,7 @@
 package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.identity.AccountVO;
-import org.zstack.header.identity.role.RoleStateEvent;
-import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 

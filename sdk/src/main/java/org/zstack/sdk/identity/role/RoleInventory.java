@@ -1,7 +1,6 @@
 package org.zstack.sdk.identity.role;
 
-import org.zstack.sdk.identity.role.RoleType;
-import org.zstack.sdk.identity.role.RoleState;
+
 
 public class RoleInventory  {
 
@@ -29,28 +28,12 @@ public class RoleInventory  {
         return this.description;
     }
 
-    public java.lang.String identity;
-    public void setIdentity(java.lang.String identity) {
-        this.identity = identity;
-    }
-    public java.lang.String getIdentity() {
-        return this.identity;
-    }
-
-    public RoleType type;
-    public void setType(RoleType type) {
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
         this.type = type;
     }
-    public RoleType getType() {
+    public java.lang.String getType() {
         return this.type;
-    }
-
-    public RoleState state;
-    public void setState(RoleState state) {
-        this.state = state;
-    }
-    public RoleState getState() {
-        return this.state;
     }
 
     public java.sql.Timestamp createDate;
@@ -69,12 +52,12 @@ public class RoleInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List statements;
-    public void setStatements(java.util.List statements) {
-        this.statements = statements;
+    public java.util.List policies;
+    public void setPolicies(java.util.List policies) {
+        this.policies = policies;
     }
-    public java.util.List getStatements() {
-        return this.statements;
+    public java.util.List getPolicies() {
+        return this.policies;
     }
 
 }

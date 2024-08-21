@@ -22,8 +22,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.quota.QuotaDefinition;
-import org.zstack.header.identity.role.RolePolicyStatementVO;
-import org.zstack.header.identity.role.RolePolicyStatementVO_;
+import org.zstack.header.identity.role.RolePolicyVO;
+import org.zstack.header.identity.role.RolePolicyVO_;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
@@ -278,8 +278,8 @@ public class AccountBase extends AbstractAccount {
                         .listValues();
 
                 if (!resourceUuids.isEmpty()) {
-                    sql(RolePolicyStatementVO.class)
-                            .in(RolePolicyStatementVO_.roleUuid, resourceUuids)
+                    sql(RolePolicyVO.class)
+                            .in(RolePolicyVO_.roleUuid, resourceUuids)
                             .delete();
 
                     sql(RoleVO.class)
