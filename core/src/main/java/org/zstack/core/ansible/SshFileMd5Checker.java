@@ -1,5 +1,6 @@
 package org.zstack.core.ansible;
 
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
@@ -33,7 +34,8 @@ public class SshFileMd5Checker implements AnsibleChecker {
         String destPath;
     }
 
-    public static final String ZSTACKLIB_SRC_PATH = PathUtil.findFileOnClassPath(String.format("ansible/zstacklib/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME), true).getAbsolutePath();
+    public static final String ZSTACKLIB_SRC_PATH = CoreGlobalProperty.UNIT_TEST_ON ? "/tmp" :
+            PathUtil.findFileOnClassPath(String.format("ansible/zstacklib/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME), true).getAbsolutePath();
 
     @Override
     public boolean needDeploy() {
@@ -47,9 +49,11 @@ public class SshFileMd5Checker implements AnsibleChecker {
                 String sourceFilePath = b.srcPath;
                 String destFilePath = b.destPath;
 
-                ssh.command(String.format("echo %s | sudo -S md5sum %s 2>/dev/null", password, destFilePath));
+                ssh.sudoCommand(String.format("md5sum %s 2>/dev/null", destFilePath));
                 SshResult ret = ssh.run();
                 if (ret.getReturnCode() != 0) {
+                    logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
+                            ret.getReturnCode(), ret.getStdout(), ret.getStderr()));
                     return true;
                 }
                 ssh.reset();
@@ -59,7 +63,7 @@ public class SshFileMd5Checker implements AnsibleChecker {
                 sret.raiseExceptionIfFail();
                 String srcMd5 = sret.getStdout().split(" ")[0];
                 if (!destMd5.equals(srcMd5)) {
-                    logger.debug(String.format("file MD5 changed, src[%s, md5:%s] dest[%s, md5, %s]", sourceFilePath,
+                    logger.debug(String.format("file MD5 changed, src[%s, md5:%s] dest[%s, md5: %s]", sourceFilePath,
                             srcMd5, destFilePath, destMd5));
                     return true;
                 }
@@ -75,10 +79,15 @@ public class SshFileMd5Checker implements AnsibleChecker {
     public void deleteDestFile() {
         for (SrcDestPair b : srcDestPairs) {
             String destFilePath = b.destPath;
+            if (!destFilePath.contains("zstack")) {
+                logger.debug(String.format("skip delete dest file[%s] which is not zstack file", destFilePath));
+                continue;
+            }
+
             Ssh ssh = new Ssh();
             ssh.setUsername(username).setPrivateKey(privateKey)
                     .setPassword(password).setPort(sshPort)
-                    .setHostname(targetIp).command(String.format("rm -f %s", destFilePath)).runAndClose();
+                    .setHostname(targetIp).sudoCommand(String.format("rm -f %s", destFilePath)).runAndClose();
             logger.debug(String.format("delete dest file[%s]", destFilePath));
         }
     }

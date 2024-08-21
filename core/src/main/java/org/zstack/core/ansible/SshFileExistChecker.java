@@ -1,15 +1,9 @@
 package org.zstack.core.ansible;
 
-import org.zstack.utils.ShellResult;
-import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  */
@@ -31,7 +25,7 @@ public class SshFileExistChecker implements AnsibleChecker {
                 .setHostname(targetIp)
                 .setTimeout(5);
         try {
-            ssh.command(String.format("echo %s | sudo -S stat %s 2>/dev/null", password, filePath));
+            ssh.sudoCommand(String.format("stat %s 2>/dev/null", filePath));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {
                 logger.debug(String.format("file not exist, file: %s", filePath));
