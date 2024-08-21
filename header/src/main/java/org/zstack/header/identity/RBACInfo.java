@@ -24,7 +24,7 @@ public class RBACInfo implements RBACDescription {
                         APIDetachRoleFromAccountMsg.class,
                         APICheckResourcePermissionMsg.class
                 )
-                .targetResources(AccountVO.class, PolicyVO.class, RoleVO.class)
+                .targetResources(AccountVO.class, RoleVO.class)
                 .communityAvailable()
                 .zsvBasicAvailable()
                 .zsvProAvailable()

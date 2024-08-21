@@ -12,10 +12,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.identity.APICreatePolicyMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.identity.APILogInByAccountMsg</name>
     </message>
 
@@ -25,10 +21,6 @@
     
     <message>
         <name>org.zstack.header.identity.APIValidateSessionMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIDeletePolicyMsg</name>
     </message>
 
     <message>
@@ -45,11 +37,6 @@
 
     <message>
         <name>org.zstack.header.identity.APIQueryAccountMsg</name>
-        <serviceId>query</serviceId>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIQueryPolicyMsg</name>
         <serviceId>query</serviceId>
     </message>
 

@@ -12,8 +12,6 @@ import java.util.List;
 
 @Inventory(mappingVOClass = AccountVO.class)
 @ExpandedQueries({
-        @ExpandedQuery(expandedField = "policy", inventoryClass = PolicyInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "accountUuid"),
         @ExpandedQuery(expandedField = "quota", inventoryClass = QuotaInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "identityUuid")
 })

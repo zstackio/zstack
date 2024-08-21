@@ -33,14 +33,6 @@ class AccountSpec extends Spec {
         roleNames.add(rname)
     }
 
-    void policy(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PolicySpec.class) Closure c) {
-        def spec = new PolicySpec(envSpec)
-        c.delegate = spec
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c()
-        addChild(spec)
-    }
-
     void role(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleSpec.class) Closure c) {
         def spec = new RoleSpec(envSpec)
         c.delegate = spec

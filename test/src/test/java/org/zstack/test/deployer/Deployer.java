@@ -67,7 +67,6 @@ public class Deployer {
     public Map<String, L3NetworkInventory> l3Networks = new HashMap<String, L3NetworkInventory>();
     public Map<String, VmInstanceInventory> vms = new HashMap<String, VmInstanceInventory>();
     public Map<String, AccountInventory> accounts = new HashMap<String, AccountInventory>();
-    public Map<String, PolicyInventory> polices = new HashMap<String, PolicyInventory>();
     public Map<String, SecurityGroupInventory> securityGroups = new HashMap<String, SecurityGroupInventory>();
     public Map<String, PortForwardingRuleInventory> portForwardingRules = new HashMap<String, PortForwardingRuleInventory>();
     public Map<String, EipInventory> eips = new HashMap<String, EipInventory>();

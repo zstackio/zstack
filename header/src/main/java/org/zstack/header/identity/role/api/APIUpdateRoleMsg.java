@@ -2,7 +2,6 @@ package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.PolicyStatement;
-import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIMessage;
@@ -27,12 +26,6 @@ public class APIUpdateRoleMsg extends APIMessage implements RoleMessage {
     @APIParam(maxLength = 2048, required = false)
     private String description;
     private List<PolicyStatement> statements;
-    @APIParam(resourceType = PolicyVO.class, required = false)
-    private List<String> policyUuids;
-
-    public List<String> getPolicyUuids() {
-        return policyUuids;
-    }
 
     public String getName() {
         return name;
@@ -58,10 +51,6 @@ public class APIUpdateRoleMsg extends APIMessage implements RoleMessage {
         this.statements = statements;
     }
 
-    public void setPolicyUuids(List<String> policyUuids) {
-        this.policyUuids = policyUuids;
-    }
-
     public String getUuid() {
         return uuid;
     }
@@ -74,7 +63,6 @@ public class APIUpdateRoleMsg extends APIMessage implements RoleMessage {
         APIUpdateRoleMsg msg = new APIUpdateRoleMsg();
         msg.setUuid(uuid());
         msg.setName("role-1");
-        msg.setPolicyUuids(Arrays.asList(uuid()));
         PolicyStatement policy = new PolicyStatement();
         policy.setEffect(StatementEffect.Allow);
         policy.setName("test role");

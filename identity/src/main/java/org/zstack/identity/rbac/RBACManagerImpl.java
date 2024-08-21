@@ -20,16 +20,13 @@ import org.zstack.header.identity.role.api.RoleMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.identity.IdentityResourceGenerateExtensionPoint;
-import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class RBACManagerImpl extends AbstractService implements RBACManager, Component, IdentityResourceGenerateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(RBACManagerImpl.class);
@@ -85,19 +82,6 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         new RoleBase(vo).handleMessage((Message) msg);
     }
 
-    static {
-        BeanUtils.reflections.getSubTypesOf(InternalPolicy.class).forEach(clz -> {
-            try {
-                InternalPolicy p = clz.getConstructor().newInstance();
-                internalPolices.addAll(p.getPolices());
-            } catch (CloudRuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new CloudRuntimeException(e);
-            }
-        });
-    }
-
     private void handleLocalMessage(Message msg) {
         bus.dealWithUnknownMessage(msg);
     }
@@ -113,28 +97,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     }
 
     private void handle(APICheckResourcePermissionMsg msg) {
-        APICheckResourcePermissionReply reply = new APICheckResourcePermissionReply();
-
-        List<RBAC.Permission> permissions = RBAC.permissions.stream().filter(p -> p.getTargetResources().stream().anyMatch(resource -> resource.getSimpleName().equals(msg.getResourceType()))).collect(Collectors.toList());
-
-        List<PolicyInventory> policies = RBACManager.getPoliciesByAPI(msg);
-        Map<PolicyInventory, List<PolicyStatement>> denyStatements = RBACManager.collectDenyStatements(policies);
-        Map<PolicyInventory, List<PolicyStatement>> allowStatements = RBACManager.collectAllowedStatements(policies);
-
-        List<String> apis = new ArrayList<>();
-        APIMessage.apiMessageClasses.forEach(apiClz -> {
-            boolean deny = denyStatements.values().stream().anyMatch(states -> states.stream().anyMatch(s -> s.getActions().stream().anyMatch(action -> matcher.match(PolicyUtils.apiNamePatternFromAction(action), apiClz.getName()))));
-            boolean allow = allowStatements.values().stream().anyMatch(states -> states.stream().anyMatch(s -> s.getActions().stream().anyMatch(action -> matcher.match(PolicyUtils.apiNamePatternFromAction(action), apiClz.getName()))));
-
-            boolean matched = permissions.stream().anyMatch(p -> p.getNormalPolicies().stream().anyMatch(api -> matcher.match(api, apiClz.getName())));
-
-            if (allow && !deny && matched) {
-                apis.add(apiClz.getSimpleName());
-            }
-        });
-
-        reply.setApis(apis);
-        bus.reply(msg, reply);
+        throw new CloudRuntimeException("APICheckResourcePermissionMsg not support now"); // TODO
     }
 
     private void handle(APICreateRoleMsg msg) {
@@ -173,15 +136,6 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                     });
                 }
 
-                if (msg.getPolicyUuids() != null) {
-                    msg.getPolicyUuids().forEach(puuid -> {
-                        RolePolicyRefVO ref = new RolePolicyRefVO();
-                        ref.setPolicyUuid(puuid);
-                        ref.setRoleUuid(roleUuid);
-                        persist(ref);
-                    });
-                }
-
                 vo = reload(vo);
 
                 evt.setInventory(RoleInventory.valueOf(vo));
@@ -207,11 +161,10 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
             @Override
             protected void scripts() {
                 RBAC.roles.stream().filter(RBAC.Role::isPredefine).forEach(role -> {
-                    if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
-                        SystemRoleVO rvo = new SystemRoleVO();
+                    if (!q(RoleVO.class).eq(RoleVO_.uuid, role.getUuid()).isExists()) {
+                        RoleVO rvo = new RoleVO();
                         rvo.setUuid(role.getUuid());
                         rvo.setName(String.format("predefined: %s", role.getName()));
-                        rvo.setSystemRoleType(role.isAdminOnly() ? SystemRoleType.Admin : SystemRoleType.Normal);
                         rvo.setType(RoleType.Predefined);
                         rvo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                         persist(rvo);

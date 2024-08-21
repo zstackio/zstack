@@ -55,3 +55,8 @@ INSERT INTO `AccountResourceRefVO`
         WHERE t.toPublic = 1;
 
 drop table `AccountResourceRefVODeprecated`;
+drop table `SystemRoleVO`;
+drop table `RolePolicyRefVO`;
+drop table `PolicyVO`;
+delete from `RoleVO`;
+delete from `ResourceVO` where resourceType in ('SystemRoleVO', 'RoleVO', 'PolicyVO');

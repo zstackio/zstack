@@ -3,8 +3,6 @@ package org.zstack.test.integration.identity.account
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmQuotaGlobalConfig
 import org.zstack.core.config.GlobalConfig
-import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.header.identity.AccountConstant
@@ -14,8 +12,6 @@ import org.zstack.header.identity.QuotaVO
 import org.zstack.header.identity.QuotaVO_
 import org.zstack.header.identity.SessionVO
 import org.zstack.header.identity.SessionVO_
-import org.zstack.header.identity.PolicyVO
-import org.zstack.header.identity.PolicyInventory
 import org.zstack.identity.QuotaGlobalConfig
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AccountInventory
@@ -80,7 +76,6 @@ class AccountCase extends SubCase {
             testQuotaConfig()
             testCheckPermission()
             testAPIOperationRenewSession()
-            testPolicyQuery()
         }
     }
 
@@ -343,24 +338,6 @@ class AccountCase extends SubCase {
             }
             testUpdateQuotaGlobalConfig(((GlobalConfig)f.get(null)).name)
         }
-    }
-
-    void testPolicyQuery() {
-        def noData = new PolicyVO(name: "", data: "", accountUuid: AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, uuid: Platform.uuid)
-        def emptyData = new PolicyVO(name: "", data: "[]", accountUuid: AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, uuid: Platform.uuid)
-
-        assert PolicyInventory.valueOf(new PolicyVO(data: "")).statements == null
-        assert PolicyInventory.valueOf(new PolicyVO(data: "[]")).statements.isEmpty()
-
-        def dbf = bean(DatabaseFacade.class)
-        dbf.persist(noData)
-        dbf.persist(emptyData)
-        def results = queryPolicy {} as List<PolicyInventory>
-        assert results.stream().anyMatch({it -> it.uuid == noData.uuid})
-        assert results.stream().anyMatch({it -> it.uuid == emptyData.uuid})
-
-        dbf.remove(noData)
-        dbf.remove(emptyData)
     }
 
     private testUpdateQuotaGlobalConfig(String configName){

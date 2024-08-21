@@ -59,12 +59,6 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="IAMIdentityResourceGenerator" class="org.zstack.identity.IAMIdentityResourceGenerator">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.identity.IdentityResourceGenerateExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
     <bean id="SystemIdentityResourceGenerator" class="org.zstack.identity.SystemIdentityResourceGenerator">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9998"/>

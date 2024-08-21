@@ -3,14 +3,12 @@ package org.zstack.test;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.config.APIListGlobalConfigReply;
 import org.zstack.core.config.GlobalConfigInventory;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -35,7 +33,6 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountResourceRefInventory;
-import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.QuotaInventory;
 import org.zstack.header.identity.SessionInventory;
@@ -1904,30 +1901,11 @@ public class Api implements CloudBusEventListener {
         return JSONObjectUtil.rehashObject(res.value.inventory, AccountInventory.class);
     }
 
-    public PolicyInventory createPolicy(String name, List<PolicyStatement> s, SessionInventory session) throws ApiSenderException {
-        CreatePolicyAction action = new CreatePolicyAction();
-        action.name = name;
-        action.statements = s;
-        action.sessionId = getSessionUuid(session);
-        CreatePolicyAction.Result res = action.call();
-        throwExceptionIfNeed(res.error);
-
-        return JSONObjectUtil.rehashObject(res.value.inventory, PolicyInventory.class);
-    }
-
     public void deleteAccount(String uuid, SessionInventory session) throws ApiSenderException {
         DeleteAccountAction action = new DeleteAccountAction();
         action.sessionId = getSessionUuid(session);
         action.uuid = uuid;
         DeleteAccountAction.Result res = action.call();
-        throwExceptionIfNeed(res.error);
-    }
-
-    public void deletePolicy(String uuid, SessionInventory session) throws ApiSenderException {
-        DeletePolicyAction action = new DeletePolicyAction();
-        action.sessionId = getSessionUuid(session);
-        action.uuid = uuid;
-        DeletePolicyAction.Result res = action.call();
         throwExceptionIfNeed(res.error);
     }
 
