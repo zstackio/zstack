@@ -2,7 +2,6 @@ package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.PolicyStatement;
-import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
@@ -19,18 +18,8 @@ public class APICreateRoleMsg extends APICreateMessage {
     @APIParam(maxLength = 2048, required = false)
     private String description;
     private List<PolicyStatement> statements;
-    @APIParam(resourceType = PolicyVO.class, required = false)
-    private List<String> policyUuids;
     @APIParam(required = false, maxLength = 255, emptyString = false)
     private String identity;
-
-    public List<String> getPolicyUuids() {
-        return policyUuids;
-    }
-
-    public void setPolicyUuids(List<String> policyUuids) {
-        this.policyUuids = policyUuids;
-    }
 
     public List<PolicyStatement> getStatements() {
         return statements;
@@ -67,7 +56,6 @@ public class APICreateRoleMsg extends APICreateMessage {
     public static APICreateRoleMsg __example__() {
         APICreateRoleMsg msg = new APICreateRoleMsg();
         msg.setName("role-1");
-        msg.setPolicyUuids(asList(uuid()));
 
         PolicyStatement statement = new PolicyStatement();
         statement.setEffect(StatementEffect.Allow);

@@ -95,6 +95,11 @@ insert into `AccountResourceRefVO`
         where t.toPublic = 1;
 
 drop table if exists `AccountResourceRefVODeprecated`;
+drop table if exists `SystemRoleVO`;
+drop table if exists `RolePolicyRefVO`;
+drop table if exists `PolicyVO`;
+delete from `RoleVO`;
+delete from `ResourceVO` where resourceType in ('SystemRoleVO', 'RoleVO', 'PolicyVO');
 
 -- Others
 

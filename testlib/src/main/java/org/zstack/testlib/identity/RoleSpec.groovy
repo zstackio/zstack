@@ -27,14 +27,6 @@ class RoleSpec extends Spec implements HasSession {
         return id(name, uuid)
     }
 
-    void policy(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value=PolicySpec.class) Closure c) {
-        PolicySpec spec = new PolicySpec(envSpec)
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c.delegate = spec
-        c()
-        addChild(spec)
-    }
-
     @Override
     void delete(String sessionId) {
         if (inventory != null) {

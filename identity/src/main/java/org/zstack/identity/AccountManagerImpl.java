@@ -451,14 +451,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 persist(vo);
                 reload(vo);
 
-                PolicyVO p = new PolicyVO();
-                p.setUuid(Platform.getUuid());
-                p.setAccountUuid(vo.getUuid());
-                p.setName("DEFAULT-READ");
-                p.setData(IAMIdentityResourceGenerator.readAPIsForNormalAccountJSONStatement);
-                persist(p);
-                reload(p);
-
                 List<Tuple> ts = Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.name, GlobalConfigVO_.value)
                         .eq(GlobalConfigVO_.category, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY).listTuple();
 
@@ -882,8 +874,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIUpdateAccountMsg) {
             validate((APIUpdateAccountMsg) msg);
-        } else if (msg instanceof APICreatePolicyMsg) {
-            validate((APICreatePolicyMsg) msg);
         } else if (msg instanceof APIShareResourceMsg) {
             validate((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
@@ -951,35 +941,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             throw new ApiMessageInterceptionException(argerr(
                     "toPublic is set to false, accountUuids cannot be null or empty"
             ));
-        }
-    }
-
-    private void validate(APICreatePolicyMsg msg) {
-        boolean sessionAccessToAdminActions = new CheckIfSessionCanOperationAdminPermission().check(msg.getSession());
-
-        for (PolicyStatement s : msg.getStatements()) {
-            if (s.getEffect() == null) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
-            }
-            if (s.getActions() == null) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
-            }
-            if (s.getActions().isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have a non-empty action field. Invalid statement[%s]",
-                                JSONObjectUtil.toJsonString(s)));
-            }
-
-            if (sessionAccessToAdminActions) {
-                continue;
-            }
-
-            if (s.getActions() != null) {
-                s.getActions().forEach(as -> {
-                    if (PolicyUtils.isAdminOnlyAction(as)) {
-                        throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only action polices[%s]", as));
-                    }
-                });
-            }
         }
     }
 
