@@ -36,12 +36,13 @@ public class SshYumRepoChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            ssh.command(String.format(
-                    "echo %s | sudo -S sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}:\\([0-9]\\+\\)/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
-                    password, restf.getHostName() + ":" + restf.getPort()
+            ssh.sudoCommand(String.format("sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}:\\([0-9]\\+\\)/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
+                    restf.getHostName() + ":" + restf.getPort()
             ));
             SshResult ret = ssh.setTimeout(60).runAndClose();
             if (ret.getReturnCode() != 0) {
+                logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
+                        ret.getReturnCode(), ret.getStdout(), ret.getStderr()));
                 return true;
             }
 

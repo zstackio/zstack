@@ -212,9 +212,20 @@ public class Ssh {
         return this;
     }
 
+    /**
+       make sure user has permissions or use sudoCommand
+    */
+    @Deprecated
     public Ssh command(String...cmds) {
         for (String cmd : cmds) {
             commands.add(createCommand(cmd));
+        }
+        return this;
+    }
+
+    public Ssh sudoCommand(String...cmds) {
+        for (String cmd : cmds) {
+            commands.add(createCommand(SshCmdHelper.wrapSudoCmd(cmd, username, password)));
         }
         return this;
     }
@@ -280,7 +291,7 @@ public class Ssh {
 
            @Override
            public String getCommandWithoutPassword() {
-               return cmd.replaceAll("echo .*?\\s*\\|\\s*sudo -S", "echo ****** | sudo -S");
+               return SshCmdHelper.removeSensitiveInfoFromCmd(cmd);
            }
        };
     }
