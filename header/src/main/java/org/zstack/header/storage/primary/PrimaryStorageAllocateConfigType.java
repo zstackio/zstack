@@ -7,7 +7,7 @@ public enum PrimaryStorageAllocateConfigType {
     LOCAL(DefaultPrimaryStorageAllocateConfig.class, "LocalStorage"),
     NFS(DefaultPrimaryStorageAllocateConfig.class, "NFS"),
     SHBK(DefaultPrimaryStorageAllocateConfig.class, "SharedBlock"),
-    Block(DefaultPrimaryStorageAllocateConfig.class, "Block"),
+    BlockStorage(DefaultPrimaryStorageAllocateConfig.class, "BlockStorage"),
     CEPH(CephPrimaryStorageAllocateConfig.class, "Ceph");
 
     private Class<? extends PrimaryStorageAllocateConfig> type;
