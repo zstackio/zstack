@@ -66,6 +66,9 @@ public class NetworkUtils {
     }
 
     public static boolean isHostname(String hostname) {
+        if (hostname == null) {
+            return false;
+        }
         String PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
         Pattern pattern = Pattern.compile(PATTERN);
         Matcher matcher = pattern.matcher(hostname);
@@ -73,6 +76,10 @@ public class NetworkUtils {
     }
 
     public static boolean isIpv4Address(String ip) {
+        if (ip == null) {
+            return false;
+        }
+
         String PATTERN =
                 "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
                         "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
