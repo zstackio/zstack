@@ -363,14 +363,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         evf.fire(HostCanonicalEvents.HOST_PHYSICAL_MEMORY_STATUS_ABNORMAL, cdata);
     }
 
-    void physicalGpuStatusAlarmEvent(HostPhysicalDeviceStatusAlarmEventCmd cmd) {
-        HostCanonicalEvents.HostPhysicalGpuStatusAbnormalData cdata = new HostCanonicalEvents.HostPhysicalGpuStatusAbnormalData();
-        cdata.setHostUuid(cmd.getHost());
-        cdata.setPcideviceAddress(cmd.getAdditionalProperties().get(KVMConstant.PCI_DEVICE_ADDRESS).toString());
-        cdata.setStatus(cmd.getAdditionalProperties().get(KVMConstant.PHSICAL_DEVICE_STATUS_NAME).toString());
-        evf.fire(HostCanonicalEvents.HOST_PHYSICAL_GPU_STATUS_ABNORMAL, cdata);
-    }
-
     void physicalPowerSupplyStatusAlarmEvent(HostPhysicalDeviceStatusAlarmEventCmd cmd) {
         HostCanonicalEvents.HostPhysicalPowerSupplyStatusAbnormalData cdata = new HostCanonicalEvents.HostPhysicalPowerSupplyStatusAbnormalData();
         cdata.setHostUuid(cmd.getHost());
@@ -583,7 +575,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                     physicalMemoryStatusAlarmEvent(cmd);
                     break;
                 case GPU:
-                    physicalGpuStatusAlarmEvent(cmd);
+                    for (KvmHardwareStatusHandlerExtensionPoint ext : pluginRgty.getExtensionList(KvmHardwareStatusHandlerExtensionPoint.class)) {
+                        ext.handleKvmHardwareStatus(HostHardware.GPU, cmd);
+                    }
                     break;
                 case POWERSUPPLY:
                     physicalPowerSupplyStatusAlarmEvent(cmd);
@@ -630,14 +624,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             cdata.setDetail(operr("host[uuid: %s] memory ecc triggered, detail: %s", cmd.host, cmd.detail));
             cdata.setHostUuid(cmd.host);
             evf.fire(HostCanonicalEvents.HOST_PHYSICAL_MEMORY_ECC_ERROR_TRIGGERED, cdata);
-            return null;
-        });
-
-        restf.registerSyncHttpCallHandler(KVMConstant.HOST_PHYSICAL_GPU_REMOVE_ALARM_EVENT, PhysicalGpuRemoveAlarmEventCmd.class, cmd -> {
-            HostCanonicalEvents.HostPhysicalGpuRemoveTriggeredData cdata = new HostCanonicalEvents.HostPhysicalGpuRemoveTriggeredData();
-            cdata.setHostUuid(cmd.host);
-            cdata.setPcideviceAddress(cmd.pcideviceAddress);
-            evf.fire(HostCanonicalEvents.HOST_PHYSICAL_GPU_REMOVE_TRIGGERED, cdata);
             return null;
         });
 
