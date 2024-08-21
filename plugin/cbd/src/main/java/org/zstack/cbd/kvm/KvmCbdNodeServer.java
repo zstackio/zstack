@@ -3,6 +3,7 @@ package org.zstack.cbd.kvm;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.cbd.AddonInfo;
+import org.zstack.cbd.CbdConstants;
 import org.zstack.cbd.MdsInfo;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -21,7 +22,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
 import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
@@ -67,8 +68,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
     @Override
     public String kvmSetupSelfFencerStorageType() {
-//        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_CBD_PROTOCOL_TYPE;
-        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE;
+        return VolumeProtocol.CBD.toString();
     }
 
     @Override

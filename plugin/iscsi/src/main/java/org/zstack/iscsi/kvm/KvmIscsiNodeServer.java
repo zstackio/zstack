@@ -1,7 +1,6 @@
 package org.zstack.iscsi.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -24,7 +23,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -196,7 +194,7 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
 
     @Override
     public String kvmSetupSelfFencerStorageType() {
-        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_ISCSI_PROTOCOL_TYPE;
+        return VolumeProtocol.iSCSI.toString();
     }
 
     @Override

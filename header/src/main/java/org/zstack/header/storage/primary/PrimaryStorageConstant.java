@@ -27,8 +27,6 @@ public interface PrimaryStorageConstant {
     String MIGRATE_VOLUME_COPY_STAGE = "10-90";
     String MIGRATE_VOLUME_CHECK_MD5_STAGE = "90-100";
     String EXTERNAL_PRIMARY_STORAGE_TYPE = "Addon";
-    String EXTERNAL_PRIMARY_STORAGE_ISCSI_PROTOCOL_TYPE = "Addon-iSCSI";
-    String EXTERNAL_PRIMARY_STORAGE_CBD_PROTOCOL_TYPE = "Addon-CBD";
 
     enum AllocatorParams {
         SPEC,
