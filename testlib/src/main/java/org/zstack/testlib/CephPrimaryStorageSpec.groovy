@@ -466,6 +466,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.ROLLBACK_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.RollbackSnapshotCmd.class)
+                assert cmd.capacityThreshold > 0
                 return new CephPrimaryStorageBase.RollbackSnapshotRsp()
             }
 
