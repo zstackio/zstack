@@ -223,7 +223,6 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.Quota$QuotaUsage", "org.zstack.sdk.QuotaUsage");
 			put("org.zstack.header.identity.QuotaInventory", "org.zstack.sdk.QuotaInventory");
 			put("org.zstack.header.identity.SessionInventory", "org.zstack.sdk.SessionInventory");
-			put("org.zstack.header.identity.SharedResourceInventory", "org.zstack.sdk.SharedResourceInventory");
 			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.login.LoginAuthenticationProcedureDesc", "org.zstack.sdk.LoginAuthenticationProcedureDesc");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
@@ -1139,7 +1138,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SharedBlockState", "org.zstack.storage.primary.sharedblock.SharedBlockState");
 			put("org.zstack.sdk.SharedBlockStatus", "org.zstack.storage.primary.sharedblock.SharedBlockStatus");
 			put("org.zstack.sdk.SharedBlockType", "org.zstack.storage.primary.sharedblock.SharedBlockType");
-			put("org.zstack.sdk.SharedResourceInventory", "org.zstack.header.identity.SharedResourceInventory");
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.ShrinkResult", "org.zstack.header.storage.snapshot.ShrinkResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");

@@ -28,8 +28,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.identity.SharedResourceVO;
-import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.image.*;
 import org.zstack.header.image.GetImageEncryptedReply;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
@@ -39,6 +37,7 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -51,8 +50,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -333,7 +331,7 @@ public class ImageBase implements Image {
                         if (count == 0) {
                             // the image is expunged on all backup storage
                             sql(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).delete();
-                            sql(SharedResourceVO.class).eq(SharedResourceVO_.resourceUuid, msg.getImageUuid()).delete();
+                            ResourceHelper.cleanShareRecords(msg.getImageUuid());
 
                             logger.debug(String.format("the image[uuid:%s, name:%s] has been expunged on all backup storage, remove it from database",
                                     self.getUuid(), self.getName()));

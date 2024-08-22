@@ -5,8 +5,10 @@ import org.zstack.core.cloudbus.EventCallback
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
+import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountConstant
-import org.zstack.header.identity.SharedResourceVO
+import org.zstack.header.identity.AccountResourceRefVO
+import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.vm.VmCanonicalEvents
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceState
@@ -16,7 +18,6 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.sdk.*
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
-import org.zstack.storage.primary.local.LocalStoragePrimaryStorageGlobalConfig
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -147,7 +148,9 @@ class LiveMigrateVmCase extends SubCase {
             assert !cmd.installUrl.contains(account.uuid)
         }
 
-        SQL.New(SharedResourceVO.class).hardDelete()
+        SQL.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                .hardDelete()
     }
 
     void testPausedVmStateAfterMigrate() {

@@ -19,7 +19,6 @@ public class RBACInfo implements RBACDescription {
                         APIShareResourceMsg.class,
                         APIRevokeResourceSharingMsg.class,
                         APIUpdateQuotaMsg.class,
-                        APIQuerySharedResourceMsg.class,
                         APIChangeResourceOwnerMsg.class,
                         APIAttachRoleToAccountMsg.class,
                         APIDetachRoleFromAccountMsg.class,

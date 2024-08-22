@@ -472,10 +472,8 @@ public class ZQL {
                         "left join AccountResourceRefVO ar on r.uuid=ar.resourceUuid " +
                         "where ar.accountUuid is Null and r.uuid in :uuids "+
                         "or r.uuid in (select ref.resourceUuid from AccountResourceRefVO ref where" +
-                        " (ref.accountUuid = :accountUuid and ref.type = 'Own' " +
-                        " or ref.resourceUuid in" +
-                        " (select sh.resourceUuid from SharedResourceVO sh where (sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1))) " +
-                        "and ref.resourceUuid in (:uuids))");
+                        " ((ref.accountUuid = :accountUuid or ref.type = 'SharePublic') " +
+                        "and ref.resourceUuid in (:uuids)))");
                 q.setParameter("uuids", resourceUuids);
                 q.setParameter("accountUuid", accountUuid);
                 List<Object[]> objs = q.getResultList();

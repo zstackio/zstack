@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -31,7 +30,7 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.ResourceSharingExtensionPoint;
-import org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint;
+import org.zstack.identity.header.ShareResourceContext;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -54,7 +53,6 @@ import javax.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
@@ -781,17 +779,15 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     @Override
-    public List<String> beforeResourceSharingExtensionPoint(Map<String, String> uuidType) {
-        List<String> additionUuids = new ArrayList<>();
-        for (String uuid : uuidType.keySet()) {
-            if (L3NetworkVO.class.getSimpleName().equals(uuidType.get(uuid))) {
-                additionUuids.addAll(Q.New(IpRangeVO.class).select(IpRangeVO_.uuid).eq(IpRangeVO_.l3NetworkUuid, uuid).listValues());
+    public void beforeSharingResource(ShareResourceContext context) {
+        // TODO: L3 and IpRange add to resource ensemble soon
+        context.uuidResourceMap.forEach((uuid, resourceVO) -> {
+            if (!L3NetworkVO.class.getSimpleName().equals(resourceVO.getResourceType())) {
+                return;
             }
-        }
-        return additionUuids;
-    }
 
-    @Override
-    public void afterResourceSharingExtensionPoint(Map<String, String> uuidType, List<String> accountUuids, boolean isToPublic) {
+            context.additionResources(list(resourceVO), uuid);
+            context.additionResources(Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, uuid).list(), uuid);
+        });
     }
 }

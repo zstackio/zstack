@@ -99,7 +99,9 @@ public class DBGraph {
                     continue;
                 }
 
-                String primaryKey = vertex.previous != null ? vertex.previous.dstKey : EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
+                String primaryKey = vertex.previous != null ?
+                        EntityMetadata.getPrimaryKeyField(vertex.previous.entityClass).getName() :
+                        EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
                 return String.format("select %s.%s from %s where %s", entity, primaryKey,
                         StringUtils.join(from, ", "),
                         StringUtils.join(conditions, " and "));
