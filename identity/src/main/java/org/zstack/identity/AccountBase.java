@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -34,7 +33,6 @@ import org.zstack.identity.header.ShareResourceContext;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -267,10 +265,6 @@ public class AccountBase extends AbstractAccount {
                         .eq(QuotaVO_.identityUuid, self.getUuid())
                         .delete();
 
-                sql(PolicyVO.class)
-                        .eq(PolicyVO_.accountUuid, self.getUuid())
-                        .delete();
-
                 sql(AccountResourceRefVO.class)
                         .eq(AccountResourceRefVO_.accountUuid, self.getUuid())
                         .eq(AccountResourceRefVO_.type, AccessLevel.Share)
@@ -305,10 +299,6 @@ public class AccountBase extends AbstractAccount {
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIUpdateAccountMsg) {
             handle((APIUpdateAccountMsg) msg);
-        } else if (msg instanceof APICreatePolicyMsg) {
-            handle((APICreatePolicyMsg) msg);
-        } else if (msg instanceof APIDeletePolicyMsg) {
-            handle((APIDeletePolicyMsg) msg);
         } else if (msg instanceof APIShareResourceMsg) {
             handle((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
@@ -555,40 +545,6 @@ public class AccountBase extends AbstractAccount {
         }.execute();
 
         APIShareResourceEvent evt = new APIShareResourceEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    private void handle(APIDeletePolicyMsg msg) {
-        dbf.removeByPrimaryKey(msg.getUuid(), PolicyVO.class);
-        APIDeletePolicyEvent evt = new APIDeletePolicyEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    private void handle(APICreatePolicyMsg msg) {
-        PolicyVO pvo = new PolicyVO();
-        if (msg.getResourceUuid() != null) {
-            pvo.setUuid(msg.getResourceUuid());
-        } else {
-            pvo.setUuid(Platform.getUuid());
-        }
-        pvo.setAccountUuid(self.getUuid());
-        pvo.setName(msg.getName());
-        pvo.setData(JSONObjectUtil.toJsonString(msg.getStatements()));
-        pvo.setType(PolicyType.Customized);
-
-        PolicyVO finalPvo = pvo;
-        pvo = new SQLBatchWithReturn<PolicyVO>() {
-            @Override
-            protected PolicyVO scripts() {
-                persist(finalPvo);
-                reload(finalPvo);
-                return finalPvo;
-            }
-        }.execute();
-
-        PolicyInventory pinv = PolicyInventory.valueOf(pvo);
-        APICreatePolicyEvent evt = new APICreatePolicyEvent(msg.getId());
-        evt.setInventory(pinv);
         bus.publish(evt);
     }
 }

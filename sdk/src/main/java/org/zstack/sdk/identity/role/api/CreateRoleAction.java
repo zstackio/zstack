@@ -34,9 +34,6 @@ public class CreateRoleAction extends AbstractAction {
     @Param(required = false)
     public java.util.List statements;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List policyUuids;
-
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String identity;
 
