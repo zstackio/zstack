@@ -5,8 +5,10 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.role.RoleAccountRefVO;
 import org.zstack.header.identity.role.RoleAccountRefVO_;
+import org.zstack.header.identity.role.RolePolicyChecker;
 import org.zstack.header.identity.role.RolePolicyStatement;
 import org.zstack.header.identity.role.RoleType;
 import org.zstack.header.identity.role.RoleVO;
@@ -29,6 +31,8 @@ import static org.zstack.utils.CollectionDSL.list;
 public class RBACApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private List<RolePolicyChecker> policyCheckers = new ArrayList<>();
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -95,6 +99,13 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("invalid role policy: " + policy));
             }
             results.add(result);
+        }
+
+        for (RolePolicyChecker checker : policyCheckers) {
+            final ErrorCode errorCode = checker.checkRolePolicies(results);
+            if (errorCode != null) {
+                throw new ApiMessageInterceptionException(errorCode);
+            }
         }
 
         return results;
