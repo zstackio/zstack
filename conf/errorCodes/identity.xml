@@ -60,5 +60,10 @@
         <id>2003</id>
         <description>Fail to authenticate a user due to remote authentication server error</description>
     </code>
+
+    <code>
+        <id>3001</id>
+        <description>Invalid Role Policy</description>
+    </code>
 </error>
 

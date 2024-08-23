@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.PolicyMatcher;
@@ -24,8 +25,13 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class RBACManagerImpl extends AbstractService implements RBACManager, Component, PrepareDbInitialValueExtensionPoint {
+import static org.zstack.core.Platform.err;
+
+public class RBACManagerImpl extends AbstractService implements
+        RBACManager, Component, PrepareDbInitialValueExtensionPoint, RolePolicyChecker {
     private static final CLogger logger = Utils.getLogger(RBACManagerImpl.class);
 
     private static PolicyMatcher matcher = new PolicyMatcher();
@@ -139,5 +145,23 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 });
             }
         }.execute();
+    }
+
+    @Override
+    public ErrorCode checkRolePolicies(List<RolePolicyStatement> policies) {
+        Pattern pattern = Pattern.compile("^[a-zA-Z0-9._]+$");
+
+        for (RolePolicyStatement policy : policies) {
+            for (String action : policy.actions) {
+                String path = action.endsWith("**") ? action.substring(0, action.length() - 2) :
+                        action.endsWith("*") ? action.substring(0, action.length() - 1) : action;
+                Matcher m = pattern.matcher(path);
+                if (!m.matches() || path.contains("..")) {
+                    return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
+                }
+            }
+        }
+
+        return null;
     }
 }
