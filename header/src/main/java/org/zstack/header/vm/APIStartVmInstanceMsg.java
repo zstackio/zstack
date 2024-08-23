@@ -46,7 +46,7 @@ public class APIStartVmInstanceMsg extends APIMessage implements VmInstanceMessa
     /**
      * @desc vm uuid
      */
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
 
     @APIParam(resourceType = ClusterVO.class, required = false)

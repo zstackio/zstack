@@ -414,6 +414,7 @@ public class RBAC {
             return this;
         }
 
+        @Deprecated
         public PermissionBuilder targetResources(Class...clzs) {
             for (Class clz : clzs) {
                 permission.getTargetResources().add(clz);

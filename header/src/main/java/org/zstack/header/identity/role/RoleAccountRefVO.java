@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 @Entity
 public class RoleAccountRefVO {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column
     private String roleUuid;

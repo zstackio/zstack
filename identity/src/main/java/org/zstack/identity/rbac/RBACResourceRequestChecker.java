@@ -17,6 +17,7 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
 import org.zstack.identity.APIRequestChecker;
+import org.zstack.identity.Account;
 
 import javax.persistence.Tuple;
 import java.util.*;
@@ -26,7 +27,7 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.header.errorcode.SysErrors.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class OperationTargetAPIRequestChecker implements APIRequestChecker {
+public class RBACResourceRequestChecker implements APIRequestChecker {
     protected RBACEntity rbacEntity;
 
     @Override
@@ -90,7 +91,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
     }
 
     private void check() {
-        if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(rbacEntity.getApiMessage().getSession().getAccountUuid())) {
+        if (Account.isAdminPermission(rbacEntity.getApiMessage().getSession())) {
             return;
         }
 
@@ -263,12 +264,6 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
         }
 
         Class<?> resourceType = param.param.resourceType()[0];
-
-        // TODO: RBACInfo.targetResources will be replaced by "APIParam.scope" soon
-        RBAC.Permission info = getRBACInfo();
-        if (info.getTargetResources().stream().anyMatch(resourceType::isAssignableFrom)) {
-            return APIResourceScope.MustOwner;
-        }
 
         if (param.param.noOwnerCheck()) {
             return APIResourceScope.AllowedAll;

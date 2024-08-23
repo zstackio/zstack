@@ -137,7 +137,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
 
     @Override
     public void beforeQueryExtensionPoint(List<Class> queryTargetInventoryClass, SessionInventory session) {
-        if (session == null) {
+        if (session == null || Account.isAdminPermission(session)) {
             return;
         }
 
