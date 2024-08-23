@@ -27,6 +27,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.utils.*;
@@ -77,6 +78,7 @@ public class Platform {
 
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
     public static final String FAKE_UUID = "THIS_IS_A_FAKE_UUID";
+    public static final String BASE_PACKAGE_NAME = AccountConstant.POLICY_BASE_PACKAGE;
 
     private static final Map<String, String> globalProperties = new HashMap<String, String>();
 
