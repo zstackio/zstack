@@ -67,6 +67,7 @@ import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
@@ -619,7 +620,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         List<String> l3UuidListOfCurrentAccount;
-        if (!AccountConstant.isAdminPermission(accountUuid)) {
+        if (!Account.isAdminPermission(accountUuid)) {
             l3UuidListOfCurrentAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
         } else {
             l3UuidListOfCurrentAccount = null;
