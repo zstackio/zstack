@@ -40,16 +40,26 @@ public interface AccountConstant {
     // login property accountType
     String ACCOUNT_TYPE = "accountType";
 
+    /**
+     * account has SystemAdmin type also have admin permission,
+     * but this method only check "admin" account.
+     *
+     * use Account.isAdminPermission(SessionInventory)
+     */
+    @Deprecated
     static boolean isAdminPermission(SessionInventory session) {
         return isAdminPermission(session.getAccountUuid());
     }
 
+    /**
+     * account has SystemAdmin type also have admin permission,
+     * but this method only check "admin" account.
+     *
+     * use Account.isAdminPermission(String)
+     */
+    @Deprecated
     static boolean isAdminPermission(String accountUuid) {
         return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
-    }
-
-    static boolean isAdmin(SessionInventory session) {
-        return INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid()) && INITIAL_SYSTEM_ADMIN_UUID.equals(session.getUserUuid());
     }
 
     enum Principal {

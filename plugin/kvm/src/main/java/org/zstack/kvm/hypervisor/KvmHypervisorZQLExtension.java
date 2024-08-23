@@ -1,10 +1,10 @@
 package org.zstack.kvm.hypervisor;
 
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
 import org.zstack.header.zql.RestrictByExprExtensionPoint;
 import org.zstack.header.zql.ZQLExtensionContext;
+import org.zstack.identity.Account;
 import org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory;
 import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ast.ZQLMetadata;
@@ -36,7 +36,7 @@ public class KvmHypervisorZQLExtension implements MarshalZQLASTTreeExtensionPoin
     }
 
     protected String filterResourceOwner(ZQLExtensionContext context) {
-        if (AccountConstant.isAdminPermission(context.getAPISession())) {
+        if (Account.isAdminPermission(context.getAPISession())) {
             throw new SkipThisRestrictExprException();
         }
 
