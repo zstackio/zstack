@@ -3,13 +3,12 @@ package org.zstack.kvm.xmlhook;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.util.StringUtils;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -25,6 +24,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.CheckAndStartVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.CollectionUtils;
 
 import java.util.*;
@@ -176,9 +176,13 @@ public class XmlHookBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                List<String> vmUuids = Q.New(XmlHookVmInstanceRefVO.class)
-                        .select(XmlHookVmInstanceRefVO_.vmInstanceUuid)
-                        .eq(XmlHookVmInstanceRefVO_.xmlHookUuid, msg.getXmlHookUuid()).listValues();
+                List<String> vmUuids = SQL.New("select vm.uuid from XmlHookVmInstanceRefVO ref, VmInstanceVO vm" +
+                                " where ref.xmlHookUuid = :hookUuid" +
+                                " and ref.vmInstanceUuid = vm.uuid" +
+                                " and vm.state in (:vmStates)")
+                        .param("hookUuid", msg.getXmlHookUuid())
+                        .param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                        .list();
                 if (CollectionUtils.isEmpty(vmUuids)) {
                     trigger.next();
                     return;
