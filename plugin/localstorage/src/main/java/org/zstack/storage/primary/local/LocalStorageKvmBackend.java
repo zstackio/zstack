@@ -3672,7 +3672,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void checkHostAttachedPSMountPath(String hostUuid, Completion completion) {
+    void checkHostAttachedPSMountPath(String hostUuid, ReturnValueCompletion<CheckInitializedFileRsp> completion) {
         CheckInitializedFileCmd cmd = new CheckInitializedFileCmd();
         cmd.uuid = self.getUuid();
         cmd.filePath = makeInitializedFilePath();
@@ -3683,10 +3683,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success(CheckInitializedFileRsp rsp) {
                 if (!rsp.existed) {
-                    completion.fail(operr("cannot find flag file [%s] on host [%s], it might not mount correct path", makeInitializedFilePath(), hostUuid));
-                } else {
-                    completion.success();
+                    rsp.setError(String.format("cannot find flag file [%s] on host [%s], it might not mount correct path", makeInitializedFilePath(), hostUuid));
                 }
+                completion.success(rsp);
             }
 
             @Override
