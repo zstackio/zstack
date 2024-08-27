@@ -1,58 +1,53 @@
 package org.zstack.header.identity.role
 
-import org.zstack.header.identity.role.RoleType
-import java.sql.Timestamp
-import java.sql.Timestamp
-import org.zstack.header.identity.role.RolePolicyStatementInventory
-
 doc {
 
-	title "在这里输入结构的名称"
+	title "角色清单"
 
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
 		type "String"
-		since "0.6"
+		since "4.10.0"
 	}
 	field {
 		name "name"
-		desc "资源名称"
+		desc "角色名称"
 		type "String"
-		since "0.6"
+		since "4.10.0"
 	}
 	field {
 		name "description"
-		desc "资源的详细描述"
+		desc "角色的详细描述"
 		type "String"
-		since "0.6"
+		since "4.10.0"
 	}
 	ref {
 		name "type"
 		path "org.zstack.header.identity.role.RoleInventory.type"
-		desc "null"
+		desc "角色类型, 系统预定义的为 Predefined, 自定义的为 Customized"
 		type "RoleType"
-		since "0.6"
+		since "4.10.0"
 		clz RoleType.class
 	}
 	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
-		since "0.6"
+		since "4.10.0"
 	}
 	field {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
-		since "0.6"
+		since "4.10.0"
 	}
 	ref {
-		name "statements"
-		path "org.zstack.header.identity.role.RoleInventory.statements"
-		desc "null"
+		name "policies"
+		path "org.zstack.header.identity.role.RoleInventory.policies"
+		desc "角色权限条目, 字符串列表格式"
 		type "List"
-		since "0.6"
-		clz RolePolicyStatementInventory.class
+		since "4.10.0"
+		clz String.class
 	}
 }

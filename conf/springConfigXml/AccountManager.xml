@@ -37,7 +37,8 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.Service"/>
-            <zstack:extension interface="org.zstack.identity.IdentityResourceGenerateExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.identity.role.RolePolicyChecker"/>
         </zstack:plugin>
     </bean>
 
@@ -56,12 +57,6 @@
     <bean id="AccountLoginBackend" class="org.zstack.identity.AccountLoginBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.identity.login.LoginBackend"/>
-        </zstack:plugin>
-    </bean>
-
-    <bean id="SystemIdentityResourceGenerator" class="org.zstack.identity.SystemIdentityResourceGenerator">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9998"/>
         </zstack:plugin>
     </bean>
 
@@ -102,7 +97,6 @@
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
-    <bean id = "RoleUtils" class="org.zstack.identity.rbac.RoleUtils"/>
 
     <bean id="AccountQuotaUpdateChecker" class="org.zstack.identity.AccountQuotaUpdateChecker"/>
 

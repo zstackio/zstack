@@ -41,9 +41,7 @@ import org.zstack.header.rest.RestAuthenticationBackend;
 import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
 import org.zstack.header.vo.*;
-import org.zstack.identity.rbac.PolicyUtils;
 import org.zstack.utils.*;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
@@ -210,17 +208,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIIsOpensourceVersionMsg) msg);
         } else if (msg instanceof APIRenewSessionMsg) {
             handle((APIRenewSessionMsg) msg);
-        } else if (msg instanceof APIGetSupportedIdentityModelsMsg) {
-            handle((APIGetSupportedIdentityModelsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(APIGetSupportedIdentityModelsMsg msg) {
-        APIGetSupportedIdentityModelsReply reply = new APIGetSupportedIdentityModelsReply();
-        reply.setConfigs(Arrays.asList(IdentityGlobalProperty.IDENTITY_INIT_TYPE.split(",")));
-        bus.reply(msg, reply);
     }
 
     private void handle(APIIsOpensourceVersionMsg msg) {

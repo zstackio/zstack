@@ -4,6 +4,8 @@ public enum RoleType {
     System,
     Customized,
     Predefined,
+    @Deprecated
     CreatedBySystem,
+    @Deprecated
     PredefinedBySystem
 }

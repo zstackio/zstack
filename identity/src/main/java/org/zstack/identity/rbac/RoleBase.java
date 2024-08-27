@@ -3,18 +3,25 @@ package org.zstack.identity.rbac;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.Platform;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.utils.gson.JSONObjectUtil;
+
+import javax.persistence.Tuple;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class RoleBase implements Role {
@@ -22,10 +29,6 @@ public class RoleBase implements Role {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private PluginRegistry pluginRgty;
-    @Autowired
-    private RoleUtils roleUtils;
 
     protected RoleVO self;
 
@@ -66,53 +69,20 @@ public class RoleBase implements Role {
     }
 
     private void handle(APIUpdateRoleMsg msg) {
+        updateRole(RoleSpec.valueOf(msg));
+
+        self = dbf.findByUuid(self.getUuid(), RoleVO.class);
         APIUpdateRoleEvent evt = new APIUpdateRoleEvent(msg.getId());
-        RoleInventory inv = new SQLBatchWithReturn<RoleInventory>() {
-            @Override
-            protected RoleInventory scripts() {
-                boolean updated = false;
-
-                self = findByUuid(self.getUuid(), RoleVO.class);
-
-                if (msg.getName() != null) {
-                    self.setName(msg.getName());
-                    updated = true;
-                }
-
-                if (msg.getDescription() != null) {
-                    self.setDescription(msg.getDescription());
-                    updated = true;
-                }
-
-                if (updated) {
-                    merge(self);
-                    self = reload(self);
-                }
-
-                if (msg.getStatements() != null) {
-                    sql(RolePolicyStatementVO.class).eq(RolePolicyStatementVO_.roleUuid, msg.getRoleUuid()).delete();
-
-                    msg.getStatements().forEach(s -> {
-                        RolePolicyStatementVO pvo = new RolePolicyStatementVO();
-                        pvo.setRoleUuid(msg.getRoleUuid());
-                        pvo.setUuid(Platform.getUuid());
-                        pvo.setStatement(JSONObjectUtil.toJsonString(s));
-                        persist(pvo);
-                    });
-                }
-
-                flush();
-                self = reload(self);
-                return RoleInventory.valueOf(self);
-            }
-        }.execute();
-        evt.setInventory(inv);
+        evt.setInventory(RoleInventory.valueOf(self));
         bus.publish(evt);
     }
 
     private void handle(APIDetachRoleFromAccountMsg msg) {
-        SQL.New(RoleAccountRefVO.class).eq(RoleAccountRefVO_.accountUuid, msg.getAccountUuid())
-                .eq(RoleAccountRefVO_.roleUuid, msg.getRoleUuid()).hardDelete();
+        SQL.New(RoleAccountRefVO.class)
+                .eq(RoleAccountRefVO_.accountUuid, msg.getAccountUuid())
+                .eq(RoleAccountRefVO_.roleUuid, msg.getRoleUuid())
+                .isNull(RoleAccountRefVO_.accountPermissionFrom)
+                .delete();
 
         APIDetachRoleFromAccountEvent evt = new APIDetachRoleFromAccountEvent(msg.getId());
         bus.publish(evt);
@@ -127,7 +97,95 @@ public class RoleBase implements Role {
     }
 
     private void handle(APIDeleteRoleMsg msg) {
-        roleUtils.deleteRole(msg.getUuid());
+        SQL.New(RoleVO.class).eq(RoleVO_.uuid, self.getUuid()).hardDelete();
+        SQL.New(RolePolicyVO.class).eq(RolePolicyVO_.roleUuid, self.getUuid()).hardDelete();
         bus.publish(new APIDeleteRoleEvent(msg.getId()));
+    }
+
+    @Transactional
+    private void updateRole(RoleSpec spec) {
+        updateRoleNameDescription(spec);
+
+        if (spec.isClearPoliciesBeforeUpdate()) {
+            SQL.New(RolePolicyVO.class)
+                    .eq(RolePolicyVO_.roleUuid, spec.getUuid())
+                    .delete();
+            spec.getPoliciesToDelete().clear();
+        }
+
+        if (!spec.getPoliciesToDelete().isEmpty() || !spec.getPoliciesToCreate().isEmpty()) {
+            updateRolePolicy(spec);
+        }
+    }
+
+    private void updateRoleNameDescription(RoleSpec spec) {
+        final UpdateQuery sql = SQL.New(RoleVO.class).eq(RoleVO_.uuid, spec.getUuid());
+        boolean updated = false;
+
+        if (spec.getName() != null) {
+            sql.set(RoleVO_.name, spec.getName());
+            sql.set(RoleVO_.resourceName, spec.getName());
+            updated = true;
+        }
+        if (spec.getDescription() != null) {
+            sql.set(RoleVO_.description, spec.getDescription());
+            updated = true;
+        }
+        if (updated) {
+            sql.update();
+        }
+    }
+
+    private void updateRolePolicy(RoleSpec spec) {
+        Set<Long> idNeedDelete = new HashSet<>();
+        List<RolePolicyVO> policiesNeedCreate = new ArrayList<>();
+
+        List<Tuple> tupleList = Q.New(RolePolicyVO.class)
+                .eq(RolePolicyVO_.roleUuid, spec.getUuid())
+                .select(RolePolicyVO_.id, RolePolicyVO_.actions, RolePolicyVO_.effect)
+                .listTuple();
+
+        Map<String, Tuple> statementTupleMap = new HashMap<>();
+        for (Tuple tuple : tupleList) {
+            String actions = tuple.get(1, String.class);
+            RolePolicyEffect effect = tuple.get(2, RolePolicyEffect.class);
+            final String statement = RolePolicyStatement.toStringStatement(effect, actions);
+            statementTupleMap.compute(statement, (key, value) -> {
+                if (value != null) {
+                    Long id = tuple.get(0, Long.class);
+                    idNeedDelete.add(id);
+                }
+                return tuple;
+            });
+        }
+
+        for (RolePolicyStatement statement : spec.getPoliciesToDelete()) {
+            for (String statmentString : statement.toStringStatements()) {
+                Tuple tuple = statementTupleMap.get(statmentString);
+                if (tuple != null) {
+                    idNeedDelete.add(tuple.get(0, Long.class));
+                }
+            }
+        }
+
+        for (RolePolicyStatement statement : spec.getPoliciesToCreate()) {
+            for (RolePolicyVO policyVO : statement.toVO()) {
+                String statmentString = RolePolicyStatement.toStringStatement(policyVO);
+                Tuple tuple = statementTupleMap.get(statmentString);
+                if (tuple == null) {
+                    policyVO.setRoleUuid(spec.getUuid());
+                    policiesNeedCreate.add(policyVO);
+                }
+            }
+        }
+
+        if (!idNeedDelete.isEmpty()) {
+            SQL.New(RolePolicyVO.class)
+                    .in(RolePolicyVO_.id, idNeedDelete)
+                    .delete();
+        }
+        if (!policiesNeedCreate.isEmpty()) {
+            dbf.persistCollection(policiesNeedCreate);
+        }
     }
 }

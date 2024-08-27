@@ -1,5 +1,30 @@
 -- Feature: IAM1 Role And Policy | ZSV-6559
 
+drop table if exists `IAM2TicketFlowCollectionVO`;
+drop table if exists `IAM2TicketFlowVO`;
+
+drop table if exists `IAM2ProjectVirtualIDGroupRefVO`;
+drop table if exists `IAM2ProjectVirtualIDRefVO`;
+drop table if exists `IAM2OrganizationProjectRefVO`;
+drop table if exists `IAM2GroupVirtualIDRefVO`;
+drop table if exists `IAM2VirtualIDRoleRefVO`;
+drop table if exists `IAM2VirtualIDOrganizationRefVO`;
+drop table if exists `IAM2VirtualIDGroupRoleRefVO`;
+drop table if exists `IAM2VirtualIDGroupRefVO`;
+drop table if exists `IAM2ProjectAccountRefVO`;
+drop table if exists `IAM2ProjectResourceRefVO`;
+
+drop table if exists `IAM2OrganizationAttributeVO`;
+drop table if exists `IAM2VirtualIDGroupAttributeVO`;
+drop table if exists `IAM2ProjectAttributeVO`;
+drop table if exists `IAM2VirtualIDAttributeVO`;
+drop table if exists `IAM2ProjectRoleVO`;
+drop table if exists `IAM2OrganizationVO`;
+drop table if exists `IAM2VirtualIDGroupVO`;
+drop table if exists `IAM2ProjectTemplateVO`;
+drop table if exists `IAM2ProjectVO`;
+drop table if exists `IAM2VirtualIDVO`;
+
 ALTER TABLE `TwoFactorAuthenticationSecretVO` CHANGE COLUMN `userUuid` `accountUuid` char(32) not null;
 call DROP_COLUMN('TwoFactorAuthenticationSecretVO', 'userType');
 
@@ -54,9 +79,47 @@ INSERT INTO `AccountResourceRefVO`
         FROM SharedResourceVO t
         WHERE t.toPublic = 1;
 
-drop table `AccountResourceRefVODeprecated`;
-drop table `SystemRoleVO`;
-drop table `RolePolicyRefVO`;
-drop table `PolicyVO`;
+drop table if exists `AccountResourceRefVODeprecated`;
+drop table if exists `SystemRoleVO`;
+drop table if exists `RolePolicyRefVO`;
+drop table if exists `PolicyVO`;
+drop table if exists `RolePolicyStatementVO`;
+drop table if exists `RoleAccountRefVO`;
 delete from `RoleVO`;
 delete from `ResourceVO` where resourceType in ('SystemRoleVO', 'RoleVO', 'PolicyVO');
+
+CALL DROP_COLUMN('RoleVO', 'identity');
+CALL DROP_COLUMN('RoleVO', 'state');
+
+create table `zstack`.`RolePolicyVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `roleUuid` char(32) not null,
+    `actions` varchar(255) not null,
+    `effect` varchar(32) not null,
+    `resourceType` varchar(255) default null,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkRolePolicyRoleUuid` foreign key (`roleUuid`) references `RoleVO` (`uuid`) on delete cascade,
+    index `idxRolePolicyActions` (`actions`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table `zstack`.`RolePolicyResourceRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `rolePolicyId` bigint unsigned not null,
+    `effect` varchar(32) default 'Allow' not null,
+    `resourceUuid` char(32) not null,
+    primary key (`id`),
+    constraint `fkRolePolicyResourceRefRolePolicyId` foreign key (`rolePolicyId`) references `RolePolicyVO` (`id`) on delete cascade
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table `zstack`.`RoleAccountRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `roleUuid` char(32) not null,
+    `accountUuid` char(32) not null,
+    `accountPermissionFrom` char(32) default null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkRoleAccountRefRoleUuid` foreign key (`roleUuid`) references `RoleVO` (`uuid`) on delete cascade,
+    constraint `fkRoleAccountRefAccountUuid` foreign key (`accountUuid`) references `AccountVO` (`uuid`) on delete cascade
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
