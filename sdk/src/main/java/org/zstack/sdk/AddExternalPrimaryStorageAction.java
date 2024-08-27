@@ -28,7 +28,7 @@ public class AddExternalPrimaryStorageAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String identity;
 
-    @Param(required = true, validValues = {"Vhost","iSCSI","NVMEoF","Curve","file"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"Vhost","iSCSI","NVMEoF","CBD","file"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String defaultOutputProtocol;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

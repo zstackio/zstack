@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.externalStorage.primary.ExternalStorageConstant;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -23,7 +24,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -193,10 +193,9 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
         cmd.iso = convertIsoIfNeeded(cmd.iso, host);
     }
 
-    // TODO hardcode, move it
     @Override
     public String kvmSetupSelfFencerStorageType() {
-        return PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE;
+        return VolumeProtocol.iSCSI.toString();
     }
 
     @Override
