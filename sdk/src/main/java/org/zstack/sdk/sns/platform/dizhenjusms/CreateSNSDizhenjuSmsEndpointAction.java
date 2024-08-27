@@ -17,10 +17,10 @@ public class CreateSNSDizhenjuSmsEndpointAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                        String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
+                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -74,9 +74,9 @@ public class CreateSNSDizhenjuSmsEndpointAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.sns.platform.dizhenjusms.CreateSNSDizhenjuSmsEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.dizhenjusms.CreateSNSDizhenjuSmsEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.dizhenjusms.CreateSNSDizhenjuSmsEndpointResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.dizhenjusms.CreateSNSDizhenjuSmsEndpointResult() : value; 
 
         return ret;
     }
