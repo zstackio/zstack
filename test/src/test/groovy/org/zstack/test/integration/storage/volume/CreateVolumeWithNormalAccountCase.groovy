@@ -161,6 +161,8 @@ class CreateVolumeWithNormalAccountCase extends SubCase{
             password = "password"
         } as AccountInventory
 
+        attachPredefineRoles(accountInventory.uuid, "image", "configuration", "networks", "vm", "volume", "snapshot")
+
         normalSession = logInByAccount {
             accountName = "normal"
             password = "password"

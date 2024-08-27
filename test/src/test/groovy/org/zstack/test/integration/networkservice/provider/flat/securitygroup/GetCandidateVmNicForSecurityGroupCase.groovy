@@ -117,6 +117,7 @@ class GetCandidateVmNicForSecurityGroupCase extends SubCase {
                 name = "test"
                 password = "password"
             } as AccountInventory
+            attachPredefineRoles(accountInventory.uuid, "security-group")
         }
 
         testGetCandiateVmNicsByAdmin()

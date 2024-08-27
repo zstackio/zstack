@@ -36,11 +36,13 @@ class VirtualRouterOfferingCase extends SubCase {
             account {
                 name = "test1"
                 password = "password"
+                predefineRole("vrouter")
             }
 
             account {
                 name = "test2"
                 password = "password"
+                predefineRole("vrouter")
             }
 
             instanceOffering {

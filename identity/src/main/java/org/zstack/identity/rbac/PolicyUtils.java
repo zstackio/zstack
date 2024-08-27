@@ -3,7 +3,6 @@ package org.zstack.identity.rbac;
 import org.zstack.header.identity.rbac.RBAC;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.zstack.core.Platform.BASE_PACKAGE_NAME;
@@ -48,10 +47,14 @@ public class PolicyUtils {
         api = api.substring(BASE_PACKAGE_NAME.length()); // start without "."
         String[] split = api.split("\\.");
         results.add(".**");
-        for (int i = 1; i < split.length; i++) {
-            results.add("." + String.join(".", Arrays.copyOfRange(split, 0, i)) + ".**");
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < split.length - 1; i++) {
+            builder.append(".").append(split[i]);
+            results.add(builder + ".**");
         }
-        results.add("." + String.join(".", Arrays.copyOfRange(split, 0, split.length - 1)) + ".*");
+
+        results.add(builder + ".*");
         results.add("." + api);
         return results;
     }
