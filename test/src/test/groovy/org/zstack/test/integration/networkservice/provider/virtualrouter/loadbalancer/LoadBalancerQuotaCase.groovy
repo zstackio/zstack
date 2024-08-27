@@ -141,6 +141,7 @@ class LoadBalancerQuotaCase extends SubCase{
             password = "password"
             sessionId = adminSession()
         }
+        attachPredefineRoles(account.uuid, "networks", "vip", "load-balancer")
 
         updateQuota {
             identityUuid = account.uuid
@@ -184,6 +185,7 @@ class LoadBalancerQuotaCase extends SubCase{
             password = "password"
             sessionId = adminSession()
         }
+        attachPredefineRoles(account.uuid, "networks", "vip", "load-balancer")
 
         updateQuota {
             identityUuid = account.uuid

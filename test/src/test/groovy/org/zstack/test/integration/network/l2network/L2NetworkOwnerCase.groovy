@@ -43,6 +43,7 @@ class L2NetworkOwnerCase extends SubCase{
             account {
                 name = "normalAccount"
                 password = "password"
+                predefineRole("networks")
             }
 
             sftpBackupStorage {

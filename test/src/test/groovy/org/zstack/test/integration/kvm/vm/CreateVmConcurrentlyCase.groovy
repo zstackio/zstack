@@ -271,6 +271,7 @@ class CreateVmConcurrentlyCase extends SubCase {
             password = userpass
             type = AccountType.Normal.toString()
         } as AccountInventory
+        attachPredefineRoles(newAccount.uuid, "vm", "image")
 
         String vmName = "test-vm-quota"
         def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
