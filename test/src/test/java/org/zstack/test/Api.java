@@ -33,7 +33,6 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountResourceRefInventory;
-import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.QuotaInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.*;

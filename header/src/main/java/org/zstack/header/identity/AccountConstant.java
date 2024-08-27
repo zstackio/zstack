@@ -40,6 +40,8 @@ public interface AccountConstant {
     // login property accountType
     String ACCOUNT_TYPE = "accountType";
 
+    String OTHER_ROLE_UUID = "80315b1f85314917826b182bf6def552";
+
     /**
      * account has SystemAdmin type also have admin permission,
      * but this method only check "admin" account.

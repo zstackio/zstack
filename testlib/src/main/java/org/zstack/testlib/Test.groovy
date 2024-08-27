@@ -22,6 +22,7 @@ import org.zstack.sdk.ErrorCode
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZQLQueryReturn
 import org.zstack.sdk.ZSClient
+import org.zstack.sdk.identity.role.RoleInventory
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.util.Retry
@@ -838,6 +839,19 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         return submitLongJob {
             delegate.jobName = msgClass.getSimpleName()
             delegate.jobData = JSONObjectUtil.toJsonString(message)
+        }
+    }
+
+    protected void attachPredefineRoles(String accountUuid, String... roleNames) {
+        for (final def roleName in roleNames) {
+            def roles = queryRole {
+                delegate.conditions = ["name=predefined: " + roleName]
+            } as List<RoleInventory>
+            assert roles.size() == 1 : "failed to find predefined with name: " + roleName
+            attachRoleToAccount {
+                delegate.roleUuid = roles[0].uuid
+                delegate.accountUuid = accountUuid
+            }
         }
     }
 

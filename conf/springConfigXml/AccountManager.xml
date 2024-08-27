@@ -39,6 +39,7 @@
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.role.RolePolicyChecker"/>
+            <zstack:extension interface="org.zstack.header.identity.AfterCreateAccountExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
