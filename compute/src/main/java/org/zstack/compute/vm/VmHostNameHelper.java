@@ -10,6 +10,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public  class VmHostNameHelper {
@@ -41,7 +42,7 @@ public  class VmHostNameHelper {
         if (hostName == null) {
             for (VmNicVO nic : vm.getVmNics()) {
                 if (nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid()) && nic.getIp() != null) {
-                    if (nic.getIpVersion() == IPv6Constants.IPv4) {
+                    if (NetworkUtils.isIpv4Address(nic.getIp())) {
                         hostName = nic.getIp().replaceAll("\\.", "-");
                     } else {
                         hostName = IPv6NetworkUtils.ipv6AddessToHostname(nic.getIp());
