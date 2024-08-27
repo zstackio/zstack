@@ -24,7 +24,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void roles() {
         roleBuilder()
-                .uuid("4366a67e46cb4e7864899458187961e")
+                .uuid("4366a67e46cb4e78a64899458187961e")
                 .permissionBaseOnThis()
                 .build();
     }

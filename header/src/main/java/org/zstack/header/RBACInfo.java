@@ -1,5 +1,6 @@
 package org.zstack.header;
 
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
@@ -21,7 +22,7 @@ public class RBACInfo implements RBACDescription {
     public void roles() {
         roleBuilder()
                 .name("other")
-                .uuid("80315b1f85314917826b182bf6def552")
+                .uuid(AccountConstant.OTHER_ROLE_UUID)
                 .actions(APIIsOpensourceVersionMsg.class)
                 .build();
     }
