@@ -17,10 +17,10 @@ public class QuerySNSSmsPlatformAction extends QueryAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                        String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
+                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -33,9 +33,9 @@ public class QuerySNSSmsPlatformAction extends QueryAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.sns.platform.dizhenjusms.QuerySNSSmsPlatformResult value = res.getResult(org.zstack.sdk.sns.platform.dizhenjusms.QuerySNSSmsPlatformResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.dizhenjusms.QuerySNSSmsPlatformResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.dizhenjusms.QuerySNSSmsPlatformResult() : value; 
 
         return ret;
     }
