@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Inventory(mappingVOClass = AccountVO.class)
 @ExpandedQueries({
@@ -99,5 +100,17 @@ public class AccountInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public static AccountInventory __example__() {
+        AccountInventory account = new AccountInventory();
+        account.setUuid(UUID.randomUUID().toString().replace("-", ""));
+        account.setName("account1");
+        account.setDescription("account1-description");
+        account.setType(AccountType.Normal.toString());
+        account.setState(AccountState.Enabled.toString());
+        account.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        account.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        return account;
     }
 }

@@ -139,6 +139,53 @@ create table if not exists `zstack`.`RoleAccountRefVO` (
     constraint `fkRoleAccountRefAccountUuid` foreign key (`accountUuid`) references `AccountVO` (`uuid`) on delete cascade
 ) ENGINE=InnoDB default CHARSET=utf8;
 
+create table if not exists `zstack`.`AccountGroupVO` (
+    `uuid` char(32) not null unique,
+    `name` varchar(255) not null,
+    `description` varchar(2048) default '',
+    `parentUuid` char(32) default null,
+    `rootGroupUuid` char(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`uuid`)
+) ENGINE=InnoDB default CHARSET=utf8;
+
+create table if not exists `zstack`.`AccountGroupAccountRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `accountUuid` char(32) not null,
+    `groupUuid` char(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkAccountGroupAccountRefAccountUuid` foreign key (`accountUuid`) references `AccountVO` (`uuid`) on delete cascade,
+    constraint `fkAccountGroupAccountRefGroupUuid` foreign key (`groupUuid`) references `AccountGroupVO` (`uuid`) on delete cascade
+) ENGINE=InnoDB default CHARSET=utf8;
+
+create table if not exists `zstack`.`AccountGroupRoleRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `roleUuid` char(32) not null,
+    `groupUuid` char(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkAccountGroupRoleRefRoleUuid` foreign key (`roleUuid`) references `RoleVO` (`uuid`) on delete cascade,
+    constraint `fkAccountGroupRoleRefGroupUuid` foreign key (`groupUuid`) references `AccountGroupVO` (`uuid`) on delete cascade
+) ENGINE=InnoDB default CHARSET=utf8;
+
+create table if not exists `zstack`.`AccountGroupResourceRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `resourceUuid` char(32) not null,
+    `groupUuid` char(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkAccountGroupResourceRefResourceUuid` foreign key (`resourceUuid`) references `ResourceVO` (`uuid`) on delete cascade,
+    constraint `fkAccountGroupResourceRefGroupUuid` foreign key (`groupUuid`) references `AccountGroupVO` (`uuid`) on delete cascade
+) ENGINE=InnoDB default CHARSET=utf8;
+
+alter table `zstack`.`AccountResourceRefVO` add constraint fkAccountResourceRefAccountPermissionFrom foreign key (accountPermissionFrom) references AccountGroupVO (uuid) on delete cascade;
+alter table `zstack`.`RoleAccountRefVO` add constraint fkRoleAccountRefAccountPermissionFrom foreign key (accountPermissionFrom) references AccountGroupVO (uuid) on delete cascade;
+
 -- Others
 
 CALL INSERT_COLUMN('VmVfNicVO', 'haState', 'varchar(32)', 0, 'Disabled', 'pciDeviceUuid');
