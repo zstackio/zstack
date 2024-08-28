@@ -29,4 +29,4 @@ ALTER TABLE `zstack`.`SanSecSecretResourcePoolVO` ADD COLUMN `sm4Key` varchar(12
 
 ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN issuerDN varchar(255) NOT NULL;
 ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN subjectDN varchar(255) NOT NULL;
-ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN serNumber varchar(128) unsigned NOT NULL;
+ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN serNumber varchar(128) NOT NULL;
