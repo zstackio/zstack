@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSNSHttpEndpointAction extends AbstractAction {
+public class SNSHttpTestConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSNSHttpEndpointAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.UpdateSNSApplicationEndpointResult value;
+        public org.zstack.sdk.sns.platform.http.SNSHttpTestConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,17 @@ public class UpdateSNSHttpEndpointAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String url;
 
-    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String username;
 
-    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String password;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platformUuid;
+    public java.lang.String endpointUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +69,8 @@ public class UpdateSNSHttpEndpointAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.UpdateSNSApplicationEndpointResult value = res.getResult(org.zstack.sdk.sns.UpdateSNSApplicationEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.UpdateSNSApplicationEndpointResult() : value; 
+        org.zstack.sdk.sns.platform.http.SNSHttpTestConnectionResult value = res.getResult(org.zstack.sdk.sns.platform.http.SNSHttpTestConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.http.SNSHttpTestConnectionResult() : value; 
 
         return ret;
     }
@@ -108,11 +99,11 @@ public class UpdateSNSHttpEndpointAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sns/application-endpoints/http/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/sns/application-endpoints/http/test-connection";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSNSHttpEndpoint";
+        info.parameterName = "params";
         return info;
     }
 
