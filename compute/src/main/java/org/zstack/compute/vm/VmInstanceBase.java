@@ -8481,7 +8481,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         cdRomVO.setDescription(msg.getDescription());
         cdRomVO = dbf.persistAndRefresh(cdRomVO);
 
-        completion.success(VmCdRomInventory.valueOf(cdRomVO));
+        final VmCdRomInventory inventory = VmCdRomInventory.valueOf(cdRomVO);
+
+        pluginRgty.getExtensionList(CdRomAfterCreateExtensionPoint.class)
+                .forEach(extension -> extension.afterCreateCdRom(inventory));
+
+        completion.success(inventory);
     }
 
     private void handle(APIFstrimVmMsg msg) {
