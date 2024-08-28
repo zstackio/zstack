@@ -145,7 +145,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             }
         } catch (Throwable t) {
             logger.warn("unhandled throwable", t);
-            completion.fail(inerr(t.getMessage()));
+            completion.fail(inerr(t.toString()));
         }
     }
 
