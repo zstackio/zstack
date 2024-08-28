@@ -28,4 +28,12 @@ public class BareMetal2ChassisGpuDeviceInventory extends org.zstack.sdk.BareMeta
         return this.power;
     }
 
+    public boolean isDriverLoaded;
+    public void setIsDriverLoaded(boolean isDriverLoaded) {
+        this.isDriverLoaded = isDriverLoaded;
+    }
+    public boolean getIsDriverLoaded() {
+        return this.isDriverLoaded;
+    }
+
 }
