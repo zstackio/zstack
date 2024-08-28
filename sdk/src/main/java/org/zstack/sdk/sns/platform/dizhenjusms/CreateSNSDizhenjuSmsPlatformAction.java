@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk.sns.platform.dizhenjusms;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSNSSmsReceiverAction extends AbstractAction {
+public class CreateSNSDizhenjuSmsPlatformAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.AddSNSSmsReceiverResult value;
+        public org.zstack.sdk.sns.CreateSNSApplicationPlatformResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,16 +25,40 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String serverIp;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String srcID = "106575007626";
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endpointUuid;
+    public java.lang.String node1Ip;
 
-    @Param(required = true, validValues = {"AliyunSms","DizhenjuSms"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username1;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password1;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String downlinkChannelNumber1;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String node2Ip;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username2;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password2;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String downlinkChannelNumber2;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = false)
@@ -75,8 +99,8 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.AddSNSSmsReceiverResult value = res.getResult(org.zstack.sdk.sns.AddSNSSmsReceiverResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.AddSNSSmsReceiverResult() : value; 
+        org.zstack.sdk.sns.CreateSNSApplicationPlatformResult value = res.getResult(org.zstack.sdk.sns.CreateSNSApplicationPlatformResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.CreateSNSApplicationPlatformResult() : value; 
 
         return ret;
     }
@@ -106,7 +130,7 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/sms-endpoints/receivers";
+        info.path = "/sns/application-platforms/dizhenjusms";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
