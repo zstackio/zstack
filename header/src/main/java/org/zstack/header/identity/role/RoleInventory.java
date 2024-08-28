@@ -100,6 +100,8 @@ public class RoleInventory {
         role.setPolicies(asList(".header.volume.APICreateVolumeSnapshotMsg", ".header.volume.APIQueryVolumeMsg"));
         role.setDescription("role for test");
         role.setType(RoleType.Customized.toString());
+        role.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        role.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         return role;
     }
 }

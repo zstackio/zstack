@@ -5,6 +5,7 @@ import org.zstack.header.search.Inventory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by xing5 on 2017/5/1.
@@ -53,5 +54,13 @@ public class ResourceInventory {
 
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public static ResourceInventory __example__() {
+        ResourceInventory role = new ResourceInventory();
+        role.setUuid(UUID.randomUUID().toString().replace("-", ""));
+        role.setResourceName("vm1");
+        role.setResourceType("VmInstanceVO");
+        return role;
     }
 }
