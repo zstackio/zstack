@@ -11,6 +11,7 @@ import org.zstack.utils.ShellUtils;
 import org.zstack.utils.StringDSL.StringWrapper;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.ssh.SshCmdHelper;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
@@ -107,7 +108,7 @@ public class SshFolderMd5Checker implements AnsibleChecker {
                             srcRes.getStdout(), srcRes.getStderr()));
         }
 
-        String dstScript = script.format(dstFolder, password);
+        String dstScript = script.format(dstFolder, SshCmdHelper.shellQuote(password));
         SshShell ssh = new SshShell();
         ssh.setHostname(hostname);
         ssh.setUsername(username);
