@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.zstack.header.identity.AccountConstant.POLICY_BASE_PACKAGE;
+
 public class RolePolicyStatement {
     public RolePolicyEffect effect = RolePolicyEffect.Allow;
     public List<String> actions = new ArrayList<>();
@@ -121,11 +123,11 @@ public class RolePolicyStatement {
                 .collect(Collectors.toList());
     }
 
-    private static String parseAction(String statement) {
+    public static String parseAction(String statement) {
         statement = statement.trim();
 
-        if (statement.startsWith("org.zstack.")) {
-            statement = "." + statement.substring("org.zstack.".length());
+        if (statement.startsWith(POLICY_BASE_PACKAGE)) {
+            statement = "." + statement.substring(POLICY_BASE_PACKAGE.length());
         }
 
         return statement;

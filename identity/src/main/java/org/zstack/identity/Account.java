@@ -79,6 +79,21 @@ public interface Account {
                 .findValue();
     }
 
+    static boolean isAdminPermission(SessionInventory session) {
+        return isAdminPermission(session.getAccountUuid());
+    }
+
+    static boolean isAdminPermission(String accountUuid) {
+        if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid)) {
+            return true;
+        }
+
+        return Q.New(AccountVO.class)
+                .eq(AccountVO_.uuid, accountUuid)
+                .eq(AccountVO_.type, AccountType.SystemAdmin)
+                .isExists();
+    }
+
     static AccountInventory create(AccountBuilder builder) {
         DebugUtils.Assert(builder.name != null, "name cannot be null");
         DebugUtils.Assert(builder.type != null, "type cannot be null");

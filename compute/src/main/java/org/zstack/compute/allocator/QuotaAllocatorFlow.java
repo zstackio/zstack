@@ -4,21 +4,15 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.VmQuotaOperator;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.identity.Account;
 import org.zstack.identity.QuotaUtil;
 
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
-import org.zstack.core.db.Q;
 import org.zstack.utils.Utils;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.host.*;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
@@ -54,7 +48,7 @@ public class QuotaAllocatorFlow extends AbstractHostAllocatorFlow {
 
         final String vmInstanceUuid = spec.getVmInstance().getUuid();
         final String accountUuid = Account.getAccountUuidOfResource(vmInstanceUuid);
-        if (accountUuid == null || AccountConstant.isAdminPermission(accountUuid)) {
+        if (accountUuid == null || Account.isAdminPermission(accountUuid)) {
             next(candidates);
             return;
         }

@@ -5,9 +5,11 @@ import org.zstack.header.PackageAPIInfo;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.SuppressCredentialCheck;
+import org.zstack.header.identity.role.RolePolicyEffect;
+import org.zstack.header.identity.role.RolePolicyStatement;
+import org.zstack.header.identity.role.RolePolicyVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.CollectionUtils;
@@ -162,16 +164,6 @@ public class RBAC {
             return permissionsByName(this.basePermission);
         }
 
-        public RoleBuilder allow() {
-            role.effect = StatementEffect.Allow;
-            return this;
-        }
-
-        public RoleBuilder deny() {
-            role.effect = StatementEffect.Deny;
-            return this;
-        }
-
         public RoleBuilder predefined() {
             role.predefine = true;
             return this;
@@ -206,7 +198,6 @@ public class RBAC {
         private String name;
         private Set<String> allowedActions = new HashSet<>();
         private StatementEffect effect = StatementEffect.Allow;
-        private boolean adminOnly;
         private boolean predefine = true;
         private List<String> excludedActions = new ArrayList<>();
 
@@ -242,14 +233,6 @@ public class RBAC {
             this.effect = effect;
         }
 
-        public boolean isAdminOnly() {
-            return adminOnly;
-        }
-
-        public void setAdminOnly(boolean adminOnly) {
-            this.adminOnly = adminOnly;
-        }
-
         public boolean isPredefine() {
             return predefine;
         }
@@ -266,22 +249,26 @@ public class RBAC {
             this.excludedActions = excludedActions;
         }
 
-        public PolicyStatement toStatement() {
-            Role self = this;
-            if (!excludedActions.isEmpty()) {
-                RBACDescriptionHelper.FlattenResult fr = RBACDescriptionHelper.flatten(new HashSet<>(excludedActions), allowedActions);
-                self.allowedActions = fr.normal;
+        public List<RolePolicyVO> toStatements() {
+            List<RolePolicyVO> results = new ArrayList<>(allowedActions.size() + excludedActions.size());
+
+            for (String action : allowedActions) {
+                RolePolicyVO policy = new RolePolicyVO();
+                policy.setActions(RolePolicyStatement.parseAction(action));
+                policy.setEffect(RolePolicyEffect.Allow);
+                policy.setRoleUuid(uuid);
+                results.add(policy);
             }
 
-            PolicyStatement p = new PolicyStatement();
-            p.setName(self.getName());
-            p.setActions(new ArrayList<>(self.allowedActions));
-            p.setEffect(self.getEffect());
-            return p;
-        }
+            for (String action : excludedActions) {
+                RolePolicyVO policy = new RolePolicyVO();
+                policy.setActions(RolePolicyStatement.parseAction(action));
+                policy.setEffect(RolePolicyEffect.Exclude);
+                policy.setRoleUuid(uuid);
+                results.add(policy);
+            }
 
-        public List<PolicyStatement> toStatements() {
-            return Arrays.asList(toStatement());
+            return results;
         }
     }
 
@@ -414,6 +401,7 @@ public class RBAC {
             return this;
         }
 
+        @Deprecated
         public PermissionBuilder targetResources(Class...clzs) {
             for (Class clz : clzs) {
                 permission.getTargetResources().add(clz);
@@ -535,6 +523,9 @@ public class RBAC {
             return this;
         }
 
+        /**
+         * @see org.zstack.header.identity.AccountConstant#OTHER_ROLE_UUID
+         */
         public RoleContributorBuilder toOtherRole() {
             return roleName("other");
         }

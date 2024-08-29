@@ -31,6 +31,7 @@ public interface AccountConstant {
 
     String LOGIN_TYPE = "account";
     String LOGIN_TYPE_AUTHENTICATIONS_KEY = "authentications";
+    String POLICY_BASE_PACKAGE = "org.zstack.";
 
     String NO_EXIST_ACCOUNT ="no-exist-account:::%s";
 
@@ -39,16 +40,28 @@ public interface AccountConstant {
     // login property accountType
     String ACCOUNT_TYPE = "accountType";
 
+    String OTHER_ROLE_UUID = "80315b1f85314917826b182bf6def552";
+
+    /**
+     * account has SystemAdmin type also have admin permission,
+     * but this method only check "admin" account.
+     *
+     * use Account.isAdminPermission(SessionInventory)
+     */
+    @Deprecated
     static boolean isAdminPermission(SessionInventory session) {
         return isAdminPermission(session.getAccountUuid());
     }
 
+    /**
+     * account has SystemAdmin type also have admin permission,
+     * but this method only check "admin" account.
+     *
+     * use Account.isAdminPermission(String)
+     */
+    @Deprecated
     static boolean isAdminPermission(String accountUuid) {
         return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
-    }
-
-    static boolean isAdmin(SessionInventory session) {
-        return INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid()) && INITIAL_SYSTEM_ADMIN_UUID.equals(session.getUserUuid());
     }
 
     enum Principal {

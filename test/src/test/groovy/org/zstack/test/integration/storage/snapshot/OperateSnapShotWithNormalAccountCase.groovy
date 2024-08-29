@@ -78,6 +78,8 @@ class OperateSnapShotWithNormalAccountCase extends SnapShotCaseSub{
             accountName = accountInventory.name
             password = "password"
         } as SessionInventory
+
+        attachPredefineRoles(accountInventory.uuid, "image", "configuration", "networks", "vm", "volume", "snapshot")
     }
 
     void setQuotaAndShareResource() {

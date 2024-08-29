@@ -19,6 +19,15 @@ public class RBACInfo implements RBACDescription {
     }
 
     @Override
+    public void roles() {
+        roleBuilder()
+                .uuid("cd6ed7e009de2ed6b55d72da2e5526a2")
+                .name("vip")
+                .permissionBaseOnThis()
+                .build();
+    }
+
+    @Override
     public void globalReadableResources() {
         globalReadableResourceBuilder()
                 .resources(VipVO.class)

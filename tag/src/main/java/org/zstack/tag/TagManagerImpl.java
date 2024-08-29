@@ -20,12 +20,12 @@ import org.zstack.header.core.NonCloneable;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.tag.*;
+import org.zstack.identity.Account;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
@@ -973,7 +973,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private ErrorCode checkPemission(String tag, SessionInventory session){
-        if (session == null || session.getUuid() == null || AccountConstant.isAdminPermission(session.getAccountUuid())) {
+        if (session == null || session.getUuid() == null || Account.isAdminPermission(session.getAccountUuid())) {
             return null;
         }
 

@@ -127,7 +127,7 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateDiskOfferingAction.metaClass, CreateDiskOfferingAction.Result.metaClass, DeleteDiskOfferingAction.class],
             [CreateInstanceOfferingAction.metaClass, CreateInstanceOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
             [CreateAccountAction.metaClass, CreateAccountAction.Result.metaClass, DeleteAccountAction.class],
-            [CreateRoleAction.metaClass, CreateRoleAction.Result.metaClass, DeleteRoleAction.class],
+            [CreateRoleAction.metaClass, CreateRoleAction.Result.metaClass, { [new DeleteRoleAction(deleteMode: "Enforcing")] }],
             [AddImageAction.metaClass, AddImageAction.Result.metaClass, DeleteImageAction.class],
             [CreateDataVolumeTemplateFromVolumeAction.metaClass, CreateDataVolumeTemplateFromVolumeAction.Result.metaClass, DeleteImageAction.class],
             [CreateRootVolumeTemplateFromRootVolumeAction.metaClass, CreateRootVolumeTemplateFromRootVolumeAction.Result.metaClass, DeleteImageAction.class],
@@ -206,30 +206,28 @@ class EnvSpec extends ApiHelper implements Node  {
             }
 
             resultMeta.delete = {
-                if (delegate.error != null) {
+                if (delegate.error != null || delegate.value.inventory == null) {
                     return false
                 }
+                String uuid = delegate.value.inventory.uuid
 
-
-                List<Class> dclasses = []
-                if (deleteClass instanceof List) {
-                    dclasses.addAll(deleteClass)
+                List<Object> actions = []
+                if (deleteClass instanceof Closure) {
+                    actions.addAll((deleteClass as Closure).call())
+                } else if (deleteClass instanceof List) {
+                    actions.addAll((deleteClass as List<Class>).collect { it.getConstructor().newInstance() })
                 } else {
-                    dclasses.add(deleteClass as Class)
+                    actions.add((deleteClass as Class).getConstructor().newInstance())
                 }
 
-                dclasses.each {
-                    def action = it.getConstructor().newInstance()
-                    if (delegate.value.inventory == null) {
-                        return
-                    }
-
-                    logger.debug("auto-deleting resource by ${it} uuid:${delegate.value.inventory.uuid}")
-                    action.uuid = delegate.value.inventory.uuid
+                actions.each { action ->
+                    logger.debug("auto-deleting resource by ${action.class.name} uuid:${uuid}")
+                    action.uuid = uuid
                     action.sessionId = session.uuid
                     def res = action.call()
                     assert res.error == null: "API failure: ${JSONObjectUtil.toJsonString(res.error)}"
                 }
+                return true
             }
         }
     }

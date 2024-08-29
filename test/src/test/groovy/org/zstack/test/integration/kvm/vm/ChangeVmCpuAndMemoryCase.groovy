@@ -4,7 +4,6 @@ import org.springframework.http.HttpEntity
 import org.zstack.compute.allocator.HostAllocatorGlobalConfig
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.compute.vm.VmQuotaConstant
-import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
@@ -18,24 +17,19 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.KVMHostInventory
 import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.SystemTagInventory
 import org.zstack.sdk.UpdateVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.storage.snapshot.VolumeSnapshotQuotaConstant
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-
-import static org.zstack.utils.CollectionDSL.e
-import static org.zstack.utils.CollectionDSL.list
-import static org.zstack.utils.CollectionDSL.map
 
 /**
  * Created by AlanJager on 2017/4/26.
@@ -266,7 +260,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         def test = createAccount {
             name = "test"
             password = "password"
-        }
+        } as AccountInventory
+        attachPredefineRoles(test.uuid, "vm")
 
         def session = logInByAccount {
             accountName = "test"
