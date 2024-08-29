@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
+public class TokenIntrospectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.ChangeSNSApplicationEndpointStateResult value;
+        public org.zstack.sdk.TokenIntrospectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String token;
 
-    @Param(required = true, validValues = {"enable","disable","hide"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String stateEvent;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String tokenType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -37,23 +37,11 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
+    @NonAPIParam
+    public boolean isSuppressCredentialCheck = true;
 
     @Param(required = false)
     public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -63,8 +51,8 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.ChangeSNSApplicationEndpointStateResult value = res.getResult(org.zstack.sdk.sns.ChangeSNSApplicationEndpointStateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.ChangeSNSApplicationEndpointStateResult() : value; 
+        org.zstack.sdk.TokenIntrospectionResult value = res.getResult(org.zstack.sdk.TokenIntrospectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.TokenIntrospectionResult() : value; 
 
         return ret;
     }
@@ -93,11 +81,11 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sns/application-endpoints/{uuid}/actions";
-        info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "changeSNSApplicationEndpointState";
+        info.httpMethod = "POST";
+        info.path = "/token/introspect";
+        info.needSession = false;
+        info.needPoll = false;
+        info.parameterName = "params";
         return info;
     }
 

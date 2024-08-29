@@ -583,6 +583,7 @@ public class SourceClassMap {
 			put("org.zstack.sso.header.RedirectUrlTemplate", "org.zstack.sdk.RedirectUrlTemplate");
 			put("org.zstack.sso.header.SSOClientInventory", "org.zstack.sdk.SSOClientInventory");
 			put("org.zstack.sso.header.SSORedirectTemplateInventory", "org.zstack.sdk.SSORedirectTemplateInventory");
+			put("org.zstack.sso.header.SSOServerTokenInventory", "org.zstack.sdk.SSOServerTokenInventory");
 			put("org.zstack.sso.header.SSOTokenInventory", "org.zstack.sdk.SSOTokenInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory", "org.zstack.sdk.ImageStoreBackupStorageInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
@@ -1178,6 +1179,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
 			put("org.zstack.sdk.SSOClientInventory", "org.zstack.sso.header.SSOClientInventory");
 			put("org.zstack.sdk.SSORedirectTemplateInventory", "org.zstack.sso.header.SSORedirectTemplateInventory");
+			put("org.zstack.sdk.SSOServerTokenInventory", "org.zstack.sso.header.SSOServerTokenInventory");
 			put("org.zstack.sdk.SSOTokenInventory", "org.zstack.sso.header.SSOTokenInventory");
 			put("org.zstack.sdk.SanSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.sansec.SanSecSecretResourcePoolInventory");
 			put("org.zstack.sdk.SanSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.sansec.SanSecSecurityMachineInventory");
