@@ -101,7 +101,7 @@ doc {
 					type "boolean"
 					optional true
 					since "5.2.0"
-					values("true", "false")
+					values ("true","false")
 				}
 				column {
 					name "hostUuid"
