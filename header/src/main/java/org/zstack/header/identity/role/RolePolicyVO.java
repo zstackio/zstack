@@ -93,12 +93,14 @@ public class RolePolicyVO {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RolePolicyVO that = (RolePolicyVO) o;
-        return Objects.equals(id, that.id);
+        RolePolicyVO policyVO = (RolePolicyVO) o;
+        return Objects.equals(actions, policyVO.actions)
+                && effect == policyVO.effect
+                && Objects.equals(resourceType, policyVO.resourceType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(actions, effect, resourceType);
     }
 }
