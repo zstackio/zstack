@@ -27,6 +27,11 @@ public class RolePolicyStatement {
         }
     }
 
+    public static RolePolicyStatement valueOf(RolePolicyVO policy) {
+        String text = toStringStatement(policy);
+        return valueOf(text);
+    }
+
     public static RolePolicyStatement valueOf(String policy) {
         String statement = policy.trim();
 
