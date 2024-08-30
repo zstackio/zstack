@@ -43,7 +43,6 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
-import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
@@ -58,7 +57,6 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -853,11 +851,29 @@ public class KvmBackend extends HypervisorBackend {
                                     logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local shared mount point storage[uuid: %s, installPath: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath));
 
-                                    pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
-                                            .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(vo)));
+                                    new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
+                                        ext.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(vo), new Completion(whileCompletion) {
+                                            @Override
+                                            public void success() {
+                                                whileCompletion.done();
+                                            }
 
-                                    completion.success(ImageCacheInventory.valueOf(vo));
-                                    chain.next();
+                                            @Override
+                                            public void fail(ErrorCode errorCode) {
+                                                whileCompletion.addError(errorCode);
+                                                whileCompletion.allDone();
+                                            }
+                                        });
+                                    }).run(new WhileDoneCompletion(completion) {
+                                        @Override
+                                        public void done(ErrorCodeList errorCodeList) {
+                                            if (!errorCodeList.getCauses().isEmpty()) {
+                                                logger.warn(String.format("failed to saveEncryptAfterCreateImageCache: %s", errorCodeList.getCauses().get(0)));
+                                            }
+                                            completion.success(ImageCacheInventory.valueOf(vo));
+                                            chain.next();
+                                        }
+                                    });
                                 }
                             });
 
