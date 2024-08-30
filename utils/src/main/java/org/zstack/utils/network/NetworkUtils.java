@@ -145,6 +145,16 @@ public class NetworkUtils {
         return value;
     }
 
+    public static byte[] ipStringToBytes(String ip){
+        validateIp(ip);
+        try {
+            InetAddress inetAddress = InetAddress.getByName(ip);
+            return inetAddress.getAddress();
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException(String.format("%s is not a valid ip address", ip), e);
+        }
+    }
+
     public static long ipv4StringToLong(String ip) {
         validateIp(ip);
 
@@ -181,8 +191,8 @@ public class NetworkUtils {
     }
 
     private static void validateIp(String ip) {
-        if (!isIpv4Address(ip)) {
-            throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address", ip));
+        if (!isIpv4Address(ip) && !isIpv6Address(ip)) {
+            throw new IllegalArgumentException(String.format("%s is not a valid ip address", ip));
         }
     }
 

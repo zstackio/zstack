@@ -35,6 +35,7 @@ public class UsedIpInventory implements Serializable {
     @APINoSee
     private String metaData;
     private long ipInLong;
+    private byte[] ipInBinary;
     private String vmNicUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -46,6 +47,7 @@ public class UsedIpInventory implements Serializable {
         inv.setIpVersion(vo.getIpVersion());
         inv.setIp(vo.getIp());
         inv.setIpInLong(vo.getIpInLong());
+        inv.setIpInBinary(vo.getIpInBinary());
         inv.setIpRangeUuid(vo.getIpRangeUuid());
         inv.setL3NetworkUuid(vo.getL3NetworkUuid());
         inv.setGateway(vo.getGateway());
@@ -98,6 +100,13 @@ public class UsedIpInventory implements Serializable {
         this.ipInLong = ipInLong;
     }
 
+    public byte[] getIpInBinary() {
+        return ipInBinary;
+    }
+
+    public void setIpInBinary(byte[] ipInBinary) {
+        this.ipInBinary = ipInBinary;
+    }
     public Timestamp getCreateDate() {
         return createDate;
     }

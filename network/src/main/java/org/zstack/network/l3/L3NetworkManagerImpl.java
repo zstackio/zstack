@@ -612,6 +612,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             vo.setUuid(uuid);
             vo.setIpRangeUuid(ipRange.getUuid());
             vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(ip));
+            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
             vo.setL3NetworkUuid(ipRange.getL3NetworkUuid());
             vo.setNetmask(ipRange.getNetmask());
             vo.setGateway(ipRange.getGateway());
@@ -636,6 +637,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         try {
             UsedIpVO vo = new UsedIpVO(ipRange.getUuid(), ip);
             vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
+            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
             String uuid;
             if (allowDuplicatedAddress) {
                 uuid = Platform.getUuid();

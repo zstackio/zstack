@@ -76,6 +76,14 @@ public class UsedIpInventory  {
         return this.ipInLong;
     }
 
+    public byte[] ipInBinary;
+    public void setIpInBinary(byte[] ipInBinary) {
+        this.ipInBinary = ipInBinary;
+    }
+    public byte[] getIpInBinary() {
+        return this.ipInBinary;
+    }
+
     public java.lang.String vmNicUuid;
     public void setVmNicUuid(java.lang.String vmNicUuid) {
         this.vmNicUuid = vmNicUuid;

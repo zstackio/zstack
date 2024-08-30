@@ -62,6 +62,12 @@ doc {
 		since "5.0.0"
 	}
 	field {
+		name "ipInBinary"
+		desc ""
+		type "byte[]"
+		since "5.2.0"
+	}
+	field {
 		name "vmNicUuid"
 		desc "云主机网卡UUID"
 		type "String"

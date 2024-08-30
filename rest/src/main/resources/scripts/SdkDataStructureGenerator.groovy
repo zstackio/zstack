@@ -195,6 +195,9 @@ ${output.join("\n")}
     }
 
     def isZStackClass(Class clz) {
+        if (clz.isArray() && clz.getComponentType() == byte.class) {
+            return false
+        }
         if (clz.getName().startsWith("java.") || int.class == clz || long.class == clz
                 || short.class == clz || char.class == clz || boolean.class == clz || float.class == clz
                 || double.class == clz) {
@@ -339,6 +342,19 @@ ${output.join("\n")}
         // skip static fields
         if (Modifier.isStatic(field.modifiers)) {
             return null
+        }
+
+        // handle byte[] type
+        if (field.type == byte[].class) {
+            return """\
+    public byte[] ${fname};
+    public void set${StringUtils.capitalize(fname)}(byte[] ${fname}) {
+        this.${fname} = ${fname};
+    }
+    public byte[] get${StringUtils.capitalize(fname)}() {
+        return this.${fname};
+    }
+"""
         }
 
         // java type

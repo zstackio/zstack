@@ -42,6 +42,7 @@ public class TestFirstAvailableIpAllocatorStrategy2 {
             UsedIpVO vo = new UsedIpVO(ipinv.getUuid(), ip);
             vo.setUuid(Platform.getUuid());
             vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
+            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
             vo.setL3NetworkUuid(l3inv.getUuid());
             dbf.persist(vo);
         }
