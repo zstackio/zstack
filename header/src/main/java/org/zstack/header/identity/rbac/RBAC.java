@@ -794,6 +794,10 @@ public class RBAC {
         return entity;
     }
 
+    public static boolean isValidAPI(String apiName) {
+        return apiBuckets.containsKey(apiName);
+    }
+
     public static boolean isAdminOnlyAPI(String apiName) {
         return apiBuckets.get(apiName).adminOnly;
     }
