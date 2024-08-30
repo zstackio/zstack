@@ -1,17 +1,16 @@
 package org.zstack.test.integration.storage.snapshot
 
-
 import org.zstack.core.db.Q
+import org.zstack.header.core.trash.InstallPathRecycleVO
+import org.zstack.header.core.trash.InstallPathRecycleVO_;
 import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.header.storage.primary.ImageCacheVO
-import org.zstack.header.storage.primary.ImageCacheVO_
-import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
-import org.zstack.sdk.*
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -342,18 +341,8 @@ class ReimageVmSaveSnapshotCase extends SubCase {
         reimageVmInstance {
             vmInstanceUuid = vm.uuid
         }
-
-        VolumeSnapshotVO snapshotVO = Q.New(VolumeSnapshotVO.class)
-                .eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).find()
-        VolumeSnapshotTreeVO volumeSnapshotTreeVO = Q.New(VolumeSnapshotTreeVO.class)
-                .eq(VolumeSnapshotTreeVO_.volumeUuid, vm.getRootVolumeUuid()).find()
-        assert snapshotVO.getParentUuid() == null
-        assert volumeSnapshotTreeVO != null
-        assert snapshotVO.getTreeUuid() == volumeSnapshotTreeVO.getUuid()
-
-        revertVolumeFromSnapshot {
-            uuid = snapshotVO.uuid
-        }
+         assert Q.New(InstallPathRecycleVO.class)
+                .eq(InstallPathRecycleVO_.resourceUuid, vm.getRootVolumeUuid()).isExists()
     }
 
     void testReimageVmSaveSnapshotCeph(){
@@ -365,18 +354,8 @@ class ReimageVmSaveSnapshotCase extends SubCase {
         reimageVmInstance {
             vmInstanceUuid = vm.uuid
         }
-
-        VolumeSnapshotVO snapshotVO = Q.New(VolumeSnapshotVO.class)
-                .eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).find()
-        VolumeSnapshotTreeVO volumeSnapshotTreeVO = Q.New(VolumeSnapshotTreeVO.class)
-                .eq(VolumeSnapshotTreeVO_.volumeUuid, vm.getRootVolumeUuid()).find()
-        assert snapshotVO.getParentUuid() == null
-        assert volumeSnapshotTreeVO != null
-        assert snapshotVO.getTreeUuid() == volumeSnapshotTreeVO.getUuid()
-
-        revertVolumeFromSnapshot {
-            uuid = snapshotVO.uuid
-        }
+        assert Q.New(InstallPathRecycleVO.class)
+                .eq(InstallPathRecycleVO_.resourceUuid, vm.getRootVolumeUuid()).isExists()
     }
 
     void testReimageVmSaveSnapshotSmp(){
@@ -388,18 +367,8 @@ class ReimageVmSaveSnapshotCase extends SubCase {
         reimageVmInstance {
             vmInstanceUuid = vm.uuid
         }
-
-        VolumeSnapshotVO snapshotVO = Q.New(VolumeSnapshotVO.class)
-                .eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).find()
-        VolumeSnapshotTreeVO volumeSnapshotTreeVO = Q.New(VolumeSnapshotTreeVO.class)
-                .eq(VolumeSnapshotTreeVO_.volumeUuid, vm.getRootVolumeUuid()).find()
-        assert snapshotVO.getParentUuid() == null
-        assert volumeSnapshotTreeVO != null
-        assert snapshotVO.getTreeUuid() == volumeSnapshotTreeVO.getUuid()
-
-        revertVolumeFromSnapshot {
-            uuid = snapshotVO.uuid
-        }
+        assert Q.New(InstallPathRecycleVO.class)
+                .eq(InstallPathRecycleVO_.resourceUuid, vm.getRootVolumeUuid()).isExists()
     }
 
     void testReimageVmSaveSnapshotNfs(){
@@ -411,18 +380,8 @@ class ReimageVmSaveSnapshotCase extends SubCase {
         reimageVmInstance {
             vmInstanceUuid = vm.uuid
         }
-
-        VolumeSnapshotVO snapshotVO = Q.New(VolumeSnapshotVO.class)
-                .eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).find()
-        VolumeSnapshotTreeVO volumeSnapshotTreeVO = Q.New(VolumeSnapshotTreeVO.class)
-                .eq(VolumeSnapshotTreeVO_.volumeUuid, vm.getRootVolumeUuid()).find()
-        assert snapshotVO.getParentUuid() == null
-        assert volumeSnapshotTreeVO != null
-        assert snapshotVO.getTreeUuid() == volumeSnapshotTreeVO.getUuid()
-
-        revertVolumeFromSnapshot {
-            uuid = snapshotVO.uuid
-        }
+        assert Q.New(InstallPathRecycleVO.class)
+                .eq(InstallPathRecycleVO_.resourceUuid, vm.getRootVolumeUuid()).isExists()
     }
     @Override
     void clean() {

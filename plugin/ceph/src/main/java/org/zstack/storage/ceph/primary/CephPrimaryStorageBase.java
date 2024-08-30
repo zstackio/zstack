@@ -5186,38 +5186,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-                        sq.add(VolumeSnapshotVO_.primaryStorageInstallPath, Op.LIKE,
-                                String.format("%s%%", originalVolumePath));
-                        sq.count();
-                        if (sq.count() == 0) {
-                            DeleteCmd cmd = new DeleteCmd();
-                            cmd.installPath = originalVolumePath;
-                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(null) {
-                                @Override
-                                public void success(DeleteRsp returnValue) {
-                                    logger.debug(String.format("successfully deleted %s", originalVolumePath));
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    //TODO GC
-                                    logger.warn(String.format("unable to delete %s, %s. Need a cleanup",
-                                            originalVolumePath, errorCode));
-                                }
-                            });
-                        } else {
-                            trash.createTrash(TrashType.ReimageVolume, false, msg.getVolume());
-                        }
-                        trigger.next();
-                    }
-                });
-
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {

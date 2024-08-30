@@ -17,6 +17,8 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.*;
+import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -31,7 +33,6 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.*;
-import org.zstack.header.storage.backup.VolumeBackupOverlayMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint;
@@ -56,10 +57,8 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -100,6 +99,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
     private VolumeDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private StorageTrash trash;
 
     public VolumeBase(VolumeVO vo) {
         self = vo;
@@ -261,30 +262,6 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "mark-root-volume-as-snapshot-on-primary-storage";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        MarkRootVolumeAsSnapshotMsg gmsg = new MarkRootVolumeAsSnapshotMsg();
-                        rootVolumeInventory.setDescription(String.format("save snapshot for reimage vm [uuid:%s]", msg.getVmInstanceUuid()));
-                        rootVolumeInventory.setName(String.format("reimage-vm-point-%s-%s", msg.getVmInstanceUuid(), TimeUtils.getCurrentTimeStamp("yyyyMMddHHmmss")));
-                        gmsg.setVolume(rootVolumeInventory);
-                        gmsg.setAccountUuid(msg.getAccountUuid());
-                        bus.makeLocalServiceId(gmsg, VolumeSnapshotConstant.SERVICE_ID);
-                        bus.send(gmsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(reply.getError());
-                                }
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
                     String __name__ = "reset-root-volume-from-image-on-primary-storage";
 
                     @Override
@@ -322,14 +299,23 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
+                                    logger.debug(String.format("failed to sync volume size after reimage, %s", reply.getError()));
+                                    vo.setSize(originSize);
                                 }
-
                                 vo.setSize(((SyncVolumeSizeReply) reply).getSize());
                                 trigger.next();
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "move-origin-volume-to-trash";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        trash.createTrash(TrashType.ReimageVolume, false, rootVolumeInventory);
+                        trigger.next();
                     }
                 });
 
