@@ -15,6 +15,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.upgrade.GrayVersion;
+import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
@@ -57,6 +58,8 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -78,6 +81,8 @@ public class KvmBackend extends HypervisorBackend {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected SMPPrimaryStorageFactory primaryStorageFactory;
+    @Autowired
+    protected UpgradeChecker upgradeChecker;
 
     public KvmBackend() {
     }
@@ -2222,6 +2227,16 @@ public class KvmBackend extends HypervisorBackend {
         if (huuids.isEmpty()) {
             // no host in the cluster
             completion.success(ClusterConnectionStatus.Disconnected);
+            return;
+        }
+
+        huuids = huuids.stream()
+                .filter(uuid -> !upgradeChecker
+                        .skipInnerDeployOrInitOnCurrentAgent(uuid))
+                .collect(Collectors.toList());
+        if (huuids.isEmpty()) {
+            // no host in the cluster
+            completion.success(ClusterConnectionStatus.FullyConnected);
             return;
         }
 
