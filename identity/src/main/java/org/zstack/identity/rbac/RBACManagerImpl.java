@@ -217,6 +217,15 @@ public class RBACManagerImpl extends AbstractService implements
                 if (!m.matches() || path.contains("..")) {
                     return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
                 }
+
+                if (!action.contains("*")) {
+                    String fullPath = action.startsWith(".") ?
+                            AccountConstant.POLICY_BASE_PACKAGE + action.substring(1) :
+                            action;
+                    if (!RBAC.isValidAPI(fullPath) || RBAC.isAdminOnlyAPI(fullPath)) {
+                        return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
+                    }
+                }
             }
         }
 
