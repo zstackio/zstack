@@ -34,8 +34,8 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
     public void allocate() {
         if (HostAllocatorConstant.MIGRATE_VM_ALLOCATOR_TYPE.equals(spec.getAllocatorStrategy()) &&
                 HostAllocatorGlobalConfig.MIGRATION_BETWEEN_DIFFERENT_OS.value(Boolean.class)) {
-            next(candidates);
             logger.debug("allow migration between hosts with different os, skip checking the target host os");
+            next(candidates);
             return;
         }
         throwExceptionIfIAmTheFirstFlow();
@@ -45,6 +45,7 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
         String currentHostUuid = vm.getHostUuid() == null ? vm.getLastHostUuid() : vm.getHostUuid();
         if (currentHostUuid == null) {
             logger.debug(String.format("VM[uuid:%s] never started on any host, skip host OS checker", vm.getUuid()));
+            next(candidates);
             return;
         }
 
@@ -76,7 +77,8 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
 
     private Map<String, HostOperationSystem> generateHostUuidOsMap(List<HostVO> hostList) {
         final Map<String, String> hostHypervisorTypeMap = hostList.stream()
-                .collect(Collectors.toMap(ResourceVO::getUuid, HostAO::getHypervisorType));
+                .collect(Collectors.toMap(ResourceVO::getUuid, HostAO::getHypervisorType,
+                        (existing, replacement) -> replacement));
         final Set<String> hypervisorTypeSet = new HashSet<>(hostHypervisorTypeMap.values());
 
         final Map<String, HostOperationSystem> results = new HashMap<>(hostList.size());
