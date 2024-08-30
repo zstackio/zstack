@@ -55,8 +55,8 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
 
         if (PolicyUtils.isAdminOnlyAction(entity.getApiName())) {
-            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED,
-                    "request api[name: %s] is admin only, can not be executed by current user",
+            throw new OperationFailureException(err(OPERATION_DENIED,
+                    "operation[API:%s] is denied: admin-only API",
                     entity.getApiName()));
         }
 
@@ -74,7 +74,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
         // no policies applied to the operation, deny by default
         throw new OperationFailureException(err(OPERATION_DENIED,
-                "operation[API:%s] is denied by default, please contact admin to correct it", apiClass.getName()));
+                "operation[API:%s] is denied: no permission", apiClass.getName()));
     }
 
     protected List<RolePolicyVO> getPoliciesForAPI() {
