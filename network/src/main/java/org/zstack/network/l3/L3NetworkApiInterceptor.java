@@ -767,7 +767,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddDnsToL3NetworkMsg msg) {
-        if (!NetworkUtils.isIpAddress(msg.getDns())) {
+        if (NetworkUtils.isNotIpAddress(msg.getDns())) {
             throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", msg.getDns()));
         }
 

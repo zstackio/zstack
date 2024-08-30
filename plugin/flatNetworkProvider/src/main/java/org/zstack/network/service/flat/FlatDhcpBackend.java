@@ -439,29 +439,33 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private List<IpStatisticData> ipStatisticAll(APIGetL3NetworkIpStatisticMsg msg, String sortBy) {
         /*
         select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmInstanceUuid, it.name as vmInstanceName, it.type, uip.createDate, uip.uuid
-        from (select uuid, ip, IpInLong, createDate, vmNicUuid
+        from (select uuid, ip, IpInLong, ipInBinary, createDate, vmNicUuid
             from UsedIpVO
             where l3NetworkUuid = '{uuid}' [and ip like '{ip}']
-            order by {sortBy} {direction}
+            order by LENGTH({sortBy}) {direction}, {sortBy} {direction}
             limit {limit} offset {start}) uip
                 left join (select uuid, name, usedIpUuid from VipVO
                     where l3NetworkUuid = '{l3Uuid}') vip on uip.uuid = vip.usedIpUuid
                 left join (select uuid, vmInstanceUuid from VmNicVO) nic on uip.vmNicUuid = nic.uuid
                 left join (select uuid, name, type from VmInstanceVO) it on nic.vmInstanceUuid = it.uuid
-        order by {sortBy} {direction};
+        order by LENGTH({sortBy}) {direction}, {sortBy} {direction};
          */
+        if (SortBy.IP.equals(msg.getSortBy())) {
+            sortBy = "ipInBinary";
+        }
         Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
         Set<String> dhcp = dhcpMap.keySet();
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmUuid, it.name as vmName, it.type, uip.createDate, uip.uuid ")
-                .append("from (select uuid, ip, ipInLong, createDate, vmNicUuid from UsedIpVO where l3NetworkUuid = '")
+                .append("from (select uuid, ip, ipInLong, ipInBinary, createDate, vmNicUuid from UsedIpVO where l3NetworkUuid = '")
                 .append(msg.getL3NetworkUuid()).append('\'');
 
         if (StringUtils.isNotEmpty(msg.getIp())) {
             sqlBuilder.append(" and ip like '").append(msg.getIp()).append('\'');
         }
 
-        sqlBuilder.append(" order by ").append(sortBy).append(' ').append(msg.getSortDirection()).append(" limit ")
+        sqlBuilder.append(" order by LENGTH(").append(sortBy).append(") ").append(msg.getSortDirection())
+                .append(", ").append(sortBy).append(" ").append(msg.getSortDirection()).append(" limit ")
                 .append(msg.getLimit()).append(" offset ").append(msg.getStart()).append(") uip ")
                 .append("left join ")
                 .append("(select uuid, name, usedIpUuid from VipVO ")
@@ -471,7 +475,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 .append("(select uuid, vmInstanceUuid from VmNicVO) nic on uip.vmNicUuid = nic.uuid ")
                 .append("left join ")
                 .append("(select uuid, name, type from VmInstanceVO) it on it.uuid = nic.vmInstanceUuid ")
-                .append("order by ").append(sortBy).append(' ').append(msg.getSortDirection());
+                .append("order by LENGTH(").append(sortBy).append(") ").append(msg.getSortDirection())
+                .append(", ").append(sortBy).append(" ").append(msg.getSortDirection());
 
         Query q = dbf.getEntityManager().createNativeQuery(sqlBuilder.toString());
         List<Object[]> results = q.getResultList();
@@ -927,7 +932,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             msg.setAllocateStrategy(L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY);
         } else {
             msg.setAllocateStrategy(L3NetworkConstant.FIRST_AVAILABLE_IPV6_ALLOCATOR_STRATEGY);
-        }   
+        }
         IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(IpAllocatorType.valueOf(msg.getAllocatorStrategy()));
         try {
             UsedIpInventory ip = ias.allocateIp(msg);
@@ -2434,12 +2439,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                             vo.setUuid(Platform.getUuid());
                             vo.setIpRangeUuid(ipr.getUuid());
                             vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
-                            //vo.setVmNicUuid(nic.getUuid());
                             vo.setIpVersion(ipr.getIpVersion());
                             vo.setIp(newIp);
+                            vo.setIpInLong(i);
+                            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setNetmask(ipr.getNetmask());
                             vo.setGateway(ipr.getGateway());
-                            vo.setIpInLong(i);
                             vo.setUsedFor(IpAllocatedReason.Reserved.toString());
                             vo.setMetaData(reservedIpRange.getUuid());
                             usedIpVOS.add(vo);
@@ -2470,6 +2475,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                             //vo.setVmNicUuid(nic.getUuid());
                             vo.setIpVersion(ipr.getIpVersion());
                             vo.setIp(newIp);
+                            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setNetmask(ipr.getNetmask());
                             vo.setGateway(ipr.getGateway());
                             vo.setUsedFor(IpAllocatedReason.Reserved.toString());

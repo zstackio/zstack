@@ -3897,6 +3897,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             }
                             vo.setIp(msg.getIp());
                             vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
+                            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setNetmask(msg.getNetmask());
                             vo.setGateway(msg.getGateway());
                             vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
@@ -3919,7 +3920,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 voUpdateSet.add(vo);
                             }
                             vo.setIp(msg.getIp6());
-                            vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getIp()).longValue());
+                            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(String.format("%s/%s", msg.getIp6(), msg.getIpv6Prefix())));
                             vo.setGateway(msg.getIpv6Gateway());
                             vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
@@ -6726,7 +6727,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 UsedIpVO vo = new UsedIpVO();
                                 vo.setUuid(Platform.getUuid());
                                 vo.setIp(nicIpAddressInfo.ipv6Address);
-                                vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getIp()).longValue());
+                                vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                 vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(nicIpAddressInfo.ipv6Address + "/" + nicIpAddressInfo.ipv6Prefix));
                                 vo.setGateway(nicIpAddressInfo.ipv6Gateway);
                                 vo.setIpVersion(IPv6Constants.IPv6);
@@ -6747,6 +6748,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 if (NetworkUtils.isIpv4Address(nicIpAddressInfo.ipv4Address)) {
                                     vo.setIp(nicIpAddressInfo.ipv4Address);
                                     vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
+                                    vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                     vo.setNetmask(nicIpAddressInfo.ipv4Netmask);
                                     vo.setGateway(nicIpAddressInfo.ipv4Gateway);
                                     vo.setIpVersion(IPv6Constants.IPv4);

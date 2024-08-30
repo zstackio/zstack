@@ -635,7 +635,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             for (String dns: msg.getDnsList()) {
-                if (!NetworkUtils.isIpAddress(dns)) {
+                if (NetworkUtils.isNotIpAddress(dns)) {
                     throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", dns));
                 }
             }

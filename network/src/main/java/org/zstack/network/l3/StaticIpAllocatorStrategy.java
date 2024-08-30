@@ -127,7 +127,8 @@ public class StaticIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
         UsedIpVO vo = new UsedIpVO();
         vo.setUuid(Platform.getUuid());
         vo.setIp(ip);
-        vo.setIpInLong(ipVersion == IPv6Constants.IPv4 ? NetworkUtils.ipv4StringToLong(ip) : IPv6NetworkUtils.ipv6AddressToBigInteger(ip).longValue());
+        vo.setIpInLong(ipVersion == IPv6Constants.IPv4 ? NetworkUtils.ipv4StringToLong(ip) : 0);
+        vo.setIpInBinary(NetworkUtils.ipStringToBytes(ip));
         vo.setIpVersion(ipVersion);
         vo.setL3NetworkUuid(amsg.getL3NetworkUuid());
         vo.setNetmask(amsg.getNetmask());

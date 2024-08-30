@@ -27,25 +27,25 @@ doc {
 	}
 	field {
 		name "ipVersion"
-		desc ""
+		desc "IP协议号"
 		type "Integer"
 		since "4.10.0"
 	}
 	field {
 		name "ip"
-		desc ""
+		desc "IP地址"
 		type "String"
 		since "4.10.0"
 	}
 	field {
 		name "netmask"
-		desc ""
+		desc "子网掩码"
 		type "String"
 		since "4.10.0"
 	}
 	field {
 		name "gateway"
-		desc ""
+		desc "网关地址"
 		type "String"
 		since "4.10.0"
 	}
@@ -57,9 +57,15 @@ doc {
 	}
 	field {
 		name "ipInLong"
-		desc ""
+		desc "Long存储的IP地址，仅ipv4有效"
 		type "long"
 		since "4.10.0"
+	}
+	field {
+		name "ipInBinary"
+		desc "二进制存储的IP地址（字节数组，IPv4长度4，IPv6长度16，网络序）"
+		type "byte[]"
+		since "4.10.16"
 	}
 	field {
 		name "vmNicUuid"

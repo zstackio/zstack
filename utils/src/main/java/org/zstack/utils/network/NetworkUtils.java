@@ -102,6 +102,10 @@ public class NetworkUtils {
         return isIpAddress;
     }
 
+    public static boolean isNotIpAddress(String ip) {
+        return !isIpAddress(ip);
+    }
+
     public static boolean isNetmask(String netmask) {
         return validNetmasks.containsKey(netmask);
     }
@@ -145,8 +149,21 @@ public class NetworkUtils {
         return value;
     }
 
+    public static byte[] ipStringToBytes(String ip) {
+        if (isNotIpAddress(ip)) {
+            throw new IllegalArgumentException(String.format("%s is not a valid ip address", ip));
+        }
+
+        try {
+            InetAddress inetAddress = InetAddress.getByName(ip);
+            return inetAddress.getAddress();
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException(String.format("%s is not a valid ip address", ip), e);
+        }
+    }
+
     public static long ipv4StringToLong(String ip) {
-        validateIp(ip);
+        validateIpv4(ip);
 
         try {
             InetAddress ia = InetAddress.getByName(ip);
@@ -175,20 +192,20 @@ public class NetworkUtils {
     }
 
     public static int ipRangeLength(String startIp, String endIp) {
-        validateIp(startIp);
-        validateIp(endIp);
+        validateIpv4(startIp);
+        validateIpv4(endIp);
         return (int)(ipv4StringToLong(endIp) - ipv4StringToLong(startIp) + 1);
     }
 
-    private static void validateIp(String ip) {
+    private static void validateIpv4(String ip) {
         if (!isIpv4Address(ip)) {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address", ip));
         }
     }
 
     public static void validateIpRange(String startIp, String endIp) {
-        validateIp(startIp);
-        validateIp(endIp);
+        validateIpv4(startIp);
+        validateIpv4(endIp);
         long s = ipv4StringToLong(startIp);
         long e = ipv4StringToLong(endIp);
         if (s > e) {
@@ -197,8 +214,8 @@ public class NetworkUtils {
     }
 
     public static boolean isValidIpv4Range(String startIp, String endIp) {
-        validateIp(startIp);
-        validateIp(endIp);
+        validateIpv4(startIp);
+        validateIpv4(endIp);
         long s = ipv4StringToLong(startIp);
         long e = ipv4StringToLong(endIp);
         return e >= s;
@@ -566,7 +583,7 @@ public class NetworkUtils {
 
     public static boolean isIpv4InCidr(String ipv4, String cidr) {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
-        validateIp(ipv4);
+        validateIpv4(ipv4);
 
         SubnetUtils.SubnetInfo info = getSubnetInfo(new SubnetUtils(cidr));
         return isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress());
@@ -578,7 +595,7 @@ public class NetworkUtils {
         List<String> results = new ArrayList<>();
 
         for (String ipv4 : ipv4s) {
-            validateIp(ipv4);
+            validateIpv4(ipv4);
             if (isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress())) {
                 results.add(ipv4) ;
             }

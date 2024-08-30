@@ -54,6 +54,10 @@ public class UsedIpVO {
     private long ipInLong;
 
     @Column
+    @Index
+    private byte[] ipInBinary;
+
+    @Column
     private String usedFor;
 
     @Column
@@ -88,6 +92,7 @@ public class UsedIpVO {
         this.setGateway(vo.getGateway());
         this.setNetmask(vo.getNetmask());
         this.setIpInLong(vo.getIpInLong());
+        this.setIpInBinary(vo.getIpInBinary());
         this.setUsedFor(vo.getUsedFor());
         this.setMetaData(vo.getMetaData());
         this.setCreateDate(vo.getCreateDate());
@@ -126,6 +131,14 @@ public class UsedIpVO {
 
     public void setIpInLong(long ipInLong) {
         this.ipInLong = ipInLong;
+    }
+
+    public byte[] getIpInBinary() {
+        return ipInBinary;
+    }
+
+    public void setIpInBinary(byte[] ipInBinary) {
+        this.ipInBinary = ipInBinary;
     }
 
     public String getL3NetworkUuid() {
