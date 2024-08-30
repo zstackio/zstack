@@ -65,11 +65,11 @@ public class RolePolicyResourceRefVO {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RolePolicyResourceRefVO that = (RolePolicyResourceRefVO) o;
-        return Objects.equals(id, that.id);
+        return effect == that.effect && Objects.equals(resourceUuid, that.resourceUuid);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(effect, resourceUuid);
     }
 }
