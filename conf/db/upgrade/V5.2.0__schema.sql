@@ -137,6 +137,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`GuestVmScriptExecutedRecordDetailVO` (
     CONSTRAINT `fkGuestVmScriptExecutedRecordDetailVOScriptExecutedRecordVO` FOREIGN KEY (`recordUuid`) REFERENCES `GuestVmScriptExecutedRecordVO` (`uuid`) ON DELETE CASCADE
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CALL ADD_COLUMN('SanSecSecretResourcePoolVO', 'managementIp', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('SanSecSecretResourcePoolVO', 'port', 'int unsigned', 1, NULL);
+CALL ADD_COLUMN('SanSecSecretResourcePoolVO', 'username', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('SanSecSecretResourcePoolVO', 'password', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('SanSecSecretResourcePoolVO', 'sm3Key', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('SanSecSecretResourcePoolVO', 'sm4Key', 'VARCHAR(128)', 1, NULL);
+
 ALTER TABLE `zstack`.`AuditsVO` MODIFY COLUMN requestDump MEDIUMTEXT, MODIFY COLUMN responseDump MEDIUMTEXT;
 
 update EventSubscriptionVO set name = 'VM NIC IP Changed (GuestTools Is Required)' where uuid='98536fa94e3f4481a38331a989132b7c';
