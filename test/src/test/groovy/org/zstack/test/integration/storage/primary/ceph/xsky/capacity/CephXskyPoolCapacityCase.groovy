@@ -123,8 +123,7 @@ class CephXskyPoolCapacityCase extends SubCase {
                             usedCapacity:  bs.getPoolUsedCapacity(),
                             availableCapacity : bs.availableCapacity + addSize,
                             totalCapacity: bs.totalCapacity + addSize,
-                            relatedOsds: "osd.2",
-                            relatedOsdCapacity: osdMap3
+                            relatedOsds: "osd.2"
                     ),
                     new CephPoolCapacity(
                             name : "other-pool",
