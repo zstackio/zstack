@@ -2108,7 +2108,7 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private long maxMemory;
         @GrayVersion(value = "5.0.0")
-        private long reservedMemory;
+        private Long reservedMemory;
         @GrayVersion(value = "5.0.0")
         private int cpuNum;
         @GrayVersion(value = "5.0.0")
@@ -2155,7 +2155,7 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private String MemAccess;
         @GrayVersion(value = "5.1.0")
-        private boolean noSharePages;
+        private Boolean noSharePages;
         @GrayVersion(value = "5.0.0")
         private boolean usbRedirect;
         @GrayVersion(value = "5.0.0")
@@ -2236,13 +2236,13 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private String vmCpuVendorId;
         @GrayVersion(value = "5.0.0")
-        private boolean qemu64BitPciMmioSetup;
+        private Boolean qemu64BitPciMmioSetup;
 
-        public boolean isQemu64BitPciMmioSetup() {
+        public Boolean getQemu64BitPciMmioSetup() {
             return qemu64BitPciMmioSetup;
         }
 
-        public void setQemu64BitPciMmioSetup(boolean qemu64BitPciMmioSetup) {
+        public void setQemu64BitPciMmioSetup(Boolean qemu64BitPciMmioSetup) {
             this.qemu64BitPciMmioSetup = qemu64BitPciMmioSetup;
         }
 
@@ -2457,11 +2457,11 @@ public class KVMAgentCommands {
             MemAccess = memAccess;
         }
 
-        public boolean isNoSharePages() {
+        public Boolean getNoSharePages() {
             return noSharePages;
         }
 
-        public void setNoSharePages(boolean noSharePages) {
+        public void setNoSharePages(Boolean noSharePages) {
             this.noSharePages = noSharePages;
         }
 
@@ -2473,11 +2473,11 @@ public class KVMAgentCommands {
             this.maxMemory = maxMemory;
         }
 
-        public long getReservedMemory() {
+        public Long getReservedMemory() {
             return reservedMemory;
         }
 
-        public void setReservedMemory(long reservedMemory) {
+        public void setReservedMemory(Long reservedMemory) {
             this.reservedMemory = reservedMemory;
         }
 

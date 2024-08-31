@@ -62,15 +62,17 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
+        final String vrUuid = (String) data.get(VmInstanceConstant.Params.vmInstanceUuid.toString());
         if (CoreGlobalProperty.UNIT_TEST_ON) {
+            // update vyos agent version when open grayScaleUpgrade
+            upgradeChecker.updateAgentVersion(vrUuid, VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, new VirtualRouterMetadataOperator().getManagementVersion(), new VirtualRouterMetadataOperator().getManagementVersion());
             trigger.next();
             return;
         }
 
         boolean fromApi = Boolean.parseBoolean(String.valueOf(data.get(Params.fromApi.toString())));
         boolean isReconnect = Boolean.parseBoolean(String.valueOf(data.get(Params.isReconnect.toString())));
-        final String vrUuid = (String) data.get(VmInstanceConstant.Params.vmInstanceUuid.toString());
-        if (!fromApi && upgradeChecker.skipConnectAgent(vrUuid)) {
+        if (!fromApi && upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(vrUuid)) {
             trigger.next();
             return;
         }

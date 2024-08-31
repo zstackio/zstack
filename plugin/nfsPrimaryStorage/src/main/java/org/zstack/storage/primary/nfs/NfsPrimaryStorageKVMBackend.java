@@ -13,6 +13,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -20,6 +21,7 @@ import org.zstack.core.step.StepRun;
 import org.zstack.core.step.StepRunCondition;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -96,6 +98,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     private StorageTrash trash;
     @Autowired
     protected ApiTimeoutManager timeoutManager;
+    @Autowired
+    private UpgradeChecker upgradeChecker;
 
     public static final String MOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/mount";
     public static final String UNMOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/unmount";
@@ -422,6 +426,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         List<ErrorCode> errs = new ArrayList<>();
         AtomicBoolean isCapacityUpdated = new AtomicBoolean(false);
         new While<>(hostUuids).each((huuid, compl) -> {
+            if (upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(huuid)) {
+                compl.done();
+                return;
+            }
+
             PingCmd cmd = new PingCmd();
             cmd.setUuid(psInv.getUuid());
             cmd.mountPath = psInv.getMountPath();
@@ -1539,12 +1548,21 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void remount(final PrimaryStorageInventory pinv, String clusterUuid, final Completion completion) {
+    public void remount(PrimaryStorageInventory pinv, String clusterUuid, NfsPrimaryStorage.NfsConnectParam param, Completion completion) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
         q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
-        final List<String> huuids = q.listValue();
+        List<String> huuids = q.listValue();
+
+        // note: createKvmHostConnectingFlow will help remount the storage if agent
+        // reconnected, just skip storage connection
+        if (StorageRemountReason.PrimaryStorageConnection.equals(param.getReason())) {
+            huuids = huuids.stream()
+                    .filter(huuid -> !upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(huuid))
+                    .collect(Collectors.toList());
+        }
+
         if (huuids.isEmpty()) {
             completion.fail(operr("no hosts in the cluster[uuid:%s] are connected", clusterUuid));
             return;

@@ -475,8 +475,9 @@ public class KVMHost extends HostBase implements Host {
         }
 
         void call(String resourceUuid, ReturnValueCompletion<T> completion) {
-            if (upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), commandName)) {
-                completion.fail(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+            ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), commandName, commandStr != null ? commandStr : cmd);
+            if (errorCode != null) {
+                completion.fail(errorCode);
                 return;
             }
             
@@ -2336,11 +2337,11 @@ public class KVMHost extends HostBase implements Host {
         if (!msg.isNoStatusCheck()) {
             checkStatus();
         }
-        
-        if (upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName())) {
-            throw new OperationFailureException(operr("This operation is not allowed on host[uuid:%s] during grayscale upgrade!", self.getUuid()));
+
+        ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName(), msg.getCommand());
+        if (errorCode != null) {
+            throw new OperationFailureException(errorCode);
         }
-        
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
         Map<String, String> headers = new HashMap<>();
@@ -4513,10 +4514,18 @@ public class KVMHost extends HostBase implements Host {
             logger.debug("host status is %s, ignore version or host uuid changed issue");
             return;
         }
-        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            changeConnectionState(HostStatusEvent.disconnected);
-            new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            if (ret.getVersion() != null) {
+                logger.debug("skip fire host disconnected event and reconnect host during grayscale upgrade");
+                return;
+            }
+
+            logger.debug("still fire host disconnected event when kvmagent report version is null");
         }
+
+        changeConnectionState(HostStatusEvent.disconnected);
+        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
 
         ReconnectHostMsg rmsg = new ReconnectHostMsg();
         rmsg.setHostUuid(self.getUuid());
@@ -4581,8 +4590,22 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    boolean needReconnectHost(PingResponse rsp) {
-        return !self.getUuid().equals(rsp.getHostUuid()) || !dbf.getDbVersion().equals(rsp.getVersion());
+    enum ReconnectHostAction {
+        SkipPingExtensionAndReconnect,
+        DoPingExtensionAndReconnect,
+        DoNothing
+    }
+
+    ReconnectHostAction needReconnectHost(PingResponse rsp) {
+        if (!self.getUuid().equals(rsp.getHostUuid())) {
+            return ReconnectHostAction.SkipPingExtensionAndReconnect;
+        }
+
+        if (!dbf.getDbVersion().equals(rsp.getVersion())) {
+            return ReconnectHostAction.DoPingExtensionAndReconnect;
+        }
+
+        return ReconnectHostAction.DoNothing;
     }
 
     boolean inconsistentHostUuid(PingResponse rsp) {
@@ -4638,10 +4661,14 @@ public class KVMHost extends HostBase implements Host {
                                 // update host agent version when open grayScaleUpgrade
                                 upgradeChecker.updateAgentVersion(self.getUuid(), AnsibleConstant.KVM_AGENT_NAME, dbf.getDbVersion(), ret.getVersion());
 
-                                if (needReconnectHost(ret)) {
+                                ReconnectHostAction action = needReconnectHost(ret);
+                                if (!action.equals(ReconnectHostAction.DoNothing)) {
                                     // reconnect host require many steps which may influence the results
                                     // of extension points, so we skip them here and do it after next ping
-                                    data.put(KVMConstant.KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS, true);
+                                    if (action.equals(ReconnectHostAction.SkipPingExtensionAndReconnect)) {
+                                        data.put(KVMConstant.KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS, true);
+                                    }
+
                                     afterDone.add(() -> doReconnectHostDueToPingResult(ret));
                                 } else if (needUpdateHostConfiguration(ret)) {
                                     afterDone.add(KVMHost.this::doUpdateHostConfiguration);

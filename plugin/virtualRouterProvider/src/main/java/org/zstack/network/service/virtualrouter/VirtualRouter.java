@@ -602,7 +602,7 @@ public class VirtualRouter extends ApplianceVmBase {
             public void run(final SyncTaskChain chain) {
                 final ReconnectVirtualRouterVmReply reply = new ReconnectVirtualRouterVmReply();
 
-                if (upgradeChecker.skipConnectAgent(self.getUuid())) {
+                if (upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(self.getUuid())) {
                     bus.reply(msg, reply);
                     chain.next();
                     return;
@@ -658,8 +658,9 @@ public class VirtualRouter extends ApplianceVmBase {
             public void run(final SyncTaskChain chain) {
                 refreshVO();
 
-                if (upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName())) {
-                    throw new OperationFailureException(operr("This operation is not allowed on virtualRoute[uuid:%s] during grayscale upgrade!", self.getUuid()));
+                ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), msg.getCommandClassName(), msg.getCommand());
+                if (errorCode != null) {
+                    throw new OperationFailureException(errorCode);
                 }
 
                 final VirtualRouterAsyncHttpCallReply reply = new VirtualRouterAsyncHttpCallReply();

@@ -43,6 +43,18 @@ public class ReplyDroppedMessageNotifierExtensionPoint implements MarshalReplyMe
                 }
             }
         });
+
+        Test.getCurrentEnvSpec().notifiersOfReceivedMessages.forEach((msgClz, cs) -> {
+            if (msg.getClass() == msgClz) {
+                logger.debug("class matched, execute closure " + cs.size());
+                synchronized (cs) {
+                    for (Test.MessageNotifier notifier : cs) {
+                        notifier.getC().call(msg);
+                        notifier.getCounter().incrementAndGet();
+                    }
+                }
+            }
+        });
     }
 
     @Override
@@ -64,8 +76,9 @@ public class ReplyDroppedMessageNotifierExtensionPoint implements MarshalReplyMe
             if (replyOrEvent.getClass() == msgClz) {
                 logger.debug("class matched, execute closure " + cs.size());
                 synchronized (cs) {
-                    for (Closure c : cs) {
-                        c.call(replyOrEvent);
+                    for (Test.MessageNotifier notifier : cs) {
+                        notifier.getC().call(replyOrEvent);
+                        notifier.getCounter().incrementAndGet();
                     }
                 }
             }
