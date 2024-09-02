@@ -207,7 +207,7 @@ public class RBACManagerImpl extends AbstractService implements
 
     @Override
     public ErrorCode checkRolePolicies(List<RolePolicyStatement> policies) {
-        Pattern pattern = Pattern.compile("^[a-zA-Z0-9.]+$");
+        Pattern pattern = Pattern.compile("^[a-zA-Z0-9._]+$");
 
         for (RolePolicyStatement policy : policies) {
             for (String action : policy.actions) {
@@ -216,6 +216,15 @@ public class RBACManagerImpl extends AbstractService implements
                 Matcher m = pattern.matcher(path);
                 if (!m.matches() || path.contains("..")) {
                     return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
+                }
+
+                if (!action.contains("*")) {
+                    String fullPath = action.startsWith(".") ?
+                            AccountConstant.POLICY_BASE_PACKAGE + action.substring(1) :
+                            action;
+                    if (!RBAC.isValidAPI(fullPath) || RBAC.isAdminOnlyAPI(fullPath)) {
+                        return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
+                    }
                 }
             }
         }

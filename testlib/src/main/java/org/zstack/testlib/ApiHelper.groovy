@@ -41636,6 +41636,33 @@ abstract class ApiHelper {
     }
 
 
+    def getRolePolicysAction(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.GetRolePolicyActionsAction.class) Closure c) {
+        def a = new org.zstack.sdk.identity.role.api.GetRolePolicyActionsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryRole(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.QueryRoleAction.class) Closure c) {
         def a = new org.zstack.sdk.identity.role.api.QueryRoleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
