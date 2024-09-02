@@ -193,6 +193,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     public void run(final FlowTrigger trigger, Map data) {
                         GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
                         cmd.volumeInstallDir = backend.makeVolumeInstallDir(rootVolume);
+                        cmd.volumeInstallPath = rootVolume.getInstallPath();
                         cmd.imageCacheDir = backend.getCachedImageDir();
                         cmd.volumeUuid = rootVolume.getUuid();
                         callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_BASE_IMAGE_PATH, cmd, GetVolumeBaseImagePathRsp.class, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(trigger) {
@@ -201,7 +202,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                 if (rsp.path != null && backend.isCachedImageUrl(rsp.path)) {
                                     backingImage.path = rsp.path;
                                     backingImage.size = rsp.size;
+                                } else if (rsp.path == null && !CollectionUtils.isEmpty(rsp.otherPaths)) {
+                                    // TODO handle snapshot image
+                                    backingImage.path = rsp.otherPaths.get(0);
+                                    backingImage.size = 0L;
                                 }
+
                                 trigger.next();
                             }
 
