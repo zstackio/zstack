@@ -48,7 +48,7 @@ delete from `ResourceVO` where `resourceType` = 'UserVO';
 
 rename table `AccountResourceRefVO` to `AccountResourceRefVODeprecated`;
 
-create table `zstack`.`AccountResourceRefVO` (
+create table if not exists `zstack`.`AccountResourceRefVO` (
     `id` bigint unsigned not null unique AUTO_INCREMENT,
     `accountUuid` char(32) default null,
     `resourceUuid` varchar(32) not null,
@@ -91,7 +91,7 @@ delete from `ResourceVO` where resourceType in ('SystemRoleVO', 'RoleVO', 'Polic
 CALL DROP_COLUMN('RoleVO', 'identity');
 CALL DROP_COLUMN('RoleVO', 'state');
 
-create table `zstack`.`RolePolicyVO` (
+create table if not exists `zstack`.`RolePolicyVO` (
     `id` bigint unsigned not null unique AUTO_INCREMENT,
     `roleUuid` char(32) not null,
     `actions` varchar(255) not null,
@@ -103,7 +103,7 @@ create table `zstack`.`RolePolicyVO` (
     index `idxRolePolicyActions` (`actions`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-create table `zstack`.`RolePolicyResourceRefVO` (
+create table if not exists `zstack`.`RolePolicyResourceRefVO` (
     `id` bigint unsigned not null unique AUTO_INCREMENT,
     `rolePolicyId` bigint unsigned not null,
     `effect` varchar(32) default 'Allow' not null,
@@ -112,7 +112,7 @@ create table `zstack`.`RolePolicyResourceRefVO` (
     constraint `fkRolePolicyResourceRefRolePolicyId` foreign key (`rolePolicyId`) references `RolePolicyVO` (`id`) on delete cascade
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-create table `zstack`.`RoleAccountRefVO` (
+create table if not exists `zstack`.`RoleAccountRefVO` (
     `id` bigint unsigned not null unique AUTO_INCREMENT,
     `roleUuid` char(32) not null,
     `accountUuid` char(32) not null,
@@ -123,3 +123,51 @@ create table `zstack`.`RoleAccountRefVO` (
     constraint `fkRoleAccountRefRoleUuid` foreign key (`roleUuid`) references `RoleVO` (`uuid`) on delete cascade,
     constraint `fkRoleAccountRefAccountUuid` foreign key (`accountUuid`) references `AccountVO` (`uuid`) on delete cascade
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists `zstack`.`AccountGroupVO` (
+    `uuid` char(32) not null unique,
+    `name` varchar(255) not null,
+    `description` varchar(2048) default '',
+    `parentUuid` char(32) default null,
+    `rootGroupUuid` char(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists `zstack`.`AccountGroupAccountRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `accountUuid` char(32) not null,
+    `groupUuid` char(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkAccountGroupAccountRefAccountUuid` foreign key (`accountUuid`) references `AccountVO` (`uuid`) on delete cascade,
+    constraint `fkAccountGroupAccountRefGroupUuid` foreign key (`groupUuid`) references `AccountGroupVO` (`uuid`) on delete cascade
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists `zstack`.`AccountGroupRoleRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `roleUuid` char(32) not null,
+    `groupUuid` char(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkAccountGroupRoleRefRoleUuid` foreign key (`roleUuid`) references `RoleVO` (`uuid`) on delete cascade,
+    constraint `fkAccountGroupRoleRefGroupUuid` foreign key (`groupUuid`) references `AccountGroupVO` (`uuid`) on delete cascade
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists `zstack`.`AccountGroupResourceRefVO` (
+    `id` bigint unsigned not null unique AUTO_INCREMENT,
+    `resourceUuid` char(32) not null,
+    `groupUuid` char(32) not null,
+    `lastOpDate` timestamp on update CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    primary key (`id`),
+    constraint `fkAccountGroupResourceRefResourceUuid` foreign key (`resourceUuid`) references `ResourceVO` (`uuid`) on delete cascade,
+    constraint `fkAccountGroupResourceRefGroupUuid` foreign key (`groupUuid`) references `AccountGroupVO` (`uuid`) on delete cascade
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+alter table `zstack`.`AccountResourceRefVO` add constraint fkAccountResourceRefAccountPermissionFrom foreign key (accountPermissionFrom) references AccountGroupVO (uuid) on delete cascade;
+alter table `zstack`.`RoleAccountRefVO` add constraint fkRoleAccountRefAccountPermissionFrom foreign key (accountPermissionFrom) references AccountGroupVO (uuid) on delete cascade;
+

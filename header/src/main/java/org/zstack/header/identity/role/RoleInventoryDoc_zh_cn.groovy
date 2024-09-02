@@ -1,5 +1,7 @@
 package org.zstack.header.identity.role
 
+import java.sql.Timestamp
+
 doc {
 
 	title "角色清单"
@@ -22,13 +24,12 @@ doc {
 		type "String"
 		since "4.10.0"
 	}
-	ref {
+	field {
 		name "type"
 		path "org.zstack.header.identity.role.RoleInventory.type"
 		desc "角色类型, 系统预定义的为 Predefined, 自定义的为 Customized"
-		type "RoleType"
+		type "String"
 		since "4.10.0"
-		clz RoleType.class
 	}
 	field {
 		name "createDate"

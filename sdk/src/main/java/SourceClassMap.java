@@ -354,6 +354,10 @@ public class SourceClassMap {
 			put("org.zstack.header.zone.ZoneInventory", "org.zstack.sdk.ZoneInventory");
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
+			put("org.zstack.iam1.entity.accounts.AccountGroupInventory", "org.zstack.sdk.iam1.accounts.AccountGroupInventory");
+			put("org.zstack.iam1.entity.accounts.AccountGroupResourceView", "org.zstack.sdk.iam1.accounts.AccountGroupResourceView");
+			put("org.zstack.iam1.entity.accounts.AccountGroupRoleView", "org.zstack.sdk.iam1.accounts.AccountGroupRoleView");
+			put("org.zstack.iam1.entity.accounts.AccountGroupView", "org.zstack.sdk.iam1.accounts.AccountGroupView");
 			put("org.zstack.iam1.entity.ensemble.AccountGroupSharingView", "org.zstack.sdk.iam1.ensemble.AccountGroupSharingView");
 			put("org.zstack.iam1.entity.ensemble.AccountSharingView", "org.zstack.sdk.iam1.ensemble.AccountSharingView");
 			put("org.zstack.iam1.entity.ensemble.ResourceEnsembleInventory", "org.zstack.sdk.iam1.ensemble.ResourceEnsembleInventory");
@@ -1278,6 +1282,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");
 			put("org.zstack.sdk.databasebackup.DatabaseType", "org.zstack.header.storage.database.backup.DatabaseType");
+			put("org.zstack.sdk.iam1.accounts.AccountGroupInventory", "org.zstack.iam1.entity.accounts.AccountGroupInventory");
+			put("org.zstack.sdk.iam1.accounts.AccountGroupResourceView", "org.zstack.iam1.entity.accounts.AccountGroupResourceView");
+			put("org.zstack.sdk.iam1.accounts.AccountGroupRoleView", "org.zstack.iam1.entity.accounts.AccountGroupRoleView");
+			put("org.zstack.sdk.iam1.accounts.AccountGroupView", "org.zstack.iam1.entity.accounts.AccountGroupView");
 			put("org.zstack.sdk.iam1.ensemble.AccountGroupSharingView", "org.zstack.iam1.entity.ensemble.AccountGroupSharingView");
 			put("org.zstack.sdk.iam1.ensemble.AccountSharingView", "org.zstack.iam1.entity.ensemble.AccountSharingView");
 			put("org.zstack.sdk.iam1.ensemble.ResourceEnsembleInventory", "org.zstack.iam1.entity.ensemble.ResourceEnsembleInventory");
