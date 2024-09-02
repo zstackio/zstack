@@ -35,6 +35,9 @@ import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.identity.login.LogInMsg;
 import org.zstack.header.identity.login.LogInReply;
 import org.zstack.header.identity.login.LoginManager;
+import org.zstack.header.identity.rbac.RBAC;
+import org.zstack.header.identity.role.api.APIGetRolePolicyActionsMsg;
+import org.zstack.header.identity.role.api.APIGetRolePolicyActionsReply;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RestAuthenticationBackend;
@@ -83,6 +86,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private final Map<Class, List<QuotaMessageHandler<? extends Message>>> messageHandlerMap = new HashMap<>();
 
     private static final Map<String, QuotaDefinition> quotaDefinitionMap = new HashMap<>();
+    private List<String> rolePolicyActionsCache = null;
+    private final Object rolePolicyActionsLock = new Object();
 
     @Override
     public void prepareDbInitialValue() {
@@ -208,6 +213,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIIsOpensourceVersionMsg) msg);
         } else if (msg instanceof APIRenewSessionMsg) {
             handle((APIRenewSessionMsg) msg);
+        } else if (msg instanceof APIGetRolePolicyActionsMsg) {
+            handle((APIGetRolePolicyActionsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -414,6 +421,24 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(APIGetRolePolicyActionsMsg msg) {
+        APIGetRolePolicyActionsReply reply = new APIGetRolePolicyActionsReply();
+
+        synchronized (rolePolicyActionsLock) {
+            if (rolePolicyActionsCache == null) {
+                rolePolicyActionsCache = RBAC.apiBuckets.entrySet().stream()
+                        .filter(entry -> !entry.getValue().adminOnly)
+                        .map(Map.Entry::getKey)
+                        .filter(api -> api.startsWith(AccountConstant.POLICY_BASE_PACKAGE))
+                        .map(api -> api.substring(AccountConstant.POLICY_BASE_PACKAGE.length() - 1))
+                        .sorted()
+                        .collect(Collectors.toList());
+            }
+            reply.setInventories(rolePolicyActionsCache);
+        }
+        bus.reply(msg, reply);
     }
 
     private void handle(CreateAccountMsg msg) {
