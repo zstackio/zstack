@@ -3583,6 +3583,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             vo.setVmNicUuid(nicVO.getUuid());
                             vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
                             vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
+                            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());
                             nicVO.setNetmask(vo.getNetmask());
@@ -3595,7 +3596,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
                             if (NetworkUtils.isIpv4Address(msg.getIp())) {
-                                vo.setIpInLong(NetworkUtils.ipv4StringToLong(msg.getIp()));
                                 vo.setIp(msg.getIp());
                                 vo.setNetmask(msg.getNetmask());
                                 vo.setGateway(msg.getGateway().isEmpty() ? "" : msg.getGateway());
@@ -3603,6 +3603,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 vo.setVmNicUuid(nicVO.getUuid());
                                 vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
                                 vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
+                                vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                 vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
                                 nicVO.setUsedIpUuid(vo.getUuid());
                                 nicVO.setIp(vo.getIp());
@@ -3617,6 +3618,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 vo.setIpVersion(IPv6Constants.IPv6);
                                 vo.setVmNicUuid(nicVO.getUuid());
                                 vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+                                vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                 nicVO.setUsedIpUuid(vo.getUuid());
                                 nicVO.setIp(vo.getIp());
                                 nicVO.setNetmask(vo.getNetmask());
@@ -6278,6 +6280,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 vo.setVmNicUuid(msg.getVmNicUuid());
                                 vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());
                                 vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
+                                vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                 nicVO.setUsedIpUuid(vo.getUuid());
                                 nicVO.setIp(nicIpAddressInfo.ipv4Address);
                                 nicVO.setGateway(nicIpAddressInfo.ipv4Gateway);
@@ -6297,6 +6300,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     vo.setVmNicUuid(msg.getVmNicUuid());
                                     vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());
                                     vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
+                                    vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                     vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
                                     nicVO.setUsedIpUuid(vo.getUuid());
                                     nicVO.setIp(nicIpAddressInfo.ipv4Address);

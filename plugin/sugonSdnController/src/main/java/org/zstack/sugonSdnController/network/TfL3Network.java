@@ -315,6 +315,7 @@ public class TfL3Network extends L3BasicNetwork {
         servIpInfo.setL3NetworkUuid(ipRangeVO.getL3NetworkUuid());
         servIpInfo.setIp(servIp);
         servIpInfo.setIpInLong(NetworkUtils.ipv4StringToLong(servIp));
+        servIpInfo.setIpInBinary(NetworkUtils.ipStringToBytes(servIpInfo.getIp()));
         servIpInfo.setGateway(ipRangeVO.getGateway());
         servIpInfo.setNetmask(ipRangeVO.getNetmask());
         servIpInfo.setIpVersion(IPv6Constants.IPv4);
@@ -326,6 +327,7 @@ public class TfL3Network extends L3BasicNetwork {
         edgeIpInfo.setUuid(Platform.getUuid());
         edgeIpInfo.setIp(edgeIp);
         edgeIpInfo.setIpInLong(NetworkUtils.ipv4StringToLong(edgeIp));
+        edgeIpInfo.setIpInBinary(NetworkUtils.ipStringToBytes(edgeIpInfo.getIp()));
         dbf.persist(edgeIpInfo);
     }
 

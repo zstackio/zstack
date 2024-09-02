@@ -53,6 +53,10 @@ public class UsedIpVO {
     private long ipInLong;
 
     @Column
+    @Index
+    private byte[] ipInBinary;
+
+    @Column
     private String usedFor;
 
     @Column
@@ -109,6 +113,14 @@ public class UsedIpVO {
 
     public void setIpInLong(long ipInLong) {
         this.ipInLong = ipInLong;
+    }
+
+    public byte[] getIpInBinary() {
+        return ipInBinary;
+    }
+
+    public void setIpInBinary(byte[] ipInBinary) {
+        this.ipInBinary = ipInBinary;
     }
 
     public String getL3NetworkUuid() {
