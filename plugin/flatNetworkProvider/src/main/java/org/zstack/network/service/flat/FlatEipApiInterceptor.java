@@ -1,6 +1,7 @@
 package org.zstack.network.service.flat;
 
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.Q;
@@ -8,6 +9,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -16,6 +18,7 @@ import org.zstack.network.service.eip.*;
 import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -52,6 +55,30 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
         return msg;
     }
 
+    void validateNicGateway(String vipUuid, String nicUuid) {
+        VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).find();
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicUuid).find();
+
+        String gateway = null;
+        if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
+            for (UsedIpVO ip : nicVO.getUsedIps()) {
+                if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                    gateway = ip.getGateway();
+                }
+            }
+        } else {
+            for (UsedIpVO ip : nicVO.getUsedIps()) {
+                if (ip.getIpVersion() == IPv6Constants.IPv6) {
+                    gateway = ip.getGateway();
+                }
+            }
+        }
+
+        if (StringUtils.isEmpty(gateway)) {
+            throw new ApiMessageInterceptionException(argerr("could not attach eip because there is no gateway for nic[uuid:%s]", nicUuid));
+        }
+    }
+
     @Transactional(readOnly = true)
     protected void validate(APICreateEipMsg msg) {
         if (msg.getVmNicUuid() == null) {
@@ -63,6 +90,8 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
         if (!providerType.toString().equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {
             return;
         }
+
+        validateNicGateway(msg.getVipUuid(), msg.getVmNicUuid());
 
         String pubL3Uuid = Q.New(VipVO.class).select(VipVO_.l3NetworkUuid).eq(VipVO_.uuid, msg.getVipUuid()).findValue();
         checkVipPublicL3Network(msg.getVmNicUuid(), pubL3Uuid);
@@ -83,6 +112,8 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
         if (!providerType.toString().equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {
             return;
         }
+
+        validateNicGateway(eip.getVipUuid(), msg.getVmNicUuid());
 
         String pubL3Uuid = SQL.New("select vip.l3NetworkUuid from EipVO eip, VipVO vip" +
                 " where eip.uuid = :eipUuid" +
