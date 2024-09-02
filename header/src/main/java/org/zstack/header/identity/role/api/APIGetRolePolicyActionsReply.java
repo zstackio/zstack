@@ -32,7 +32,6 @@ public class APIGetRolePolicyActionsReply extends APIReply {
             ".header.identity.APICreateAccountMsg",
             ".header.identity.APIDeleteAccountMsg",
             ".header.identity.APIGetAccountQuotaUsageMsg",
-            ".header.identity.APIGetActionsMsg",
             ".header.identity.APIGetResourceAccountMsg",
             ".header.identity.APILogInByAccountMsg",
             ".header.identity.APILogOutMsg",
