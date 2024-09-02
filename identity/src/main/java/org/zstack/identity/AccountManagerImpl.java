@@ -873,7 +873,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                                 List<String> existingQuota = q(QuotaVO.class).select(QuotaVO_.name).eq(QuotaVO_.identityUuid, nA).listValues();
                                 for (Map.Entry<String, QuotaDefinition> e : quotaDefinitionMap.entrySet()) {
                                     String rtype = e.getKey();
-                                    Long value = e.getValue().getDefaultValue();
+                                    Long value = e.getValue().getRepairValue() != null ?
+                                            e.getValue().getRepairValue() : e.getValue().getDefaultValue();
                                     if (existingQuota.contains(rtype)) {
                                         continue;
                                     }
