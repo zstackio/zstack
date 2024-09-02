@@ -28,8 +28,8 @@ public class RemoveAccountFromGroupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String groupUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String accountUuid;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List accountUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -94,7 +94,7 @@ public class RemoveAccountFromGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/account-groups/{groupUuid}/accounts/{accountUuid}";
+        info.path = "/account-groups/{groupUuid}/accounts";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
