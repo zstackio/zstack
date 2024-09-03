@@ -837,8 +837,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 HostStatus state = t.get(1, HostStatus.class);
                 if (state == HostStatus.Connected) {
                     connected.add(huuid);
-                } else {
-                    // for Disconnected and Connecting, treat as Disconnected
+                } else if (state == HostStatus.Disconnected) {
                     disconnected.add(huuid);
                 }
             }
