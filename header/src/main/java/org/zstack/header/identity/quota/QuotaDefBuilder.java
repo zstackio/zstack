@@ -5,6 +5,7 @@ import org.zstack.utils.DebugUtils;
 public class QuotaDefBuilder {
     private String name;
     private Long defaultValue;
+    private Long repairValue;
     private GetQuotaUsage getUsage;
 
     public static QuotaDefBuilder newBuilder() {
@@ -21,6 +22,11 @@ public class QuotaDefBuilder {
         return this;
     }
 
+    public QuotaDefBuilder repairValue(Long repairValue) {
+        this.repairValue = repairValue;
+        return this;
+    }
+
     public QuotaDefBuilder getUsage(GetQuotaUsage usage) {
         this.getUsage = usage;
         return this;
@@ -34,6 +40,7 @@ public class QuotaDefBuilder {
         private String name;
         private Long defaultValue;
         private GetQuotaUsage getUsage;
+        private Long repairValue;
 
         @Override
         public String getName() {
@@ -65,17 +72,28 @@ public class QuotaDefBuilder {
         public void setGetUsage(GetQuotaUsage getUsage) {
             this.getUsage = getUsage;
         }
+
+        @Override
+        public Long getRepairValue() {
+            return repairValue;
+        }
+
+        public void setRepairValue(Long repairValue) {
+            this.repairValue = repairValue;
+        }
     }
 
     public QuotaDefinition build() {
         DebugUtils.Assert(this.name != null, "quota name is required");
         DebugUtils.Assert(this.defaultValue != null, "quota defaultValue is required");
         DebugUtils.Assert(this.getUsage != null, "quota getUsage is required");
+        DebugUtils.Assert(this.repairValue != null, "quota repairValue is required");
 
         QuotaDefinitionImpl quota = new QuotaDefinitionImpl();
         quota.name = this.name;
         quota.defaultValue = this.defaultValue;
         quota.getUsage = this.getUsage;
+        quota.repairValue = this.repairValue;
         return quota;
     }
 }
