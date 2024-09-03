@@ -7,7 +7,7 @@ doc {
 
     category "rbac"
 
-    desc """在这里填写API描述"""
+    desc """绑定角色和账户"""
 
     rest {
         request {
@@ -24,38 +24,38 @@ doc {
 				column {
 					name "roleUuid"
 					enclosedIn "params"
-					desc ""
+					desc "角色 UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "accountUuid"
 					enclosedIn "params"
-					desc "账户UUID"
+					desc "账户 UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.10.0"
 				}
 			}
         }
