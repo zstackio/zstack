@@ -224,6 +224,7 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.SessionInventory", "org.zstack.sdk.SessionInventory");
 			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.login.LoginAuthenticationProcedureDesc", "org.zstack.sdk.LoginAuthenticationProcedureDesc");
+			put("org.zstack.header.identity.role.RoleAccountRefInventory", "org.zstack.sdk.identity.role.RoleAccountRefInventory");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
 			put("org.zstack.header.identityzone.IdentityZoneInventory", "org.zstack.sdk.IdentityZoneInventory");
 			put("org.zstack.header.identityzone.IdentityZoneProperty", "org.zstack.sdk.IdentityZoneProperty");
@@ -1297,6 +1298,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.ldap.entity.LdapEntryAttributeInventory", "org.zstack.ldap.entity.LdapEntryAttributeInventory");
 			put("org.zstack.sdk.identity.ldap.entity.LdapEntryInventory", "org.zstack.ldap.entity.LdapEntryInventory");
 			put("org.zstack.sdk.identity.ldap.entity.LdapServerInventory", "org.zstack.ldap.entity.LdapServerInventory");
+			put("org.zstack.sdk.identity.role.RoleAccountRefInventory", "org.zstack.header.identity.role.RoleAccountRefInventory");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");

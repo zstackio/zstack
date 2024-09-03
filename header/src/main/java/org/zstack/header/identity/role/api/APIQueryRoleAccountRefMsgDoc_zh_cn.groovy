@@ -1,23 +1,22 @@
 package org.zstack.header.identity.role.api
 
-import org.zstack.header.identity.role.api.APIQueryRoleReply
+import org.zstack.header.identity.role.api.APIQueryRoleAccountRefReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryRole"
+    title "QueryRoleAccountRef"
 
     category "rbac"
 
-    desc """查询角色"""
+    desc """查询角色账户关系"""
 
     rest {
         request {
-			url "GET /v1/identities/roles"
-			url "GET /v1/identities/roles/{uuid}"
+			url "GET /v1/identities/role-account-refs"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryRoleMsg.class
+            clz APIQueryRoleAccountRefMsg.class
 
             desc """"""
             
@@ -25,7 +24,7 @@ doc {
         }
 
         response {
-            clz APIQueryRoleReply.class
+            clz APIQueryRoleAccountRefReply.class
         }
     }
 }
