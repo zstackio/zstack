@@ -189,7 +189,7 @@ public class XmlHookBase {
                 }
 
                 List<ErrorCode> errs = new ArrayList<>();
-                new While<>(vmUuids).each((vmUuid, wcompl) -> {
+                new While<>(vmUuids).step((vmUuid, wcompl) -> {
                     CheckAndStartVmInstanceMsg cmsg = new CheckAndStartVmInstanceMsg();
                     cmsg.setVmInstanceUuid(vmUuid);
                     bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
@@ -205,7 +205,7 @@ public class XmlHookBase {
                             }
                         }
                     });
-                }).run(new WhileDoneCompletion(trigger) {
+                }, 10).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (errs.isEmpty()) {
