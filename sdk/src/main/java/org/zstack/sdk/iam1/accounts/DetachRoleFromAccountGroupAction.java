@@ -28,8 +28,8 @@ public class DetachRoleFromAccountGroupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String groupUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String roleUuid;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List roleUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -94,7 +94,7 @@ public class DetachRoleFromAccountGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/account-groups/{groupUuid}/role/{roleUuid}";
+        info.path = "/account-groups/{groupUuid}/roles";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
