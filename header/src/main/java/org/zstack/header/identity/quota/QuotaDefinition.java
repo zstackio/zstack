@@ -18,4 +18,13 @@ public interface QuotaDefinition {
      * no usage supported
      */
     Long getQuotaUsage(String accountUuid);
+
+    /**
+     * Gets the repair value for the quota.
+     *
+     * @return the repair value as a Long. If the value is null, it indicates that the repair value is unavailable or not supported.
+     */
+    default Long getRepairValue() {
+        return null;
+    }
 }
