@@ -7053,6 +7053,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setEnableRDP(VmSystemTags.RDP_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.RDP_ENABLE_TOKEN));
             spec.setVDIMonitorNumber(VmSystemTags.VDI_MONITOR_NUMBER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.VDI_MONITOR_NUMBER_TOKEN));
             spec.setEnableSecurityElement(Boolean.parseBoolean(VmSystemTags.SECURITY_ELEMENT_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.SECURITY_ELEMENT_ENABLE_TOKEN)));
+            spec.setAllocationScene(AllocationScene.Auto);
         }
 
         if (msg instanceof HaStartVmInstanceMsg) {
