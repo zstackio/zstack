@@ -5488,14 +5488,14 @@ public class KVMHost extends HostBase implements Host {
                     public void run(FlowTrigger trigger, Map data) {
                         StringBuilder builder = new StringBuilder();
                         if (!KVMGlobalProperty.MN_NETWORKS.isEmpty()) {
-                            builder.append(String.format("sudo bash %s -m %s -p %s -s %s -c %s",
+                            builder.append(String.format("bash %s -m %s -p %s -s %s -c %s",
                                     "/var/lib/zstack/kvm/kvmagent-iptables",
                                     KVMConstant.IPTABLES_COMMENTS,
                                     KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
                                     KVMGlobalProperty.AGENT_PORT,
                                     String.join(",", KVMGlobalProperty.MN_NETWORKS)));
                         } else {
-                            builder.append(String.format("sudo bash %s -m %s -p %s -s %s",
+                            builder.append(String.format("bash %s -m %s -p %s -s %s",
                                     "/var/lib/zstack/kvm/kvmagent-iptables",
                                     KVMConstant.IPTABLES_COMMENTS,
                                     KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
@@ -5503,11 +5503,13 @@ public class KVMHost extends HostBase implements Host {
                         }
 
                         try {
-                            new Ssh().shell(builder.toString())
+                            new Ssh()
                                     .setUsername(getSelf().getUsername())
                                     .setPassword(getSelf().getPassword())
                                     .setHostname(getSelf().getManagementIp())
-                                    .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
+                                    .setPort(getSelf().getPort())
+                                    .sudoCommand(builder.toString())
+                                    .runErrorByExceptionAndClose();
                         } catch (SshException ex) {
                             throw new OperationFailureException(operr(ex.toString()));
                         }
