@@ -134,4 +134,9 @@ public class KVMGlobalConfig {
     @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "use 'force' mode when stop VM without operating system")
     public static GlobalConfig STOP_VM_WITHOUT_OS_BY_FORCE_MODE =
             new GlobalConfig(CATEGORY, "stop.vm.without.os.by.force.mode");
+
+    @GlobalConfigValidation(numberGreaterThan = 1000, numberLessThan = 1000000)
+    @GlobalConfigDef(defaultValue = "1000000",type = Long.class)
+    @BindResourceConfig(VmInstanceVO.class)
+    public static GlobalConfig VM_CPU_QUOTA = new GlobalConfig(CATEGORY,"vm.cpu.quota");
 }

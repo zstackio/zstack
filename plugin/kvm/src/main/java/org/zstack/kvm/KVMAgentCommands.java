@@ -82,6 +82,30 @@ public class KVMAgentCommands {
     public static class UpdateVmPriorityRsp extends AgentResponse {
     }
 
+    public static class UpdateVmCpuQuotaCmd extends AgentCommand {
+        private String vmUuid;
+        private long vmCpuQuota;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public long getVmCpuQuota() {
+            return vmCpuQuota;
+        }
+
+        public void setVmCpuQuota(long vmCpuQuota) {
+            this.vmCpuQuota = vmCpuQuota;
+        }
+    }
+
+    public static class UpdateVmCpuQuotaRsp extends AgentResponse {
+    }
+
     public static class ChangeVmNicStateCommand extends AgentCommand {
         private String vmUuid;
         private String state;
@@ -1928,6 +1952,7 @@ public class KVMAgentCommands {
         private boolean vmPortOff;
         private String vmCpuModel;
         private boolean emulateHyperV;
+        private long vmCpuQuota;
 
         // hyperv features
         private boolean hypervClock;
@@ -1963,6 +1988,14 @@ public class KVMAgentCommands {
         // TODO: only for test
         private boolean useColoBinary;
         private String vmCpuVendorId;
+
+        public long getVmCpuQuota() {
+            return vmCpuQuota;
+        }
+
+        public void setVmCpuQuota(long vmCpuQuota) {
+            this.vmCpuQuota = vmCpuQuota;
+        }
 
         public void setSocketNum(Integer socketNum) {
             this.socketNum = socketNum;

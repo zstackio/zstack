@@ -58,6 +58,7 @@ public interface KVMConstant {
     String KVM_UPDATE_NIC_PATH = "/vm/updatenic";
     String KVM_VM_CHECK_STATE = "/vm/checkstate";
     String KVM_VM_UPDATE_PRIORITY_PATH = "/vm/priority";
+    String KVM_VM_UPDATE_CPU_QUOTA_PATH = "/vm/cpu/quota";
     String KVM_TAKE_VOLUME_SNAPSHOT_PATH = "/vm/volume/takesnapshot";
     String KVM_CHECK_VOLUME_SNAPSHOT_PATH = "/vm/volume/checksnapshot";
     String KVM_MERGE_SNAPSHOT_PATH = "/vm/volume/mergesnapshot";

@@ -182,6 +182,10 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
+        spec.simulator(KVMConstant.KVM_VM_UPDATE_CPU_QUOTA_PATH) {
+            return new KVMAgentCommands.UpdateVmCpuQuotaRsp()
+        }
+
         spec.simulator(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH) {
             return new KVMAgentCommands.UpdateVmPriorityRsp()
         }
