@@ -664,7 +664,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
             if (msg.getGateway() == null) {
-                msg.setGateway("");
+                if (ipv4Ranges.isEmpty()) {
+                    msg.setGateway("");
+                } else {
+                    msg.setGateway(ipv4Ranges.get(0).getGateway());
+                }
             }
             if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getIp()).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
                 throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic", msg.getIp()));
@@ -680,7 +684,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
             if (msg.getIpv6Gateway() == null) {
-                msg.setIpv6Gateway("");
+                if (ipv6Ranges.isEmpty()) {
+                    msg.setIpv6Gateway("");
+                } else {
+                    msg.setIpv6Gateway(ipv6Ranges.get(0).getGateway());
+                }
             }
             if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getIp6()).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
                 throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic", msg.getIp6()));
