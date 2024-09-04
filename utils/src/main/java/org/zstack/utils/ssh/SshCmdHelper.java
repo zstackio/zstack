@@ -7,7 +7,7 @@ public class SshCmdHelper {
         } else if (password == null) {
             return String.format("sudo %s", cmd);
         } else {
-            return String.format("echo %s | sudo -S %s", shellQuote(password), cmd);
+            return String.format("echo %s | sudo -S %s 2>/dev/null", shellQuote(password), cmd);
         }
     }
 

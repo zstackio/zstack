@@ -25,7 +25,7 @@ public class SshFileExistChecker implements AnsibleChecker {
                 .setHostname(targetIp)
                 .setTimeout(5);
         try {
-            ssh.sudoCommand(String.format("stat %s 2>/dev/null", filePath));
+            ssh.sudoCommand(String.format("stat %s", filePath));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {
                 logger.debug(String.format("file not exist, file: %s", filePath));
