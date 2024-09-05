@@ -20,7 +20,7 @@ import static org.zstack.utils.CollectionDSL.list;
         isAction = true,
         responseClass = APIRevokeResourceSharingEvent.class
 )
-public class APIRevokeResourceSharingMsg extends APIMessage implements AccountMessage {
+public class APIRevokeResourceSharingMsg extends APIMessage {
     @APIParam(resourceType = ResourceVO.class, nonempty = true, scope = APIParam.SCOPE_MUST_OWNER)
     private List<String> resourceUuids;
     private boolean toPublic;
@@ -60,11 +60,6 @@ public class APIRevokeResourceSharingMsg extends APIMessage implements AccountMe
         this.accountUuids = accountUuids;
     }
 
-    @Override
-    public String getAccountUuid() {
-        return getSession().getAccountUuid();
-    }
- 
     public static APIRevokeResourceSharingMsg __example__() {
         APIRevokeResourceSharingMsg msg = new APIRevokeResourceSharingMsg();
         msg.setAccountUuids(list(uuid(), uuid()));
