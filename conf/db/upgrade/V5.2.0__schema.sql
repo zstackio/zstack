@@ -219,3 +219,6 @@ BEGIN
 END $$
 DELIMITER ;
 CALL upgradeIpInLongColumn();
+
+ALTER TABLE BareMetal2ChassisGpuDeviceVO MODIFY COLUMN memory bigint unsigned NULL, MODIFY COLUMN power bigint unsigned NULL;
+ALTER TABLE GpuDeviceVO MODIFY COLUMN memory bigint unsigned NULL, MODIFY COLUMN power bigint unsigned NULL;
