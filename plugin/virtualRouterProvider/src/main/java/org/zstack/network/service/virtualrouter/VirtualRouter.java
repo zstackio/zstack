@@ -507,6 +507,7 @@ public class VirtualRouter extends ApplianceVmBase {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
                 self = dbf.reload(self);
                 completion.success();
             }
