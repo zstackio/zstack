@@ -107,5 +107,7 @@
             <zstack:extension interface="org.zstack.header.identity.AfterUpdateAccountExtensionPoint"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="ShareResourceHelper" class="org.zstack.identity.rbac.ShareResourceHelper"/>
 </beans>
 

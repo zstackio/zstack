@@ -1,10 +1,8 @@
 package org.zstack.identity;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -29,21 +27,16 @@ import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.identity.header.ShareResourceContext;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionUtils.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AccountBase extends AbstractAccount {
@@ -299,10 +292,6 @@ public class AccountBase extends AbstractAccount {
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIUpdateAccountMsg) {
             handle((APIUpdateAccountMsg) msg);
-        } else if (msg instanceof APIShareResourceMsg) {
-            handle((APIShareResourceMsg) msg);
-        } else if (msg instanceof APIRevokeResourceSharingMsg) {
-            handle((APIRevokeResourceSharingMsg) msg);
         } else if (msg instanceof APIUpdateQuotaMsg) {
             handle((APIUpdateQuotaMsg) msg);
         } else if (msg instanceof APIDeleteAccountMsg) {
@@ -363,188 +352,6 @@ public class AccountBase extends AbstractAccount {
 
         APIUpdateQuotaEvent evt = new APIUpdateQuotaEvent(msg.getId());
         evt.setInventory(QuotaInventory.valueOf(quota));
-        bus.publish(evt);
-    }
-
-    @Transactional
-    private void handle(APIRevokeResourceSharingMsg msg) {
-        APIRevokeResourceSharingEvent evt = new APIRevokeResourceSharingEvent(msg.getId());
-        ShareResourceContext context = ShareResourceContext.fromResources(msg.getResourceUuids());
-
-        CollectionUtils.safeForEach(
-                pluginRgty.getExtensionList(ResourceSharingExtensionPoint.class),
-                it -> it.beforeSharingResource(context));
-
-        final Set<String> masterResourceUuidSet = context.findAllMasterResources();
-        final Set<String> resourceUuidSet = context.findAllSolitaryResources();
-        if (msg.isAll()) {
-            if (!masterResourceUuidSet.isEmpty()) {
-                SQL.New(AccountResourceRefVO.class)
-                        .in(AccountResourceRefVO_.resourcePermissionFrom, masterResourceUuidSet)
-                        .in(AccountResourceRefVO_.type, list(AccessLevel.Share, AccessLevel.SharePublic))
-                        .delete();
-            }
-            if (!resourceUuidSet.isEmpty()) {
-                SQL.New(AccountResourceRefVO.class)
-                        .in(AccountResourceRefVO_.resourceUuid, resourceUuidSet)
-                        .in(AccountResourceRefVO_.type, list(AccessLevel.Share, AccessLevel.SharePublic))
-                        .delete();
-            }
-            logger.debug(String.format("Revoke shared resource for all types: \n%s",
-                    StringUtils.join(transform(resourceUuidSet, uuid -> String.format("\tuuid:%s", uuid)), "\n")));
-            bus.publish(evt);
-            return;
-        }
-
-        if (msg.isToPublic()) {
-            if (!masterResourceUuidSet.isEmpty()) {
-                SQL.New(AccountResourceRefVO.class)
-                        .in(AccountResourceRefVO_.resourcePermissionFrom, masterResourceUuidSet)
-                        .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
-                        .delete();
-            }
-            if (!resourceUuidSet.isEmpty()) {
-                SQL.New(AccountResourceRefVO.class)
-                        .in(AccountResourceRefVO_.resourceUuid, resourceUuidSet)
-                        .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
-                        .delete();
-            }
-            logger.debug(String.format("Revoke shared resource for type(SharePublic): \n%s",
-                    StringUtils.join(transform(resourceUuidSet, uuid -> String.format("\tuuid:%s", uuid)), "\n")));
-            bus.publish(evt);
-            return;
-        }
-
-        if (!masterResourceUuidSet.isEmpty()) {
-            SQL.New(AccountResourceRefVO.class)
-                    .in(AccountResourceRefVO_.resourcePermissionFrom, masterResourceUuidSet)
-                    .eq(AccountResourceRefVO_.type, AccessLevel.Share)
-                    .in(AccountResourceRefVO_.accountUuid, msg.getAccountUuids())
-                    .delete();
-        }
-        if (!resourceUuidSet.isEmpty()) {
-            SQL.New(AccountResourceRefVO.class)
-                    .in(AccountResourceRefVO_.resourceUuid, resourceUuidSet)
-                    .eq(AccountResourceRefVO_.type, AccessLevel.Share)
-                    .in(AccountResourceRefVO_.accountUuid, msg.getAccountUuids())
-                    .delete();
-        }
-
-        logger.debug(String.format("Revoke shared resource for type(Share to Account): \n%s\nWith accounts: \n%s",
-                StringUtils.join(transform(resourceUuidSet, uuid -> String.format("\tuuid:%s", uuid)), "\n"),
-                StringUtils.join(transform(msg.getAccountUuids(), uuid -> String.format("\tuuid:%s", uuid)), "\n")));
-        bus.publish(evt);
-    }
-
-    private void handle(APIShareResourceMsg msg) {
-        ShareResourceContext context = ShareResourceContext.fromResources(msg.getResourceUuids());
-
-        CollectionUtils.safeForEach(
-                pluginRgty.getExtensionList(ResourceSharingExtensionPoint.class),
-                it -> it.beforeSharingResource(context));
-
-        new SQLBatch(){
-            @Override
-            protected void scripts() {
-                if (msg.isToPublic()) {
-                    shareToPublic(msg.getResourceUuids());
-                } else {
-                    shareToAccount(msg.getResourceUuids(), msg.getAccountUuids());
-                }
-            }
-
-            void shareToPublic(List<String> resourceUuidList) {
-                final Set<String> allMasterResources = context.findAllMasterResources();
-                List<AccountResourceRefVO> needPersists = new ArrayList<>();
-
-                for (String masterResource : allMasterResources) {
-                    List<AccountResourceRefVO> refs = context.buildShareToPublicRecords(masterResource);
-
-                    List<String> existsUuidList = q(AccountResourceRefVO.class)
-                            .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
-                            .in(AccountResourceRefVO_.resourceUuid, transform(refs, AccountResourceRefVO::getResourceUuid))
-                            .eq(AccountResourceRefVO_.resourcePermissionFrom, masterResource)
-                            .select(AccountResourceRefVO_.resourceUuid)
-                            .listValues();
-                    refs.removeIf(ref -> existsUuidList.contains(ref.getResourceUuid()));
-                    needPersists.addAll(refs);
-                }
-
-                List<AccountResourceRefVO> refs = context.buildShareToPublicRecordsForSolitaryResources();
-                if (!refs.isEmpty()) {
-                    List<String> existsUuidList = q(AccountResourceRefVO.class)
-                            .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
-                            .in(AccountResourceRefVO_.resourceUuid, transform(refs, AccountResourceRefVO::getResourceUuid))
-                            .isNull(AccountResourceRefVO_.resourcePermissionFrom)
-                            .select(AccountResourceRefVO_.resourceUuid)
-                            .listValues();
-                    refs.removeIf(ref -> existsUuidList.contains(ref.getResourceUuid()));
-                    needPersists.addAll(refs);
-                }
-
-                if (needPersists.isEmpty()) {
-                    return;
-                }
-
-                dbf.persistCollection(needPersists);
-                String texts = StringUtils.join(transform(refs,
-                        shared -> String.format("\tuuid:%s type:%s", shared.getResourceUuid(), shared.getResourceType())), "\n");
-                logger.debug(String.format("Shared below resources to public: \n%s", texts));
-            }
-
-            void shareToAccount(List<String> resourceUuidList, List<String> receiverUuidList) {
-                final Set<String> allMasterResources = context.findAllMasterResources();
-                List<AccountResourceRefVO> needPersists = new ArrayList<>();
-
-                for (String masterResource : allMasterResources) {
-                    List<AccountResourceRefVO> refs = context.buildShareAccountRecords(masterResource, receiverUuidList);
-
-                    List<Tuple> existsTuples = q(AccountResourceRefVO.class)
-                            .eq(AccountResourceRefVO_.type, AccessLevel.Share)
-                            .in(AccountResourceRefVO_.resourceUuid, transform(refs, AccountResourceRefVO::getResourceUuid))
-                            .in(AccountResourceRefVO_.accountUuid, receiverUuidList)
-                            .eq(AccountResourceRefVO_.resourcePermissionFrom, masterResource)
-                            .select(
-                                    AccountResourceRefVO_.resourceUuid,
-                                    AccountResourceRefVO_.accountUuid,
-                                    AccountResourceRefVO_.resourcePermissionFrom
-                            )
-                            .listTuple();
-                    Set<String> existsRecords = transformToSet(existsTuples,
-                            tuple -> tuple.get(0, String.class) + "," + tuple.get(1, String.class) + "," + tuple.get(2, String.class));
-                    refs.removeIf(ref -> existsRecords.contains(String.format("%s,%s,%s",
-                            ref.getResourceUuid(), ref.getAccountUuid(), ref.getResourcePermissionFrom())));
-                    needPersists.addAll(refs);
-                }
-
-                List<AccountResourceRefVO> refs = context.buildShareAccountRecordsForSolitaryResources(receiverUuidList);
-                if (!refs.isEmpty()) {
-                    List<Tuple> existsTuples = q(AccountResourceRefVO.class)
-                            .eq(AccountResourceRefVO_.type, AccessLevel.Share)
-                            .in(AccountResourceRefVO_.resourceUuid, transform(refs, AccountResourceRefVO::getResourceUuid))
-                            .in(AccountResourceRefVO_.accountUuid, receiverUuidList)
-                            .isNull(AccountResourceRefVO_.resourcePermissionFrom)
-                            .select(AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.accountUuid)
-                            .listTuple();
-                    Set<Pair<String, String>> resourceAccountPairs = transformToSet(existsTuples,
-                            tuple -> new Pair<>(tuple.get(0, String.class), tuple.get(1, String.class)));
-                    refs.removeIf(ref -> resourceAccountPairs.contains(
-                            new Pair<>(ref.getResourceUuid(), ref.getAccountUuid())));
-                    needPersists.addAll(refs);
-                }
-
-                if (needPersists.isEmpty()) {
-                    return;
-                }
-
-                dbf.persistCollection(needPersists);
-                String texts = StringUtils.join(transform(needPersists,
-                        shared -> String.format("\tuuid:%s type:%s", shared.getResourceUuid(), shared.getResourceType())), "\n");
-                logger.debug(String.format("Shared below resources to account[uuid:%s]: \n%s", receiverUuidList, texts));
-            }
-        }.execute();
-
-        APIShareResourceEvent evt = new APIShareResourceEvent(msg.getId());
         bus.publish(evt);
     }
 }

@@ -29,7 +29,7 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.ResourceSharingExtensionPoint;
+import org.zstack.identity.rbac.ResourceSharingExtensionPoint;
 import org.zstack.identity.header.ShareResourceContext;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;

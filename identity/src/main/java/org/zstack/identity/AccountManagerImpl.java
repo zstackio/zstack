@@ -44,6 +44,8 @@ import org.zstack.header.rest.RestAuthenticationBackend;
 import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
 import org.zstack.header.vo.*;
+import org.zstack.identity.header.ShareResourceContext;
+import org.zstack.identity.rbac.ShareResourceHelper;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
@@ -78,6 +80,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private EventFacade evtf;
     @Autowired
     private List<QuotaUpdateChecker> quotaChangeCheckers = Collections.emptyList();
+    @Autowired
+    private ShareResourceHelper shareResourceHelper;
 
     private final List<Class> resourceTypes = new ArrayList<>();
     private final Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
@@ -203,6 +207,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APILogOutMsg) msg);
         } else if (msg instanceof APIValidateSessionMsg) {
             handle((APIValidateSessionMsg) msg);
+        } else if (msg instanceof APIShareResourceMsg) {
+            handle((APIShareResourceMsg) msg);
+        } else if (msg instanceof APIRevokeResourceSharingMsg) {
+            handle((APIRevokeResourceSharingMsg) msg);
         } else if (msg instanceof APIGetResourceAccountMsg) {
             handle((APIGetResourceAccountMsg) msg);
         } else if (msg instanceof APIChangeResourceOwnerMsg) {
@@ -325,6 +333,31 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }).start();
     }
 
+    private void handle(APIShareResourceMsg msg) {
+        ShareResourceContext context = ShareResourceContext.fromResources(msg.getResourceUuids());
+
+        if (msg.isToPublic()) {
+            shareResourceHelper.shareToPublic(context);
+        } else {
+            shareResourceHelper.shareToAccounts(context, msg.getAccountUuids());
+        }
+
+        bus.publish(new APIShareResourceEvent(msg.getId()));
+    }
+
+    private void handle(APIRevokeResourceSharingMsg msg) {
+        ShareResourceContext context = ShareResourceContext.fromResources(msg.getResourceUuids());
+
+        if (msg.isAll()) {
+            shareResourceHelper.revokeSharingAll(context);
+        } else if (msg.isToPublic()) {
+            shareResourceHelper.revokeSharingToPublic(context);
+        } else {
+            shareResourceHelper.revokeSharingToAccounts(context, msg.getAccountUuids());
+        }
+
+        bus.publish(new APIRevokeResourceSharingEvent(msg.getId()));
+    }
 
     @Transactional(readOnly = true)
     private void handle(APIGetResourceAccountMsg msg) {

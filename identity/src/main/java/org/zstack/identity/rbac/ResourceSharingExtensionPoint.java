@@ -1,4 +1,4 @@
-package org.zstack.identity;
+package org.zstack.identity.rbac;
 
 import org.zstack.identity.header.ShareResourceContext;
 
