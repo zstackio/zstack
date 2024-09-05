@@ -140,7 +140,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
         ClusterVO cluster = updateClusterOSStruct.getCluster();
 
         boolean qemuOrLibvirtUpdated = updatePackages != null && (updatePackages.contains("qemu-kvm-ev") || updatePackages.contains("qemu-kvm") || updatePackages.contains("qemu") || updatePackages.contains("libvirt"));
-        boolean qemuAndLibvirtExcluded = excludePackages != null && (excludePackages.contains("qemu-kvm-ev") || excludePackages.contains("qemu-kvm") || excludePackages.contains("qemu") && excludePackages.contains("libvirt"));
+        boolean qemuAndLibvirtExcluded = excludePackages != null && (excludePackages.contains("qemu-kvm-ev") || excludePackages.contains("qemu-kvm") || excludePackages.contains("qemu")) && excludePackages.contains("libvirt");
         boolean osUpdatedWithHypervisor = StringUtils.isNotEmpty(updateClusterOSStruct.getReleaseVersion()) && !qemuAndLibvirtExcluded;
 
         if (qemuOrLibvirtUpdated || osUpdatedWithHypervisor) {
