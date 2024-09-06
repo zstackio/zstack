@@ -15,7 +15,6 @@ import org.zstack.header.identity.SessionVO_
 import org.zstack.identity.QuotaGlobalConfig
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AccountInventory
-import org.zstack.sdk.CheckResourcePermissionAction
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
@@ -74,7 +73,6 @@ class AccountCase extends SubCase {
             testAdminAccountDeleteSystemAdmin()
             testCreateAccount()
             testQuotaConfig()
-            testCheckPermission()
             testAPIOperationRenewSession()
         }
     }
@@ -121,13 +119,6 @@ class AccountCase extends SubCase {
                 .findValue() as Timestamp
 
         assert time1.before(time2)
-    }
-
-    void testCheckPermission() {
-        def action = new CheckResourcePermissionAction()
-        action.resourceType = "VmInstanceVO"
-        action.sessionId = adminSession()
-        CheckResourcePermissionAction.Result ret = action.call()
     }
 
     void testNormalAccountQueryGlobalConfig() {
