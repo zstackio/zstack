@@ -44,6 +44,14 @@ public class ModelServiceInstanceInventory  {
         return this.url;
     }
 
+    public java.lang.String internalUrl;
+    public void setInternalUrl(java.lang.String internalUrl) {
+        this.internalUrl = internalUrl;
+    }
+    public java.lang.String getInternalUrl() {
+        return this.internalUrl;
+    }
+
     public java.lang.String vmInstanceUuid;
     public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;

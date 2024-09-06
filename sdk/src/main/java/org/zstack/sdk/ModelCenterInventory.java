@@ -92,6 +92,14 @@ public class ModelCenterInventory  {
         return this.containerRegistry;
     }
 
+    public java.lang.String containerStorageNetwork;
+    public void setContainerStorageNetwork(java.lang.String containerStorageNetwork) {
+        this.containerStorageNetwork = containerStorageNetwork;
+    }
+    public java.lang.String getContainerStorageNetwork() {
+        return this.containerStorageNetwork;
+    }
+
     public java.lang.String containerNetwork;
     public void setContainerNetwork(java.lang.String containerNetwork) {
         this.containerNetwork = containerNetwork;
