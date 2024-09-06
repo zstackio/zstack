@@ -5,7 +5,6 @@ import org.zstack.header.PackageAPIInfo;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.identity.role.RolePolicyEffect;
 import org.zstack.header.identity.role.RolePolicyStatement;
@@ -35,7 +34,6 @@ public class RBAC {
     public static List<Role> roles = new ArrayList<>();
     public static Map<String, ApiPermissionBucket> apiBuckets = new HashMap<>();
     public static List<Class<?>> readableResources = new ArrayList<>();
-    public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
     private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
     public static List<ResourceEnsembleMember> ensembleMembers = new ArrayList<>();
 
@@ -45,11 +43,6 @@ public class RBAC {
     private static List<RoleBuilder> roleBuilders = new ArrayList<>();
 
     private static PolicyMatcher matcher = new PolicyMatcher();
-
-    static class APIPermissionCheckerWrapper {
-        boolean takeOver;
-        APIPermissionChecker checker;
-    }
 
     public static void checkMissingRBACInfo() {
         PolicyMatcher matcher = new PolicyMatcher();
@@ -197,7 +190,6 @@ public class RBAC {
         private String uuid;
         private String name;
         private Set<String> allowedActions = new HashSet<>();
-        private StatementEffect effect = StatementEffect.Allow;
         private boolean predefine = true;
         private List<String> excludedActions = new ArrayList<>();
 
@@ -223,14 +215,6 @@ public class RBAC {
 
         public void setAllowedActions(Set<String> allowedActions) {
             this.allowedActions = allowedActions;
-        }
-
-        public StatementEffect getEffect() {
-            return effect;
-        }
-
-        public void setEffect(StatementEffect effect) {
-            this.effect = effect;
         }
 
         public boolean isPredefine() {
@@ -750,30 +734,6 @@ public class RBAC {
     public static boolean isResourceGlobalReadable(Class clz) {
         return readableResources.stream().anyMatch(r -> r.isAssignableFrom(clz))
                 || !OwnedByAccount.class.isAssignableFrom(clz);
-    }
-
-    public static boolean checkAPIPermission(APIMessage msg, boolean policyDecision) {
-        List<APIPermissionCheckerWrapper> checkers = permissionCheckers.get(msg.getClass());
-        if (checkers == null || checkers.isEmpty()) {
-            return policyDecision;
-        }
-
-        for (APIPermissionCheckerWrapper checker : checkers) {
-            Boolean ret = checker.checker.check(msg);
-            if (ret == null) {
-                continue;
-            }
-
-            if (checker.takeOver) {
-                return ret;
-            }
-
-            if (!ret) {
-                return false;
-            }
-        }
-
-        return policyDecision;
     }
 
     public static RBACEntity formatRBACEntity(RBACEntity entity) {

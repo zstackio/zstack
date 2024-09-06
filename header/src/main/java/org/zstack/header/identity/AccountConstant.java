@@ -35,8 +35,6 @@ public interface AccountConstant {
 
     String NO_EXIST_ACCOUNT ="no-exist-account:::%s";
 
-    IdentityType identityType = new IdentityType("IAM");
-
     // login property accountType
     String ACCOUNT_TYPE = "accountType";
 

@@ -27,8 +27,7 @@ public class RBACInfo implements RBACDescription {
                         APIUpdateQuotaMsg.class,
                         APIChangeResourceOwnerMsg.class,
                         APIAttachRoleToAccountMsg.class,
-                        APIDetachRoleFromAccountMsg.class,
-                        APICheckResourcePermissionMsg.class
+                        APIDetachRoleFromAccountMsg.class
                 )
                 .targetResources(AccountVO.class, RoleVO.class)
                 .communityAvailable()

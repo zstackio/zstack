@@ -6,7 +6,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.GenerateMessageIdentityCategoryMsg;
 import org.zstack.test.*;
 
 /**

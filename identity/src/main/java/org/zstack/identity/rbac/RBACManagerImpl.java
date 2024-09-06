@@ -89,15 +89,9 @@ public class RBACManagerImpl extends AbstractService implements
     private void handleApiMessage(Message msg) {
         if (msg instanceof APICreateRoleMsg) {
             handle((APICreateRoleMsg) msg);
-        } else if (msg instanceof APICheckResourcePermissionMsg) {
-            handle((APICheckResourcePermissionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(APICheckResourcePermissionMsg msg) {
-        throw new CloudRuntimeException("APICheckResourcePermissionMsg not support now"); // TODO
     }
 
     private void handle(APICreateRoleMsg msg) {
