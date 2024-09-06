@@ -18,12 +18,8 @@ import org.zstack.header.identity.role.api.APIDeleteRoleMsg;
 import org.zstack.header.identity.role.api.APIUpdateRoleMsg;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
-<<<<<<< HEAD
-=======
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
-import org.zstack.utils.CollectionUtils;
->>>>>>> ae87856... <feature>[identity]: role policy support resource
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
@@ -34,6 +30,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
 import static org.zstack.utils.CollectionUtils.isEmpty;
 
 public class RBACApiInterceptor implements ApiMessageInterceptor {
@@ -95,18 +92,23 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
 
         List<RolePolicyStatement> results = new ArrayList<>(policies.size());
         for (Object policy : policies) {
-            RolePolicyStatement result = null;
-
             if (policy instanceof String) {
-                result = RolePolicyStatement.valueOf((String) policy);
-            } else if (policy instanceof Map) {
-                result = RolePolicyStatement.valueOf((Map<String, Object>) policy);
-            }
+                RolePolicyStatement result = RolePolicyStatement.valueOf((String) policy);
+                if (result == null || result.actions == null) {
+                    throw new ApiMessageInterceptionException(argerr("invalid role policy: " + policy));
+                }
 
-            if (result == null || result.actions.contains(null)) {
+                results.add(result);
+            } else if (policy instanceof Map) {
+                List<RolePolicyStatement> result = RolePolicyStatement.valueOf((Map<String, Object>) policy);
+                if (isEmpty(result) || findOneOrNull(result, s -> s.actions == null) != null) {
+                    throw new ApiMessageInterceptionException(argerr("invalid role policy: " + policy));
+                }
+
+                results.addAll(result);
+            } else {
                 throw new ApiMessageInterceptionException(argerr("invalid role policy: " + policy));
             }
-            results.add(result);
         }
 
         Map<String, List<RolePolicyStatement.Resource>> resourceMap = results.stream()

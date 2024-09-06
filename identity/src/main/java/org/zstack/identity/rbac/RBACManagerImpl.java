@@ -225,24 +225,23 @@ public class RBACManagerImpl extends AbstractService implements
         Pattern pattern = Pattern.compile("^[a-zA-Z0-9._]+$");
 
         for (RolePolicyStatement policy : policies) {
-            for (String action : policy.actions) {
-                String path = action.endsWith("**") ? action.substring(0, action.length() - 2) :
-                        action.endsWith("*") ? action.substring(0, action.length() - 1) : action;
-                Matcher m = pattern.matcher(path);
-                if (!m.matches() || path.contains("..")) {
+            String action = policy.actions;
+            String path = action.endsWith("**") ? action.substring(0, action.length() - 2) :
+                    action.endsWith("*") ? action.substring(0, action.length() - 1) : action;
+            Matcher m = pattern.matcher(path);
+            if (!m.matches() || path.contains("..")) {
+                return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
+            }
+
+            // TODO: UI is currently unable to distinguish admin-only APIs,
+            // and this limitation has been temporarily removed for convenience
+
+            if (!action.contains("*")) {
+                String fullPath = action.startsWith(".") ?
+                        AccountConstant.POLICY_BASE_PACKAGE + action.substring(1) :
+                        action;
+                if (!RBAC.isValidAPI(fullPath)/* || RBAC.isAdminOnlyAPI(fullPath)*/) {
                     return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
-                }
-
-                // TODO: UI is currently unable to distinguish admin-only APIs,
-                // and this limitation has been temporarily removed for convenience
-
-                if (!action.contains("*")) {
-                    String fullPath = action.startsWith(".") ?
-                            AccountConstant.POLICY_BASE_PACKAGE + action.substring(1) :
-                            action;
-                    if (!RBAC.isValidAPI(fullPath)/* || RBAC.isAdminOnlyAPI(fullPath)*/) {
-                        return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
-                    }
                 }
             }
         }

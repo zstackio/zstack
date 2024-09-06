@@ -11,11 +11,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.header.identity.AccountConstant.POLICY_BASE_PACKAGE;
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.*;
 
 public class RolePolicyStatement {
     public RolePolicyEffect effect = RolePolicyEffect.Allow;
-    public List<String> actions = new ArrayList<>();
+    public String actions;
     public List<Resource> resources = new ArrayList<>();
 
     public static class Resource {
@@ -52,43 +53,51 @@ public class RolePolicyStatement {
             return null;
         }
 
-        value.actions = Arrays.asList(parseAction(split[0]));
+        value.actions = parseAction(split[0]);
         return value;
     }
 
-    public static RolePolicyStatement valueOf(Map<String, Object> map) {
-        RolePolicyStatement value = new RolePolicyStatement();
+    public static List<RolePolicyStatement> valueOf(Map<String, Object> map) {
+        RolePolicyEffect effect;
+        List<Resource> resources = new ArrayList<>();
+        List<String> actions = new ArrayList<>();
 
-        final Object effect = map.get("effect");
-        if (effect == null || "Allow".equals(effect)) {
-            value.effect = RolePolicyEffect.Allow;
-        } else if ("Exclude".equals(effect)) {
-            value.effect = RolePolicyEffect.Exclude;
+        final Object effectObject = map.get("effect");
+        if (effectObject == null || "Allow".equals(effectObject)) {
+            effect = RolePolicyEffect.Allow;
+        } else if ("Exclude".equals(effectObject)) {
+            effect = RolePolicyEffect.Exclude;
         } else {
             return null;
         }
 
-        final Object resources = map.get("resources");
-        if (resources == null) {
+        final Object resourcesObject = map.get("resources");
+        if (resourcesObject == null) {
             // do-nothing
-        } else if (resources instanceof String) {
-            value.resources.addAll(parseResource((String) resources));
-        } else if (resources instanceof List) {
-            ((List<?>) resources).forEach(r -> value.resources.addAll(parseResource((String) r)));
+        } else if (resourcesObject instanceof String) {
+            resources.addAll(parseResource((String) resourcesObject));
+        } else if (resourcesObject instanceof List) {
+            ((List<?>) resourcesObject).forEach(r -> resources.addAll(parseResource((String) r)));
         } else {
             return null;
         }
 
-        final Object actions = map.get("actions");
-        if (actions instanceof String) {
-            value.actions.add(parseAction((String) actions));
-        } else if (actions instanceof List) {
-            ((List<?>) actions).forEach(r -> value.actions.add(parseAction(Objects.toString(r))));
+        final Object actionsObject = map.get("actions");
+        if (actionsObject instanceof String) {
+            actions.add(parseAction((String) actionsObject));
+        } else if (actionsObject instanceof List) {
+            ((List<?>) actionsObject).forEach(r -> actions.add(parseAction(Objects.toString(r))));
         } else {
             return null;
         }
 
-        return value;
+        return transform(actions, action -> {
+            RolePolicyStatement statement = new RolePolicyStatement();
+            statement.effect = effect;
+            statement.actions = action;
+            statement.resources = new ArrayList<>(resources);
+            return statement;
+        });
     }
 
     public List<String> toStringStatements() {
@@ -129,33 +138,29 @@ public class RolePolicyStatement {
 
     public List<RolePolicyVO> toVO() {
         if (resources.isEmpty()) {
-            return transform(actions, action -> {
-                RolePolicyVO vo = new RolePolicyVO();
-                vo.setActions(action);
-                vo.setEffect(effect);
-                return vo;
-            });
+            RolePolicyVO vo = new RolePolicyVO();
+            vo.setActions(actions);
+            vo.setEffect(effect);
+            return list(vo);
         }
 
         Map<String, List<Resource>> typeResourcesMap = groupBy(resources, resource -> resource.resourceType);
         List<RolePolicyVO> policies = new ArrayList<>();
-        for (String action : actions) {
-            for (Map.Entry<String, List<Resource>> entry : typeResourcesMap.entrySet()) {
-                RolePolicyVO vo = new RolePolicyVO();
-                vo.setActions(action);
-                vo.setEffect(effect);
-                vo.setResourceType(entry.getKey());
-                vo.setResourceRefs(new HashSet<>());
+        for (Map.Entry<String, List<Resource>> entry : typeResourcesMap.entrySet()) {
+            RolePolicyVO vo = new RolePolicyVO();
+            vo.setActions(actions);
+            vo.setEffect(effect);
+            vo.setResourceType(entry.getKey());
+            vo.setResourceRefs(new HashSet<>());
 
-                for (Resource resource : entry.getValue()) {
-                    RolePolicyResourceRefVO ref = new RolePolicyResourceRefVO();
-                    ref.setResourceUuid(resource.uuid);
-                    ref.setEffect(resource.effect);
-                    vo.getResourceRefs().add(ref);
-                }
-
-                policies.add(vo);
+            for (Resource resource : entry.getValue()) {
+                RolePolicyResourceRefVO ref = new RolePolicyResourceRefVO();
+                ref.setResourceUuid(resource.uuid);
+                ref.setEffect(resource.effect);
+                vo.getResourceRefs().add(ref);
             }
+
+            policies.add(vo);
         }
 
         return policies;
