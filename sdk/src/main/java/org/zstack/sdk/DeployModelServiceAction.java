@@ -67,6 +67,9 @@ public class DeployModelServiceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List l3NetworkUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer serviceBootUptime;
+
     @Param(required = false)
     public java.util.List systemTags;
 
