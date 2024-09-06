@@ -1,4 +1,4 @@
-package org.zstack.header.identity;
+package org.zstack.test.identity;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

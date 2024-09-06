@@ -1,4 +1,4 @@
-package org.zstack.header.identity;
+package org.zstack.test.identity;
 
 import org.zstack.header.message.MessageReply;
 

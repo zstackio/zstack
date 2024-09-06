@@ -218,11 +218,9 @@ public class SourceClassMap {
 			put("org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct", "org.zstack.sdk.VpcVpnIpSecConfigStruct");
 			put("org.zstack.header.identity.AccountInventory", "org.zstack.sdk.AccountInventory");
 			put("org.zstack.header.identity.AccountResourceRefInventory", "org.zstack.sdk.AccountResourceRefInventory");
-			put("org.zstack.header.identity.PolicyStatement", "org.zstack.sdk.PolicyStatement");
 			put("org.zstack.header.identity.Quota$QuotaUsage", "org.zstack.sdk.QuotaUsage");
 			put("org.zstack.header.identity.QuotaInventory", "org.zstack.sdk.QuotaInventory");
 			put("org.zstack.header.identity.SessionInventory", "org.zstack.sdk.SessionInventory");
-			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.login.LoginAuthenticationProcedureDesc", "org.zstack.sdk.LoginAuthenticationProcedureDesc");
 			put("org.zstack.header.identity.role.RoleAccountRefInventory", "org.zstack.sdk.identity.role.RoleAccountRefInventory");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
@@ -1046,8 +1044,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PolicyRouteTableInventory", "org.zstack.policyRoute.PolicyRouteTableInventory");
 			put("org.zstack.sdk.PolicyRouteTableRouteEntryInventory", "org.zstack.policyRoute.PolicyRouteTableRouteEntryInventory");
 			put("org.zstack.sdk.PolicyRouteTableVRouterRefInventory", "org.zstack.policyRoute.PolicyRouteTableVRouterRefInventory");
-			put("org.zstack.sdk.PolicyStatement", "org.zstack.header.identity.PolicyStatement");
-			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.StatementEffect");
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
 			put("org.zstack.sdk.PortGroupInventory", "org.zstack.network.l2.virtualSwitch.header.PortGroupInventory");
 			put("org.zstack.sdk.PortGroupVlanMode", "org.zstack.network.l2.virtualSwitch.header.PortGroupVlanMode");
