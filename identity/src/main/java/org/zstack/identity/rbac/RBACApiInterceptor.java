@@ -18,11 +18,19 @@ import org.zstack.header.identity.role.api.APIDeleteRoleMsg;
 import org.zstack.header.identity.role.api.APIUpdateRoleMsg;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
+<<<<<<< HEAD
+=======
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.ResourceVO_;
+import org.zstack.utils.CollectionUtils;
+>>>>>>> ae87856... <feature>[identity]: role policy support resource
 
+import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -99,6 +107,19 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("invalid role policy: " + policy));
             }
             results.add(result);
+        }
+
+        Map<String, List<RolePolicyStatement.Resource>> resourceMap = results.stream()
+                .flatMap(statement -> statement.resources.stream())
+                .collect(Collectors.groupingBy(resource -> resource.uuid));
+        if (!resourceMap.isEmpty()) {
+            List<Tuple> tuples = Q.New(ResourceVO.class)
+                    .select(ResourceVO_.uuid, ResourceVO_.resourceType)
+                    .in(ResourceVO_.uuid, resourceMap.keySet())
+                    .listTuple();
+            for (Tuple tuple : tuples) {
+                resourceMap.get(tuple.get(0, String.class)).forEach(it -> it.resourceType = tuple.get(1, String.class));
+            }
         }
 
         for (RolePolicyChecker checker : policyCheckers) {
