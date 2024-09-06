@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 
 public class RBACManagerImpl extends AbstractService implements
         RBACManager, Component, PrepareDbInitialValueExtensionPoint, RolePolicyChecker,
@@ -104,10 +106,29 @@ public class RBACManagerImpl extends AbstractService implements
         final RoleSpec spec = RoleSpec.valueOf(msg);
 
         RoleVO vo = spec.buildVOWithoutPolicies();
-        dbf.persist(vo);
-
         List<RolePolicyVO> policies = spec.buildPoliciesToCreate(vo.getUuid());
-        dbf.persistCollection(policies);
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                persist(vo);
+
+                for (RolePolicyVO policy : policies) {
+                    persist(policy);
+
+                    Set<RolePolicyResourceRefVO> refs = policy.getResourceRefs();
+                    if (isEmpty(refs)) {
+                        continue;
+                    }
+
+                    reload(policy);
+                    for (RolePolicyResourceRefVO ref : refs) {
+                        ref.setRolePolicyId(policy.getId());
+                        persist(ref);
+                    }
+                }
+            }
+        }.execute();
 
         APICreateRoleEvent evt = new APICreateRoleEvent(msg.getId());
         evt.setInventory(RoleInventory.valueOf(dbf.findByUuid(vo.getUuid(), RoleVO.class)));

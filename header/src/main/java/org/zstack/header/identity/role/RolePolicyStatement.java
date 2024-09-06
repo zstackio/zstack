@@ -1,16 +1,17 @@
 package org.zstack.header.identity.role;
 
-import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.utils.CollectionUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.header.identity.AccountConstant.POLICY_BASE_PACKAGE;
+import static org.zstack.utils.CollectionUtils.*;
 
 public class RolePolicyStatement {
     public RolePolicyEffect effect = RolePolicyEffect.Allow;
@@ -51,7 +52,7 @@ public class RolePolicyStatement {
             return null;
         }
 
-        value.actions = Arrays.asList(parseAction(statement));
+        value.actions = Arrays.asList(parseAction(split[0]));
         return value;
     }
 
@@ -91,11 +92,14 @@ public class RolePolicyStatement {
     }
 
     public List<String> toStringStatements() {
-        return CollectionUtils.transform(toVO(), RolePolicyStatement::toStringStatement);
+        return transform(toVO(), RolePolicyStatement::toStringStatement);
     }
 
     public static String toStringStatement(RolePolicyVO vo) {
-        return toStringStatement(vo.getEffect(), vo.getActions());
+        if (isEmpty(vo.getResourceRefs())) {
+            return toStringStatement(vo.getEffect(), vo.getActions());
+        }
+        return toStringStatement(vo.getEffect(), vo.getActions(), vo.getResourceRefs());
     }
 
     public static String toStringStatement(RolePolicyInventory inventory) {
@@ -108,9 +112,24 @@ public class RolePolicyStatement {
         return String.format("%s%s", prefix, action);
     }
 
+    public static String toStringStatement(RolePolicyEffect effect, String action, Set<RolePolicyResourceRefVO> resourceRefs) {
+        String prefix = RolePolicyEffect.Allow.equals(effect) ? "" : effect + ": ";
+
+        List<RolePolicyResourceRefVO> refs = new ArrayList<>(resourceRefs);
+        refs.sort(Comparator.comparing(RolePolicyResourceRefVO::getResourceUuid));
+
+        String suffix = String.join(",", transform(refs,
+                ref -> ref.getEffect() == RolePolicyResourceEffect.Allow ?
+                        ref.getResourceUuid() :
+                        ref.getEffect() + ":" + ref.getResourceUuid()));
+
+        // Exclude: <api> -> <resourceUuid>,<resourceUuid>,<resourceUuid>,Exclude:<resourceUuid>
+        return String.format("%s%s -> %s", prefix, action, suffix);
+    }
+
     public List<RolePolicyVO> toVO() {
         if (resources.isEmpty()) {
-            return CollectionUtils.transform(actions, action -> {
+            return transform(actions, action -> {
                 RolePolicyVO vo = new RolePolicyVO();
                 vo.setActions(action);
                 vo.setEffect(effect);
@@ -118,7 +137,28 @@ public class RolePolicyStatement {
             });
         }
 
-        throw new CloudRuntimeException("policy with resource is not support now");
+        Map<String, List<Resource>> typeResourcesMap = groupBy(resources, resource -> resource.resourceType);
+        List<RolePolicyVO> policies = new ArrayList<>();
+        for (String action : actions) {
+            for (Map.Entry<String, List<Resource>> entry : typeResourcesMap.entrySet()) {
+                RolePolicyVO vo = new RolePolicyVO();
+                vo.setActions(action);
+                vo.setEffect(effect);
+                vo.setResourceType(entry.getKey());
+                vo.setResourceRefs(new HashSet<>());
+
+                for (Resource resource : entry.getValue()) {
+                    RolePolicyResourceRefVO ref = new RolePolicyResourceRefVO();
+                    ref.setResourceUuid(resource.uuid);
+                    ref.setEffect(resource.effect);
+                    vo.getResourceRefs().add(ref);
+                }
+
+                policies.add(vo);
+            }
+        }
+
+        return policies;
     }
 
     private static List<Resource> parseResource(String statement) {
