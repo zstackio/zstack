@@ -20,7 +20,7 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APIShareResourceEvent.class,
         isAction = true
 )
-public class APIShareResourceMsg extends APIMessage implements AccountMessage {
+public class APIShareResourceMsg extends APIMessage {
     @APIParam(resourceType = ResourceVO.class, nonempty = true, scope = APIParam.SCOPE_MUST_OWNER)
     private List<String> resourceUuids;
     @APIParam(resourceType = AccountVO.class, required = false)
@@ -65,11 +65,6 @@ public class APIShareResourceMsg extends APIMessage implements AccountMessage {
         this.permission = permission;
     }
 
-    @Override
-    public String getAccountUuid() {
-        return getSession().getAccountUuid();
-    }
- 
     public static APIShareResourceMsg __example__() {
         APIShareResourceMsg msg = new APIShareResourceMsg();
         msg.setAccountUuids(list(uuid(), uuid()));
