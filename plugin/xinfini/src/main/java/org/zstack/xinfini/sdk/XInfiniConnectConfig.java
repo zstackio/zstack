@@ -1,5 +1,7 @@
 package org.zstack.xinfini.sdk;
 
+import org.zstack.xinfini.XInfiniConfig;
+
 import java.util.concurrent.TimeUnit;
 
 public class XInfiniConnectConfig {
@@ -10,6 +12,15 @@ public class XInfiniConnectConfig {
     public Long readTimeout;
     public Long writeTimeout;
     public String token;
+    public XInfiniConfig xInfiniConfig;
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
 
     public String getHostname() {
         return hostname;
@@ -25,44 +36,5 @@ public class XInfiniConnectConfig {
 
     public long getDefaultPollingInterval() {
         return defaultPollingInterval;
-    }
-
-    public static class Builder {
-        XInfiniConnectConfig config = new XInfiniConnectConfig();
-
-        public Builder setHostname(String hostname) {
-            config.hostname = hostname;
-            return this;
-        }
-
-        public Builder setPort(int port) {
-            config.port = port;
-            return this;
-        }
-
-        public Builder setDefaultPollingTimeout(long value, TimeUnit unit) {
-            config.defaultPollingTimeout = unit.toMillis(value);
-            return this;
-        }
-
-        public Builder setDefaultPollingInterval(long value, TimeUnit unit) {
-            config.defaultPollingInterval = unit.toMillis(value);
-            return this;
-        }
-
-        public Builder setReadTimeout(long value, TimeUnit unit) {
-            config.readTimeout = unit.toMillis(value);
-            return this;
-        }
-
-        public Builder setWriteTimeout(long value, TimeUnit unit) {
-            config.writeTimeout = unit.toMillis(value);
-            return this;
-        }
-
-
-        public XInfiniConnectConfig build() {
-            return config;
-        }
     }
 }

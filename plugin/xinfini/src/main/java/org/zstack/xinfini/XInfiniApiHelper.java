@@ -2,6 +2,7 @@ package org.zstack.xinfini;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Maps;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
@@ -27,6 +28,7 @@ import org.zstack.xinfini.sdk.volume.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -44,6 +46,10 @@ public class XInfiniApiHelper {
 
     XInfiniApiHelper(XInfiniClient client) {
         this.client = client;
+    }
+
+    public <T extends XInfiniResponse> T callWithNode(XInfiniRequest req, Class<T> clz, XInfiniConfig.Node node) {
+        return client.call(req, clz, node);
     }
 
     public <T extends XInfiniResponse> T callErrorOut(XInfiniRequest req, Class<T> clz) {
@@ -94,6 +100,17 @@ public class XInfiniApiHelper {
     public String getClusterUuid() {
         QueryClusterRequest req = new QueryClusterRequest();
         return queryErrorOut(req, QueryClusterResponse.class).toModule().getUuid();
+    }
+
+    public Map<String, NodeStatus> checkNodesConnection(List<XInfiniConfig.Node> nodes) {
+        Map<String, NodeStatus> nodesStatus = Maps.newConcurrentMap();
+        for (XInfiniConfig.Node node : nodes) {
+            QueryClusterRequest req = new QueryClusterRequest();
+            QueryClusterResponse rsp = callWithNode(req, QueryClusterResponse.class, node);
+            nodesStatus.put(node.getIp(), rsp.isSuccess() ? NodeStatus.Connected : NodeStatus.Disconnected);
+        }
+
+        return nodesStatus;
     }
 
     public List<NodeModule> queryNodes() {
@@ -327,46 +344,34 @@ public class XInfiniApiHelper {
     }
 
     public void deleteBdcBdev(int bdevId) {
-        GetBdcBdevRequest gReq = new GetBdcBdevRequest();
-        gReq.setId(bdevId);
-        GetBdcBdevResponse rsp = call(gReq, GetBdcBdevResponse.class);
+        DeleteBdcBdevRequest req = new DeleteBdcBdevRequest();
+        req.setId(bdevId);
+        DeleteBdcBdevResponse rsp = call(req, DeleteBdcBdevResponse.class);
         if (rsp.resourceIsDeleted()) {
             logger.info(String.format("bdev %s has been deleted, skip send delete req", bdevId));
             return;
         }
 
-        DeleteBdcBdevRequest req = new DeleteBdcBdevRequest();
-        req.setId(bdevId);
-        callErrorOut(req, DeleteBdcBdevResponse.class);
-
+        GetBdcBdevRequest gReq = new GetBdcBdevRequest();
+        gReq.setId(bdevId);
         retryUtilResourceDeleted(gReq, GetBdcBdevResponse.class);
     }
 
     public void deleteVolume(int volId, boolean force) {
-        GetVolumeRequest gReq = new GetVolumeRequest();
-        gReq.setId(volId);
-        GetVolumeResponse rsp = call(gReq, GetVolumeResponse.class);
+        DeleteVolumeRequest req = new DeleteVolumeRequest();
+        req.setId(volId);
+        DeleteVolumeResponse rsp = call(req, DeleteVolumeResponse.class);
         if (rsp.resourceIsDeleted()) {
             logger.info(String.format("volume %s has been deleted, skip send delete req", volId));
             return;
         }
 
-        DeleteVolumeRequest req = new DeleteVolumeRequest();
-        req.setId(volId);
-        callErrorOut(req, DeleteVolumeResponse.class);
-
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(volId);
         retryUtilResourceDeleted(gReq, GetVolumeResponse.class);
     }
 
     public void deleteVolumeSnapshot(int snapShotId) {
-        GetVolumeSnapshotRequest gReq = new GetVolumeSnapshotRequest();
-        gReq.setId(snapShotId);
-        GetVolumeSnapshotResponse rsp = call(gReq, GetVolumeSnapshotResponse.class);
-        if (rsp.resourceIsDeleted()) {
-            logger.info(String.format("volume snapshot %s has been deleted, skip send delete req", snapShotId));
-            return;
-        }
-
         // check snapshot cloned volume
         if (snapshotHasClonedVolume(snapShotId)) {
             throw new OperationFailureException(operr("snapshot[id: %s] has cloned volume, please delete or flatten volumes", snapShotId));
@@ -374,8 +379,13 @@ public class XInfiniApiHelper {
 
         DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
         req.setId(snapShotId);
-        callErrorOut(req, DeleteVolumeSnapshotResponse.class);
-
+        DeleteVolumeSnapshotResponse rsp = call(req, DeleteVolumeSnapshotResponse.class);
+        if (rsp.resourceIsDeleted()) {
+            logger.info(String.format("volume snapshot %s has been deleted, skip send delete req", snapShotId));
+            return;
+        }
+        GetVolumeSnapshotRequest gReq = new GetVolumeSnapshotRequest();
+        gReq.setId(snapShotId);
         retryUtilResourceDeleted(gReq, GetVolumeSnapshotResponse.class);
     }
 
@@ -474,18 +484,16 @@ public class XInfiniApiHelper {
     }
 
     public void deleteVolumeClientGroupMapping(int mapId) {
-        GetVolumeClientGroupMappingRequest gReq = new GetVolumeClientGroupMappingRequest();
-        gReq.setId(mapId);
-        GetVolumeClientGroupMappingResponse rsp = call(gReq, GetVolumeClientGroupMappingResponse.class);
+        DeleteVolumeClientGroupMappingRequest req = new DeleteVolumeClientGroupMappingRequest();
+        req.setId(mapId);
+        DeleteVolumeClientGroupMappingResponse rsp = call(req, DeleteVolumeClientGroupMappingResponse.class);
         if (rsp.resourceIsDeleted()) {
             logger.info(String.format("volume-client-group-mapping %s has been deleted, skip send delete req", mapId));
             return;
         }
 
-        DeleteVolumeClientGroupMappingRequest req = new DeleteVolumeClientGroupMappingRequest();
-        req.setId(mapId);
-        callErrorOut(req, DeleteVolumeClientGroupMappingResponse.class);
-
+        GetVolumeClientGroupMappingRequest gReq = new GetVolumeClientGroupMappingRequest();
+        gReq.setId(mapId);
         retryUtilResourceDeleted(gReq, GetVolumeClientGroupMappingResponse.class);
     }
 
@@ -519,18 +527,16 @@ public class XInfiniApiHelper {
     }
 
     public void deleteIscsiClient(int iscsiClientId) {
-        GetIscsiClientRequest gReq = new GetIscsiClientRequest();
-        gReq.setId(iscsiClientId);
-        GetIscsiClientResponse rsp = call(gReq, GetIscsiClientResponse.class);
+        DeleteIscsiClientRequest req = new DeleteIscsiClientRequest();
+        req.setId(iscsiClientId);
+        DeleteIscsiClientResponse rsp = call(req, DeleteIscsiClientResponse.class);
         if (rsp.resourceIsDeleted()) {
             logger.info(String.format("iscsi-client %s has been deleted, skip send delete req", iscsiClientId));
             return;
         }
 
-        DeleteIscsiClientRequest req = new DeleteIscsiClientRequest();
-        req.setId(iscsiClientId);
-        callErrorOut(req, DeleteIscsiClientResponse.class);
-
+        GetIscsiClientRequest gReq = new GetIscsiClientRequest();
+        gReq.setId(iscsiClientId);
         retryUtilResourceDeleted(gReq, GetIscsiClientResponse.class);
     }
 

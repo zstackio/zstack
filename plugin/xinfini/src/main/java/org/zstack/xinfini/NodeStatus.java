@@ -5,6 +5,6 @@ package org.zstack.xinfini;
  * @ Date   : Created in 16:41 2024/5/28
  */
 public enum NodeStatus {
-    Connectd,
-    Disconnectd
+    Connected,
+    Disconnected
 }

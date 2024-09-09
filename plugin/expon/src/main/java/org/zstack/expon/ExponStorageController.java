@@ -854,6 +854,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         comp.success(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
     }
 
+    @Override
+    public void ping(Completion completion) {
+        completion.success();
+    }
+
     private void reloadDbInfo() {
         self = dbf.reload(self);
         addonInfo = StringUtils.isEmpty(self.getAddonInfo()) ? new ExponAddonInfo() : JSONObjectUtil.toObject(self.getAddonInfo(), ExponAddonInfo.class);

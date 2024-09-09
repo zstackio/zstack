@@ -52,6 +52,15 @@ public class XInfiniConfig {
     public static class Node {
         private String ip;
         private int port;
+        private NodeStatus status = NodeStatus.Connected;
+
+        public NodeStatus getStatus() {
+            return status;
+        }
+
+        public void setStatus(NodeStatus status) {
+            this.status = status;
+        }
 
         public String getIp() {
             return ip;
