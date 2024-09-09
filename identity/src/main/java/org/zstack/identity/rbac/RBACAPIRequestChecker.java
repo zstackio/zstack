@@ -3,6 +3,7 @@ package org.zstack.identity.rbac;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.db.Q;
@@ -35,6 +36,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     protected APIMessage apiMessage;
     protected Class<?> apiClass;
     protected SessionInventory session;
+
+    @Autowired(required = false)
+    private ResourcePolicyCheckerFactory resourcePolicyCheckerFactory;
+    private ResourcePolicyChecker resourcePolicyChecker;
 
     public boolean bypass(RBACEntity entity) {
         return entity.getApiMessage().getHeaders().containsKey(IdentityByPassCheck.NoRBACCheck.toString());
@@ -113,32 +118,74 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
             return false;
         }
 
-        final Set<String> roleSet = transformToSet(policies, RolePolicyVO::getRoleUuid);
+        final Map<String, List<RolePolicyVO>> rolePoliciesMap = groupBy(policies, RolePolicyVO::getRoleUuid);
         List<List<RolePolicyVO>> expendCheckList = new ArrayList<>();
 
         OUT_LOOP:
-        for (String roleUuid : roleSet) {
-            List<RolePolicyVO> policiesToCheck = filter(policies, p -> roleUuid.equals(p.getRoleUuid()));
+        for (List<RolePolicyVO> policiesToCheck : rolePoliciesMap.values()) {
 
             // first: no wildcards   (".header.vm.APIStartVmInstanceMsg")
             // second: end with "*"  (".header.vm.*")
             // last: end with "**"   (".header.vm.**") > (".header.**") > (".**") sort by string length
+
+            // others:
+            //    effect Exclude > Allow
             policiesToCheck.sort(Comparator
                 .comparingInt((RolePolicyVO p) ->
                         (p.getActions().endsWith(".**") ? 2 : (p.getActions().endsWith(".*") ? 1 : 0)))
-                .thenComparingInt((RolePolicyVO p) -> -p.getActions().length()));
+                .thenComparingInt((RolePolicyVO p) -> -p.getActions().length())
+                .thenComparingInt((RolePolicyVO p) -> p.getEffect() == RolePolicyEffect.Exclude ? 0 : 1));
+
+            boolean allPoliciesWithoutResources = policiesToCheck.stream()
+                    .allMatch(policy -> isEmpty(policy.getResourceRefs()));
+
+            if (allPoliciesWithoutResources) {
+                for (RolePolicyVO policy : policiesToCheck) {
+                    if (policy.getEffect() == RolePolicyEffect.Exclude) {
+                        continue OUT_LOOP;
+                    }
+                    if (policy.getEffect() == RolePolicyEffect.Allow) {
+                        return true;
+                    }
+                }
+                continue;
+            }
+
+            Map<String, Boolean> resourceTypeAllowMap = new HashMap<>();
+
+            RolePolicyVO last = new RolePolicyVO();
+            last.setEffect(RolePolicyEffect.Exclude);
+            policiesToCheck.add(last);
 
             for (RolePolicyVO policy : policiesToCheck) {
-                if (policy.getEffect() == RolePolicyEffect.Exclude) {
+                if (policy.getEffect() == RolePolicyEffect.Exclude) { // or find the last
+                    if (resourceTypeAllowMap.values().stream().allMatch(b -> b)) {
+                        return true;
+                    }
                     continue OUT_LOOP;
                 }
+
                 if (policy.getEffect() == RolePolicyEffect.Allow) {
-                    return true;
+                    if (isEmpty(policy.getResourceRefs())) {
+                        return true;
+                    }
+                    resourceTypeAllowMap.put(policy.getResourceType(), matchResource(policy));
                 }
             }
         }
 
         return false;
+    }
+
+    private boolean matchResource(RolePolicyVO policy) {
+        if (resourcePolicyCheckerFactory == null) {
+            return false;
+        }
+        if (resourcePolicyChecker == null) {
+            resourcePolicyChecker = resourcePolicyCheckerFactory.build(APIMessage.getApiParams().get(apiClass), apiMessage);
+        }
+
+        return resourcePolicyChecker.matchResources(policy);
     }
 
     public Map<String, Boolean> evalAPIPermission(List<Class> classes, SessionInventory session) {
@@ -152,5 +199,4 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
         return apiClassNamePassMap;
     }
-
 }
