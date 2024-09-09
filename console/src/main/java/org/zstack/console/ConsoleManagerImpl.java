@@ -213,15 +213,6 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-    }
-
-    @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
     public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
         ConsoleBackend bkd = getBackend();
         FutureCompletion completion = new FutureCompletion(null);
@@ -234,11 +225,6 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             logger.warn(e.getMessage(), e);
             Thread.currentThread().interrupt();
         }
-    }
-
-    @Override
-    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
-
     }
 
     @Override
