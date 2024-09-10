@@ -100,17 +100,24 @@ public class RBACManagerImpl extends AbstractService implements
         final RoleSpec spec = RoleSpec.valueOf(msg);
 
         RoleVO vo = spec.buildVOWithoutPolicies();
-        List<RolePolicyVO> policies = spec.buildPoliciesToCreate(vo.getUuid());
+        RolePolicyUpdater updater = RolePolicyUpdater.pure();
+        for (RolePolicyStatement statement : spec.getPoliciesToCreate()) {
+            updater.add(statement);
+        }
+
+        updater.squeeze();
+        List<RolePolicyVO> policiesNeedCreate = updater.collectAllPolicyIdsNeedCreate();
 
         new SQLBatch() {
             @Override
             protected void scripts() {
                 persist(vo);
 
-                for (RolePolicyVO policy : policies) {
-                    persist(policy);
-
+                policiesNeedCreate.forEach(p -> p.setRoleUuid(spec.getUuid()));
+                for (RolePolicyVO policy : policiesNeedCreate) {
                     Set<RolePolicyResourceRefVO> refs = policy.getResourceRefs();
+
+                    persist(policy);
                     if (isEmpty(refs)) {
                         continue;
                     }
