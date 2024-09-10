@@ -116,20 +116,28 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
             vo.setTotalCapacity(total);
             vo.setAvailableCapacity(avail);
 
-            if (poolCapacities != null) {
-                if (poolCapacities.stream().anyMatch((e) -> vo.getPoolName().equals(e.getName()))) {
-                    CephPoolCapacity poolCapacity = poolCapacities.stream()
-                            .filter(e -> vo.getPoolName().equals(e.getName()))
-                            .findAny().get();
-
+            if (poolCapacities != null && poolCapacities.stream().anyMatch((e) -> vo.getPoolName().equals(e.getName()))) {
+                CephPoolCapacity poolCapacity = poolCapacities.stream()
+                        .filter(e -> vo.getPoolName().equals(e.getName()))
+                        .findAny().get();
+                if (poolCapacity.getRelatedOsdCapacity() != null) {
+                    total = 0;
+                    avail = 0;
+                    for (String osdName : poolCapacity.getRelatedOsdCapacity().keySet()) {
+                        total += poolCapacity.getRelatedOsdCapacity().get(osdName).getSize() * poolCapacity.getDiskUtilization();
+                        avail += poolCapacity.getRelatedOsdCapacity().get(osdName).getAvailableCapacity() * poolCapacity.getDiskUtilization();
+                    }
+                    vo.setTotalCapacity(total);
+                    vo.setAvailableCapacity(avail);
+                } else {
                     vo.setTotalCapacity(poolCapacity.getTotalCapacity());
                     vo.setAvailableCapacity(poolCapacity.getAvailableCapacity());
-                    vo.setPoolAvailableCapacity(poolCapacity.getAvailableCapacity());
-                    vo.setPoolReplicatedSize(poolCapacity.getReplicatedSize());
-                    vo.setPoolUsedCapacity(poolCapacity.getUsedCapacity());
-                    vo.setPoolSecurityPolicy(poolCapacity.getSecurityPolicy());
-                    vo.setPoolDiskUtilization(poolCapacity.getDiskUtilization());
                 }
+                vo.setPoolAvailableCapacity(poolCapacity.getAvailableCapacity());
+                vo.setPoolReplicatedSize(poolCapacity.getReplicatedSize());
+                vo.setPoolUsedCapacity(poolCapacity.getUsedCapacity());
+                vo.setPoolSecurityPolicy(poolCapacity.getSecurityPolicy());
+                vo.setPoolDiskUtilization(poolCapacity.getDiskUtilization());
             }
 
             dbf.getEntityManager().merge(vo);
