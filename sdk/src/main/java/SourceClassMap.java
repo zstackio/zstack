@@ -7,6 +7,7 @@ public class SourceClassMap {
         {
 			put("org.zstack.accessKey.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
 			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
+			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
 			put("org.zstack.ai.entity.DatasetInventory", "org.zstack.sdk.DatasetInventory");
 			put("org.zstack.ai.entity.ModelCenterInventory", "org.zstack.sdk.ModelCenterInventory");
 			put("org.zstack.ai.entity.ModelEvalServiceInstanceGroupInventory", "org.zstack.sdk.ModelEvalServiceInstanceGroupInventory");
@@ -1089,6 +1090,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NetworkRouterFlowMeterRefInventory", "org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
+			put("org.zstack.sdk.NginxRedirectRule", "org.zstack.ai.NginxRedirectRule");
 			put("org.zstack.sdk.NormalIpRangeInventory", "org.zstack.header.network.l3.NormalIpRangeInventory");
 			put("org.zstack.sdk.NvmeLunHostRefInventory", "org.zstack.storage.device.nvme.NvmeLunHostRefInventory");
 			put("org.zstack.sdk.NvmeLunInventory", "org.zstack.storage.device.nvme.NvmeLunInventory");
