@@ -23,7 +23,7 @@ import java.util.Set;
 import static org.zstack.utils.CollectionUtils.isEmpty;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class RoleBase implements Role {
+public class RoleBase {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -39,7 +39,6 @@ public class RoleBase implements Role {
         return RoleInventory.valueOf(self);
     }
 
-    @Override
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {

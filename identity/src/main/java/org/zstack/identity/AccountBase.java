@@ -39,7 +39,7 @@ import java.util.Map;
 import static org.zstack.utils.CollectionDSL.list;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class AccountBase extends AbstractAccount {
+public class AccountBase implements Account {
     private static final CLogger logger = Utils.getLogger(AccountBase.class);
 
     @Autowired
@@ -61,7 +61,6 @@ public class AccountBase extends AbstractAccount {
         this.self = self;
     }
 
-    @Override
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
