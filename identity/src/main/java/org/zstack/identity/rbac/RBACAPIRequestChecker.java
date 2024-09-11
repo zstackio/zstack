@@ -33,7 +33,16 @@ import static org.zstack.utils.CollectionUtils.*;
 public class RBACAPIRequestChecker implements APIRequestChecker {
     protected static final CLogger logger = Utils.getLogger(RBACAPIRequestChecker.class);
 
+    protected APIMessage baseApiMessage;
+    protected Class<?> baseApiClass;
+
+    /**
+     * Maybe {@link #baseApiMessage}, or expanded api message
+     */
     protected APIMessage apiMessage;
+    /**
+     * Maybe {@link #baseApiClass}, or expanded api class
+     */
     protected Class<?> apiClass;
     protected SessionInventory session;
 
@@ -47,8 +56,8 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     @Override
     public void check(RBACEntity entity) {
-        apiMessage = entity.getApiMessage();
-        apiClass = apiMessage.getClass();
+        baseApiMessage = apiMessage = entity.getApiMessage();
+        baseApiClass = apiClass = apiMessage.getClass();
         session = apiMessage.getSession();
 
         if (Account.isAdminPermission(session)) {
@@ -69,12 +78,29 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
             permissionDenied();
         }
 
-//        entity.getAdditionalApisToCheck() TODO check addition apis | AdditionalApis need to convent to Class<?>
+        List<APIMessage> additionalApisToCheck = entity.getAdditionalApisToCheck();
+        if (isEmpty(additionalApisToCheck)) {
+            return;
+        }
+
+        for (APIMessage additionalApi : additionalApisToCheck) {
+            apiClass = additionalApi.getClass();
+            apiMessage = additionalApi;
+            if (!check()) {
+                permissionDenied();
+            }
+        }
     }
 
     private void permissionDenied() {
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("[RBAC]operation is denied by default, API:\n%s", jsonMessage()));
+        }
+
+        if (apiClass != baseApiClass) {
+            throw new OperationFailureException(err(OPERATION_DENIED,
+                    "operation[API:%s] is denied: no permission for expended api %s",
+                    baseApiClass.getName(), apiClass.getSimpleName()));
         }
 
         // no policies applied to the operation, deny by default
