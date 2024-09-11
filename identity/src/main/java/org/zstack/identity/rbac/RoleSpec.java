@@ -12,7 +12,6 @@ import org.zstack.header.identity.role.api.APIUpdateRoleMsg;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionUtils.*;
 
@@ -133,12 +132,5 @@ public class RoleSpec {
         role.setType(getType());
         role.setAccountUuid(getAccountUuid());
         return role;
-    }
-
-    public List<RolePolicyVO> buildPoliciesToCreate(String roleUuid) {
-        List<RolePolicyVO> list = policiesToCreate.stream()
-                .flatMap(statement -> statement.toVO().stream())
-                .collect(Collectors.toList());
-        return PolicyUtils.formatPolicies(list, roleUuid);
     }
 }

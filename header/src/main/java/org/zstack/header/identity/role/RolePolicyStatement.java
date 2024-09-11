@@ -100,10 +100,6 @@ public class RolePolicyStatement {
         });
     }
 
-    public List<String> toStringStatements() {
-        return transform(toVO(), RolePolicyStatement::toStringStatement);
-    }
-
     public static String toStringStatement(RolePolicyVO vo) {
         if (isEmpty(vo.getResourceRefs())) {
             return toStringStatement(vo.getEffect(), vo.getActions());
