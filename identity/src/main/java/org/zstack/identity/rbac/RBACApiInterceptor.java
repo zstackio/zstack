@@ -6,6 +6,7 @@ import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.role.RoleAccountRefVO;
 import org.zstack.header.identity.role.RoleAccountRefVO_;
 import org.zstack.header.identity.role.RolePolicyChecker;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.findOneOrNull;
 import static org.zstack.utils.CollectionUtils.isEmpty;
@@ -119,6 +121,15 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
                     .select(ResourceVO_.uuid, ResourceVO_.resourceType)
                     .in(ResourceVO_.uuid, resourceMap.keySet())
                     .listTuple();
+            if (resourceMap.size() != tuples.size()) {
+                for (Tuple tuple : tuples) {
+                    resourceMap.remove(tuple.get(0, String.class));
+                }
+                throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_ROLE_POLICY,
+                        "invalid role policy resource: resource[uuid:%s] is not found",
+                        resourceMap.keySet()));
+            }
+
             for (Tuple tuple : tuples) {
                 resourceMap.get(tuple.get(0, String.class)).forEach(it -> it.resourceType = tuple.get(1, String.class));
             }
