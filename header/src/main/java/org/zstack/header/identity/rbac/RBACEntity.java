@@ -1,15 +1,14 @@
 package org.zstack.header.identity.rbac;
 
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class RBACEntity {
     private static final CLogger logger = Utils.getLogger(RBACEntity.class);
@@ -17,42 +16,23 @@ public class RBACEntity {
     private String apiName;
     private APIMessage apiMessage;
 
-    private List<String> additionalApisToCheck = new ArrayList<>();
+    private final List<APIMessage> additionalApisToCheck = new ArrayList<>();
 
     public RBACEntity(APIMessage apiMessage) {
         this.apiMessage = apiMessage;
         apiName = apiMessage.getClass().getName();
 
-        List<RBAC.ExpendedFieldPermission> structs = RBAC.expendApiClassForPermissionCheck.get(apiMessage.getClass());
+        final List<Function<APIMessage, List<APIMessage>>> functions = RBAC.expendPermissionCheckList(apiMessage.getClass());
 
-        if (structs == null) {
+        if (functions == null) {
             return;
         }
 
-        for (RBAC.ExpendedFieldPermission s : structs) {
-            Field field = FieldUtils.getField(s.fieldName, apiMessage.getClass());
-
-            if (field == null) {
-                throw new CloudRuntimeException(String.format("Unknown field %s of class %s", s.fieldName, apiMessage.getClass()));
-            }
-
-            try {
-                field.setAccessible(true);
-                Object obj = field.get(apiMessage);
-
-                if (obj == null) {
-                    continue;
-                }
-
-                if (obj instanceof Collection && ((Collection) obj).isEmpty()) {
-                    continue;
-                }
-
-                additionalApisToCheck.add(s.apiClass.getName());
-            } catch (IllegalAccessException e) {
-                throw new CloudRuntimeException(e);
-            }
-        }
+        additionalApisToCheck.addAll(functions.stream()
+                .map(function -> function.apply(apiMessage))
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .collect(Collectors.toList()));
     }
 
     public RBACEntity() {
@@ -74,11 +54,7 @@ public class RBACEntity {
         this.apiMessage = apiMessage;
     }
 
-    public List<String> getAdditionalApisToCheck() {
+    public List<APIMessage> getAdditionalApisToCheck() {
         return additionalApisToCheck;
-    }
-
-    public void setAdditionalApisToCheck(List<String> additionalApisToCheck) {
-        this.additionalApisToCheck = additionalApisToCheck;
     }
 }

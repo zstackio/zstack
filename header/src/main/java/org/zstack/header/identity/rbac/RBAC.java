@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
@@ -37,7 +38,7 @@ public class RBAC {
     private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
     public static List<ResourceEnsembleMember> ensembleMembers = new ArrayList<>();
 
-    public static Map<Class, List<ExpendedFieldPermission>> expendApiClassForPermissionCheck = new HashMap<>();
+    public static Map<Class<?>, List<Function<?, List<APIMessage>>>> expendApiClassForPermissionCheck = new HashMap<>();
 
     private static List<RoleContributor> roleContributors = new ArrayList<>();
     private static List<RoleBuilder> roleBuilders = new ArrayList<>();
@@ -316,31 +317,23 @@ public class RBAC {
         }
     }
 
-    public static class ExpendedFieldPermissionBuilder {
-        ExpendedFieldPermission fieldPermission = new ExpendedFieldPermission();
-        Class basicApiClass;
+    public static class ExpendedPermission<MSG extends APIMessage> {
+        public final Class<MSG> basicApiClass;
 
-        public ExpendedFieldPermissionBuilder basicApi(Class v) {
-            basicApiClass = v;
-            return this;
+        public ExpendedPermission(Class<MSG> basicApiClass) {
+            this.basicApiClass = Objects.requireNonNull(basicApiClass);
         }
 
-        public ExpendedFieldPermissionBuilder fieldName(String v) {
-            fieldPermission.fieldName = v;
-            return this;
-        }
+        List<Function<MSG, List<APIMessage>>> expands = new ArrayList<>();
 
-        public ExpendedFieldPermissionBuilder expandTo(Class v) {
-            fieldPermission.apiClass = v;
+        public ExpendedPermission<MSG> expandTo(Function<MSG, List<APIMessage>> function) {
+            expands.add(function);
             return this;
         }
 
         public void build() {
-            DebugUtils.Assert(fieldPermission.fieldName != null, "fieldName in ExpendedFieldPermission can not be null");
-            DebugUtils.Assert(fieldPermission.apiClass != null, "apiClass in ExpendedFieldPermission can not be null");
-
             expendApiClassForPermissionCheck.putIfAbsent(basicApiClass, new ArrayList<>());
-            expendApiClassForPermissionCheck.get(basicApiClass).add(fieldPermission);
+            expendApiClassForPermissionCheck.get(basicApiClass).addAll(expands);
         }
     }
 
@@ -726,6 +719,7 @@ public class RBAC {
         });
     }
 
+    @Deprecated
     static class ExpendedFieldPermission {
         String fieldName;
         Class apiClass;
@@ -760,6 +754,15 @@ public class RBAC {
 
     public static boolean isAdminOnlyAPI(String apiName) {
         return apiBuckets.get(apiName).adminOnly;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static List<Function<APIMessage, List<APIMessage>>> expendPermissionCheckList(Class<?> apiClass) {
+        final List list = expendApiClassForPermissionCheck.get(apiClass);
+        if (list == null) {
+            return null;
+        }
+        return (List<Function<APIMessage, List<APIMessage>>>) list;
     }
 
     public static class ApiPermissionBucket {

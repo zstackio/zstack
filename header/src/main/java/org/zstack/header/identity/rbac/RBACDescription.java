@@ -1,12 +1,20 @@
 package org.zstack.header.identity.rbac;
 
+import org.zstack.header.message.APIMessage;
+
+import java.util.List;
+import java.util.function.Function;
+
 public interface RBACDescription {
     default RBAC.PermissionBuilder permissionBuilder() {
         return new RBAC.PermissionBuilder(this);
     }
 
-    default RBAC.ExpendedFieldPermissionBuilder expandedpermissionBuilder() {
-        return new RBAC.ExpendedFieldPermissionBuilder();
+    default <MSG extends APIMessage> void expandedPermission(Class<MSG> apiClass,
+                                                             Function<MSG, List<APIMessage>> function) {
+        new RBAC.ExpendedPermission<>(apiClass)
+                .expandTo(function)
+                .build();
     }
 
     default RBAC.RoleContributorBuilder roleContributorBuilder() {
