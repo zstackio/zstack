@@ -206,6 +206,7 @@ public class SourceClassMap {
 			put("org.zstack.header.host.HostNetworkBondingServiceRefInventory", "org.zstack.sdk.HostNetworkBondingServiceRefInventory");
 			put("org.zstack.header.host.HostNetworkInterfaceServiceRefInventory", "org.zstack.sdk.HostNetworkInterfaceServiceRefInventory");
 			put("org.zstack.header.host.HostNetworkInterfaceServiceType", "org.zstack.sdk.HostNetworkInterfaceServiceType");
+			put("org.zstack.header.host.HostPhysicalCpuInventory", "org.zstack.sdk.HostPhysicalCpuInventory");
 			put("org.zstack.header.host.HostPhysicalMemoryInventory", "org.zstack.sdk.HostPhysicalMemoryInventory");
 			put("org.zstack.header.host.Sensor", "org.zstack.sdk.Sensor");
 			put("org.zstack.header.host.ServiceTypeStatisticData", "org.zstack.sdk.ServiceTypeStatisticData");
@@ -928,6 +929,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostNetworkInterfaceServiceRefInventory", "org.zstack.header.host.HostNetworkInterfaceServiceRefInventory");
 			put("org.zstack.sdk.HostNetworkInterfaceServiceType", "org.zstack.header.host.HostNetworkInterfaceServiceType");
 			put("org.zstack.sdk.HostOsCategoryInventory", "org.zstack.kvm.hypervisor.datatype.HostOsCategoryInventory");
+			put("org.zstack.sdk.HostPhysicalCpuInventory", "org.zstack.header.host.HostPhysicalCpuInventory");
 			put("org.zstack.sdk.HostPhysicalMemoryInventory", "org.zstack.header.host.HostPhysicalMemoryInventory");
 			put("org.zstack.sdk.HostSchedulingRuleGroupInventory", "org.zstack.header.vmscheduling.HostSchedulingRuleGroupInventory");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
