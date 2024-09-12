@@ -37,10 +37,6 @@ public interface RBACDescription {
         return new RBAC.ResourceEnsembleContributorBuilder();
     }
 
-    default RBACEntityFormatter entityFormatter() {
-        return null;
-    }
-
     String permissionName();
 
     void permissions();
