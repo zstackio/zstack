@@ -38197,6 +38197,33 @@ abstract class ApiHelper {
     }
 
 
+    def syncAINginxConfiguration(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncAINginxConfigurationAction.class) Closure c) {
+        def a = new org.zstack.sdk.SyncAINginxConfigurationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def syncAliyunRouteEntryFromRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncAliyunRouteEntryFromRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.SyncAliyunRouteEntryFromRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -39036,6 +39063,7 @@ abstract class ApiHelper {
 
     def tokenIntrospection(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.TokenIntrospectionAction.class) Closure c) {
         def a = new org.zstack.sdk.TokenIntrospectionAction()
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
