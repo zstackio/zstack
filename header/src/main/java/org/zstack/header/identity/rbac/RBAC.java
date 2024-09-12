@@ -42,8 +42,6 @@ public class RBAC {
     private static List<RoleContributor> roleContributors = new ArrayList<>();
     private static List<RoleBuilder> roleBuilders = new ArrayList<>();
 
-    private static PolicyMatcher matcher = new PolicyMatcher();
-
     public static void checkMissingRBACInfo() {
         PolicyMatcher matcher = new PolicyMatcher();
 
@@ -122,7 +120,6 @@ public class RBAC {
 
         public RoleBuilder(RBACDescription description) {
             basePermission = description.permissionName();
-            role.setPredefine(true);
             role.setName(basePermission);
         }
 
@@ -157,16 +154,6 @@ public class RBAC {
             return permissionsByName(this.basePermission);
         }
 
-        public RoleBuilder predefined() {
-            role.predefine = true;
-            return this;
-        }
-
-        public RoleBuilder notPredefined() {
-            role.predefine = false;
-            return this;
-        }
-
         public RoleBuilder excludeActions(String...vs) {
             for (String v : vs) {
                 role.getExcludedActions().add(v);
@@ -190,7 +177,6 @@ public class RBAC {
         private String uuid;
         private String name;
         private Set<String> allowedActions = new HashSet<>();
-        private boolean predefine = true;
         private List<String> excludedActions = new ArrayList<>();
 
         public String getUuid() {
@@ -215,14 +201,6 @@ public class RBAC {
 
         public void setAllowedActions(Set<String> allowedActions) {
             this.allowedActions = allowedActions;
-        }
-
-        public boolean isPredefine() {
-            return predefine;
-        }
-
-        public void setPredefine(boolean predefine) {
-            this.predefine = predefine;
         }
 
         public List<String> getExcludedActions() {

@@ -149,7 +149,6 @@ public class RBACManagerImpl extends AbstractService implements
                 .select(RoleVO_.uuid)
                 .listValues());
         final List<RBAC.Role> roleList = RBAC.roles.stream()
-                .filter(RBAC.Role::isPredefine)
                 .collect(Collectors.toList());
 
         List<RoleVO> rolesNeedCreate = new ArrayList<>();
