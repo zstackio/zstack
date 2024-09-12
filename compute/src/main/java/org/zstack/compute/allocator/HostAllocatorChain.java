@@ -24,8 +24,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.*;
 
 /**
  */
