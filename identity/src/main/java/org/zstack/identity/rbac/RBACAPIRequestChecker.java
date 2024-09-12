@@ -94,7 +94,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     private void permissionDenied() {
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("[RBAC]operation is denied by default, API:\n%s", jsonMessage()));
+            logger.trace(String.format("[RBAC]operation is denied by default, API:%n%s", jsonMessage()));
         }
 
         if (apiClass != baseApiClass) {
@@ -145,7 +145,6 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
 
         final Map<String, List<RolePolicyVO>> rolePoliciesMap = groupBy(policies, RolePolicyVO::getRoleUuid);
-        List<List<RolePolicyVO>> expendCheckList = new ArrayList<>();
 
         OUT_LOOP:
         for (List<RolePolicyVO> policiesToCheck : rolePoliciesMap.values()) {
@@ -218,9 +217,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         this.session = session;
 
         Map<String, Boolean> apiClassNamePassMap = new HashMap<>();
-        for (Class<?> apiClass : classes) {
-            this.apiClass = apiClass;
-            apiClassNamePassMap.put(apiClass.getName(), check());
+        for (Class<?> clazz : classes) {
+            this.apiClass = clazz;
+            apiClassNamePassMap.put(clazz.getName(), check());
         }
 
         return apiClassNamePassMap;
