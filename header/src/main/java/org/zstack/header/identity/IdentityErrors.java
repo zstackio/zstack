@@ -18,6 +18,7 @@ public enum IdentityErrors {
     ADDITION_AUTHENTICATION_SERVER_ERROR(2003),
 
     INVALID_ROLE_POLICY(3001),
+    ROLE_BEING_USED(3002),
     ;
 
     private String code;
