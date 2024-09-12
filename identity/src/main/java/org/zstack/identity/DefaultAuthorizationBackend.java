@@ -5,12 +5,10 @@ import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.extension.AuthorizationBackend;
-import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.rbac.RBACResourceRequestChecker;
 import org.zstack.identity.rbac.RBACAPIRequestChecker;
 import org.zstack.identity.rbac.RBACManager;
-import org.zstack.header.identity.rbac.RBACEntity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -40,10 +38,9 @@ public class DefaultAuthorizationBackend implements AuthorizationBackend {
         checkers.add(new QuotaAPIRequestChecker());
 
         try {
-            RBACEntity entity = RBAC.formatRBACEntity(new RBACEntity(msg));
             checkers.forEach(c -> {
-                if (!c.bypass(entity)) {
-                    c.check(entity);
+                if (!c.bypass(msg)) {
+                    c.check(msg);
                 }
             });
         } catch (OperationFailureException e) {

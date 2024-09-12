@@ -1,11 +1,11 @@
 package org.zstack.identity;
 
-import org.zstack.header.identity.rbac.RBACEntity;
+import org.zstack.header.message.APIMessage;
 
 public interface APIRequestChecker {
-    void check(RBACEntity msg);
+    void check(APIMessage msg);
 
-    default boolean bypass(RBACEntity entity) {
+    default boolean bypass(APIMessage entity) {
         return false;
     }
 }

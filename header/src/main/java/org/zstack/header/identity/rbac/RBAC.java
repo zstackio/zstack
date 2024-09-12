@@ -35,7 +35,6 @@ public class RBAC {
     public static List<Role> roles = new ArrayList<>();
     public static Map<String, ApiPermissionBucket> apiBuckets = new HashMap<>();
     public static List<Class<?>> readableResources = new ArrayList<>();
-    private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
     public static List<ResourceEnsembleMember> ensembleMembers = new ArrayList<>();
 
     public static Map<Class<?>, List<Function<?, List<APIMessage>>>> expendApiClassForPermissionCheck = new HashMap<>();
@@ -682,18 +681,6 @@ public class RBAC {
             rd.roles();
             rd.contributeToRoles();
             rd.globalReadableResources();
-            RBACEntityFormatter formatter =  rd.entityFormatter();
-            if (formatter != null) {
-                for (Class aClass : formatter.getAPIClasses()) {
-                    List<Class> clzs = new ArrayList<>();
-                    clzs.add(aClass);
-                    clzs.addAll(BeanUtils.reflections.getSubTypesOf(aClass));
-                    clzs.forEach(apiClz-> {
-                        List<RBACEntityFormatter> formatters = entityFormatters.computeIfAbsent(apiClz, x->new ArrayList<>());
-                        formatters.add(formatter);
-                    });
-                }
-            }
         });
 
         buildApiBuckets();
@@ -728,24 +715,6 @@ public class RBAC {
     public static boolean isResourceGlobalReadable(Class clz) {
         return readableResources.stream().anyMatch(r -> r.isAssignableFrom(clz))
                 || !OwnedByAccount.class.isAssignableFrom(clz);
-    }
-
-    public static RBACEntity formatRBACEntity(RBACEntity entity) {
-        Class apiClass = entity.getApiMessage().getClass();
-        List<RBACEntityFormatter> formatters = entityFormatters.get(apiClass);
-        if (formatters == null) {
-            return entity;
-        }
-
-        RBACEntity e;
-        for (RBACEntityFormatter formatter : formatters) {
-            e = formatter.format(entity);
-            if (e != null) {
-                return e;
-            }
-        }
-
-        return entity;
     }
 
     public static boolean isValidAPI(String apiName) {
