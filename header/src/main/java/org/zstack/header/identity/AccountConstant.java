@@ -62,13 +62,6 @@ public interface AccountConstant {
         return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
     }
 
-    enum Principal {
-        Account,
-        User,
-        Role,
-        Group
-    }
-
     String ACCOUNT_REST_AUTH = "OAuth";
     RestAuthenticationType ACCOUNT_REST_AUTHENTICATION_TYPE = new RestAuthenticationType(ACCOUNT_REST_AUTH);
 }

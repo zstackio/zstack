@@ -113,13 +113,13 @@ public class RolePolicyUpdater {
             //     because we only support resourceEffect == Allow
 
             Set<String> allResourceToDelete = transformToSet(statement.resources, resource -> resource.uuid);
-            final Set<Long> resourceRefIdToDelete = vos.stream()
+            final Set<String> resourceUuidToDelete = vos.stream()
                     .filter(policy -> policy.getResourceRefs() != null)
                     .flatMap(policy -> policy.getResourceRefs().stream())
                     .filter(ref -> allResourceToDelete.contains(ref.getResourceUuid()))
-                    .map(RolePolicyResourceRefVO::getId)
+                    .map(RolePolicyResourceRefVO::getResourceUuid)
                     .collect(Collectors.toSet());
-            if (resourceRefIdToDelete.isEmpty()) {
+            if (resourceUuidToDelete.isEmpty()) {
                 return;
             }
 
@@ -127,7 +127,7 @@ public class RolePolicyUpdater {
             for (Iterator<RolePolicyVO> iterator = vos.iterator(); iterator.hasNext();) {
                 RolePolicyVO vo = iterator.next();
 
-                vo.getResourceRefs().removeIf(ref -> resourceRefIdToDelete.contains(ref.getId()));
+                vo.getResourceRefs().removeIf(ref -> resourceUuidToDelete.contains(ref.getResourceUuid()));
                 if (vo.getResourceRefs().isEmpty()) {
                     iterator.remove();
                 }
