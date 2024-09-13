@@ -81,8 +81,8 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
                 .eq(RoleAccountRefVO_.roleUuid, msg.getRoleUuid())
                 .isExists();
         if (anyAttached) {
-            throw new ApiMessageInterceptionException(
-                    argerr("failed to delete role[uuid=%s]: some accounts attached this role", msg.getRoleUuid()));
+            throw new ApiMessageInterceptionException(err(IdentityErrors.ROLE_BEING_USED,
+                    "failed to delete role[uuid:%s]: some accounts attached this role", msg.getRoleUuid()));
         }
     }
 

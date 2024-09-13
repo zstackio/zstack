@@ -9,7 +9,7 @@ import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.rbac.RBACEntity;
+import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.SuppressRBACCheck;
 import org.zstack.header.identity.role.RoleAccountRefVO;
 import org.zstack.header.identity.role.RoleAccountRefVO_;
@@ -24,6 +24,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.header.errorcode.SysErrors.OPERATION_DENIED;
@@ -50,13 +52,13 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     private ResourcePolicyCheckerFactory resourcePolicyCheckerFactory;
     private ResourcePolicyChecker resourcePolicyChecker;
 
-    public boolean bypass(RBACEntity entity) {
-        return entity.getApiMessage().getHeaders().containsKey(IdentityByPassCheck.NoRBACCheck.toString());
+    public boolean bypass(APIMessage apiMessage) {
+        return apiMessage.getHeaders().containsKey(IdentityByPassCheck.NoRBACCheck.toString());
     }
 
     @Override
-    public void check(RBACEntity entity) {
-        baseApiMessage = apiMessage = entity.getApiMessage();
+    public void check(APIMessage message) {
+        baseApiMessage = apiMessage = message;
         baseApiClass = apiClass = apiMessage.getClass();
         session = apiMessage.getSession();
 
@@ -68,17 +70,17 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
             return;
         }
 
-        if (PolicyUtils.isAdminOnlyAction(entity.getApiName())) {
+        if (PolicyUtils.isAdminOnlyAction(apiClass.getName())) {
             throw new OperationFailureException(err(OPERATION_DENIED,
                     "operation[API:%s] is denied: admin-only API",
-                    entity.getApiName()));
+                    apiClass.getName()));
         }
 
         if (!check()) {
             permissionDenied();
         }
 
-        List<APIMessage> additionalApisToCheck = entity.getAdditionalApisToCheck();
+        List<APIMessage> additionalApisToCheck = collectExpendedApiMessages();
         if (isEmpty(additionalApisToCheck)) {
             return;
         }
@@ -94,7 +96,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     private void permissionDenied() {
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("[RBAC]operation is denied by default, API:\n%s", jsonMessage()));
+            logger.trace(String.format("[RBAC]operation is denied by default, API:%n%s", jsonMessage()));
         }
 
         if (apiClass != baseApiClass) {
@@ -123,6 +125,20 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                 .list();
     }
 
+    protected List<APIMessage> collectExpendedApiMessages() {
+        List<Function<APIMessage, List<APIMessage>>> functions = RBAC.expendPermissionCheckList(apiMessage.getClass());
+
+        if (functions == null) {
+            return Collections.emptyList();
+        }
+
+        return functions.stream()
+                .map(function -> function.apply(apiMessage))
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+    }
+
     protected boolean check() {
         List<RolePolicyVO> policies = getPoliciesForAPI();
         return evalStatements(policies);
@@ -145,7 +161,6 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
 
         final Map<String, List<RolePolicyVO>> rolePoliciesMap = groupBy(policies, RolePolicyVO::getRoleUuid);
-        List<List<RolePolicyVO>> expendCheckList = new ArrayList<>();
 
         OUT_LOOP:
         for (List<RolePolicyVO> policiesToCheck : rolePoliciesMap.values()) {
@@ -218,9 +233,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         this.session = session;
 
         Map<String, Boolean> apiClassNamePassMap = new HashMap<>();
-        for (Class<?> apiClass : classes) {
-            this.apiClass = apiClass;
-            apiClassNamePassMap.put(apiClass.getName(), check());
+        for (Class<?> clazz : classes) {
+            this.apiClass = clazz;
+            apiClassNamePassMap.put(clazz.getName(), check());
         }
 
         return apiClassNamePassMap;

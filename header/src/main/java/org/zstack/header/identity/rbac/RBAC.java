@@ -35,15 +35,12 @@ public class RBAC {
     public static List<Role> roles = new ArrayList<>();
     public static Map<String, ApiPermissionBucket> apiBuckets = new HashMap<>();
     public static List<Class<?>> readableResources = new ArrayList<>();
-    private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
     public static List<ResourceEnsembleMember> ensembleMembers = new ArrayList<>();
 
     public static Map<Class<?>, List<Function<?, List<APIMessage>>>> expendApiClassForPermissionCheck = new HashMap<>();
 
     private static List<RoleContributor> roleContributors = new ArrayList<>();
     private static List<RoleBuilder> roleBuilders = new ArrayList<>();
-
-    private static PolicyMatcher matcher = new PolicyMatcher();
 
     public static void checkMissingRBACInfo() {
         PolicyMatcher matcher = new PolicyMatcher();
@@ -123,7 +120,6 @@ public class RBAC {
 
         public RoleBuilder(RBACDescription description) {
             basePermission = description.permissionName();
-            role.setPredefine(true);
             role.setName(basePermission);
         }
 
@@ -158,16 +154,6 @@ public class RBAC {
             return permissionsByName(this.basePermission);
         }
 
-        public RoleBuilder predefined() {
-            role.predefine = true;
-            return this;
-        }
-
-        public RoleBuilder notPredefined() {
-            role.predefine = false;
-            return this;
-        }
-
         public RoleBuilder excludeActions(String...vs) {
             for (String v : vs) {
                 role.getExcludedActions().add(v);
@@ -191,7 +177,6 @@ public class RBAC {
         private String uuid;
         private String name;
         private Set<String> allowedActions = new HashSet<>();
-        private boolean predefine = true;
         private List<String> excludedActions = new ArrayList<>();
 
         public String getUuid() {
@@ -216,14 +201,6 @@ public class RBAC {
 
         public void setAllowedActions(Set<String> allowedActions) {
             this.allowedActions = allowedActions;
-        }
-
-        public boolean isPredefine() {
-            return predefine;
-        }
-
-        public void setPredefine(boolean predefine) {
-            this.predefine = predefine;
         }
 
         public List<String> getExcludedActions() {
@@ -682,18 +659,6 @@ public class RBAC {
             rd.roles();
             rd.contributeToRoles();
             rd.globalReadableResources();
-            RBACEntityFormatter formatter =  rd.entityFormatter();
-            if (formatter != null) {
-                for (Class aClass : formatter.getAPIClasses()) {
-                    List<Class> clzs = new ArrayList<>();
-                    clzs.add(aClass);
-                    clzs.addAll(BeanUtils.reflections.getSubTypesOf(aClass));
-                    clzs.forEach(apiClz-> {
-                        List<RBACEntityFormatter> formatters = entityFormatters.computeIfAbsent(apiClz, x->new ArrayList<>());
-                        formatters.add(formatter);
-                    });
-                }
-            }
         });
 
         buildApiBuckets();
@@ -728,24 +693,6 @@ public class RBAC {
     public static boolean isResourceGlobalReadable(Class clz) {
         return readableResources.stream().anyMatch(r -> r.isAssignableFrom(clz))
                 || !OwnedByAccount.class.isAssignableFrom(clz);
-    }
-
-    public static RBACEntity formatRBACEntity(RBACEntity entity) {
-        Class apiClass = entity.getApiMessage().getClass();
-        List<RBACEntityFormatter> formatters = entityFormatters.get(apiClass);
-        if (formatters == null) {
-            return entity;
-        }
-
-        RBACEntity e;
-        for (RBACEntityFormatter formatter : formatters) {
-            e = formatter.format(entity);
-            if (e != null) {
-                return e;
-            }
-        }
-
-        return entity;
     }
 
     public static boolean isValidAPI(String apiName) {
