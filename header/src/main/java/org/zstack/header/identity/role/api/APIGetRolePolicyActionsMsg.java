@@ -1,6 +1,7 @@
 package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
@@ -13,6 +14,17 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetRolePolicyActionsReply.class
 )
 public class APIGetRolePolicyActionsMsg extends APISyncCallMessage {
+    @APIParam(required = false)
+    private boolean showAllPolicies;
+
+    public boolean isShowAllPolicies() {
+        return showAllPolicies;
+    }
+
+    public void setShowAllPolicies(boolean showAllPolicies) {
+        this.showAllPolicies = showAllPolicies;
+    }
+
     public static APIGetRolePolicyActionsMsg __example__() {
         return new APIGetRolePolicyActionsMsg();
     }

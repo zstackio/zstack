@@ -36,6 +36,11 @@ import org.zstack.header.identity.login.LogInMsg;
 import org.zstack.header.identity.login.LogInReply;
 import org.zstack.header.identity.login.LoginManager;
 import org.zstack.header.identity.rbac.RBAC;
+import org.zstack.header.identity.role.RoleAccountRefVO;
+import org.zstack.header.identity.role.RoleAccountRefVO_;
+import org.zstack.header.identity.role.RoleInventory;
+import org.zstack.header.identity.role.RoleVO;
+import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.identity.role.api.APIGetRolePolicyActionsMsg;
 import org.zstack.header.identity.role.api.APIGetRolePolicyActionsReply;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
@@ -459,6 +464,36 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void handle(APIGetRolePolicyActionsMsg msg) {
         APIGetRolePolicyActionsReply reply = new APIGetRolePolicyActionsReply();
 
+        if (!msg.isShowAllPolicies()) {
+            // only show roles and policies attached to the account
+
+            List<RoleVO> roles = Q.New(RoleVO.class, RoleAccountRefVO.class)
+                    .table0()
+                        .selectThisTable()
+                        .eq(RoleVO_.uuid).table1(RoleAccountRefVO_.roleUuid)
+                    .table1()
+                        .eq(RoleAccountRefVO_.accountUuid, msg.getSession().getAccountUuid())
+                    .list();
+            List<RoleInventory> roleInventories = RoleInventory.valueOf(roles);
+
+            reply.setPolicies(roleInventories.stream()
+                    .flatMap(role -> role.getPolicies().stream())
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList()));
+
+            roleInventories.forEach(role -> {
+                role.setLastOpDate(null);
+                role.setCreateDate(null);
+                role.setDescription(null);
+                role.setPolicies(null);
+            });
+            reply.setRoles(roleInventories);
+
+            bus.reply(msg, reply);
+            return;
+        }
+
         synchronized (rolePolicyActionsLock) {
             if (rolePolicyActionsCache == null) {
                 rolePolicyActionsCache = RBAC.apiBuckets.entrySet().stream()
@@ -469,7 +504,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         .sorted()
                         .collect(Collectors.toList());
             }
-            reply.setInventories(rolePolicyActionsCache);
+            reply.setPolicies(rolePolicyActionsCache);
         }
         bus.reply(msg, reply);
     }

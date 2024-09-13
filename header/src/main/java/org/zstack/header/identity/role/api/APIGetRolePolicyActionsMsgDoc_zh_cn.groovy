@@ -39,6 +39,15 @@ doc {
 					optional true
 					since "4.10.0"
 				}
+				column {
+					name "showAllPolicies"
+					enclosedIn ""
+					desc "是否查询系统内所有角色权限。true 则查询查询系统内所有角色权限，false 仅查询当前账户拥有的角色和权限"
+					location "query"
+					type "boolean"
+					optional true
+					since "4.10.0"
+				}
 			}
         }
 
