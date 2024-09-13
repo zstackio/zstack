@@ -25,6 +25,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionUtils.distinctByKey;
 
@@ -74,7 +75,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
             query.setParameter("phStatus", PrimaryStorageHostStatus.Connected);
-            errorInfo = String.format("cannot find primary storage satisfying conditions" +
+            errorInfo = i18n("cannot find primary storage satisfying conditions" +
                             "[connected to host:%s, state:%s, status: %s, available capacity > %s",
                     spec.getRequiredHostUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredClusterUuids() != null && !spec.getRequiredClusterUuids().isEmpty()) {
