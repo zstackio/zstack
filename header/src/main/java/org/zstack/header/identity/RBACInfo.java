@@ -8,6 +8,8 @@ import org.zstack.header.identity.role.api.APIAttachRoleToAccountMsg;
 import org.zstack.header.identity.role.api.APICreateRoleMsg;
 import org.zstack.header.identity.role.api.APIDeleteRoleMsg;
 import org.zstack.header.identity.role.api.APIDetachRoleFromAccountMsg;
+import org.zstack.header.identity.role.api.APIGetRolePolicyActionsMsg;
+import org.zstack.header.identity.role.api.APIQueryRoleAccountRefMsg;
 import org.zstack.header.identity.role.api.APIQueryRoleMsg;
 import org.zstack.header.identity.role.api.APIUpdateRoleMsg;
 
@@ -22,8 +24,6 @@ public class RBACInfo implements RBACDescription {
         permissionBuilder()
                 .adminOnlyAPIs(
                         APICreateAccountMsg.class,
-                        APIShareResourceMsg.class,
-                        APIRevokeResourceSharingMsg.class,
                         APIUpdateQuotaMsg.class,
                         APIChangeResourceOwnerMsg.class,
                         APIAttachRoleToAccountMsg.class,
@@ -68,16 +68,18 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .actions(
+                        APIGetAccountQuotaUsageMsg.class,
+                        APIGetLoginProceduresMsg.class,
+                        APIGetResourceAccountMsg.class,
+                        APIGetRolePolicyActionsMsg.class,
+                        APILogInByAccountMsg.class,
                         APILogInMsg.class,
                         APILogOutMsg.class,
-                        APIGetLoginProceduresMsg.class,
-                        APIQueryRoleMsg.class,
-                        APIGetAccountQuotaUsageMsg.class,
-                        APIGetResourceAccountMsg.class,
-                        APILogInByAccountMsg.class,
                         APIQueryAccountMsg.class,
                         APIQueryAccountResourceRefMsg.class,
                         APIQueryQuotaMsg.class,
+                        APIQueryRoleAccountRefMsg.class,
+                        APIQueryRoleMsg.class,
                         APIRenewSessionMsg.class,
                         APIRevokeResourceSharingMsg.class,
                         APIShareResourceMsg.class,
