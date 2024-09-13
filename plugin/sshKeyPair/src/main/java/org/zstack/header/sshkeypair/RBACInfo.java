@@ -20,9 +20,6 @@ public class RBACInfo implements RBACDescription {
 
     @Override
     public void roles() {
-        roleBuilder()
-                .uuid("2ae2f3bdb0ff4296bda2447aa7b334e7")
-                .permissionBaseOnThis()
-                .build();
+        contributeNormalApiToOtherRole();
     }
 }
