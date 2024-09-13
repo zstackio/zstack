@@ -20,9 +20,6 @@ public class RBACInfo implements RBACDescription {
 
     @Override
     public void contributeToRoles() {
-        roleContributorBuilder()
-                .roleName("other")
-                .actions(APIRefreshSearchIndexesMsg.class)
-                .build();
+        contributeNormalApiToOtherRole();
     }
 }

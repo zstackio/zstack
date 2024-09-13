@@ -25,4 +25,14 @@ public class RBACInfo implements RBACDescription {
                 .permissionBaseOnThis()
                 .build();
     }
+
+    @Override
+    public void contributeToRoles() {
+        roleContributorBuilder()
+                .toOtherRole()
+                .actions(
+                    APIQueryImageMsg.class
+                )
+                .build();
+    }
 }

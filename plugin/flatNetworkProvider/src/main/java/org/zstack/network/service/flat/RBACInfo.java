@@ -23,5 +23,13 @@ public class RBACInfo implements RBACDescription {
                 .roleName("networks")
                 .actionsInThisPermission()
                 .build();
+
+        roleContributorBuilder()
+                .toOtherRole()
+                .actions(
+                    APIGetL3NetworkDhcpIpAddressMsg.class,
+                    APIGetL3NetworkIpStatisticMsg.class
+                )
+                .build();
     }
 }
