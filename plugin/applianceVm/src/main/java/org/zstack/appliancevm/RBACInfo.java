@@ -4,11 +4,17 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "appliance-vm";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("appliance-vm")
                 .targetResources(ApplianceVmVO.class)
-                .normalAPIs("org.zstack.appliancevm.**")
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -16,15 +22,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("vrouter")
-                .actionsByPermissionName("appliance-vm")
+                .actionsInThisPermission()
                 .build();
-    }
-
-    @Override
-    public void roles() {
-    }
-
-    @Override
-    public void globalReadableResources() {
     }
 }

@@ -4,10 +4,18 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "cluster";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .adminOnlyAPIs("org.zstack.header.cluster.**")
+                .adminOnlyForAll()
                 .normalAPIs(APIQueryClusterMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -17,11 +25,6 @@ public class RBACInfo implements RBACDescription {
                 .roleName("other")
                 .actions(APIQueryClusterMsg.class)
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
     }
 
     @Override

@@ -5,10 +5,18 @@ import org.zstack.storage.ceph.backup.APIQueryCephBackupStorageMsg;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "ceph-storage";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .adminOnlyAPIs("org.zstack.storage.ceph.**")
+                .adminOnlyForAll()
                 .normalAPIs(APIQueryCephBackupStorageMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -16,17 +24,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("image")
-                .actions(APIQueryCephBackupStorageMsg.class)
+                .actionsInThisPermission()
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

@@ -4,10 +4,16 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "flat-l3";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("flat-l3")
-                .normalAPIs("org.zstack.network.service.flat.**")
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -15,16 +21,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("networks")
-                .actionsByPermissionName("flat-l3")
+                .actionsInThisPermission()
                 .build();
-    }
-
-    @Override
-    public void roles() {
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

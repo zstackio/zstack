@@ -4,25 +4,24 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "zone";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("zone")
-                .adminOnlyAPIs("org.zstack.header.zone.**")
+                .adminOnlyForAll()
                 .normalAPIs(APIQueryZoneMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-        roleContributorBuilder()
-                .roleName("other")
-                .actionsByPermissionName("zone")
-                .build();
-    }
-
-    @Override
-    public void roles() {
-
+        contributeNormalApiToOtherRole();
     }
 
     @Override

@@ -140,12 +140,16 @@ class LdapBasicCase extends SubCase {
             loginType = "ldap"
         }
 
-        action = new LogInAction()
-        action.username = cn
-        action.password = rightPassword
-        action.loginType = "ldap"
-        LogInAction.Result result = action.call()
-        assert result.error.details.contains(IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED.toString())
+        expectApiFailure ({
+            logIn {
+                delegate.username = cn
+                delegate.password = rightPassword
+                delegate.loginType = "ldap"
+            }
+        }) {
+            assert code == "ID.1006"
+            assert IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED.toString() == "ID.1006"
+        }
 
         IdentityGlobalConfig.MAX_CONCURRENT_SESSION.resetValue()
 

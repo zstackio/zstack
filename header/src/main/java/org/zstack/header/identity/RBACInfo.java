@@ -7,9 +7,13 @@ import org.zstack.header.identity.role.api.APIDetachRoleFromAccountMsg;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "identity";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("identity")
                 .adminOnlyAPIs(
                         APICreateAccountMsg.class,
                         APIShareResourceMsg.class,
@@ -20,27 +24,19 @@ public class RBACInfo implements RBACDescription {
                         APIAttachRoleToAccountMsg.class,
                         APIDetachRoleFromAccountMsg.class,
                         APICheckResourcePermissionMsg.class
-                ).normalAPIs("org.zstack.header.identity.**")
+                )
                 .targetResources(AccountVO.class, PolicyVO.class, RoleVO.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
-    }
-
-    @Override
-    public void contributeToRoles() {
-
     }
 
     @Override
     public void roles() {
         roleBuilder()
-                .name("identity")
-                .permissionsByName("identity")
                 .uuid("acf2695d8c7c4c5587f5b136098fe45e")
+                .permissionBaseOnThis()
                 .build();
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

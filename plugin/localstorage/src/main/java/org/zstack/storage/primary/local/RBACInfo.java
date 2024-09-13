@@ -5,12 +5,20 @@ import org.zstack.header.volume.VolumeVO;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "local-storage";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .adminOnlyAPIs("org.zstack.storage.primary.local.**")
+                .adminOnlyForAll()
                 .normalAPIs(APILocalStorageGetVolumeMigratableHostsMsg.class, APILocalStorageMigrateVolumeMsg.class,
                         APIQueryLocalStorageResourceRefMsg.class)
                 .targetResources(VolumeVO.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -21,15 +29,5 @@ public class RBACInfo implements RBACDescription {
                 .actions(APILocalStorageGetVolumeMigratableHostsMsg.class, APILocalStorageMigrateVolumeMsg.class,
                         APIQueryLocalStorageResourceRefMsg.class)
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

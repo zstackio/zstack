@@ -4,13 +4,22 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "network-service";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .adminOnlyAPIs("org.zstack.header.network.service.**")
+                .adminOnlyForAll()
                 .normalAPIs(
                         APIAttachNetworkServiceToL3NetworkMsg.class,
                         APIQueryNetworkServiceProviderMsg.class
-                ).build();
+                )
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
+                .build();
     }
 
     @Override
@@ -19,15 +28,5 @@ public class RBACInfo implements RBACDescription {
                 .roleName("networks")
                 .actions(APIQueryNetworkServiceProviderMsg.class, APIAttachNetworkServiceToL3NetworkMsg.class)
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }

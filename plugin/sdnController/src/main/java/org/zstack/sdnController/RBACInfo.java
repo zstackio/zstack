@@ -4,23 +4,15 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "sdn-controller";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("sdnController")
-                .adminOnlyAPIs("org.zstack.sdnController.**")
+                .adminOnlyForAll()
+                .communityAvailable()
                 .build();
-    }
-
-    @Override
-    public void contributeToRoles() {
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
     }
 }

@@ -4,11 +4,18 @@ import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "host";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("host")
-                .adminOnlyAPIs("org.zstack.header.host.**")
+                .adminOnlyForAll()
                 .normalAPIs(APIQueryHostMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -18,11 +25,6 @@ public class RBACInfo implements RBACDescription {
                 .roleName("other")
                 .actions(APIQueryHostMsg.class)
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
     }
 
     @Override

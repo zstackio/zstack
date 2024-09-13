@@ -5,29 +5,22 @@ import org.zstack.header.vo.ResourceVO;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "resource-config";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
-                .name("resource-config")
-                .normalAPIs("org.zstack.resourceconfig.**")
                 .targetResources(ResourceVO.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-        roleContributorBuilder()
-                .roleName("other")
-                .actionsByPermissionName("resource-config")
-                .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
+        contributeNormalApiToOtherRole();
     }
 }

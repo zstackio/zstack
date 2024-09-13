@@ -5,9 +5,17 @@ import org.zstack.search.APIRefreshSearchIndexesMsg;
 
 public class RBACInfo implements RBACDescription {
     @Override
+    public String permissionName() {
+        return "query";
+    }
+
+    @Override
     public void permissions() {
         permissionBuilder()
                 .normalAPIs(APIBatchQueryMsg.class, APIZQLQueryMsg.class, APIRefreshSearchIndexesMsg.class)
+                .communityAvailable()
+                .zsvBasicAvailable()
+                .zsvProAvailable()
                 .build();
     }
 
@@ -17,15 +25,5 @@ public class RBACInfo implements RBACDescription {
                 .roleName("other")
                 .actions(APIBatchQueryMsg.class, APIZQLQueryMsg.class, APIRefreshSearchIndexesMsg.class)
                 .build();
-    }
-
-    @Override
-    public void roles() {
-
-    }
-
-    @Override
-    public void globalReadableResources() {
-
     }
 }
