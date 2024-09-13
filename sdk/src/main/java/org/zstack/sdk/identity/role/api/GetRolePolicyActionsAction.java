@@ -25,6 +25,9 @@ public class GetRolePolicyActionsAction extends AbstractAction {
         }
     }
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean showAllPolicies = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 
