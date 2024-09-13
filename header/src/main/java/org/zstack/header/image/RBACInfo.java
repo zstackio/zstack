@@ -1,5 +1,6 @@
 package org.zstack.header.image;
 
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {

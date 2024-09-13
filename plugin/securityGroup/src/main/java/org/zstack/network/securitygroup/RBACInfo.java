@@ -35,5 +35,10 @@ public class RBACInfo implements RBACDescription {
                     APIValidateSecurityGroupRuleMsg.class
                 )
                 .build();
+
+        roleContributorBuilder()
+                .roleName("legacy")
+                .actions("org.zstack.network.securitygroup.**")
+                .build();
     }
 }

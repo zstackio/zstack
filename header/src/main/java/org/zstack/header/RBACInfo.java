@@ -25,5 +25,11 @@ public class RBACInfo implements RBACDescription {
                 .uuid(AccountConstant.OTHER_ROLE_UUID)
                 .actions(APIIsOpensourceVersionMsg.class)
                 .build();
+
+        roleBuilder()
+                .name("legacy")
+                .uuid(AccountConstant.LEGACY_ROLE_UUID)
+                .actions("org.zstack.header.**")
+                .build();
     }
 }

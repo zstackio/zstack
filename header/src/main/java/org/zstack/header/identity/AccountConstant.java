@@ -39,6 +39,7 @@ public interface AccountConstant {
     String ACCOUNT_TYPE = "accountType";
 
     String OTHER_ROLE_UUID = "80315b1f85314917826b182bf6def552";
+    String LEGACY_ROLE_UUID = "85cfac2138494b2db6501881e1e68045";
 
     /**
      * account has SystemAdmin type also have admin permission,
