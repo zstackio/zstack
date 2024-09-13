@@ -25,6 +25,11 @@ drop table if exists `IAM2ProjectTemplateVO`;
 drop table if exists `IAM2ProjectVO`;
 drop table if exists `IAM2VirtualIDVO`;
 
+delete from `AccountResourceRefVO` where `accountUuid` = '2dce5dc485554d21a3796500c1db007a';
+delete from `QuotaVO` where `identityUuid` = '2dce5dc485554d21a3796500c1db007a';
+delete from `AccountVO` where `uuid` = '2dce5dc485554d21a3796500c1db007a';
+delete from `ResourceVO` where `uuid` = '2dce5dc485554d21a3796500c1db007a';
+
 ALTER TABLE `TwoFactorAuthenticationSecretVO` CHANGE COLUMN `userUuid` `accountUuid` char(32) not null;
 call DROP_COLUMN('TwoFactorAuthenticationSecretVO', 'userType');
 
