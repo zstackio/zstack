@@ -26,5 +26,7 @@ public class RBACInfo implements RBACDescription {
                 .roleName("identity")
                 .actionsByPermissionName("identity-captcha-refresh")
                 .build();
+
+        contributeNormalApiToOtherRole();
     }
 }

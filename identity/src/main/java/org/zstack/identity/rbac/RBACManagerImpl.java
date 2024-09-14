@@ -174,7 +174,8 @@ public class RBACManagerImpl extends AbstractService implements
 
                 policiesNeedCreate.addAll(role.toStatements());
 
-                if (AccountConstant.OTHER_ROLE_UUID.equals(role.getUuid())) {
+                if (AccountConstant.OTHER_ROLE_UUID.equals(role.getUuid())
+                        || AccountConstant.LEGACY_ROLE_UUID.equals(role.getUuid())) {
                     List<String> accountUuidList = Q.New(AccountVO.class)
                             .in(AccountVO_.type, list(AccountType.Normal, AccountType.ThirdParty))
                             .select(AccountVO_.uuid)
@@ -182,7 +183,7 @@ public class RBACManagerImpl extends AbstractService implements
                     for (String accountUuid : accountUuidList) {
                         RoleAccountRefVO ref = new RoleAccountRefVO();
                         ref.setAccountUuid(accountUuid);
-                        ref.setRoleUuid(AccountConstant.OTHER_ROLE_UUID);
+                        ref.setRoleUuid(role.getUuid());
                         accountRefsNeedCreate.add(ref);
                     }
                 }
