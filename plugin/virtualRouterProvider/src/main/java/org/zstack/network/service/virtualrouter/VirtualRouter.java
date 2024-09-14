@@ -1006,12 +1006,12 @@ public class VirtualRouter extends ApplianceVmBase {
                     VirtualRouterAsyncHttpCallReply re = reply.castReply();
                     VirtualRouterCommands.ConfigureNicRsp rsp = re.toResponse(VirtualRouterCommands.ConfigureNicRsp.class);
                     if (rsp.isSuccess()) {
-                        logger.debug(String.format("successfully add nic[ip:%s, mac:%s] to virtual router vm[uuid:%s, ip:%s]",
-                                info.getIp(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp()));
+                        logger.debug(String.format("successfully add nic[ip:%s, ip6:%s, mac:%s] to virtual router vm[uuid:%s, ip:%s]",
+                                info.getIp(), info.getIp6(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp()));
                         trigger.next();
                     } else {
-                        ErrorCode err = operr("unable to add nic[ip:%s, mac:%s] to virtual router vm[uuid:%s ip:%s], because %s",
-                                info.getIp(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
+                        ErrorCode err = operr("unable to add nic[ip:%s, ip6:%s, mac:%s] to virtual router vm[uuid:%s ip:%s], because %s",
+                                info.getIp(), info.getIp6(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
                         trigger.fail(err);
                     }
                 }
