@@ -46,6 +46,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -78,6 +80,7 @@ import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+import org.zstack.tag.SystemTag;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
@@ -372,6 +375,29 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                 error = checkHostAccessible(volumeVO, hostUuid);
                 if (error != null) {
                     throw new ApiMessageInterceptionException(error);
+                }
+
+                List<SystemTagVO> systemTags = sql("select tag from SystemTagVO tag " +
+                        "join VolumeVO v on tag.resourceUuid = v.uuid " +
+                        "where tag.resourceType = :resourceType " +
+                        "and (v.vmInstanceUuid = :vmInstanceUuid or v.uuid = :volumeUuid)")
+                        .param("resourceType",VolumeVO.class.getSimpleName())
+                        .param("vmInstanceUuid", msg.getVmUuid())
+                        .param("volumeUuid", msg.getVolumeUuid())
+                        .list();
+
+                if (systemTags != null && !systemTags.isEmpty()) {
+                    long scsiVolumeCount = systemTags.stream()
+                            .filter(tag -> "capability::scsi".equals(tag.getTag()))
+                            .count();
+
+                    long virtioScsiVolumeCount = systemTags.stream()
+                            .filter(tag -> "capability::virtio-scsi".equals(tag.getTag()))
+                            .count();
+
+                    if (scsiVolumeCount > 0 && virtioScsiVolumeCount > 0) {
+                        throw new ApiMessageInterceptionException(operr("vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously."));
+                    }
                 }
             }
         }.execute();

@@ -39,6 +39,8 @@ public class KVMSystemTags {
 
     public static SystemTag VOLUME_VIRTIO_SCSI = new SystemTag("capability::virtio-scsi", VolumeVO.class);
 
+    public static SystemTag VOLUME_SCSI = new SystemTag("capability::scsi", VolumeVO.class);
+
     public static final String DISK_OFFERING_VIRTIO_SCSI_TOKEN = "diskOfferingUuid";
     public static final String DISK_OFFERING_VIRTIO_SCSI_NUM_TOKEN = "number";
     public static PatternedSystemTag DISK_OFFERING_VIRTIO_SCSI = new PatternedSystemTag(
