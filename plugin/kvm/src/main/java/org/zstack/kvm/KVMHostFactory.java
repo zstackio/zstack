@@ -589,9 +589,39 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
                 if (vm != null && (vm.getState() == VmInstanceState.Running || vm.getState() == VmInstanceState.Unknown)) {
                     throw new OperationFailureException(argerr("vm current state[%s], " +
-                            "modify virtioSCSI requires the vm state[%s]", vm.getState(), VmInstanceState.Stopped));
+                            "modify bus type requires the vm state[%s]", vm.getState(), VmInstanceState.Stopped));
                 }
 
+                if (vm != null ) {
+                    boolean hasScsiTag = !vm.getAllVolumes(volume -> KVMSystemTags.VOLUME_SCSI.hasTag(volume.getUuid())).isEmpty();
+
+                    if (hasScsiTag) {
+                        throw new OperationFailureException(argerr("vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously."));
+                    }
+                }
+            }
+        });
+
+        KVMSystemTags.VOLUME_SCSI.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                VmInstanceVO vm = SQL.New("select vm from VmInstanceVO vm, VolumeVO volume " +
+                                "where vm.uuid = volume.vmInstanceUuid and volume.uuid = :uuid", VmInstanceVO.class)
+                        .param("uuid", resourceUuid)
+                        .find();
+
+                if (vm != null && (vm.getState() == VmInstanceState.Running || vm.getState() == VmInstanceState.Unknown)) {
+                    throw new OperationFailureException(argerr("vm current state[%s], " +
+                            "modify bus type requires the vm state[%s]", vm.getState(), VmInstanceState.Stopped));
+                }
+
+                if (vm != null ) {
+                    boolean hasVirtioScsiTag = !vm.getAllVolumes(volume -> KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(volume.getUuid())).isEmpty();
+
+                    if (hasVirtioScsiTag) {
+                        throw new OperationFailureException(argerr("vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously."));
+                    }
+                }
             }
         });
 

@@ -31,6 +31,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private String volumeUuid;
     private boolean useVirtio;
     private boolean useVirtioSCSI;
+    private boolean useSCSI;
     private boolean shareable;
     private String cacheMode = "none";
     private boolean aioNative;
@@ -57,6 +58,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         this.volumeUuid = other.volumeUuid;
         this.useVirtio = other.useVirtio;
         this.useVirtioSCSI = other.useVirtioSCSI;
+        this.useSCSI = other.useSCSI;
         this.cacheMode = other.cacheMode;
         this.aioNative = other.aioNative;
         this.wwn = other.wwn;
@@ -103,6 +105,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         to.setUseVirtio(platform == null || (ImagePlatform.Windows.toString().equals(platform) ||
                 ImagePlatform.valueOf(platform).isParaVirtualization()));
         to.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
+        to.setUseSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_SCSI.hasTag(vol.getUuid()));
         to.setWwn(KVMHost.computeWwnIfAbsent(vol.getUuid()));
         to.setShareable(vol.isShareable());
         ResourceConfigFacade rcf = Platform.getComponentLoader().getComponent(ResourceConfigFacade.class);
@@ -165,6 +168,14 @@ public class VolumeTO extends BaseVirtualDeviceTO {
 
     public void setUseVirtio(boolean useVirtio) {
         this.useVirtio = useVirtio;
+    }
+
+    public boolean isUseSCSI() {
+        return useSCSI;
+    }
+
+    public void setUseSCSI(boolean useSCSI) {
+        this.useSCSI = useSCSI;
     }
 
     public String getVolumeUuid() {
