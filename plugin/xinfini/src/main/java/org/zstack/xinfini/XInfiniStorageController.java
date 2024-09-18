@@ -480,6 +480,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                 .set(ExternalPrimaryStorageVO_.config, JSONObjectUtil.toJsonString(config))
                 .update();
+        completion.success();
     }
 
     @Override
