@@ -69,6 +69,7 @@ public class VmAllocateCdRomFlow implements Flow {
             vmCdRomVO.setName(String.format("vm-%s-cdRom", spec.getVmInventory().getUuid()));
             vmCdRomVO.setAccountUuid(acntUuid);
             vmCdRomVO.setIsoUuid(cdRomSpec.getImageUuid());
+            vmCdRomVO.setOccupant(vmCdRomVO.getIsoUuid() == null ? null : VmInstanceConstant.VM_CDROM_OCCUPANT_ISO);
             cdRomVOS.add(vmCdRomVO);
         }
 

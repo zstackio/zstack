@@ -5,7 +5,6 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.header.Component;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -77,6 +76,7 @@ public class VmCdRomUpgradeExtension implements ManagementNodeReadyExtensionPoin
             cdRomVO.setUuid(Platform.getUuid());
             cdRomVO.setDeviceId(deviceId);
             cdRomVO.setIsoUuid(vmDeviceIdIsoMap.get(deviceId));
+            cdRomVO.setOccupant(cdRomVO.getIsoUuid() == null ? null : VmInstanceConstant.VM_CDROM_OCCUPANT_ISO);
             cdRomVO.setVmInstanceUuid(vmUuid);
             cdRomVO.setName(String.format("vm-%s-cdRom", vmUuid));
             cdRomVO.setAccountUuid(acntUuid);
@@ -108,6 +108,7 @@ public class VmCdRomUpgradeExtension implements ManagementNodeReadyExtensionPoin
             cdRomVO.setUuid(Platform.getUuid());
             cdRomVO.setDeviceId(deviceId);
             cdRomVO.setIsoUuid(isoUuid);
+            cdRomVO.setOccupant(isoUuid == null ? null : VmInstanceConstant.VM_CDROM_OCCUPANT_ISO);
             cdRomVO.setVmInstanceUuid(vmUuid);
             cdRomVO.setName(String.format("vm-%s-cdRom", vmUuid));
             cdRomVO.setAccountUuid(acntUuid);

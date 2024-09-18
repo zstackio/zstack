@@ -92,4 +92,7 @@ public interface VmInstanceConstant {
     String NONE_CDROM = "none";
 
     String DETACH_NIC_FAILED_REGEX = ".*NIC device is still attached after.*";
+
+    String VM_CDROM_OCCUPANT_ISO = "ISO";
+    String VM_CDROM_OCCUPANT_GUEST_TOOLS = "GuestTools";
 }

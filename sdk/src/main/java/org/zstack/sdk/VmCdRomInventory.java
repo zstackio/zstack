@@ -28,6 +28,14 @@ public class VmCdRomInventory  {
         return this.deviceId;
     }
 
+    public java.lang.String occupant;
+    public void setOccupant(java.lang.String occupant) {
+        this.occupant = occupant;
+    }
+    public java.lang.String getOccupant() {
+        return this.occupant;
+    }
+
     public java.lang.String isoUuid;
     public void setIsoUuid(java.lang.String isoUuid) {
         this.isoUuid = isoUuid;
