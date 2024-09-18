@@ -28,6 +28,14 @@ public class ModelServiceInstanceInventory  {
         return this.yaml;
     }
 
+    public java.lang.String k8sResourceYaml;
+    public void setK8sResourceYaml(java.lang.String k8sResourceYaml) {
+        this.k8sResourceYaml = k8sResourceYaml;
+    }
+    public java.lang.String getK8sResourceYaml() {
+        return this.k8sResourceYaml;
+    }
+
     public java.lang.String status;
     public void setStatus(java.lang.String status) {
         this.status = status;
