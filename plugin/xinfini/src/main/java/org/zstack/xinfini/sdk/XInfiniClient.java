@@ -11,6 +11,8 @@ import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.xinfini.NodeStatus;
+import org.zstack.xinfini.XInfiniConfig;
 
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
@@ -58,9 +60,9 @@ public class XInfiniClient extends ExternalStorageApiClient {
         }
     }
 
-    public <T extends XInfiniResponse> T call(XInfiniRequest req, Class<T> clz) {
+    public <T extends XInfiniResponse> T call(XInfiniRequest req, Class<T> clz, XInfiniConfig.Node node) {
         errorIfNotConfigured();
-        XinfiniApiResult ret = new Api(req).call();
+        XinfiniApiResult ret = new Api(req).callWithNode(node);
 
         if (ret.getMessage() != null) {
             XInfiniResponse rsp = new XInfiniResponse();
@@ -70,6 +72,10 @@ public class XInfiniClient extends ExternalStorageApiClient {
         }
 
         return ret.getResult(clz);
+    }
+
+    public <T extends XInfiniResponse> T call(XInfiniRequest req, Class<T> clz) {
+        return call(req, clz, null);
     }
 
     public void call(XInfiniRequest req, XInfiniApiCompletion completion) {
@@ -119,17 +125,30 @@ public class XInfiniClient extends ExternalStorageApiClient {
             }
         }
 
-
         XinfiniApiResult doCall() {
+            return doCallWithNode(null);
+        }
 
+        XinfiniApiResult doCallWithNode(XInfiniConfig.Node withNode) {
+            XInfiniConfig.Node node;
             Request.Builder reqBuilder = new Request.Builder();
             action.checkParameters();
+            if (withNode != null) {
+                node = withNode;
+            } else {
+                node = config.xInfiniConfig
+                        .getNodes()
+                        .stream()
+                        .filter(it -> it.getStatus() == NodeStatus.Connected)
+                        .findAny()
+                        .orElseThrow(() -> new XInfiniApiException("No connected node found"));
+            }
 
             try {
                 if (action instanceof XInfiniQueryRequest) {
-                    fillQueryApiRequestBuilder(reqBuilder);
+                    fillQueryApiRequestBuilder(reqBuilder, node);
                 } else {
-                    fillNonQueryApiRequestBuilder(reqBuilder);
+                    fillNonQueryApiRequestBuilder(reqBuilder, node);
                 }
             } catch (Exception e) {
                 throw new XInfiniApiException(e);
@@ -161,12 +180,12 @@ public class XInfiniClient extends ExternalStorageApiClient {
             }
         }
 
-        private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) throws Exception {
+        private void fillQueryApiRequestBuilder(Request.Builder reqBuilder, XInfiniConfig.Node node) throws Exception {
             XInfiniQueryRequest qaction = (XInfiniQueryRequest) action;
 
             HttpUrl.Builder urlBuilder = new HttpUrl.Builder().scheme("http")
-                    .host(config.hostname)
-                    .port(config.port);
+                    .host(node.getIp())
+                    .port(node.getPort());
 
             urlBuilder.addPathSegments(restInfo.category().toString());
             urlBuilder.addPathSegment(restInfo.version());
@@ -214,11 +233,11 @@ public class XInfiniClient extends ExternalStorageApiClient {
             return buffer.toString();
         }
 
-        private void fillNonQueryApiRequestBuilder(Request.Builder reqBuilder) throws Exception {
+        private void fillNonQueryApiRequestBuilder(Request.Builder reqBuilder, XInfiniConfig.Node node) throws Exception {
             HttpUrl.Builder builder = new HttpUrl.Builder()
                     .scheme("http")
-                    .host(config.hostname)
-                    .port(config.port);
+                    .host(node.getIp())
+                    .port(node.getPort());
             builder.addPathSegments(restInfo.category().toString());
             builder.addPathSegment(restInfo.version());
 
@@ -302,8 +321,8 @@ public class XInfiniClient extends ExternalStorageApiClient {
             return res;
         }
 
-        XinfiniApiResult call() {
-            XinfiniApiResult ret = doCall();
+        XinfiniApiResult callWithNode(XInfiniConfig.Node node) {
+            XinfiniApiResult ret = doCallWithNode(node);
             if (ret.getMessage() != null) {
                 logger.debug(String.format("request[%s: %s] error: %s result: %s code: %s", action.getClass().getSimpleName(),
                         taskIdForLog, gson.toJson(ret.getMessage()), ret.getResultString(), ret.getReturnCode()));

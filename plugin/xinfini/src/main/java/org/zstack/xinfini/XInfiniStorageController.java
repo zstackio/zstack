@@ -76,7 +76,6 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
-    private final static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
     private final String vhostSocketDir;
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
@@ -107,16 +106,13 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         this.reloadDbInfo();
     }
 
-    public XInfiniStorageController(String config) {
-        XInfiniConfig xConfig = JSONObjectUtil.toObject(config, XInfiniConfig.class);
-        // TODO add node connection check
-        XInfiniConfig.Node node = xConfig.getNodes().get(0);
+    public XInfiniStorageController(String configStr) {
+        config = JSONObjectUtil.toObject(configStr, XInfiniConfig.class);
         XInfiniConnectConfig clientConfig = new XInfiniConnectConfig();
-        clientConfig.hostname = node.getIp();
-        clientConfig.port = node.getPort();
         clientConfig.readTimeout = TimeUnit.MINUTES.toMillis(10);
         clientConfig.writeTimeout = TimeUnit.MINUTES.toMillis(10);
-        clientConfig.token = xConfig.getToken();
+        clientConfig.token = config.getToken();
+        clientConfig.xInfiniConfig = config;
         XInfiniClient client = new XInfiniClient();
         client.configure(clientConfig);
 
@@ -160,8 +156,15 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             throw new OperationFailureException(operr("cannot get volume[%s] details, maybe it has been deleted", vol.getInstallPath()));
         }
 
-        BdcBdevModule bdev = apiHelper.createBdcBdev(bdc.getSpec().getId(), volModule.getSpec().getId(), vhostName);
         VhostVolumeTO to = new VhostVolumeTO();
+        BdcBdevModule bdev = apiHelper.queryBdcBdevByVolumeIdAndBdcId(volModule.getSpec().getId(), bdc.getSpec().getId());
+        if (bdev != null) {
+            logger.info("dest bdc bdev has been created, skip active");
+            to.setInstallPath(bdev.getSpec().getSocketPath());
+            return to;
+        }
+
+        bdev = apiHelper.createBdcBdev(bdc.getSpec().getId(), volModule.getSpec().getId(), vhostName);
         to.setInstallPath(bdev.getSpec().getSocketPath());
         return to;
     }
@@ -468,6 +471,18 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
+    public void ping(Completion completion) {
+        reloadDbInfo();
+        Map<String, NodeStatus> nodesStatus = apiHelper.checkNodesConnection(config.getNodes());
+        logger.info(String.format("get nodes status: %s", nodesStatus));
+
+        config.getNodes().forEach(it -> it.setStatus(nodesStatus.getOrDefault(it.getIp(), NodeStatus.Disconnected)));
+        SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
+                .set(ExternalPrimaryStorageVO_.config, JSONObjectUtil.toJsonString(config))
+                .update();
+    }
+
+    @Override
     public void connect(String config, String url, ReturnValueCompletion<LinkedHashMap> comp) {
         DebugUtils.Assert(StringUtils.isNotEmpty(config), "config cannot be none");
         XInfiniAddonInfo info = new XInfiniAddonInfo();
@@ -676,9 +691,8 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void deleteVolume(String installPath, Completion comp) {
-        int volId = getVolIdFromPath(installPath);
-        apiHelper.deleteVolume(volId, true);
-        comp.success();
+        // xinfini must delete snapshot before deleting volume
+        deleteVolumeAndSnapshot(installPath, comp);
     }
 
     @Override
