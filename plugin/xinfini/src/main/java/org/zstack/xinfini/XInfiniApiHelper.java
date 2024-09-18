@@ -370,7 +370,7 @@ public class XInfiniApiHelper {
     public void deleteVolume(int volId, boolean force) {
         List<VolumeClientGroupMappingModule> mappings = queryVolumeClientGroupMappingByVolId(volId);
         if (!CollectionUtils.isEmpty(mappings)) {
-            logger.info(String.format("find volume %s has related client group mappings %s, delete mappings", volId, mappings));
+            logger.info(String.format("find volume %s has %s related client group mappings, delete mappings", volId, mappings.size()));
             for (VolumeClientGroupMappingModule mapping : mappings) {
                 deleteVolumeClientGroupMapping(mapping.getSpec().getId());
             }
@@ -395,8 +395,13 @@ public class XInfiniApiHelper {
 
     public void deleteVolumeSnapshot(int snapShotId) {
         // check snapshot cloned volume
-        if (snapshotHasClonedVolume(snapShotId)) {
-            throw new OperationFailureException(operr("snapshot[id: %s] has cloned volume, please delete or flatten volumes", snapShotId));
+        QueryVolumeRequest vReq = new QueryVolumeRequest();
+        vReq.q = String.format("spec.bs_snap_id:%s", snapShotId);
+        QueryVolumeResponse vRsp = queryErrorOut(vReq, QueryVolumeResponse.class);
+        if (vRsp.getMetadata().getPagination().getCount() > 0) {
+            List<String> volNames = vRsp.getItems().stream().map(VolumeModule::getSpec).map(VolumeModule.VolumeSpec::getName).collect(Collectors.toList());
+
+            throw new OperationFailureException(operr("snapshot %s has %d cloned volumes, volumes names: %s", snapShotId, vRsp.getMetadata().getPagination().getCount(), volNames));
         }
 
         DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
