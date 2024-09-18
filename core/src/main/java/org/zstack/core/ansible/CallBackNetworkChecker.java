@@ -50,7 +50,8 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     private ErrorCode useNcatAndNmapToTestConnection(Ssh ssh) {
         String srcScript = script.format(SshCmdHelper.shellQuote(password), callBackPort, callbackIp);
 
-        SshResult ret = ssh.setExecTimeout(60).shell(srcScript).setTimeout(60).runAndClose();
+        ssh.sudoCommand(srcScript);
+        SshResult ret = ssh.run();
         ret.raiseExceptionIfFailed();
 
         return null;
