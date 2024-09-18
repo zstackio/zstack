@@ -64,7 +64,7 @@ public class APICreatePolicyMsg extends APICreateMessage implements AccountMessa
         PolicyStatement s = new PolicyStatement();
         s.setName(String.format("user-reset-password-%s", uuid()));
         s.setEffect(StatementEffect.Allow);
-        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
+        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, "APIUpdateUserMsg"));
         msg.setStatements(list(s));
 
         return msg;

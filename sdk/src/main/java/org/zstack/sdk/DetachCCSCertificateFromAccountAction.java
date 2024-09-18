@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetTwoFactorAuthenticationSecretAction extends AbstractAction {
+public class DetachCCSCertificateFromAccountAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetTwoFactorAuthenticationSecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetTwoFactorAuthenticationSecretResult value;
+        public org.zstack.sdk.DetachCCSCertificateFromAccountResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,16 +26,7 @@ public class GetTwoFactorAuthenticationSecretAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String captchaUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String verifyCode;
+    public java.lang.String accountUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -43,11 +34,23 @@ public class GetTwoFactorAuthenticationSecretAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @NonAPIParam
-    public boolean isSuppressCredentialCheck = true;
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
 
     @Param(required = false)
     public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -57,8 +60,8 @@ public class GetTwoFactorAuthenticationSecretAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetTwoFactorAuthenticationSecretResult value = res.getResult(org.zstack.sdk.GetTwoFactorAuthenticationSecretResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetTwoFactorAuthenticationSecretResult() : value; 
+        org.zstack.sdk.DetachCCSCertificateFromAccountResult value = res.getResult(org.zstack.sdk.DetachCCSCertificateFromAccountResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachCCSCertificateFromAccountResult() : value; 
 
         return ret;
     }
@@ -87,11 +90,11 @@ public class GetTwoFactorAuthenticationSecretAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/twofactorauthentication/secret";
-        info.needSession = false;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.httpMethod = "POST";
+        info.path = "/crypto/ccs-certificate/detach-account/{accountUuid}";
+        info.needSession = true;
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

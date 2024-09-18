@@ -66,6 +66,11 @@ public class CollectionUtils {
         return from.stream().collect(Collectors.toMap(keyMapper, valueMapper));
     }
 
+    public static <KEY, VALUE> Map<KEY, List<VALUE>> groupBy(Collection<VALUE> from,
+                                                             java.util.function.Function<VALUE, KEY> keyMapper) {
+        return from.stream().collect(Collectors.groupingBy(keyMapper));
+    }
+
     public static <FROM, TO> Set<TO> transformToSetAndRemoveNull(Collection<FROM> from,
                                                                java.util.function.Function<FROM, TO> mapper) {
         return from.stream().map(mapper).filter(Objects::nonNull).collect(Collectors.toSet());

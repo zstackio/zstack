@@ -10,39 +10,15 @@
     <message>
         <name>org.zstack.header.identity.APIUpdateAccountMsg</name>
     </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APICreateUserMsg</name>
-    </message>
-    
+
     <message>
         <name>org.zstack.header.identity.APICreatePolicyMsg</name>
     </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APIAttachPolicyToUserMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APICreateUserGroupMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APIAttachPolicyToUserGroupMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APIAddUserToGroupMsg</name>
-    </message>
-    
+
     <message>
         <name>org.zstack.header.identity.APILogInByAccountMsg</name>
     </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APILogInByUserMsg</name>
-    </message>
-    
+
     <message>
         <name>org.zstack.header.identity.APILogOutMsg</name>
     </message>
@@ -56,35 +32,11 @@
     </message>
 
     <message>
-        <name>org.zstack.header.identity.APIDeleteUserGroupMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIDeleteUserMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIDetachPolicyFromUserGroupMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIDetachPolicyFromUserMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIRemoveUserFromGroupMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.identity.APIShareResourceMsg</name>
     </message>
 
     <message>
         <name>org.zstack.header.identity.APIRevokeResourceSharingMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIUpdateUserMsg</name>
     </message>
 
     <message>
@@ -98,16 +50,6 @@
 
     <message>
         <name>org.zstack.header.identity.APIQueryPolicyMsg</name>
-        <serviceId>query</serviceId>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIQueryUserGroupMsg</name>
-        <serviceId>query</serviceId>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIQueryUserMsg</name>
         <serviceId>query</serviceId>
     </message>
 
@@ -136,22 +78,6 @@
     <message>
         <name>org.zstack.header.identity.APIQuerySharedResourceMsg</name>
         <serviceId>query</serviceId>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APICheckApiPermissionMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIDetachPoliciesFromUserMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIAttachPoliciesToUserMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.identity.APIUpdateUserGroupMsg</name>
     </message>
 
     <message>
