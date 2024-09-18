@@ -509,7 +509,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             ssh.reset();
             if (ret.getReturnCode() != 0) {
                 reply.setError(operr("failed to get disk devices, " +
-                        "because [stderr:%s, stdout:%s]", ret.getStderr(), ret.getStdout()));
+                                "because [stderr:%s, stdout:%s, exitErrorMessage:%s]",
+                        ret.getStderr(), ret.getStdout(), ret.getExitErrorMessage()));
                 reply.setSuccess(false);
             } else {
                 BlockDevices blockDevices = BlockDevices.valueOf(BlockDevicesParser.parse(ret.getStdout()));
@@ -551,8 +552,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 SshResult ret = ssh.command(command).run();
                 ssh.reset();
                 if (ret.getReturnCode() != 0) {
-                    event.setError(operr("failed to execute the command[%s], because [stderr:%s, stdout:%s]",
-                            command, ret.getStderr(), ret.getStdout()));
+                    event.setError(operr("failed to execute the command[%s], " +
+                                    "because [stderr:%s, stdout:%s, exitErrorMessage:%s]",
+                            command, ret.getStderr(), ret.getStdout(), ret.getExitErrorMessage()));
                     event.setSuccess(false);
                     break;
                 }
