@@ -32,12 +32,6 @@ public class SyncAINginxConfigurationAction extends AbstractAction {
     public java.lang.Boolean dryRun;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -54,12 +48,6 @@ public class SyncAINginxConfigurationAction extends AbstractAction {
 
     @Param(required = false)
     public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -102,7 +90,7 @@ public class SyncAINginxConfigurationAction extends AbstractAction {
         info.httpMethod = "POST";
         info.path = "/ai/nginx/sync";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "param";
         return info;
     }
