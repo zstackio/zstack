@@ -97,6 +97,21 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
                     ));
                 }
 
+                if (msg.getHostUuid() != null) {
+                    boolean hostConnected = q(HostVO.class)
+                            .eq(HostVO_.clusterUuid, msg.getUuid())
+                            .eq(HostVO_.uuid, msg.getHostUuid())
+                            .eq(HostVO_.status, HostStatus.Connected)
+                            .isExists();
+                    if (!hostConnected) {
+                        throw new ApiMessageInterceptionException(Platform.argerr(
+                                "host[uuid:%s] in cluster[uuid:%s] is not in the Connected status, cannot update cluster os right now",
+                                msg.getHostUuid(), msg.getUuid()
+                        ));
+                    }
+                    return;
+                }
+
                 // all hosts in the cluster must be connected
                 Long notConnected = q(HostVO.class)
                         .eq(HostVO_.clusterUuid, msg.getUuid())
