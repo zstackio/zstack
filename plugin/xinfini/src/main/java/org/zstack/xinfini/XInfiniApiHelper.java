@@ -105,9 +105,15 @@ public class XInfiniApiHelper {
     public Map<String, NodeStatus> checkNodesConnection(List<XInfiniConfig.Node> nodes) {
         Map<String, NodeStatus> nodesStatus = Maps.newConcurrentMap();
         for (XInfiniConfig.Node node : nodes) {
-            QueryClusterRequest req = new QueryClusterRequest();
-            QueryClusterResponse rsp = callWithNode(req, QueryClusterResponse.class, node);
-            nodesStatus.put(node.getIp(), rsp.isSuccess() ? NodeStatus.Connected : NodeStatus.Disconnected);
+            try {
+                QueryClusterRequest req = new QueryClusterRequest();
+                QueryClusterResponse rsp = callWithNode(req, QueryClusterResponse.class, node);
+                nodesStatus.put(node.getIp(), rsp.isSuccess() ? NodeStatus.Connected : NodeStatus.Disconnected);
+            } catch (Exception e) {
+                logger.warn(String.format("get node %s connection failed, change node status to disconnected, %s",
+                        node.getIp(), e.getMessage()));
+                nodesStatus.put(node.getIp(), NodeStatus.Disconnected);
+            }
         }
 
         return nodesStatus;
@@ -347,9 +353,13 @@ public class XInfiniApiHelper {
         DeleteBdcBdevRequest req = new DeleteBdcBdevRequest();
         req.setId(bdevId);
         DeleteBdcBdevResponse rsp = call(req, DeleteBdcBdevResponse.class);
-        if (rsp.resourceIsDeleted()) {
-            logger.info(String.format("bdev %s has been deleted, skip send delete req", bdevId));
-            return;
+        if (!rsp.isSuccess()) {
+            if (rsp.resourceIsDeleted()) {
+                logger.info(String.format("bdev %s has been deleted, skip send delete req", bdevId));
+                return;
+            }
+
+            throw new OperationFailureException(operr("delete bdev failed %s", rsp.getMessage()));
         }
 
         GetBdcBdevRequest gReq = new GetBdcBdevRequest();
@@ -358,12 +368,24 @@ public class XInfiniApiHelper {
     }
 
     public void deleteVolume(int volId, boolean force) {
+        List<VolumeClientGroupMappingModule> mappings = queryVolumeClientGroupMappingByVolId(volId);
+        if (!CollectionUtils.isEmpty(mappings)) {
+            logger.info(String.format("find volume %s has related client group mappings %s, delete mappings", volId, mappings));
+            for (VolumeClientGroupMappingModule mapping : mappings) {
+                deleteVolumeClientGroupMapping(mapping.getSpec().getId());
+            }
+        }
+
         DeleteVolumeRequest req = new DeleteVolumeRequest();
         req.setId(volId);
         DeleteVolumeResponse rsp = call(req, DeleteVolumeResponse.class);
-        if (rsp.resourceIsDeleted()) {
-            logger.info(String.format("volume %s has been deleted, skip send delete req", volId));
-            return;
+        if (!rsp.isSuccess()) {
+            if (rsp.resourceIsDeleted()) {
+                logger.info(String.format("volume %s has been deleted, skip send delete req", volId));
+                return;
+            }
+
+            throw new OperationFailureException(operr("delete volume failed %s", rsp.getMessage()));
         }
 
         GetVolumeRequest gReq = new GetVolumeRequest();
@@ -380,9 +402,14 @@ public class XInfiniApiHelper {
         DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
         req.setId(snapShotId);
         DeleteVolumeSnapshotResponse rsp = call(req, DeleteVolumeSnapshotResponse.class);
-        if (rsp.resourceIsDeleted()) {
-            logger.info(String.format("volume snapshot %s has been deleted, skip send delete req", snapShotId));
-            return;
+
+        if (!rsp.isSuccess()) {
+            if (rsp.resourceIsDeleted()) {
+                logger.info(String.format("volume snapshot %s has been deleted, skip send delete req", snapShotId));
+                return;
+            }
+
+            throw new OperationFailureException(operr("delete volume snapshot failed %s", rsp.getMessage()));
         }
         GetVolumeSnapshotRequest gReq = new GetVolumeSnapshotRequest();
         gReq.setId(snapShotId);
@@ -487,9 +514,13 @@ public class XInfiniApiHelper {
         DeleteVolumeClientGroupMappingRequest req = new DeleteVolumeClientGroupMappingRequest();
         req.setId(mapId);
         DeleteVolumeClientGroupMappingResponse rsp = call(req, DeleteVolumeClientGroupMappingResponse.class);
-        if (rsp.resourceIsDeleted()) {
-            logger.info(String.format("volume-client-group-mapping %s has been deleted, skip send delete req", mapId));
-            return;
+        if (!rsp.isSuccess()) {
+            if (rsp.resourceIsDeleted()) {
+                logger.info(String.format("volume-client-group-mapping %s has been deleted, skip send delete req", mapId));
+                return;
+            }
+
+            throw new OperationFailureException(operr("delete volume-client-group-mapping failed %s", rsp.getMessage()));
         }
 
         GetVolumeClientGroupMappingRequest gReq = new GetVolumeClientGroupMappingRequest();
@@ -530,9 +561,13 @@ public class XInfiniApiHelper {
         DeleteIscsiClientRequest req = new DeleteIscsiClientRequest();
         req.setId(iscsiClientId);
         DeleteIscsiClientResponse rsp = call(req, DeleteIscsiClientResponse.class);
-        if (rsp.resourceIsDeleted()) {
-            logger.info(String.format("iscsi-client %s has been deleted, skip send delete req", iscsiClientId));
-            return;
+        if (!rsp.isSuccess()) {
+            if (rsp.resourceIsDeleted()) {
+                logger.info(String.format("iscsi-client %s has been deleted, skip send delete req", iscsiClientId));
+                return;
+            }
+
+            throw new OperationFailureException(operr("delete iscsi client failed %s", rsp.getMessage()));
         }
 
         GetIscsiClientRequest gReq = new GetIscsiClientRequest();
