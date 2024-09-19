@@ -1,5 +1,13 @@
 CALL ADD_COLUMN('SNSApplicationEndpointVO', 'connectionStatus', 'varchar(10)', 1, 'UP');
 
+-- Improvement: VM Cdrom Occupant | ZSV-6691
+
+CALL INSERT_COLUMN('VmCdRomVO', 'occupant', 'varchar(64)', 1, null, 'deviceId');
+update `VmCdRomVO` set `occupant` = 'ISO' where `isoUuid` is not null;
+update `VmCdRomVO` set `occupant` = 'GuestTools'
+    where `vmInstanceUuid` in ( select `resourceUuid` from `SystemTagVO` where `tag` = 'guestToolsHasAttached' )
+    and `deviceId` = 0;
+
 -- Feature: IAM1 Role And Policy | ZSV-6559
 
 drop table if exists `IAM2TicketFlowCollectionVO`;

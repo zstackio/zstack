@@ -18,6 +18,7 @@ public class VmCdRomVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VmCdRomVO, String> isoInstallPath;
     public static volatile SingularAttribute<VmNicVO, String> description;
     public static volatile SingularAttribute<VmNicVO, Integer> deviceId;
+    public static volatile SingularAttribute<VmNicVO, String> occupant;
     public static volatile SingularAttribute<VmCdRomVO, Timestamp> createDate;
     public static volatile SingularAttribute<VmCdRomVO, Timestamp> lastOpDate;
 }

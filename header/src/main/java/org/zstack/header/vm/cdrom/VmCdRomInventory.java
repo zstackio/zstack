@@ -4,9 +4,10 @@ import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.utils.CollectionUtils;
+
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -21,6 +22,8 @@ public class VmCdRomInventory implements Serializable {
     private String vmInstanceUuid;
 
     private Integer deviceId;
+
+    private String occupant;
 
     private String isoUuid;
 
@@ -39,6 +42,7 @@ public class VmCdRomInventory implements Serializable {
         inv.setUuid(vo.getUuid());
         inv.setVmInstanceUuid(vo.getVmInstanceUuid());
         inv.setDeviceId(vo.getDeviceId());
+        inv.setOccupant(vo.getOccupant());
         inv.setDescription(vo.getDescription());
         inv.setName(vo.getName());
         inv.setIsoUuid(vo.getIsoUuid());
@@ -50,11 +54,7 @@ public class VmCdRomInventory implements Serializable {
     }
 
     public static List<VmCdRomInventory> valueOf(Collection<VmCdRomVO> vos) {
-        List<VmCdRomInventory> invs = new ArrayList<VmCdRomInventory>(vos.size());
-        for (VmCdRomVO vo : vos) {
-            invs.add(VmCdRomInventory.valueOf(vo));
-        }
-        return invs;
+        return CollectionUtils.transform(vos, VmCdRomInventory::valueOf);
     }
 
     public String getUuid() {
@@ -79,6 +79,14 @@ public class VmCdRomInventory implements Serializable {
 
     public void setDeviceId(int deviceId) {
         this.deviceId = deviceId;
+    }
+
+    public String getOccupant() {
+        return occupant;
+    }
+
+    public void setOccupant(String occupant) {
+        this.occupant = occupant;
     }
 
     public Timestamp getCreateDate() {

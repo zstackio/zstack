@@ -4830,6 +4830,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Destroyed) {
             targetVmCdRomVO.setIsoUuid(null);
             targetVmCdRomVO.setIsoInstallPath(null);
+            targetVmCdRomVO.setOccupant(null);
             dbf.update(targetVmCdRomVO);
             new IsoOperator().syncVmIsoSystemTag(self.getUuid());
             completion.success();
@@ -4861,6 +4862,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(Map data) {
                 targetVmCdRomVO.setIsoUuid(null);
                 targetVmCdRomVO.setIsoInstallPath(null);
+                targetVmCdRomVO.setOccupant(null);
                 dbf.update(targetVmCdRomVO);
                 new IsoOperator().syncVmIsoSystemTag(self.getUuid());
                 completion.success();
@@ -5158,6 +5160,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (self.getState() == VmInstanceState.Stopped) {
             targetVmCdRomVO.setIsoUuid(isoUuid);
+            targetVmCdRomVO.setOccupant(VmInstanceConstant.VM_CDROM_OCCUPANT_ISO);
             dbf.update(targetVmCdRomVO);
             completion.success();
             new IsoOperator().syncVmIsoSystemTag(self.getUuid());
@@ -5190,6 +5193,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         .findAny()
                         .orElse(null);
                 targetVmCdRomVO.setIsoUuid(isoUuid);
+                targetVmCdRomVO.setOccupant(VmInstanceConstant.VM_CDROM_OCCUPANT_ISO);
                 targetVmCdRomVO.setIsoInstallPath(isoSpec != null ? isoSpec.getInstallPath() : null);
                 dbf.update(targetVmCdRomVO);
                 new IsoOperator().syncVmIsoSystemTag(self.getUuid());
@@ -5921,8 +5925,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         String targetCdRomIsoUuid = targetCdRomVO.getIsoUuid();
         String path = targetCdRomVO.getIsoInstallPath();
         targetCdRomVO.setIsoUuid(sourceCdRomVO.getIsoUuid());
+        targetCdRomVO.setOccupant(VmInstanceConstant.VM_CDROM_OCCUPANT_ISO);
         targetCdRomVO.setIsoInstallPath(sourceCdRomVO.getIsoInstallPath());
         sourceCdRomVO.setIsoUuid(targetCdRomIsoUuid);
+        sourceCdRomVO.setOccupant(VmInstanceConstant.VM_CDROM_OCCUPANT_ISO);
         sourceCdRomVO.setIsoInstallPath(path);
 
         new SQLBatch() {
@@ -8474,6 +8480,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         String cdRomUuid = msg.getResourceUuid() != null ? msg.getResourceUuid() : Platform.getUuid();
         cdRomVO.setUuid(cdRomUuid);
         cdRomVO.setDeviceId(targetDeviceId);
+        cdRomVO.setOccupant(msg.getIsoUuid() == null ? null : VmInstanceConstant.VM_CDROM_OCCUPANT_ISO);
         cdRomVO.setIsoUuid(msg.getIsoUuid());
         cdRomVO.setVmInstanceUuid(msg.getVmInstanceUuid());
         cdRomVO.setName(msg.getName());

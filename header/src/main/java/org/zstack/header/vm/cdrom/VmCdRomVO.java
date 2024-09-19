@@ -31,6 +31,16 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
     @Column
     private Integer deviceId;
 
+    /**
+     * The occupant of the cdrom.
+     * Maybe 'ISO' for cdrom iso, or 'GuestTools' for guest-tools, or null for empty cdrom.
+     *
+     * @see org.zstack.header.vm.VmInstanceConstant#VM_CDROM_OCCUPANT_ISO
+     * @see org.zstack.header.vm.VmInstanceConstant#VM_CDROM_OCCUPANT_GUEST_TOOLS
+     */
+    @Column
+    private String occupant;
+
     @Column
     @ForeignKey(parentEntityClass = ImageEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String isoUuid;
@@ -99,6 +109,14 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
 
     public Integer getDeviceId() {
         return deviceId;
+    }
+
+    public String getOccupant() {
+        return occupant;
+    }
+
+    public void setOccupant(String occupant) {
+        this.occupant = occupant;
     }
 
     public String getIsoUuid() {
