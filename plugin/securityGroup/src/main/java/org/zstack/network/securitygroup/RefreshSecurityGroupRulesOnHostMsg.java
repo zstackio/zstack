@@ -1,8 +1,8 @@
 package org.zstack.network.securitygroup;
 
-import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedReplyMessage;
 
-public class RefreshSecurityGroupRulesOnHostMsg extends Message {
+public class RefreshSecurityGroupRulesOnHostMsg extends NeedReplyMessage {
     private String hostUuid;
 
     public String getHostUuid() {
