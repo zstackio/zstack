@@ -31,7 +31,56 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_GPU_STATUS_ABNORMAL = "/host/physicalGpu/status/abnormal";
     public static final String HOST_PHYSICAL_VGPU_STATUS_ABNORMAL = "/host/physicalVGpu/status/abnormal";
     public static final String HOST_PHYSICAL_RAID_STATUS_ABNORMAL = "/host/physicalRaid/status/abnormal";
+    public static final String HOST_PHYSICAL_HBA_STATE_ABNORMAL = "/host/physicalHBA/state/abnormal";
 
+    @NeedJsonSchema
+    public static class HostPhysicalHBAPortStateAbnormalData {
+        private String hostUuid;
+        private String name;
+        private String portName;
+        private String newPortState;
+        private String oldPortState;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getPortName() {
+            return portName;
+        }
+
+        public void setPortName(String portName) {
+            this.portName = portName;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getNewPortState() {
+            return newPortState;
+        }
+
+        public void setNewPortState(String newPortState) {
+            this.newPortState = newPortState;
+        }
+
+        public String getOldPortState() {
+            return oldPortState;
+        }
+
+        public void setOldPortState(String oldPortState) {
+            this.oldPortState = oldPortState;
+        }
+    }
 
     @NeedJsonSchema
     public static class HostPhysicalGpuRemoveTriggeredData {
