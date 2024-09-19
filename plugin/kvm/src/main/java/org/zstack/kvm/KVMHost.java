@@ -218,6 +218,7 @@ public class KVMHost extends HostBase implements Host {
     private String blockCommitVolumePath;
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
+    private String updateVmCpuQuotaPath;
 
     public KVMHost(KVMHostVO self, KVMHostContext context) {
         super(self);
@@ -372,6 +373,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH);
         updateVmPriorityPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_UPDATE_CPU_QUOTA_PATH);
+        updateVmCpuQuotaPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH);
@@ -680,9 +685,35 @@ public class KVMHost extends HostBase implements Host {
             handle((TakeVmConsoleScreenshotMsg) msg);
         } else if (msg instanceof GetVmUptimeMsg) {
             handle((GetVmUptimeMsg) msg);
+        } else if (msg instanceof UpdateVmCpuQuotaMsg) {
+            handle((UpdateVmCpuQuotaMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(UpdateVmCpuQuotaMsg msg) {
+        UpdateVmCpuQuotaReply reply = new UpdateVmCpuQuotaReply();
+
+        UpdateVmCpuQuotaCmd cmd = new UpdateVmCpuQuotaCmd();
+        cmd.setVmUuid(msg.getVmInstanceUuid());
+        cmd.setVmCpuQuota(msg.getVmCpuQuota());
+        new Http<>(updateVmCpuQuotaPath, cmd, UpdateVmCpuQuotaRsp.class).call(new ReturnValueCompletion<UpdateVmCpuQuotaRsp>(msg) {
+            @Override
+            public void success(UpdateVmCpuQuotaRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setSuccess(false);
+                    reply.setError(operr("Failed to update the quota configuration item in the virtual machine XML. Due to %s", rsp.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(GetVmUptimeMsg msg) {
@@ -4108,6 +4139,7 @@ public class KVMHost extends HostBase implements Host {
         if (vmClockTrack == VmClockTrack.guest) {
             cmd.setClockTrack(vmClockTrack.toString());
         }
+        cmd.setVmCpuQuota(rcf.getResourceConfigValue(KVMGlobalConfig.VM_CPU_QUOTA, spec.getVmInventory().getUuid(), Long.class));
 
         cmd.setVideoType(rcf.getResourceConfigValue(VmGlobalConfig.VM_VIDEO_TYPE, spec.getVmInventory().getUuid(), String.class));
         cmd.setSoundType(rcf.getResourceConfigValue(VmGlobalConfig.VM_SOUND_TYPE, spec.getVmInventory().getUuid(), String.class));

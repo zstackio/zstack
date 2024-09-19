@@ -257,4 +257,10 @@
         <defaultValue>1800</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <category>kvm</category>
+        <name>vm.cpu.quota</name>
+        <defaultValue>1000000</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>
