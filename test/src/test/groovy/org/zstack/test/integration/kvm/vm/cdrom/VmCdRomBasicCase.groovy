@@ -1,13 +1,11 @@
 package org.zstack.test.integration.kvm.vm.cdrom
 
 import org.springframework.http.HttpEntity
-import org.zstack.compute.vm.IsoOperator
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.Q
 import org.zstack.core.db.SimpleQuery
 import org.zstack.header.image.ImageConstant
-import org.zstack.header.vm.VmBootDevice
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.cdrom.VmCdRomVO
 import org.zstack.header.vm.cdrom.VmCdRomVO_
@@ -18,11 +16,8 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.sdk.VmCdRomInventory
 
 import java.util.stream.Collectors
-
-import static org.zstack.utils.CollectionDSL.list
 
 /**
  * Created by lining on 2018/02/10.
@@ -189,6 +184,7 @@ class VmCdRomBasicCase extends SubCase {
 
             assert vmCdRomInventory.isoInstallPath == null
             assert vmCdRomInventory.isoUuid  == null
+            assert vmCdRomInventory.occupant  == null
         }
     }
 
@@ -252,6 +248,7 @@ class VmCdRomBasicCase extends SubCase {
         assert cdRomInventory.name == "newCdRom"
         assert cdRomInventory.description == "desc"
         assert cdRomInventory.vmInstanceUuid == vm.uuid
+        assert cdRomInventory.occupant == null
         assert cdRomInventory.isoUuid == null
         assert cdRomInventory.isoInstallPath == null
     }
@@ -277,6 +274,7 @@ class VmCdRomBasicCase extends SubCase {
         assert inventory.description == "new desc"
         assert inventory.uuid == target.uuid
         assert inventory.deviceId == target.deviceId
+        assert inventory.occupant == target.occupant
         assert inventory.isoInstallPath == target.isoInstallPath
         assert inventory.isoUuid == target.isoUuid
         assert inventory.vmInstanceUuid == target.vmInstanceUuid
@@ -355,6 +353,23 @@ class VmCdRomBasicCase extends SubCase {
         assert cdRomVO.description == targetCdRomVO.description
         assert cdRomVO.isoInstallPath != null
         assert cdRomVO.isoUuid == iso.uuid
+        assert cdRomVO.occupant == "ISO"
+
+        rebootVmInstance {
+            delegate.uuid = vm.uuid
+        }
+
+        cdRomVO = Q.New(VmCdRomVO.class)
+                .eq(VmCdRomVO_.uuid, targetCdRomVO.uuid)
+                .find()
+
+        assert cdRomVO.vmInstanceUuid == targetCdRomVO.vmInstanceUuid
+        assert cdRomVO.deviceId == targetCdRomVO.deviceId
+        assert cdRomVO.name == targetCdRomVO.name
+        assert cdRomVO.description == targetCdRomVO.description
+        assert cdRomVO.isoInstallPath != null
+        assert cdRomVO.isoUuid == iso.uuid
+        assert cdRomVO.occupant == "ISO"
     }
 
     void testDetachIso() {

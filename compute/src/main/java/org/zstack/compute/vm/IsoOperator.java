@@ -74,7 +74,7 @@ public class IsoOperator {
     static VmCdRomVO getEmptyCdRom(String vmUuid) {
         VmCdRomVO cdRomVO = Q.New(VmCdRomVO.class)
                 .eq(VmCdRomVO_.vmInstanceUuid, vmUuid)
-                .isNull(VmCdRomVO_.isoUuid)
+                .isNull(VmCdRomVO_.occupant)
                 .orderBy(VmCdRomVO_.deviceId, SimpleQuery.Od.ASC)
                 .limit(1)
                 .find();
