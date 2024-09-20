@@ -100,6 +100,7 @@ public class SourceClassMap {
 			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.dean.DeAnSecretResourcePoolInventory", "org.zstack.sdk.DeAnSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory", "org.zstack.sdk.FlkSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory", "org.zstack.sdk.FlkSecSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory", "org.zstack.sdk.HaiTaiSecretResourcePoolInventory");
@@ -846,6 +847,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DataVolumeBillingInventory", "org.zstack.billing.generator.volume.data.DataVolumeBillingInventory");
 			put("org.zstack.sdk.DataVolumeSpending", "org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpending");
 			put("org.zstack.sdk.DataVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpendingInventory");
+			put("org.zstack.sdk.DeAnSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.dean.DeAnSecretResourcePoolInventory");
 			put("org.zstack.sdk.DeleteSnapshotGroupResult", "org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult");
 			put("org.zstack.sdk.DirectoryInventory", "org.zstack.directory.DirectoryInventory");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
