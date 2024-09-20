@@ -164,7 +164,10 @@ class KVMSimulator implements Simulator {
             rsp.qemuImgVersion = "2.0.0"
             rsp.libvirtVersion = "1.2.9"
             rsp.cpuModelName = "Broadwell"
-            rsp.cpuProcessorNum = "10"
+            rsp.cpuProcessorNum = 10
+            rsp.cpuThreadsPerCore = 2
+            rsp.cpuCoresPerSocket = 5
+            rsp.cpuSockets = 1
             rsp.cpuGHz = "2.10"
             rsp.hostCpuModelName = "Broadwell @ 2.10GHz"
             rsp.ipmiAddress = "None"

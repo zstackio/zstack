@@ -50,6 +50,13 @@ public class HostSystemTags {
     public static final String CPU_PROCESSOR_NUM_TOKEN = "cpuProcessorNum";
     public static PatternedSystemTag CPU_PROCESSOR_NUM = new PatternedSystemTag(String.format("cpuProcessorNum::{%s}", CPU_PROCESSOR_NUM_TOKEN), HostVO.class);
 
+    public static final String CPU_SOCKETS_TOKEN = "sockets";
+    public static final String CPU_CORES_TOKEN = "cores";
+    public static final String CPU_THREADS_TOKEN = "threads";
+    public static PatternedSystemTag CPU_SOCKET_CORE_THREAD = new PatternedSystemTag(
+            String.format("cpuSocketCoreThread::{%s}::{%s}::{%s}", CPU_SOCKETS_TOKEN, CPU_CORES_TOKEN, CPU_THREADS_TOKEN),
+            HostVO.class);
+
     public static final String CPU_CACHE_TOKEN = "cpuCache";
     public static PatternedSystemTag CPU_CACHE = new PatternedSystemTag(String.format("cpuCache::{%s}", CPU_CACHE_TOKEN), HostVO.class);
 

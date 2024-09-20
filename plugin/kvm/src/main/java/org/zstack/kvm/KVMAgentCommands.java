@@ -455,7 +455,10 @@ public class KVMAgentCommands {
         private String cpuArchitecture;
         private String cpuModelName;
         private String cpuGHz;
-        private String cpuProcessorNum;
+        private Integer cpuProcessorNum;
+        private Integer cpuSockets;
+        private Integer cpuCoresPerSocket;
+        private Integer cpuThreadsPerCore;
         private String powerSupplyModelName;
         private String powerSupplyManufacturer;
         private String ipmiAddress;
@@ -558,12 +561,36 @@ public class KVMAgentCommands {
             this.cpuGHz = cpuGHz;
         }
 
-        public String getCpuProcessorNum() {
+        public Integer getCpuProcessorNum() {
             return cpuProcessorNum;
         }
 
-        public void setCpuProcessorNum(String cpuProcessorNum) {
+        public void setCpuProcessorNum(Integer cpuProcessorNum) {
             this.cpuProcessorNum = cpuProcessorNum;
+        }
+
+        public Integer getCpuSockets() {
+            return cpuSockets;
+        }
+
+        public void setCpuSockets(Integer cpuSockets) {
+            this.cpuSockets = cpuSockets;
+        }
+
+        public Integer getCpuCoresPerSocket() {
+            return cpuCoresPerSocket;
+        }
+
+        public void setCpuCoresPerSocket(Integer cpuCoresPerSocket) {
+            this.cpuCoresPerSocket = cpuCoresPerSocket;
+        }
+
+        public Integer getCpuThreadsPerCore() {
+            return cpuThreadsPerCore;
+        }
+
+        public void setCpuThreadsPerCore(Integer cpuThreadsPerCore) {
+            this.cpuThreadsPerCore = cpuThreadsPerCore;
         }
 
         public String getCpuCache() {
