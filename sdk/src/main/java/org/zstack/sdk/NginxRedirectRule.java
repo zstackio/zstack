@@ -20,12 +20,28 @@ public class NginxRedirectRule  {
         return this.uuid;
     }
 
+    public java.lang.String jupyterUrl;
+    public void setJupyterUrl(java.lang.String jupyterUrl) {
+        this.jupyterUrl = jupyterUrl;
+    }
+    public java.lang.String getJupyterUrl() {
+        return this.jupyterUrl;
+    }
+
     public java.lang.String currentUrl;
     public void setCurrentUrl(java.lang.String currentUrl) {
         this.currentUrl = currentUrl;
     }
     public java.lang.String getCurrentUrl() {
         return this.currentUrl;
+    }
+
+    public java.lang.String currentJupyterUrl;
+    public void setCurrentJupyterUrl(java.lang.String currentJupyterUrl) {
+        this.currentJupyterUrl = currentJupyterUrl;
+    }
+    public java.lang.String getCurrentJupyterUrl() {
+        return this.currentJupyterUrl;
     }
 
 }

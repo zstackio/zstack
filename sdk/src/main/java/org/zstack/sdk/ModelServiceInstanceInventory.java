@@ -60,6 +60,14 @@ public class ModelServiceInstanceInventory  {
         return this.internalUrl;
     }
 
+    public java.lang.String jupyterUrl;
+    public void setJupyterUrl(java.lang.String jupyterUrl) {
+        this.jupyterUrl = jupyterUrl;
+    }
+    public java.lang.String getJupyterUrl() {
+        return this.jupyterUrl;
+    }
+
     public java.lang.String vmInstanceUuid;
     public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
