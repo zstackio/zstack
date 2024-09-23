@@ -21,7 +21,6 @@ public class VolumeSystemTags {
     public static String VOLUME_PROVISIONING_STRATEGY_TOKEN = "volumeProvisioningStrategy";
     public static PatternedSystemTag VOLUME_PROVISIONING_STRATEGY = new PatternedSystemTag(String.format("volumeProvisioningStrategy::{%s}", VOLUME_PROVISIONING_STRATEGY_TOKEN), VolumeVO.class);
 
-
     public static String PRIMARY_STORAGE_VOLUME_PROVISIONING_STRATEGY_TOKEN = "primaryStorageVolumeProvisioningStrategy";
     public static PatternedSystemTag PRIMARY_STORAGE_VOLUME_PROVISIONING_STRATEGY = new PatternedSystemTag(String.format("primaryStorageVolumeProvisioningStrategy::{%s}", PRIMARY_STORAGE_VOLUME_PROVISIONING_STRATEGY_TOKEN), PrimaryStorageVO.class);
 
@@ -42,6 +41,9 @@ public class VolumeSystemTags {
 
     @NonCloneable
     public static EphemeralSystemTag FLATTEN = new EphemeralSystemTag("volume::flatten");
+
+    @NonCloneable
+    public static EphemeralSystemTag FORMAT_QCOW2 = new EphemeralSystemTag("volume::format::qcow2");
 
     public static String VOLUME_QOS_TOKEN = "qos";
     public static PatternedSystemTag VOLUME_QOS = new PatternedSystemTag(String.format("%s::{%s}", VOLUME_QOS_TOKEN, VOLUME_QOS_TOKEN), VolumeVO.class);
