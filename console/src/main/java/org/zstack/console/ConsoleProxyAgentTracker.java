@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.tacker.PingTracker;
+import org.zstack.core.tracker.PingTracker;
 import org.zstack.header.console.ConsoleBackend;
 import org.zstack.header.console.PingConsoleProxyAgentMsg;
 import org.zstack.header.console.PingConsoleProxyAgentReply;

@@ -9,7 +9,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
-import org.zstack.core.tacker.PingTracker;
+import org.zstack.core.tracker.PingTracker;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
