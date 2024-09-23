@@ -367,6 +367,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         long size;
         boolean shareable;
         boolean skipIfExisting;
+        String format = VolumeConstant.VOLUME_FORMAT_RAW;
 
         public boolean isShareable() {
             return shareable;
@@ -398,6 +399,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public boolean isSkipIfExisting() {
             return skipIfExisting;
+        }
+
+        public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
         }
     }
 
@@ -1731,6 +1740,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.size = msg.getVolume().getSize();
         cmd.setShareable(msg.getVolume().isShareable());
         cmd.skipIfExisting = msg.isSkipIfExisting();
+        cmd.format = msg.hasSystemTag(VolumeSystemTags.FORMAT_QCOW2.getTagFormat()) ? VolumeConstant.VOLUME_FORMAT_QCOW2 : VolumeConstant.VOLUME_FORMAT_RAW ;
 
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         

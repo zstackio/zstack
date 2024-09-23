@@ -56,4 +56,7 @@ public class HostGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig SYNC_HOST_HW_MONITOR_INTERVAL = new GlobalConfig(CATEGORY, "sync.host.hw.monitor.interval");
 
+    @GlobalConfigValidation
+    @GlobalConfigDef(type = String.class, defaultValue = "10501:10999", description = "nbd port range")
+    public static GlobalConfig NBD_PORT_RANGE = new GlobalConfig(CATEGORY, "nbd.port.range");
 }
