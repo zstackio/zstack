@@ -109,6 +109,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.zstack.compute.host.HostSystemTags.*;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
@@ -4988,27 +4989,29 @@ public class KVMHost extends HostBase implements Host {
         if (value == null || value.isEmpty()) {
             return;
         }
-        recreateTag(tag, token, value, inherent);
+        recreateTag(tag, map(e(token, value)), inherent);
     }
 
     private void recreateNonInherentTag(SystemTag tag, String token, String value) {
-        recreateTag(tag, token, value, false);
+        recreateTag(tag, map(e(token, value)), false);
     }
 
     private void recreateNonInherentTag(SystemTag tag) {
-        recreateTag(tag, null, null, false);
+        recreateTag(tag, Collections.emptyMap(), false);
     }
 
-    private void recreateInherentTag(SystemTag tag, String token, String value) {
-        recreateTag(tag, token, value, true);
-    }
-
-    private void recreateTag(SystemTag tag, String token, String value, boolean inherent) {
+    private void recreateTag(SystemTag tag, Map<String, String> map, boolean inherent) {
         SystemTagCreator creator = tag.newSystemTagCreator(self.getUuid());
-        Optional.ofNullable(token).ifPresent(it -> creator.setTagByTokens(Collections.singletonMap(token, value)));
+        if (!map.isEmpty()) {
+            creator.setTagByTokens(map);
+        }
         creator.inherent = inherent;
         creator.recreate = true;
         creator.create();
+    }
+
+    private String stringOrEmpty(Object value) {
+        return value == null ? "" : value.toString();
     }
 
     @Override
@@ -5730,6 +5733,7 @@ public class KVMHost extends HostBase implements Host {
     private NoRollbackFlow createCollectHostFactsFlow(final ConnectHostInfo info) {
         return new NoRollbackFlow() {
             String __name__ = "collect-kvm-host-facts";
+            ErrorCodeList hardwareChangedErrors = new ErrorCodeList();
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -5764,41 +5768,68 @@ public class KVMHost extends HostBase implements Host {
                         });
             }
 
-            private void recordHardwareChangesAndCreateTag(PatternedSystemTag systemTag, String token, String newValue, ErrorCodeList errorCodeList) {
-                if (StringUtils.isEmpty(newValue)) {
+            private void recordHardwareChangesAndCreateTag(PatternedSystemTag systemTag, Map<String, String> tokenMap) {
+                if (tokenMap.isEmpty()) {
                     return;
                 }
 
-                String oldValue = systemTag.getTokenByResourceUuid(self.getUuid(), token);
-                if (StringUtils.isEmpty(oldValue) || newValue.equals(oldValue)) {
-                    logger.trace(String.format("host[uuid:%s]'s %s not changed or not recorded, old:%s, new:%s",
+                boolean anyValueIsEmpty = tokenMap.values().stream().anyMatch(StringUtils::isEmpty);
+                if (anyValueIsEmpty) {
+                    return;
+                }
+
+                Map<String, String> oldTokenMap = systemTag.getTokensByResourceUuid(self.getUuid());
+                if (oldTokenMap == null) {
+                    recreateTag(systemTag, tokenMap, true);
+                    return;
+                }
+
+                for (Map.Entry<String, String> entry : tokenMap.entrySet()) {
+                    String key = entry.getKey();
+                    String newValue = entry.getValue();
+                    String oldValue = oldTokenMap.get(key);
+
+                    if (StringUtils.isEmpty(oldValue) || newValue.equals(oldValue)) {
+                        logger.trace(String.format("host[uuid:%s]'s %s not changed or not recorded, old:%s, new:%s",
+                                self.getUuid(),
+                                systemTag.getTagFormat(),
+                                oldValue, newValue));
+                        continue;
+                    }
+
+                    hardwareChangedErrors.getCauses().add(operr("host[uuid:%s]'s %s changed, old:%s, new:%s",
                             self.getUuid(),
                             systemTag.getTagFormat(),
                             oldValue, newValue));
-                    createTagWithoutNonValue(systemTag, token, newValue, true);
-                    return;
                 }
 
-                errorCodeList.getCauses().add(operr("host[uuid:%s]'s %s changed, old:%s, new:%s",
-                        self.getUuid(),
-                        systemTag.getTagFormat(),
-                        oldValue, newValue));
-
-                createTagWithoutNonValue(systemTag, token, newValue, true);
+                recreateTag(systemTag, tokenMap, true);
             }
 
+            @SuppressWarnings({"unchecked"})
             private void saveGeneralHostHardwareFacts(HostFactResponse ret) {
-                ErrorCodeList errorCodeList = new ErrorCodeList();
-
-                recordHardwareChangesAndCreateTag(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_MANUFACTURER, HostSystemTags.SYSTEM_MANUFACTURER_TOKEN, ret.getSystemManufacturer(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_UUID, HostSystemTags.SYSTEM_UUID_TOKEN, ret.getSystemUUID(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.MEMORY_SLOTS_MAXIMUM, HostSystemTags.MEMORY_SLOTS_MAXIMUM_TOKEN, ret.getMemorySlotsMaximum(), errorCodeList);
+                recordHardwareChangesAndCreateTag(HOST_CPU_MODEL_NAME, map(
+                        e(HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName())));
+                recordHardwareChangesAndCreateTag(CPU_GHZ, map(
+                        e(CPU_GHZ_TOKEN, ret.getCpuGHz())));
+                recordHardwareChangesAndCreateTag(CPU_PROCESSOR_NUM, map(
+                        e(CPU_PROCESSOR_NUM_TOKEN, stringOrEmpty(ret.getCpuProcessorNum()))));
+                recordHardwareChangesAndCreateTag(CPU_SOCKET_CORE_THREAD, map(
+                        e(CPU_SOCKETS_TOKEN, stringOrEmpty(ret.getCpuSockets())),
+                        e(CPU_CORES_TOKEN, stringOrEmpty(ret.getCpuCoresPerSocket())),
+                        e(CPU_THREADS_TOKEN, stringOrEmpty(ret.getCpuThreadsPerCore()))));
+                recordHardwareChangesAndCreateTag(CPU_CACHE, map(
+                        e(CPU_CACHE_TOKEN, ret.getCpuCache())));
+                recordHardwareChangesAndCreateTag(SYSTEM_PRODUCT_NAME, map(
+                        e(SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName())));
+                recordHardwareChangesAndCreateTag(SYSTEM_SERIAL_NUMBER, map(
+                        e(SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber())));
+                recordHardwareChangesAndCreateTag(SYSTEM_MANUFACTURER, map(
+                        e(SYSTEM_MANUFACTURER_TOKEN, ret.getSystemManufacturer())));
+                recordHardwareChangesAndCreateTag(SYSTEM_UUID, map(
+                        e(SYSTEM_UUID_TOKEN, ret.getSystemUUID())));
+                recordHardwareChangesAndCreateTag(MEMORY_SLOTS_MAXIMUM, map(
+                        e(MEMORY_SLOTS_MAXIMUM_TOKEN, ret.getMemorySlotsMaximum())));
 
                 createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
                 createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
@@ -5812,17 +5843,17 @@ public class KVMHost extends HostBase implements Host {
 
                 saveHostExtraIps(ret);
 
-                if (errorCodeList.getCauses().isEmpty()) {
+                if (hardwareChangedErrors.getCauses().isEmpty()) {
                     return;
                 }
 
                 // only log the hardware info change for existing host
                 if (info.isNewAdded()) {
-                    logger.debug(String.format("host[uuid:%s]'s hardware info changed, %s", self.getUuid(), errorCodeList.getCauses()));
+                    logger.debug(String.format("host[uuid:%s]'s hardware info changed, %s", self.getUuid(), hardwareChangedErrors.getCauses()));
                     return;
                 }
 
-                new HostHardwareChangedCanonicalEvent(self.getUuid(), errorCodeList).fire();
+                new HostHardwareChangedCanonicalEvent(self.getUuid(), hardwareChangedErrors).fire();
             }
 
             /**
