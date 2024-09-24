@@ -1347,8 +1347,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         boolean force = false;
         if (VolumeVO.class.getSimpleName().equals(msg.getBitsType()) && msg.getBitsUuid() != null) {
             VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getBitsUuid()).find();
-            protocol = volume.getProtocol();
-            if (VolumeType.Root.equals(volume.getType()) && VolumeProtocol.iSCSI.toString().equals(protocol)) {
+            if (volume != null) {
+                protocol = volume.getProtocol();
+            }
+            if (volume != null && VolumeType.Root.equals(volume.getType()) && VolumeProtocol.iSCSI.toString().equals(protocol)) {
                 force = true;
             }
         }
