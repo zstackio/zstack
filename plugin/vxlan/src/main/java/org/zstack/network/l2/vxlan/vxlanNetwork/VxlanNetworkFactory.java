@@ -235,18 +235,6 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     }
 
     @Override
-    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-    }
-
-    @Override
-    public void  afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
-    }
-
-    @Override
-    public void  failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
-    }
-
-    @Override
     public String getL2NetworkType() {
         return VxlanNetworkConstant.VXLAN_NETWORK_TYPE;
     }

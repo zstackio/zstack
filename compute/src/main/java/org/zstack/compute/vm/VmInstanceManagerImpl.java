@@ -2812,16 +2812,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
     public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
         if (!inv.getHypervisorType().equals(VmInstanceConstant.KVM_HYPERVISOR_TYPE)) {
             return;
@@ -2844,11 +2834,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             }
         });
-    }
-
-    @Override
-    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
-
     }
 
     @Override

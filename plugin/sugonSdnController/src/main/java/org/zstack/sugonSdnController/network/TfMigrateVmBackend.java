@@ -111,11 +111,6 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint, VmPr
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
     public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
         notifySugonSdn(inv, srcHostUuid, "delete");
     }

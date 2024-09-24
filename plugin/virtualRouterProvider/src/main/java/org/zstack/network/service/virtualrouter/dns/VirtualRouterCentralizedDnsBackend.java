@@ -279,16 +279,6 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
-    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
-
-    }
-
-    @Override
     public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
         if (inv.getDefaultL3NetworkUuid() == null) {
             return;

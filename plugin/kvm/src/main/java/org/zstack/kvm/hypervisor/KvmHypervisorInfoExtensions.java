@@ -13,6 +13,10 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
 import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands.DestroyVmCmd;
+import org.zstack.kvm.KVMAgentCommands.RebootVmResponse;
+import org.zstack.kvm.KVMAgentCommands.StopVmCmd;
+import org.zstack.kvm.KVMAgentCommands.VmDevicesInfoResponse;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -127,12 +131,6 @@ public class KvmHypervisorInfoExtensions implements
     }
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {}
-
-    @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {}
-
-    @Override
     public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
         final String hostUuid = inv.getHostUuid();
         if (hostUuid == null) {
@@ -154,6 +152,4 @@ public class KvmHypervisorInfoExtensions implements
         });
     }
 
-    @Override
-    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {}
 }
