@@ -57,6 +57,7 @@ public abstract class BatchTracker implements Component {
         @Override
         public void run() {
             try {
+                executionHook();
                 synchronized (resourceUuids) {
                     executeTask(resourceUuids);
                 }
@@ -64,6 +65,10 @@ public abstract class BatchTracker implements Component {
                 logger.warn("unhandled throwable", t);
             }
         }
+    }
+
+    protected void executionHook() {
+
     }
 
     protected void trackHook(String resourceUuid) {
@@ -75,7 +80,7 @@ public abstract class BatchTracker implements Component {
     protected void startHook() {
     }
 
-    protected void pingIntervalChanged() {
+    protected void taskIntervalChanged() {
         startTracker();
     }
 
@@ -153,7 +158,14 @@ public abstract class BatchTracker implements Component {
 
     @Override
     public boolean stop() {
-        trackerThread.cancel(true);
+        if (trackerThread != null) {
+            trackerThread.cancel(true);
+        }
+
         return true;
+    }
+
+    public List<String> getResourceUuids() {
+        return resourceUuids;
     }
 }

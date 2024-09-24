@@ -9,10 +9,18 @@ import java.util.Objects;
  */
 public class UnitNumber {
     public final long number;
+    public final Double doubleFormatNumber;
     public final String units;
 
     public UnitNumber(long number, String units) {
         this.number = number;
+        this.doubleFormatNumber = null;
+        this.units = units;
+    }
+
+    public UnitNumber(double doubleFormatNumber, String units) {
+        this.number = 0L;
+        this.doubleFormatNumber = doubleFormatNumber;
         this.units = units;
     }
 
@@ -27,11 +35,19 @@ public class UnitNumber {
         return numeric;
     }
 
+    public static UnitNumber valueOfWithFloatResultOrNull(String text) {
+        return valueOfOrNull(text, true);
+    }
+
     /**
      * @param text example: 50G / -60TB ...
      */
     public static UnitNumber valueOfOrNull(String text) {
-        if (text.length() == 0) {
+        return valueOfOrNull(text, false);
+    }
+
+    public static UnitNumber valueOfOrNull(String text, boolean withFloat) {
+        if (text.isEmpty()) {
             return null;
         }
 
@@ -43,7 +59,7 @@ public class UnitNumber {
 
         for (; i < chars.length; i++) {
             char ch = chars[i];
-            if (!Character.isDigit(ch)) {
+            if (!Character.isDigit(ch) && ch != '.') {
                 break;
             }
         }
@@ -51,7 +67,12 @@ public class UnitNumber {
         if (i == 0 || chars[0] == '-' && i == 1) {
             return null;
         }
-        return new UnitNumber(Long.parseLong(text.substring(0, i)), text.substring(i).trim());
+
+        if (withFloat) {
+            return new UnitNumber(Double.parseDouble(text.substring(0, i)), text.substring(i).trim());
+        } else {
+            return new UnitNumber(Long.parseLong(text.substring(0, i)), text.substring(i).trim());
+        }
     }
 
     public UnitNumber setNumber(long number) {

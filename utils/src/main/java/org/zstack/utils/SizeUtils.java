@@ -53,7 +53,7 @@ public class SizeUtils {
      */
     public static boolean isSizeString2(String str) {
         final UnitNumber numeric = NumberUtils.ofUnitNumber(str);
-        return numeric == null ? false : isSize2(numeric);
+        return numeric != null && isSize2(numeric);
     }
 
     /**
@@ -79,7 +79,7 @@ public class SizeUtils {
      */
     public static boolean isSizeString(String str) {
         final UnitNumber numeric = NumberUtils.ofUnitNumber(str);
-        return numeric == null ? false : isSize(numeric);
+        return numeric != null && isSize(numeric);
     }
 
     public static boolean isSize2(UnitNumber numeric) {
@@ -98,11 +98,35 @@ public class SizeUtils {
         return matchedUnits.contains(numeric.units);
     }
 
+    public static double sizeStringToBytes2(String str) {
+        final UnitNumber numeric = NumberUtils.ofUnitNumberOrThrow2(str);
+        String suffix = numeric.units;
+        double size = numeric.doubleFormatNumber;
+        if (suffix.isEmpty()) {
+            return size;
+        }
+
+        switch (suffix) {
+            case T_SUFFIX: case t_SUFFIX: case TB_SUFFIX: case TIB_SUFFIX:
+                return SizeUnit.TERABYTE.toByte(size);
+            case G_SUFFIX: case g_SUFFIX: case GB_SUFFIX: case GIB_SUFFIX:
+                return SizeUnit.GIGABYTE.toByte(size);
+            case M_SUFFIX: case m_SUFFIX: case MB_SUFFIX: case MIB_SUFFIX:
+                return SizeUnit.MEGABYTE.toByte(size);
+            case K_SUFFIX: case k_SUFFIX: case KB_SUFFIX: case KIB_SUFFIX:
+                return SizeUnit.KILOBYTE.toByte(size);
+            case B_SUFFIX: case b_SUFFIX:
+                return SizeUnit.BYTE.toByte(size);
+        }
+
+        throw new RuntimeException(String.format("should not be here, input size string: %s, parsed size: %s, parsed unit: %s", str, size, suffix));
+    }
+
     public static long sizeStringToBytes(String str) {
         final UnitNumber numeric = NumberUtils.ofUnitNumberOrThrow(str);
         String suffix = numeric.units;
         long size = numeric.number;
-        if (suffix.length() == 0) {
+        if (suffix.isEmpty()) {
             return size;
         }
 

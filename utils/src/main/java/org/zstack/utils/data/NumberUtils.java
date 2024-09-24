@@ -21,4 +21,14 @@ public class NumberUtils {
     public static UnitNumber ofUnitNumberOrThrow(String text) throws NumberFormatException {
         return UnitNumber.valueOf(text);
     }
+
+    /**
+     * support float type size string like: 12.39 GiB
+     * @param text size string
+     * @return UnitNumber instance
+     * @throws NumberFormatException
+     */
+    public static UnitNumber ofUnitNumberOrThrow2(String text) throws NumberFormatException {
+        return UnitNumber.valueOfWithFloatResultOrNull(text);
+    }
 }
