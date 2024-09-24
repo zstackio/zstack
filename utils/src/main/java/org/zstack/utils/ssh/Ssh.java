@@ -504,12 +504,8 @@ public class Ssh {
                 if (script != null) {
                     logger.trace(String.format("execute script[%s], cost time:%s", script.scriptName, watch.getTime()));
                 } else {
-                    String cmd = StringUtils.join(CollectionUtils.transformToList(commands, new Function<String, SshRunner>() {
-                        @Override
-                        public String call(SshRunner arg) {
-                            return arg.getCommandWithoutPassword();
-                        }
-                    }), ",");
+                    String cmd = StringUtils.join(CollectionUtils.transform(
+                            commands, SshRunner::getCommandWithoutPassword), ",");
                     String info = s(
                             "\nssh execution[host: {0}, port:{1}]\n",
                             "command: {2}\n",

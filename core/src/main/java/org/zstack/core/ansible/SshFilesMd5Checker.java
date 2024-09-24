@@ -31,6 +31,7 @@ public class SshFilesMd5Checker implements AnsibleChecker {
             ssh.command(String.format("echo %s | sudo -S md5sum %s 2>/dev/null", password, filePath));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {
+                logger.warn(String.format("Failed to get MD5 for file %s: %s", filePath, ret.getStderr()));
                 return true;
             }
             ssh.reset();
