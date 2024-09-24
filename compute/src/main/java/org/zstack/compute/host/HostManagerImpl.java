@@ -621,33 +621,37 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
             @Override
             public void run() {
-                List<HostIpmiVO> ipmis = Q.New(HostIpmiVO.class).list();
+                List<HostIpmiVO> ipmis = Q.New(HostIpmiVO.class)
+                        .list();
+
+                ipmis = ipmis.stream().filter(i -> destMaker.isManagedByUs(i.getUuid())).collect(Collectors.toList());
                 new While<>(ipmis).step((ipmi, comp) -> {
                     refreshHostPowerStatus(ipmi);
                     comp.done();
                 },10).run(new NopeWhileDoneCompletion());
             }
 
-            @AsyncThread
             private void refreshHostPowerStatus(HostIpmiVO ipmi) {
                 if (ipmi == null) {
                     return;
                 }
 
                 HostPowerStatus status = HostIpmiPowerExecutor.getPowerStatus(ipmi);
-                if ( HostPowerStatus.POWER_BOOTING == ipmi.getIpmiPowerStatus()
+                if (HostPowerStatus.POWER_BOOTING == ipmi.getIpmiPowerStatus()
                         && HostPowerStatus.POWER_OFF == status) {
                     return;
                 }
 
-                if ( HostPowerStatus.POWER_SHUTDOWN == ipmi.getIpmiPowerStatus()
+                if (HostPowerStatus.POWER_SHUTDOWN == ipmi.getIpmiPowerStatus()
                         && HostPowerStatus.POWER_ON == status) {
                     return;
                 }
 
                 if (ipmi.getIpmiPowerStatus() != status) {
-                    ipmi.setIpmiPowerStatus(status);
-                    dbf.update(ipmi);
+                    SQL.New(HostIpmiVO.class)
+                            .set(HostIpmiVO_.ipmiPowerStatus, status)
+                            .eq(HostIpmiVO_.uuid, ipmi.getUuid())
+                            .update();
                 }
             }
         });
