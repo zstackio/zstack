@@ -1,5 +1,6 @@
 package org.zstack.core.ansible;
 
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.ssh.Ssh;
@@ -28,7 +29,9 @@ public class SshFilesMd5Checker implements AnsibleChecker {
                 .setHostname(ip)
                 .setTimeout(5);
         try {
-            ssh.command(String.format("echo %s | sudo -S md5sum %s 2>/dev/null", password, filePath));
+            ssh.command(String.format("echo %s | sudo -S md5sum %s 2>/dev/null",
+                    ShellUtils.escapeShellText(password),
+                    filePath));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {
                 logger.warn(String.format("Failed to get MD5 for file %s: %s", filePath, ret.getStderr()));
