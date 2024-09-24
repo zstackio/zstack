@@ -19241,6 +19241,33 @@ abstract class ApiHelper {
     }
 
 
+    def getHostBlockDevices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetHostBlockDevicesAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetHostBlockDevicesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getHostCandidatesForVmMigration(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetHostCandidatesForVmMigrationAction.class) Closure c) {
         def a = new org.zstack.sdk.GetHostCandidatesForVmMigrationAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -19504,6 +19531,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getHostSensors(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetHostSensorsAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetHostSensorsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())

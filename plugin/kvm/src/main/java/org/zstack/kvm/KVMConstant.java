@@ -110,6 +110,8 @@ public interface KVMConstant {
     String KVM_BLOCK_COMMIT_VOLUME_PATH = "/vm/volume/blockcommit";
     String TAKE_VM_CONSOLE_SCREENSHOT_PATH = "/vm/console/screenshot";
     String GET_VM_UPTIME_PATH = "/vm/getpidcreatetime";
+    String KVM_HOST_GET_BLOCK_DEVICES_PATH = "/host/blockdevices/get";
+    String KVM_HOST_GET_SENSORS_PATH = "/host/sensors/get";
 
     String SET_HOST_PHYSICAL_MEMORY_MONITOR = "/host/physical/memory/monitor/start";
 

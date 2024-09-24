@@ -37,6 +37,13 @@ public class BlockDevices {
         usedBlockDevices.removeIf(blockDevice -> excludedBlockDevicesType.contains(blockDevice.getType()));
     }
 
+    public List<BlockDevice> getAllBlockDevices() {
+        List<BlockDevice> allBlockDevices = new ArrayList<>();
+        allBlockDevices.addAll(unusedBlockDevices);
+        allBlockDevices.addAll(usedBlockDevices);
+        return allBlockDevices;
+    }
+
     public static class BlockDevice {
         private String name;
         private String type;
@@ -46,6 +53,11 @@ public class BlockDevices {
         private String mountPoint;
         private List<BlockDevice> children;
         private String partitionTable;
+        private String FSType;
+        private String serialNumber;
+        private String model;
+        private String mediaType;
+        private long usedRatio;
 
         BlockDevice() {
 
@@ -66,6 +78,9 @@ public class BlockDevices {
                     device.children.add(valueOf(child));
                 }
             }
+            device.FSType = blockDevice.getFstype();
+            device.serialNumber = blockDevice.getSerial();
+            device.model = blockDevice.getModel();
             return device;
         }
 
@@ -146,6 +161,46 @@ public class BlockDevices {
 
         public void setPartitionTable(String partitionTable) {
             this.partitionTable = partitionTable;
+        }
+
+        public String getFSType() {
+            return FSType;
+        }
+
+        public void setFSType(String FSType) {
+            this.FSType = FSType;
+        }
+
+        public String getSerialNumber() {
+            return serialNumber;
+        }
+
+        public void setSerialNumber(String serialNumber) {
+            this.serialNumber = serialNumber;
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public void setModel(String model) {
+            this.model = model;
+        }
+
+        public String getMediaType() {
+            return mediaType;
+        }
+
+        public void setMediaType(String mediaType) {
+            this.mediaType = mediaType;
+        }
+
+        public long getUsedRatio() {
+            return usedRatio;
+        }
+
+        public void setUsedRatio(long usedRatio) {
+            this.usedRatio = usedRatio;
         }
     }
 }

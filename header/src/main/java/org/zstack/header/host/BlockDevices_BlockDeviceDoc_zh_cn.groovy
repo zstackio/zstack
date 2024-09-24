@@ -56,4 +56,34 @@ doc {
 		type "String"
 		since "zsv 4.3.0"
 	}
+	field {
+		name "FSType"
+		desc "文件系统类型"
+		type "String"
+		since "zsv 4.10.0"
+	}
+	field {
+		name "serialNumber"
+		desc "序列号"
+		type "String"
+		since "zsv 4.10.0"
+	}
+	field {
+		name "model"
+		desc "型号"
+		type "String"
+		since "zsv 4.10.0"
+	}
+	field {
+		name "mediaType"
+		desc "介质类型"
+		type "String"
+		since "zsv 4.10.0"
+	}
+	field {
+		name "usedRatio"
+		desc "使用率"
+		type "String"
+		since "zsv 4.10.0"
+	}
 }

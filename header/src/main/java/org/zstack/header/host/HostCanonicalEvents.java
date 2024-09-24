@@ -337,6 +337,7 @@ public class HostCanonicalEvents {
         private String serialNumber;
         private String enclosureId;
         private String slotNumber;
+        private String name;
 
         public String getHostUuid() {
             return hostUuid;
@@ -368,6 +369,14 @@ public class HostCanonicalEvents {
 
         public void setSlotNumber(String slotNumber) {
             this.slotNumber = slotNumber;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
     }
 

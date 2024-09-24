@@ -68,4 +68,12 @@
     <message>
         <name>org.zstack.header.host.APIMountBlockDeviceMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetHostBlockDevicesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetHostSensorsMsg</name>
+    </message>
 </service>
