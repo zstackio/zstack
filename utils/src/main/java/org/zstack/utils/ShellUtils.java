@@ -1,12 +1,17 @@
 package org.zstack.utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ShellUtils {
@@ -323,5 +328,68 @@ public class ShellUtils {
 
     public static String getScriptsPath(String scriptName) {
         return PathUtil.findFileOnClassPath(scriptName, true).getAbsolutePath();
+    }
+
+    public static final String[] ESCAPE_TEXT_FORM;
+    public static final String[] ESCAPE_TEXT_TO;
+
+    static {
+        Map<String, String> escapeMap = new HashMap<>();
+        escapeMap.put("\\", "\\\\");
+        escapeMap.put(" ", "\\ ");
+        escapeMap.put("`", "\\`");
+        escapeMap.put("~", "\\~");
+        escapeMap.put("!", "\\!");
+        escapeMap.put("#", "\\#");
+        escapeMap.put("$", "\\$");
+        escapeMap.put("&", "\\&");
+        escapeMap.put("*", "\\*");
+        escapeMap.put("(", "\\(");
+        escapeMap.put(")", "\\)");
+        escapeMap.put("-", "\\-");
+        escapeMap.put("+", "\\+");
+        escapeMap.put("=", "\\=");
+        escapeMap.put("[", "\\[");
+        escapeMap.put("]", "\\]");
+        escapeMap.put("{", "\\{");
+        escapeMap.put("}", "\\}");
+        escapeMap.put("|", "\\|");
+        escapeMap.put(":", "\\:");
+        escapeMap.put(";", "\\;");
+        escapeMap.put("\"", "\\\"");
+        escapeMap.put("'", "\\'");
+        escapeMap.put(".", "\\.");
+        escapeMap.put("<", "\\<");
+        escapeMap.put(">", "\\>");
+        escapeMap.put("/", "\\/");
+        escapeMap.put("?", "\\?");
+
+        List<String> escapeFromList = new ArrayList<>();
+        List<String> escapeToList = new ArrayList<>();
+
+        escapeMap.forEach((k, v) -> {
+            escapeFromList.add(k);
+            escapeToList.add(v);
+        });
+
+        ESCAPE_TEXT_FORM = escapeFromList.toArray(new String[0]);
+        ESCAPE_TEXT_TO = escapeToList.toArray(new String[0]);
+    }
+
+    /**
+     * Escape text for shell script
+     *
+     * <pre>
+     *  escapeShellText(null)        = null
+     *  escapeShellText("")          = ""
+     *  escapeShellText("     ")     = "\\ \\ \\ \\ \\ "
+     *  escapeShellText("abc")       = "abc"
+     *  escapeShellText("#123")      = "\\#123"
+     *  escapeShellText("!@#$")      = "\\!@\\#\\$"
+     *  escapeShellText(";init 0;")  = "\\;init\\ 0\\;"
+     * </pre>
+     */
+    public static String escapeShellText(String text) {
+        return StringUtils.replaceEach(text, ESCAPE_TEXT_FORM, ESCAPE_TEXT_TO);
     }
 }

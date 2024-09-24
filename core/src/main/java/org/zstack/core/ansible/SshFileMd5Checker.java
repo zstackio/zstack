@@ -47,7 +47,9 @@ public class SshFileMd5Checker implements AnsibleChecker {
                 String sourceFilePath = b.srcPath;
                 String destFilePath = b.destPath;
 
-                ssh.command(String.format("echo %s | sudo -S md5sum %s 2>/dev/null", password, destFilePath));
+                ssh.command(String.format("echo %s | sudo -S md5sum %s 2>/dev/null",
+                        ShellUtils.escapeShellText(password),
+                        destFilePath));
                 SshResult ret = ssh.run();
                 if (ret.getReturnCode() != 0) {
                     return true;

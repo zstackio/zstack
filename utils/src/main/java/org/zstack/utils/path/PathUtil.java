@@ -429,4 +429,22 @@ public class PathUtil {
             return false;
         }
     }
+
+    public static Long getFileInode(String filePath) {
+        Path path = Paths.get(filePath);
+        try {
+            return (Long) Files.getAttribute(path, "unix:ino");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static FileTime getFileLastModifiedTime(String filePath) {
+        Path path = Paths.get(filePath);
+        try {
+            return Files.getLastModifiedTime(path);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

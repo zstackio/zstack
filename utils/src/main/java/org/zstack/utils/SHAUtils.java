@@ -1,5 +1,8 @@
 package org.zstack.utils;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
+import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -18,6 +21,14 @@ public class SHAUtils {
             return String.format("%0128x", bigInteger);
         } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static String getFileMd5sum(String filePath) {
+        try (FileInputStream srcIn = new FileInputStream(filePath)) {
+            return DigestUtils.md5Hex(srcIn);
+        } catch (Exception e) {
+            throw new RuntimeException("failed to get md5 sum with file:" + filePath, e);
         }
     }
 }

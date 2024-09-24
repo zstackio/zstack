@@ -8,6 +8,7 @@ import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
 import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
+import org.zstack.test.unittest.utils.ShellEscapeCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
 
 import java.util.stream.Collectors
@@ -20,6 +21,7 @@ import java.util.stream.Collectors
 @Suite.SuiteClasses([
         NetworkUtilsCase.class,
         OfferingUserConfigUtilsCase.class,
+        ShellEscapeCase.class,
         SizeUnitUtilsCase.class
     ])
 class JUnitTestSuite {
