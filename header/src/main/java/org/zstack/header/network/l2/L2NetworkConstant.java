@@ -42,4 +42,8 @@ public interface L2NetworkConstant {
     public static final int VIRTUAL_NETWORK_ID_DEFAULT_VALUE = 0;
 
     public static final String PHYSICAL_INTERFACE_EMPTY = "";
+
+    public static enum Param {
+        OLD_VIRTUAL_NETWORK_ID
+    }
 }

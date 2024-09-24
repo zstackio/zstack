@@ -117,7 +117,7 @@ public class FlatDhcpUpgradeExtension implements Component {
 
                     L3NetworkInventory l3 = l3Host.l3;
 
-                    String brName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
+                    String brName = new BridgeNameFinder().findByL3UuidOnHost(l3.getUuid(), l3Host.hostUuid);
                     DeleteNamespaceCmd cmd = new DeleteNamespaceCmd();
                     cmd.bridgeName = brName;
                     cmd.namespaceName = brName;

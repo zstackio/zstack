@@ -13,12 +13,13 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.HostParam;
-import org.zstack.header.host.HostState;
-import org.zstack.header.host.HostVO;
+import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.ArrayList;
@@ -64,6 +65,8 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIAttachL2NetworkToHostMsg) msg);
         } else if (msg instanceof APIDetachL2NetworkFromHostMsg) {
             validate((APIDetachL2NetworkFromHostMsg) msg);
+        } else if (msg instanceof APIUpdateL2NetworkVirtualNetworkIdMsg) {
+            validate((APIUpdateL2NetworkVirtualNetworkIdMsg) msg);
         }
 
         setServiceId(msg);
@@ -203,5 +206,21 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (!VSwitchType.hasType(msg.getvSwitchType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported vSwitch type[%s]", msg.getvSwitchType()));
         }
+    }
+
+    private void validate(APIUpdateL2NetworkVirtualNetworkIdMsg msg) {
+        L2NetworkVO l2 = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
+        if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(l2.getType()) ||
+                L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(l2.getType())) {
+            throw new ApiMessageInterceptionException(operr("l2 network[type:%s] does not support update virtual network id", l2.getType()));
+        }
+
+        l2.getAttachedClusterRefs().forEach(ref -> {
+            if (!Q.New(ClusterVO.class).eq(ClusterVO_.uuid, ref.getClusterUuid())
+                    .eq(ClusterVO_.hypervisorType, VmInstanceConstant.KVM_HYPERVISOR_TYPE).isExists()) {
+                throw new ApiMessageInterceptionException(operr("cannot update virtual network id for l2Network[uuid:%s]" +
+                        " because it only supports an L2Network that is exclusively attached to a kvm cluster", l2.getUuid()));
+            }
+        });
     }
 }

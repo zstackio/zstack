@@ -4,21 +4,17 @@ import org.apache.commons.lang.StringUtils;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.HostParam;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
-import org.zstack.header.network.l2.L2NetworkHostRefVO;
-import org.zstack.header.network.l2.L2NetworkHostRefVO_;
-import org.zstack.header.network.l2.L2ProviderType;
+import org.zstack.header.host.*;
+import org.zstack.header.network.l2.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import javax.persistence.Tuple;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 
 public class L2NetworkHostUtils {
@@ -62,6 +58,27 @@ public class L2NetworkHostUtils {
                 .findValue();
     }
 
+    public static Map<String, String> getBridgeNameMapFromL2NetworkHostRef(List<String> l2Uuids, String hostUuid) {
+        Map<String, String> bridgeNameMap = new HashMap<>();
+        if (CollectionUtils.isEmpty(l2Uuids)) {
+            return bridgeNameMap;
+        }
+
+        List<Tuple> tuples = Q.New(L2NetworkHostRefVO.class)
+                .select(L2NetworkHostRefVO_.l2NetworkUuid, L2NetworkHostRefVO_.bridgeName)
+                .in(L2NetworkHostRefVO_.l2NetworkUuid, l2Uuids)
+                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
+                .listTuple();
+
+        tuples.forEach(t -> {
+            String l2Uuid = t.get(0, String.class);
+            String bridgeName = t.get(1, String.class);
+            bridgeNameMap.put(l2Uuid, bridgeName);
+        });
+
+        return bridgeNameMap;
+    }
+
     public static void changeBridgeNameIfNotEqual(String l2Uuid, String hostUuid, String bridgeName) {
         SQL.New(L2NetworkHostRefVO.class)
                 .eq(L2NetworkHostRefVO_.l2NetworkUuid, l2Uuid)
@@ -89,6 +106,27 @@ public class L2NetworkHostUtils {
                 .in(L2NetworkHostRefVO_.hostUuid, hostUuids)
                 .listValues();
         return hostUuids.stream().filter(it -> !hostsWithRef.contains(it)).collect(Collectors.toList());
+    }
+
+    public static List<HostVO> getHostsByAttachedL2Network(L2NetworkInventory l2) {
+        if (L2NetworkType.valueOf(l2.getType()).isAttachToAllHosts()) {
+            List<HostVO> vos = Q.New(HostVO.class)
+                    .in(HostVO_.clusterUuid, l2.getAttachedClusterUuids())
+                    .notIn(HostVO_.state, asList(HostState.PreMaintenance, HostState.Maintenance))
+                    .eq(HostVO_.status, HostStatus.Connected)
+                    .list();
+            return vos.stream().distinct().collect(Collectors.toList());
+        }
+
+        return SQL.New("select distinct host from L2NetworkHostRefVO ref, HostVO host" +
+                        " where ref.hostUuid = host.uuid" +
+                        " and ref.l2NetworkUuid = :l2Uuid" +
+                        " and host.state not in (:states)" +
+                        " and host.status = :status ", HostVO.class)
+                .param("l2Uuid", l2.getUuid())
+                .param("states", asList(HostState.PreMaintenance, HostState.Maintenance))
+                .param("status", HostStatus.Connected)
+                .list();
     }
 
     public static ErrorCode validateHostParams(List<HostParam> hostParams, String clusterUuid, String hostUuid) {

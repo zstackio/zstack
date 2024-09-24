@@ -114,7 +114,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
         final VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
         cmd.setVtepIp(vtepIp);
-        cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
+        cmd.setBridgeName(getBridgeName(l2vxlan));
         cmd.setVni(l2vxlan.getVni());
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setPeers(peers);
@@ -158,6 +158,57 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 completion.success();
             }
         });
+    }
+
+    @Override
+    public void update(final L2NetworkInventory oldL2Network, final L2NetworkInventory newL2Network,
+                       final String hostUuid, final Completion completion) {
+        final KVMAgentCommands.UpdateBridgeCmd cmd = new KVMAgentCommands.UpdateBridgeCmd();
+
+        String vxlanPoolUuid = Q.New(VxlanNetworkVO.class).select(VxlanNetworkVO_.poolUuid)
+                .eq(VxlanNetworkVO_.uuid, oldL2Network.getUuid()).findValue();
+        List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, vxlanPoolUuid).list();
+        List<String> peers = vteps.stream()
+                .filter(v -> !v.getHostUuid().equals(hostUuid))
+                .map(VtepVO::getVtepIp)
+                .collect(Collectors.toList());
+        cmd.setPhysicalInterfaceName(newL2Network.getPhysicalInterface());
+        cmd.setBridgeName(getBridgeName(oldL2Network));
+        cmd.setOldVirtualNetworkId(oldL2Network.getVirtualNetworkId());
+        cmd.setNewVirtualNetworkId(newL2Network.getVirtualNetworkId());
+        cmd.setL2NetworkUuid(newL2Network.getUuid());
+        cmd.setPeers(peers);
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setNoStatusCheck(false);
+        msg.setCommand(cmd);
+        msg.setHostUuid(hostUuid);
+        msg.setPath(KVMConstant.KVM_UPDATE_L2VXLAN_NETWORK_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                KVMAgentCommands.UpdateL2NetworkResponse rsp = hreply.toResponse(KVMAgentCommands.UpdateL2NetworkResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("failed to update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+                            cmd.getBridgeName(), newL2Network.getUuid(), newL2Network.getName(), hostUuid, rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                String info = String.format("successfully update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s]",
+                        cmd.getBridgeName(), newL2Network.getUuid(), newL2Network.getName(), hostUuid);
+                logger.debug(info);
+                completion.success();
+            }
+        });
+
     }
 
     @Override
@@ -363,7 +414,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         final Integer vni = getVni(l2Network.getUuid());
         KVMAgentCommands.NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
-        to.setBridgeName(makeBridgeName(vni));
+        to.setBridgeName(getBridgeName(l2Network));
         to.setMetaData(String.valueOf(vni));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
@@ -371,6 +422,9 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
+        if (KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid(), L2NetworkVO.class)) {
+            return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Network.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+        }
         final Integer vni = getVni(l2Network.getUuid());
         return makeBridgeName(vni);
     }
@@ -458,7 +512,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
 
         final VxlanKvmAgentCommands.DeleteVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.DeleteVxlanBridgeCmd();
-        cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
+        cmd.setBridgeName(getBridgeName(l2vxlan));
         cmd.setVni(l2vxlan.getVni());
         cmd.setL2NetworkUuid(l2Network.getUuid());
 

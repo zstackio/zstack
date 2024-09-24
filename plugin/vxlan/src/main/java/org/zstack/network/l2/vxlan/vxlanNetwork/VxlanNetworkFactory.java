@@ -86,7 +86,8 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
         bus.makeTargetServiceIdByResourceUuid(vniMsg, L2NetworkConstant.SERVICE_ID, amsg.getPoolUuid());
         MessageReply reply = bus.call(vniMsg);
         if (!reply.isSuccess()) {
-            throw new OperationFailureException(reply.getError());
+            completion.fail(reply.getError());
+            return;
         }
         AllocateVniReply r = reply.castReply();
 

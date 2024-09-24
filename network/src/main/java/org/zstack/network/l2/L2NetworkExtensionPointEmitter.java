@@ -6,6 +6,7 @@ import org.zstack.header.Component;
 import org.zstack.header.network.l2.L2NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkException;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkUpdateExtensionPoint;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
@@ -16,7 +17,9 @@ import java.util.List;
 public class L2NetworkExtensionPointEmitter implements Component {
     private static final CLogger logger = Utils.getLogger(L2NetworkExtensionPointEmitter.class);
     private List<L2NetworkDeleteExtensionPoint> extensions = null;
-    
+
+    private List<L2NetworkUpdateExtensionPoint> updateExtensions = null;
+
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -50,6 +53,10 @@ public class L2NetworkExtensionPointEmitter implements Component {
         });
     }
 
+    public void afterUpdate(final L2NetworkInventory inv) {
+        CollectionUtils.safeForEach(updateExtensions, arg -> arg.afterUpdateL2NetworkVirtualNetworkId(inv));
+    }
+
     @Override
     public boolean start() {
         populateExtensions();
@@ -57,7 +64,8 @@ public class L2NetworkExtensionPointEmitter implements Component {
     }
 
     private void populateExtensions() {
-        extensions  = pluginRgty.getExtensionList(L2NetworkDeleteExtensionPoint.class);
+        extensions        = pluginRgty.getExtensionList(L2NetworkDeleteExtensionPoint.class);
+        updateExtensions  = pluginRgty.getExtensionList(L2NetworkUpdateExtensionPoint.class);
     }
 
     @Override

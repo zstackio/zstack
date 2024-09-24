@@ -84,7 +84,10 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, Glo
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        return Arrays.asList(APIAttachL2NetworkToClusterMsg.class, APICreateL3NetworkMsg.class);
+        return Arrays.asList(
+                APIAttachL2NetworkToClusterMsg.class,
+                APICreateL3NetworkMsg.class,
+                APIUpdateL2NetworkVirtualNetworkIdMsg.class);
     }
 
     @Override

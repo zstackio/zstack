@@ -29,6 +29,8 @@ import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -115,7 +117,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
         final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
-        prepareL2NetworkOnHosts(Arrays.asList(msg.getHost()), new Completion(msg) {
+        prepareL2NetworkOnHosts(Collections.singletonList(msg.getHost()), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -144,6 +146,51 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Override
+    protected Flow updateL2NetworkVirtualNetworkIdInDb(final APIUpdateL2NetworkVirtualNetworkIdMsg msg) {
+        return new Flow() {
+            String __name__ = "update-vxlan-vni-in-db";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (!self.getVirtualNetworkId().equals(msg.getVirtualNetworkId())) {
+                    AllocateVniMsg vniMsg = new AllocateVniMsg();
+                    vniMsg.setL2NetworkUuid(getSelf().getPoolUuid());
+                    vniMsg.setRequiredVni(msg.getVirtualNetworkId());
+                    bus.makeTargetServiceIdByResourceUuid(vniMsg, L2NetworkConstant.SERVICE_ID, getSelf().getPoolUuid());
+                    MessageReply reply = bus.call(vniMsg);
+                    if (!reply.isSuccess()) {
+                        trigger.fail(reply.getError());
+                        return;
+                    }
+                    AllocateVniReply r = reply.castReply();
+
+                    VxlanNetworkVO vo = getSelf();
+                    data.put(L2NetworkConstant.Param.OLD_VIRTUAL_NETWORK_ID.toString(), vo.getVirtualNetworkId());
+                    vo.setVni(r.getVni());
+                    vo.setVirtualNetworkId(vo.getVni());
+                    dbf.updateAndRefresh(vo);
+                }
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                Integer oldVni = (Integer) data.get(L2NetworkConstant.Param.OLD_VIRTUAL_NETWORK_ID.toString());
+                if (oldVni == null) {
+                    trigger.rollback();
+                    return;
+                }
+
+                VxlanNetworkVO vo = getSelf();
+                vo.setVni(oldVni);
+                vo.setVirtualNetworkId(vo.getVni());
+                dbf.updateAndRefresh(vo);
+                trigger.rollback();
+            }
+        };
     }
 
     private void prepareL2NetworkOnHosts(final List<HostInventory> hosts, final Completion completion) {

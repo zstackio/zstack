@@ -92,6 +92,7 @@ public class DhcpApply {
 
             FlatDhcpBackend.PrepareDhcpCmd cmd = new FlatDhcpBackend.PrepareDhcpCmd();
             cmd.bridgeName = i.bridgeName;
+            cmd.virtualNetworkId = i.virtualNetworkId;
             cmd.namespaceName = i.namespaceName;
             if (dhcp4Server != null) {
                 cmd.dhcpServerIp = dhcp4Server.getIp();
