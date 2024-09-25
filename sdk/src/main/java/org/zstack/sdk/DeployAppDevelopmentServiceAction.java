@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeployModelServiceAction extends AbstractAction {
+public class DeployAppDevelopmentServiceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeployModelServiceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeployModelServiceResult value;
+        public org.zstack.sdk.DeployAppDevelopmentServiceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,6 +24,9 @@ public class DeployModelServiceAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String appServiceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
@@ -102,8 +105,8 @@ public class DeployModelServiceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeployModelServiceResult value = res.getResult(org.zstack.sdk.DeployModelServiceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeployModelServiceResult() : value; 
+        org.zstack.sdk.DeployAppDevelopmentServiceResult value = res.getResult(org.zstack.sdk.DeployAppDevelopmentServiceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeployAppDevelopmentServiceResult() : value; 
 
         return ret;
     }
@@ -133,10 +136,10 @@ public class DeployModelServiceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ai/model-services/{uuid}";
+        info.path = "/ai/model-services/app/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "deployModelService";
+        info.parameterName = "deployAppDevelopmentService";
         return info;
     }
 
