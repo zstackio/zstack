@@ -186,7 +186,7 @@ class ChangeVmCpuQuotaCase extends SubCase{
             resourceUuid = vo.uuid
             category = KVMGlobalConfig.CATEGORY
             name = KVMGlobalConfig.VM_CPU_QUOTA.name
-            value = 4000
+            value = 40000
         }
 
         def config = getResourceConfig {
@@ -196,7 +196,7 @@ class ChangeVmCpuQuotaCase extends SubCase{
         } as GetResourceConfigResult
 
         assert called
-        assert config.value == '4000'
+        assert config.value == '40000'
         env.cleanSimulatorHandlers()
     }
 
@@ -210,7 +210,7 @@ class ChangeVmCpuQuotaCase extends SubCase{
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             instanceOfferingUuid = instance.uuid
-            systemTags = ["resourceConfig::kvm::vm.cpu.quota::5000"]
+            systemTags = ["resourceConfig::kvm::vm.cpu.quota::50000"]
         } as VmInstanceInventory
 
         startVmInstance {
@@ -223,7 +223,7 @@ class ChangeVmCpuQuotaCase extends SubCase{
             name = KVMGlobalConfig.VM_CPU_QUOTA.getName()
         } as GetResourceConfigResult
 
-        assert config.value == "5000";
+        assert config.value == "50000";
     }
 
     void testConfigVmCpuQuotaOutOfRange() {
@@ -236,7 +236,7 @@ class ChangeVmCpuQuotaCase extends SubCase{
                 resourceUuid = vo.uuid
                 category = KVMGlobalConfig.CATEGORY
                 name = KVMGlobalConfig.VM_CPU_QUOTA.name
-                value = 999
+                value = 9999
             }
         }
 
@@ -244,7 +244,7 @@ class ChangeVmCpuQuotaCase extends SubCase{
             resourceUuid = vo.uuid
             category = KVMGlobalConfig.CATEGORY
             name = KVMGlobalConfig.VM_CPU_QUOTA.name
-            value = 1000
+            value = 10000
         }
 
 
@@ -282,14 +282,12 @@ class ChangeVmCpuQuotaCase extends SubCase{
             name = KVMGlobalConfig.VM_CPU_QUOTA.name
         } as GetResourceConfigResult
 
-        String originValue = beforeConfig.value;
-
         expect(AssertionError.class) {
             updateResourceConfig {
                 resourceUuid = vo.uuid
                 category = KVMGlobalConfig.CATEGORY
                 name = KVMGlobalConfig.VM_CPU_QUOTA.name
-                value = 1000
+                value = 10000
             }
         }
 
@@ -300,7 +298,7 @@ class ChangeVmCpuQuotaCase extends SubCase{
         } as GetResourceConfigResult
 
         assert called
-        assert afterConfig.value == originValue
+        assert afterConfig.value == beforeConfig.value
         env.cleanSimulatorHandlers()
     }
 }
