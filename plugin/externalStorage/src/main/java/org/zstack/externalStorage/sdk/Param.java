@@ -1,4 +1,4 @@
-package org.zstack.expon.sdk;
+package org.zstack.externalStorage.sdk;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

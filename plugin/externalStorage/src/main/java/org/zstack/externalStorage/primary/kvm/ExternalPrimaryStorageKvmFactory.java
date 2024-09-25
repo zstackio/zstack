@@ -37,6 +37,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -212,8 +213,8 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
             List<String> vmInUseVolUuids = SQL.New("select vol.uuid from VolumeVO vol, VmInstanceVO vm" +
                             " where vol.uuid in :volUuids" +
                             " and vol.vmInstanceUuid = vm.uuid" +
-                            " and (vm.state = :vmState or vm.hostUuid = :huuid)", String.class)
-                    .param("vmState", VmInstanceState.Starting)
+                            " and (vm.state in (:vmStates) or vm.hostUuid = :huuid)", String.class)
+                    .param("vmStates", Arrays.asList(VmInstanceState.Starting, VmInstanceState.Migrating))
                     .param("huuid", host.getUuid())
                     .param("volUuids", infos.stream().map(BaseVolumeInfo::getUuid).collect(Collectors.toList()))
                     .list();
