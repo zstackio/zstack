@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostPhysicalCpuVO` (
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkHostPhysicalCpuVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`PciDeviceVO` ADD COLUMN `directState` varchar(32) NOT NULL;
