@@ -18,3 +18,13 @@ BEGIN
 END //
 DELIMITER ;
 CALL UpdateK8sResourceYaml();
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ApplicationDevelopmentServiceVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(255) NULL,
+    `modelServiceGroupUuid` varchar(32) NULL,
+    `modelServiceUuid` varchar(32) NULL,
+    `deploymentStatus` varchar(255) NOT NULL,
+    CONSTRAINT fkApplicationDevelopmentServiceVOModelServiceGroupVO FOREIGN KEY (modelServiceGroupUuid) REFERENCES ModelServiceInstanceGroupVO (uuid) ON DELETE SET NULL,
+  PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
