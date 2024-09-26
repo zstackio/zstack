@@ -76,6 +76,9 @@ public class AddModelServiceAction extends AbstractAction {
     @Param(required = false, validValues = {"Other","Bentoml","HuggingFace"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String framework = "Other";
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List modelUuids;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
