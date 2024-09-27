@@ -597,6 +597,8 @@ public class SourceClassMap {
 			put("org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory", "org.zstack.sdk.CephPrimaryStoragePoolInventory");
 			put("org.zstack.storage.device.fibreChannel.FiberChannelLunInventory", "org.zstack.sdk.FiberChannelLunInventory");
 			put("org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory", "org.zstack.sdk.FiberChannelStorageInventory");
+			put("org.zstack.storage.device.hba.FcHbaDeviceInventory", "org.zstack.sdk.FcHbaDeviceInventory");
+			put("org.zstack.storage.device.hba.HbaDeviceInventory", "org.zstack.sdk.HbaDeviceInventory");
 			put("org.zstack.storage.device.iscsi.IscsiLunInventory", "org.zstack.sdk.IscsiLunInventory");
 			put("org.zstack.storage.device.iscsi.IscsiServerClusterRefInventory", "org.zstack.sdk.IscsiServerClusterRefInventory");
 			put("org.zstack.storage.device.iscsi.IscsiServerInventory", "org.zstack.sdk.IscsiServerInventory");
@@ -915,6 +917,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ExternalServiceCapabilitiesBuilder", "org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder");
 			put("org.zstack.sdk.ExternalServiceInventory", "org.zstack.header.core.external.service.ExternalServiceInventory");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
+			put("org.zstack.sdk.FcHbaDeviceInventory", "org.zstack.storage.device.hba.FcHbaDeviceInventory");
 			put("org.zstack.sdk.FiSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecretResourcePoolInventory");
 			put("org.zstack.sdk.FiSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecurityMachineInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
@@ -940,6 +943,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
 			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
+			put("org.zstack.sdk.HbaDeviceInventory", "org.zstack.storage.device.hba.HbaDeviceInventory");
 			put("org.zstack.sdk.HostConnectedStatus", "org.zstack.zops.HostConnectedStatus");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
