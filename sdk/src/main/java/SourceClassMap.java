@@ -197,9 +197,9 @@ public class SourceClassMap {
 			put("org.zstack.header.flowMeter.FlowCounter", "org.zstack.sdk.FlowCounter");
 			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
 			put("org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory", "org.zstack.sdk.NetworkRouterFlowMeterRefInventory");
-			put("org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices", "org.zstack.sdk.BlockDevices");
-			put("org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices$BlockDevice", "org.zstack.sdk.BlockDevice");
 			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
+			put("org.zstack.header.host.BlockDevices", "org.zstack.sdk.BlockDevices");
+			put("org.zstack.header.host.BlockDevices$BlockDevice", "org.zstack.sdk.BlockDevice");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.host.HostIpmiInventory", "org.zstack.sdk.HostIpmiInventory");
 			put("org.zstack.header.host.HostNUMANode", "org.zstack.sdk.HostNUMANode");
@@ -207,6 +207,7 @@ public class SourceClassMap {
 			put("org.zstack.header.host.HostNetworkInterfaceServiceRefInventory", "org.zstack.sdk.HostNetworkInterfaceServiceRefInventory");
 			put("org.zstack.header.host.HostNetworkInterfaceServiceType", "org.zstack.sdk.HostNetworkInterfaceServiceType");
 			put("org.zstack.header.host.HostPhysicalMemoryInventory", "org.zstack.sdk.HostPhysicalMemoryInventory");
+			put("org.zstack.header.host.Sensor", "org.zstack.sdk.Sensor");
 			put("org.zstack.header.host.ServiceTypeStatisticData", "org.zstack.sdk.ServiceTypeStatisticData");
 			put("org.zstack.header.hybrid.network.eip.HybridEipAddressInventory", "org.zstack.sdk.HybridEipAddressInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipStatus", "org.zstack.sdk.HybridEipStatus");
@@ -507,6 +508,7 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.PciDeviceState", "org.zstack.sdk.PciDeviceState");
 			put("org.zstack.pciDevice.PciDeviceStatus", "org.zstack.sdk.PciDeviceStatus");
 			put("org.zstack.pciDevice.PciDeviceType", "org.zstack.sdk.PciDeviceType");
+			put("org.zstack.pciDevice.gpu.GpuDeviceInventory", "org.zstack.sdk.GpuDeviceInventory");
 			put("org.zstack.pciDevice.specification.mdev.MdevDeviceSpecInventory", "org.zstack.sdk.MdevDeviceSpecInventory");
 			put("org.zstack.pciDevice.specification.mdev.MdevDeviceSpecState", "org.zstack.sdk.MdevDeviceSpecState");
 			put("org.zstack.pciDevice.specification.mdev.PciDeviceMdevSpecRefInventory", "org.zstack.sdk.PciDeviceMdevSpecRefInventory");
@@ -811,8 +813,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BaremetalVlanNicInventory", "org.zstack.header.baremetal.network.BaremetalVlanNicInventory");
 			put("org.zstack.sdk.BatchDeleteVolumeSnapshotStruct", "org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
-			put("org.zstack.sdk.BlockDevice", "org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices$BlockDevice");
-			put("org.zstack.sdk.BlockDevices", "org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply$BlockDevices");
+			put("org.zstack.sdk.BlockDevice", "org.zstack.header.host.BlockDevices$BlockDevice");
+			put("org.zstack.sdk.BlockDevices", "org.zstack.header.host.BlockDevices");
 			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BlockVolumeInventory", "org.zstack.header.volume.block.BlockVolumeInventory");
 			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");
@@ -902,6 +904,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
 			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
+			put("org.zstack.sdk.GpuDeviceInventory", "org.zstack.pciDevice.gpu.GpuDeviceInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
 			put("org.zstack.sdk.GuestToolsStateInventory", "org.zstack.guesttools.GuestToolsStateInventory");
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
@@ -1163,6 +1166,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
 			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.header.securitymachine.SecurityMachineInventory");
+			put("org.zstack.sdk.Sensor", "org.zstack.header.host.Sensor");
 			put("org.zstack.sdk.ServiceTypeStatisticData", "org.zstack.header.host.ServiceTypeStatisticData");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SessionStatus", "org.zstack.header.portMirror.SessionStatus");

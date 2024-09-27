@@ -29,7 +29,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.host.APIGetPhysicalMachineBlockDevicesReply.BlockDevices;
 import org.zstack.header.managementnode.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -121,6 +120,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             handle((APIMountBlockDeviceMsg) msg);
         }  else if (msg instanceof APIGetHostWebSshUrlMsg){
             handle((APIGetHostWebSshUrlMsg) msg);
+        }  else if (msg instanceof APIGetHostBlockDevicesMsg){
+            handle((APIGetHostBlockDevicesMsg) msg);
+        }  else if (msg instanceof APIGetHostSensorsMsg){
+            handle((APIGetHostSensorsMsg) msg);
         } else if (msg instanceof HostMessage) {
             HostMessage hmsg = (HostMessage) msg;
             passThrough(hmsg);
@@ -562,6 +565,54 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         } finally {
             ssh.close();
         }
+    }
+
+    private void handle(final APIGetHostBlockDevicesMsg msg) {
+        APIGetHostBlockDevicesReply reply = new APIGetHostBlockDevicesReply();
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        GetHostBlockDevicesMsg gmsg = new GetHostBlockDevicesMsg();
+        gmsg.setHostUuid(msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                } else {
+                    GetHostBlockDevicesReply gr = r.castReply();
+                    reply.setBlockDevices(gr.getBlockDevices());
+                }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final APIGetHostSensorsMsg msg) {
+        APIGetHostSensorsReply reply = new APIGetHostSensorsReply();
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        GetHostSensorsMsg gmsg = new GetHostSensorsMsg();
+        gmsg.setHostUuid(msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                } else {
+                    GetHostSensorsReply gr = r.castReply();
+                    reply.setSensors(gr.getSensors());
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(CancelHostTasksMsg msg) {

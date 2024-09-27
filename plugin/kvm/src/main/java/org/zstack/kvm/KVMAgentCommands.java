@@ -1,10 +1,13 @@
 package org.zstack.kvm;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.host.BlockDevices;
 import org.zstack.header.host.HostNUMANode;
+import org.zstack.header.host.Sensor;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.*;
@@ -4140,6 +4143,37 @@ public class KVMAgentCommands {
 
     public static class VmFstrimRsp extends AgentResponse {
     }
+
+    public static class GetBlockDevicesCmd extends AgentCommand {
+    }
+
+    public static class GetBlockDevicesResponse extends AgentResponse {
+        private List<BlockDevices.BlockDevice> blockDevices;
+
+        public List<BlockDevices.BlockDevice> getBlockDevices() {
+            return blockDevices;
+        }
+
+        public void setBlockDevices(List<BlockDevices.BlockDevice> blockDevices) {
+            this.blockDevices = blockDevices;
+        }
+    }
+
+    public static class GetSensorsCmd extends AgentCommand {
+    }
+
+    public static class GetSensorsResponse extends AgentResponse {
+        private List<Sensor> sensors;
+
+        public List<Sensor> getSensors() {
+            return sensors;
+        }
+
+        public void setSensors(List<Sensor> sensors) {
+            this.sensors = sensors;
+        }
+    }
+
     public static class TakeVmConsoleScreenshotCmd extends AgentCommand {
         private String vmUuid;
 
@@ -4188,4 +4222,101 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class HardwareMonitorCmd extends KVMAgentCommands.AgentCommand {
+    }
+
+    public static class HostPhysicalCpuStatusAlarmEventCmd {
+        public String host;
+        public String cpuName;
+        public String status;
+    }
+
+    public static class HostPhysicalMemoryStatusAlarmEventCmd {
+        public String host;
+        public String locator;
+        public String status;
+    }
+
+    public static class HostPhysicalFanStatusAlarmEventCmd {
+        public String host;
+        public String fan_name;
+        public String status;
+    }
+
+    public static class HostPhysicalPowerSupplyStatusAlarmEventCmd {
+        public String host;
+        public String name;
+        public String status;
+    }
+
+    public static class HostPhysicalDiskStatusAlarmEventCmd {
+        public String host;
+        public String slot_number;
+        public String enclosure_device_id;
+        public String drive_state;
+        public String serial_number;
+    }
+
+    public static class HostPhysicalDiskInsertAlarmEventCmd {
+        public String host;
+        public String slot_number;
+        public String enclosure_device_id;
+        public String serial_number;
+        public String name;
+    }
+
+    public static class HostPhysicalDiskRemoveAlarmEventCmd {
+        public String host;
+        public String slot_number;
+        public String enclosure_device_id;
+        public String serial_number;
+        public String name;
+    }
+
+    public static class PhysicalMemoryEccErrorAlarmEventCmd {
+        public String host;
+        public String detail;
+    }
+
+    public static class PhysicalGpuStatusAlarmEventCmd {
+        public String host;
+        public String pcideviceAddress;
+        public String status;
+    }
+
+    public static class PhysicalGpuRemoveAlarmEventCmd {
+        public String host;
+        public String pcideviceAddress;
+    }
+
+    public static class HostPhysicalDeviceStatusAlarmEventCmd {
+        private String host;
+        private String type;
+        private Map<String, Object> additionalProperties = new HashMap<>();
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public Map<String, Object> getAdditionalProperties() {
+            return additionalProperties;
+        }
+
+        @JsonAnySetter
+        public void setAdditionalProperties(Map<String, Object> additionalProperties) {
+            this.additionalProperties = additionalProperties;
+        }
+    }
 }

@@ -21,6 +21,9 @@ public class BlockDevicesParser {
         private String mountPoint;
         private List<BlockDevice> children;
         private String partitionTable;
+        private String fstype;
+        private String serial;
+        private String model;
 
         BlockDevice() {
         }
@@ -88,6 +91,30 @@ public class BlockDevicesParser {
         public void setPartitionTable(String partitionTable) {
             this.partitionTable = partitionTable;
         }
+
+        public String getFstype() {
+            return fstype;
+        }
+
+        public void setFstype(String fstype) {
+            this.fstype = fstype;
+        }
+
+        public String getSerial() {
+            return serial;
+        }
+
+        public void setSerial(String serial) {
+            this.serial = serial;
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public void setModel(String model) {
+            this.model = model;
+        }
     }
 
     public static  String blockDevicesExample = "{\n" +
@@ -132,6 +159,15 @@ public class BlockDevicesParser {
         });
         allBlockDevices.forEach(blockDevice -> blockDevice.setPartitionTable(blockDevicePartitionTable.get(blockDevice.getName())));
 
+        return allBlockDevices;
+    }
+
+    public static List<BlockDevice> parse(List<String> blockDevices) {
+        List<BlockDevice> allBlockDevices = new ArrayList<>();
+        blockDevices.forEach(blockDevice -> {
+            LinkedHashMap blockDeviceMap = JSONObjectUtil.toObject(blockDevice, LinkedHashMap.class);
+            allBlockDevices.add(JSONObjectUtil.toObject(JSONObjectUtil.toJsonString(blockDeviceMap), BlockDevice.class));
+        });
         return allBlockDevices;
     }
 

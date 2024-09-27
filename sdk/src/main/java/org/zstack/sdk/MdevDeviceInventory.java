@@ -119,4 +119,12 @@ public class MdevDeviceInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String vendor;
+    public void setVendor(java.lang.String vendor) {
+        this.vendor = vendor;
+    }
+    public java.lang.String getVendor() {
+        return this.vendor;
+    }
+
 }

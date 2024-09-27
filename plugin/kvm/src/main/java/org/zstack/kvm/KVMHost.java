@@ -218,6 +218,8 @@ public class KVMHost extends HostBase implements Host {
     private String blockCommitVolumePath;
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
+    private String getBlockDevicesPath;
+    private String getSensorsPath;
 
     public KVMHost(KVMHostVO self, KVMHostContext context) {
         super(self);
@@ -440,6 +442,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH);
         blockCommitVolumePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_GET_BLOCK_DEVICES_PATH);
+        getBlockDevicesPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_GET_SENSORS_PATH);
+        getSensorsPath = ub.build().toString();
     }
 
     static {
@@ -680,6 +690,10 @@ public class KVMHost extends HostBase implements Host {
             handle((TakeVmConsoleScreenshotMsg) msg);
         } else if (msg instanceof GetVmUptimeMsg) {
             handle((GetVmUptimeMsg) msg);
+        } else if (msg instanceof GetHostBlockDevicesMsg) {
+            handle((GetHostBlockDevicesMsg) msg);
+        } else if (msg instanceof GetHostSensorsMsg) {
+            handle((GetHostSensorsMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -6503,6 +6517,78 @@ public class KVMHost extends HostBase implements Host {
                 if (!rsp.isSuccess()) {
                     reply.setError(operr("vm[%s] failed to fstrim, because:%s", msg.getVmUuid(), rsp.getError()));
                 }
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(GetHostBlockDevicesMsg msg) {
+        inQueue().name(String.format("get-block-device-on-host-%s", self.getUuid())).asyncBackup(msg)
+                .run(chain -> getBlockDevices(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void getBlockDevices(GetHostBlockDevicesMsg msg, NoErrorCompletion completion) {
+        GetHostBlockDevicesReply reply = new GetHostBlockDevicesReply();
+        GetBlockDevicesCmd cmd = new GetBlockDevicesCmd();
+        new Http<>(getBlockDevicesPath, cmd, GetBlockDevicesResponse.class).call(new ReturnValueCompletion<GetBlockDevicesResponse>(msg) {
+            @Override
+            public void success(GetBlockDevicesResponse rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to get block devices, because:%s", rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+                reply.setBlockDevices(rsp.getBlockDevices());
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(GetHostSensorsMsg msg) {
+        inQueue().name(String.format("get-block-device-on-host-%s", self.getUuid())).asyncBackup(msg)
+                .run(chain -> getSensors(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void getSensors(GetHostSensorsMsg msg, NoErrorCompletion completion) {
+        GetHostSensorsReply reply = new GetHostSensorsReply();
+        GetSensorsCmd cmd = new GetSensorsCmd();
+        new Http<>(getSensorsPath, cmd, GetSensorsResponse.class).call(new ReturnValueCompletion<GetSensorsResponse>(msg) {
+            @Override
+            public void success(GetSensorsResponse rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to get block devices, because:%s", rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+                reply.setSensors(rsp.getSensors());
                 bus.reply(msg, reply);
                 completion.done();
             }

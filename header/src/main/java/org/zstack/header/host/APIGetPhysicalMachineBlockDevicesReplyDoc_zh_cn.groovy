@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-
+import org.zstack.header.host.BlockDevices
 import org.zstack.header.errorcode.ErrorCode
 
 doc {
@@ -13,7 +13,7 @@ doc {
 		desc "物理机磁盘信息"
 		type "BlockDevices"
 		since "zsv 4.3.0"
-		clz BlockDevicesParser.class
+		clz BlockDevices.class
 	}
 	field {
 		name "success"
