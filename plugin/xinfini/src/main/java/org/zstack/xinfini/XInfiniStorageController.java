@@ -699,11 +699,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     @Override
     public void deleteVolumeAndSnapshot(String installPath, Completion comp) {
         int volId = getVolIdFromPath(installPath);
-        for (VolumeSnapshotModule mod : apiHelper.queryVolumeSnapshotByVolumeId(volId)) {
-            apiHelper.deleteVolumeSnapshot(mod.getSpec().getId());
-        }
-
-        apiHelper.deleteVolume(volId, true);
+        apiHelper.deleteVolumeAndSnapshot(volId);
         comp.success();
     }
 
