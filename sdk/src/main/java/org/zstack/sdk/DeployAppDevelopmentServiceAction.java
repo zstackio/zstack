@@ -136,7 +136,7 @@ public class DeployAppDevelopmentServiceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ai/model-services/app/{uuid}";
+        info.path = "/ai/model-services/app/";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "deployAppDevelopmentService";
