@@ -4,10 +4,13 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.db.Q;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -393,6 +396,13 @@ public class XInfiniApiHelper {
         retryUtilResourceDeleted(gReq, GetVolumeResponse.class);
     }
 
+    public void deleteVolumeAndSnapshot(int volId) {
+        for (VolumeSnapshotModule mod : queryVolumeSnapshotByVolumeId(volId)) {
+            deleteVolumeSnapshot(mod.getSpec().getId());
+        }
+        deleteVolume(volId, true);
+    }
+
     public void deleteVolumeSnapshot(int snapShotId) {
         // check snapshot cloned volume
         QueryVolumeRequest vReq = new QueryVolumeRequest();
@@ -400,8 +410,24 @@ public class XInfiniApiHelper {
         QueryVolumeResponse vRsp = queryErrorOut(vReq, QueryVolumeResponse.class);
         if (vRsp.getMetadata().getPagination().getCount() > 0) {
             List<String> volNames = vRsp.getItems().stream().map(VolumeModule::getSpec).map(VolumeModule.VolumeSpec::getName).collect(Collectors.toList());
+            List<String> installPaths = vRsp.getItems().stream()
+                    .map(v -> XInfiniPathHelper.buildXInfiniPath(v.getSpec().getPoolId(), v.getSpec().getId()))
+                    .collect(Collectors.toList());
 
-            throw new OperationFailureException(operr("snapshot %s has %d cloned volumes, volumes names: %s", snapShotId, vRsp.getMetadata().getPagination().getCount(), volNames));
+            logger.info(String.format("find cloned volumes paths: %s", installPaths));
+
+            boolean exist = Q.New(VolumeVO.class)
+                    .in(VolumeVO_.installPath, installPaths)
+                    .isExists();
+
+            if (exist) {
+                throw new OperationFailureException(operr("snapshot %s has %d cloned volumes, volumes names: %s", snapShotId, vRsp.getMetadata().getPagination().getCount(), volNames));
+            }
+            logger.info("all cloned volumes not exist in database, try to delete them");
+            // try to delete cloned volumes if not exist in db
+            for (VolumeModule v : vRsp.getItems()) {
+                deleteVolumeAndSnapshot(v.getSpec().getId());
+            }
         }
 
         DeleteVolumeSnapshotRequest req = new DeleteVolumeSnapshotRequest();
