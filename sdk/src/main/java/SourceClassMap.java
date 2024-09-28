@@ -498,7 +498,6 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.HostIommuStateType", "org.zstack.sdk.HostIommuStateType");
 			put("org.zstack.pciDevice.HostIommuStatusType", "org.zstack.sdk.HostIommuStatusType");
 			put("org.zstack.pciDevice.PciDeviceChooser", "org.zstack.sdk.PciDeviceChooser");
-			put("org.zstack.pciDevice.PciDeviceDirectState", "org.zstack.sdk.PciDeviceDirectState");
 			put("org.zstack.pciDevice.PciDeviceInventory", "org.zstack.sdk.PciDeviceInventory");
 			put("org.zstack.pciDevice.PciDeviceMetaData", "org.zstack.sdk.PciDeviceMetaData");
 			put("org.zstack.pciDevice.PciDeviceMetaDataEntry", "org.zstack.sdk.PciDeviceMetaDataEntry");
@@ -506,6 +505,7 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.PciDeviceOfferingInstanceOfferingRefInventory", "org.zstack.sdk.PciDeviceOfferingInstanceOfferingRefInventory");
 			put("org.zstack.pciDevice.PciDeviceOfferingInventory", "org.zstack.sdk.PciDeviceOfferingInventory");
 			put("org.zstack.pciDevice.PciDeviceOfferingType", "org.zstack.sdk.PciDeviceOfferingType");
+			put("org.zstack.pciDevice.PciDevicePassThroughState", "org.zstack.sdk.PciDevicePassThroughState");
 			put("org.zstack.pciDevice.PciDevicePciDeviceOfferingRefInventory", "org.zstack.sdk.PciDevicePciDeviceOfferingRefInventory");
 			put("org.zstack.pciDevice.PciDeviceState", "org.zstack.sdk.PciDeviceState");
 			put("org.zstack.pciDevice.PciDeviceStatus", "org.zstack.sdk.PciDeviceStatus");
@@ -1064,7 +1064,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.Pagination", "org.zstack.billing.Pagination");
 			put("org.zstack.sdk.PciDeviceBillingInventory", "org.zstack.billing.generator.pcidevice.PciDeviceBillingInventory");
 			put("org.zstack.sdk.PciDeviceChooser", "org.zstack.pciDevice.PciDeviceChooser");
-			put("org.zstack.sdk.PciDeviceDirectState", "org.zstack.pciDevice.PciDeviceDirectState");
 			put("org.zstack.sdk.PciDeviceInventory", "org.zstack.pciDevice.PciDeviceInventory");
 			put("org.zstack.sdk.PciDeviceMdevSpecRefInventory", "org.zstack.pciDevice.specification.mdev.PciDeviceMdevSpecRefInventory");
 			put("org.zstack.sdk.PciDeviceMetaData", "org.zstack.pciDevice.PciDeviceMetaData");
@@ -1073,6 +1072,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceOfferingInstanceOfferingRefInventory", "org.zstack.pciDevice.PciDeviceOfferingInstanceOfferingRefInventory");
 			put("org.zstack.sdk.PciDeviceOfferingInventory", "org.zstack.pciDevice.PciDeviceOfferingInventory");
 			put("org.zstack.sdk.PciDeviceOfferingType", "org.zstack.pciDevice.PciDeviceOfferingType");
+			put("org.zstack.sdk.PciDevicePassThroughState", "org.zstack.pciDevice.PciDevicePassThroughState");
 			put("org.zstack.sdk.PciDevicePciDeviceOfferingRefInventory", "org.zstack.pciDevice.PciDevicePciDeviceOfferingRefInventory");
 			put("org.zstack.sdk.PciDeviceSpecInventory", "org.zstack.pciDevice.specification.pci.PciDeviceSpecInventory");
 			put("org.zstack.sdk.PciDeviceSpecState", "org.zstack.pciDevice.specification.pci.PciDeviceSpecState");
