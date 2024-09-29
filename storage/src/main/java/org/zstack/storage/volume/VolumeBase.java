@@ -1412,6 +1412,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 .set(VolumeVO_.rootImageUuid, volume.getRootImageUuid())
                                 .set(VolumeVO_.primaryStorageUuid, volume.getPrimaryStorageUuid())
                                 .set(VolumeVO_.actualSize, volume.getActualSize())
+                                .set(VolumeVO_.protocol, volume.getProtocol())
                                 .update();
 
                         sql(VolumeVO.class)
@@ -1421,6 +1422,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 .set(VolumeVO_.rootImageUuid, transientVolume.getRootImageUuid())
                                 .set(VolumeVO_.primaryStorageUuid, transientVolume.getPrimaryStorageUuid())
                                 .set(VolumeVO_.actualSize, transientVolume.getActualSize())
+                                .set(VolumeVO_.protocol, transientVolume.getProtocol())
                                 .update();
                         flush();
                     }
