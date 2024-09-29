@@ -28,10 +28,6 @@ public class AccountResourceRefVO {
     private String accountUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
-    private String ownerAccountUuid;
-
-    @Column
     @Index
     private String resourceUuid;
 
@@ -41,13 +37,14 @@ public class AccountResourceRefVO {
     private String resourceType;
 
     @Column
-    private String concreteResourceType;
+    private String accountPermissionFrom;
 
     @Column
-    private int permission;
+    private String resourcePermissionFrom;
 
     @Column
-    private boolean isShared;
+    @Enumerated(EnumType.STRING)
+    private AccessLevel type;
 
     @Column
     private Timestamp createDate;
@@ -58,14 +55,6 @@ public class AccountResourceRefVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
-    }
-
-    public String getConcreteResourceType() {
-        return concreteResourceType;
-    }
-
-    public void setConcreteResourceType(String concreteResourceType) {
-        this.concreteResourceType = concreteResourceType;
     }
 
     public long getId() {
@@ -100,28 +89,28 @@ public class AccountResourceRefVO {
         this.resourceType = resourceType;
     }
 
-    public int getPermission() {
-        return permission;
+    public String getAccountPermissionFrom() {
+        return accountPermissionFrom;
     }
 
-    public void setPermission(int permission) {
-        this.permission = permission;
+    public void setAccountPermissionFrom(String accountPermissionFrom) {
+        this.accountPermissionFrom = accountPermissionFrom;
     }
 
-    public boolean isShared() {
-        return isShared;
+    public String getResourcePermissionFrom() {
+        return resourcePermissionFrom;
     }
 
-    public void setShared(boolean isShared) {
-        this.isShared = isShared;
+    public void setResourcePermissionFrom(String resourcePermissionFrom) {
+        this.resourcePermissionFrom = resourcePermissionFrom;
     }
 
-    public String getOwnerAccountUuid() {
-        return ownerAccountUuid;
+    public AccessLevel getType() {
+        return type;
     }
 
-    public void setOwnerAccountUuid(String ownerAccountUuid) {
-        this.ownerAccountUuid = ownerAccountUuid;
+    public void setType(AccessLevel type) {
+        this.type = type;
     }
 
     public Timestamp getCreateDate() {
@@ -140,15 +129,12 @@ public class AccountResourceRefVO {
         this.lastOpDate = lastOpDate;
     }
 
-    public static AccountResourceRefVO New(String accountUuid, String resourceUuid, Class<?> baseType, Class concreteType) {
+    public static AccountResourceRefVO forOwner(String accountUuid, String resourceUuid, Class<?> baseType) {
         AccountResourceRefVO ref = new AccountResourceRefVO();
         ref.setAccountUuid(accountUuid);
         ref.setResourceType(baseType.getSimpleName());
-        ref.setConcreteResourceType(concreteType.getName());
         ref.setResourceUuid(resourceUuid);
-        ref.setPermission(AccountConstant.RESOURCE_PERMISSION_WRITE);
-        ref.setOwnerAccountUuid(accountUuid);
-        ref.setShared(false);
+        ref.setType(AccessLevel.Own);
         return ref;
     }
 }

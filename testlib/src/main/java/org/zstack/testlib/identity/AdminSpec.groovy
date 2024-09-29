@@ -17,14 +17,6 @@ class AdminSpec extends Spec {
         addChild(spec)
     }
 
-    void policy(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PolicySpec.class) Closure c) {
-        def spec = new PolicySpec(envSpec)
-        c.delegate = spec
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c()
-        addChild(spec)
-    }
-
     @Override
     SpecID create(String uuid, String sessionId) {
         return null

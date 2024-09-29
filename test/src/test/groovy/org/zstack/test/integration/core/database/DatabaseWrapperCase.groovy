@@ -9,9 +9,6 @@ import org.zstack.header.configuration.InstanceOfferingVO
 import org.zstack.header.configuration.InstanceOfferingVO_
 import org.zstack.header.identity.AccountConstant
 import org.zstack.core.db.DBSourceUtils
-import org.zstack.header.identity.SharedResourceVO
-import org.zstack.header.identity.role.RolePolicyStatementVO
-import org.zstack.header.identity.role.RoleVO
 import org.zstack.header.vo.ResourceVO
 import org.zstack.header.vo.ResourceVO_
 import org.zstack.testlib.SubCase

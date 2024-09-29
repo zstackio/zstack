@@ -3,12 +3,12 @@ package org.zstack.test.integration.storage.primary.local.datavolume
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
+import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImageVO
 import org.zstack.header.storage.backup.BackupStorageStateEvent
-import org.zstack.header.storage.primary.AllocatePrimaryStorageMsg
 import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg
 import org.zstack.header.storage.primary.DownloadDataVolumeToPrimaryStorageMsg
 import org.zstack.header.storage.primary.GetInstallPathForDataVolumeDownloadMsg
@@ -149,6 +149,7 @@ class CreateDataVolumeTemplateCase extends SubCase {
         def count = Q.New(AccountResourceRefVO.class)
                 .eq(AccountResourceRefVO_.resourceType, ImageVO.class.getSimpleName())
                 .eq(AccountResourceRefVO_.accountUuid, account.uuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                 .count()
 
         updateQuota {

@@ -21,6 +21,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
@@ -234,26 +235,9 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
             return null;
         }
 
-        final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-            @Override
-            public String call(AccountInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
-        List<CertificateVO> vos = new Callable<List<CertificateVO>>() {
-            @Override
-            @Transactional(readOnly = true)
-            public List<CertificateVO> call() {
-                String sql = "select d from CertificateVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                        " r.resourceType = :rtype and r.accountUuid in (:auuids)";
-                TypedQuery<CertificateVO> q = dbf.getEntityManager().createQuery(sql, CertificateVO.class);
-                q.setParameter("auuids", auuids);
-                q.setParameter("rtype", CertificateVO.class.getSimpleName());
-                return q.getResultList();
-            }
-        }.call();
-
+        List<CertificateVO> vos = ResourceHelper.findOwnResources(CertificateVO.class, auuids);
         if (!vos.isEmpty()) {
             return CertificateInventory.valueOf(vos);
         }
@@ -265,26 +249,9 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
         if (LoadBalancerVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
-            List<LoadBalancerVO> vos = new Callable<List<LoadBalancerVO>>() {
-                @Override
-                @Transactional(readOnly = true)
-                public List<LoadBalancerVO> call() {
-                    String sql = "select d from LoadBalancerVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
-                    TypedQuery<LoadBalancerVO> q = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);
-                    q.setParameter("auuids", auuids);
-                    q.setParameter("rtype", LoadBalancerVO.class.getSimpleName());
-                    return q.getResultList();
-                }
-            }.call();
-
+            List<LoadBalancerVO> vos = ResourceHelper.findOwnResources(LoadBalancerVO.class, auuids);
             if (!vos.isEmpty()) {
                 return LoadBalancerInventory.valueOf(vos);
             }

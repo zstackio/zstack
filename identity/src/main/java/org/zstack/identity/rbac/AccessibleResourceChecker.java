@@ -1,10 +1,15 @@
 package org.zstack.identity.rbac;
 
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccessLevel;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.rbac.RBAC;
+import org.zstack.header.message.APIResourceScope;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
+import org.zstack.identity.ResourceHelper;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
@@ -23,7 +28,8 @@ import static org.zstack.utils.CollectionUtils.*;
  */
 public class AccessibleResourceChecker {
     public final String accountUuid;
-    private boolean readOnly = false;
+    private boolean allowGlobalReadableResource = false;
+    private APIResourceScope scope = APIResourceScope.AllowedSharing;
     private Class<?> resourceType;
 
     private AccessibleResourceChecker(String accountUuid) {
@@ -34,8 +40,13 @@ public class AccessibleResourceChecker {
         return new AccessibleResourceChecker(accountUuid);
     }
 
-    public AccessibleResourceChecker checkReadOnlyPermission() {
-        this.readOnly = true;
+    public AccessibleResourceChecker allowGlobalReadableResource() {
+        this.allowGlobalReadableResource = true;
+        return this;
+    }
+
+    public AccessibleResourceChecker withScope(APIResourceScope scope) {
+        this.scope = scope;
         return this;
     }
 
@@ -53,61 +64,70 @@ public class AccessibleResourceChecker {
             return Collections.emptyList();
         }
 
-        if (readOnly) {
-            return findOutAllInaccessibleResourcesForRead(resourceUuids);
-        } else {
-            return findOutAllInaccessibleResourcesForWrite(resourceUuids);
+        if (scope == APIResourceScope.AllowedAll) {
+            return Collections.emptyList();
         }
-    }
 
-    private List<String> findOutAllInaccessibleResourcesForRead(List<String> resourceUuids) {
+        if (scope == APIResourceScope.MustOwner) {
+            return findInaccessibleResourcesWithMustOwnerScope(resourceUuids);
+        }
+
+        if (!allowGlobalReadableResource) {
+            return findInaccessibleResourcesWithAllowedSharingScope(resourceUuids);
+        }
+
         if (resourceType != null) {
             if (RBAC.isResourceGlobalReadable(resourceType)) {
                 // all resources are accessible.
                 return Collections.emptyList();
             } else {
-                return findOutAllInaccessibleResourcesForWrite(resourceUuids);
+                return findInaccessibleResourcesWithAllowedSharingScope(resourceUuids);
             }
         }
 
         final List<Tuple> tuples = Q.New(ResourceVO.class)
-                .select(ResourceVO_.uuid, ResourceVO_.resourceType)
+                .select(ResourceVO_.uuid, ResourceVO_.concreteResourceType)
                 .in(ResourceVO_.uuid, resourceUuids)
                 .listTuple();
         Set<String> types = transformToSet(tuples, tuple -> tuple.get(1, String.class));
         List<String> inaccessible = new ArrayList<>();
 
         for (String type : types) {
-            if (RBAC.isResourceGlobalReadable(type)) {
+            if (RBAC.isResourceGlobalReadable(fromConcreteResourceType(type))) {
                 continue;
             }
 
             final List<String> filterResources = transform(
                     filter(tuples, tuple -> tuple.get(1, String.class).equals(type)),
                             tuple -> tuple.get(0, String.class));
-            inaccessible.addAll(findOutAllInaccessibleResourcesForWrite(filterResources));
+            inaccessible.addAll(findInaccessibleResourcesWithAllowedSharingScope(filterResources));
         }
 
         return inaccessible;
     }
 
-    private List<String> findOutAllInaccessibleResourcesForWrite(List<String> resourceUuids) {
-        return new SQLBatchWithReturn<List<String>>() {
-            @Override
-            protected List<String> scripts() {
-                String text = "select ref.resourceUuid from AccountResourceRefVO ref where" +
-                        " ref.ownerAccountUuid = :accountUuid" +
-                        " or ref.resourceUuid in" +
-                        " (select sh.resourceUuid from SharedResourceVO sh where sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1)" +
-                        " and ref.resourceUuid in (:uuids)";
+    private List<String> findInaccessibleResourcesWithAllowedSharingScope(List<String> resourceUuids) {
+        List<String> auuids = ResourceHelper.filterAccessibleResources(resourceUuids, accountUuid);
+        return resourceUuids.stream().filter(uuid -> !auuids.contains(uuid)).collect(Collectors.toList());
+    }
 
-                List<String> auuids = sql(text, String.class)
-                        .param("accountUuid", accountUuid)
-                        .param("uuids", resourceUuids)
-                        .list();
+    private List<String> findInaccessibleResourcesWithMustOwnerScope(List<String> resourceUuids) {
+        final List<String> ownResources = Q.New(AccountResourceRefVO.class)
+                .select(AccountResourceRefVO_.resourceUuid)
+                .eq(AccountResourceRefVO_.accountUuid, accountUuid)
+                .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .listValues();
+        final ArrayList<String> results = new ArrayList<>(resourceUuids);
+        results.removeAll(ownResources);
+        return results;
+    }
 
-                return resourceUuids.stream().filter(uuid -> !auuids.contains(uuid)).collect(Collectors.toList());
-            }
-        }.execute();
+    private static Class<?> fromConcreteResourceType(String type) {
+        try {
+            return Class.forName(type);
+        } catch (ClassNotFoundException e) {
+            throw new CloudRuntimeException(String.format("ResourceVO.concreteResourceType[%s] is invalid", type), e);
+        }
     }
 }

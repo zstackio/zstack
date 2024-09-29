@@ -1,7 +1,6 @@
 package org.zstack.acl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
@@ -16,15 +15,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 public class AccessControlListCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(AccessControlListCascadeExtension.class);
@@ -114,20 +111,7 @@ public class AccessControlListCascadeExtension extends AbstractAsyncCascadeExten
             final List<AccountInventory> parentIssuerContext = action.getParentIssuerContext();
             final List<String> auuids = CollectionUtils.transformAndRemoveNull(parentIssuerContext, AccountInventory::getUuid);
 
-            List<AccessControlListVO> vos = new Callable<List<AccessControlListVO>>() {
-                @Override
-                @Transactional(readOnly = true)
-                public List<AccessControlListVO> call() {
-                    String sql = "select d from AccessControlListVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
-
-                    TypedQuery<AccessControlListVO> q = dbf.getEntityManager().createQuery(sql, AccessControlListVO.class);
-                    q.setParameter("auuids", auuids);
-                    q.setParameter("rtype", AccessControlListVO.class.getSimpleName());
-                    return q.getResultList();
-                }
-            }.call();
-
+            List<AccessControlListVO> vos = ResourceHelper.findOwnResources(AccessControlListVO.class, auuids);
             if (!vos.isEmpty()) {
                 return AccessControlListInventory.valueOf(vos);
             }

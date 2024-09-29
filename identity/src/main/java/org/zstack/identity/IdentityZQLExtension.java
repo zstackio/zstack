@@ -1,7 +1,6 @@
 package org.zstack.identity;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.Platform;
 import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
@@ -83,9 +82,7 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
 
     protected String getAccountResourceSql(String inventoryName, String primaryKey, String accountStr) {
         return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
-                        "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
-                        " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
-                        " sharedresourcevo.receiverAccountUuid in (%s) OR sharedresourcevo.toPublic = 1))))",
-                inventoryName, primaryKey, accountStr, accountStr);
+                        " accountresourcerefvo.accountUuid in (%s) or accountresourcerefvo.type = 'SharePublic'))",
+                inventoryName, primaryKey, accountStr);
     }
 }

@@ -24,7 +24,6 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -43,22 +42,16 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.network.service.vip.VipConstant;
-import org.zstack.network.service.vip.VipDeletionMsg;
-import org.zstack.network.service.vip.VipInventory;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -805,18 +798,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             final List<AccountInventory> parentIssuerContext = action.getParentIssuerContext();
             final List<String> auuids = CollectionUtils.transformAndRemoveNull(parentIssuerContext, AccountInventory::getUuid);
 
-            List<ApplianceVmVO> vos = new Callable<List<ApplianceVmVO>>() {
-                @Override
-                @Transactional(readOnly = true)
-                public List<ApplianceVmVO> call() {
-                    String sql = "select d from ApplianceVmVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
-                    TypedQuery<ApplianceVmVO> q = dbf.getEntityManager().createQuery(sql, ApplianceVmVO.class);
-                    q.setParameter("auuids", auuids);
-                    q.setParameter("rtype", "VpcRouterVmVO");
-                    return q.getResultList();
-                }
-            }.call();
+            List<ApplianceVmVO> vos = ResourceHelper.findOwnResources(ApplianceVmVO.class, auuids);
+            vos.removeIf(vo -> !Objects.equals(vo.getResourceType(), "VpcRouterVmVO"));
 
             if (!vos.isEmpty()) {
                 ret = ApplianceVmInventory.valueOf1(vos);

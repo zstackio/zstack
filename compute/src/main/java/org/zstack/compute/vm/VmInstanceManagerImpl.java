@@ -2747,9 +2747,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void validateAPIChangeResourceOwnerMsg(APIChangeResourceOwnerMsg msg) {
-        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-        q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
-        AccountResourceRefVO ref = q.find();
+        AccountResourceRefVO ref = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, msg.getResourceUuid())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .find();
 
         if (ref == null || !VolumeVO.class.getSimpleName().equals(ref.getResourceType())) {
             return;

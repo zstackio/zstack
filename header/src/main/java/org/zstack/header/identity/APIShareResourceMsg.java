@@ -21,13 +21,14 @@ import static org.zstack.utils.CollectionDSL.list;
         isAction = true
 )
 public class APIShareResourceMsg extends APIMessage implements AccountMessage {
-    @APIParam(resourceType = ResourceVO.class, nonempty = true, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = ResourceVO.class, nonempty = true, scope = APIParam.SCOPE_MUST_OWNER)
     private List<String> resourceUuids;
     @APIParam(resourceType = AccountVO.class, required = false)
     private List<String> accountUuids;
     @APIParam(required = false)
     private boolean toPublic;
     @APIParam(required = false, validEnums = {ShareResourcePermission.class})
+    @Deprecated
     private String permission;
 
     public List<String> getResourceUuids() {
@@ -54,10 +55,12 @@ public class APIShareResourceMsg extends APIMessage implements AccountMessage {
         this.toPublic = toPublic;
     }
 
+    @Deprecated
     public String getPermission() {
         return permission;
     }
 
+    @Deprecated
     public void setPermission(String permission) {
         this.permission = permission;
     }

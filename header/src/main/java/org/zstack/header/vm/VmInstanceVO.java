@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
                 @EntityGraph.Neighbour(type = InstanceOfferingVO.class, myField = "instanceOfferingUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = VolumeVO.class, myField = "rootVolumeUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = VmNicVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
+                @EntityGraph.Neighbour(type = VmCdRomVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
         }
 )
 public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInventory {

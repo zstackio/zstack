@@ -19,13 +19,12 @@ public class RBACInfo implements RBACDescription {
                         APIShareResourceMsg.class,
                         APIRevokeResourceSharingMsg.class,
                         APIUpdateQuotaMsg.class,
-                        APIQuerySharedResourceMsg.class,
                         APIChangeResourceOwnerMsg.class,
                         APIAttachRoleToAccountMsg.class,
                         APIDetachRoleFromAccountMsg.class,
                         APICheckResourcePermissionMsg.class
                 )
-                .targetResources(AccountVO.class, PolicyVO.class, RoleVO.class)
+                .targetResources(AccountVO.class, RoleVO.class)
                 .communityAvailable()
                 .zsvBasicAvailable()
                 .zsvProAvailable()

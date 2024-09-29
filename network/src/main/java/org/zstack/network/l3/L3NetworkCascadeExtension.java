@@ -1,7 +1,6 @@
 package org.zstack.network.l3;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
@@ -17,16 +16,14 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.inerr;
 /**
@@ -146,12 +143,7 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     private List<L3NetworkInventory> l3NetworkFromAction(CascadeAction action) {
         List<L3NetworkInventory> ret = null;
         if (L2NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> l2uuids = CollectionUtils.transformToList((List<L2NetworkInventory>)action.getParentIssuerContext(), new Function<String, L2NetworkInventory>() {
-                @Override
-                public String call(L2NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> l2uuids = CollectionUtils.transform(action.getParentIssuerContext(), L2NetworkInventory::getUuid);
 
             SimpleQuery<L3NetworkVO> q = dbf.createQuery(L3NetworkVO.class);
             q.add(L3NetworkVO_.l2NetworkUuid, SimpleQuery.Op.IN, l2uuids);
@@ -162,26 +154,9 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (NAME.equals(action.getParentIssuer())) {
             ret = action.getParentIssuerContext();
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
-            List<L3NetworkVO> l3vos = new Callable<List<L3NetworkVO>>() {
-                @Override
-                @Transactional(readOnly = true)
-                public List<L3NetworkVO> call() {
-                    String sql = "select d from L3NetworkVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
-                    TypedQuery<L3NetworkVO> q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
-                    q.setParameter("auuids", auuids);
-                    q.setParameter("rtype", L3NetworkVO.class.getSimpleName());
-                    return q.getResultList();
-                }
-            }.call();
-
+            List<L3NetworkVO> l3vos = ResourceHelper.findOwnResources(L3NetworkVO.class, auuids);
             if (!l3vos.isEmpty()) {
                 ret = L3NetworkInventory.valueOf(l3vos);
             }

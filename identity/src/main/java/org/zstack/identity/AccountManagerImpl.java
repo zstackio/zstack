@@ -49,7 +49,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -58,6 +57,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.header.identity.AccountConstant.ACCOUNT_REST_AUTHENTICATION_TYPE;
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.isEmpty;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -108,10 +108,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }.execute();
     }
-    static class AccountCheckField {
-        Field field;
-        APIParam param;
-    }
 
     private Future<Void> expiredSessionCollector;
 
@@ -153,10 +149,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Override
     @Transactional
     public AccountResourceRefInventory changeResourceOwner(String resourceUuid, String newOwnerUuid) {
-        String sql = "select ref from AccountResourceRefVO ref where ref.resourceUuid = :resUuid";
-        TypedQuery<AccountResourceRefVO> q = dbf.getEntityManager().createQuery(sql, AccountResourceRefVO.class);
-        q.setParameter("resUuid", resourceUuid);
-        List<AccountResourceRefVO> refs = q.getResultList();
+        List<AccountResourceRefVO> refs = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, resourceUuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .list();
         if (refs.isEmpty()) {
             throw new OperationFailureException(argerr("cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
                             resourceUuid));
@@ -170,7 +166,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         ref.setAccountUuid(newOwnerUuid);
-        ref.setOwnerAccountUuid(newOwnerUuid);
         ref = dbf.getEntityManager().merge(ref);
 
         CollectionUtils.safeForEach(
@@ -291,10 +286,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     return;
                 }
                 // check if change resource owner to self
-                SimpleQuery<AccountResourceRefVO> queryAccResRefVO = dbf.createQuery(AccountResourceRefVO.class);
-                queryAccResRefVO.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
-                AccountResourceRefVO accResRefVO = queryAccResRefVO.find();
-                String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
+                 String resourceOriginalOwnerAccountUuid = Q.New(AccountResourceRefVO.class)
+                        .select(AccountResourceRefVO_.accountUuid)
+                        .eq(AccountResourceRefVO_.resourceUuid, msg.getResourceUuid())
+                        .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                        .findValue();
                 if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
                     trigger.fail(err(IdentityErrors.QUOTA_INVALID_OP,
                             "Invalid ChangeResourceOwner operation." +
@@ -335,13 +331,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Transactional(readOnly = true)
     private void handle(APIGetResourceAccountMsg msg) {
-        String sql = "select a, ref.resourceUuid" +
-                " from AccountResourceRefVO ref, AccountVO a" +
-                " where a.uuid = ref.accountUuid" +
-                " and ref.resourceUuid in (:uuids)";
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("uuids", msg.getResourceUuids());
-        List<Tuple> tuples = q.getResultList();
+        List<Tuple> tuples = Q.New(AccountResourceRefVO.class, AccountVO.class)
+                .table1()
+                    .selectThisTable()
+                    .eq(AccountVO_.uuid).table0(AccountResourceRefVO_.accountUuid)
+                .table0()
+                    .select(AccountResourceRefVO_.resourceUuid)
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                    .in(AccountResourceRefVO_.resourceUuid, msg.getResourceUuids())
+                .listTuple();
         Map<String, AccountInventory> ret = new HashMap<>();
         for (Tuple t : tuples) {
             String resUuid = t.get(1, String.class);
@@ -452,14 +450,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 vo.setState(msg.getState() == null ? AccountState.Enabled : msg.getState());
                 persist(vo);
                 reload(vo);
-
-                PolicyVO p = new PolicyVO();
-                p.setUuid(Platform.getUuid());
-                p.setAccountUuid(vo.getUuid());
-                p.setName("DEFAULT-READ");
-                p.setData(IAMIdentityResourceGenerator.readAPIsForNormalAccountJSONStatement);
-                persist(p);
-                reload(p);
 
                 List<Tuple> ts = Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.name, GlobalConfigVO_.value)
                         .eq(GlobalConfigVO_.category, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY).listTuple();
@@ -710,7 +700,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 // use native SQL instead of JPQL here,
                 // JPQL will join all sub-tables of ResourceVO, which
                 // exceeds the limit of max tables MySQL can join
-                List rvos = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceType, concreteResourceType from ResourceVO where uuid not in (select resourceUuid from AccountResourceRefVO)" +
+                List rvos = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceType from ResourceVO where uuid not in" +
+                        " (select resourceUuid from AccountResourceRefVO where type = 'Own')" +
                         " and resourceType in (:rtypes)")
                         .setParameter("rtypes", ResourceTypeMetadata.getAllBaseTypes().stream().map(Class::getSimpleName).collect(Collectors.toList()))
                         .getResultList();
@@ -719,16 +710,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     Object[] values = (Object[]) obj;
                     String ruuid = values[0].toString();
                     String rtype = values[1].toString();
-                    String crtype = values[2].toString();
 
                     AccountResourceRefVO ref = new AccountResourceRefVO();
                     ref.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                     ref.setResourceType(rtype);
-                    ref.setConcreteResourceType(crtype);
                     ref.setResourceUuid(ruuid);
-                    ref.setPermission(AccountConstant.RESOURCE_PERMISSION_WRITE);
-                    ref.setOwnerAccountUuid(ref.getAccountUuid());
-                    ref.setShared(false);
+                    ref.setType(AccessLevel.Own);
                     persist(ref);
                     orphanedResources.add(ruuid);
                 });
@@ -800,17 +787,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     @Override
-    public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType) {
-        return findAllAccessResources(accountUuid, resourceType, ShareResourcePermission.READ);
-    }
-
-    @Override
-    public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType, ShareResourcePermission permission) {
-        return findAllAccessResources(accountUuid, resourceType, permission);
-    }
-
     @Transactional(readOnly = true)
-    private List<String> findAllAccessResources(String accountUuid, Class resourceType, ShareResourcePermission permission) {
+    public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType) {
         String sql = "select a.type from AccountVO a where a.uuid = :auuid";
         TypedQuery<AccountType> q = dbf.getEntityManager().createQuery(sql, AccountType.class);
         q.setParameter("auuid", accountUuid);
@@ -824,44 +802,25 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             return null;
         }
 
-        sql = "select r.resourceUuid from AccountResourceRefVO r where r.accountUuid = :auuid" +
-                " and r.resourceType = :rtype";
-        TypedQuery<String> rq = dbf.getEntityManager().createQuery(sql, String.class);
-        rq.setParameter("auuid", accountUuid);
-        rq.setParameter("rtype", resourceType.getSimpleName());
-        List<String> ownResourceUuids = rq.getResultList();
+        List<String> resourceUuids = Q.New(AccountResourceRefVO.class)
+                .select(AccountResourceRefVO_.resourceUuid)
+                .eq(AccountResourceRefVO_.accountUuid, accountUuid)
+                .eq(AccountResourceRefVO_.resourceType, resourceType.getSimpleName())
+                .in(AccountResourceRefVO_.type, list(AccessLevel.Own, AccessLevel.Share))
+                .listValues();
+        List<String> sharePublicUuids = Q.New(AccountResourceRefVO.class)
+                .select(AccountResourceRefVO_.resourceUuid)
+                .eq(AccountResourceRefVO_.resourceType, resourceType.getSimpleName())
+                .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                .listValues();
+        sharePublicUuids.addAll(resourceUuids);
 
-        sql =   "select " +
-                    "r.resourceUuid " +
-                "from " +
-                    "SharedResourceVO r " +
-                "where " +
-                    "(r.toPublic = :toPublic or r.receiverAccountUuid = :auuid) " +
-                    "and r.resourceType = :rtype " +
-                    "and r.permission >= :permissionCode";
-        TypedQuery<String> srq = dbf.getEntityManager().createQuery(sql, String.class);
-        srq.setParameter("toPublic", true);
-        srq.setParameter("auuid", accountUuid);
-        srq.setParameter("rtype", resourceType.getSimpleName());
-        srq.setParameter("permissionCode", permission.code);
-        List<String> shared = srq.getResultList();
-        shared.addAll(ownResourceUuids);
-
-        return shared;
+        return sharePublicUuids;
     }
 
     @Override
     public String getOwnerAccountUuidOfResource(String resourceUuid) {
-        try {
-            SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-            q.select(AccountResourceRefVO_.ownerAccountUuid);
-            q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
-            String ownerUuid = q.findValue();
-            DebugUtils.Assert(ownerUuid != null, String.format("cannot find owner uuid for resource[uuid:%s]", resourceUuid));
-            return ownerUuid;
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
+        return Account.getAccountUuidOfResource(resourceUuid);
     }
 
     @Override
@@ -915,8 +874,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIUpdateAccountMsg) {
             validate((APIUpdateAccountMsg) msg);
-        } else if (msg instanceof APICreatePolicyMsg) {
-            validate((APICreatePolicyMsg) msg);
         } else if (msg instanceof APIShareResourceMsg) {
             validate((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
@@ -984,35 +941,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             throw new ApiMessageInterceptionException(argerr(
                     "toPublic is set to false, accountUuids cannot be null or empty"
             ));
-        }
-    }
-
-    private void validate(APICreatePolicyMsg msg) {
-        boolean sessionAccessToAdminActions = new CheckIfSessionCanOperationAdminPermission().check(msg.getSession());
-
-        for (PolicyStatement s : msg.getStatements()) {
-            if (s.getEffect() == null) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
-            }
-            if (s.getActions() == null) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
-            }
-            if (s.getActions().isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have a non-empty action field. Invalid statement[%s]",
-                                JSONObjectUtil.toJsonString(s)));
-            }
-
-            if (sessionAccessToAdminActions) {
-                continue;
-            }
-
-            if (s.getActions() != null) {
-                s.getActions().forEach(as -> {
-                    if (PolicyUtils.isAdminOnlyAction(as)) {
-                        throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only action polices[%s]", as));
-                    }
-                });
-            }
         }
     }
 

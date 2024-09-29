@@ -2,6 +2,7 @@ package org.zstack.test.integration.identity.account
 
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
+import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
@@ -178,6 +179,7 @@ class DelayDeleteResourceCase extends SubCase {
             def size = Q.New(AccountResourceRefVO.class)
                     .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
                     .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                     .count()
             assert size == resourceUuids.size() as Long
         }
@@ -192,6 +194,7 @@ class DelayDeleteResourceCase extends SubCase {
             def size = Q.New(AccountResourceRefVO.class)
                     .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
                     .eq(AccountResourceRefVO_.accountUuid, accountInventory.getUuid())
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                     .count()
             assert size == resourceUuids.size() as Long
         }
@@ -205,6 +208,7 @@ class DelayDeleteResourceCase extends SubCase {
             def size = Q.New(AccountResourceRefVO.class)
                     .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
                     .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
                     .count()
             assert size == resourceUuids.size() as Long
         }

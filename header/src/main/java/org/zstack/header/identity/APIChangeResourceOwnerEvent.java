@@ -30,9 +30,9 @@ public class APIChangeResourceOwnerEvent extends APIEvent {
         AccountResourceRefInventory inventory = new AccountResourceRefInventory();
         inventory.setAccountUuid(uuid());
         inventory.setResourceUuid(uuid());
-        inventory.setShared(false);
         inventory.setResourceType("ImageVO");
         inventory.setId(1);
+        inventory.setType("Own");
 
         event.setInventory(inventory);
         return event;

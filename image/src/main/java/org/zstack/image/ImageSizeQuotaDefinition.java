@@ -1,8 +1,12 @@
 package org.zstack.image;
 
-import org.zstack.core.db.SQL;
+import org.zstack.core.db.Q;
+import org.zstack.header.identity.AccessLevel;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 
 public class ImageSizeQuotaDefinition implements QuotaDefinition {
     @Override
@@ -17,16 +21,15 @@ public class ImageSizeQuotaDefinition implements QuotaDefinition {
 
     @Override
     public Long getQuotaUsage(String accountUuid) {
-        String sql = "select sum(image.actualSize) " +
-                " from ImageVO image ,AccountResourceRefVO ref " +
-                " where image.uuid = ref.resourceUuid " +
-                " and ref.accountUuid = :auuid " +
-                " and ref.resourceType = :rtype ";
-        SQL q = SQL.New(sql, Long.class);
-        q.param("auuid", accountUuid);
-        q.param("rtype", ImageVO.class.getSimpleName());
-        Long imageSize = q.find();
-        imageSize = imageSize == null ? 0 : imageSize;
-        return imageSize;
+        Long imageSize = Q.New(ImageVO.class, AccountResourceRefVO.class)
+                .table0()
+                    .eq(ImageVO_.uuid).table1(AccountResourceRefVO_.resourceUuid)
+                    .selectSum(ImageVO_.actualSize)
+                .table1()
+                    .eq(AccountResourceRefVO_.accountUuid, accountUuid)
+                    .eq(AccountResourceRefVO_.resourceType, ImageVO.class.getSimpleName())
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .find();
+        return imageSize == null ? 0L : imageSize;
     }
 }

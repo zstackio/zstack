@@ -1,7 +1,7 @@
 package org.zstack.network.service.portforwarding;
 
-import org.zstack.core.db.SQL;
 import org.zstack.header.identity.quota.QuotaDefinition;
+import org.zstack.identity.ResourceHelper;
 
 public class PortForwardingNumQuotaDefinition implements QuotaDefinition {
     @Override
@@ -16,13 +16,6 @@ public class PortForwardingNumQuotaDefinition implements QuotaDefinition {
 
     @Override
     public Long getQuotaUsage(String accountUuid) {
-        String sql = "select count(pf) from PortForwardingRuleVO pf, AccountResourceRefVO ref where pf.uuid = ref.resourceUuid" +
-                " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
-        SQL q = SQL.New(sql, Long.class);
-        q.param("auuid", accountUuid);
-        q.param("rtype", PortForwardingRuleVO.class.getSimpleName());
-        Long pfn = q.find();
-        pfn = pfn == null ? 0 : pfn;
-        return pfn;
+        return ResourceHelper.countOwnResources(PortForwardingRuleVO.class, accountUuid);
     }
 }

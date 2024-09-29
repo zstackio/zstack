@@ -16,7 +16,9 @@ public interface AccountConstant {
 
     String SYSTEM_ADMIN_ROLE = ".*";
 
+    @Deprecated
     int RESOURCE_PERMISSION_READ = 1;
+    @Deprecated
     int RESOURCE_PERMISSION_WRITE = 2;
 
     String ACTION_CATEGORY = "identity";

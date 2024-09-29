@@ -6,10 +6,13 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccessLevel;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.AccountVO_;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.identity.SharedResourceVO;
-import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.identity.rbac.RBACEntity;
 import static org.zstack.core.Platform.*;
@@ -88,8 +91,8 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
 
         SessionInventory session = rbacEntity.getApiMessage().getSession();
 
-        Set checkAccountResourceUuids = new HashSet();
-        Set operationTargetResourceUuids = new HashSet();
+        Set<String> checkAccountResourceUuids = new HashSet<>();
+        Set<String> operationTargetResourceUuids = new HashSet<>();
 
         for (CheckAccountAPIField cf : fields) {
             Object value = cf.field.get(rbacEntity.getApiMessage());
@@ -105,9 +108,9 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
                 }
             } else {
                 if (cf.operationTarget) {
-                    operationTargetResourceUuids.add(value);
+                    operationTargetResourceUuids.add(value.toString());
                 } else if (cf.checkAccount) {
-                    checkAccountResourceUuids.add(value);
+                    checkAccountResourceUuids.add(value.toString());
                 }
             }
         }
@@ -121,9 +124,11 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
             protected void scripts() {
                 if (!checkAccountResourceUuids.isEmpty()) {
                     // rule out resources that shared as public
-                    List<String> shared = q(SharedResourceVO.class).select(SharedResourceVO_.resourceUuid)
-                            .in(SharedResourceVO_.resourceUuid, checkAccountResourceUuids)
-                            .eq(SharedResourceVO_.toPublic, true).listValues();
+                    List<String> shared = q(AccountResourceRefVO.class)
+                            .select(AccountResourceRefVO_.resourceUuid)
+                            .in(AccountResourceRefVO_.resourceUuid, checkAccountResourceUuids)
+                            .eq(AccountResourceRefVO_.type, AccessLevel.SharePublic)
+                            .listValues();
                     checkAccountResourceUuids.removeAll(shared);
                 }
 
@@ -135,10 +140,13 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                List<Tuple> ts = sql(" select avo.name ,arrf.accountUuid ,arrf.resourceUuid ,arrf.resourceType " +
-                                "from AccountResourceRefVO arrf ,AccountVO avo " +
-                                "where arrf.resourceUuid in (:resourceUuids) and avo.uuid = arrf.accountUuid",Tuple.class)
-                        .param("resourceUuids", toCheck).list();
+                List<Tuple> ts = q(AccountResourceRefVO.class, AccountVO.class)
+                        .table0().in(AccountResourceRefVO_.resourceUuid, toCheck)
+                        .table0().eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                        .table1().eq(AccountVO_.uuid).table1(AccountResourceRefVO_.accountUuid)
+                        .table1().select(AccountVO_.name)
+                        .table0().select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType)
+                        .listTuple();
 
                 ts.forEach(t -> {
                     String resourceOwnerName = t.get(0, String.class);

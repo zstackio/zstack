@@ -17,12 +17,11 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -123,19 +122,8 @@ public class DiskOfferingCascadeExtension extends AbstractAsyncCascadeExtension 
 
     @Transactional(readOnly = true)
     private List<DiskOfferingInventory> getForTheAccount(List<AccountInventory> invs) {
-        List<String> accountUuids = CollectionUtils.transformToList(invs, new Function<String, AccountInventory>() {
-            @Override
-            public String call(AccountInventory arg) {
-                return arg.getUuid();
-            }
-        });
-
-        String sql = "select d from DiskOfferingVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                " r.resourceType = :rtype and r.accountUuid in (:auuids)";
-        TypedQuery<DiskOfferingVO> q = dbf.getEntityManager().createQuery(sql, DiskOfferingVO.class);
-        q.setParameter("rtype", DiskOfferingVO.class.getSimpleName());
-        q.setParameter("auuids", accountUuids);
-        List<DiskOfferingVO> vos = q.getResultList();
+        List<String> accountUuids = CollectionUtils.transform(invs, AccountInventory::getUuid);
+        List<DiskOfferingVO> vos = ResourceHelper.findOwnResources(DiskOfferingVO.class, accountUuids);
         return DiskOfferingInventory.valueOf(vos);
     }
 

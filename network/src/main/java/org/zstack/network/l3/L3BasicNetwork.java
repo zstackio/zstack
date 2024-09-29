@@ -24,8 +24,9 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.identity.SharedResourceVO;
-import org.zstack.header.identity.SharedResourceVO_;
+import org.zstack.header.identity.AccessLevel;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
@@ -50,8 +51,7 @@ import javax.persistence.Tuple;
 import java.util.*;
 
 import static org.zstack.core.Platform.err;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L3BasicNetwork implements L3Network {
@@ -122,22 +122,21 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void setIpRangeSharedResource(String L3NetworkUuid, String IpRangeUuid) {
-        SharedResourceVO l3NetworkSharedResource = Q.New(SharedResourceVO.class)
-                .eq(SharedResourceVO_.resourceUuid, L3NetworkUuid)
-                .eq(SharedResourceVO_.resourceType, L3NetworkVO.class.getSimpleName())
+        AccountResourceRefVO l3NetworkSharedResource = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, L3NetworkUuid)
+                .eq(AccountResourceRefVO_.resourceType, L3NetworkVO.class.getSimpleName())
+                .in(AccountResourceRefVO_.type, list(AccessLevel.Share, AccessLevel.SharePublic))
                 .limit(1)
                 .find();
         if (l3NetworkSharedResource == null) {
             return;
         }
-        SharedResourceVO svo = new SharedResourceVO();
-        svo.setOwnerAccountUuid(l3NetworkSharedResource.getOwnerAccountUuid());
+        AccountResourceRefVO svo = new AccountResourceRefVO();
         svo.setResourceType(IpRangeVO.class.getSimpleName());
         svo.setResourceUuid(IpRangeUuid);
-        if (l3NetworkSharedResource.isToPublic()) {
-            svo.setToPublic(l3NetworkSharedResource.isToPublic());
-        } else {
-            svo.setReceiverAccountUuid(l3NetworkSharedResource.getReceiverAccountUuid());
+        svo.setType(l3NetworkSharedResource.getType());
+        if (l3NetworkSharedResource.getType() == AccessLevel.Share) {
+            svo.setAccountUuid(l3NetworkSharedResource.getAccountUuid());
         }
         dbf.persistAndRefresh(svo);
     }

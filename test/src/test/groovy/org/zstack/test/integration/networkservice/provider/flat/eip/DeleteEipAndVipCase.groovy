@@ -1,6 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
 import org.zstack.core.db.Q
+import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.network.service.eip.EipVO
@@ -130,7 +131,10 @@ class DeleteEipAndVipCase extends SubCase {
         }
 
         retryInSecs() {
-            assert !Optional.ofNullable(Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, eip.uuid).find()).present
+            assert !Q.New(AccountResourceRefVO.class)
+                    .eq(AccountResourceRefVO_.resourceUuid, eip.uuid)
+                    .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                    .isExists()
         }
     }
 

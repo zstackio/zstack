@@ -15,13 +15,12 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -121,12 +120,7 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
         List<SecurityGroupDeletionMsg> msgs = new SQLBatchWithReturn<List<SecurityGroupDeletionMsg>>() {
             @Override
             protected List<SecurityGroupDeletionMsg> scripts() {
-                List<String> uuids = q(AccountResourceRefVO.class)
-                        .select(AccountResourceRefVO_.resourceUuid)
-                        .eq(AccountResourceRefVO_.resourceType, SecurityGroupVO.class.getSimpleName())
-                        .in(AccountResourceRefVO_.ownerAccountUuid, accountUuids)
-                        .listValues();
-
+                List<String> uuids = ResourceHelper.findOwnResourceUuidList(SecurityGroupVO.class, accountUuids);
                 if (uuids.isEmpty()) {
                     return null;
                 }

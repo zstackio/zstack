@@ -31,6 +31,16 @@ public class Q {
         return this;
     }
 
+    public Q orderByAsc(SingularAttribute<?, ?> attr) {
+        q.orderBy(attr, SimpleQuery.Od.ASC);
+        return this;
+    }
+
+    public Q orderByDesc(SingularAttribute<?, ?> attr) {
+        q.orderBy(attr, SimpleQuery.Od.DESC);
+        return this;
+    }
+
     public Q groupBy(SingularAttribute attr) {
         q.groupBy(attr);
         return this;
@@ -116,9 +126,17 @@ public class Q {
         return this;
     }
 
+    public QueryMore in(SingularAttribute<?, ?> attr, Q subQuery) {
+        return toQueryMore().in(attr, subQuery);
+    }
+
     public Q notIn(SingularAttribute attr, Collection val) {
         q.add(attr, SimpleQuery.Op.NOT_IN, val);
         return this;
+    }
+
+    public QueryMore notIn(SingularAttribute<?, ?> attr, Q subQuery) {
+        return toQueryMore().notIn(attr, subQuery);
     }
 
     public Q isNull(SingularAttribute attr) {
@@ -163,5 +181,13 @@ public class Q {
 
     public static Q New(Class clz) {
         return new Q(clz);
+    }
+
+    public static QueryMore New(Class<?> clz, Class<?>... more) {
+        return new QueryMore(clz, more);
+    }
+
+    public QueryMore toQueryMore() {
+        return q.toQueryMore();
     }
 }

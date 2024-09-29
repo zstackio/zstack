@@ -1,6 +1,7 @@
 package org.zstack.test.integration.identity.resource
 
 import org.zstack.core.db.Q
+import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.sdk.VmInstanceInventory
@@ -37,8 +38,11 @@ class GetResourceAccountCase extends SubCase {
             resourceUuids = [vm.uuid]
         }
         assert 1 == accountInventories.size()
-        assert Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, vm.uuid).select(AccountResourceRefVO_.ownerAccountUuid).findValue() == accountInventories.get(vm.uuid).uuid
-        assert Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, vm.uuid).select(AccountResourceRefVO_.accountUuid).findValue() == accountInventories.get(vm.uuid).uuid
+        assert Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, vm.uuid)
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .select(AccountResourceRefVO_.accountUuid)
+                .findValue() == accountInventories.get(vm.uuid).uuid
     }
 
     @Override

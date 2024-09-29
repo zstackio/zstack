@@ -2,17 +2,11 @@ package org.zstack.test.integration.identity
 
 import org.zstack.header.network.l3.L3NetworkConstant
 import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.PolicyInventory
-import org.zstack.sdk.PolicyStatement
-import org.zstack.sdk.PolicyStatementEffect
 import org.zstack.sdk.PortForwardingRuleInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.SessionInventory
-import org.zstack.sdk.SystemTagInventory
-import org.zstack.sdk.UserTagInventory
 import org.zstack.sdk.VipInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
@@ -60,7 +54,6 @@ class InvalidDeleteResourceCase extends SubCase{
 
             testL3Network()
             testDiskOffering()
-            testPolicy()
             testVolumeSnapshot()
             testDataVolume()
             testPortForwardingRule()
@@ -94,27 +87,6 @@ class InvalidDeleteResourceCase extends SubCase{
         expect([AssertionError.class]){
             deleteDiskOffering {
                 uuid = diskOfferingInventory.uuid
-                sessionId = testSessionInventory.uuid
-            }
-        }
-    }
-
-    void testPolicy(){
-        PolicyInventory policyInventory = createPolicy {
-            name = "id1-policy"
-            statements = [new PolicyStatement(
-                    name: "allow",
-                    effect: PolicyStatementEffect.Allow,
-                    actions: [
-                            "org.zstack.header.image.APIAddImageMsg",
-                            "org.zstack.header.image.APIDeleteImageMsg",
-                    ]
-            )]
-        }
-
-        expect([AssertionError.class]){
-            deletePolicy {
-                uuid = policyInventory.uuid
                 sessionId = testSessionInventory.uuid
             }
         }
