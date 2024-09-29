@@ -32,7 +32,7 @@ public class UpdatePciDeviceAction extends AbstractAction {
     public java.lang.String state;
 
     @Param(required = false, validValues = {"Enabled","Available"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String directState;
+    public java.lang.String passThroughState;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;

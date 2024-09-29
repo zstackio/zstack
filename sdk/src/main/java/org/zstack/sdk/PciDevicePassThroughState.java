@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public enum PciDeviceDirectState {
+public enum PciDevicePassThroughState {
 	Available,
 	Disabled,
 	Enabled,
