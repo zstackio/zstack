@@ -146,6 +146,18 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>VyOS</name>
+        <version>1.1.7</version>
+        <osRelease>VyOS 1.1.7</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>VyOS</name>
+        <version>1.2.0</version>
+        <osRelease>VyOS 1.2.0</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>SUSE</name>
         <version>12</version>
         <osRelease>SUSE Linux 12</osRelease>
