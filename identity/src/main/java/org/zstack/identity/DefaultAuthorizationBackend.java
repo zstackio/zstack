@@ -7,7 +7,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.extension.AuthorizationBackend;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.message.APIMessage;
-import org.zstack.identity.rbac.OperationTargetAPIRequestChecker;
+import org.zstack.identity.rbac.RBACResourceRequestChecker;
 import org.zstack.identity.rbac.RBACAPIRequestChecker;
 import org.zstack.identity.rbac.RBACManager;
 import org.zstack.header.identity.rbac.RBACEntity;
@@ -36,7 +36,7 @@ public class DefaultAuthorizationBackend implements AuthorizationBackend {
     public APIMessage authorize(APIMessage msg) {
         List<APIRequestChecker> checkers = new ArrayList<>();
         checkers.add(new RBACAPIRequestChecker());
-        checkers.add(new OperationTargetAPIRequestChecker());
+        checkers.add(new RBACResourceRequestChecker());
         checkers.add(new QuotaAPIRequestChecker());
 
         try {

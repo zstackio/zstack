@@ -225,10 +225,6 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.login.LoginAuthenticationProcedureDesc", "org.zstack.sdk.LoginAuthenticationProcedureDesc");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
-			put("org.zstack.header.identity.role.RolePolicyStatementInventory", "org.zstack.sdk.identity.role.RolePolicyStatementInventory");
-			put("org.zstack.header.identity.role.RoleState", "org.zstack.sdk.identity.role.RoleState");
-			put("org.zstack.header.identity.role.RoleStateEvent", "org.zstack.sdk.identity.role.RoleStateEvent");
-			put("org.zstack.header.identity.role.RoleType", "org.zstack.sdk.identity.role.RoleType");
 			put("org.zstack.header.identityzone.IdentityZoneInventory", "org.zstack.sdk.IdentityZoneInventory");
 			put("org.zstack.header.identityzone.IdentityZoneProperty", "org.zstack.sdk.IdentityZoneProperty");
 			put("org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure", "org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure");
@@ -1294,10 +1290,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.ldap.entity.LdapEntryInventory", "org.zstack.ldap.entity.LdapEntryInventory");
 			put("org.zstack.sdk.identity.ldap.entity.LdapServerInventory", "org.zstack.ldap.entity.LdapServerInventory");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
-			put("org.zstack.sdk.identity.role.RolePolicyStatementInventory", "org.zstack.header.identity.role.RolePolicyStatementInventory");
-			put("org.zstack.sdk.identity.role.RoleState", "org.zstack.header.identity.role.RoleState");
-			put("org.zstack.sdk.identity.role.RoleStateEvent", "org.zstack.header.identity.role.RoleStateEvent");
-			put("org.zstack.sdk.identity.role.RoleType", "org.zstack.header.identity.role.RoleType");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sdk.sns.SNSSmsEndpointInventory", "org.zstack.sns.SNSSmsEndpointInventory");

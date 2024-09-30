@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -150,7 +149,7 @@ public class QuotaUtil {
             return;
         }
 
-        if (AccountConstant.isAdminPermission(targetAccountUuid)) {
+        if (Account.isAdminPermission(targetAccountUuid)) {
             return;
         }
 

@@ -28,6 +28,17 @@ public class RBACInfo implements RBACDescription {
     }
 
     @Override
+    public void contributeToRoles() {
+        roleContributorBuilder()
+                .actions(
+                    APIQueryL3NetworkMsg.class,
+                    APIQueryIpRangeMsg.class
+                )
+                .toOtherRole()
+                .build();
+    }
+
+    @Override
     public void globalReadableResources() {
         globalReadableResourceBuilder()
                 .resources(UsedIpVO.class)

@@ -5,28 +5,28 @@ import org.zstack.header.identity.role.RoleInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "更新角色结果"
 
 	field {
 		name "success"
-		desc ""
+		desc "更新角色是否成功"
 		type "boolean"
-		since "0.6"
+		since "4.10.0"
 	}
 	ref {
 		name "error"
 		path "org.zstack.header.identity.role.api.APIUpdateRoleEvent.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
-		since "0.6"
+		since "4.10.0"
 		clz ErrorCode.class
 	}
 	ref {
 		name "inventory"
 		path "org.zstack.header.identity.role.api.APIUpdateRoleEvent.inventory"
-		desc "null"
+		desc "更新的角色信息, 附带角色权限条目"
 		type "RoleInventory"
-		since "0.6"
+		since "4.10.0"
 		clz RoleInventory.class
 	}
 }

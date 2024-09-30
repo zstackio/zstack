@@ -86,6 +86,7 @@ class CreateDataVolumeTemplateCase extends SubCase {
             name = "test"
             password = "test"
         } as AccountInventory
+        attachPredefineRoles(account.uuid, "vm", "volume", "image")
 
         def session = logInByAccount {
             accountName = "test"

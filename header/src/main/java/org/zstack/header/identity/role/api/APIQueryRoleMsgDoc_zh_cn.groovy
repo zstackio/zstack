@@ -8,7 +8,7 @@ doc {
 
     category "rbac"
 
-    desc """在这里填写API描述"""
+    desc """查询角色"""
 
     rest {
         request {

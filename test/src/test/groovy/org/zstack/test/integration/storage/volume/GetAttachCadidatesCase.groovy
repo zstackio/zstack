@@ -92,6 +92,7 @@ class GetAttachCadidatesCase extends SubCase {
             name = "test1"
             password = "password"
         } as AccountInventory
+        attachPredefineRoles(normalAccount.uuid, "vm", "volume")
 
         normalSession = logInByAccount {
             accountName = normalAccount.name

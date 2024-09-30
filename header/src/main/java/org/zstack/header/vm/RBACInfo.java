@@ -33,6 +33,20 @@ public class RBACInfo implements RBACDescription {
                 .resource(VmCdRomVO.class)
                 .contributeTo(VmInstanceVO.class)
                 .build();
+
+        roleContributorBuilder()
+                .actions(
+                        APIQueryVmInstanceMsg.class,
+                        APIGetVmBootOrderMsg.class,
+                        APIGetVmCapabilitiesMsg.class,
+                        APIGetVmHostnameMsg.class,
+                        APIGetVmsCapabilitiesMsg.class,
+                        APIQueryVmNicMsg.class,
+                        APITakeVmConsoleScreenshotMsg.class,
+                        APIGetVmConsoleAddressMsg.class
+                )
+                .toOtherRole()
+                .build();
     }
 
     @Override

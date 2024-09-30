@@ -24,6 +24,11 @@ public class RBACInfo implements RBACDescription {
                 .roleName("snapshot")
                 .actions(APICreateVolumeSnapshotMsg.class)
                 .build();
+
+        roleContributorBuilder()
+                .actions(APIQueryVolumeMsg.class)
+                .toOtherRole()
+                .build();
     }
 
     @Override

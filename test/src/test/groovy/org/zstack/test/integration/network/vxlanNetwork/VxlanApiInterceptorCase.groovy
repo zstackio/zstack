@@ -34,6 +34,7 @@ class VxlanApiInterceptorCase extends SubCase {
             account {
                 name = "accnTest1"
                 password = "password"
+                predefineRole("networks")
             }
 
             instanceOffering {

@@ -164,7 +164,8 @@
         <class>org.zstack.header.longjob.LongJobVO</class>
         <class>org.zstack.header.identity.role.RoleAccountRefVO</class>
         <class>org.zstack.header.identity.role.RoleVO</class>
-        <class>org.zstack.header.identity.role.RolePolicyStatementVO</class>
+        <class>org.zstack.header.identity.role.RolePolicyVO</class>
+        <class>org.zstack.header.identity.role.RolePolicyResourceRefVO</class>
         <class>org.zstack.header.core.captcha.CaptchaVO</class>
         <class>org.zstack.header.vm.cdrom.VmCdRomVO</class>
         <class>org.zstack.header.core.trash.InstallPathRecycleVO</class>

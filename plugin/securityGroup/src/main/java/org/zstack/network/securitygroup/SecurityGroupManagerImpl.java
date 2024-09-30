@@ -26,7 +26,6 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
@@ -40,7 +39,6 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.APIChangeResourceOwnerMsg;
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
@@ -59,6 +57,7 @@ import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
@@ -85,7 +84,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
@@ -1905,7 +1903,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
 
             String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
-            if (!AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !AccountConstant.isAdminPermission(vmAccountUuid) && !sgOwnerAccountUuid.equals(vmAccountUuid)) {
+            if (!Account.isAdminPermission(sgOwnerAccountUuid) && !Account.isAdminPermission(vmAccountUuid) && !sgOwnerAccountUuid.equals(vmAccountUuid)) {
                 throw new OperationFailureException(argerr("security group[uuid:%s] is not owned by account[uuid:%s] or admin", msg.getSecurityGroupUuid(), vmAccountUuid));
             }
         }
@@ -1929,7 +1927,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             VmNicSecurityGroupRefVO vo = new VmNicSecurityGroupRefVO();
 
             String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
-            if (AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !vmAccountUuid.equals(sgOwnerAccountUuid)) {
+            if (Account.isAdminPermission(sgOwnerAccountUuid) && !vmAccountUuid.equals(sgOwnerAccountUuid)) {
                 List<VmNicSecurityGroupRefVO> toUpdate = refs.stream().filter(ref -> ref.getVmNicUuid().equals(nic.getUuid())).collect(Collectors.toList());
                 if (!toUpdate.isEmpty()) {
                     toUpdate.stream().forEach(r ->{

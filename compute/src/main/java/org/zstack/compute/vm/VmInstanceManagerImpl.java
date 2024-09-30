@@ -67,6 +67,7 @@ import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
@@ -94,7 +95,6 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
 import static org.zstack.utils.CollectionUtils.merge;
-import static org.zstack.utils.CollectionUtils.transformToList;
 
 public class VmInstanceManagerImpl extends AbstractService implements
         VmInstanceManager,
@@ -620,7 +620,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         List<String> l3UuidListOfCurrentAccount;
-        if (!AccountConstant.isAdminPermission(accountUuid)) {
+        if (!Account.isAdminPermission(accountUuid)) {
             l3UuidListOfCurrentAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
         } else {
             l3UuidListOfCurrentAccount = null;
@@ -2597,53 +2597,48 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
 
                 final Timestamp current = dbf.getCurrentSqlTime();
-
-                final List<ExpungeVmMsg> msgs = transformToList(vms, new Function<ExpungeVmMsg, Tuple>() {
-                    @Override
-                    public ExpungeVmMsg call(Tuple t) {
-                        String uuid = t.get(0, String.class);
-                        Timestamp date = t.get(1, Timestamp.class);
-                        long end = date.getTime() + TimeUnit.SECONDS.toMillis(VmGlobalConfig.VM_EXPUNGE_PERIOD.value(Long.class));
-                        if (current.getTime() >= end) {
-                            VmInstanceDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(uuid);
-
-                            if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
-                                logger.debug(String.format("[VM Expunging Task]: the deletion policy of the vm[uuid:%s] is Never, don't expunge it",
-                                        uuid));
-                                return null;
-                            } else {
-                                ExpungeVmMsg msg = new ExpungeVmMsg();
-                                msg.setVmInstanceUuid(uuid);
-                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
-                                return msg;
-                            }
-                        } else {
-                            return null;
-                        }
+                new While<>(vms).step((t, completion) -> {
+                    String uuid = t.get(0, String.class);
+                    Timestamp date = t.get(1, Timestamp.class);
+                    long end = date.getTime() + TimeUnit.SECONDS.toMillis(VmGlobalConfig.VM_EXPUNGE_PERIOD.value(Long.class));
+                    if (current.getTime() < end) {
+                        completion.done();
+                        return;
                     }
-                });
 
-                if (msgs.isEmpty()) {
-                    logger.debug("[VM Expunging Task]: no vm to expunge");
-                    return false;
-                }
+                    VmInstanceDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(uuid);
+                    if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
+                        logger.debug(String.format(
+                                "[VM Expunging Task]: the deletion policy of the vm[uuid:%s] is Never, don't expunge it",
+                                uuid));
+                        completion.done();
+                        return;
+                    }
 
-                bus.send(msgs, 100, new CloudBusListCallBack(null) {
-                    @Override
-                    public void run(List<MessageReply> replies) {
-                        for (MessageReply r : replies) {
-                            ExpungeVmMsg msg = msgs.get(replies.indexOf(r));
-                            if (!r.isSuccess()) {
-                                logger.warn(String.format("failed to expunge the vm[uuid:%s], %s",
-                                        msg.getVmInstanceUuid(), r.getError()));
-                            } else {
+                    ExpungeVmMsg msg = new ExpungeVmMsg();
+                    msg.setVmInstanceUuid(uuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                    bus.send(msg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
                                 logger.debug(String.format("successfully expunged the vm[uuid:%s]",
                                         msg.getVmInstanceUuid()));
+                            } else {
+                                logger.warn(String.format("failed to expunge the vm[uuid:%s], %s",
+                                        msg.getVmInstanceUuid(), reply.getError()));
+                                completion.addError(reply.getError());
                             }
+                            completion.done();
                         }
+                    });
+                }, 3).run(new WhileDoneCompletion(null) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        logger.debug(String.format("expungeVmTask done, %d/%d failed",
+                                errorCodeList.getCauses().size(), vms.size()));
                     }
                 });
-
                 return false;
             }
 
