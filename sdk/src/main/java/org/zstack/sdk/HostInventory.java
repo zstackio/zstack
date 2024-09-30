@@ -1,6 +1,14 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.HwMonitorStatus;
+import org.zstack.sdk.HwMonitorStatus;
+import org.zstack.sdk.HwMonitorStatus;
+import org.zstack.sdk.HwMonitorStatus;
+import org.zstack.sdk.HwMonitorStatus;
+import org.zstack.sdk.HwMonitorStatus;
+import org.zstack.sdk.HwMonitorStatus;
+import org.zstack.sdk.HwMonitorStatus;
+import org.zstack.sdk.HwMonitorStatus;
 
 public class HostInventory  {
 
@@ -156,75 +164,75 @@ public class HostInventory  {
         return this.ipmiPowerStatus;
     }
 
-    public java.lang.Boolean cpuStatus;
-    public void setCpuStatus(java.lang.Boolean cpuStatus) {
+    public HwMonitorStatus cpuStatus;
+    public void setCpuStatus(HwMonitorStatus cpuStatus) {
         this.cpuStatus = cpuStatus;
     }
-    public java.lang.Boolean getCpuStatus() {
+    public HwMonitorStatus getCpuStatus() {
         return this.cpuStatus;
     }
 
-    public java.lang.Boolean memoryStatus;
-    public void setMemoryStatus(java.lang.Boolean memoryStatus) {
+    public HwMonitorStatus memoryStatus;
+    public void setMemoryStatus(HwMonitorStatus memoryStatus) {
         this.memoryStatus = memoryStatus;
     }
-    public java.lang.Boolean getMemoryStatus() {
+    public HwMonitorStatus getMemoryStatus() {
         return this.memoryStatus;
     }
 
-    public java.lang.Boolean diskStatus;
-    public void setDiskStatus(java.lang.Boolean diskStatus) {
+    public HwMonitorStatus diskStatus;
+    public void setDiskStatus(HwMonitorStatus diskStatus) {
         this.diskStatus = diskStatus;
     }
-    public java.lang.Boolean getDiskStatus() {
+    public HwMonitorStatus getDiskStatus() {
         return this.diskStatus;
     }
 
-    public java.lang.Boolean nicStatus;
-    public void setNicStatus(java.lang.Boolean nicStatus) {
+    public HwMonitorStatus nicStatus;
+    public void setNicStatus(HwMonitorStatus nicStatus) {
         this.nicStatus = nicStatus;
     }
-    public java.lang.Boolean getNicStatus() {
+    public HwMonitorStatus getNicStatus() {
         return this.nicStatus;
     }
 
-    public java.lang.Boolean gpuStatus;
-    public void setGpuStatus(java.lang.Boolean gpuStatus) {
+    public HwMonitorStatus gpuStatus;
+    public void setGpuStatus(HwMonitorStatus gpuStatus) {
         this.gpuStatus = gpuStatus;
     }
-    public java.lang.Boolean getGpuStatus() {
+    public HwMonitorStatus getGpuStatus() {
         return this.gpuStatus;
     }
 
-    public java.lang.Boolean powerSupplyStatus;
-    public void setPowerSupplyStatus(java.lang.Boolean powerSupplyStatus) {
+    public HwMonitorStatus powerSupplyStatus;
+    public void setPowerSupplyStatus(HwMonitorStatus powerSupplyStatus) {
         this.powerSupplyStatus = powerSupplyStatus;
     }
-    public java.lang.Boolean getPowerSupplyStatus() {
+    public HwMonitorStatus getPowerSupplyStatus() {
         return this.powerSupplyStatus;
     }
 
-    public java.lang.Boolean fanStatus;
-    public void setFanStatus(java.lang.Boolean fanStatus) {
+    public HwMonitorStatus fanStatus;
+    public void setFanStatus(HwMonitorStatus fanStatus) {
         this.fanStatus = fanStatus;
     }
-    public java.lang.Boolean getFanStatus() {
+    public HwMonitorStatus getFanStatus() {
         return this.fanStatus;
     }
 
-    public java.lang.Boolean raidStatus;
-    public void setRaidStatus(java.lang.Boolean raidStatus) {
+    public HwMonitorStatus raidStatus;
+    public void setRaidStatus(HwMonitorStatus raidStatus) {
         this.raidStatus = raidStatus;
     }
-    public java.lang.Boolean getRaidStatus() {
+    public HwMonitorStatus getRaidStatus() {
         return this.raidStatus;
     }
 
-    public java.lang.Boolean temperatureStatus;
-    public void setTemperatureStatus(java.lang.Boolean temperatureStatus) {
+    public HwMonitorStatus temperatureStatus;
+    public void setTemperatureStatus(HwMonitorStatus temperatureStatus) {
         this.temperatureStatus = temperatureStatus;
     }
-    public java.lang.Boolean getTemperatureStatus() {
+    public HwMonitorStatus getTemperatureStatus() {
         return this.temperatureStatus;
     }
 

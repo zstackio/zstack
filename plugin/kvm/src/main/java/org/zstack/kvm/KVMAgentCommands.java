@@ -4259,18 +4259,12 @@ public class KVMAgentCommands {
 
     public static class HostPhysicalDiskInsertAlarmEventCmd {
         public String host;
-        public String slot_number;
-        public String enclosure_device_id;
-        public String serial_number;
-        public String name;
+        public Map<String, Object> additionalProperties = new HashMap<>();
     }
 
     public static class HostPhysicalDiskRemoveAlarmEventCmd {
         public String host;
-        public String slot_number;
-        public String enclosure_device_id;
-        public String serial_number;
-        public String name;
+        public Map<String, Object> additionalProperties = new HashMap<>();
     }
 
     public static class PhysicalMemoryEccErrorAlarmEventCmd {

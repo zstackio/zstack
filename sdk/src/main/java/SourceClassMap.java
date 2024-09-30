@@ -208,6 +208,7 @@ public class SourceClassMap {
 			put("org.zstack.header.host.HostNetworkInterfaceServiceType", "org.zstack.sdk.HostNetworkInterfaceServiceType");
 			put("org.zstack.header.host.HostPhysicalCpuInventory", "org.zstack.sdk.HostPhysicalCpuInventory");
 			put("org.zstack.header.host.HostPhysicalMemoryInventory", "org.zstack.sdk.HostPhysicalMemoryInventory");
+			put("org.zstack.header.host.HwMonitorStatus", "org.zstack.sdk.HwMonitorStatus");
 			put("org.zstack.header.host.Sensor", "org.zstack.sdk.Sensor");
 			put("org.zstack.header.host.ServiceTypeStatisticData", "org.zstack.sdk.ServiceTypeStatisticData");
 			put("org.zstack.header.hybrid.network.eip.HybridEipAddressInventory", "org.zstack.sdk.HybridEipAddressInventory");
@@ -933,6 +934,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostPhysicalCpuInventory", "org.zstack.header.host.HostPhysicalCpuInventory");
 			put("org.zstack.sdk.HostPhysicalMemoryInventory", "org.zstack.header.host.HostPhysicalMemoryInventory");
 			put("org.zstack.sdk.HostSchedulingRuleGroupInventory", "org.zstack.header.vmscheduling.HostSchedulingRuleGroupInventory");
+			put("org.zstack.sdk.HwMonitorStatus", "org.zstack.header.host.HwMonitorStatus");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
 			put("org.zstack.sdk.HybridConnectionType", "org.zstack.header.aliyun.network.HybridConnectionType");
 			put("org.zstack.sdk.HybridEipAddressInventory", "org.zstack.header.hybrid.network.eip.HybridEipAddressInventory");
