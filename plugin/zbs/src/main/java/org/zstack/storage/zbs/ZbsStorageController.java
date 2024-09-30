@@ -572,7 +572,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats> comp) {
-
+        comp.fail(operr("not supported flatten volume with zbs primary storage."));
     }
 
     @Override
