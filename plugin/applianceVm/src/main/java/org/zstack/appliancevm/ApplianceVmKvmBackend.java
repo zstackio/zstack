@@ -27,14 +27,24 @@ public class ApplianceVmKvmBackend implements KVMStartVmAddonExtensionPoint {
         }
 
         KVMAddons.Channel chan = new KVMAddons.Channel();
+        KVMAddons.Channel chan_vr = new KVMAddons.Channel();
         cmd.setEmulateHyperV(false);
+
         chan.setSocketPath(makeChannelSocketPath(spec.getVmInventory().getUuid()));
         chan.setTargetName("applianceVm.vport");
         cmd.getAddons().put(KVMAddons.Channel.NAME, chan);
         logger.debug(String.format("make kvm channel device[path:%s, target:%s]", chan.getSocketPath(), chan.getTargetName()));
+
+        chan_vr.setSocketPath(makeChannelVRSocketPath(spec.getVmInventory().getUuid()));
+        chan_vr.setTargetName("org.qemu.guest_agent.0"); // this channel name must keep org.qemu.guest_agent to use qemu-ga
+        cmd.getAddons().put(KVMAddons.Channel.VR_NAME, chan_vr);
+        logger.debug(String.format("make kvm channel device[path:%s, target:%s]", chan_vr.getSocketPath(), chan_vr.getTargetName()));
     }
 
     public String makeChannelSocketPath(String apvmuuid) {
         return PathUtil.join(ApplianceVmConstant.KVM_CHANNEL_AGENT_PATH, String.format("applianceVm.%s", apvmuuid));
+    }
+    private String makeChannelVRSocketPath(String apvmuuid) {
+        return PathUtil.join(ApplianceVmConstant.KVM_CHANNEL_QEMU_GA_PATH, apvmuuid);
     }
 }

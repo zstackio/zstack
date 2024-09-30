@@ -5,6 +5,7 @@ package org.zstack.kvm;
 public interface KVMAddons {
     public static class Channel {
         public static final String NAME = "channel";
+        public static final String VR_NAME = "channel_vr";
 
         private String socketPath;
         private String targetName;

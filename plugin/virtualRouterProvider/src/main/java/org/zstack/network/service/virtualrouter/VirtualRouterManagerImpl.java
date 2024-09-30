@@ -77,6 +77,7 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosVersionCheckResult;
 import org.zstack.network.service.virtualrouter.vyos.VyosVersionManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -110,7 +111,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
         GetPeerL3NetworksForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
-        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint, QueryBelongFilter {
+        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint, QueryBelongFilter,
+        VmInstanceMigrateExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -2629,5 +2631,132 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         List<String> l3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, vrUuid)
                 .in(VmNicVO_.metaData, VirtualRouterNicMetaData.ALL_PUBLIC_NIC_MASK_STRING_LIST).listValues();
         return l3Uuids;
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid, NoErrorCompletion completion) {
+        if (inv == null || srcHostUuid == null) {
+            completion.done();
+            return;
+        }
+        if (VmInstanceConstant.USER_VM_TYPE.equals(inv.getType())) {
+            completion.done();
+            return;
+        }
+        List<VmNicInventory> vfNics = inv.getVmNics().stream()
+                .filter(nic -> !Objects.equals(nic.getType(), VmInstanceConstant.VIRTUAL_NIC_TYPE))
+                .collect(Collectors.toList());
+        logger.debug(String.format("virtual router[uuid:%s] has %s vf nics need to sync vip after hot migrate",
+                inv.getUuid(), vfNics.size()));
+        if (vfNics.isEmpty()) {
+            completion.done();
+            return;
+        }
+        List<VipTO> vips = findVipsOnVirtualRouter(vfNics, inv.getUuid());
+        if (vips.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        CreateVipCmd cmd = new CreateVipCmd();
+        cmd.setSyncVip(false);
+        cmd.setVips(vips);
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setVmInstanceUuid(inv.getUuid());
+        msg.setCommand(cmd);
+        msg.setPath(VirtualRouterConstant.VR_CREATE_VIP);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to sync vips on virtual router[uuid:%s] due to %s",
+                            inv.getUuid(), reply.getError()));
+                    completion.done();
+                    return;
+                }
+
+                VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                CreateVipRsp ret = re.toResponse(CreateVipRsp.class);
+                if (!ret.isSuccess()) {
+                    ErrorCode err = operr("failed to sync vips[ips: %s] on virtual router[uuid:%s]" +
+                                    " for vr hot mirage, because %s",
+                            vips.stream().map(VipTO::getIp).collect(Collectors.toList()),
+                            inv.getUuid(), ret.getError());
+                    logger.warn(err.toString());
+                    completion.done();
+                } else {
+                    List<String> vipUuids = vips.stream().map(VipTO::getVipUuid).distinct().collect(Collectors.toList());
+                    vipProxy.attachNetworkService(inv.getUuid(), VipVO.class.getSimpleName(), vipUuids);
+                    List<VipVO> vips = Q.New(VipVO.class).in(VipVO_.uuid, vipUuids).list();
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAcquireVipExtensionPoint.class), ext -> {
+                        logger.debug(String.format("execute after acquire vip extension point %s", ext));
+                        ext.afterAcquireVip(VipInventory.valueOf(vips));
+                    });
+                    completion.done();
+                }
+            }
+        });
+    }
+
+    private List<VipTO> findVipsOnVirtualRouter(List<VmNicInventory> vfNics, String vrUuid) {
+        List<String> vipUuids = SQL.New("select vip.uuid from VipVO vip, VipPeerL3NetworkRefVO ref " +
+                        "where ref.vipUuid = vip.uuid and vip.system = false " +
+                        "and ref.l3NetworkUuid in (:l3NetworkUuids)")
+                .param("l3NetworkUuids", vfNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()))
+                .list();
+
+        vipUuids = getVirtualRouterVips(vrUuid, vipUuids);
+        if (vipUuids == null || vipUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<VipVO> vips = Q.New(VipVO.class).in(VipVO_.uuid, vipUuids).list();
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
+                Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find());
+
+        List<VipVO> systemVip = vips.stream().filter(VipVO::isSystem).collect(Collectors.toList());
+        List<VipVO> notSystemVip = vips.stream().filter(v -> !v.isSystem()).collect(Collectors.toList());
+        List<VipVO> vipss = new ArrayList<>();
+        vipss.addAll(systemVip);
+        vipss.addAll(notSystemVip);
+
+        List<VipTO> vipTOS = new ArrayList<>();
+        for (VipVO vip : vipss) {
+            if (vipTOS.stream().anyMatch(v -> v.getIp().equals(vip.getIp()))) {
+                logger.warn(String.format(
+                        "found duplicate vip ip[uuid; %s, uuids: %s] for vr[uuid: %s]",
+                        vip.getIp(),
+                        vips.stream().
+                                filter(v -> v.getIp().equals(vip.getIp()))
+                                .map(VipVO::getUuid)
+                                .collect(Collectors.toSet()),
+                        vrUuid));
+                continue;
+            }
+
+            VipTO to = new VipTO();
+            to.setIp(vip.getIp());
+            to.setGateway(vip.getGateway());
+            to.setNetmask(vip.getNetmask());
+            Optional<VmNicInventory> pubNic = vr.getVmNics().stream()
+                    .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
+                    .findFirst();
+            if (!pubNic.isPresent()) {
+                continue;
+            }
+            to.setOwnerEthernetMac(pubNic.get().getMac());
+            to.setVipUuid(vip.getUuid());
+            to.setSystem(vip.isSystem());
+            vipTOS.add(to);
+        }
+
+        return vipTOS;
     }
 }
