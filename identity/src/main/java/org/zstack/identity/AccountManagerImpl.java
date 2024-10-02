@@ -35,12 +35,22 @@ import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.identity.login.LogInMsg;
 import org.zstack.header.identity.login.LogInReply;
 import org.zstack.header.identity.login.LoginManager;
+import org.zstack.header.identity.rbac.RBAC;
+import org.zstack.header.identity.role.RoleAccountRefVO;
+import org.zstack.header.identity.role.RoleAccountRefVO_;
+import org.zstack.header.identity.role.RoleInventory;
+import org.zstack.header.identity.role.RoleVO;
+import org.zstack.header.identity.role.RoleVO_;
+import org.zstack.header.identity.role.api.APIGetRolePolicyActionsMsg;
+import org.zstack.header.identity.role.api.APIGetRolePolicyActionsReply;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RestAuthenticationBackend;
 import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
 import org.zstack.header.vo.*;
+import org.zstack.identity.header.ShareResourceContext;
+import org.zstack.identity.rbac.ShareResourceHelper;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
@@ -75,6 +85,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private EventFacade evtf;
     @Autowired
     private List<QuotaUpdateChecker> quotaChangeCheckers = Collections.emptyList();
+    @Autowired
+    private ShareResourceHelper shareResourceHelper;
 
     private final List<Class> resourceTypes = new ArrayList<>();
     private final Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
@@ -83,6 +95,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private final Map<Class, List<QuotaMessageHandler<? extends Message>>> messageHandlerMap = new HashMap<>();
 
     private static final Map<String, QuotaDefinition> quotaDefinitionMap = new HashMap<>();
+    private List<String> rolePolicyActionsCache = null;
+    private final Object rolePolicyActionsLock = new Object();
 
     @Override
     public void prepareDbInitialValue() {
@@ -198,6 +212,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APILogOutMsg) msg);
         } else if (msg instanceof APIValidateSessionMsg) {
             handle((APIValidateSessionMsg) msg);
+        } else if (msg instanceof APIShareResourceMsg) {
+            handle((APIShareResourceMsg) msg);
+        } else if (msg instanceof APIRevokeResourceSharingMsg) {
+            handle((APIRevokeResourceSharingMsg) msg);
         } else if (msg instanceof APIGetResourceAccountMsg) {
             handle((APIGetResourceAccountMsg) msg);
         } else if (msg instanceof APIChangeResourceOwnerMsg) {
@@ -208,6 +226,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIIsOpensourceVersionMsg) msg);
         } else if (msg instanceof APIRenewSessionMsg) {
             handle((APIRenewSessionMsg) msg);
+        } else if (msg instanceof APIGetRolePolicyActionsMsg) {
+            handle((APIGetRolePolicyActionsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -318,6 +338,31 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }).start();
     }
 
+    private void handle(APIShareResourceMsg msg) {
+        ShareResourceContext context = ShareResourceContext.fromResources(msg.getResourceUuids());
+
+        if (msg.isToPublic()) {
+            shareResourceHelper.shareToPublic(context);
+        } else {
+            shareResourceHelper.shareToAccounts(context, msg.getAccountUuids());
+        }
+
+        bus.publish(new APIShareResourceEvent(msg.getId()));
+    }
+
+    private void handle(APIRevokeResourceSharingMsg msg) {
+        ShareResourceContext context = ShareResourceContext.fromResources(msg.getResourceUuids());
+
+        if (msg.isAll()) {
+            shareResourceHelper.revokeSharingAll(context);
+        } else if (msg.isToPublic()) {
+            shareResourceHelper.revokeSharingToPublic(context);
+        } else {
+            shareResourceHelper.revokeSharingToAccounts(context, msg.getAccountUuids());
+        }
+
+        bus.publish(new APIRevokeResourceSharingEvent(msg.getId()));
+    }
 
     @Transactional(readOnly = true)
     private void handle(APIGetResourceAccountMsg msg) {
@@ -414,6 +459,54 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(APIGetRolePolicyActionsMsg msg) {
+        APIGetRolePolicyActionsReply reply = new APIGetRolePolicyActionsReply();
+
+        if (!msg.isShowAllPolicies()) {
+            // only show roles and policies attached to the account
+
+            List<RoleVO> roles = Q.New(RoleVO.class, RoleAccountRefVO.class)
+                    .table0()
+                        .selectThisTable()
+                        .eq(RoleVO_.uuid).table1(RoleAccountRefVO_.roleUuid)
+                    .table1()
+                        .eq(RoleAccountRefVO_.accountUuid, msg.getSession().getAccountUuid())
+                    .list();
+            List<RoleInventory> roleInventories = RoleInventory.valueOf(roles);
+
+            reply.setPolicies(roleInventories.stream()
+                    .flatMap(role -> role.getPolicies().stream())
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList()));
+
+            roleInventories.forEach(role -> {
+                role.setLastOpDate(null);
+                role.setCreateDate(null);
+                role.setDescription(null);
+                role.setPolicies(null);
+            });
+            reply.setRoles(roleInventories);
+
+            bus.reply(msg, reply);
+            return;
+        }
+
+        synchronized (rolePolicyActionsLock) {
+            if (rolePolicyActionsCache == null) {
+                rolePolicyActionsCache = RBAC.apiBuckets.entrySet().stream()
+                        .filter(entry -> !entry.getValue().adminOnly)
+                        .map(Map.Entry::getKey)
+                        .filter(api -> api.startsWith(AccountConstant.POLICY_BASE_PACKAGE))
+                        .map(api -> api.substring(AccountConstant.POLICY_BASE_PACKAGE.length() - 1))
+                        .sorted()
+                        .collect(Collectors.toList());
+            }
+            reply.setPolicies(rolePolicyActionsCache);
+        }
+        bus.reply(msg, reply);
     }
 
     private void handle(CreateAccountMsg msg) {

@@ -3,20 +3,20 @@ package org.zstack.sdk.iam1.ensemble;
 
 
 public class GetResourceSharingResult {
-    public java.lang.String resourceUuid;
-    public void setResourceUuid(java.lang.String resourceUuid) {
-        this.resourceUuid = resourceUuid;
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
     }
-    public java.lang.String getResourceUuid() {
-        return this.resourceUuid;
+    public java.lang.String getUuid() {
+        return this.uuid;
     }
 
-    public java.lang.String masterResourceUuid;
-    public void setMasterResourceUuid(java.lang.String masterResourceUuid) {
-        this.masterResourceUuid = masterResourceUuid;
+    public java.lang.String masterUuid;
+    public void setMasterUuid(java.lang.String masterUuid) {
+        this.masterUuid = masterUuid;
     }
-    public java.lang.String getMasterResourceUuid() {
-        return this.masterResourceUuid;
+    public java.lang.String getMasterUuid() {
+        return this.masterUuid;
     }
 
     public java.lang.String masterResourceType;

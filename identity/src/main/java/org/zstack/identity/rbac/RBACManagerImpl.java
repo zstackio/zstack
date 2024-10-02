@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 
 public class RBACManagerImpl extends AbstractService implements
         RBACManager, Component, PrepareDbInitialValueExtensionPoint, RolePolicyChecker,
@@ -89,25 +91,45 @@ public class RBACManagerImpl extends AbstractService implements
     private void handleApiMessage(Message msg) {
         if (msg instanceof APICreateRoleMsg) {
             handle((APICreateRoleMsg) msg);
-        } else if (msg instanceof APICheckResourcePermissionMsg) {
-            handle((APICheckResourcePermissionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(APICheckResourcePermissionMsg msg) {
-        throw new CloudRuntimeException("APICheckResourcePermissionMsg not support now"); // TODO
     }
 
     private void handle(APICreateRoleMsg msg) {
         final RoleSpec spec = RoleSpec.valueOf(msg);
 
         RoleVO vo = spec.buildVOWithoutPolicies();
-        dbf.persist(vo);
+        RolePolicyUpdater updater = RolePolicyUpdater.pure();
+        for (RolePolicyStatement statement : spec.getPoliciesToCreate()) {
+            updater.add(statement);
+        }
 
-        List<RolePolicyVO> policies = spec.buildPoliciesToCreate(vo.getUuid());
-        dbf.persistCollection(policies);
+        updater.squeeze();
+        List<RolePolicyVO> policiesNeedCreate = updater.collectAllPolicyIdsNeedCreate();
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                persist(vo);
+
+                policiesNeedCreate.forEach(p -> p.setRoleUuid(spec.getUuid()));
+                for (RolePolicyVO policy : policiesNeedCreate) {
+                    Set<RolePolicyResourceRefVO> refs = policy.getResourceRefs();
+
+                    persist(policy);
+                    if (isEmpty(refs)) {
+                        continue;
+                    }
+
+                    reload(policy);
+                    for (RolePolicyResourceRefVO ref : refs) {
+                        ref.setRolePolicyId(policy.getId());
+                        persist(ref);
+                    }
+                }
+            }
+        }.execute();
 
         APICreateRoleEvent evt = new APICreateRoleEvent(msg.getId());
         evt.setInventory(RoleInventory.valueOf(dbf.findByUuid(vo.getUuid(), RoleVO.class)));
@@ -127,7 +149,6 @@ public class RBACManagerImpl extends AbstractService implements
                 .select(RoleVO_.uuid)
                 .listValues());
         final List<RBAC.Role> roleList = RBAC.roles.stream()
-                .filter(RBAC.Role::isPredefine)
                 .collect(Collectors.toList());
 
         List<RoleVO> rolesNeedCreate = new ArrayList<>();
@@ -153,7 +174,8 @@ public class RBACManagerImpl extends AbstractService implements
 
                 policiesNeedCreate.addAll(role.toStatements());
 
-                if (AccountConstant.OTHER_ROLE_UUID.equals(role.getUuid())) {
+                if (AccountConstant.OTHER_ROLE_UUID.equals(role.getUuid())
+                        || AccountConstant.LEGACY_ROLE_UUID.equals(role.getUuid())) {
                     List<String> accountUuidList = Q.New(AccountVO.class)
                             .in(AccountVO_.type, list(AccountType.Normal, AccountType.ThirdParty))
                             .select(AccountVO_.uuid)
@@ -161,7 +183,7 @@ public class RBACManagerImpl extends AbstractService implements
                     for (String accountUuid : accountUuidList) {
                         RoleAccountRefVO ref = new RoleAccountRefVO();
                         ref.setAccountUuid(accountUuid);
-                        ref.setRoleUuid(AccountConstant.OTHER_ROLE_UUID);
+                        ref.setRoleUuid(role.getUuid());
                         accountRefsNeedCreate.add(ref);
                     }
                 }
@@ -210,11 +232,22 @@ public class RBACManagerImpl extends AbstractService implements
         Pattern pattern = Pattern.compile("^[a-zA-Z0-9._]+$");
 
         for (RolePolicyStatement policy : policies) {
-            for (String action : policy.actions) {
-                String path = action.endsWith("**") ? action.substring(0, action.length() - 2) :
-                        action.endsWith("*") ? action.substring(0, action.length() - 1) : action;
-                Matcher m = pattern.matcher(path);
-                if (!m.matches() || path.contains("..")) {
+            String action = policy.actions;
+            String path = action.endsWith("**") ? action.substring(0, action.length() - 2) :
+                    action.endsWith("*") ? action.substring(0, action.length() - 1) : action;
+            Matcher m = pattern.matcher(path);
+            if (!m.matches() || path.contains("..")) {
+                return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
+            }
+
+            // TODO: UI is currently unable to distinguish admin-only APIs,
+            // and this limitation has been temporarily removed for convenience
+
+            if (!action.contains("*")) {
+                String fullPath = action.startsWith(".") ?
+                        AccountConstant.POLICY_BASE_PACKAGE + action.substring(1) :
+                        action;
+                if (!RBAC.isValidAPI(fullPath)/* || RBAC.isAdminOnlyAPI(fullPath)*/) {
                     return err(IdentityErrors.INVALID_ROLE_POLICY, "invalid role policy actions: %s", action);
                 }
             }

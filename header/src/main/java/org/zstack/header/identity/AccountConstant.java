@@ -35,12 +35,11 @@ public interface AccountConstant {
 
     String NO_EXIST_ACCOUNT ="no-exist-account:::%s";
 
-    IdentityType identityType = new IdentityType("IAM");
-
     // login property accountType
     String ACCOUNT_TYPE = "accountType";
 
     String OTHER_ROLE_UUID = "80315b1f85314917826b182bf6def552";
+    String LEGACY_ROLE_UUID = "85cfac2138494b2db6501881e1e68045";
 
     /**
      * account has SystemAdmin type also have admin permission,
@@ -62,13 +61,6 @@ public interface AccountConstant {
     @Deprecated
     static boolean isAdminPermission(String accountUuid) {
         return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
-    }
-
-    enum Principal {
-        Account,
-        User,
-        Role,
-        Group
     }
 
     String ACCOUNT_REST_AUTH = "OAuth";

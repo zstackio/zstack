@@ -2,16 +2,19 @@ package org.zstack.header.identity.rbac;
 
 import org.zstack.header.message.APIMessage;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public interface RBACDescription {
     default RBAC.PermissionBuilder permissionBuilder() {
         return new RBAC.PermissionBuilder(this);
     }
 
-    default RBAC.ExpendedFieldPermissionBuilder expandedpermissionBuilder() {
-        return new RBAC.ExpendedFieldPermissionBuilder();
+    default <MSG extends APIMessage> void expandedPermission(Class<MSG> apiClass,
+                                                             Function<MSG, List<APIMessage>> function) {
+        new RBAC.ExpendedPermission<>(apiClass)
+                .expandTo(function)
+                .build();
     }
 
     default RBAC.RoleContributorBuilder roleContributorBuilder() {
@@ -32,31 +35,6 @@ public interface RBACDescription {
 
     default RBAC.ResourceEnsembleContributorBuilder resourceEnsembleContributorBuilder() {
         return new RBAC.ResourceEnsembleContributorBuilder();
-    }
-
-    default void registerAPIPermissionChecker(Class aClz, boolean takeOver, APIPermissionChecker checker) {
-        List<Class> clzs = new ArrayList<>();
-        if (aClz == null) {
-            clzs.addAll(APIMessage.apiMessageClasses);
-        } else {
-            clzs.add(aClz);
-        }
-
-        clzs.forEach(apiClz-> {
-            List<RBAC.APIPermissionCheckerWrapper> ws = RBAC.permissionCheckers.computeIfAbsent(apiClz, x->new ArrayList<>());
-            RBAC.APIPermissionCheckerWrapper w = new RBAC.APIPermissionCheckerWrapper();
-            w.takeOver = takeOver;
-            w.checker = checker;
-            ws.add(w);
-        });
-    }
-
-    default void registerAPIPermissionChecker(Class apiClz, APIPermissionChecker checker) {
-        registerAPIPermissionChecker(apiClz, false, checker);
-    }
-
-    default RBACEntityFormatter entityFormatter() {
-        return null;
     }
 
     String permissionName();

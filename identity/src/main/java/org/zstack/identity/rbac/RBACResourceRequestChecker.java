@@ -2,7 +2,6 @@ package org.zstack.identity.rbac;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -25,19 +24,20 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.header.errorcode.SysErrors.*;
+import static org.zstack.utils.CollectionUtils.transform;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class RBACResourceRequestChecker implements APIRequestChecker {
-    protected RBACEntity rbacEntity;
+    protected APIMessage message;
 
     @Override
-    public void check(RBACEntity entity) {
-        rbacEntity = entity;
+    public void check(APIMessage message) {
+        this.message = message;
         check();
     }
 
     protected RBAC.Permission getRBACInfo() {
-        return RBAC.apiBuckets.get(rbacEntity.getApiMessage().getClass().getName()).permission;
+        return RBAC.apiBuckets.get(message.getClass().getName()).permission;
     }
 
     private static class AccountResourceBundle {
@@ -74,24 +74,24 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
         if (param.param.noOwnerCheck()) {
             // do nothing
         } else if (String.class.isAssignableFrom(param.field.getType())) {
-            String uuid = (String) param.field.get(rbacEntity.getApiMessage());
+            String uuid = (String) param.field.get(message);
             if (uuid != null) {
                 uuids.add(uuid);
             }
         } else if (Collection.class.isAssignableFrom(param.field.getType())) {
-            Collection u = (Collection<? extends String>) param.field.get(rbacEntity.getApiMessage());
+            Collection u = (Collection<? extends String>) param.field.get(message);
             if (u != null) {
                 uuids.addAll(u);
             }
         } else {
-            throw new CloudRuntimeException(String.format("not supported field type[%s] for %s#%s", param.field.getType(), rbacEntity.getApiMessage().getClass(), param.field.getName()));
+            throw new CloudRuntimeException(String.format("not supported field type[%s] for %s#%s", param.field.getType(), message.getClass(), param.field.getName()));
         }
 
         return uuids;
     }
 
     private void check() {
-        if (Account.isAdminPermission(rbacEntity.getApiMessage().getSession())) {
+        if (Account.isAdminPermission(message.getSession())) {
             return;
         }
 
@@ -100,7 +100,7 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
         new SQLBatch() {
             @Override
             protected void scripts() {
-                APIMessage.getApiParams().get(rbacEntity.getApiMessage().getClass()).forEach(this::checkOperationTarget);
+                APIMessage.getApiParams().get(message.getClass()).forEach(this::checkOperationTarget);
             }
 
             private void checkOperationTarget(APIMessage.FieldParam param) {
@@ -113,7 +113,7 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                if (rbacEntity.getApiMessage() instanceof APISyncCallMessage) {
+                if (message instanceof APISyncCallMessage) {
                     // no check to read api
                     return;
                 }
@@ -140,34 +140,12 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
                     return;
                 }
                 List<String> uuids = getResourceUuids(param);
-                String currentAccountUuid = rbacEntity.getApiMessage().getSession().getAccountUuid();
+                String currentAccountUuid = message.getSession().getAccountUuid();
                 if (uuids.stream().anyMatch(uuid -> !Objects.equals(uuid, currentAccountUuid))) {
                     String parameterName = param.field.getName();
                     throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
-                            "permission denied: parameter[%s] must be yourself", parameterName));
+                            "Operations on other accounts are not permitted", parameterName));
                 }
-            }
-
-            private void checkIfTheAccountOwnTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
-                List<String> uuids = getResourceUuids(param);
-                removeSharedToPublicResources(uuids);
-                if (uuids.isEmpty()) {
-                    return;
-                }
-
-                Collection<AccountResourceBundle> bundles = getAccountResourceBundles(uuids);
-                uuids.forEach(uuid -> {
-                    Optional<AccountResourceBundle> opt = bundles.stream().filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid)).findFirst();
-                    if (!opt.isPresent()) {
-                        String resourceType = Q.New(ResourceVO.class)
-                                .eq(ResourceVO_.uuid, uuid)
-                                .select(ResourceVO_.resourceType)
-                                .findValue();
-                        throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
-                                "%s resource[uuid:%s] is not accessible for account[uuid:%s]",
-                                resourceType, uuid, rbacEntity.getApiMessage().getSession().getAccountUuid()));
-                    }
-                });
             }
 
             private void removeSharedToPublicResources(List<String> uuids) {
@@ -195,7 +173,7 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
                             .select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid)
                             .in(AccountResourceRefVO_.resourceUuid, uuids)
                             .eq(AccountResourceRefVO_.type, AccessLevel.Share)
-                            .eq(AccountResourceRefVO_.accountUuid, rbacEntity.getApiMessage().getSession().getAccountUuid())
+                            .eq(AccountResourceRefVO_.accountUuid, message.getSession().getAccountUuid())
                             .listTuple()
                 );
 
@@ -223,12 +201,12 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
                     String uuid = tuple.get(0, String.class);
                     String type = tuple.get(1, String.class);
                     Optional<AccountResourceBundle> opt = bundles.stream()
-                            .filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid))
+                            .filter(b -> b.accountUuid.equals(message.getSession().getAccountUuid()) && b.resourceUuid.equals(uuid))
                             .findFirst();
                     if (!opt.isPresent()) {
                         throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
-                                "permission denied, the account[uuid:%s] is not the owner of the tagged resource[uuid:%s, type:%s]",
-                                rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, type));
+                                "account[uuid:%s] has no permission to set system tag with resource[uuid:%s, type:%s]",
+                                message.getSession().getAccountUuid(), uuid, type));
                     }
                 });
             }
@@ -236,9 +214,11 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
             private void checkIfTheAccountCanAccessTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = getResourceUuids(param);
 
-                final String accountUuid = rbacEntity.getApiMessage().getSession().getAccountUuid();
+                final String accountUuid = message.getSession().getAccountUuid();
+                APIResourceScope scope = apiResourceScope(param);
+
                 AccessibleResourceChecker checker = AccessibleResourceChecker.forAccount(accountUuid)
-                        .withScope(apiResourceScope(param));
+                        .withScope(scope);
 
                 final Class<?>[] resourceTypes = param.param.resourceType();
                 if (resourceTypes.length == 1) {
@@ -247,12 +227,25 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
 
                 List<String> inaccessibleResources = checker.findOutAllInaccessibleResources(uuids);
                 if (!inaccessibleResources.isEmpty()) {
-                    throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
-                            "the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
-                            accountUuid, inaccessibleResources,
-                            Arrays.stream(resourceTypes).map(Class::getSimpleName).collect(Collectors.toList())));
+                    noAccessWithSharableScopeError(accountUuid, inaccessibleResources, scope);
                 }
+            }
 
+            private void noAccessWithSharableScopeError(String accountUuid, List<String> inaccessibleResources, APIResourceScope scope) {
+                List<Tuple> tuples = q(ResourceVO.class)
+                        .in(ResourceVO_.uuid, inaccessibleResources)
+                        .select(ResourceVO_.uuid, ResourceVO_.resourceType)
+                        .listTuple();
+                List<String> texts = transform(tuples,
+                        tuple -> String.format("%s[uuid:%s]", tuple.get(1, String.class), tuple.get(0, String.class)));
+                if (scope == APIResourceScope.AllowedSharing) {
+                    throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
+                            "account[uuid:%s] has no access to resources with allow-sharing scope: %s",
+                            accountUuid, String.join("\n\t", texts)));
+                }
+                throw new OperationFailureException(err(RESOURCE_NOT_ACCESSIBLE,
+                        "account[uuid:%s] has no access to resources with owner-only scope: %s",
+                        accountUuid, String.join(",", texts)));
             }
         }.execute();
     }

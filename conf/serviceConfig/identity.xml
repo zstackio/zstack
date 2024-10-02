@@ -73,4 +73,8 @@
     <message>
         <name>org.zstack.header.identity.APIRenewSessionMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APIGetRolePolicyActionsMsg</name>
+    </message>
 </service>

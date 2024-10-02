@@ -25,5 +25,7 @@ public class RBACInfo implements RBACDescription {
                 .roleName("image")
                 .actionsInThisPermission()
                 .build();
+
+        contributeNormalApiToOtherRole();
     }
 }

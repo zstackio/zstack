@@ -9,22 +9,21 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 
-import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import static org.zstack.utils.CollectionUtils.isEmpty;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class RoleBase implements Role {
+public class RoleBase {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -40,7 +39,6 @@ public class RoleBase implements Role {
         return RoleInventory.valueOf(self);
     }
 
-    @Override
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
@@ -137,55 +135,56 @@ public class RoleBase implements Role {
     }
 
     private void updateRolePolicy(RoleSpec spec) {
-        Set<Long> idNeedDelete = new HashSet<>();
-        List<RolePolicyVO> policiesNeedCreate = new ArrayList<>();
-
-        List<Tuple> tupleList = Q.New(RolePolicyVO.class)
+        List<RolePolicyVO> existsPolicies = Q.New(RolePolicyVO.class)
                 .eq(RolePolicyVO_.roleUuid, spec.getUuid())
-                .select(RolePolicyVO_.id, RolePolicyVO_.actions, RolePolicyVO_.effect)
-                .listTuple();
-
-        Map<String, Tuple> statementTupleMap = new HashMap<>();
-        for (Tuple tuple : tupleList) {
-            String actions = tuple.get(1, String.class);
-            RolePolicyEffect effect = tuple.get(2, RolePolicyEffect.class);
-            final String statement = RolePolicyStatement.toStringStatement(effect, actions);
-            statementTupleMap.compute(statement, (key, value) -> {
-                if (value != null) {
-                    Long id = tuple.get(0, Long.class);
-                    idNeedDelete.add(id);
-                }
-                return tuple;
-            });
-        }
+                .list();
+        RolePolicyUpdater updater = RolePolicyUpdater.of(existsPolicies);
 
         for (RolePolicyStatement statement : spec.getPoliciesToDelete()) {
-            for (String statmentString : statement.toStringStatements()) {
-                Tuple tuple = statementTupleMap.get(statmentString);
-                if (tuple != null) {
-                    idNeedDelete.add(tuple.get(0, Long.class));
-                }
-            }
+            updater.delete(statement);
         }
 
         for (RolePolicyStatement statement : spec.getPoliciesToCreate()) {
-            for (RolePolicyVO policyVO : statement.toVO()) {
-                String statmentString = RolePolicyStatement.toStringStatement(policyVO);
-                Tuple tuple = statementTupleMap.get(statmentString);
-                if (tuple == null) {
-                    policyVO.setRoleUuid(spec.getUuid());
-                    policiesNeedCreate.add(policyVO);
-                }
-            }
+            updater.add(statement);
         }
 
-        if (!idNeedDelete.isEmpty()) {
-            SQL.New(RolePolicyVO.class)
-                    .in(RolePolicyVO_.id, idNeedDelete)
-                    .delete();
+        updater.squeeze();
+
+        Set<Long> policyIdsNeedDelete = updater.collectAllPolicyIdsNeedDelete();
+        List<RolePolicyVO> policiesNeedCreate = updater.collectAllPolicyIdsNeedCreate();
+        if (policyIdsNeedDelete.isEmpty() && policiesNeedCreate.isEmpty()) {
+            return;
         }
-        if (!policiesNeedCreate.isEmpty()) {
-            dbf.persistCollection(policiesNeedCreate);
-        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                if (!policyIdsNeedDelete.isEmpty()) {
+                    sql(RolePolicyVO.class)
+                            .in(RolePolicyVO_.id, policyIdsNeedDelete)
+                            .delete();
+                }
+
+                if (policiesNeedCreate.isEmpty()) {
+                    return;
+                }
+
+                policiesNeedCreate.forEach(p -> p.setRoleUuid(spec.getUuid()));
+                for (RolePolicyVO policy : policiesNeedCreate) {
+                    Set<RolePolicyResourceRefVO> refs = new HashSet<>(policy.getResourceRefs());
+
+                    persist(policy);
+                    if (isEmpty(refs)) {
+                        continue;
+                    }
+
+                    reload(policy);
+                    for (RolePolicyResourceRefVO ref : refs) {
+                        ref.setRolePolicyId(policy.getId());
+                        persist(ref);
+                    }
+                }
+            }
+        }.execute();
     }
 }

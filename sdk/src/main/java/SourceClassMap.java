@@ -218,12 +218,11 @@ public class SourceClassMap {
 			put("org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct", "org.zstack.sdk.VpcVpnIpSecConfigStruct");
 			put("org.zstack.header.identity.AccountInventory", "org.zstack.sdk.AccountInventory");
 			put("org.zstack.header.identity.AccountResourceRefInventory", "org.zstack.sdk.AccountResourceRefInventory");
-			put("org.zstack.header.identity.PolicyStatement", "org.zstack.sdk.PolicyStatement");
 			put("org.zstack.header.identity.Quota$QuotaUsage", "org.zstack.sdk.QuotaUsage");
 			put("org.zstack.header.identity.QuotaInventory", "org.zstack.sdk.QuotaInventory");
 			put("org.zstack.header.identity.SessionInventory", "org.zstack.sdk.SessionInventory");
-			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.login.LoginAuthenticationProcedureDesc", "org.zstack.sdk.LoginAuthenticationProcedureDesc");
+			put("org.zstack.header.identity.role.RoleAccountRefInventory", "org.zstack.sdk.identity.role.RoleAccountRefInventory");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
 			put("org.zstack.header.identityzone.IdentityZoneInventory", "org.zstack.sdk.IdentityZoneInventory");
 			put("org.zstack.header.identityzone.IdentityZoneProperty", "org.zstack.sdk.IdentityZoneProperty");
@@ -354,6 +353,10 @@ public class SourceClassMap {
 			put("org.zstack.header.zone.ZoneInventory", "org.zstack.sdk.ZoneInventory");
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
+			put("org.zstack.iam1.entity.accounts.AccountGroupInventory", "org.zstack.sdk.iam1.accounts.AccountGroupInventory");
+			put("org.zstack.iam1.entity.accounts.AccountGroupResourceView", "org.zstack.sdk.iam1.accounts.AccountGroupResourceView");
+			put("org.zstack.iam1.entity.accounts.AccountGroupRoleView", "org.zstack.sdk.iam1.accounts.AccountGroupRoleView");
+			put("org.zstack.iam1.entity.accounts.AccountGroupView", "org.zstack.sdk.iam1.accounts.AccountGroupView");
 			put("org.zstack.iam1.entity.ensemble.AccountGroupSharingView", "org.zstack.sdk.iam1.ensemble.AccountGroupSharingView");
 			put("org.zstack.iam1.entity.ensemble.AccountSharingView", "org.zstack.sdk.iam1.ensemble.AccountSharingView");
 			put("org.zstack.iam1.entity.ensemble.ResourceEnsembleInventory", "org.zstack.sdk.iam1.ensemble.ResourceEnsembleInventory");
@@ -1041,8 +1044,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PolicyRouteTableInventory", "org.zstack.policyRoute.PolicyRouteTableInventory");
 			put("org.zstack.sdk.PolicyRouteTableRouteEntryInventory", "org.zstack.policyRoute.PolicyRouteTableRouteEntryInventory");
 			put("org.zstack.sdk.PolicyRouteTableVRouterRefInventory", "org.zstack.policyRoute.PolicyRouteTableVRouterRefInventory");
-			put("org.zstack.sdk.PolicyStatement", "org.zstack.header.identity.PolicyStatement");
-			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.StatementEffect");
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
 			put("org.zstack.sdk.PortGroupInventory", "org.zstack.network.l2.virtualSwitch.header.PortGroupInventory");
 			put("org.zstack.sdk.PortGroupVlanMode", "org.zstack.network.l2.virtualSwitch.header.PortGroupVlanMode");
@@ -1278,6 +1279,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");
 			put("org.zstack.sdk.databasebackup.DatabaseType", "org.zstack.header.storage.database.backup.DatabaseType");
+			put("org.zstack.sdk.iam1.accounts.AccountGroupInventory", "org.zstack.iam1.entity.accounts.AccountGroupInventory");
+			put("org.zstack.sdk.iam1.accounts.AccountGroupResourceView", "org.zstack.iam1.entity.accounts.AccountGroupResourceView");
+			put("org.zstack.sdk.iam1.accounts.AccountGroupRoleView", "org.zstack.iam1.entity.accounts.AccountGroupRoleView");
+			put("org.zstack.sdk.iam1.accounts.AccountGroupView", "org.zstack.iam1.entity.accounts.AccountGroupView");
 			put("org.zstack.sdk.iam1.ensemble.AccountGroupSharingView", "org.zstack.iam1.entity.ensemble.AccountGroupSharingView");
 			put("org.zstack.sdk.iam1.ensemble.AccountSharingView", "org.zstack.iam1.entity.ensemble.AccountSharingView");
 			put("org.zstack.sdk.iam1.ensemble.ResourceEnsembleInventory", "org.zstack.iam1.entity.ensemble.ResourceEnsembleInventory");
@@ -1289,6 +1294,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.ldap.entity.LdapEntryAttributeInventory", "org.zstack.ldap.entity.LdapEntryAttributeInventory");
 			put("org.zstack.sdk.identity.ldap.entity.LdapEntryInventory", "org.zstack.ldap.entity.LdapEntryInventory");
 			put("org.zstack.sdk.identity.ldap.entity.LdapServerInventory", "org.zstack.ldap.entity.LdapServerInventory");
+			put("org.zstack.sdk.identity.role.RoleAccountRefInventory", "org.zstack.header.identity.role.RoleAccountRefInventory");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");

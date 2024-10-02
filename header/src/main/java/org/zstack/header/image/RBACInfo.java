@@ -1,5 +1,6 @@
 package org.zstack.header.image;
 
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.rbac.RBACDescription;
 
 public class RBACInfo implements RBACDescription {
@@ -23,6 +24,16 @@ public class RBACInfo implements RBACDescription {
         roleBuilder()
                 .uuid("d55b63dc06b14ad1b62448fa6899729b")
                 .permissionBaseOnThis()
+                .build();
+    }
+
+    @Override
+    public void contributeToRoles() {
+        roleContributorBuilder()
+                .toOtherRole()
+                .actions(
+                    APIQueryImageMsg.class
+                )
                 .build();
     }
 }

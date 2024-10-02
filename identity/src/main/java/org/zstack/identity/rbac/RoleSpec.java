@@ -1,8 +1,10 @@
 package org.zstack.identity.rbac;
 
 import org.zstack.core.Platform;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.role.RolePolicyStatement;
 import org.zstack.header.identity.role.RolePolicyVO;
+import org.zstack.header.identity.role.RolePolicyVO_;
 import org.zstack.header.identity.role.RoleType;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.identity.role.api.APICreateRoleMsg;
@@ -10,6 +12,8 @@ import org.zstack.header.identity.role.api.APIUpdateRoleMsg;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.*;
 
 public class RoleSpec {
     private String uuid;
@@ -97,6 +101,12 @@ public class RoleSpec {
         spec.setDescription(message.getDescription());
         spec.setType(RoleType.Customized);
         spec.setAccountUuid(message.getSession() == null ? null : message.getSession().getAccountUuid());
+        if (message.getBaseOnRole() != null) {
+            List<RolePolicyVO> basePolicies = Q.New(RolePolicyVO.class)
+                    .eq(RolePolicyVO_.roleUuid, message.getBaseOnRole())
+                    .list();
+            spec.getPoliciesToCreate().addAll(transform(basePolicies, RolePolicyStatement::valueOf));
+        }
         spec.getPoliciesToCreate().addAll(message.getFormatPolicies());
         return spec;
     }
@@ -122,14 +132,5 @@ public class RoleSpec {
         role.setType(getType());
         role.setAccountUuid(getAccountUuid());
         return role;
-    }
-
-    public List<RolePolicyVO> buildPoliciesToCreate(String roleUuid) {
-        List<RolePolicyVO> list = new ArrayList<>();
-        for (RolePolicyStatement statement : policiesToCreate) {
-            list.addAll(statement.toVO());
-        }
-        list.forEach(vo -> vo.setRoleUuid(roleUuid));
-        return list;
     }
 }

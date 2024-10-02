@@ -5,7 +5,6 @@ import org.zstack.header.PackageAPIInfo;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.identity.role.RolePolicyEffect;
 import org.zstack.header.identity.role.RolePolicyStatement;
@@ -29,27 +28,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
     public static List<Role> roles = new ArrayList<>();
     public static Map<String, ApiPermissionBucket> apiBuckets = new HashMap<>();
     public static List<Class<?>> readableResources = new ArrayList<>();
-    public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
-    private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
     public static List<ResourceEnsembleMember> ensembleMembers = new ArrayList<>();
 
-    public static Map<Class, List<ExpendedFieldPermission>> expendApiClassForPermissionCheck = new HashMap<>();
+    public static Map<Class<?>, List<Function<?, List<APIMessage>>>> expendApiClassForPermissionCheck = new HashMap<>();
 
     private static List<RoleContributor> roleContributors = new ArrayList<>();
     private static List<RoleBuilder> roleBuilders = new ArrayList<>();
-
-    private static PolicyMatcher matcher = new PolicyMatcher();
-
-    static class APIPermissionCheckerWrapper {
-        boolean takeOver;
-        APIPermissionChecker checker;
-    }
 
     public static void checkMissingRBACInfo() {
         PolicyMatcher matcher = new PolicyMatcher();
@@ -129,7 +120,6 @@ public class RBAC {
 
         public RoleBuilder(RBACDescription description) {
             basePermission = description.permissionName();
-            role.setPredefine(true);
             role.setName(basePermission);
         }
 
@@ -164,16 +154,6 @@ public class RBAC {
             return permissionsByName(this.basePermission);
         }
 
-        public RoleBuilder predefined() {
-            role.predefine = true;
-            return this;
-        }
-
-        public RoleBuilder notPredefined() {
-            role.predefine = false;
-            return this;
-        }
-
         public RoleBuilder excludeActions(String...vs) {
             for (String v : vs) {
                 role.getExcludedActions().add(v);
@@ -197,8 +177,6 @@ public class RBAC {
         private String uuid;
         private String name;
         private Set<String> allowedActions = new HashSet<>();
-        private StatementEffect effect = StatementEffect.Allow;
-        private boolean predefine = true;
         private List<String> excludedActions = new ArrayList<>();
 
         public String getUuid() {
@@ -223,22 +201,6 @@ public class RBAC {
 
         public void setAllowedActions(Set<String> allowedActions) {
             this.allowedActions = allowedActions;
-        }
-
-        public StatementEffect getEffect() {
-            return effect;
-        }
-
-        public void setEffect(StatementEffect effect) {
-            this.effect = effect;
-        }
-
-        public boolean isPredefine() {
-            return predefine;
-        }
-
-        public void setPredefine(boolean predefine) {
-            this.predefine = predefine;
         }
 
         public List<String> getExcludedActions() {
@@ -332,31 +294,23 @@ public class RBAC {
         }
     }
 
-    public static class ExpendedFieldPermissionBuilder {
-        ExpendedFieldPermission fieldPermission = new ExpendedFieldPermission();
-        Class basicApiClass;
+    public static class ExpendedPermission<MSG extends APIMessage> {
+        public final Class<MSG> basicApiClass;
 
-        public ExpendedFieldPermissionBuilder basicApi(Class v) {
-            basicApiClass = v;
-            return this;
+        public ExpendedPermission(Class<MSG> basicApiClass) {
+            this.basicApiClass = Objects.requireNonNull(basicApiClass);
         }
 
-        public ExpendedFieldPermissionBuilder fieldName(String v) {
-            fieldPermission.fieldName = v;
-            return this;
-        }
+        List<Function<MSG, List<APIMessage>>> expands = new ArrayList<>();
 
-        public ExpendedFieldPermissionBuilder expandTo(Class v) {
-            fieldPermission.apiClass = v;
+        public ExpendedPermission<MSG> expandTo(Function<MSG, List<APIMessage>> function) {
+            expands.add(function);
             return this;
         }
 
         public void build() {
-            DebugUtils.Assert(fieldPermission.fieldName != null, "fieldName in ExpendedFieldPermission can not be null");
-            DebugUtils.Assert(fieldPermission.apiClass != null, "apiClass in ExpendedFieldPermission can not be null");
-
             expendApiClassForPermissionCheck.putIfAbsent(basicApiClass, new ArrayList<>());
-            expendApiClassForPermissionCheck.get(basicApiClass).add(fieldPermission);
+            expendApiClassForPermissionCheck.get(basicApiClass).addAll(expands);
         }
     }
 
@@ -705,18 +659,6 @@ public class RBAC {
             rd.roles();
             rd.contributeToRoles();
             rd.globalReadableResources();
-            RBACEntityFormatter formatter =  rd.entityFormatter();
-            if (formatter != null) {
-                for (Class aClass : formatter.getAPIClasses()) {
-                    List<Class> clzs = new ArrayList<>();
-                    clzs.add(aClass);
-                    clzs.addAll(BeanUtils.reflections.getSubTypesOf(aClass));
-                    clzs.forEach(apiClz-> {
-                        List<RBACEntityFormatter> formatters = entityFormatters.computeIfAbsent(apiClz, x->new ArrayList<>());
-                        formatters.add(formatter);
-                    });
-                }
-            }
         });
 
         buildApiBuckets();
@@ -742,6 +684,7 @@ public class RBAC {
         });
     }
 
+    @Deprecated
     static class ExpendedFieldPermission {
         String fieldName;
         Class apiClass;
@@ -752,50 +695,21 @@ public class RBAC {
                 || !OwnedByAccount.class.isAssignableFrom(clz);
     }
 
-    public static boolean checkAPIPermission(APIMessage msg, boolean policyDecision) {
-        List<APIPermissionCheckerWrapper> checkers = permissionCheckers.get(msg.getClass());
-        if (checkers == null || checkers.isEmpty()) {
-            return policyDecision;
-        }
-
-        for (APIPermissionCheckerWrapper checker : checkers) {
-            Boolean ret = checker.checker.check(msg);
-            if (ret == null) {
-                continue;
-            }
-
-            if (checker.takeOver) {
-                return ret;
-            }
-
-            if (!ret) {
-                return false;
-            }
-        }
-
-        return policyDecision;
-    }
-
-    public static RBACEntity formatRBACEntity(RBACEntity entity) {
-        Class apiClass = entity.getApiMessage().getClass();
-        List<RBACEntityFormatter> formatters = entityFormatters.get(apiClass);
-        if (formatters == null) {
-            return entity;
-        }
-
-        RBACEntity e;
-        for (RBACEntityFormatter formatter : formatters) {
-            e = formatter.format(entity);
-            if (e != null) {
-                return e;
-            }
-        }
-
-        return entity;
+    public static boolean isValidAPI(String apiName) {
+        return apiBuckets.containsKey(apiName);
     }
 
     public static boolean isAdminOnlyAPI(String apiName) {
         return apiBuckets.get(apiName).adminOnly;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static List<Function<APIMessage, List<APIMessage>>> expendPermissionCheckList(Class<?> apiClass) {
+        final List list = expendApiClassForPermissionCheck.get(apiClass);
+        if (list == null) {
+            return null;
+        }
+        return (List<Function<APIMessage, List<APIMessage>>>) list;
     }
 
     public static class ApiPermissionBucket {
