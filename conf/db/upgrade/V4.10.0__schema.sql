@@ -188,4 +188,6 @@ alter table `zstack`.`RoleAccountRefVO` add constraint fkRoleAccountRefAccountPe
 
 -- Others
 
+CALL INSERT_COLUMN('ClusterDRSVO', 'lastAdviceGroupUuid', 'char(32)', 1, null, 'balancedState');
+
 CALL INSERT_COLUMN('VmVfNicVO', 'haState', 'varchar(32)', 0, 'Disabled', 'pciDeviceUuid');
