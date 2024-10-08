@@ -24,6 +24,9 @@ import java.util.Set;
         parents = {
                 @EntityGraph.Neighbour(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid"),
+        },
+        friends = {
+                @EntityGraph.Neighbour(type = IpRangeVO.class, myField = "uuid", targetField = "l3NetworkUuid"),
         }
 )
 public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {

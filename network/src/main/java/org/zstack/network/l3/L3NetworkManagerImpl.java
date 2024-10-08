@@ -29,7 +29,6 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.rbac.ResourceSharingExtensionPoint;
 import org.zstack.identity.header.ShareResourceContext;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
@@ -58,7 +57,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint,
-        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint, ResourceSharingExtensionPoint {
+        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(L3NetworkManagerImpl.class);
 
     @Autowired
@@ -776,18 +775,5 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         }
 
         return ret;
-    }
-
-    @Override
-    public void beforeSharingResource(ShareResourceContext context) {
-        // TODO: L3 and IpRange add to resource ensemble soon
-        context.uuidResourceMap.forEach((uuid, resourceVO) -> {
-            if (!L3NetworkVO.class.getSimpleName().equals(resourceVO.getResourceType())) {
-                return;
-            }
-
-            context.additionResources(list(resourceVO), uuid);
-            context.additionResources(Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, uuid).list(), uuid);
-        });
     }
 }
