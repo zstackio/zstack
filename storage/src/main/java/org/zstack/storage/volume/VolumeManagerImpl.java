@@ -300,11 +300,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                     throw new OperationFailureException(operr("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
                                 }
 
-                                String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and bs.state = :bsState and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
+                                String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
                                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                                 q.setParameter("psUuid", msg.getPrimaryStorageUuid());
                                 q.setParameter("bsStatus", BackupStorageStatus.Connected);
-                                q.setParameter("bsState", BackupStorageState.Enabled);
                                 q.setParameter("bsUuids", bsUuids);
                                 bsUuids = q.getResultList();
 
