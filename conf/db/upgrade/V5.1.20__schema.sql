@@ -11,7 +11,7 @@ BEGIN
 
     UPDATE ModelServiceInstanceVO
     SET k8sResourceYaml = yaml
-    WHERE vmInstanceUuid IS NULL;
+    WHERE vmInstanceUuid IS NULL AND k8sResourceYaml IS NULL AND yaml IS NOT NULL;
 
     -- 提交事务
     COMMIT;
