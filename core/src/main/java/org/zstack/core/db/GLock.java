@@ -198,6 +198,16 @@ public class GLock {
 
             PreparedStatement pstmt = null;
             try {
+                if (!conn.isValid(15)) {
+                    logger.debug(String.format("conn is not valid, renew conn"));
+                    conn = dataSource.getConnection();
+                    conn.setAutoCommit(true);
+                }
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("[GLock Release DB Lock] thread[%s] starting released DB lock[%s]", Thread.currentThread().getName(), name));
+                }
+
                 pstmt = conn.prepareStatement(String.format("select release_lock('%s')", name), ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (!rs.next()) {
