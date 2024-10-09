@@ -19,7 +19,7 @@ public class KvmCbdCommands {
     }
 
     public static class KvmUpdateClientConfCmd extends AgentCmd {
-        public List<MdsInfo> mdsInfos;
+        private List<MdsInfo> mdsInfos;
 
         public List<MdsInfo> getMdsInfos() {
             return mdsInfos;
