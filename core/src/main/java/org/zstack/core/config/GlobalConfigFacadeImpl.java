@@ -16,7 +16,6 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.Pair;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -25,7 +24,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -407,7 +405,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     String regularExpression;
 
                     {
-                        if (g.getType() != null) {
+                        if (String.class.getName().equals(g.getType())) {
+                            typeClass = String.class;
+
+                            try {
+                                typeClassValueOfMethod = String.class.getMethod("valueOf", Object.class);
+                            } catch (Exception ignored) {}
+                        } else if (g.getType() != null) {
                             typeClass = Class.forName(g.getType());
 
                             try {
