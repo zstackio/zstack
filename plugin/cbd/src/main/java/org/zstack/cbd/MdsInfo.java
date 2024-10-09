@@ -5,13 +5,12 @@ package org.zstack.cbd;
  * @date 2024/4/10 23:18
  */
 public class MdsInfo {
-    public String sshUsername;
-    public String sshPassword;
-    public int sshPort = 22;
-    public String mdsAddr;
-    public int mdsPort = 6666;
-    public MdsStatus mdsStatus;
-    public String mdsVersion;
+    private String sshUsername;
+    private String sshPassword;
+    private int sshPort = 22;
+    private String mdsAddr;
+    private String mdsExternalAddr;
+    private MdsStatus mdsStatus;
 
     public String getSshUsername() {
         return sshUsername;
@@ -29,14 +28,6 @@ public class MdsInfo {
         this.sshPassword = sshPassword;
     }
 
-    public String getMdsAddr() {
-        return mdsAddr;
-    }
-
-    public void setMdsAddr(String mdsAddr) {
-        this.mdsAddr = mdsAddr;
-    }
-
     public int getSshPort() {
         return sshPort;
     }
@@ -45,12 +36,20 @@ public class MdsInfo {
         this.sshPort = sshPort;
     }
 
-    public int getMdsPort() {
-        return mdsPort;
+    public String getMdsAddr() {
+        return mdsAddr;
     }
 
-    public void setMdsPort(int mdsPort) {
-        this.mdsPort = mdsPort;
+    public void setMdsAddr(String mdsAddr) {
+        this.mdsAddr = mdsAddr;
+    }
+
+    public String getMdsExternalAddr() {
+        return mdsExternalAddr;
+    }
+
+    public void setMdsExternalAddr(String mdsExternalAddr) {
+        this.mdsExternalAddr = mdsExternalAddr;
     }
 
     public MdsStatus getMdsStatus() {
@@ -59,13 +58,5 @@ public class MdsInfo {
 
     public void setMdsStatus(MdsStatus mdsStatus) {
         this.mdsStatus = mdsStatus;
-    }
-
-    public String getMdsVersion() {
-        return mdsVersion;
-    }
-
-    public void setMdsVersion(String mdsVersion) {
-        this.mdsVersion = mdsVersion;
     }
 }

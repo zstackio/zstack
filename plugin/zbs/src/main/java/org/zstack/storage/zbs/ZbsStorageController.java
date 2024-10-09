@@ -80,6 +80,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
 
     private static final String ZBS_CBD_LUN_PATH_FORMAT = "cbd:%s/%s/%s";
+    private static final Integer SUPPORT_MINIMUM_MDS_NUMBER = 2;
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -203,7 +204,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             mdsInfo.setSshPassword(uri.getSshPassword());
             mdsInfo.setSshPort(uri.getSshPort());
             mdsInfo.setMdsAddr(uri.getHostname());
-            mdsInfo.setMdsPort(uri.getMdsPort());
             mdsInfos.add(mdsInfo);
         }
 
@@ -274,17 +274,15 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        String mdsListenAddr = mds.stream().map(m -> m.getSelf().getMdsAddr() + ":" + m.getSelf().getMdsPort()).collect(Collectors.joining(","));
                         List<ErrorCode> errors = new ArrayList<>();
                         new While<>(mds).each((m, comp) -> {
                             GetFactsCmd cmd = new GetFactsCmd();
                             cmd.setUuid(self.getUuid());
                             cmd.setMdsAddr(m.getSelf().getMdsAddr());
-                            cmd.setMdsListenAddr(mdsListenAddr);
                             m.httpCall(GET_FACTS_PATH, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(comp) {
                                 @Override
                                 public void success(GetFactsRsp returnValue) {
-                                    m.getSelf().setMdsVersion(returnValue.version);
+                                    m.getSelf().setMdsExternalAddr(returnValue.getMdsExternalAddr());
                                     comp.done();
                                 }
 
@@ -354,6 +352,21 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                         .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
                         .update();
+
+                boolean isConnected = addonInfo.getMdsInfos().stream()
+                        .filter(mdsInfo -> MdsStatus.Connected.equals(mdsInfo.getMdsStatus()))
+                        .count() >= SUPPORT_MINIMUM_MDS_NUMBER;
+
+                if (!isConnected) {
+                    String notConnectedIps = addonInfo.getMdsInfos().stream()
+                            .filter(mdsInfo -> !MdsStatus.Connected.equals(mdsInfo.getMdsStatus()))
+                            .map(MdsInfo::getMdsAddr)
+                            .collect(Collectors.joining(", "));
+
+                    completion.fail(operr("at least %d of the MDS nodes exist in the Connected state, " +
+                            "the following MDS nodes[%s] are not Connected.", SUPPORT_MINIMUM_MDS_NUMBER, notConnectedIps));
+                    return;
+                }
                 completion.success();
             }
         });
@@ -1213,14 +1226,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class GetFactsRsp extends AgentResponse {
-        private String version;
+        private String mdsExternalAddr;
 
-        public String getVersion() {
-            return version;
+        public String getMdsExternalAddr() {
+            return mdsExternalAddr;
         }
 
-        public void setVersion(String version) {
-            this.version = version;
+        public void setMdsExternalAddr(String mdsExternalAddr) {
+            this.mdsExternalAddr = mdsExternalAddr;
         }
     }
 
@@ -1585,15 +1598,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class GetFactsCmd extends AgentCommand {
-        private String mdsListenAddr;
-
-        public String getMdsListenAddr() {
-            return mdsListenAddr;
-        }
-
-        public void setMdsListenAddr(String mdsListenAddr) {
-            this.mdsListenAddr = mdsListenAddr;
-        }
     }
 
     public static class AgentResponse extends ZbsMdsBase.AgentResponse {

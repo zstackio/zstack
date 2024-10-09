@@ -1780,11 +1780,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     final String __name__ = "ping-storage";
 
                     @Override
-                    public boolean skip(Map data) {
-                        return CoreGlobalProperty.UNIT_TEST_ON;
-                    }
-
-                    @Override
                     public void run(FlowTrigger trigger, Map data) {
                         controller.ping(new Completion(trigger) {
                             @Override
