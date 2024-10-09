@@ -23409,13 +23409,24 @@
     "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
   },
   {
+    "raw": "illegal type[%s] for pci device, only %s are legal",
+    "en_US": "illegal type[{0}] for pci device, only {1} are legal",
+    "zh_CN": "PCI设备的类型[{0}]非法，只有{1}是合法的",
+    "arguments": [
+      "type",
+      "PciDeviceType.leagalPciDeviceCandidateTypes"
+    ],
+    "line": 159,
+    "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
+  },
+  {
     "raw": "pci device[uuid:%s] doesn\u0027t exist",
     "en_US": "pci device[uuid:{0}] doesn\u0027t exist",
     "zh_CN": "PCI设备[uuid:{0}]不存在",
     "arguments": [
       "msg.getPciDeviceUuid()"
     ],
-    "line": 417,
+    "line": 422,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23425,7 +23436,7 @@
     "arguments": [
       "pci.getHostUuid()"
     ],
-    "line": 422,
+    "line": 427,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23435,7 +23446,7 @@
     "arguments": [
       "pci.getHostUuid()"
     ],
-    "line": 468,
+    "line": 473,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23445,7 +23456,7 @@
     "arguments": [
       "pci.getHostUuid()"
     ],
-    "line": 473,
+    "line": 478,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23457,7 +23468,7 @@
       "pci.getType()",
       "pci.getHostUuid()"
     ],
-    "line": 487,
+    "line": 492,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23468,7 +23479,7 @@
       "pci.getHostUuid()",
       "pci.getUuid()"
     ],
-    "line": 609,
+    "line": 632,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23478,7 +23489,7 @@
     "arguments": [
       "interfaceVO.getUuid()"
     ],
-    "line": 505,
+    "line": 510,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23488,7 +23499,7 @@
     "arguments": [
       "msg.getPciDeviceUuid()"
     ],
-    "line": 513,
+    "line": 518,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23498,7 +23509,18 @@
     "arguments": [
       "pci.getHostUuid()"
     ],
-    "line": 528,
+    "line": 533,
+    "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "sub-devices of pci device[uuid:%s] are attached to paused VMs[uuids:%s], please detach them first",
+    "en_US": "sub-devices of pci device[uuid:{0}] are attached to paused VMs[uuids:{1}], please detach them first",
+    "zh_CN": "PCI设备[uuid:{0}]的子设备已挂载到暂停的云主机[uuids:{1}]，请先卸载它们",
+    "arguments": [
+      "pci.getUuid()",
+      "pausedVms"
+    ],
+    "line": 559,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23508,7 +23530,7 @@
     "arguments": [
       "msg.getPciDeviceUuid()"
     ],
-    "line": 550,
+    "line": 573,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23519,7 +23541,7 @@
       "msg.getPciDeviceUuid()",
       "msg.getMdevSpecUuid()"
     ],
-    "line": 561,
+    "line": 584,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23529,7 +23551,7 @@
     "arguments": [
       "msg.getPciDeviceUuid()"
     ],
-    "line": 583,
+    "line": 606,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23539,7 +23561,7 @@
     "arguments": [
       "msg.getPciDeviceUuid()"
     ],
-    "line": 600,
+    "line": 623,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23549,7 +23571,7 @@
     "arguments": [
       "VmInstanceUuid"
     ],
-    "line": 624,
+    "line": 647,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23559,7 +23581,7 @@
     "arguments": [
       "VmInstanceUuid"
     ],
-    "line": 628,
+    "line": 651,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
@@ -23569,7 +23591,7 @@
     "arguments": [
       "VmInstanceUuid"
     ],
-    "line": 635,
+    "line": 658,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
