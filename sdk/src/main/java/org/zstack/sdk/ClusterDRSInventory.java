@@ -28,6 +28,14 @@ public class ClusterDRSInventory  {
         return this.balancedState;
     }
 
+    public java.lang.String lastAdviceGroupUuid;
+    public void setLastAdviceGroupUuid(java.lang.String lastAdviceGroupUuid) {
+        this.lastAdviceGroupUuid = lastAdviceGroupUuid;
+    }
+    public java.lang.String getLastAdviceGroupUuid() {
+        return this.lastAdviceGroupUuid;
+    }
+
     public java.lang.String automationLevel;
     public void setAutomationLevel(java.lang.String automationLevel) {
         this.automationLevel = automationLevel;
