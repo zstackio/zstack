@@ -71,9 +71,7 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
 
     protected List<String> getResourceUuids(APIMessage.FieldParam param) throws IllegalAccessException {
         List<String> uuids = new ArrayList<>();
-        if (param.param.noOwnerCheck()) {
-            // do nothing
-        } else if (String.class.isAssignableFrom(param.field.getType())) {
+        if (String.class.isAssignableFrom(param.field.getType())) {
             String uuid = (String) param.field.get(message);
             if (uuid != null) {
                 uuids.add(uuid);
@@ -257,10 +255,6 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
         }
 
         Class<?> resourceType = param.param.resourceType()[0];
-
-        if (param.param.noOwnerCheck()) {
-            return APIResourceScope.AllowedAll;
-        }
 
         if (param.param.checkAccount() || param.param.operationTarget()) {
             return APIResourceScope.AllowedSharing;
