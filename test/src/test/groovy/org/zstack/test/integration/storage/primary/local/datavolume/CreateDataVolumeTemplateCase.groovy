@@ -8,6 +8,7 @@ import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImageVO
+import org.zstack.header.storage.backup.BackupStorageState
 import org.zstack.header.storage.backup.BackupStorageStateEvent
 import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg
 import org.zstack.header.storage.primary.DownloadDataVolumeToPrimaryStorageMsg
@@ -278,17 +279,47 @@ class CreateDataVolumeTemplateCase extends SubCase {
             stateEvent = BackupStorageStateEvent.disable.toString()
         }
 
-        GetPrimaryStorageCapacityResult originPsCapacity = getPrimaryStorageCapacity {
+        BackupStorageInventory bss = queryBackupStorage {
+            conditions = ["uuid=${bs.uuid}"]
+        }[0]
+        assert bss.state == BackupStorageState.Disabled.toString()
+
+        GetBackupStorageCapacityResult bsCapacity = getBackupStorageCapacity {
+            backupStorageUuids = [bs.uuid]
+        } as GetBackupStorageCapacityResult
+
+        GetPrimaryStorageCapacityResult psCapacity = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         } as GetPrimaryStorageCapacityResult
 
-        createVolumeTemplateFailAndCheckCapacity(originPsCapacity, ps.uuid, kvm.uuid, image.uuid)
+        createDataVolumeFromVolumeTemplate {
+            primaryStorageUuid = ps.uuid
+            delegate.imageUuid = image.uuid
+            delegate.hostUuid = kvm.uuid
+            name = "test-success"
+        }
+
+        retryInSecs {
+            GetBackupStorageCapacityResult currentBsCapacity = getBackupStorageCapacity {
+                backupStorageUuids = [bs.uuid]
+            } as GetBackupStorageCapacityResult
+            GetPrimaryStorageCapacityResult currentPsCapacity = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            } as GetPrimaryStorageCapacityResult
+
+            assert bsCapacity.availableCapacity == currentBsCapacity.availableCapacity
+            assert psCapacity.availableCapacity > currentPsCapacity.availableCapacity
+        }
 
         // pretend allocate PS failed and check capacity
         changeBackupStorageState {
             uuid = bs.uuid
             stateEvent = BackupStorageStateEvent.enable.toString()
         }
+
+        GetPrimaryStorageCapacityResult originPsCapacity = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        } as GetPrimaryStorageCapacityResult
 
         env.message(AllocatePrimaryStorageSpaceMsg.class) { AllocatePrimaryStorageSpaceMsg msg, CloudBus bus ->
             bus.replyErrorByMessageType(msg, "on purpose")
