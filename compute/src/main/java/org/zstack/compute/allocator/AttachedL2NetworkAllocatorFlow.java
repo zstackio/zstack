@@ -83,18 +83,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         /* in normal case, there is no L2NetworkHostRefVO  */
-        List<Tuple> tuples = Q.New(L2NetworkVO.class)
-                .select(L2NetworkVO_.uuid, L2NetworkVO_.type)
-                .in(L2NetworkVO_.uuid, l2uuids)
-                .listTuple();
-
-        List<String> notAttachToAllHostsL2s = new ArrayList<>();
-        for (Tuple t : tuples) {
-            if (!L2NetworkType.valueOf(t.get(1, String.class)).isAttachToAllHosts()) {
-                notAttachToAllHostsL2s.add(t.get(0, String.class));
-            }
-        }
-        List<String> excludeHostUuids = L2NetworkHostUtils.getExcludeHostUuids(notAttachToAllHostsL2s, retHostUuids);
+        List<String> excludeHostUuids = L2NetworkHostUtils.getExcludeHostUuids(l2uuids, retHostUuids);
         retHostUuids.removeAll(excludeHostUuids);
         if (retHostUuids.isEmpty()){
             return new ArrayList<>();

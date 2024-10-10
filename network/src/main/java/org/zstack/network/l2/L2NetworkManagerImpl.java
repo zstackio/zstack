@@ -23,6 +23,9 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.vm.FilterAttachableL3NetworkExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
@@ -35,7 +38,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 
-public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager {
+public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager, FilterAttachableL3NetworkExtensionPoint {
     private static final CLogger logger = Utils.getLogger(L2NetworkManagerImpl.class);
 
     @Autowired
@@ -589,5 +592,19 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         }
 
         createExtensions = pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class);
+    }
+
+    @Override
+    public List<L3NetworkInventory> filterAttachableL3Network(VmInstanceInventory vm, List<L3NetworkInventory> l3s) {
+        String hostUuid = vm.getHostUuid() != null ? vm.getHostUuid() : vm.getLastHostUuid();
+        List<String> l2Uuids = l3s.stream().map(L3NetworkInventory::getL2NetworkUuid).distinct().collect(Collectors.toList());
+        List<L3NetworkInventory> rets = new ArrayList<>(l3s);
+        if (l2Uuids.isEmpty()) {
+            return rets;
+        }
+
+        List<String> excludeL2Uuids = L2NetworkHostUtils.getExcludeL2Uuids(l2Uuids, hostUuid);
+        rets.removeIf(l3 -> excludeL2Uuids.contains(l3.getL2NetworkUuid()));
+        return rets;
     }
 }

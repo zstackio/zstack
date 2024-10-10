@@ -95,17 +95,59 @@ public class L2NetworkHostUtils {
                 .isExists();
     }
 
+    public static List<String> getNotAttachToAllHostL2Uuids(List<String> l2Uuids) {
+        if (CollectionUtils.isEmpty(l2Uuids)) {
+            return new ArrayList<>();
+        }
+
+        List<Tuple> tuples = Q.New(L2NetworkVO.class)
+                .select(L2NetworkVO_.uuid, L2NetworkVO_.type)
+                .in(L2NetworkVO_.uuid, l2Uuids)
+                .listTuple();
+
+        List<String> notAttachToAllHostsL2Uuids = new ArrayList<>();
+        for (Tuple t : tuples) {
+            if (!L2NetworkType.valueOf(t.get(1, String.class)).isAttachToAllHosts()) {
+                notAttachToAllHostsL2Uuids.add(t.get(0, String.class));
+            }
+        }
+        return notAttachToAllHostsL2Uuids;
+    }
+
     public static List<String> getExcludeHostUuids(List<String> l2Uuids, List<String> hostUuids) {
         if (CollectionUtils.isEmpty(l2Uuids) || CollectionUtils.isEmpty(hostUuids)) {
             return new ArrayList<>();
         }
 
+        List<String> notAttachToAllHostsL2Uuids = getNotAttachToAllHostL2Uuids(l2Uuids);
+        if (CollectionUtils.isEmpty(notAttachToAllHostsL2Uuids)) {
+            return new ArrayList<>();
+        }
+
         List<String> hostsWithRef = Q.New(L2NetworkHostRefVO.class)
                 .select(L2NetworkHostRefVO_.hostUuid)
-                .in(L2NetworkHostRefVO_.l2NetworkUuid, l2Uuids)
+                .in(L2NetworkHostRefVO_.l2NetworkUuid, notAttachToAllHostsL2Uuids)
                 .in(L2NetworkHostRefVO_.hostUuid, hostUuids)
                 .listValues();
         return hostUuids.stream().filter(it -> !hostsWithRef.contains(it)).collect(Collectors.toList());
+    }
+
+    public static List<String> getExcludeL2Uuids(List<String> l2Uuids, String hostUuid) {
+        if (CollectionUtils.isEmpty(l2Uuids)) {
+            return new ArrayList<>();
+        }
+
+        List<String> notAttachToAllHostsL2Uuids = getNotAttachToAllHostL2Uuids(l2Uuids);
+        if (CollectionUtils.isEmpty(notAttachToAllHostsL2Uuids)) {
+            return new ArrayList<>();
+        }
+
+        List<String> l2sWithRef = Q.New(L2NetworkHostRefVO.class)
+                .select(L2NetworkHostRefVO_.l2NetworkUuid)
+                .in(L2NetworkHostRefVO_.l2NetworkUuid, notAttachToAllHostsL2Uuids)
+                .eq(L2NetworkHostRefVO_.hostUuid, hostUuid)
+                .listValues();
+        return l2Uuids.stream().filter(it -> !l2sWithRef.contains(it)).collect(Collectors.toList());
     }
 
     public static List<HostVO> getHostsByAttachedL2Network(L2NetworkInventory l2) {
