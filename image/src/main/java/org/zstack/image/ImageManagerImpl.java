@@ -2027,12 +2027,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         // TODO: move to compute module.
 
         String architecture = spec.getArchitecture();
-        if (architecture == null && spec.getImage() != null) {
-            architecture = spec.getImage().getArchitecture();
-        }
-
         if (architecture == null && spec.getVmInstance() != null) {
             architecture = spec.getVmInstance().getArchitecture();
+        }
+
+        if (architecture == null && spec.getImage() != null) {
+            architecture = spec.getImage().getArchitecture();
         }
 
         if (architecture == null) {
