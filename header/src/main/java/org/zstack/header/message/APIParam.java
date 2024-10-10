@@ -102,12 +102,6 @@ public @interface APIParam {
     boolean checkAccount() default false;
 
     /**
-     * use {@link #scope()}
-     */
-    @Deprecated
-    boolean noOwnerCheck() default false;
-
-    /**
      * Only use for String type field;
      * NOT support for Collection type field.
      */

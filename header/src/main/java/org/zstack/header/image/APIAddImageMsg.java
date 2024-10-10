@@ -42,7 +42,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     private String format;
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
-    @APIParam(nonempty = true, resourceType = BackupStorageVO.class, noOwnerCheck = true)
+    @APIParam(nonempty = true, resourceType = BackupStorageVO.class)
     private List<String> backupStorageUuids;
     private String type;
     @APIParam(required = false)
