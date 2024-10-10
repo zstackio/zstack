@@ -349,6 +349,7 @@ public class RestServer implements Component, CloudBusEventListener {
             if (evt.isSuccess()) {
                 APIBatchRequest.Result batchResult = ((APIBatchRequest) d.apiMessage).collectResult(d.apiMessage, evt);
 
+                DebugUtils.Assert(batchResult != null, "APIBatchRequest.collectResult should not return null");
                 RestConstants.Batch result;
                 if (batchResult.getSuccessCount() == 0) {
                     result = RestConstants.Batch.FAIL;

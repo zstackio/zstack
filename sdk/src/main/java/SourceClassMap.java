@@ -274,6 +274,7 @@ public class SourceClassMap {
 			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
 			put("org.zstack.header.longjob.LongJobState", "org.zstack.sdk.LongJobState");
 			put("org.zstack.header.managementnode.ManagementNodeInventory", "org.zstack.sdk.ManagementNodeInventory");
+			put("org.zstack.header.message.APIBatchRequest$BatchOperationResult", "org.zstack.sdk.BatchOperationResult");
 			put("org.zstack.header.network.l2.L2NetworkData", "org.zstack.sdk.L2NetworkData");
 			put("org.zstack.header.network.l2.L2NetworkInventory", "org.zstack.sdk.L2NetworkInventory");
 			put("org.zstack.header.network.l2.L2VlanNetworkInventory", "org.zstack.sdk.L2VlanNetworkInventory");
@@ -850,6 +851,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BaremetalPxeServerInventory", "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerInventory");
 			put("org.zstack.sdk.BaremetalVlanNicInventory", "org.zstack.header.baremetal.network.BaremetalVlanNicInventory");
 			put("org.zstack.sdk.BatchDeleteVolumeSnapshotStruct", "org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct");
+			put("org.zstack.sdk.BatchOperationResult", "org.zstack.header.message.APIBatchRequest$BatchOperationResult");
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
 			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BlockVolumeInventory", "org.zstack.header.volume.block.BlockVolumeInventory");
