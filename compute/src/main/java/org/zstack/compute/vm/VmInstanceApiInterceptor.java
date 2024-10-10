@@ -27,10 +27,7 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l2.L2NetworkClusterRefVO;
-import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
@@ -44,6 +41,7 @@ import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.network.l2.L2NetworkHostUtils;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
@@ -267,14 +265,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr(error, msg.getVmNicUuid()));
         }
 
-        String sql = "select vm.uuid, vm.state, vm.type, nic.l3NetworkUuid from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :uuid";
+        String sql = "select vm.uuid, vm.state, vm.type, vm.hostUuid, vm.lastHostUuid from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :uuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("uuid", msg.getVmNicUuid());
         Tuple t = q.getSingleResult();
         String vmUuid = t.get(0, String.class);
         VmInstanceState state = t.get(1, VmInstanceState.class);
         String type = t.get(2, String.class);
-        String srcL3Uuid = t.get(3, String.class);
+        String hostUuid = t.get(3, String.class) != null ? t.get(3, String.class) : t.get(4, String.class);
         msg.setVmInstanceUuid(vmUuid);
 
         if (!VmInstanceState.Stopped.equals(state) && !VmInstanceState.Running.equals(state)) {
@@ -370,6 +368,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
             msg.getRequiredIpMap().put(e.getKey(), e.getValue());
+        }
+
+        L2NetworkType l2Type = L2NetworkType.valueOf(Q.New(L2NetworkVO.class)
+                .eq(L2NetworkVO_.uuid, l2Uuids.get(0))
+                .select(L2NetworkVO_.type).findValue());
+        if (!l2Type.isAttachToAllHosts() && !L2NetworkHostUtils.checkIfL2AttachedToHost(l2Uuids.get(0), hostUuid)) {
+            throw new ApiMessageInterceptionException(operr("unable to change to L3 network[uuid:%s]" +
+                            " whose l2Network is not attached to the host[uuid:%s]", msg.getDestL3NetworkUuid(), hostUuid));
         }
     }
 
