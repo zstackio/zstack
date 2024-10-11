@@ -189,5 +189,11 @@ alter table `zstack`.`RoleAccountRefVO` add constraint fkRoleAccountRefAccountPe
 -- Others
 
 CALL INSERT_COLUMN('ClusterDRSVO', 'lastAdviceGroupUuid', 'char(32)', 1, null, 'balancedState');
+update `ClusterDRSVO` set `state` = 'Enabled' where `clusterUuid` in
+    (select `resourceUuid` from `ResourceConfigVO` where `name` = 'drs.enable' and `resourceType` = 'ClusterVO' and `value` = 'true');
+update `ClusterDRSVO` set `state` = 'Disabled' where `clusterUuid` in
+    (select `resourceUuid` from `ResourceConfigVO` where `name` = 'drs.enable' and `resourceType` = 'ClusterVO' and `value` = 'false');
+delete from `ResourceConfigVO` where `name` = 'drs.enable' and `resourceType` = 'ClusterVO';
+delete from `GlobalConfigVO` where `name` = 'drs.enable';
 
 CALL INSERT_COLUMN('VmVfNicVO', 'haState', 'varchar(32)', 0, 'Disabled', 'pciDeviceUuid');
