@@ -52,4 +52,12 @@ public class FcHbaDeviceInventory extends org.zstack.sdk.HbaDeviceInventory {
         return this.supportedClasses;
     }
 
+    public java.lang.String nodeName;
+    public void setNodeName(java.lang.String nodeName) {
+        this.nodeName = nodeName;
+    }
+    public java.lang.String getNodeName() {
+        return this.nodeName;
+    }
+
 }
