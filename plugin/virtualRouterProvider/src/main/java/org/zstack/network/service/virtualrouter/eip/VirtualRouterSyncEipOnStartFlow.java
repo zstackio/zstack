@@ -30,6 +30,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -105,6 +106,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             to.setGuestIp(guestIp);
             to.setPrivateMac(privMac);
             to.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
+            to.setIpVersion(IPv6NetworkUtils.getIpVersion(to.getVipIp()));
             ret.add(to);
         }
 

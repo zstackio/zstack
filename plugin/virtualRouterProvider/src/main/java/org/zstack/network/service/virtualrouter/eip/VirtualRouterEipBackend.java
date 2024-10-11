@@ -35,6 +35,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.Tuple;
 import java.util.*;
@@ -142,6 +143,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 to.setVipIp(struct.getVip().getIp());
                 to.setGuestIp(struct.getNic().getIp());
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
+                to.setIpVersion(IPv6NetworkUtils.getIpVersion(to.getVipIp()));
 
                 VirtualRouterCommands.CreateEipCmd cmd = new VirtualRouterCommands.CreateEipCmd();
                 cmd.setEip(to);
@@ -298,6 +300,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                         .eq(EipVO_.vmNicUuid, struct.getEip().getVmNicUuid())
                         .notEq(EipVO_.vipIp, struct.getEip().getVipIp())
                         .isExists());
+                to.setIpVersion(IPv6NetworkUtils.getIpVersion(to.getVipIp()));
                 cmd.setEip(to);
 
                 VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
@@ -559,6 +562,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 continue;
             }
             to.setPublicMac(pubNic.get().getMac());
+            to.setIpVersion(IPv6NetworkUtils.getIpVersion(to.getVipIp()));
             ret.add(to);
         }
 

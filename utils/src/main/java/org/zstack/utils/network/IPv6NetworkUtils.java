@@ -18,6 +18,9 @@ public class IPv6NetworkUtils {
     // MAC 地址正则表达式
     private static String macRegex = "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$";
 
+    private static String IP_VERSION_4 = "ipv4";
+    private static String IP_VERSION_6 = "ipv6";
+
     private static boolean isConsecutiveRange(BigInteger[] allocatedIps) {
         BigInteger first = allocatedIps[0];
         BigInteger last = allocatedIps[allocatedIps.length - 1];
@@ -470,5 +473,14 @@ public class IPv6NetworkUtils {
         }
 
         return 0;
+    }
+
+    public static String getIpVersion(String ip) {
+        if (isValidIpv4(ip)) {
+            return IP_VERSION_4;
+        } else if (isValidIpv6(ip)) {
+            return IP_VERSION_6;
+        }
+        throw new IllegalArgumentException("Invalid IP address: " + ip);
     }
 }
