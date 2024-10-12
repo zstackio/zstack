@@ -225,7 +225,7 @@ public class HostInventory implements Serializable {
         if (vo.getHwMonitorStatus() != null) {
             this.setCpuStatus(vo.getHwMonitorStatus().getCpuStatus());
             this.setMemoryStatus(vo.getHwMonitorStatus().getMemoryStatus());
-            this.setDiskStatus(vo.getHwMonitorStatus().getMemoryStatus());
+            this.setDiskStatus(vo.getHwMonitorStatus().getDiskStatus());
             this.setFanStatus(vo.getHwMonitorStatus().getFanStatus());
             this.setPowerSupplyStatus(vo.getHwMonitorStatus().getPowerSupplyStatus());
             this.setRaidStatus(vo.getHwMonitorStatus().getRaidStatus());
