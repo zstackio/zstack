@@ -17,6 +17,7 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
     private String vmInstanceUuid;
     private String accountUuid;
     private String hostUuid;
+    private String clusterUuid;
     private List<String> softAvoidHostUuids;
     private AllocationScene allocationScene;
     private boolean startPaused;
@@ -78,5 +79,13 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
 
     public void setAvoidHostUuids(List<String> avoidHostUuids) {
         this.avoidHostUuids = avoidHostUuids;
+    }
+
+    public String getClusterUuid() {
+        return clusterUuid;
+    }
+
+    public void setClusterUuid(String clusterUuid) {
+        this.clusterUuid = clusterUuid;
     }
 }
