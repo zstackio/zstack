@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`FcHbaDeviceVO` (
     `speed`  varchar(255) default null,
     `symbolicName`  varchar(255) default null,
     `supportedClasses`  varchar(255) default null,
+    `nodeName` varchar(255) default null,
     CONSTRAINT fkFcHbaDeviceVO FOREIGN KEY (uuid) REFERENCES HbaDeviceVO (uuid) ON DELETE CASCADE,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
