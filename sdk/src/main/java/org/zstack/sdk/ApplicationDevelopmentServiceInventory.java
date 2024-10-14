@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.ModelServiceInventory;
 
 public class ApplicationDevelopmentServiceInventory  {
 
@@ -42,6 +42,14 @@ public class ApplicationDevelopmentServiceInventory  {
     }
     public java.lang.String getDeploymentStatus() {
         return this.deploymentStatus;
+    }
+
+    public ModelServiceInventory service;
+    public void setService(ModelServiceInventory service) {
+        this.service = service;
+    }
+    public ModelServiceInventory getService() {
+        return this.service;
     }
 
 }
