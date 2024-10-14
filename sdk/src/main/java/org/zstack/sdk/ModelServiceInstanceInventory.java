@@ -52,6 +52,14 @@ public class ModelServiceInstanceInventory  {
         return this.url;
     }
 
+    public java.util.Map urlMaps;
+    public void setUrlMaps(java.util.Map urlMaps) {
+        this.urlMaps = urlMaps;
+    }
+    public java.util.Map getUrlMaps() {
+        return this.urlMaps;
+    }
+
     public java.lang.String internalUrl;
     public void setInternalUrl(java.lang.String internalUrl) {
         this.internalUrl = internalUrl;
