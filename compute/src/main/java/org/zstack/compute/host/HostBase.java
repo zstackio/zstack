@@ -1337,11 +1337,8 @@ public abstract class HostBase extends AbstractHost {
                                 FlowChain preConnectChain = FlowChainBuilder.newSimpleFlowChain();
                                 preConnectChain.allowEmptyFlow();
 
-                                self = dbf.reload(self);
-                                HostInventory inv = getSelfInventory();
-
                                 for (PreHostConnectExtensionPoint p : pluginRgty.getExtensionList(PreHostConnectExtensionPoint.class)) {
-                                    Flow flow = p.createPreHostConnectFlow(inv);
+                                    Flow flow = p.createPreHostConnectFlow(msg);
                                     if (flow != null) {
                                         preConnectChain.then(flow);
                                     }
