@@ -84,8 +84,22 @@ class ZbsPrimaryStorageCase extends SubCase {
                     hypervisorType = "KVM"
 
                     kvm {
-                        name = "kvm"
-                        managementIp = "localhost"
+                        name = "kvm-1"
+                        managementIp = "127.0.0.1"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "kvm-2"
+                        managementIp = "127.0.0.2"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "kvm-3"
+                        managementIp = "127.0.0.3"
                         username = "root"
                         password = "password"
                     }
@@ -156,6 +170,34 @@ class ZbsPrimaryStorageCase extends SubCase {
         attachPrimaryStorageToCluster {
             primaryStorageUuid = ps.uuid
             clusterUuid = cluster.uuid
+        }
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        env.afterSimulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployClientCmd)
+
+            ZbsStorageController.DeployClientRsp deployClientRsp = new ZbsStorageController.DeployClientRsp()
+            if (cmd.clientIp.equals("127.0.0.1")) {
+                deployClientRsp.success = false
+                deployClientRsp.error = "on purpose"
+            }
+
+            return deployClientRsp
+        }
+
+        expect(AssertionError.class) {
+            reconnectPrimaryStorage {
+                uuid = ps.uuid
+            }
+        }
+
+        env.cleanAfterSimulatorHandlers()
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
         }
 
         detachPrimaryStorageFromCluster {

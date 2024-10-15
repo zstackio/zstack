@@ -487,6 +487,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
+    public void deployClient(HostInventory h, Completion comp) {
+        comp.success();
+    }
+
+    @Override
     public List<ActiveVolumeClient> getActiveClients(String installPath, String protocol) {
         if (VolumeProtocol.Vhost.toString().equals(protocol)) {
             VolumeModule vol = apiHelper.getVolume(getVolIdFromPath(installPath));

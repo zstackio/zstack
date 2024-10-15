@@ -10,6 +10,7 @@ import org.zstack.cbd.kvm.CbdVolumeTo;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -23,17 +24,23 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostAO_;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageStatus;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
+import org.zstack.kvm.KVMHostVO;
+import org.zstack.kvm.KVMHostVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -65,6 +72,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private AddonInfo addonInfo;
     private Config config;
 
+    public static final String DEPLOY_CLIENT_PATH = "/zbs/primarystorage/client/deploy";
     public static final String GET_FACTS_PATH = "/zbs/primarystorage/facts";
     public static final String GET_CAPACITY_PATH = "/zbs/primarystorage/capacity";
     public static final String COPY_PATH = "/zbs/primarystorage/copy";
@@ -145,6 +153,30 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public List<String> getActiveVolumesLocation(HostInventory h) {
         return null;
+    }
+
+    @Override
+    public void deployClient(HostInventory h, Completion comp) {
+        String clientPassword = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, h.getUuid()).findValue();
+        if (clientPassword == null) {
+            comp.fail(operr("failed to get client[uuid:%s] password", h.getUuid()));
+        }
+
+        DeployClientCmd cmd = new DeployClientCmd();
+        cmd.setClientIp(h.getManagementIp());
+        cmd.setClientPassword(clientPassword);
+
+        httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
+            @Override
+            public void success(DeployClientRsp returnValue) {
+                comp.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.fail(errorCode);
+            }
+        });
     }
 
     @Override
@@ -297,6 +329,68 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                             public void done(ErrorCodeList errorCodeList) {
                                 if (!errors.isEmpty()) {
                                     trigger.fail(errors.get(0));
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "deploy-client";
+
+                    List<PrimaryStorageClusterRefVO> refs = Q.New(PrimaryStorageClusterRefVO.class)
+                            .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, self.getUuid())
+                            .list();
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return refs.isEmpty();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> clusterUuids = refs.stream()
+                                .map(PrimaryStorageClusterRefVO::getClusterUuid)
+                                .collect(Collectors.toList());
+
+                        List<HostVO> hosts = Q.New(HostVO.class)
+                                .in(HostAO_.clusterUuid, clusterUuids)
+                                .list();
+
+                        new While<>(hosts).each((h, comp) -> {
+                            String clientPassword = Q.New(KVMHostVO.class)
+                                    .select(KVMHostVO_.password)
+                                    .eq(KVMHostVO_.uuid, h.getUuid())
+                                    .findValue();
+
+                            if (clientPassword == null) {
+                                comp.addError(operr("failed to get client[uuid:%s] password.", h.getUuid()));
+                            }
+
+                            DeployClientCmd cmd = new DeployClientCmd();
+                            cmd.setClientIp(h.getManagementIp());
+                            cmd.setClientPassword(clientPassword);
+
+                            httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
+                                @Override
+                                public void success(DeployClientRsp returnValue) {
+                                    comp.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    comp.addError(errorCode);
+                                    comp.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
                                     return;
                                 }
 
@@ -1225,6 +1319,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
+    public static class DeployClientRsp extends AgentResponse {
+
+    }
+
     public static class GetFactsRsp extends AgentResponse {
         private String mdsExternalAddr;
 
@@ -1594,6 +1692,27 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setLogicalPoolName(String logicalPoolName) {
             this.logicalPoolName = logicalPoolName;
+        }
+    }
+
+    public static class DeployClientCmd extends AgentCommand {
+        private String clientIp;
+        private String clientPassword;
+
+        public String getClientIp() {
+            return clientIp;
+        }
+
+        public void setClientIp(String clientIp) {
+            this.clientIp = clientIp;
+        }
+
+        public String getClientPassword() {
+            return clientPassword;
+        }
+
+        public void setClientPassword(String clientPassword) {
+            this.clientPassword = clientPassword;
         }
     }
 

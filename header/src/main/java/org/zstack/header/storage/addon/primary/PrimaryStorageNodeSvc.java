@@ -23,6 +23,8 @@ public interface PrimaryStorageNodeSvc {
 
     List<String> getActiveVolumesLocation(HostInventory h);
 
+    void deployClient(HostInventory h, Completion comp);
+
     void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp);
 
     void deactivateHeartbeatVolume(HostInventory h, Completion comp);
