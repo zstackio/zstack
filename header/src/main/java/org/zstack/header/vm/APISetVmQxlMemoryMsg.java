@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APISetVmQxlMemoryEvent.class
 )
 public class APISetVmQxlMemoryMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
     @APIParam(numberRange = {1024, 524288}, required = false)
     private Integer ram = 65536;

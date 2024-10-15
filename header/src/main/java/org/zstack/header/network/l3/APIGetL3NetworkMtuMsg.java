@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetL3NetworkMtuReply.class
 )
 public class APIGetL3NetworkMtuMsg extends APISyncCallMessage implements L3NetworkMessage {
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
 
     @Override

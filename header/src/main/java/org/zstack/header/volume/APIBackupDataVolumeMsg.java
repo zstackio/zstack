@@ -38,7 +38,7 @@ public class APIBackupDataVolumeMsg extends APIMessage implements VolumeMessage 
     /**
      * @desc data volume uuid
      */
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String uuid;
     /**
      * @desc uuid of backup storage where the data volume is being backed up to. If omitted, zstack

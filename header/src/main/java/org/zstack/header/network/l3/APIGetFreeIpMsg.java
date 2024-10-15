@@ -29,9 +29,9 @@ import org.zstack.header.rest.SDK;
         }
 )
 public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMessage {
-    @APIParam(resourceType = L3NetworkVO.class, required = false, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, required = false)
     private String l3NetworkUuid;
-    @APIParam(resourceType = IpRangeVO.class, required = false, checkAccount = true)
+    @APIParam(resourceType = IpRangeVO.class, required = false)
     private String ipRangeUuid;
     @APIParam(required = false)
     private String start;

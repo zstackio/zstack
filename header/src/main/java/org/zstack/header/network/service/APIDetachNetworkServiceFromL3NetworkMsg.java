@@ -3,7 +3,6 @@ package org.zstack.header.network.service;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.MapField;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkConstant;
@@ -26,7 +25,7 @@ public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implemen
     /**
      * @desc l3Network uuid
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
     /**
      * @desc a map where key is network service provider uuid and value is list of network service types

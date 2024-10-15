@@ -20,7 +20,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateLongJobEvent.class
 )
 public class APIUpdateLongJobMsg extends APIMessage implements LongJobMessage {
-    @APIParam(resourceType = LongJobVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = LongJobVO.class, scope = APIParam.SCOPE_MUST_OWNER)
     private String uuid;
 
     @APIParam(maxLength = 255, required = false)

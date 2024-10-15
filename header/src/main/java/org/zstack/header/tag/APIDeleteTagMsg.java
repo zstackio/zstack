@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteTagEvent.class
 )
 public class APIDeleteTagMsg extends APIDeleteMessage {
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam
     private String uuid;
 
     public String getUuid() {

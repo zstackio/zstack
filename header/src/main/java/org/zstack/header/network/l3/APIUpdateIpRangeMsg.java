@@ -19,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateIpRangeEvent.class
 )
 public class APIUpdateIpRangeMsg extends APIMessage implements L3NetworkMessage, IpRangeMessage {
-    @APIParam(resourceType = IpRangeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = IpRangeVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

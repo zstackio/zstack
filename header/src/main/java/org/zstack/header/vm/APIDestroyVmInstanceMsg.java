@@ -3,8 +3,6 @@ package org.zstack.header.vm;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
@@ -49,7 +47,7 @@ public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInsta
     /**
      * @desc vm uuid
      */
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
+    @APIParam(resourceType = VmInstanceVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {

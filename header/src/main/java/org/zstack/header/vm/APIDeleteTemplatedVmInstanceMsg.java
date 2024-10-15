@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteTemplatedVmInstanceEvent.class
 )
 public class APIDeleteTemplatedVmInstanceMsg extends APIDeleteMessage implements VmInstanceMessage {
-    @APIParam(resourceType = TemplatedVmInstanceVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
+    @APIParam(resourceType = TemplatedVmInstanceVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {

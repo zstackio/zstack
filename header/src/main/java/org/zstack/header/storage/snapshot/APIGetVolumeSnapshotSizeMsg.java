@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 public class APIGetVolumeSnapshotSizeMsg extends APIMessage implements VolumeSnapshotMessage {
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class)
     private String uuid;
 
     @APINoSee

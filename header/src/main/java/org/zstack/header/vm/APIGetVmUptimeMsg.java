@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetVmUptimeReply.class
 )
 public class APIGetVmUptimeMsg extends APISyncCallMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
 
     public String getUuid() {

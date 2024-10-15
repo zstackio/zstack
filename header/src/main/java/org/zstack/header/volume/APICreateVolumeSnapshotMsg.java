@@ -52,7 +52,7 @@ public class APICreateVolumeSnapshotMsg extends APICreateMessage implements Volu
     /**
      * @desc volume uuid. See :ref:`VolumeInventory`
      */
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String volumeUuid;
     /**
      * @desc snapshot name. Max length of 255 characters

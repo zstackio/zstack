@@ -25,7 +25,7 @@ import java.util.List;
         isAction = true
 )
 public class APIChangeVmNicStateMsg extends APIMessage implements VmInstanceMessage, APIMultiAuditor {
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;
     @APIParam(validValues = {"enable", "disable"})
     private String state;

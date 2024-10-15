@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
 )
 @Action(category = L2NetworkConstant.ACTION_CATEGORY)
 public class APIUpdateL2NetworkMsg extends APIMessage implements L2NetworkMessage {
-    @APIParam(resourceType = L2NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L2NetworkVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

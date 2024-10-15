@@ -21,7 +21,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIChangeDiskOfferingStateEvent.class
 )
 public class APIChangeDiskOfferingStateMsg extends APIMessage implements DiskOfferingMessage {
-    @APIParam(resourceType = DiskOfferingVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = DiskOfferingVO.class)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

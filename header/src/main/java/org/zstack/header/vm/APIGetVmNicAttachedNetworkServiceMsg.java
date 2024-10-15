@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetVmNicAttachedNetworkServiceReply.class
 )
 public class APIGetVmNicAttachedNetworkServiceMsg extends APISyncCallMessage {
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true)
+    @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;
 
     public String getVmNicUuid() {

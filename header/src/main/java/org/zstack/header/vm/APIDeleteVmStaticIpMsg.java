@@ -3,8 +3,6 @@ package org.zstack.header.vm;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
@@ -18,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteVmStaticIpEvent.class
 )
 public class APIDeleteVmStaticIpMsg extends APIDeleteMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
     @APIParam
     private String l3NetworkUuid;

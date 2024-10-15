@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIFlattenVolumeEvent.class
 )
 public class APIFlattenVolumeMsg extends APIMessage implements VolumeMessage, APIAuditor {
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String uuid;
 
     @APIParam(required = false)

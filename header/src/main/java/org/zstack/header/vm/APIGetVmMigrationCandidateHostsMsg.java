@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetVmMigrationCandidateHostsReply.class
 )
 public class APIGetVmMigrationCandidateHostsMsg extends APISyncCallMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
 
     public String getVmInstanceUuid() {

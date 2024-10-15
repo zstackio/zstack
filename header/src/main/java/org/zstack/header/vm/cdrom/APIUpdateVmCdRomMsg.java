@@ -23,7 +23,7 @@ import org.zstack.header.vm.VmInstanceVO;
         responseClass = APIUpdateVmCdRomEvent.class
 )
 public class APIUpdateVmCdRomMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmCdRomVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmCdRomVO.class)
     private String uuid;
 
     @APINoSee

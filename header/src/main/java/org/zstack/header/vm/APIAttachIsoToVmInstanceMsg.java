@@ -20,9 +20,9 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "null"
 )
 public class APIAttachIsoToVmInstanceMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(resourceType = ImageVO.class)
     private String isoUuid;
 
     @APINoSee

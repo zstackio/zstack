@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateDiskOfferingEvent.class
 )
 public class APIUpdateDiskOfferingMsg extends APIMessage implements DiskOfferingMessage {
-    @APIParam(resourceType = DiskOfferingVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = DiskOfferingVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

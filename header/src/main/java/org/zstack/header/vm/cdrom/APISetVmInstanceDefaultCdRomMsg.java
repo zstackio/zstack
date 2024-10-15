@@ -22,10 +22,10 @@ import org.zstack.header.vm.VmInstanceVO;
         responseClass = APISetVmInstanceDefaultCdRomEvent.class
 )
 public class APISetVmInstanceDefaultCdRomMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
-    @APIParam(resourceType = VmCdRomVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmCdRomVO.class)
     private String uuid;
 
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
 
     public String getUuid() {

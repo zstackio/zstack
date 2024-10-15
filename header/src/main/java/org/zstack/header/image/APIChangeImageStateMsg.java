@@ -21,7 +21,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT
 )
 public class APIChangeImageStateMsg extends APIMessage implements ImageMessage {
-    @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = ImageVO.class)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

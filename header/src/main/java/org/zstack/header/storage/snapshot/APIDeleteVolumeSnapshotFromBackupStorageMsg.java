@@ -2,8 +2,6 @@ package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -49,7 +47,7 @@ public class APIDeleteVolumeSnapshotFromBackupStorageMsg extends APIDeleteMessag
     /**
      * @desc volume snapshot uuid
      */
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class)
     private String uuid;
     /**
      * @desc a list of backup storage uuid where snapshot is being deleted from

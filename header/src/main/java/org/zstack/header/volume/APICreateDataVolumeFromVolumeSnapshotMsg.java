@@ -62,7 +62,7 @@ public class APICreateDataVolumeFromVolumeSnapshotMsg extends APICreateMessage i
     /**
      * @desc volume snapshot uuid
      */
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class)
     private String volumeSnapshotUuid;
     /**
      * @desc uuid of primary storage where the data volume is being created. If omitted,

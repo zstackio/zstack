@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT
 )
 public class APIUpdateSystemTagMsg extends APIMessage {
-    @APIParam(resourceType = SystemTagVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = SystemTagVO.class)
     private String uuid;
     @APIParam
     private String tag;

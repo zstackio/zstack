@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetVmAttachableL3NetworkReply.class
 )
 public class APIGetVmAttachableL3NetworkMsg extends APISyncCallMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
 
     @Override

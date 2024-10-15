@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetCandidateL3NetworksForChangeVmNicNetworkReply.class
 )
 public class APIGetCandidateL3NetworksForChangeVmNicNetworkMsg  extends APISyncCallMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true)
+    @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;
 
     @APINoSee

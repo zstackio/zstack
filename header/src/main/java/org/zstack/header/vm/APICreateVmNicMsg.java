@@ -25,7 +25,7 @@ public class APICreateVmNicMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc uuid of L3Network where the nic will be created
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
 
     @APIParam(required = false)

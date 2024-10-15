@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICancelLongJobEvent.class
 )
 public class APICancelLongJobMsg extends APIMessage implements LongJobMessage {
-    @APIParam(resourceType = LongJobVO.class, checkAccount = true)
+    @APIParam(resourceType = LongJobVO.class, scope = APIParam.SCOPE_MUST_OWNER)
     private String uuid;
 
     public String getUuid() {

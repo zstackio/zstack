@@ -50,7 +50,7 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
     /**
      * @desc vm uuid
      */
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
     /**
      * @desc uuid of host the vm is migrating to. If omitted, zstack will try to find

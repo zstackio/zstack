@@ -2,7 +2,6 @@ package org.zstack.header.network.l2;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -44,7 +43,7 @@ public class APIDetachL2NetworkFromClusterMsg extends APIMessage implements L2Ne
     /**
      * @desc l2Network uuid
      */
-    @APIParam(resourceType = L2NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L2NetworkVO.class)
     private String l2NetworkUuid;
     /**
      * @desc cluster uuid. See :ref:`ClusterInventory`

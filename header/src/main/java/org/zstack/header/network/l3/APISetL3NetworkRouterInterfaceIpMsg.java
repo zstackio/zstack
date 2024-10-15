@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params"
 )
 public class APISetL3NetworkRouterInterfaceIpMsg extends APIMessage implements L3NetworkMessage {
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
 
     @APIParam

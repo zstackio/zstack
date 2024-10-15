@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @TagResourceType(ImageVO.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
 public class APICreateDataVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor, CreateDataVolumeTemplateMessage {
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class)
     private String snapshotUuid;
     @APIParam(maxLength = 255)
     private String name;

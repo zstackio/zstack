@@ -25,7 +25,7 @@ public class APIAddIpv6RangeByNetworkCidrMsg extends APICreateMessage implements
     private String name;
     @APIParam(required = false, maxLength = 2048)
     private String description;
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
     @APIParam
     private String networkCidr;

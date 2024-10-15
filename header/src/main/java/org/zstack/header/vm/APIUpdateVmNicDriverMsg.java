@@ -18,10 +18,10 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateVmNicDriverEvent.class
 )
 public class APIUpdateVmNicDriverMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
 
-    @APIParam(resourceType = VmNicVO.class, nonempty = true, checkAccount = true)
+    @APIParam(resourceType = VmNicVO.class, nonempty = true)
     private String vmNicUuid;
 
     @APIParam

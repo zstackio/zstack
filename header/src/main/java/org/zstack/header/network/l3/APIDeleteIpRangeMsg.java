@@ -51,8 +51,7 @@ public class APIDeleteIpRangeMsg extends APIDeleteMessage implements L3NetworkMe
     /**
      * @desc ip range uuid
      */
-    @APIParam(resourceType = IpRangeVO.class, successIfResourceNotExisting = true,
-            checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = IpRangeVO.class, successIfResourceNotExisting = true)
     private String uuid;
     /**
      * @ignore

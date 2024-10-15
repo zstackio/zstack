@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIDeleteVmNicMsg extends APIDeleteMessage {
 
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true, successIfResourceNotExisting = true)
+    @APIParam(resourceType = VmNicVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {

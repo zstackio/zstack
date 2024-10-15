@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APISetVmHostnameEvent.class
 )
 public class APISetVmHostnameMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
     @APIParam
     private String hostname;

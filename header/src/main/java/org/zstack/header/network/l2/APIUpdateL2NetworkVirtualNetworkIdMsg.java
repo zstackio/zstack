@@ -19,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
 )
 @Action(category = L2NetworkConstant.ACTION_CATEGORY)
 public class APIUpdateL2NetworkVirtualNetworkIdMsg extends APIMessage implements L2NetworkMessage, APIAuditor {
-    @APIParam(resourceType = L2NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L2NetworkVO.class)
     private String uuid;
     @APIParam
     private Integer virtualNetworkId;

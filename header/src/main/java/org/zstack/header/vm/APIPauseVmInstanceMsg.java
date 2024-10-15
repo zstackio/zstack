@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
 )
 @SkipVmTracer(replyClass = APIPauseVmInstanceEvent.class)
 public class APIPauseVmInstanceMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
 
     @Override

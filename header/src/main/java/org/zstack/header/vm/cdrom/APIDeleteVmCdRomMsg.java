@@ -23,7 +23,7 @@ import org.zstack.header.vm.VmInstanceVO;
         responseClass = APIDeleteVmCdRomEvent.class
 )
 public class APIDeleteVmCdRomMsg extends APIDeleteMessage implements VmInstanceMessage, APIAuditor {
-    @APIParam(resourceType = VmCdRomVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
+    @APIParam(resourceType = VmCdRomVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     @APINoSee

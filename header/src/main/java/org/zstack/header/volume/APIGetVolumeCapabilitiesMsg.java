@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetVolumeCapabilitiesReply.class
 )
 public class APIGetVolumeCapabilitiesMsg extends APISyncCallMessage implements VolumeMessage {
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String uuid;
 
     public String getUuid() {

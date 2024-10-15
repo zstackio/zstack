@@ -20,12 +20,12 @@ public class APIAttachL3NetworkToVmNicMsg extends APIMessage {
     /**
      * @desc vm uuid
      */
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;
     /**
      * @desc uuid of L3Network
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
 
     private String staticIp;

@@ -45,7 +45,7 @@ public class APIChangeVolumeStateMsg extends APIMessage implements VolumeMessage
     /**
      * @desc data volume uuid
      */
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String uuid;
     /**
      * @desc - enable: enable data volume

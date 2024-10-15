@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APISetImageBootModeEvent.class
 )
 public class APISetImageBootModeMsg extends APIMessage implements ImageMessage {
-    @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = ImageVO.class)
     private String uuid;
 
     @APIParam(validValues = {"Legacy", "UEFI", "UEFI_WITH_CSM"})

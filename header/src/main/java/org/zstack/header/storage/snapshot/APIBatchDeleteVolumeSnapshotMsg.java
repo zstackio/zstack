@@ -31,7 +31,7 @@ public class APIBatchDeleteVolumeSnapshotMsg extends APIDeleteMessage implements
     /**
      * @desc volume snapshot uuid
      */
-    @APIParam(resourceType = VolumeSnapshotVO.class, successIfResourceNotExisting = true, checkAccount = true, nonempty = true, emptyString = false)
+    @APIParam(resourceType = VolumeSnapshotVO.class, successIfResourceNotExisting = true, nonempty = true, emptyString = false)
     private List<String> uuids;
 
     /**

@@ -13,7 +13,7 @@ import java.util.List;
         responseClass = APIGetCandidateClustersForAttachingL2NetworkReply.class
 )
 public class APIGetCandidateClustersForAttachingL2NetworkMsg extends APIGetMessage {
-    @APIParam(resourceType = L2NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L2NetworkVO.class)
     private String l2NetworkUuid;
 
     @APIParam(required = false)

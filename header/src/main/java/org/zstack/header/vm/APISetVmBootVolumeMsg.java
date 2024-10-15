@@ -19,9 +19,9 @@ import org.zstack.header.volume.VolumeVO;
         responseClass = APISetVmBootVolumeEvent.class
 )
 public class APISetVmBootVolumeMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String volumeUuid;
 
     @Override
