@@ -1,7 +1,12 @@
 package org.zstack.test.integration.storage.primary.addon.zbs
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
+import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.sdk.*
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.test.integration.storage.StorageTest
@@ -9,6 +14,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * @author Xingwei Yu
@@ -126,6 +132,9 @@ class ZbsPrimaryStorageCase extends SubCase {
 
             testZbsStorageLifecycle()
             testDataVolumeLifecycle()
+            PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(1)
+            testZbsPrimaryStorageMdsPing()
+            PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(60)
             testZbsStorageNegativeScenario()
             testDataVolumeNegativeScenario()
         }
@@ -153,6 +162,63 @@ class ZbsPrimaryStorageCase extends SubCase {
             primaryStorageUuid = ps.uuid
             clusterUuid = cluster.uuid
         }
+    }
+
+    void testZbsPrimaryStorageMdsPing() {
+        Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
+
+        def addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
+
+        assert addonInfo == "{\"mdsInfos\":[{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.1\",\"mdsExternalAddr\":\"1.1.1.1:6666\",\"mdsStatus\":\"Connected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.2\",\"mdsExternalAddr\":\"1.1.1.2:6666\",\"mdsStatus\":\"Connected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.3\",\"mdsExternalAddr\":\"1.1.1.3:6666\",\"mdsStatus\":\"Connected\"}]}"
+
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
+            ZbsPrimaryStorageMdsBase.PingRsp pingRsp = new ZbsPrimaryStorageMdsBase.PingRsp()
+            if (cmd.mdsExternalAddr.equals("1.1.1.1:6666")) {
+                pingRsp.success = false
+                pingRsp.error = "on purpose"
+            }
+
+            return pingRsp
+        }
+
+        sleep(2000)
+
+        addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
+
+        assert addonInfo == "{\"mdsInfos\":[{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.1\",\"mdsExternalAddr\":\"1.1.1.1:6666\",\"mdsStatus\":\"Disconnected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.2\",\"mdsExternalAddr\":\"1.1.1.2:6666\",\"mdsStatus\":\"Connected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.3\",\"mdsExternalAddr\":\"1.1.1.3:6666\",\"mdsStatus\":\"Connected\"}]}"
+
+        assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
+
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
+            ZbsPrimaryStorageMdsBase.PingRsp pingRsp = new ZbsPrimaryStorageMdsBase.PingRsp()
+            if (cmd.mdsExternalAddr.equals("1.1.1.1:6666")) {
+                pingRsp.success = false
+                pingRsp.error = "on purpose"
+            } else if (cmd.mdsExternalAddr.equals("1.1.1.2:6666")) {
+                pingRsp.success = false
+                pingRsp.error = "on purpose"
+            }
+
+            return pingRsp
+        }
+
+        sleep(1000)
+
+        addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
+
+        assert addonInfo == "{\"mdsInfos\":[{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.1\",\"mdsExternalAddr\":\"1.1.1.1:6666\",\"mdsStatus\":\"Disconnected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.2\",\"mdsExternalAddr\":\"1.1.1.2:6666\",\"mdsStatus\":\"Disconnected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.3\",\"mdsExternalAddr\":\"1.1.1.3:6666\",\"mdsStatus\":\"Connected\"}]}"
+
+        assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Disconnected
+
+        env.cleanAfterSimulatorHandlers()
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
     }
 
     void testDataVolumeLifecycle() {
@@ -219,8 +285,17 @@ class ZbsPrimaryStorageCase extends SubCase {
         }
 
         env.simulator(ZbsStorageController.GET_FACTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            ZbsStorageController.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetFactsCmd.class)
+
             def rsp = new ZbsStorageController.GetFactsRsp()
-            rsp.version = "1.4.0+6e9353ad+release"
+            if (cmd.getMdsAddr().equals("127.0.2.1")) {
+                rsp.setMdsExternalAddr("1.1.2.1:6666")
+            } else if (cmd.mdsAddr.equals("127.0.2.2")) {
+                rsp.setMdsExternalAddr("1.1.2.2:6666")
+            } else if (cmd.mdsAddr.equals("127.0.2.3")) {
+                rsp.setMdsExternalAddr("1.1.2.3:6666")
+            }
+
             return rsp
         }
 

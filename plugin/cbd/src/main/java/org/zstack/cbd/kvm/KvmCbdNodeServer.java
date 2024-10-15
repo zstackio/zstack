@@ -99,8 +99,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                         List<MdsInfo> mdsInfos = new ArrayList<>();
                         for (MdsInfo mdsInfo : addonInfo.getMdsInfos()) {
                             MdsInfo info = new MdsInfo();
-                            info.mdsAddr = mdsInfo.mdsAddr;
-                            info.mdsPort = mdsInfo.mdsPort;
+                            info.setMdsExternalAddr(mdsInfo.getMdsExternalAddr());
                             mdsInfos.add(info);
                         }
                         cmd.setMdsInfos(mdsInfos);
