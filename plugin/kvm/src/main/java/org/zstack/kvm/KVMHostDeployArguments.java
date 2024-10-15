@@ -1,7 +1,11 @@
 package org.zstack.kvm;
 
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang.StringUtils;
 import org.zstack.core.ansible.SyncTimeRequestedDeployArguments;
+import org.zstack.header.errorcode.OperationFailureException;
+
+import static org.zstack.core.Platform.operr;
 
 public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     @SerializedName("pkg_kvmagent")
@@ -160,5 +164,13 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setForceRun(boolean forceRun) {
         this.forceRun = forceRun;
+    }
+
+    public void enableForceRunWithReason(String reason) {
+        this.forceRun = true;
+        if (StringUtils.isEmpty(reason)) {
+            throw new OperationFailureException(operr("the reason must be stated when setting force run"));
+        }
+        logger.info(String.format("set ansible to force run, because %s", reason));
     }
 }
