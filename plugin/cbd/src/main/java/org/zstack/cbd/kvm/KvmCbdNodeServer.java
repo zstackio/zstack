@@ -84,29 +84,13 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    final String __name__ = "configure-cbd-client-on-kvm";
+                    final String __name__ = "deploy-client";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ExternalPrimaryStorageVO vo = dbf.findByUuid(param.getPrimaryStorage().getUuid(), ExternalPrimaryStorageVO.class);
-                        if (vo == null) {
-                            trigger.fail(operr("not found primary storage[uuid:%s].", param.getPrimaryStorage().getUuid()));
-                            return;
-                        }
-
-                        KvmUpdateClientConfCmd cmd = new KvmUpdateClientConfCmd();
-                        AddonInfo addonInfo = StringUtils.isEmpty(vo.getAddonInfo()) ? new AddonInfo() : JSONObjectUtil.toObject(vo.getAddonInfo(), AddonInfo.class);
-                        List<MdsInfo> mdsInfos = new ArrayList<>();
-                        for (MdsInfo mdsInfo : addonInfo.getMdsInfos()) {
-                            MdsInfo info = new MdsInfo();
-                            info.setMdsExternalAddr(mdsInfo.getMdsExternalAddr());
-                            mdsInfos.add(info);
-                        }
-                        cmd.setMdsInfos(mdsInfos);
-
-                        httpCall(KvmCbdCommands.CBD_CONFIGURE_CLIENT_PATH, param.getHostUuid(), cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
+                        nodeSvc.deployClient(host, new Completion(trigger) {
                             @Override
-                            public void success(AgentRsp returnValue) {
+                            public void success() {
                                 trigger.next();
                             }
 

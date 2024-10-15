@@ -50,6 +50,17 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.DeployClientCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployClientCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.DeployClientRsp()
+                rsp.success = true
+
+                return rsp
+            }
+
             simulator(ZbsStorageController.GET_FACTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 ZbsStorageController.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetFactsCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
