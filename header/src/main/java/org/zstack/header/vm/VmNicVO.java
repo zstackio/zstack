@@ -227,10 +227,12 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
         return String.format("vnic%s.%s", vmInternalId, nicDeviceId);
     }
 
+    @Deprecated
     public Integer getIpVersion() {
         return ipVersion;
     }
 
+    @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
     }
