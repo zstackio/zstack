@@ -46,7 +46,7 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
     /**
      * @desc uuid of instance offering. See :ref:`InstanceOfferingInventory`
      */
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, required = false)
+    @APIParam(resourceType = InstanceOfferingVO.class, required = false)
     private String instanceOfferingUuid;
 
     @APIParam(required = false)
@@ -61,7 +61,7 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
     /**
      * @desc a list of L3Network uuid the vm will create nic on. See :ref:`L3NetworkInventory`
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, required = false)
+    @APIParam(resourceType = L3NetworkVO.class, required = false)
     private List<String> l3NetworkUuids;
     /**
      * @desc see type of :ref:`VmInstanceInventory`
@@ -74,7 +74,7 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
      * @desc root volume. Optional when vm is created from RootVolumeTemplate,
      * mandatory when vm is created from ISO. See 'mediaType' of :ref:`ImageInventory`
      */
-    @APIParam(resourceType = VolumeSnapshotGroupVO.class, checkAccount = true)
+    @APIParam(resourceType = VolumeSnapshotGroupVO.class)
     private String volumeSnapshotGroupUuid;
 
     @APIParam(required = false, resourceType = ZoneVO.class)

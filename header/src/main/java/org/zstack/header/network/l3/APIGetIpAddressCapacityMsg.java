@@ -21,9 +21,9 @@ import java.util.List;
 public class APIGetIpAddressCapacityMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = ZoneVO.class)
     private List<String> zoneUuids;
-    @APIParam(required = false, resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(required = false, resourceType = L3NetworkVO.class)
     private List<String> l3NetworkUuids;
-    @APIParam(required = false, resourceType = IpRangeVO.class, checkAccount = true)
+    @APIParam(required = false, resourceType = IpRangeVO.class)
     private List<String> ipRangeUuids;
     private boolean all;
 

@@ -20,9 +20,9 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 )
 public class APIUndoSnapshotCreationMsg extends APIMessage implements VolumeMessage {
 
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String uuid;
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class)
     private String snapShotUuid;
 
     public String getSnapShotUuid() {

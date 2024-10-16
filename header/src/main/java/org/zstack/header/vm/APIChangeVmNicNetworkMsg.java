@@ -19,10 +19,10 @@ import java.util.Map;
         responseClass = APIChangeVmNicNetworkEvent.class
 )
 public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMessage{
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;
 
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String destL3NetworkUuid;
 
     @APIParam(required = false)

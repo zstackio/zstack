@@ -23,7 +23,7 @@ public class APIAddIpv6RangeMsg extends APICreateMessage implements L3NetworkMes
     /**
      * @desc l3Network uuid
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
     /**
      * @desc max length of 255 characters

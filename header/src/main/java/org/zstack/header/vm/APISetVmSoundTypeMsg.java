@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APISetVmSoundTypeEvent.class
 )
 public class APISetVmSoundTypeMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
     @APIParam(validValues={"ac97", "ich6"})
     private String soundType;

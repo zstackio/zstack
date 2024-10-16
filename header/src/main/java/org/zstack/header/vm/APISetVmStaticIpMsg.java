@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APISetVmStaticIpEvent.class
 )
 public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
     @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;

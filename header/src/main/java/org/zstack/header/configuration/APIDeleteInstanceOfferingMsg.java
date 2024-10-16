@@ -15,8 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteInstanceOfferingEvent.class
 )
 public class APIDeleteInstanceOfferingMsg extends APIDeleteMessage implements InstanceOfferingMessage {
-    @APIParam(resourceType = InstanceOfferingVO.class, successIfResourceNotExisting = true,
-            checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = InstanceOfferingVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public APIDeleteInstanceOfferingMsg() {

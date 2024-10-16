@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params"
 )
 public class APIConvertTemplatedVmInstanceToVmInstanceMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
-    @APIParam(resourceType = TemplatedVmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = TemplatedVmInstanceVO.class)
     private String templatedVmInstanceUuid;
 
     @APIParam(maxLength = 255, required = true)

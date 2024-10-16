@@ -21,7 +21,7 @@ import java.util.List;
         isAction = true
 )
 public class APIRecoverImageMsg extends APIMessage implements ImageMessage {
-    @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = ImageVO.class)
     private String imageUuid;
     private List<String> backupStorageUuids;
 

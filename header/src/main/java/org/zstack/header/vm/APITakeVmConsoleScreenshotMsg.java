@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APITakeVmConsoleScreenshotEvent.class
 )
 public class APITakeVmConsoleScreenshotMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
 
     public String getUuid() {

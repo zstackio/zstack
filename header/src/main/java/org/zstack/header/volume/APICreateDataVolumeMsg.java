@@ -63,7 +63,7 @@ public class APICreateDataVolumeMsg extends APICreateMessage implements APIAudit
     /**
      * @desc uuid of disk offering the volume is created from
      */
-    @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
+    @APIParam(required = false, resourceType = DiskOfferingVO.class)
     private String diskOfferingUuid;
 
     @APIParam(required = false)

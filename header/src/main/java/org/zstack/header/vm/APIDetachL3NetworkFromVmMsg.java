@@ -24,7 +24,7 @@ import java.util.List;
         responseClass = APIDetachL3NetworkFromVmEvent.class
 )
 public class APIDetachL3NetworkFromVmMsg extends APIMessage implements VmInstanceMessage, APIMultiAuditor {
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;
     @APINoSee
     private String vmInstanceUuid;

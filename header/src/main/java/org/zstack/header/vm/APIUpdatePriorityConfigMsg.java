@@ -19,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIUpdatePriorityConfigMsg extends APIMessage {
 
-    @APIParam(resourceType = VmPriorityConfigVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmPriorityConfigVO.class)
     private String uuid;
 
     @APIParam(required = false, numberRange = {2, 262144})

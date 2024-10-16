@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APISetVmClockTrackEvent.class
 )
 public class APISetVmClockTrackMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
     @APIParam(validValues = {"guest", "host"})
     private String track;

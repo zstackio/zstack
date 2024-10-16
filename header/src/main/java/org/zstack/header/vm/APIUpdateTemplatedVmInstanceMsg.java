@@ -17,7 +17,7 @@ import org.zstack.utils.data.SizeUnit;
         responseClass = APIUpdateTemplatedVmInstanceEvent.class
 )
 public class APIUpdateTemplatedVmInstanceMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
-    @APIParam(resourceType = TemplatedVmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = TemplatedVmInstanceVO.class)
     private String uuid;
 
     @APIParam(maxLength = 255, required = false)

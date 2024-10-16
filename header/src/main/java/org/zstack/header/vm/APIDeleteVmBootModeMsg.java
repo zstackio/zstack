@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteVmBootModeEvent.class
 )
 public class APIDeleteVmBootModeMsg extends APIDeleteMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
 
     public String getUuid() {

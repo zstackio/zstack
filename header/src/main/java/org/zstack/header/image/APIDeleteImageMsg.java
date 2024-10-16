@@ -21,7 +21,7 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APIDeleteImageEvent.class
 )
 public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage {
-    @APIParam(resourceType = ImageVO.class, successIfResourceNotExisting = true, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = ImageVO.class, successIfResourceNotExisting = true)
     private String uuid;
     @APIParam(required = false, nonempty = true, resourceType = BackupStorageVO.class)
     private List<String> backupStorageUuids;

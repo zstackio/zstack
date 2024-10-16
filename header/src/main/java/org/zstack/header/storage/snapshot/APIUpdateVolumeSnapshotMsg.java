@@ -19,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateVolumeSnapshotEvent.class
 )
 public class APIUpdateVolumeSnapshotMsg extends APIMessage implements VolumeSnapshotMessage {
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

@@ -22,10 +22,10 @@ import java.util.concurrent.TimeUnit;
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APIExportImageFromBackupStorageMsg extends APIMessage implements BackupStorageMessage, APIAuditor {
-    @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = BackupStorageVO.class)
     private String backupStorageUuid;
 
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(resourceType = ImageVO.class)
     private String imageUuid;
 
     @APIParam(validValues = {"raw", "qcow2"}, required = false)

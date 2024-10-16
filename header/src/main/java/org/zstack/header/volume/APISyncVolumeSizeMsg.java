@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 public class APISyncVolumeSizeMsg extends APIMessage implements VolumeMessage {
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String uuid;
 
     public String getUuid() {

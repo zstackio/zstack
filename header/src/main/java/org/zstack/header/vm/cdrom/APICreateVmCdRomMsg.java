@@ -29,10 +29,10 @@ public class APICreateVmCdRomMsg extends APICreateMessage implements APIAuditor,
     @APIParam(maxLength = 255)
     private String name;
 
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
 
-    @APIParam(resourceType = ImageVO.class, checkAccount = true, required = false)
+    @APIParam(resourceType = ImageVO.class, required = false)
     private String isoUuid;
 
     @APIParam(required = false, maxLength = 2048)

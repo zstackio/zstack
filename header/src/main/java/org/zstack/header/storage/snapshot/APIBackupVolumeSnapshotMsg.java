@@ -39,7 +39,7 @@ public class APIBackupVolumeSnapshotMsg extends APIMessage implements VolumeSnap
     /**
      * @desc volume snapshot uuid
      */
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class)
     private String uuid;
     /**
      * @desc uuid of backup storage where the snapshot is being backed up. If omitted, zstack

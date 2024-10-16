@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIExpungeDataVolumeEvent.class
 )
 public class APIExpungeDataVolumeMsg extends APIMessage implements VolumeMessage {
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
+    @APIParam(resourceType = VolumeVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {

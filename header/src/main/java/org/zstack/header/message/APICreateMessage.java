@@ -15,7 +15,7 @@ public class APICreateMessage extends APIMessage {
      */
     private String resourceUuid;
 
-    @APIParam(required = false, checkAccount = true, resourceType = TagPatternVO.class)
+    @APIParam(required = false, resourceType = TagPatternVO.class)
     private List<String> tagUuids;
 
     public void addSystemTag(String tag) {

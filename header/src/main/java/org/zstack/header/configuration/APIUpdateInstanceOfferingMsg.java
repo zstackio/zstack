@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 public class APIUpdateInstanceOfferingMsg extends APIMessage implements InstanceOfferingMessage {
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = InstanceOfferingVO.class)
     private String uuid;
     @APIParam(required = false, maxLength = 255)
     private String name;

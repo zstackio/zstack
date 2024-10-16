@@ -19,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteExportedImageFromBackupStorageEvent.class
 )
 public class APIDeleteExportedImageFromBackupStorageMsg extends APIMessage implements BackupStorageMessage {
-    @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = BackupStorageVO.class)
     private String backupStorageUuid;
 
     @APIParam(resourceType = ImageVO.class)

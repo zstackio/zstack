@@ -34,7 +34,7 @@ public class APISubmitLongJobMsg extends APICreateMessage implements APILongJobA
     private String jobName;
     @APIParam
     private String jobData;
-    @APIParam(maxLength = 32, required = false, resourceType = ResourceVO.class, checkAccount = true)
+    @APIParam(maxLength = 32, required = false, resourceType = ResourceVO.class)
     private String targetResourceUuid;
 
     @APINoSee

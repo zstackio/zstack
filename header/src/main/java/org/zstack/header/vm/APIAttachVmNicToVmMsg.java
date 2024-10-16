@@ -16,10 +16,10 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIAttachVmNicToVmMsg extends APIMessage implements VmInstanceMessage {
 
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true)
+    @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;
 
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
 
     public String getVmNicUuid() {

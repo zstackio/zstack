@@ -18,7 +18,7 @@ import org.zstack.header.vo.ResourceVO;
 public class APIChangeResourceOwnerMsg extends APIMessage {
     @APIParam(resourceType = AccountVO.class)
     private String accountUuid;
-    @APIParam(resourceType = ResourceVO.class, nonempty = true, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = ResourceVO.class, nonempty = true)
     private String resourceUuid;
 
     public String getAccountUuid() {

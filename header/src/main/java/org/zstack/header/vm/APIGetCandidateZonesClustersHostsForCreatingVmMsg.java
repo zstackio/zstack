@@ -24,17 +24,17 @@ import static java.util.Arrays.asList;
         responseClass = APIGetCandidateZonesClustersHostsForCreatingVmReply.class
 )
 public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCallMessage {
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, required = false)
+    @APIParam(resourceType = InstanceOfferingVO.class, required = false)
     private String instanceOfferingUuid;
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(resourceType = ImageVO.class)
     private String imageUuid;
-    @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, nonempty = true)
     private List<String> l3NetworkUuids;
-    @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
+    @APIParam(required = false, resourceType = DiskOfferingVO.class)
     private String rootDiskOfferingUuid;
     @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"}, required = false)
     private Long rootDiskSize;
-    @APIParam(required = false, nonempty = true, resourceType = DiskOfferingVO.class, checkAccount = true)
+    @APIParam(required = false, nonempty = true, resourceType = DiskOfferingVO.class)
     private List<String> dataDiskOfferingUuids;
     @APIParam(numberRange = {1, 1024}, required = false)
     private Integer cpuNum;

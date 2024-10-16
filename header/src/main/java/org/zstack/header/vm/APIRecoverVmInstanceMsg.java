@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIRecoverVmInstanceEvent.class
 )
 public class APIRecoverVmInstanceMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
 
     public String getUuid() {

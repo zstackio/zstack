@@ -35,7 +35,7 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
     /**
      * @desc root volume uuid. See :ref:`VolumeInventory`
      */
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeVO.class)
     private String rootVolumeUuid;
     /**
      * @desc snapshot group name. Max length of 255 characters

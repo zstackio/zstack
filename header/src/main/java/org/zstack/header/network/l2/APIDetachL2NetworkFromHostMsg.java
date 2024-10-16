@@ -15,7 +15,7 @@ public class APIDetachL2NetworkFromHostMsg extends APIMessage implements L2Netwo
     /**
      * @desc l2Network uuid
      */
-    @APIParam(resourceType = L2NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L2NetworkVO.class)
     private String l2NetworkUuid;
     /**
      * @desc host uuid. See :ref:`HostInventory`

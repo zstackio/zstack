@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
         isAction = true
 )
 public class APIFlattenVmInstanceMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
 
     @APIParam(required = false)

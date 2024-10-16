@@ -19,7 +19,7 @@ import java.util.List;
 public class APICreateSystemTagsMsg extends APIMessage {
     @APIParam
     private String resourceType;
-    @APIParam(checkAccount = true, resourceType = ResourceVO.class)
+    @APIParam(resourceType = ResourceVO.class, scope = APIParam.SCOPE_ALLOWED_SHARING)
     private String resourceUuid;
     @APIParam(nonempty = true)
     @NoLogging(type = NoLogging.Type.Tag)

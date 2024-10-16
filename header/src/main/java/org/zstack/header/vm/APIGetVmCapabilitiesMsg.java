@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.GET
 )
 public class APIGetVmCapabilitiesMsg extends APISyncCallMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
 
     public String getUuid() {

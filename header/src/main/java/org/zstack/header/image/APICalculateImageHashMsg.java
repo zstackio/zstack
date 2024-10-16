@@ -23,10 +23,10 @@ import org.zstack.header.storage.backup.ImageHashAlgorithm;
 )
 public class APICalculateImageHashMsg extends APIMessage implements ImageMessage, APIAuditor {
 
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(resourceType = ImageVO.class)
     private String uuid;
 
-    @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = BackupStorageVO.class)
     private String backupStorageUuid;
 
     @APIParam(required = false)

@@ -22,7 +22,7 @@ import static java.util.Arrays.asList;
         responseClass = APISetVmBootOrderEvent.class
 )
 public class APISetVmBootOrderMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
     private List<String> bootOrder;
 

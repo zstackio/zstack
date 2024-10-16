@@ -18,7 +18,7 @@ import java.io.Serializable;
 )
 @EncryptionParamAllowed(forbiddenFields = {"uuid"})
 public class APIUpdateAccountMsg extends APIMessage implements AccountMessage, Serializable {
-    @APIParam(resourceType = AccountVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = AccountVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false, password = true)
     @NoLogging

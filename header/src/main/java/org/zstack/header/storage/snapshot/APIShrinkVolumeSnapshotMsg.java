@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
 public class APIShrinkVolumeSnapshotMsg extends APIMessage implements VolumeSnapshotMessage {
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class)
     private String uuid;
     @APINoSee
     private String volumeUuid;

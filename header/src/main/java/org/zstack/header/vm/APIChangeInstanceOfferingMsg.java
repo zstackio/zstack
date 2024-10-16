@@ -19,9 +19,9 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIChangeInstanceOfferingEvent.class
 )
 public class APIChangeInstanceOfferingMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true)
+    @APIParam(resourceType = InstanceOfferingVO.class)
     private String instanceOfferingUuid;
 
     @Override

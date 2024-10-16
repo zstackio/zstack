@@ -21,7 +21,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIChangeInstanceOfferingStateEvent.class
 )
 public class APIChangeInstanceOfferingStateMsg extends APIMessage implements InstanceOfferingMessage {
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = InstanceOfferingVO.class)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

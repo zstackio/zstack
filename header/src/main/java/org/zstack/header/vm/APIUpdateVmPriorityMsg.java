@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateVmPriorityEvent.class
 )
 public class APIUpdateVmPriorityMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
     @APIParam
     private String priority;

@@ -21,7 +21,7 @@ import java.io.Serializable;
         responseClass = APISetVmConsolePasswordEvent.class
 )
 public class APISetVmConsolePasswordMsg extends APIMessage implements VmInstanceMessage, Serializable {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;
     @APIParam
     @NoLogging

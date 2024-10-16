@@ -19,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDetachIsoFromVmInstanceEvent.class
 )
 public class APIDetachIsoFromVmInstanceMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;
 
     // resourceType can not be set to ImageVO.class, because the image may have been deleted

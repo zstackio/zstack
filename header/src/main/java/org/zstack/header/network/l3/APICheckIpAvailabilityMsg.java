@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICheckIpAvailabilityReply.class
 )
 public class APICheckIpAvailabilityMsg extends APISyncCallMessage implements L3NetworkMessage {
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
     @APIParam(maxLength = 255)
     private String ip;

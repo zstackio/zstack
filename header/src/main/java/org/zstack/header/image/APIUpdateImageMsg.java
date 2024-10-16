@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
-    @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = ImageVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;
