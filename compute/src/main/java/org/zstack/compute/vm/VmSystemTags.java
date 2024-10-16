@@ -195,6 +195,10 @@ public class VmSystemTags {
     public static PatternedSystemTag VM_GUEST_TOOLS =
             new PatternedSystemTag(String.format("GuestTools::{%s}", VM_GUEST_TOOLS_VERSION_TOKEN), VmInstanceVO.class);
 
+    public static String VM_GUEST_TOOLS_PREVIEW_STATE_TOKEN = "guestToolsPreviewState";
+    public static PatternedSystemTag VM_GUEST_TOOLS_PREVIEW_STATE =
+            new PatternedSystemTag(String.format("GuestToolsPreviewState::{%s}", VM_GUEST_TOOLS_PREVIEW_STATE_TOKEN), VmInstanceVO.class);
+
     public static String VM_RESOURCE_BINGDING_TOKEN = "resourceUUids";
     public static PatternedSystemTag VM_RESOURCE_BINGDING =
             new PatternedSystemTag(String.format("resourceBindings::{%s}", VM_RESOURCE_BINGDING_TOKEN), VmInstanceVO.class);
