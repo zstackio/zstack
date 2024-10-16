@@ -87,91 +87,57 @@ ZStack采用与OSGi和Eclipse类似的插件系统方式作为核心架构基础
 
 ZStack提供**3套全自动化的严密测试系统**，确保每个功能的代码质量。
 
-## 安装
+## 安装和使用
 
 安装ZStack极为便捷。用户可按需选择不同的安装模式安装首套ZStack环境。
 
-* 如需快速尝试，请参阅[快速安装手册](http://en.zstack.io/installation/index.html)。
-* 如需部署生产环境，请参阅[手动安装手册](http://en.zstack.io/installation/manual.html)。
-* 如需部署多管理节点环境，请参阅[多管理节点安装手册](http://en.zstack.io/installation/multi-node.html)。
+* 如需快速尝试，请参阅[快速安装手册](https://www.zstack.io/help/tutorials/quick_install_guide/v5/)。
+* 如需部署生产环境，请参阅[手动安装手册](https://www.zstack.io/help/product_manuals/user_guide/v5/)。
+* 如需部署多管理节点环境，请参阅[多管理节点安装手册](https://www.zstack.io/help/tutorials/double_mn_ha_solution/v5/)。
 
-安装完成之后，可参考以下手册快速使用云平台：
-
-* [快速使用云平台（快速安装）](http://en.zstack.io/documentation/getstart-quick.html)
-* [快速使用云平台（手动安装）](http://en.zstack.io/documentation/getstart-manual.html)
-* [快速使用云平台（多管理节点安装）](http://en.zstack.io/documentation/getstart-multi.html)
-
-## 教程
-
-对于首次使用All in One方式在单台Linux机器上搭建使用ZStack云平台的用户，ZStack提供以下6本教程可供参阅：
-
-#### Amazon EC2经典弹性IP域：
-
-* [UI界面](http://en.zstack.io/tutorials/ec2-ui.html)
-* [命令行工具](http://en.zstack.io/tutorials/ec2-cli.html)
-
-#### 扁平网络:
-
-* [UI界面](http://en.zstack.io/tutorials/flat-network-ui.html)
-* [命令行工具](http://en.zstack.io/tutorials/flat-network-cli.html)
-
-#### 三层网络:
-
-* [UI界面](http://en.zstack.io/tutorials/three-tiered-ui.html)
-* [命令行工具](http://en.zstack.io/tutorials/three-tiered-cli.html)
-
-#### 安全组:
-
-* [UI界面](http://en.zstack.io/tutorials/security-group-ui.html)
-* [命令行工具](http://en.zstack.io/tutorials/security-group-cli.html)
-
-#### 弹性端口转发：
-
-* [UI界面](http://en.zstack.io/tutorials/elastic-port-forwarding-ui.html)
-* [命令行工具](http://en.zstack.io/tutorials/elastic-port-forwarding-cli.html)
-
-#### 快照：
-
-* [UI界面](http://en.zstack.io/tutorials/snapshot-ui.html)
-* [命令行工具](http://en.zstack.io/tutorials/snapshot-cli.html)
-
-#### 更多
-
-关于ZStack架构设计的更多解读，请参阅以下文章：
+## ZStack架构设计
 
 #### 伸缩性
 
-* [ZStack弹性架构揭秘 1：异构架构](http://en.zstack.io/blog/asynchronous-architecture.html)
-* [ZStack弹性架构揭秘 2：无状态服务架构](http://en.zstack.io/blog/stateless-clustering.html)
-* [ZStack弹性架构揭秘 3：无锁架构](http://en.zstack.io/blog/lock-free.html)
+* [ZStack弹性架构揭秘](https://res.zstack.io/assets/pdf/08.pdf)
+  -  异构架构
+  -  无状态服务架构
+  -  无锁架构
 
 #### 插件架构
 
-* [进程内微服务架构](http://en.zstack.io/blog/microservices.html)
-* [通用插件系统](http://en.zstack.io/blog/plugin.html)
-* [标签系统](http://en.zstack.io/blog/tag.html)
-* [工作流引擎](http://en.zstack.io/blog/workflow.html)
-* [瀑布流架构](http://en.zstack.io/blog/cascade.html)
+* [ZStack插件架构](https://res.zstack.io/assets/pdf/09.pdf)
+  - 进程内微服务架构
+  - 通用插件系统
+  - 工作流引擎
 
-#### 查询API:
+#### 资源操作框架
 
-* [查询API](http://en.zstack.io/blog/query.html)
+* [标签系统/级联框架/查询API](https://res.zstack.io/assets/pdf/10.pdf)
 
-#### 自动化:
+#### 整体技术架构概述
+* [技术架构概述](https://www.zstack.io/help/product_manuals/white_paper/v5/)
 
-* [全自动化Ansible部署](http://en.zstack.io/blog/ansible.html)
+## 社区交流
+* 加入QQ群，共同探讨和分享对ZStack的建议、使用心得、发展方向等。QQ群号：一群（410185063）、二群（443027683）、三群（741300236）、四群（1046295840）、五群（1071894823）、六群（1012034825）
 
-#### 存储与网络：
+## 参与贡献
+#### 问题反馈
+1. 提交Issue或通过QQ群反馈问题
+2. 描述如何重现该问题（可选）
+3. 可提供解决方案（可选）
+4. 提交PR以解决问题（可选）
 
-* [网络模型 1：二层网络和三层网络](http://en.zstack.io/blog/network-l2.html)
-* [网络模型 2：云路由器网络服务提供商](http://en.zstack.io/blog/virtual-router.html)
-* [存储模型：主存储与镜像服务器](http://en.zstack.io/blog/storage.html)
+#### 功能需求
+1. 提交Issue或通过QQ群反馈新功能需求及原因
+2. 指出这个功能的实现方案（可选）
+3. 提出PR实现这个新的功能（可选）
 
-#### 测试
+#### 代码贡献
+1. 参考[快速编译手册](https://gitee.com/zstackio/zstack-utility/blob/master/zstackbuild/README.md) 准备一个开发环境
+2. 提交PR请求根据社区反馈进行完善
 
-* [自动化测试系统 1：综合测试](http://en.zstack.io/blog/integration-testing.html)
-* [自动化测试系统2：系统测试](http://en.zstack.io/blog/system-testing.html)
-* [自动化测试系统3：模型测试](http://en.zstack.io/blog/model-based-testing.html)
+感谢以下小伙伴对本仓库的贡献和反馈[社区贡献榜](https://gitee.com/zstackio/zstack/blob/master/CONTRIBUTORS)！
 
 ## 许可证
 
