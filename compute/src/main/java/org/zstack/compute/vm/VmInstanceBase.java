@@ -4888,7 +4888,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         String sql;
         TypedQuery<L3NetworkVO> q;
-        if (self.getVmNics().isEmpty()) {
+        if (self.getVmNics().isEmpty() || VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)) {
             if (l3Uuids == null) {
                 // accessed by a system admin
                 sql = "select l3" +
@@ -5063,11 +5063,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
         }
 
-        VmNicVO nicVO= Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
         for (FilterVmNicChangeableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterVmNicChangeableL3NetworkExtensionPoint.class)) {
             ret = ext.filterVmNicChangeableL3Network(VmNicInventory.valueOf(nicVO), ret);
         }
 
+        ret.removeIf(l3 -> l3.getUuid().equals(nicVO.getL3NetworkUuid()));
         reply.setInventories(ret);
         bus.reply(msg, reply);
     }
