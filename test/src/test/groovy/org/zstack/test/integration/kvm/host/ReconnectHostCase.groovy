@@ -1,22 +1,26 @@
 package org.zstack.test.integration.kvm.host
 
+import org.springframework.http.HttpEntity
+import org.springframework.web.util.UriComponentsBuilder
+import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.host.*
+import org.zstack.header.rest.RESTConstant
+import org.zstack.header.rest.RESTFacade
 import org.zstack.header.vm.VmInstanceState
-import org.zstack.kvm.KVMAgentCommands
-import org.zstack.kvm.KVMConstant
-import org.zstack.kvm.KVMHostVO
-import org.zstack.kvm.KVMHostVO_
+import org.zstack.kvm.*
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.Utils
-import org.zstack.utils.logging.CLogger
+import org.zstack.utils.gson.JSONObjectUtil
+
+import static org.zstack.utils.CollectionDSL.e
+import static org.zstack.utils.CollectionDSL.map
 
 /**
  * Created by MaJin on 2017-05-01.
@@ -24,7 +28,7 @@ import org.zstack.utils.logging.CLogger
 class ReconnectHostCase extends SubCase {
     EnvSpec env
     HostInventory host
-    private final static CLogger logger = Utils.getLogger(ReconnectHostCase.class)
+    RESTFacade restf
     static RECONNECT_TIME = 10
 
     @Override
@@ -41,16 +45,79 @@ class ReconnectHostCase extends SubCase {
     void test() {
         env.create {
             host = env.inventoryByName("kvm")
+            restf = bean(RESTFacade.class)
             testReconnectHostVmState()
             testReconnectFailureHostVmState()
             testUpdateHostDuringConnecting()
             testChangeHostConnectionState()
+            testInstallHostShutdownHookCmd()
         }
     }
 
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testInstallHostShutdownHookCmd() {
+        Boolean installHostShutdownHook = null
+        env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { KVMAgentCommands.AgentResponse rsp, HttpEntity<String> e ->
+            def connectCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ConnectCmd.class)
+            if (connectCmd.hostUuid.equals(host.uuid)) {
+                installHostShutdownHook = connectCmd.installHostShutdownHook
+            }
+            return rsp
+        }
+
+        reconnectHost {
+            uuid = host.uuid
+        }
+
+        assert !installHostShutdownHook
+
+        KVMGlobalConfig.INSTALL_HOST_SHUTDOWN_HOOK.updateValue(true)
+
+        reconnectHost {
+            uuid = host.uuid
+        }
+
+        assert installHostShutdownHook
+
+        KVMGlobalConfig.INSTALL_HOST_SHUTDOWN_HOOK.updateValue(KVMGlobalConfig.INSTALL_HOST_SHUTDOWN_HOOK.getDefaultValue())
+
+        env.cleanAfterSimulatorHandlers()
+
+        def isChangeStatus = false
+        KVMAgentCommands.ReportHostStopEventCmd cmd = new KVMAgentCommands.ReportHostStopEventCmd()
+        cmd.hostUuid = Platform.getUuid()
+
+        env.message(ChangeHostStatusMsg.class) { ChangeHostStatusMsg msg, CloudBus bus ->
+            isChangeStatus = true
+            ChangeHostStatusReply r = new ChangeHostStatusReply()
+            bus.reply(msg, r)
+        }
+
+        Map<String, String> header = map(e(RESTConstant.COMMAND_PATH, KVMConstant.KVM_REPORT_HOST_STOP_EVENT))
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl())
+        ub.path(RESTConstant.COMMAND_CHANNEL_PATH)
+        String url = ub.build().toUriString()
+        restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, String.class)
+
+        retryInSecs {
+            assert isChangeStatus
+        }
+
+        isChangeStatus = false
+        cmd.hostUuid = null
+        restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, String.class)
+
+        expect(AssertionError.class) {
+            retryInSecs {
+                assert isChangeStatus
+            }
+        }
+
+        env.cleanMessageHandlers()
     }
 
     void testUpdateHostDuringConnecting() {

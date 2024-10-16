@@ -4809,6 +4809,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
             cmd.setTcpServerPort(KVMGlobalProperty.TCP_SERVER_PORT);
             cmd.setVersion(dbf.getDbVersion());
+            cmd.setInstallHostShutdownHook(KVMGlobalConfig.INSTALL_HOST_SHUTDOWN_HOOK.value(Boolean.class));
             if (HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class) || !KVMSystemTags.EPT_CPU_FLAG.hasTag(self.getUuid())) {
                 cmd.setPageTableExtensionDisabled(true);
             }
@@ -5426,10 +5427,6 @@ public class KVMHost extends HostBase implements Host {
 
                         if ("baremetal2".equals(self.getHypervisorType())) {
                             deployArguments.setIsBareMetal2Gateway("true");
-                        }
-                        if (KVMGlobalConfig.INSTALL_HOST_SHUTDOWN_HOOK.value(Boolean.class)) {
-                            deployArguments.setIsInstallHostShutdownHook("true");
-                            runner.setForceRun(true);
                         }
 
                         String enableKsm = rcf.getResourceConfigValue(KVMGlobalConfig.HOST_KSM, self.getUuid(), String.class);
