@@ -845,11 +845,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAttachL3NetworkToVmMsg msg) {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.type, VmInstanceVO_.state);
+        q.select(VmInstanceVO_.type, VmInstanceVO_.state, VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid);
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         Tuple t = q.findTuple();
         String type = t.get(0, String.class);
         VmInstanceState state = t.get(1, VmInstanceState.class);
+        String hostUuid = t.get(2, String.class) != null ? t.get(2, String.class) : t.get(3, String.class);
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
@@ -986,6 +987,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             VmNicUtils.validateVmParams(vmNicParams, Arrays.asList(msg.getL3NetworkUuid()), supportNicDriverTypes, type);
+        }
+
+        L2NetworkType l2Type = L2NetworkType.valueOf(Q.New(L2NetworkVO.class)
+                .eq(L2NetworkVO_.uuid, l2Uuids.get(0))
+                .select(L2NetworkVO_.type).findValue());
+        if (!l2Type.isAttachToAllHosts() && !L2NetworkHostUtils.checkIfL2AttachedToHost(l2Uuids.get(0), hostUuid)) {
+            throw new ApiMessageInterceptionException(operr("unable to attach L3 network[uuid:%s] to VM[uuid:%s]" +
+                    " whose l2Network is not attached to the host[uuid:%s]",
+                    msg.getL3NetworkUuid(), msg.getVmInstanceUuid(), hostUuid));
         }
     }
 

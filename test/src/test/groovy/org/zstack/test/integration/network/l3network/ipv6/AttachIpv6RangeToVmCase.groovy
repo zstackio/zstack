@@ -34,6 +34,12 @@ class AttachIpv6RangeToVmCase extends SubCase {
     @Override
     void test() {
         env.create {
+            updateGlobalConfig {
+                category = VmGlobalConfig.CATEGORY
+                name = VmGlobalConfig.MULTI_VNIC_SUPPORT.name
+                value = "false"
+            }
+
             testCreateVmOfPrivateIPv6Network()
             testAttachDualStackNetworkToVm()
         }
