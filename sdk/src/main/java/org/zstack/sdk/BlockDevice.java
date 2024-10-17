@@ -28,6 +28,22 @@ public class BlockDevice  {
         return this.size;
     }
 
+    public long used;
+    public void setUsed(long used) {
+        this.used = used;
+    }
+    public long getUsed() {
+        return this.used;
+    }
+
+    public long available;
+    public void setAvailable(long available) {
+        this.available = available;
+    }
+    public long getAvailable() {
+        return this.available;
+    }
+
     public long physicalSector;
     public void setPhysicalSector(long physicalSector) {
         this.physicalSector = physicalSector;
@@ -106,6 +122,14 @@ public class BlockDevice  {
     }
     public long getUsedRatio() {
         return this.usedRatio;
+    }
+
+    public boolean status;
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+    public boolean getStatus() {
+        return this.status;
     }
 
 }

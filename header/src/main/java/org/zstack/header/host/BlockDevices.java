@@ -48,6 +48,8 @@ public class BlockDevices {
         private String name;
         private String type;
         private long size;
+        private long used;
+        private long available;
         private long physicalSector;
         private long logicalSector;
         private String mountPoint;
@@ -58,6 +60,7 @@ public class BlockDevices {
         private String model;
         private String mediaType;
         private long usedRatio;
+        private boolean status;
 
         BlockDevice() {
 
@@ -121,6 +124,22 @@ public class BlockDevices {
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public long getUsed() {
+            return used;
+        }
+
+        public void setUsed(long used) {
+            this.used = used;
+        }
+
+        public long getAvailable() {
+            return available;
+        }
+
+        public void setAvailable(long available) {
+            this.available = available;
         }
 
         public long getPhysicalSector() {
@@ -201,6 +220,14 @@ public class BlockDevices {
 
         public void setUsedRatio(long usedRatio) {
             this.usedRatio = usedRatio;
+        }
+
+        public boolean isStatus() {
+            return status;
+        }
+
+        public void setStatus(boolean status) {
+            this.status = status;
         }
     }
 }
