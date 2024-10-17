@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.core.convert.PasswordConverter;
+import org.zstack.header.core.encrypt.EncryptColumn;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vo.EO;
@@ -14,7 +15,8 @@ import javax.persistence.*;
 public class KVMHostVO extends HostVO {
     @Column
     private String username;
-    
+
+    @EncryptColumn
     @Column
     @Convert(converter = PasswordConverter.class)
     private String password;
