@@ -102,10 +102,15 @@ public class VolumeTO extends BaseVirtualDeviceTO {
             platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vol.getUuid()).select(VmInstanceVO_.platform).findValue();
         }
 
-        to.setUseVirtio(platform == null || (ImagePlatform.Windows.toString().equals(platform) ||
-                ImagePlatform.valueOf(platform).isParaVirtualization()));
-        to.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
-        to.setUseSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_SCSI.hasTag(vol.getUuid()));
+        if (KVMSystemTags.VOLUME_SCSI.hasTag(vol.getUuid())) {
+            to.setUseSCSI(true);
+        } else {
+            to.setUseVirtio(platform == null || (ImagePlatform.Windows.toString().equals(platform) ||
+                    ImagePlatform.valueOf(platform).isParaVirtualization()));
+            to.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) &&
+                    KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
+        }
+
         to.setWwn(KVMHost.computeWwnIfAbsent(vol.getUuid()));
         to.setShareable(vol.isShareable());
         ResourceConfigFacade rcf = Platform.getComponentLoader().getComponent(ResourceConfigFacade.class);
