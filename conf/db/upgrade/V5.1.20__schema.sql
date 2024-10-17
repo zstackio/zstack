@@ -27,5 +27,17 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ApplicationDevelopmentServiceVO` (
     `modelServiceUuid` varchar(32) NULL,
     `deploymentStatus` varchar(255) NOT NULL,
     CONSTRAINT fkApplicationDevelopmentServiceVOModelServiceGroupVO FOREIGN KEY (modelServiceGroupUuid) REFERENCES ModelServiceInstanceGroupVO (uuid) ON DELETE SET NULL,
-  PRIMARY KEY (`uuid`)
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterCapacityVO` (
+    `uuid` varchar(32) NOT NULL,
+    `modelUsedCapacity` bigint NULL,
+    `modelServiceUsedCapacity` bigint NULL,
+    `datasetUsedCapacity` bigint NULL,
+    `fineTuneUsedCapacity` bigint NULL,
+    `modelEvaluationUsedCapacity` bigint NULL,
+    `installationUsedCapacity` bigint NULL,
+    `temporaryUsedCapacity` bigint NULL,
+    PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

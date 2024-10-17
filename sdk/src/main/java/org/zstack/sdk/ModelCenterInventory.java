@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.ModelCenterCapacityInventory;
 
 public class ModelCenterInventory  {
 
@@ -106,6 +106,14 @@ public class ModelCenterInventory  {
     }
     public java.lang.String getContainerNetwork() {
         return this.containerNetwork;
+    }
+
+    public ModelCenterCapacityInventory capacity;
+    public void setCapacity(ModelCenterCapacityInventory capacity) {
+        this.capacity = capacity;
+    }
+    public ModelCenterCapacityInventory getCapacity() {
+        return this.capacity;
     }
 
     public java.sql.Timestamp createDate;
