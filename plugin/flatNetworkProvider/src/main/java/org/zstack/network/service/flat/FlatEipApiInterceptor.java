@@ -106,7 +106,8 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
         /* TODO: this is temp limitation, ipv6 eip can be only attached to flat eip */
         EipVO eip = Q.New(EipVO.class).eq(EipVO_.uuid, msg.getEipUuid()).find();
         if (IPv6NetworkUtils.isIpv6Address(eip.getVipIp()) && !providerType.toString().equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {
-            throw new ApiMessageInterceptionException(argerr("could not attach eip because ipv6 eip can ONLY be attached to flat network"));
+//            throw new ApiMessageInterceptionException(argerr("could not attach eip because ipv6 eip can ONLY be attached to flat network"));
+            return;
         }
 
         if (!providerType.toString().equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {

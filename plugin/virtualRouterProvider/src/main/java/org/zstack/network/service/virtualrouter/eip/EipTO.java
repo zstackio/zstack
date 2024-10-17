@@ -11,6 +11,7 @@ public class EipTO implements Serializable {
     private String guestIp;
     private boolean snatInboundTraffic;
     private boolean needCleanGuestIp;
+    private String ipVersion;
 
     public boolean isNeedCleanGuestIp() {
         return needCleanGuestIp;
@@ -59,4 +60,13 @@ public class EipTO implements Serializable {
     public void setPublicMac(String publicMac) {
         this.publicMac = publicMac;
     }
+
+    public String getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(String ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
 }
