@@ -175,6 +175,8 @@
 
         <Logger name="org.zstack.core.upgrade" level="TRACE" />
 
+        <Logger name="org.zstack.zwatch.host" level="TRACE" />
+
         <Logger name="org.zstack.testlib.util.Retry" level="INFO" />
 
         <Root level="WARN" additivity="false">
