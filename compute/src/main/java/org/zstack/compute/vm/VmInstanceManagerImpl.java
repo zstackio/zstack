@@ -2317,7 +2317,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         diskOfferingUuids.addAll(msg.getDataDiskOfferingUuids());
                     }
                     if (imgType == ImageConstant.ImageMediaType.RootVolumeTemplate) {
-                        allVolumeSizeAsked += imgSize;
+                        if (msg.getRootDiskOfferingUuid() != null) {
+                            diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+                        } else {
+                            allVolumeSizeAsked += imgSize;
+                        }
                     } else if (imgType == ImageConstant.ImageMediaType.ISO) {
                         if (msg.getRootDiskOfferingUuid() != null) {
                             diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
