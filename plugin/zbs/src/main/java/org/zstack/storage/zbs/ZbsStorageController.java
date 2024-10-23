@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.storage.zbs.ZbsNameHelper.*;
 
 /**
  * @author Xingwei Yu
@@ -87,7 +88,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String DELETE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/delete";
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
 
-    private static final String ZBS_CBD_LUN_PATH_FORMAT = "cbd:%s/%s/%s";
     private static final Integer SUPPORT_MINIMUM_MDS_NUMBER = 2;
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
@@ -517,7 +517,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public String allocateSpace(AllocateSpaceSpec aspec) {
         reloadDbInfo();
-
         return buildVolumePath("", config.getLogicalPoolName(), "");
     }
 
@@ -902,22 +901,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     }
 
-    public String getLogicalPoolNameFromPath(String url) {
-        return url.split("/")[1];
-    }
-
-    public String getPhysicalPoolNameFromPath(String url) {
-        return url.split("/")[0].split(":")[1];
-    }
-
-    public String getLunNameFromPath(String url) {
-        return url.split("/")[2].split("@")[0];
-    }
-
-    public String getSnapshotNameFromPath(String url) {
-        return url.split("/")[2].split("@")[1];
-    }
-
     public void doDeleteVolume(String installPath, Boolean force, Completion comp) {
         DeleteVolumeCmd cmd = new DeleteVolumeCmd();
         cmd.setLogicalPoolName(getLogicalPoolNameFromPath(installPath));
@@ -935,11 +918,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 comp.fail(errorCode);
             }
         });
-    }
-
-    public static String buildVolumePath(String physicalPoolName, String logicalPoolName, String volId) {
-        String base = volId.replace("-", "");
-        return String.format(ZBS_CBD_LUN_PATH_FORMAT, physicalPoolName, logicalPoolName, base);
     }
 
     private void reloadDbInfo() {
