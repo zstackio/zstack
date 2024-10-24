@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetServiceTypeOnHostNetworkBondingAction extends AbstractAction {
+public class CreateHostNetworkServiceTypeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetServiceTypeOnHostNetworkBondingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetServiceTypeOnHostNetworkBondingResult value;
+        public org.zstack.sdk.CreateHostNetworkServiceTypeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,17 @@ public class SetServiceTypeOnHostNetworkBondingAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List bondingUuids;
+    @Param(required = true, maxLength = 128, nonempty = true, nullElements = false, emptyString = true, noTrim = true)
+    public java.lang.String serviceType;
+
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public boolean system = false;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vlanIds;
-
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List serviceTypes;
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +69,8 @@ public class SetServiceTypeOnHostNetworkBondingAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetServiceTypeOnHostNetworkBondingResult value = res.getResult(org.zstack.sdk.SetServiceTypeOnHostNetworkBondingResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetServiceTypeOnHostNetworkBondingResult() : value; 
+        org.zstack.sdk.CreateHostNetworkServiceTypeResult value = res.getResult(org.zstack.sdk.CreateHostNetworkServiceTypeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateHostNetworkServiceTypeResult() : value; 
 
         return ret;
     }
@@ -97,7 +100,7 @@ public class SetServiceTypeOnHostNetworkBondingAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hosts/bondings/service-types";
+        info.path = "/hosts/service-types";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

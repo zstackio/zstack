@@ -31,7 +31,7 @@ public class SetServiceTypeOnHostNetworkInterfaceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List vlanIds;
 
-    @Param(required = false, validValues = {"ManagementNetwork","TenantNetwork","StorageNetwork","BackupNetwork","MigrationNetwork"}, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List serviceTypes;
 
     @Param(required = false)

@@ -115,9 +115,117 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         } else if (msg instanceof HostMessage) {
             HostMessage hmsg = (HostMessage) msg;
             passThrough(hmsg);
+        } else if (msg instanceof APICreateHostNetworkServiceTypeMsg) {
+            handle((APICreateHostNetworkServiceTypeMsg) msg);
+        } else if (msg instanceof APIUpdateHostNetworkServiceTypeMsg) {
+            handle((APIUpdateHostNetworkServiceTypeMsg) msg);
+        } else if (msg instanceof APIDeleteHostNetworkServiceTypeMsg) {
+            handle((APIDeleteHostNetworkServiceTypeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+
+    private void handle(APIDeleteHostNetworkServiceTypeMsg msg) {
+        APIDeleteHostNetworkServiceTypeEvent event = new APIDeleteHostNetworkServiceTypeEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                deleteHostNetworkLabel(msg, new Completion(msg, chain){
+                    @Override
+                    public void success() {
+                        HostNetworkLabelVO vo = dbf.findByUuid(msg.getUuid(), HostNetworkLabelVO.class);
+                        dbf.remove(vo);
+                        logger.debug(String.format("delete host network service type[uuid:%s]", vo.getUuid()));
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return String.format("delete-host-network-label[uuid:%s]", msg.getUuid());
+            }
+
+            @Override
+            public String getName() {
+                return "delete-host-network-label";
+            }
+        });
+    }
+
+    private void handle(APIUpdateHostNetworkServiceTypeMsg msg) {
+        APIUpdateHostNetworkServiceTypeEvent event = new APIUpdateHostNetworkServiceTypeEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                updateHostNetworkLabel(msg, new Completion(msg, chain){
+                    @Override
+                    public void success() {
+                        HostNetworkLabelVO vo = dbf.findByUuid(msg.getUuid(), HostNetworkLabelVO.class);
+                        vo.setServiceType(msg.getServiceType());
+                        vo.setSystem(msg.isSystem());
+                        dbf.updateAndRefresh(vo);
+                        logger.debug(String.format("update host network service type[uuid:%s, serviceType:%s, system:%s]",
+                                vo.getUuid(), vo.getServiceType(), vo.getSystem()));
+                        event.setInventory(HostNetworkLabelInventory.valueOf(vo));
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return String.format("update-host-network-label[uuid:%s]", msg.getUuid());
+            }
+
+            @Override
+            public String getName() {
+                return "update-host-network-label";
+            }
+        });
+    }
+
+    private void handle(APICreateHostNetworkServiceTypeMsg msg) {
+        HostNetworkLabelVO vo = new HostNetworkLabelVO();
+        vo.setUuid(Platform.getUuid());
+        vo.setServiceType(msg.getServiceType());
+        vo.setSystem(msg.isSystem());
+        dbf.persist(vo);
+        logger.debug(String.format("create host network service type[uuid:%s, serviceType:%s, system:%s]",
+                vo.getUuid(), vo.getServiceType(), vo.getSystem()));
+        APICreateHostNetworkServiceTypeEvent event = new APICreateHostNetworkServiceTypeEvent(msg.getId());
+        event.setInventory(HostNetworkLabelInventory.valueOf(vo));
+        bus.publish(event);
+    }
+
+    private void deleteHostNetworkLabel(APIDeleteHostNetworkServiceTypeMsg msg, Completion completion) {
+        HostNetworkLabelVO vo = dbf.findByUuid(msg.getUuid(), HostNetworkLabelVO.class);
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostNetworkLabelExtensionPoint.class),
+                arg -> arg.deleteHostNetworkLabel(vo.toInventory(), completion));
+    }
+
+    private void updateHostNetworkLabel(APIUpdateHostNetworkServiceTypeMsg msg, Completion completion) {
+        HostNetworkLabelVO vo = dbf.findByUuid(msg.getUuid(), HostNetworkLabelVO.class);
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostNetworkLabelExtensionPoint.class),
+                arg -> arg.updateHostNetworkLabel(vo.toInventory(), msg.getServiceType(), completion));
     }
 
     private void handle(APIGetHostWebSshUrlMsg msg) {
