@@ -60,6 +60,7 @@ public interface VirtualRouterConstant {
     public static final String SNAT_NETWORK_SERVICE_TYPE = "SNAT";
     public static final String IPSEC_NETWORK_SERVICE_TYPE = "IPsec";
     public static final String IPSEC_NETWORK_SERVICE_LATEST_VERSION = "5.9.4";
+	public static final String IPSEC_NETWORK_SERVICE_EULER_2203 = "5.9.7";
     public static final String IPSEC_NETWORK_SERVICE_OLD_VERSION = "4.5.2";
 
 	public static final String VR_CHANGE_DEFAULT_ROUTE_JOB = "changeDefaultNic";

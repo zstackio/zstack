@@ -675,11 +675,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APICreateLoadBalancerListenerMsg msg) {
+        LoadBalancerVO lbVO = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
+
         if (msg.getInstancePort() == null) {
             msg.setInstancePort(msg.getLoadBalancerPort());
         }
         if (msg.getProtocol() == null) {
             msg.setProtocol(LoadBalancerConstants.LB_PROTOCOL_TCP);
+        }
+
+        if (msg.getProtocol().equals(LB_PROTOCOL_UDP)) {
+            if (!StringUtils.isEmpty(lbVO.getVipUuid()) && !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {
+                throw new ApiMessageInterceptionException(
+                        operr("can not create listener because udp listener can not have both ipv4 and ipv6 vip",
+                                msg.getProtocol(), msg.getHealthCheckProtocol()));
+            }
         }
         if (msg.getHealthCheckProtocol() == null) {
             if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol())) {
@@ -1725,6 +1735,37 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
                 .findValue();
         msg.setLoadBalancerUuid(loadBalancerUuid);
+
+        /* until 5.3.0, udp lb only has 2 use case: ipv4 vip --> ipv4 backend +
+        * ipv6 vip --> ipv6 backend  */
+        LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getlistenerUuid(),
+                LoadBalancerListenerVO.class);
+        LoadBalancerVO lbVO = dbf.findByUuid(loadBalancerUuid, LoadBalancerVO.class);
+        LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+        if (listenerVO.getProtocol().equals(LB_PROTOCOL_UDP)) {
+            if (!StringUtils.isEmpty(lbVO.getVipUuid()) &&
+                    !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {
+                throw new ApiMessageInterceptionException(operr(
+                        "could not add server group[uuid:%s} to listener [uuid:%s], " +
+                                "because udp listener can not has both ipv4 and ipv6 vip",
+                        msg.getServerGroupUuid(),msg.getlistenerUuid()));
+            }
+
+            if (groupVO.getIpVersion() == IPv6Constants.IPv4 && !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {
+                throw new ApiMessageInterceptionException(operr(
+                        "could not add server group[uuid:%s} to listener [uuid:%s], " +
+                                "because udp listener can not map ipv6 to ipv4 backend",
+                        msg.getServerGroupUuid(),msg.getlistenerUuid()));
+            }
+
+            if (groupVO.getIpVersion() == IPv6Constants.IPv6 && !StringUtils.isEmpty(lbVO.getVipUuid())) {
+                throw new ApiMessageInterceptionException(operr(
+                        "could not add server group[uuid:%s} to listener [uuid:%s], " +
+                                "because udp listener can not map ipv4 to ipv6 backend",
+                        msg.getServerGroupUuid(),msg.getlistenerUuid()));
+            }
+        }
+
     }
 
     private void validate(APIRemoveServerGroupFromLoadBalancerListenerMsg msg){
