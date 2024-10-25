@@ -72,14 +72,10 @@ public class MonUri {
                         " in format of %s", url, MON_URL_FORMAT)));
             }
 
-            String rest = url.substring(at+1);
-            int colon = url.indexOf(":");
-            if (colon <= 0 || colon > url.length() - 1) {
-                throw new OperationFailureException(errorCode(String.format("invalid monUrl[%s], sshUsername and sshPassword must be separated by ':' and cannot be empty. A valid monUrl is" +
-                        " in format of %s", url, MON_URL_FORMAT)));
-            }
-            sshUsername = userInfo.substring(0, colon);
-            sshPassword = userInfo.substring(colon+1);
+            String rest = url.substring(at+1, url.length());
+            String[] ssh = userInfo.split(":");
+            sshUsername = ssh[0];
+            sshPassword = ssh[1];
 
             URI uri = new URI(String.format("ssh://%s", rest));
             hostname = uri.getHost();
