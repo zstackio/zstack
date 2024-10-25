@@ -42,6 +42,7 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
 
         List<ApplianceVmSyncConfigToHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(ApplianceVmSyncConfigToHaGroupExtensionPoint.class);
         if (exps == null || exps.isEmpty()) {
+            logger.debug(String.format("there is no exp for ApplianceVmSyncConfigToHaGroupExtensionPoint"));
             chain.next();
             return;
         }
@@ -50,11 +51,13 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
         if (spec.getMessage() instanceof APIStartVmInstanceMsg) {
             systemTags = ((APIStartVmInstanceMsg)spec.getMessage()).getSystemTags();
         } else {
+            logger.debug("msg is not APIStartVmInstanceMsg");
             chain.next();
             return;
         }
 
         if (systemTags == null || systemTags.isEmpty()) {
+            logger.debug("there is no systemTags");
             chain.next();
             return;
         }
@@ -63,6 +66,7 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
         ApplianceVmVO applianceVmVO = dbf.findByUuid(inv.getUuid(), ApplianceVmVO.class);
         /* only handle first join ha group */
         if (applianceVmVO.isHaEnabled()) {
+            logger.debug(String.format("applianceVm[uuid:%s] is in hastatus"));
             chain.next();
             return;
         }
@@ -77,6 +81,7 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
             haUuid = token.get(ApplianceVmSystemTags.APPLIANCEVM_HA_UUID_TOKEN);
         }
         if (haUuid == null) {
+            logger.debug(String.format("there is not ha group uuid"));
             chain.next();
             return;
         }
