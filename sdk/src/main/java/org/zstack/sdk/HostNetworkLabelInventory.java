@@ -2,22 +2,14 @@ package org.zstack.sdk;
 
 
 
-public class HostNetworkBondingServiceRefInventory  {
+public class HostNetworkLabelInventory  {
 
-    public java.lang.String bondingUuid;
-    public void setBondingUuid(java.lang.String bondingUuid) {
-        this.bondingUuid = bondingUuid;
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
     }
-    public java.lang.String getBondingUuid() {
-        return this.bondingUuid;
-    }
-
-    public java.lang.Integer vlanId;
-    public void setVlanId(java.lang.Integer vlanId) {
-        this.vlanId = vlanId;
-    }
-    public java.lang.Integer getVlanId() {
-        return this.vlanId;
+    public java.lang.String getUuid() {
+        return this.uuid;
     }
 
     public java.lang.String serviceType;
@@ -26,6 +18,14 @@ public class HostNetworkBondingServiceRefInventory  {
     }
     public java.lang.String getServiceType() {
         return this.serviceType;
+    }
+
+    public java.lang.Boolean system;
+    public void setSystem(java.lang.Boolean system) {
+        this.system = system;
+    }
+    public java.lang.Boolean getSystem() {
+        return this.system;
     }
 
     public java.sql.Timestamp createDate;

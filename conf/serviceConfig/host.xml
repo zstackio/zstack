@@ -60,4 +60,16 @@
     <message>
         <name>org.zstack.header.host.APIGetHostPowerStatusMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.APICreateHostNetworkServiceTypeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIDeleteHostNetworkServiceTypeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIUpdateHostNetworkServiceTypeMsg</name>
+    </message>
 </service>

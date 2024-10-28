@@ -55,9 +55,35 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIChangeHostStateMsg) msg);
         } else if (msg instanceof APIGetHostWebSshUrlMsg) {
             validate((APIGetHostWebSshUrlMsg) msg);
+        } else if (msg instanceof APICreateHostNetworkServiceTypeMsg) {
+            validate((APICreateHostNetworkServiceTypeMsg) msg);
+        } else if (msg instanceof APIDeleteHostNetworkServiceTypeMsg) {
+            validate((APIDeleteHostNetworkServiceTypeMsg) msg);
+        } else if (msg instanceof APIUpdateHostNetworkServiceTypeMsg) {
+            validate((APIUpdateHostNetworkServiceTypeMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIDeleteHostNetworkServiceTypeMsg msg) {
+        if (Q.New(HostNetworkLabelVO.class).eq(HostNetworkLabelVO_.uuid, msg.getUuid())
+                .eq(HostNetworkLabelVO_.system, Boolean.TRUE).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("system host network service type[%s] cannot be deleted", msg.getUuid()));
+        }
+    }
+
+    private void validate(APIUpdateHostNetworkServiceTypeMsg msg) {
+        if (Q.New(HostNetworkLabelVO.class).eq(HostNetworkLabelVO_.uuid, msg.getUuid())
+                .eq(HostNetworkLabelVO_.system, Boolean.TRUE).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("system host network service type[%s] cannot be updated", msg.getUuid()));
+        }
+    }
+
+    private void validate(APICreateHostNetworkServiceTypeMsg msg) {
+        if (Q.New(HostNetworkLabelVO.class).eq(HostNetworkLabelVO_.serviceType, msg.getServiceType()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("there has been a host network service type[%s]", msg.getServiceType()));
+        }
     }
 
     private void validate(APIGetHostWebSshUrlMsg msg) {
