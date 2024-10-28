@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.HostNetworkInterfaceServiceType;
+
 
 public class HostNetworkBondingServiceRefInventory  {
 
@@ -20,11 +20,11 @@ public class HostNetworkBondingServiceRefInventory  {
         return this.vlanId;
     }
 
-    public HostNetworkInterfaceServiceType serviceType;
-    public void setServiceType(HostNetworkInterfaceServiceType serviceType) {
+    public java.lang.String serviceType;
+    public void setServiceType(java.lang.String serviceType) {
         this.serviceType = serviceType;
     }
-    public HostNetworkInterfaceServiceType getServiceType() {
+    public java.lang.String getServiceType() {
         return this.serviceType;
     }
 
