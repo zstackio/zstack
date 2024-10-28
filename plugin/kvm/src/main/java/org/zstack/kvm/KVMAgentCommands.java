@@ -4704,7 +4704,7 @@ public class KVMAgentCommands {
         public String pcideviceAddress;
     }
 
-    public static class HostStorageDeviceHBAStateEventCmd {
+    public static class HostStorageDeviceHbaStateEventCmd {
         public String host;
         public String portName;
         public String portState;

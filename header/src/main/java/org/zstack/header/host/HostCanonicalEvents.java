@@ -34,7 +34,7 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_HBA_STATE_ABNORMAL = "/host/physicalHBA/state/abnormal";
 
     @NeedJsonSchema
-    public static class HostPhysicalHBAPortStateAbnormalData {
+    public static class HostPhysicalHbaPortStateAbnormalData {
         private String hostUuid;
         private String name;
         private String portName;
