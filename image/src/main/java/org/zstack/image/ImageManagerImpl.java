@@ -231,6 +231,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             @Override
             public void run(MessageReply r) {
                 if (!r.isSuccess()) {
+                    dbf.remove(vo);
                     reply.setError(r.getError());
                     bus.reply(msg, reply);
                     return;
