@@ -29,9 +29,7 @@ import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingState;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowChain;
-import org.zstack.header.core.workflow.FlowException;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -112,7 +110,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
         GetPeerL3NetworksForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
         VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint, QueryBelongFilter,
-        VmInstanceMigrateExtensionPoint {
+        VmInstanceMigrateExtensionPoint, VmPreMigrationExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -2758,5 +2756,46 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         return vipTOS;
+    }
+
+    @Override
+    public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
+        if (ApplianceVmConstant.APPLIANCE_VM_TYPE.equals(vm.getType())) {
+            VirtualRouterVmVO vrVo = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vm.getUuid()).find();
+            if (vrVo != null && vrVo.isHaEnabled()) {
+                List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+                if (exps.isEmpty()) {
+                    completion.success();
+                    return;
+                }
+                String peerUuid = exps.get(0).getPeerUuid(vrVo.getUuid());
+                if (peerUuid == null) {
+                    completion.success();
+                    return;
+                }
+                if (ApplianceVmHaStatus.Master.equals(vrVo.getHaStatus()) &&
+                        ApplianceVmStatus.Connected.equals(vrVo.getStatus()) &&
+                        Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.status, ApplianceVmStatus.Connected)
+                                .eq(VirtualRouterVmVO_.uuid, peerUuid).isExists()) {
+                    logger.debug(String.format("demote ha master before migrate, virtual router[uuid:%s]", vrVo.getUuid()));
+                    VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+                    msg.setVmInstanceUuid(vrVo.getUuid());
+                    msg.setCommand(new VirtualRouterCommands.AgentCommand());
+                    msg.setCheckStatus(true);
+                    msg.setPath(VirtualRouterConstant.VR_HA_MASTER_DEMOTE);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrVo.getUuid());
+                    bus.send(msg, new CloudBusCallBack(null) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(reply.getError().toString());
+                            }
+                            completion.success();
+                        }
+                    });
+                }
+            }
+        }
+        completion.success();
     }
 }

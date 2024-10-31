@@ -176,6 +176,10 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
             simulator(VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_NETWORK) {
                 return new VirtualRouterCommands.ChangeDefaultNicRsp()
             }
+
+            simulator(VirtualRouterConstant.VR_HA_MASTER_DEMOTE) {
+                return new VirtualRouterCommands.AgentResponse()
+            }
         }
     }
 
