@@ -4,9 +4,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.NeedJsonSchema;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Created by xing5 on 2016/3/22.
  */
@@ -31,6 +28,7 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_GPU_STATUS_ABNORMAL = "/host/physicalGpu/status/abnormal";
     public static final String HOST_PHYSICAL_VGPU_STATUS_ABNORMAL = "/host/physicalVGpu/status/abnormal";
     public static final String HOST_PHYSICAL_RAID_STATUS_ABNORMAL = "/host/physicalRaid/status/abnormal";
+    public static final String HOST_PHYSICAL_VOLUME_STATE_ABNORMAL = "/host/physicalVolume/state/abnormal";
 
 
     @NeedJsonSchema
@@ -368,6 +366,55 @@ public class HostCanonicalEvents {
 
         public void setSlotNumber(String slotNumber) {
             this.slotNumber = slotNumber;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalVolumeStateAbnormalData {
+        private String hostUuid;
+        private String diskName;
+        private String diskUuids; // example: scsi-360014058e50754920324473a4c85c767;wwn-0x60014058e50754920324473a4c85c767
+        private String state;
+        private String vgName;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getDiskName() {
+            return diskName;
+        }
+
+        public void setDiskName(String diskName) {
+            this.diskName = diskName;
+        }
+
+        public String getDiskUuids() {
+            return diskUuids;
+        }
+
+        public void setDiskUuids(String diskUuids) {
+            this.diskUuids = diskUuids;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+
+        public String getVgName() {
+            return vgName;
+        }
+
+        public void setVgName(String vgName) {
+            this.vgName = vgName;
         }
     }
 

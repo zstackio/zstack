@@ -12,6 +12,7 @@ public enum HostHardware {
     POWERSUPPLY,
     FAN,
     RAID,
+    PHYSICAL_VOLUME,
     UNKNOWN;
 
     public static HostHardware fromString(String name) {

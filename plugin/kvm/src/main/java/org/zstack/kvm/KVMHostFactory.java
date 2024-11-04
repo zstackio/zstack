@@ -11,16 +11,11 @@ import org.zstack.core.config.GuestOsExtensionPoint;
 import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
-import org.zstack.kvm.xmlhook.APICreateVmUserDefinedXmlHookScriptMsg;
-import org.zstack.kvm.xmlhook.XmlHookBase;
-import org.zstack.kvm.xmlhook.XmlHookMessage;
-import org.zstack.kvm.xmlhook.XmlHookVO;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
@@ -87,7 +82,6 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMAgentCommands.*;
-import static org.zstack.core.Platform.*;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory,
@@ -414,6 +408,16 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         evf.fire(HostCanonicalEvents.HOST_PHYSICAL_RAID_STATUS_ABNORMAL, cdata);
     }
 
+    void physicalVolumeStateAlarmEvent(HostPhysicalDeviceStatusAlarmEventCmd cmd) {
+        HostCanonicalEvents.HostPhysicalVolumeStateAbnormalData cdata = new HostCanonicalEvents.HostPhysicalVolumeStateAbnormalData();
+        cdata.setHostUuid(cmd.getHost());
+        cdata.setState(cmd.getAdditionalProperties().get(KVMConstant.PHYSICAL_DEVICE_STATE_NAME).toString());
+        cdata.setDiskUuids(cmd.getAdditionalProperties().get(KVMConstant.PHYSICAL_DEVICE_DISK_UUIDS).toString());
+        cdata.setDiskName(cmd.getAdditionalProperties().get(KVMConstant.DEVICE_NAME).toString());
+        cdata.setVgName(cmd.getAdditionalProperties().get(KVMConstant.VOLUME_GROUP_NAME).toString());
+        evf.fire(HostCanonicalEvents.HOST_PHYSICAL_VOLUME_STATE_ABNORMAL, cdata);
+    }
+
     @Override
     public boolean start() {
         deployAnsibleModule();
@@ -604,6 +608,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                     break;
                 case RAID:
                     physicalRaidStatusAlarmEvent(cmd);
+                    break;
+                case PHYSICAL_VOLUME:
+                    physicalVolumeStateAlarmEvent(cmd);
                     break;
 
                 default:

@@ -154,9 +154,12 @@ public interface KVMConstant {
 
     String MEMORY_LOCATOR_NAME = "locator";
     String PHSICAL_DEVICE_STATUS_NAME = "status";
+    String PHYSICAL_DEVICE_STATE_NAME = "state";
+    String PHYSICAL_DEVICE_DISK_UUIDS = "diskUuids";
     String CPU_NAME = "cpuName";
     String PCI_DEVICE_ADDRESS = "pcideviceAddress";
     String DEVICE_NAME = "name";
+    String VOLUME_GROUP_NAME = "volumeGroup";
     String DEVICE_SERIAL_NUMBER = "serial_number";
     String ENCLOSURE_DEVICE_ID = "enclosure_device_id";
     String SLOT_NUMBER = "slot_number";
