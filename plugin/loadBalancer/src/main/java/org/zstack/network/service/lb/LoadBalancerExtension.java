@@ -76,11 +76,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
     }
 
     private boolean isLbShouldBeAttachedToBackend(String vmUuid, String l3Uuid) {
-        boolean ipChanged = new StaticIpOperator().isIpChange(vmUuid, l3Uuid);
-
-        L3NetworkVO l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
-        boolean l3Need = l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType());
-        return ipChanged || l3Need;
+        return !new StaticIpOperator().isIpChange(vmUuid, l3Uuid);
     }
 
     @Override
@@ -104,7 +100,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 l3Map.put(l3Uuid, l3Vo);
             }
             /* if l3 network doesn't want to apply lb for vm start, skip this nic */
-            if (!isLbShouldBeAttachedToBackend(servedVm.getVmInventory().getUuid(), l3Uuid)) {
+            if (isLbShouldBeAttachedToBackend(servedVm.getVmInventory().getUuid(), l3Uuid)) {
                 continue;
             }
 
@@ -219,7 +215,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 l3Map.put(l3Uuid, l3Vo);
             }
             /* if l3 network doesn't want to apply lb for vm start, skip this nic */
-            if (!isLbShouldBeAttachedToBackend(servedVm.getVmInventory().getUuid(), l3Uuid)
+            if (isLbShouldBeAttachedToBackend(servedVm.getVmInventory().getUuid(), l3Uuid)
                     && !LoadBalancerConstants.vmOperationForDetachListener.contains(servedVm.getCurrentVmOperation())) {
                 continue;
             }
@@ -252,6 +248,11 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                     return msg;
                 }
             }));
+        }
+
+        if (msgs.isEmpty()) {
+            completion.done();
+            return;
         }
 
         bus.send(msgs, new CloudBusListCallBack(completion) {

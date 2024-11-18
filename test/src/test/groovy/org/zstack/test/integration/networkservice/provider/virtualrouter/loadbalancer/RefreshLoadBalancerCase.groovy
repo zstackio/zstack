@@ -214,13 +214,12 @@ class RefreshLoadBalancerCase extends SubCase {
             return rsp
         }
 
+        // stop vm will not refresh lb
         stopVmInstance {
             uuid = vm.uuid
         }
 
-        // listeners with same nic on same load balance only refresh rules one time
-        assert count == 1
-        assert cmd.lbs.size() == 3
+        assert count == 0
 
         def vm2 = env.inventoryByName("vm2") as VmInstanceInventory
 
@@ -236,8 +235,7 @@ class RefreshLoadBalancerCase extends SubCase {
             uuid = vm2.uuid
         }
 
-        assert count == 1
-        assert cmd.lbs.size() == 3
+        assert count == 0
 
         // one lb doesn't have nic
         removeVmNicFromLoadBalancer {
@@ -253,12 +251,13 @@ class RefreshLoadBalancerCase extends SubCase {
         cmd = null
         count = 0
 
+        // start vm will not refresh lb either
         startVmInstance {
             uuid = vm.uuid
         }
 
-        assert count == 1
-        assert cmd.lbs.size() == 3
+        assert count == 0
+
 
         // no load balancer rules won't refresh rules
         removeVmNicFromLoadBalancer {
@@ -273,8 +272,8 @@ class RefreshLoadBalancerCase extends SubCase {
             uuid = vm.uuid
         }
 
-        assert count == 1
-        assert cmd.lbs.size() == 3
+        assert count == 0
+
 
 
         VipInventory vip2 = createVip {
@@ -316,7 +315,6 @@ class RefreshLoadBalancerCase extends SubCase {
             uuid = vm.uuid
         }
 
-        assert countInvoked == 2
-        assert rulesSize == 4
+        assert countInvoked == 0
     }
 }
