@@ -90,6 +90,17 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
         // get bind resources from config
         ResourceBindingClusterCollector clusterCollector = new ResourceBindingClusterCollector();
         if (!resourceConfig) {
+            //remove bind cluster uuid from system tag, use current cluster uuid from config
+            if (resources.containsKey(clusterCollector.getType())) {
+                List<String> uuids = resources.get(clusterCollector.getType());
+                if (!uuids.contains(spec.getVmInstance().getClusterUuid())) {
+                    String tag = String.format("Cluster:%s", spec.getVmInstance().getClusterUuid());
+                    VmSystemTags.VM_RESOURCE_BINGDING.updateTagByToken(spec.getVmInstance().getUuid(),
+                            VmSystemTags.VM_RESOURCE_BINGDING_TOKEN, tag);
+                }
+                resources.remove(clusterCollector.getType());
+            }
+
             resources.computeIfAbsent(clusterCollector.getType(), k -> new ArrayList<>()).add(spec.getVmInstance().getClusterUuid());
         }
 
