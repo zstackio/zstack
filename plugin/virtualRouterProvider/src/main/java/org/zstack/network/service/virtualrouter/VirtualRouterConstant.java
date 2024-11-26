@@ -49,6 +49,8 @@ public interface VirtualRouterConstant {
 	public static final String VR_CREATE_VIP = "/createvip";
 	public static final String VR_REMOVE_VIP = "/removevip";
 
+	public static final String VR_CONFIG_PROMTAIL = "/promtail/config";
+
 	public static final String VR_KVM_CREATE_BOOTSTRAP_ISO_PATH = "/virtualrouter/createbootstrapiso";
 	public static final String VR_KVM_DELETE_BOOTSTRAP_ISO_PATH = "/virtualrouter/deletebootstrapiso";
 

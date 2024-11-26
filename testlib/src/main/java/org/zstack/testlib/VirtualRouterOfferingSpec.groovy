@@ -180,6 +180,10 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
             simulator(VirtualRouterConstant.VR_HA_MASTER_DEMOTE) {
                 return new VirtualRouterCommands.AgentResponse()
             }
+
+            simulator(VirtualRouterConstant.VR_CONFIG_PROMTAIL) {
+                return new VirtualRouterCommands.AgentResponse()
+            }
         }
     }
 
