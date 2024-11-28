@@ -5,6 +5,7 @@ import org.zstack.core.db.Q
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
+import org.zstack.cbd.MdsUri
 import org.zstack.sdk.*
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
@@ -151,6 +152,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(60)
             testZbsStorageNegativeScenario()
             testDataVolumeNegativeScenario()
+            testDecodeMdsUriWithSpecialPassword()
         }
     }
 
@@ -384,6 +386,14 @@ class ZbsPrimaryStorageCase extends SubCase {
             deleteVolume(vol2.uuid)
         }
     }
+
+    static void testDecodeMdsUriWithSpecialPassword() {
+        def specialPassword = "password123-`=[];,./~!@#\$%^&*()_+|{}:<>?"
+        def mdsUri = "root:${specialPassword}@127.0.2.1"
+        MdsUri uri = new MdsUri(mdsUri);
+        assert uri.sshPassword == specialPassword
+    }
+
 
     void deleteVolume(String volUuid) {
         deleteDataVolume {
