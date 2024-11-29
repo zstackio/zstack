@@ -12,6 +12,13 @@ if [[ `id -u` -ne 0 ]] && [[ x"$user" = x"root" ]]; then
     MYSQL='sudo mysql'
 fi
 
+if command -v greatdb &> /dev/null; then
+    MYSQL='greatdb'
+    if [[ `id -u` -ne 0 ]] && [[ x"$user" = x"root" ]]; then
+        MYSQL='sudo greatdb'
+    fi
+fi
+
 base=`dirname $0`
 
 if [[ ! -n $host ]] || [[ ! -n $port ]];then
@@ -20,17 +27,33 @@ else
   loginCmd="--user=$user --password=$password --host=$host --port=$port"
 fi
 
-${MYSQL} ${loginCmd} << EOF
-set global log_bin_trust_function_creators=1;
-DROP DATABASE IF EXISTS zstack;
-CREATE DATABASE zstack;
-DROP DATABASE IF EXISTS zstack_rest;
-CREATE DATABASE zstack_rest;
-grant all privileges on zstack.* to root@'%' identified by "${password}";
-grant all privileges on zstack_rest.* to root@'%' identified by "${password}";
-grant all privileges on zstack.* to root@'127.0.0.1' identified by "${password}";
-grant all privileges on zstack_rest.* to root@'127.0.0.1' identified by "${password}";
+if command -v greatdb &> /dev/null; then
+  ${MYSQL} ${loginCmd} << EOF
+    set global log_bin_trust_function_creators=1;
+    DROP DATABASE IF EXISTS zstack;
+    CREATE DATABASE zstack;
+    DROP DATABASE IF EXISTS zstack_rest;
+    CREATE DATABASE zstack_rest;
+    CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY "${password}";
+    CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY "${password}";
+    grant all privileges on zstack.* to root@'%';
+    grant all privileges on zstack_rest.* to root@'%';
+    grant all privileges on zstack.* to root@'127.0.0.1';
+    grant all privileges on zstack_rest.* to root@'127.0.0.1';
 EOF
+else
+  ${MYSQL} ${loginCmd} << EOF
+  set global log_bin_trust_function_creators=1;
+  DROP DATABASE IF EXISTS zstack;
+  CREATE DATABASE zstack;
+  DROP DATABASE IF EXISTS zstack_rest;
+  CREATE DATABASE zstack_rest;
+  grant all privileges on zstack.* to root@'%' identified by "${password}";
+  grant all privileges on zstack_rest.* to root@'%' identified by "${password}";
+  grant all privileges on zstack.* to root@'127.0.0.1' identified by "${password}";
+  grant all privileges on zstack_rest.* to root@'127.0.0.1' identified by "${password}";
+EOF
+fi
 
 # assign flyway version if not defined
 : "${flywayver:=3.2.1}"
