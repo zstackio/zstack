@@ -129,6 +129,7 @@ public class SourceClassMap {
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.jit.JitSecurityMachineInventory", "org.zstack.sdk.JitSecurityMachineInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.koal.KoAlSecretResourcePoolInventory", "org.zstack.sdk.KoAlSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.sansec.SanSecSecretResourcePoolInventory", "org.zstack.sdk.SanSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.sansec.SanSecSecurityMachineInventory", "org.zstack.sdk.SanSecSecurityMachineInventory");
 			put("org.zstack.directory.DirectoryInventory", "org.zstack.sdk.DirectoryInventory");
@@ -1035,6 +1036,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.JsonLabelInventory", "org.zstack.core.jsonlabel.JsonLabelInventory");
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");
+			put("org.zstack.sdk.KoAlSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.koal.KoAlSecretResourcePoolInventory");
 			put("org.zstack.sdk.KvmHostHypervisorMetadataInventory", "org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataInventory");
 			put("org.zstack.sdk.KvmHypervisorInfoInventory", "org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory");
 			put("org.zstack.sdk.L2NetworkData", "org.zstack.header.network.l2.L2NetworkData");
