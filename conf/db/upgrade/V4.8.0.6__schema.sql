@@ -5,4 +5,4 @@ CREATE VIEW `zstack`.`L2NetworkVO` AS SELECT uuid, name, description, type, vSwi
 
 ALTER TABLE `zstack`.`L3NetworkEO` ADD COLUMN `isolated` boolean NOT NULL DEFAULT FALSE AFTER `enableIPAM`;
 DROP VIEW IF EXISTS `zstack`.`L3NetworkVO`;
-CREATE VIEW `zstack`.`L3NetworkVO` AS SELECT uuid, name, description, state, type, zoneUuid, l2NetworkUuid, system, dnsDomain, createDate, lastOpDate, category, ipVersion, enableIPAM, isolated FROM `zstack`.`L3NetworkEO` WHERE deleted IS NULL;
+CREATE VIEW `zstack`.`L3NetworkVO` AS SELECT uuid, name, description, state, type, zoneUuid, l2NetworkUuid, `system`, dnsDomain, createDate, lastOpDate, category, ipVersion, enableIPAM, isolated FROM `zstack`.`L3NetworkEO` WHERE deleted IS NULL;
