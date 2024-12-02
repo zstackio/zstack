@@ -36,8 +36,17 @@ public class KVMCephVolumeTO extends VolumeTO {
         super(other);
     }
 
+    private Integer fsId;
     private List<MonInfo> monInfo;
     private String secretUuid;
+
+    public Integer getFsId() {
+        return fsId;
+    }
+
+    public void setFsId(Integer fsId) {
+        this.fsId = fsId;
+    }
 
     public String getSecretUuid() {
         return secretUuid;
