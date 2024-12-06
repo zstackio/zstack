@@ -4,7 +4,8 @@ public enum ImageArchitecture {
     x86_64,
     aarch64,
     mips64el,
-    loongarch64;
+    loongarch64,
+    sw_64;
 
     private static String defaultArch = System.getProperty("os.arch").equals("amd64") ?
             "x86_64" : System.getProperty("os.arch");

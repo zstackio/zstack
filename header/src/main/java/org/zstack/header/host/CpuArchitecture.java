@@ -5,4 +5,5 @@ public enum CpuArchitecture {
     aarch64,
     mips64el,
     loongarch64,
+    sw_64,
 }
