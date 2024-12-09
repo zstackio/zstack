@@ -33,6 +33,12 @@ mysql_run() {
     $MYSQL --user=$user --password=$password --host=$host --port=$port "$@"
 }
 
+if [[ ! -n $host ]] || [[ ! -n $port ]];then
+  loginCmd="--user=$user --password=$password"
+else
+  loginCmd="--user=$user --password=$password --host=$host --port=$port"
+fi
+
 if command -v greatdb &> /dev/null; then
   ${MYSQL} ${loginCmd} << EOF
     set global log_bin_trust_function_creators=1;
