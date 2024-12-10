@@ -1,5 +1,7 @@
 package org.zstack.kvm.hypervisor;
 
+import org.zstack.core.Platform;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HostOperationSystem;
@@ -42,6 +44,7 @@ public class KvmHypervisorInfoHelper {
 
         final Map<Pair<String, String>, HostOsCategoryVO> caches = new HashMap<>();
         final Map<String, HostOsCategoryVO> results = new HashMap<>();
+        DatabaseFacade dbf = Platform.getComponentLoader().getComponent(DatabaseFacade.class);
         for (String hostUuid : hostUuidList) {
             String architecture = hostArchMap.get(hostUuid);
             if (architecture == null) {
@@ -59,10 +62,22 @@ public class KvmHypervisorInfoHelper {
                 continue;
             }
 
-            vo = Q.New(HostOsCategoryVO.class)
-                    .eq(HostOsCategoryVO_.architecture, architecture)
-                    .eq(HostOsCategoryVO_.osReleaseVersion, osReleaseVersion)
-                    .find();
+            String sql = " select h from HostOsCategoryVO h, KvmHostHypervisorMetadataVO k where k.categoryUuid = h.uuid " +
+                    "and k.managementNodeUuid = :mnId " +
+                    "and h.architecture = :arch " +
+                    "and h.osReleaseVersion = :os " +
+                    "order by k.createDate desc";
+
+            List<HostOsCategoryVO> resultList = dbf.getEntityManager().createQuery(sql, HostOsCategoryVO.class)
+                    .setParameter("arch", architecture)
+                    .setParameter("os", osReleaseVersion)
+                    .setParameter("mnId", Platform.getManagementServerId())
+                    .setMaxResults(1)
+                    .getResultList();
+            if (!resultList.isEmpty()) {
+                vo = resultList.get(0);
+            }
+
             caches.put(key, vo);
             results.put(hostUuid, vo);
         }
