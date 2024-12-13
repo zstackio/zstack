@@ -1,11 +1,10 @@
 package org.zstack.test.integration.core.config
 
-import org.zstack.core.config.GlobalConfigException
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.EventFacade
-import org.zstack.core.config.GlobalConfig
 import org.zstack.core.config.GlobalConfigCanonicalEvents
+import org.zstack.core.config.GlobalConfigException
 import org.zstack.core.config.GlobalConfigFacadeImpl
 import org.zstack.core.config.GlobalConfigVO
 import org.zstack.core.config.GlobalConfigVO_
@@ -17,16 +16,17 @@ import org.zstack.core.db.UpdateQuery
 import org.zstack.header.vm.APICreateVmNicMsg
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.kvm.KVMGlobalConfig
-import org.zstack.sdk.GlobalConfigInventory
-import org.zstack.sdk.UpdateGlobalConfigAction
-import org.zstack.sdk.GetGlobalConfigOptionsResult
+import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
+import java.util.concurrent.TimeUnit
+
 import static org.zstack.utils.CollectionDSL.e
 import static org.zstack.utils.CollectionDSL.map
 import static org.zstack.utils.StringDSL.s
+
 /**
  * Created by miao on 17-5-4.
  */
@@ -55,6 +55,7 @@ class GlobalConfigCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testSdk()
             testTolerateDatabaseDirtyData()
             testUpdateIntegerConfigWithFloatValue()
             testFloatPointNumberTolerance()
@@ -68,6 +69,47 @@ class GlobalConfigCase extends SubCase {
             testUpdateValueSkipValidation()
             testGetConfigOptions()
         }
+    }
+
+    void testSdk() {
+        def zone = env.inventoryByName("zone") as ZoneInventory
+
+        int port = 8989
+        String WEB_HOOK_PATH = "http://127.0.0.1:$port/sdk/webook"
+
+        def config = new ZSConfig.Builder()
+                .setHostname("127.0.0.1")
+                .setPort(port)
+                .setDefaultPollingInterval(100, TimeUnit.MILLISECONDS)
+                .setDefaultPollingTimeout(300000, TimeUnit.MILLISECONDS)
+                .setReadTimeout(10, TimeUnit.MINUTES)
+                .setWriteTimeout(10, TimeUnit.MINUTES)
+                .build()
+
+        LogInByAccountAction a = new LogInByAccountAction();
+        a.accountName = "admin"
+        a.password = "password"
+        a.call();
+        
+        a = new LogInByAccountAction();
+        a.accountName = "admin"
+        a.password = "password"
+        a.call();
+
+        ApiResult r = ZSClient.callWithConfig(a, config)
+        a = new LogInByAccountAction();
+        a.accountName = "admin"
+        a.password = "password"
+        a.call();
+        ZSClient.callWithConfig(a, ZSClient.getConfig())
+
+        CreateClusterAction ca = new CreateClusterAction();
+        ca.name = "cluster"
+        ca.zoneUuid = zone.getUuid()
+        ca.hypervisorType = "KVM"
+        ca.sessionId = adminSession()
+
+        ZSClient.callWithConfig(ca, config)
     }
 
     void testGetConfigOptions() {
@@ -202,7 +244,7 @@ class GlobalConfigCase extends SubCase {
             conditions = ["category=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.category}","name=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name}"]
         }[0]
         assert KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value(int.class) == 10
-        
+
 
         resetGlobalConfig {}
 
