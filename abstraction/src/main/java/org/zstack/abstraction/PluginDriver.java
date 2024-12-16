@@ -8,18 +8,20 @@ import java.util.Map;
  *     by PluginRegister we should get all metadata of the plugin.
  * </p>
  */
-public interface PluginRegister {
+public interface PluginDriver {
+    String type();
+
     /**
      * product name of your plugin
      * @return a String of name
      */
-    String productName();
+    String name();
 
     /**
      * unique product key from distribution
      * @return the key of current environment
      */
-    String productKey();
+    String uuid();
 
     /**
      * plugin version
@@ -30,7 +32,31 @@ public interface PluginRegister {
     /**
      * capabilities map describe current plugin's whole
      * capabilities
-     * @return map of capabilities
+     * @return map of feature
      */
-    Map<String, PluginCapabilityState> capabilities();
+    Map<String, Boolean> features();
+
+    /**
+     * plugin's description
+     * @return description of current plugin
+     */
+    String description();
+
+    /**
+     * plugin's vendor
+     * @return vendor of current plugin
+     */
+    String vendor();
+
+    /**
+     * plugin's url
+     * @return url of current plugin
+     */
+    String url();
+
+    /**
+     * plugin's license
+     * @return license of current plugin
+     */
+    String license();
 }

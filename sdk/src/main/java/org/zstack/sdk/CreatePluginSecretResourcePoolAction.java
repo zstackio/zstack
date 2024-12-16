@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
+public class CreatePluginSecretResourcePoolAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -25,8 +25,11 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4L}, noTrim = false)
-    public int connectionMode = 0;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String resourcePoolType;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map properties;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -37,7 +40,7 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String model;
 
-    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine","CloudSecurityResourceService","SecureSignVerifyService","Plugin"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine","CloudSecurityResourceService","Plugin"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {6L,180L}, noTrim = false)
@@ -115,7 +118,7 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/secret-resource-pool/infoSec";
+        info.path = "/secret-resource-pool/plugin";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
