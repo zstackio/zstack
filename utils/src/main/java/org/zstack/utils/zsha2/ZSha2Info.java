@@ -10,6 +10,7 @@ public class ZSha2Info {
     private String nic;
     private int peerport;
     private boolean isMaster;
+    private String execUser;
 
     public String getNodeip() {
         return nodeip;
@@ -53,6 +54,13 @@ public class ZSha2Info {
 
     public int getPeerport() {return peerport;}
 
-    public void setPeerport(int peerport) {this.peerport = peerport;
+    public void setPeerport(int peerport) {this.peerport = peerport;}
+
+    public String getExecUser() {
+        return execUser;
+    }
+
+    public void setExecUser(String execUser) {
+        this.execUser = execUser;
     }
 }
