@@ -36,4 +36,28 @@ public class PluginDriverInventory  {
         return this.features;
     }
 
+    public java.lang.String license;
+    public void setLicense(java.lang.String license) {
+        this.license = license;
+    }
+    public java.lang.String getLicense() {
+        return this.license;
+    }
+
+    public java.lang.String version;
+    public void setVersion(java.lang.String version) {
+        this.version = version;
+    }
+    public java.lang.String getVersion() {
+        return this.version;
+    }
+
+    public java.lang.String description;
+    public void setDescription(java.lang.String description) {
+        this.description = description;
+    }
+    public java.lang.String getDescription() {
+        return this.description;
+    }
+
 }

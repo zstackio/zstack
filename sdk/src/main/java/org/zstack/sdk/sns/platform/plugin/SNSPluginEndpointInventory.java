@@ -1,6 +1,6 @@
 package org.zstack.sdk.sns.platform.plugin;
 
-
+import org.zstack.sdk.PluginDriverInventory;
 
 public class SNSPluginEndpointInventory extends org.zstack.sdk.sns.SNSApplicationEndpointInventory {
 
@@ -26,6 +26,14 @@ public class SNSPluginEndpointInventory extends org.zstack.sdk.sns.SNSApplicatio
     }
     public java.util.Map getProperties() {
         return this.properties;
+    }
+
+    public PluginDriverInventory driver;
+    public void setDriver(PluginDriverInventory driver) {
+        this.driver = driver;
+    }
+    public PluginDriverInventory getDriver() {
+        return this.driver;
     }
 
 }
