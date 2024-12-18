@@ -10,4 +10,5 @@ public class ExternalPrimaryStorageVO_ extends PrimaryStorageVO_ {
     public static volatile SingularAttribute<ExternalPrimaryStorageVO, String> identity;
     public static volatile SingularAttribute<ExternalPrimaryStorageVO, String> config;
     public static volatile SingularAttribute<ExternalPrimaryStorageVO, String> addonInfo;
+    public static volatile SingularAttribute<ExternalPrimaryStorageVO, String> defaultProtocol;
 }

@@ -190,7 +190,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             public void success(CreateVolumeRsp returnValue) {
                 CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
                 to.setInstallPath(returnValue.installPath);
-                to.setHeartbeatRequiredSpace(SizeUnit.GIGABYTE.toByte(1));
+                to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
+                to.setCoveringPaths(Collections.singletonList(config.getLogicalPoolName()));
                 comp.success(to);
             }
 
@@ -208,7 +209,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
-        return null;
+        // FIXME: hard code for install path
+        CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
+        to.setInstallPath(String.format("cbd:%s_physical/%s/%s", config.getLogicalPoolName(), config.getLogicalPoolName(), ZbsHelper.zbsHeartbeatVolumeName));
+        to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
+        to.setCoveringPaths(Collections.singletonList(config.getLogicalPoolName()));
+        return to;
     }
 
     @Override
