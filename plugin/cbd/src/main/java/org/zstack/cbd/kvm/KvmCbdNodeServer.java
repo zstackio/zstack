@@ -3,14 +3,16 @@ package org.zstack.cbd.kvm;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.cbd.AddonInfo;
-import org.zstack.cbd.CbdConstants;
 import org.zstack.cbd.MdsInfo;
+import org.zstack.cbd.kvm.KvmCbdCommands.AgentRsp;
+import org.zstack.cbd.kvm.KvmCbdCommands.KvmSetupSelfFencerCmd;
+import org.zstack.cbd.kvm.KvmCbdCommands.KvmUpdateClientConfCmd;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.externalStorage.primary.ExternalStorageConstant;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -23,15 +25,14 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
 import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO_;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
-import org.zstack.cbd.kvm.KvmCbdCommands.AgentRsp;
-import org.zstack.cbd.kvm.KvmCbdCommands.KvmSetupSelfFencerCmd;
-import org.zstack.cbd.kvm.KvmCbdCommands.KvmUpdateClientConfCmd;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -127,6 +128,16 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        Integer hostId = Q.New(ExternalPrimaryStorageHostRefVO.class).select(ExternalPrimaryStorageHostRefVO_.hostId)
+                                .eq(ExternalPrimaryStorageHostRefVO_.hostUuid, param.getHostUuid())
+                                .eq(ExternalPrimaryStorageHostRefVO_.primaryStorageUuid, param.getPrimaryStorage().getUuid())
+                                .findValue();
+
+                        if (hostId == null) {
+                            trigger.fail(operr("not found hostId for hostUuid[%s] and primaryStorageUuid[%s]", param.getHostUuid(), param.getPrimaryStorage().getUuid()));
+                            return;
+                        }
+
                         KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
                         cmd.interval = param.getInterval();
                         cmd.maxAttempts = param.getMaxAttempts();
@@ -135,6 +146,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                         cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
                         cmd.heartbeatRequiredSpace = heartbeatVol.getHeartbeatRequiredSpace();
                         cmd.hostUuid = param.getHostUuid();
+                        cmd.hostId = hostId;
                         cmd.strategy = param.getStrategy();
                         cmd.uuid = param.getPrimaryStorage().getUuid();
                         cmd.fencers = param.getFencers();

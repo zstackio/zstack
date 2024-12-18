@@ -138,6 +138,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((SetTrashExpirationTimeMsg) msg);
         } else if (msg instanceof GetAccessPathMsg) {
             handle((GetAccessPathMsg) msg);
+        } else if (msg instanceof UpdatePrimaryStorageHostStatusMsg) {
+            handle((UpdatePrimaryStorageHostStatusMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -192,6 +194,23 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
         imageCacheCleaner.cleanup(msg.getUuid(), false);
         bus.publish(evt);
+    }
+
+    @Override
+    protected void handle(UpdatePrimaryStorageHostStatusMsg msg) {
+        ExternalPrimaryStorageHostRefVO ref = Q.New(ExternalPrimaryStorageHostRefVO.class)
+                .eq(ExternalPrimaryStorageHostRefVO_.hostUuid, msg.getHostUuid())
+                .eq(ExternalPrimaryStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                .find();
+
+        if (ref == null || ref.getHostId() == 0) {
+            // FIXME: different primary storage may have different max host id
+            ref = new ExternalHostIdGetter(999).getOrAllocateHostIdRef(msg.getHostUuid(), msg.getPrimaryStorageUuid());
+        }
+
+        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), msg.getStatus(), msg.getReason());
+        UpdatePrimaryStorageHostStatusReply reply = new UpdatePrimaryStorageHostStatusReply();
+        bus.reply(msg, reply);
     }
 
     @Override
