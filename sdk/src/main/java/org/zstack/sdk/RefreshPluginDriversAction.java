@@ -12,7 +12,7 @@ public class RefreshPluginDriversAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshPluginDrviersResult value;
+        public org.zstack.sdk.RefreshPluginDriversResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +60,8 @@ public class RefreshPluginDriversAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RefreshPluginDrviersResult value = res.getResult(org.zstack.sdk.RefreshPluginDrviersResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshPluginDrviersResult() : value; 
+        org.zstack.sdk.RefreshPluginDriversResult value = res.getResult(org.zstack.sdk.RefreshPluginDriversResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RefreshPluginDriversResult() : value; 
 
         return ret;
     }

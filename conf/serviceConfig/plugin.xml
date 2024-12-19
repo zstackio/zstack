@@ -9,4 +9,8 @@
     <message>
         <name>org.zstack.header.core.external.plugin.APIRefreshPluginDriversMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.core.external.plugin.APIDeletePluginDriversMsg</name>
+    </message>
 </service>

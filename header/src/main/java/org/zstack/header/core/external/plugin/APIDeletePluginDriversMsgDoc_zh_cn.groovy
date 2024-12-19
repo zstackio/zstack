@@ -3,31 +3,31 @@ package org.zstack.header.core.external.plugin
 import org.zstack.header.core.external.plugin.APIRefreshPluginDriversEvent
 
 doc {
-    title "RefreshPluginDrivers"
+    title "DeletePluginDrivers"
 
     category "external.plugin"
 
-    desc """刷新插件驱动器"""
+    desc """删除插件驱动器"""
 
     rest {
         request {
-			url "PUT /v1/external/plugins"
+			url "DELETE /v1/external/plugins/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRefreshPluginDriversMsg.class
+            clz APIDeletePluginDriversMsg.class
 
             desc """"""
             
 			params {
 
 				column {
-					name "name"
-					enclosedIn "refreshPluginDrivers"
-					desc "资源名称"
-					location "body"
+					name "uuid"
+					enclosedIn ""
+					desc "资源的UUID，唯一标示该资源"
+					location "url"
 					type "String"
-					optional true
+					optional false
 					since "5.3.0"
 				}
 				column {

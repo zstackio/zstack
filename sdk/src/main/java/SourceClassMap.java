@@ -5,6 +5,8 @@ import java.util.HashMap;
 public class SourceClassMap {
     public final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
+			put("org.zstack.abstraction.OptionType", "org.zstack.sdk.OptionType");
+			put("org.zstack.abstraction.OptionType$InputType", "org.zstack.sdk.InputType");
 			put("org.zstack.accessKey.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
 			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
 			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
@@ -1037,6 +1039,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageStoreImageStruct", "org.zstack.storage.backup.imagestore.ImageStoreImageStruct");
 			put("org.zstack.sdk.InfoSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory");
 			put("org.zstack.sdk.InfoSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory");
+			put("org.zstack.sdk.InputType", "org.zstack.abstraction.OptionType$InputType");
 			put("org.zstack.sdk.InstallPathRecycleInventory", "org.zstack.header.core.trash.InstallPathRecycleInventory");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
 			put("org.zstack.sdk.IpCapacityData", "org.zstack.header.network.l3.datatypes.IpCapacityData");
@@ -1156,6 +1159,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ObservabilityServerOfferingInventory", "org.zstack.observabilityServer.ObservabilityServerOfferingInventory");
 			put("org.zstack.sdk.ObservabilityServerServiceDataInventory", "org.zstack.observabilityServer.service.ObservabilityServerServiceDataInventory");
 			put("org.zstack.sdk.ObservabilityServerVmInventory", "org.zstack.observabilityServer.ObservabilityServerVmInventory");
+			put("org.zstack.sdk.OptionType", "org.zstack.abstraction.OptionType");
 			put("org.zstack.sdk.OssBucketInventory", "org.zstack.header.aliyun.oss.OssBucketInventory");
 			put("org.zstack.sdk.OssBucketProperty", "org.zstack.header.aliyun.oss.OssBucketProperty");
 			put("org.zstack.sdk.OvfCdDriverInfo", "org.zstack.ovf.datatype.OvfCdDriverInfo");

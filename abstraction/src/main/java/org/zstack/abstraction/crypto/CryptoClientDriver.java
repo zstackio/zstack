@@ -1,8 +1,9 @@
 package org.zstack.abstraction.crypto;
 
+import org.zstack.abstraction.OptionType;
 import org.zstack.abstraction.PluginDriver;
 
-import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.Map;
 
 public interface CryptoClientDriver extends PluginDriver {
@@ -15,12 +16,12 @@ public interface CryptoClientDriver extends PluginDriver {
     boolean connect(Map<String, String> properties);
 
     /**
-     * Parse certificate
+     * Parse original text and certificate base64 string
      *
-     * @param cert Certificate byte[]
-     * @return X509Certificate instance
+     * @param input Signature string representation
+     * @return A 2D byte array where Result[0] contains the original text and Result[1] contains the certificate base64 string
      */
-    X509Certificate genericCertificate(byte[] cert);
+    byte[][] attachedVerify(String input);
 
     /**
      * Return SM3 encrypted cipher text
@@ -53,4 +54,6 @@ public interface CryptoClientDriver extends PluginDriver {
      * @return hmac encrypted text
      */
     String hmac(String plain);
+
+    Collection<OptionType> optionTypes();
 }

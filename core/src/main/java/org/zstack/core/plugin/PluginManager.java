@@ -1,6 +1,8 @@
 package org.zstack.core.plugin;
 
 import org.zstack.abstraction.PluginDriver;
+import org.zstack.core.CoreGlobalProperty;
+import org.zstack.utils.path.PathUtil;
 
 import java.util.List;
 

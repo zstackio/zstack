@@ -1,0 +1,17 @@
+package org.zstack.sdk;
+
+public enum InputType {
+	TEXT,
+	PASSWORD,
+	NUMBER,
+	TEXTAREA,
+	SELECT,
+	MULTI_SELECT,
+	CHECKBOX,
+	RADIO,
+	CREDENTIAL,
+	TYPEAHEAD,
+	MULTI_TYPEAHEAD,
+	CODE_EDITOR,
+	HIDDEN,
+}
