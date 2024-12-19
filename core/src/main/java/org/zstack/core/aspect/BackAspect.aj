@@ -21,7 +21,7 @@ public aspect BackAspect {
     private void setMsgDeadline() {
         if (TaskContext.containsTaskContext("__messagedeadline__")) {
             long deadline = Long.parseLong((String) TaskContext.getTaskContext().get("__messagedeadline__"));
-            if (deadline < System.currentTimeMillis()) {
+            if (deadline < System.currentTimeMillis() + 1000) {
                 TaskContext.getTaskContext().put("__messagedeadline__", String.valueOf(deadline + TimeUtils.parseTimeInMillis("30m")));
                 TaskContext.getTaskContext().put("__messagetimeout__", String.valueOf(TimeUtils.parseTimeInMillis("30m")));
             }
