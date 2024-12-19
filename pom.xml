@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.zstack</groupId>
     <artifactId>zstack</artifactId>
-    <version>5.4.0</version>
+    <version>5.3.0</version>
     <packaging>pom</packaging>
     <name>zstack</name>
     <modules>
