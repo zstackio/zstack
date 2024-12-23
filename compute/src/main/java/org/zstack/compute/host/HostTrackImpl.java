@@ -1,5 +1,7 @@
 package org.zstack.compute.host;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.*;
@@ -35,6 +37,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
     private Map<String, Tracker> trackers = new ConcurrentHashMap<>();
     private static boolean alwaysStartRightNow = false;
+    private static final Cache<String, Long> skippedPingHostDeadline = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build();
 
     @Autowired
     private DatabaseFacade dbf;
@@ -120,6 +123,12 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
             if (state == HostState.PreMaintenance || state == HostState.Maintenance) {
                 logger.debug(String.format("host[uuid:%s] is in state of %s, not tracking it this time", uuid, state));
+                continueToRunThisTimer();
+                return;
+            }
+
+            if (skippedPingHostDeadline.getIfPresent(uuid) != null && System.currentTimeMillis() / 1000 <= skippedPingHostDeadline.getIfPresent(uuid)) {
+                logger.debug(String.format("skip tracking host[uuid:%s] this time, deadline %s", uuid, skippedPingHostDeadline.getIfPresent(uuid)));
                 continueToRunThisTimer();
                 return;
             }
@@ -341,6 +350,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     public boolean start() {
         populateExtensions();
         onHostStatusChange();
+        onHostPingSkip();
 
         HostGlobalConfig.PING_HOST_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> {
             logger.debug(String.format("%s change from %s to %s, restart host trackers",
@@ -382,6 +392,24 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                         HostStatus.Connecting.toString().equals(d.getOldStatus())) {
                     hostDisconnectCount.computeIfAbsent(d.getHostUuid(), key -> new AtomicInteger(0)).addAndGet(1);
                 }
+            }
+        });
+    }
+
+    private void onHostPingSkip() {
+        evtf.on(HostCanonicalEvents.HOST_PING_SKIP, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                HostCanonicalEvents.HostPingSkipData d = (HostCanonicalEvents.HostPingSkipData) data;
+                Long deadline = System.currentTimeMillis() / 1000 + d.getSkipTimeInSec();
+                skippedPingHostDeadline.put(d.getHostUuid(), deadline);
+            }
+        });
+        evtf.on(HostCanonicalEvents.HOST_PING_CANCEL_SKIP, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                HostCanonicalEvents.HostPingSkipData d = (HostCanonicalEvents.HostPingSkipData) data;
+                skippedPingHostDeadline.invalidate(d.getHostUuid());
             }
         });
     }

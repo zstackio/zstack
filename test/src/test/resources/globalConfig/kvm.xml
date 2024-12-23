@@ -256,4 +256,20 @@
         <defaultValue>3600</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>kvmagent.physicalmemory.usage.alarm.threshold</name>
+        <description>The threshold for the physical memory usage of the kvmagent process, exceeding which an alarm will be triggered.</description>
+        <defaultValue>2147483648</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>kvmagent.physicalmemory.usage.hardlimit</name>
+        <description>The hard limit for the physical memory usage of the kvmagent process, exceeding this value will trigger a kvmagent restart.</description>
+        <defaultValue>10737418240</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>
