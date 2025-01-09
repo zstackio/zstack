@@ -282,8 +282,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
         new While<>(stepCount).each((step, comp) -> {
             PingCmd cmd = new PingCmd();
-            cmd.setMdsExternalAddr(getSelf().getMdsExternalAddr());
-
+            cmd.setMdsAddr(getSelf().getMdsAddr());
             restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getMdsAddr(), PING_PATH),
                     cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {
                         @Override
@@ -305,7 +304,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            logger.warn(String.format("ping zbs primary storage mds[%s] failed (%d/%d): %s", getSelf().getMdsExternalAddr(), step, MAX_PING_CNT, errorCode.toString()));
+                            logger.warn(String.format("ping zbs primary storage mds[%s] failed (%d/%d): %s", getSelf().getMdsAddr(), step, MAX_PING_CNT, errorCode.toString()));
                             comp.addError(errorCode);
 
                             if (step.equals(MAX_PING_CNT)) {
@@ -337,15 +336,6 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
     }
 
     public static class PingCmd extends ZbsMdsBase.AgentCommand {
-        private String mdsExternalAddr;
-
-        public String getMdsExternalAddr() {
-            return mdsExternalAddr;
-        }
-
-        public void setMdsExternalAddr(String mdsExternalAddr) {
-            this.mdsExternalAddr = mdsExternalAddr;
-        }
     }
 
     @Override

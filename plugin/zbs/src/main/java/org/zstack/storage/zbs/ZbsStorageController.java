@@ -74,7 +74,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private Config config;
 
     public static final String DEPLOY_CLIENT_PATH = "/zbs/primarystorage/client/deploy";
-    public static final String GET_FACTS_PATH = "/zbs/primarystorage/facts";
     public static final String GET_CAPACITY_PATH = "/zbs/primarystorage/capacity";
     public static final String COPY_PATH = "/zbs/primarystorage/copy";
     public static final String CREATE_VOLUME_PATH = "/zbs/primarystorage/volume/create";
@@ -87,8 +86,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String CREATE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/create";
     public static final String DELETE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/delete";
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
-
-    private static final Integer SUPPORT_MINIMUM_MDS_NUMBER = 2;
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -302,43 +299,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "get-facts";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        List<ErrorCode> errors = new ArrayList<>();
-                        new While<>(mds).each((m, comp) -> {
-                            GetFactsCmd cmd = new GetFactsCmd();
-                            cmd.setUuid(self.getUuid());
-                            cmd.setMdsAddr(m.getSelf().getMdsAddr());
-                            m.httpCall(GET_FACTS_PATH, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(comp) {
-                                @Override
-                                public void success(GetFactsRsp returnValue) {
-                                    m.getSelf().setMdsExternalAddr(returnValue.getMdsExternalAddr());
-                                    comp.done();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    errors.add(errorCode);
-                                    comp.done();
-                                }
-                            });
-                        }).run(new WhileDoneCompletion(trigger) {
-                            @Override
-                            public void done(ErrorCodeList errorCodeList) {
-                                if (!errors.isEmpty()) {
-                                    trigger.fail(errors.get(0));
-                                    return;
-                                }
-
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
                     String __name__ = "deploy-client";
 
                     List<PrimaryStorageClusterRefVO> refs = Q.New(PrimaryStorageClusterRefVO.class)
@@ -423,9 +383,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void ping(Completion completion) {
         reloadDbInfo();
-
         final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformToList(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
-
         new While<>(mds).each((m, comp) -> {
             m.ping(new Completion(comp) {
                 @Override
@@ -447,18 +405,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                         .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
                         .update();
 
-                boolean isConnected = addonInfo.getMdsInfos().stream()
-                        .filter(mdsInfo -> MdsStatus.Connected.equals(mdsInfo.getMdsStatus()))
-                        .count() >= SUPPORT_MINIMUM_MDS_NUMBER;
-
+                boolean isConnected = addonInfo.getMdsInfos().stream().anyMatch(mdsInfo -> MdsStatus.Connected.equals(mdsInfo.getMdsStatus()));
                 if (!isConnected) {
                     String notConnectedIps = addonInfo.getMdsInfos().stream()
                             .filter(mdsInfo -> !MdsStatus.Connected.equals(mdsInfo.getMdsStatus()))
                             .map(MdsInfo::getMdsAddr)
                             .collect(Collectors.joining(", "));
 
-                    completion.fail(operr("at least %d of the MDS nodes exist in the Connected state, " +
-                            "the following MDS nodes[%s] are not Connected.", SUPPORT_MINIMUM_MDS_NUMBER, notConnectedIps));
+                    completion.fail(operr("no MDS node is Connected, the following MDS nodes[%s] are not Connected.", notConnectedIps));
                     return;
                 }
                 completion.success();
