@@ -8,6 +8,7 @@ import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.cbd.MdsUri
 import org.zstack.sdk.*
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
+import org.zstack.storage.zbs.ZbsConstants
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.test.integration.storage.StorageTest
@@ -147,9 +148,7 @@ class ZbsPrimaryStorageCase extends SubCase {
 
             testZbsStorageLifecycle()
             testDataVolumeLifecycle()
-            PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(1)
             testZbsPrimaryStorageMdsPing()
-            PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(60)
             testZbsStorageNegativeScenario()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
@@ -164,6 +163,7 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         ps = queryPrimaryStorage {}[0] as ExternalPrimaryStorageInventory
         assert ps.name == "test-zbs-new-name"
+        assert ps.url == ZbsConstants.ZBS_CBD_PREFIX_SCHEME + ps.uuid
 
         reconnectPrimaryStorage {
             uuid = ps.uuid
@@ -209,6 +209,8 @@ class ZbsPrimaryStorageCase extends SubCase {
     }
 
     void testZbsPrimaryStorageMdsPing() {
+        PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(1)
+
         Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
 
         def addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
@@ -266,6 +268,8 @@ class ZbsPrimaryStorageCase extends SubCase {
         }
 
         Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
+
+        PrimaryStorageGlobalConfig.PING_INTERVAL.resetValue()
     }
 
     void testDataVolumeLifecycle() {
@@ -387,7 +391,7 @@ class ZbsPrimaryStorageCase extends SubCase {
         }
     }
 
-    static void testDecodeMdsUriWithSpecialPassword() {
+    void testDecodeMdsUriWithSpecialPassword() {
         def specialPassword = "password123-`=[];,./~!@#\$%^&*()_+|{}:<>?"
         def mdsUri = "root:${specialPassword}@127.0.2.1"
         MdsUri uri = new MdsUri(mdsUri);
