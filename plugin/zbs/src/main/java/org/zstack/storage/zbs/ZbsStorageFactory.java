@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.zstack.storage.zbs.ZbsNameHelper.*;
+import static org.zstack.storage.zbs.ZbsHelper.*;
 
 /**
  * @author Xingwei Yu

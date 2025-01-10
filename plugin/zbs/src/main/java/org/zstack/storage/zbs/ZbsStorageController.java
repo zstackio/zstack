@@ -31,10 +31,7 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
-import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
-import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
-import org.zstack.header.storage.primary.PrimaryStorageStatus;
-import org.zstack.header.storage.primary.VolumeSnapshotCapability;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeProtocol;
@@ -54,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.storage.zbs.ZbsNameHelper.*;
+import static org.zstack.storage.zbs.ZbsHelper.*;
 
 /**
  * @author Xingwei Yu
@@ -182,7 +179,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         CreateVolumeCmd cmd = new CreateVolumeCmd();
         cmd.setLogicalPoolName(config.getLogicalPoolName());
-        cmd.setLunName(ZbsHelper.zbsHeartbeatVolumeName);
+        cmd.setLunName(ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
         cmd.setSkipIfExisting(true);
 
         httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {
@@ -211,7 +208,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
         // FIXME: hard code for install path
         CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-        to.setInstallPath(String.format("cbd:%s_physical/%s/%s", config.getLogicalPoolName(), config.getLogicalPoolName(), ZbsHelper.zbsHeartbeatVolumeName));
+        to.setInstallPath(String.format("cbd:%s_physical/%s/%s", config.getLogicalPoolName(), config.getLogicalPoolName(), ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(config.getLogicalPoolName()));
         return to;
@@ -370,6 +367,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     @Override
                     public void handle(Map data) {
                         changeStatus(PrimaryStorageStatus.Connected);
+                        configUrl(self.getUuid());
                         addonInfo = info;
                         completion.success(JSONObjectUtil.rehashObject(info, LinkedHashMap.class));
                     }
