@@ -1,6 +1,5 @@
 package org.zstack.storage.zbs;
 
-import org.apache.commons.lang.StringUtils;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -12,9 +11,9 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
  */
 public class ZbsHelper {
     public static void configUrl(String psUuid) {
-        String url = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.url).eq(PrimaryStorageVO_.uuid, psUuid).findValue();
-        if (StringUtils.isEmpty(url)) {
-            SQL.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, psUuid).set(PrimaryStorageVO_.url, ZbsConstants.ZBS_CBD_PREFIX_SCHEME + psUuid).update();
+        String psUrl = ZbsConstants.ZBS_CBD_PREFIX_SCHEME + psUuid;
+        if (!psUrl.equals(Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.url).eq(PrimaryStorageVO_.uuid, psUuid).findValue())) {
+            SQL.New(PrimaryStorageVO.class).set(PrimaryStorageVO_.url, psUrl).eq(PrimaryStorageVO_.uuid, psUuid).update();
         }
     }
 
