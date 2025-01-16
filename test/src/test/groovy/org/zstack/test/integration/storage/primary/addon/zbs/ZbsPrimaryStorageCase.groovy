@@ -130,7 +130,7 @@ class ZbsPrimaryStorageCase extends SubCase {
                     identity = "zbs"
                     defaultOutputProtocol = "CBD"
                     config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
-                    url = ""
+                    url = "fake url"
                 }
 
                 attachBackupStorage("sftp")
