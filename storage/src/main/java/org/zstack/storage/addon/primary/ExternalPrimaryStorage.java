@@ -1568,8 +1568,24 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class));
-                        downloadImageCache(image, new ReturnValueCompletion<ImageCacheInventory>(trigger) {
+                        String imageCacheInstallUrl = Q.New(ImageCacheVO.class)
+                                .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
+                                .eq(ImageCacheVO_.imageUuid, msg.getVolume().getRootImageUuid())
+                                .select(ImageCacheVO_.installUrl).findValue();
+
+                        if (imageCacheInstallUrl != null) {
+                            installUrl = imageCacheInstallUrl;
+                            trigger.next();
+                            return;
+                        }
+
+                        ImageVO image = dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class);
+                        if (image == null) {
+                            trigger.fail(operr("root image and root image cache has been deleted, cannot reimage now"));
+                            return;
+                        }
+
+                        downloadImageCache(ImageInventory.valueOf(image), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
                             @Override
                             public void success(ImageCacheInventory returnValue) {
                                 installUrl = returnValue.getInstallUrl();
