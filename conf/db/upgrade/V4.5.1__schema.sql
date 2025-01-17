@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PluginDriverVO` (
     `features` varchar(1024) NOT NULL,
     `optionTypes` text DEFAULT NULL,
     `description` varchar(1024) DEFAULT NULL,
+    `deleted` BOOLEAN NOT NULL,
     `license` varchar(1024) DEFAULT NULL,
     `version` varchar(1024) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,

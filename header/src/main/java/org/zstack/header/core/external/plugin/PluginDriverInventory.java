@@ -8,7 +8,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Inventory(mappingVOClass = PluginDriverVO.class)
 public class PluginDriverInventory {
@@ -18,6 +17,7 @@ public class PluginDriverInventory {
     private String vendor;
     private String features;
     private Collection<OptionType> optionTypes;
+    private boolean deleted;
     private String license;
     private String version;
     private String description;
@@ -37,6 +37,7 @@ public class PluginDriverInventory {
         inv.setOptionTypes(JSONObjectUtil.toCollection(vo.getOptionTypes(), ArrayList.class, OptionType.class));
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setDeleted(vo.isDeleted());
         return inv;
     }
 
@@ -46,6 +47,14 @@ public class PluginDriverInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     public String getUuid() {

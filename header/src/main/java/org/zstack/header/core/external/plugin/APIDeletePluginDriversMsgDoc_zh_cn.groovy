@@ -1,6 +1,6 @@
 package org.zstack.header.core.external.plugin
 
-import org.zstack.header.core.external.plugin.APIRefreshPluginDriversEvent
+import org.zstack.header.core.external.plugin.APIDeletePluginDriversEvent
 
 doc {
     title "DeletePluginDrivers"
@@ -48,11 +48,20 @@ doc {
 					optional true
 					since "5.3.0"
 				}
+				column {
+					name "deleteMode"
+					enclosedIn ""
+					desc "删除模式(Permissive / Enforcing，Permissive)"
+					location "body"
+					type "String"
+					optional true
+					since "5.3.20"
+				}
 			}
         }
 
         response {
-            clz APIRefreshPluginDriversEvent.class
+            clz APIDeletePluginDriversEvent.class
         }
     }
 }

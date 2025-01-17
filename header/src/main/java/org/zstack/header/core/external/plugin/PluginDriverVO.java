@@ -42,6 +42,9 @@ public class PluginDriverVO extends ResourceVO {
     @Column
     private Timestamp lastOpDate;
 
+    @Column
+    private boolean deleted = false;
+
     public PluginDriverVO() {
     }
 
@@ -57,6 +60,15 @@ public class PluginDriverVO extends ResourceVO {
         this.optionTypes = other.optionTypes;
         this.createDate = other.createDate;
         this.lastOpDate = other.lastOpDate;
+        this.deleted = other.deleted;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     @Override

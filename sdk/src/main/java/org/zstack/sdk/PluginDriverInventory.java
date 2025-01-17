@@ -52,6 +52,14 @@ public class PluginDriverInventory  {
         return this.optionTypes;
     }
 
+    public boolean deleted;
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+    public boolean getDeleted() {
+        return this.deleted;
+    }
+
     public java.lang.String license;
     public void setLicense(java.lang.String license) {
         this.license = license;

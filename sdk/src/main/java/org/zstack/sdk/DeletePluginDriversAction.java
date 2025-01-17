@@ -12,7 +12,7 @@ public class DeletePluginDriversAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshPluginDriversResult value;
+        public org.zstack.sdk.DeletePluginDriversResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,6 +27,9 @@ public class DeletePluginDriversAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +63,8 @@ public class DeletePluginDriversAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RefreshPluginDriversResult value = res.getResult(org.zstack.sdk.RefreshPluginDriversResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshPluginDriversResult() : value; 
+        org.zstack.sdk.DeletePluginDriversResult value = res.getResult(org.zstack.sdk.DeletePluginDriversResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePluginDriversResult() : value; 
 
         return ret;
     }
