@@ -23,3 +23,5 @@ ORDER BY p.id;
 
 -- Delete old UserTagVO of AI::Image-Generation
 DELETE FROM UserTagVO WHERE uuid = 'a7ec68923efe447d9119ba7b6df2b54c';
+
+ALTER TABLE `zstack`.`HostHaStateVO` ADD CONSTRAINT `HostHaStateVO_HostEO_uuid_fk` FOREIGN KEY (`uuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE ;
