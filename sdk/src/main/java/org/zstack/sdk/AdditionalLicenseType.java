@@ -5,4 +5,5 @@ public enum AdditionalLicenseType {
 	edge,
 	zstone,
 	zcex,
+	zsv,
 }
