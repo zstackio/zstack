@@ -4843,4 +4843,34 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class HostKvmagentStatusCmd {
+        private String status;
+        private String hostUuid;
+        private long memoryUsage;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public long getMemoryUsage() {
+            return memoryUsage;
+        }
+
+        public void setMemoryUsage(long memoryUsage) {
+            this.memoryUsage = memoryUsage;
+        }
+    }
+
 }

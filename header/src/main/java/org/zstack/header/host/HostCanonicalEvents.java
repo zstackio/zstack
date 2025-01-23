@@ -31,6 +31,8 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_HBA_STATE_ABNORMAL = "/host/physicalHBA/state/abnormal";
     public static final String HOST_PHYSICAL_VOLUME_STATE_ABNORMAL = "/host/physicalVolume/state/abnormal";
     public static final String HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ABNORMAL = "/host/process/physicalMemory/usage/abnormal";
+    public static final String HOST_PING_SKIP = "/host/ping/skip";
+    public static final String HOST_PING_CANCEL_SKIP = "/host/ping/cancel/skip";
 
     @NeedJsonSchema
     public static class HostPhysicalHbaPortStateAbnormalData {
@@ -699,6 +701,28 @@ public class HostCanonicalEvents {
 
         public void setMemoryUsage(String memoryUsage) {
             this.memoryUsage = memoryUsage;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPingSkipData {
+        private String hostUuid;
+        private int skipTimeInSec;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public int getSkipTimeInSec() {
+            return skipTimeInSec;
+        }
+
+        public void setSkipTimeInSec(int skipTimeInSec) {
+            this.skipTimeInSec = skipTimeInSec;
         }
     }
 }

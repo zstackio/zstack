@@ -847,6 +847,50 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "wait for kvmagent to be ready";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                int retryCount = 60;
+                While.makeRetryWhile(retryCount).each((currentStep, compl) -> {
+                    PingCmd cmd = new PingCmd();
+                    cmd.hostUuid = self.getUuid();
+                    restf.asyncJsonPost(pingPath, cmd, new JsonAsyncRESTCallback<PingResponse>(compl) {
+                        @Override
+                        public void fail(ErrorCode err) {
+                            try {
+                                if (currentStep < retryCount) {
+                                    TimeUnit.SECONDS.sleep(1);
+                                }
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            } finally {
+                                compl.addError(err);
+                                compl.done();
+                            }
+                        }
+
+                        @Override
+                        public void success(PingResponse ret) {
+                            compl.allDone();
+                        }
+
+                        @Override
+                        public Class<PingResponse> getReturnClass() {
+                            return PingResponse.class;
+                        }
+                    }, TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_TIMEOUT.value(Long.class));
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodeList.getCauses().size() == retryCount) {
+                            logger.debug("waiting for kvmagent to start timeout: " + errorCodeList.getCauses().get(0).getDetails());
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
             String __name__ = String.format("reconnect host %s after restart kvmagent", self.getUuid());
 
             public void run(FlowTrigger trigger, Map data) {
