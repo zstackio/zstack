@@ -353,7 +353,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                         continue;
                     }
 
-                    if (entryName.contains("$")) {
+                    if (entryName.matches(".*\\d.*")) {
+                        // eg: org.zstack.CipherOnCloudCryptoPlugin$1.class
                         continue;
                     }
 
@@ -365,6 +366,12 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     Class<?> tempClazz = classLoader.loadClass(className);
                     if (className.contains("Validator")) {
                         collectPluginValidators(tempClazz);
+                        continue;
+                    }
+
+                    // Skip anonymous classes or inner classes (which are named with $)
+                    // Anonymous classes or inner classes are typically not needed for plugin registration
+                    if (entryName.contains("$")) {
                         continue;
                     }
 
