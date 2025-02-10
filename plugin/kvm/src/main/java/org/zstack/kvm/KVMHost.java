@@ -5482,19 +5482,20 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        String allowPorts = KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class) + ',' + HostGlobalConfig.NBD_PORT_RANGE.value(String.class);
                         StringBuilder builder = new StringBuilder();
                         if (!KVMGlobalProperty.MN_NETWORKS.isEmpty()) {
                             builder.append(String.format("bash %s -m %s -p %s -s %s -c %s",
                                     "/var/lib/zstack/kvm/kvmagent-iptables",
                                     KVMConstant.IPTABLES_COMMENTS,
-                                    KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
+                                    allowPorts,
                                     KVMGlobalProperty.AGENT_PORT,
                                     String.join(",", KVMGlobalProperty.MN_NETWORKS)));
                         } else {
                             builder.append(String.format("bash %s -m %s -p %s -s %s",
                                     "/var/lib/zstack/kvm/kvmagent-iptables",
                                     KVMConstant.IPTABLES_COMMENTS,
-                                    KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
+                                    allowPorts,
                                     KVMGlobalProperty.AGENT_PORT));
                         }
 

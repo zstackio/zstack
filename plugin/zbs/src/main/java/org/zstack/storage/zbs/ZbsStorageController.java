@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.cbd.*;
 import org.zstack.cbd.kvm.CbdHeartbeatVolumeTO;
 import org.zstack.cbd.kvm.CbdVolumeTo;
+import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.db.DatabaseFacade;
@@ -39,6 +40,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
+import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMHostVO;
 import org.zstack.kvm.KVMHostVO_;
 import org.zstack.utils.CollectionUtils;
@@ -766,6 +768,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         CbdToNbdCmd cmd = new CbdToNbdCmd();
         cmd.setInstallPath(espec.getInstallPath());
+        cmd.setPortRange(HostGlobalConfig.NBD_PORT_RANGE.value(String.class));
 
         httpCall(CBD_TO_NBD_PATH, cmd, CbdToNbdRsp.class, new ReturnValueCompletion<CbdToNbdRsp>(comp) {
             @Override
@@ -1510,6 +1513,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static class CbdToNbdCmd extends AgentCommand {
         private String installPath;
+        private String portRange;
 
         public String getInstallPath() {
             return installPath;
@@ -1517,6 +1521,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public String getPortRange() {
+            return portRange;
+        }
+
+        public void setPortRange(String portRange) {
+            this.portRange = portRange;
         }
     }
 
