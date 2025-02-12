@@ -153,6 +153,6 @@ public class AccountLoginBackend implements LoginBackend {
 
     @Override
     public List<AdditionalAuthFeature> getRequiredAdditionalAuthFeature() {
-        return Arrays.asList(LoginAuthConstant.basicLoginControl, LoginAuthConstant.twoFactor);
+        return Arrays.asList(LoginAuthConstant.basicLoginControl, LoginAuthConstant.twoFactor, LoginAuthConstant.ssoServerLoginControl);
     }
 }
