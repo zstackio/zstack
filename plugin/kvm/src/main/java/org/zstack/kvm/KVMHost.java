@@ -4081,6 +4081,10 @@ public class KVMHost extends HostBase implements Host {
         if (to.getUseVirtio() == null) {
             to.setUseVirtio(VmSystemTags.VIRTIO.hasTag(nic.getVmInstanceUuid()));
             to.setIps(getCleanTrafficIp(nic));
+            if (to.getUseVirtio() && Q.New(VmNicVO.class)
+                    .eq(VmNicVO_.uuid, nic.getUuid()).eq(VmNicVO_.driverType, VmNicDriverType.VIRTIO.toString()).isExists()) {
+                to.setDriverType(VmNicDriverType.VIRTIO.toString());
+            }
         }
 
         String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
