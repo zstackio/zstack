@@ -4,6 +4,7 @@ import org.zstack.abstraction.OptionType;
 import org.zstack.abstraction.PluginDriver;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 public interface CryptoClientDriver extends PluginDriver {
@@ -22,6 +23,16 @@ public interface CryptoClientDriver extends PluginDriver {
      * @return A 2D byte array where Result[0] contains the original text and Result[1] contains the certificate base64 string
      */
     byte[][] attachedVerify(String input);
+
+    /**
+     * Retrieves additional signature properties.
+     *
+     * @return A map containing additional signature properties,
+     * where each key-value pair represents a signature-related configuration or metadata.
+     */
+    default Map<String, String> additionSignatureProperties(){
+        return new HashMap<>();
+    };
 
     /**
      * Return SM3 encrypted cipher text
