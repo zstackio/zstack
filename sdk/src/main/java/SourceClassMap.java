@@ -648,6 +648,7 @@ public class SourceClassMap {
 			put("org.zstack.zstone.entity.ZStoneLicenseInventory", "org.zstack.sdk.zstone.entity.ZStoneLicenseInventory");
 			put("org.zstack.zstone.entity.ZStoneLicenseView", "org.zstack.sdk.zstone.entity.ZStoneLicenseView");
 			put("org.zstack.zstone.entity.ZStonePoolSummaryView", "org.zstack.sdk.zstone.entity.ZStonePoolSummaryView");
+			put("org.zstack.zsv.storage.entity.CephPluginConnectionView", "org.zstack.sdk.zsv.storage.entity.CephPluginConnectionView");
 			put("org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam", "org.zstack.sdk.zwatch.alarm.ActionParam");
 			put("org.zstack.zwatch.alarm.AlarmActionInventory", "org.zstack.sdk.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.zwatch.alarm.AlarmDataAckInventory", "org.zstack.sdk.zwatch.alarm.AlarmDataAckInventory");
@@ -1355,6 +1356,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zstone.entity.ZStoneLicenseInventory", "org.zstack.zstone.entity.ZStoneLicenseInventory");
 			put("org.zstack.sdk.zstone.entity.ZStoneLicenseView", "org.zstack.zstone.entity.ZStoneLicenseView");
 			put("org.zstack.sdk.zstone.entity.ZStonePoolSummaryView", "org.zstack.zstone.entity.ZStonePoolSummaryView");
+			put("org.zstack.sdk.zsv.storage.entity.CephPluginConnectionView", "org.zstack.zsv.storage.entity.CephPluginConnectionView");
 			put("org.zstack.sdk.zwatch.alarm.ActionParam", "org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam");
 			put("org.zstack.sdk.zwatch.alarm.AlarmActionInventory", "org.zstack.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmDataAckInventory", "org.zstack.zwatch.alarm.AlarmDataAckInventory");
