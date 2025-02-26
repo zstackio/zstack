@@ -168,8 +168,8 @@ public class VmAllocateNicIpFlow implements Flow {
                             UsedIpVO ipVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIp.getUuid()).find();
                             ipVO.setVmNicUuid(nic.getUuid());
                             ipVOS.add(ipVO);
+                            nic.getUsedIps().add(ipVO);
                         }
-                        nic.setUsedIps(ipVOS);
                         nicsWithIp.add(nic);
                         spec.getDestNics().removeIf(inv -> nic.getUuid().equals(inv.getUuid()));
                         spec.getDestNics().add(VmNicInventory.valueOf(nic));

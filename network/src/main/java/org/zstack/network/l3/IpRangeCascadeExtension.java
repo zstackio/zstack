@@ -66,7 +66,7 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             msgs.add(msg);
         }
 
-        new While<>(msgs).all((msg, compl) -> {
+        new While<>(msgs).each((msg, compl) -> {
             bus.send(msg, new CloudBusCallBack(compl) {
                 @Override
                 public void run(MessageReply reply) {

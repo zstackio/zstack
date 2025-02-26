@@ -308,4 +308,6 @@ public class VmSystemTags {
     }
 
     public static PatternedSystemTag VM_STATE_PAUSED_AFTER_MIGRATE = new PatternedSystemTag(("vmPausedAfterMigrate"), VmInstanceVO.class);
+
+    public static PatternedSystemTag VM_MEMORY_ACCESS_MODE_SHARED = new PatternedSystemTag(("vmMemoryAccessModeShared"), VmInstanceVO.class);
 }

@@ -12,14 +12,12 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.DhcpStruct;
-import org.zstack.header.network.service.NetworkServiceDhcpBackend;
-import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkGlobalConfig;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -43,6 +41,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private L3NetworkManager l3Mgr;
 
     private final Map<NetworkServiceProviderType, NetworkServiceDhcpBackend> dhcpBackends = new HashMap<NetworkServiceProviderType, NetworkServiceDhcpBackend>();
 
@@ -297,6 +297,10 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : providerMap.entrySet()) {
             NetworkServiceProviderType ptype = e.getKey();
+            if (!ptype.isCreateDhcpNameSpace()) {
+                continue;
+            }
+
             List<DhcpStruct> lst = new ArrayList<DhcpStruct>();
 
             List<VmNicVO> nics = new ArrayList<>();
@@ -391,6 +395,18 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
+        SdnControllerDhcp sdnDhcp = l3Mgr.getSdnControllerDhcp(l3VO.getUuid());
+        if (sdnDhcp != null) {
+            List<IpRangeInventory> normalIpRange = IpRangeHelper.getNormalIpRanges(l3VO);
+            if (normalIpRange.isEmpty()) {
+                completion.success();
+                return;
+            }
+
+            sdnDhcp.allocateDhcpAndEnableDhcp(l3VO, systemTags, completion);
+            return;
+        }
+
         NetworkServiceDhcpBackend bkd = dhcpBackends.get(providerType);
         if (bkd == null) {
             completion.fail(operr("unable to find NetworkServiceDhcpBackend[provider type: %s]", providerType));
@@ -402,6 +418,18 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        SdnControllerDhcp sdnDhcp = l3Mgr.getSdnControllerDhcp(l3VO.getUuid());
+        if (sdnDhcp != null) {
+            List<IpRangeInventory> normalIpRange = IpRangeHelper.getNormalIpRanges(l3VO);
+            if (normalIpRange.isEmpty()) {
+                completion.success();
+                return;
+            }
+
+            sdnDhcp.disableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3VO)), IPv6Constants.DUAL_STACK, completion);
+            return;
+        }
+
         NetworkServiceDhcpBackend bkd = dhcpBackends.get(providerType);
         if (bkd == null) {
             completion.fail(operr("unable to find NetworkServiceDhcpBackend[provider type: %s]", providerType));

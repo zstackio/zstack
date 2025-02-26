@@ -21,7 +21,14 @@ import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.service.GetSdnControllerDhcpExtensionPoint;
+import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.*;
+import org.zstack.network.l2.L2NetworkSystemTags;
+import org.zstack.network.l3.L3NetworkHelper;
+import org.zstack.network.securitygroup.SecurityGroupGetSdnBackendExtensionPoint;
+import org.zstack.network.securitygroup.SecurityGroupManager;
+import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
 import org.zstack.sdnController.header.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
@@ -34,7 +41,8 @@ import static org.zstack.core.Platform.operr;
 public class SdnControllerManagerImpl extends AbstractService implements SdnControllerManager,
         L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, InstantiateResourceOnAttachingNicExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
-        ReleaseNetworkServiceOnDetachingNicExtensionPoint {
+        ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint,
+        GetSdnControllerDhcpExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
 
     @Autowired
@@ -45,6 +53,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private SecurityGroupManager sgMgr;
 
     private Map<String, SdnControllerFactory> sdnControllerFactories = Collections.synchronizedMap(new HashMap<String, SdnControllerFactory>());
 
@@ -233,9 +243,9 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
         String sdnControllerUuid = null;
         for (String systag : msg.getSystemTags()) {
-            if (SdnControllerSystemTags.L2_NETWORK_OVN_UUID.isMatch(systag)) {
-                sdnControllerUuid = SdnControllerSystemTags.L2_NETWORK_OVN_UUID.getTokenByTag(
-                        systag, SdnControllerSystemTags.L2_NETWORK_OVN_UUID_TOKEN);
+            if (L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.isMatch(systag)) {
+                sdnControllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByTag(
+                        systag, L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
             }
         }
 
@@ -309,7 +319,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     }
 
-    private void addOvnLogicalPorts(String sdnControllerUuid, List<VmNicInventory> nics, Completion completion) {
+    private void sdnAddVmNic(String sdnControllerUuid, List<VmNicInventory> nics, Completion completion) {
         SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
         SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
         if (factory == null) {
@@ -318,12 +328,12 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
 
         SdnControllerL2 controller = factory.getSdnControllerL2(vo);
-        controller.addLogicalPorts(nics, completion);
+        controller.addVmNics(nics, completion);
     }
 
-    private void addOvnLogicalPort(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
+    private void sdnAddVmNics(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
         new While<>(nicMaps.entrySet()).each((e, wcomp) -> {
-            addOvnLogicalPorts(e.getKey(), e.getValue(), new Completion(wcomp) {
+            sdnAddVmNic(e.getKey(), e.getValue(), new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();
@@ -356,7 +366,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
 
         SdnControllerL2 controller = factory.getSdnControllerL2(vo);
-        controller.removeLogicalPorts(nics, completion);
+        controller.removeVmNics(nics, completion);
     }
 
     private void removeLogicalPort(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
@@ -422,8 +432,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                 continue;
             }
 
-            String controllerUuid = SdnControllerSystemTags.L2_NETWORK_OVN_UUID.getTokenByResourceUuid(
-                    l2VO.getUuid(), SdnControllerSystemTags.L2_NETWORK_OVN_UUID_TOKEN);
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
             if (controllerUuid == null) {
                 completion.fail(operr("sdn l2 network[uuid:%s] is not attached controller", l2VO.getUuid()));
                 return;
@@ -449,8 +459,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
-        String controllerUuid = SdnControllerSystemTags.L2_NETWORK_OVN_UUID.getTokenByResourceUuid(
-                l2NetworkVO.getUuid(), SdnControllerSystemTags.L2_NETWORK_OVN_UUID_TOKEN);
+        String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                l2NetworkVO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
         if (controllerUuid == null) {
             completion.fail(operr("sdn l2 network[uuid:%s] is not attached controller", l2NetworkVO.getUuid()));
             return;
@@ -460,7 +470,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         List<VmNicInventory> nics = new ArrayList<>();
         nics.add(spec.getDestNics().get(0));
         nicMaps.put(controllerUuid, nics);
-        addOvnLogicalPort(nicMaps, completion);
+        sdnAddVmNics(nicMaps, completion);
     }
 
     @Override
@@ -472,8 +482,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
-        String controllerUuid = SdnControllerSystemTags.L2_NETWORK_OVN_UUID.getTokenByResourceUuid(
-                l2NetworkVO.getUuid(), SdnControllerSystemTags.L2_NETWORK_OVN_UUID_TOKEN);
+        String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                l2NetworkVO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
         if (controllerUuid == null) {
             logger.warn(String.format("sdn l2 network[uuid:%s] is not attached controller", l2NetworkVO.getUuid()));
             completion.done();
@@ -510,8 +520,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
-        String controllerUuid = SdnControllerSystemTags.L2_NETWORK_OVN_UUID.getTokenByResourceUuid(
-                l2NetworkVO.getUuid(), SdnControllerSystemTags.L2_NETWORK_OVN_UUID_TOKEN);
+        String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                l2NetworkVO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
         if (controllerUuid == null) {
             logger.warn(String.format("sdn l2 network[uuid:%s] is not attached controller", l2NetworkVO.getUuid()));
             completion.done();
@@ -574,8 +584,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                 continue;
             }
 
-            String controllerUuid = SdnControllerSystemTags.L2_NETWORK_OVN_UUID.getTokenByResourceUuid(
-                    l2VO.getUuid(), SdnControllerSystemTags.L2_NETWORK_OVN_UUID_TOKEN);
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
             if (controllerUuid == null) {
                 completion.fail(operr("sdn l2 network[uuid:%s] is not attached controller", l2VO.getUuid()));
                 return;
@@ -589,7 +599,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
-        addOvnLogicalPort(nicMaps, completion);
+        sdnAddVmNics(nicMaps, completion);
     }
 
     @Override
@@ -623,8 +633,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                 continue;
             }
 
-            String controllerUuid = SdnControllerSystemTags.L2_NETWORK_OVN_UUID.getTokenByResourceUuid(
-                    l2VO.getUuid(), SdnControllerSystemTags.L2_NETWORK_OVN_UUID_TOKEN);
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
             if (controllerUuid == null) {
                 completion.fail(operr("sdn l2 network[uuid:%s] is not attached controller", l2VO.getUuid()));
                 return;
@@ -664,6 +674,32 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
     @Override
+    public SecurityGroupSdnBackend getSecurityGroupSdnBackend(String sdnControllerUuid) {
+        SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            return null;
+        }
+        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+        return factory.getSdnControllerSecurityGroup(vo);
+    }
+
+    @Override
+    public SdnControllerDhcp getSdnControllerDhcp(String l3Uuid) {
+        String controllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3Uuid);
+        if (controllerUuid == null) {
+            return null;
+        }
+
+        SdnControllerVO vo = dbf.findByUuid(controllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            throw new CloudRuntimeException(String.format("can not find sdn controller[uuid:%s] for l3 network[uuid:%s]",
+                    controllerUuid, l3Uuid));
+        }
+        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+        return factory.getSdnControllerDhcp(vo);
+    }
+
+    @Override
     public FlowChain getSyncChain(SdnControllerVO sdnControllerVO) {
         SdnControllerFactory f = getSdnControllerFactory(sdnControllerVO.getVendorType());
         return f.getSyncChain();
@@ -692,4 +728,6 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     public boolean stop() {
         return true;
     }
+
+
 }

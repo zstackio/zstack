@@ -1,4 +1,5 @@
 package org.zstack.network.l3;
+import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
 
 import javax.persistence.Tuple;
@@ -261,5 +262,23 @@ public class IpRangeHelper {
             return false;
         }
         return l3NetworkVO.enableIpAddressAllocation();
+    }
+
+    public static IpRangeVO fromIpRangeInventory(IpRangeInventory ipr, String accountUuid) {
+        NormalIpRangeVO vo = new NormalIpRangeVO();
+        vo.setUuid(ipr.getUuid() == null ? Platform.getUuid() : ipr.getUuid());
+        vo.setDescription(ipr.getDescription());
+        vo.setEndIp(ipr.getEndIp());
+        vo.setGateway(ipr.getGateway());
+        vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+        vo.setName(ipr.getName());
+        vo.setNetmask(ipr.getNetmask());
+        vo.setStartIp(ipr.getStartIp());
+        vo.setNetworkCidr(ipr.getNetworkCidr());
+        vo.setAccountUuid(accountUuid);
+        vo.setIpVersion(ipr.getIpVersion());
+        vo.setAddressMode(ipr.getAddressMode());
+        vo.setPrefixLen(ipr.getPrefixLen());
+        return vo;
     }
 }

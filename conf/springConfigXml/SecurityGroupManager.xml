@@ -21,6 +21,7 @@
 			<zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.vm.ValidateL3SecurityGroupExtensionPoint" />
+			<zstack:extension interface="org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint" />
 		</zstack:plugin>
 	</bean>
 

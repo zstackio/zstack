@@ -26,7 +26,7 @@ public interface SecurityGroupConstant {
         SECURITY_GROUP_RULE_VO,
         SECURITY_GROUP_VO,
         SECURITY_GROUP_UUIDS,
+        SECURITY_GROUP_REFS,
         VM_NIC_UUIDS,
-        HOST_SECURITY_GROUP_MEMBERS_TO
     }
 }

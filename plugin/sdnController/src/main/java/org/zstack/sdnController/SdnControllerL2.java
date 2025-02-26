@@ -30,6 +30,6 @@ public interface SdnControllerL2 {
 
     default List<String> getL2NetworkOfSdnController() { return new ArrayList<>();};
 
-    default void addLogicalPorts(List<VmNicInventory> nics, Completion completion) {completion.success();};
-    default void removeLogicalPorts(List<VmNicInventory> nics, Completion completion) {completion.success();};
+    default void addVmNics(List<VmNicInventory> nics, Completion completion) {completion.success();};
+    default void removeVmNics(List<VmNicInventory> nics, Completion completion) {completion.success();};
 }
