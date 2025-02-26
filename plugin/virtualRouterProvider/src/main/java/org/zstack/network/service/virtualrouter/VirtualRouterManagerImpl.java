@@ -2498,7 +2498,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
-        if (ipr.getIpRangeType() != IpRangeType.Normal) {
+        if (!Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ipr.getUuid()).isExists()) {
             return;
         }
 

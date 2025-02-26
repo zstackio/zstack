@@ -49,6 +49,9 @@ public class FlatProviderFactory implements NetworkServiceProviderFactory, Prepa
 
     @Override
     public void prepareDbInitialValue() {
+        FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE.setCreateDhcpNameSpace(true);
+        FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE.setAllocateDhcpServerIp(true);
+
         SimpleQuery<NetworkServiceProviderVO> query = dbf.createQuery(NetworkServiceProviderVO.class);
         query.add(NetworkServiceProviderVO_.type, Op.EQ, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         NetworkServiceProviderVO rpvo = query.find();

@@ -89,4 +89,11 @@
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
+
+    <bean id="SdnControllerDhcpExtension" class="org.zstack.sdnController.SdnControllerDhcpExtensionImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l3.IpRangeBackendExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

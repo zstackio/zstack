@@ -297,6 +297,10 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : providerMap.entrySet()) {
             NetworkServiceProviderType ptype = e.getKey();
+            if (!ptype.isCreateDhcpNameSpace()) {
+                continue;
+            }
+
             List<DhcpStruct> lst = new ArrayList<DhcpStruct>();
 
             List<VmNicVO> nics = new ArrayList<>();
