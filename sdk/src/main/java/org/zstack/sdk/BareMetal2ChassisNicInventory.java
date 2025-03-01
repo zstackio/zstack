@@ -52,6 +52,14 @@ public class BareMetal2ChassisNicInventory  {
         return this.isProvisionNic;
     }
 
+    public java.lang.Boolean isPrimaryProvisionNic;
+    public void setIsPrimaryProvisionNic(java.lang.Boolean isPrimaryProvisionNic) {
+        this.isPrimaryProvisionNic = isPrimaryProvisionNic;
+    }
+    public java.lang.Boolean getIsPrimaryProvisionNic() {
+        return this.isPrimaryProvisionNic;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
