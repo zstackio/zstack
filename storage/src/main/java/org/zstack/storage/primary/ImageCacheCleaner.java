@@ -289,7 +289,7 @@ public abstract class ImageCacheCleaner {
     }
 
     @Transactional
-    protected List<Long> getStaleImageCacheIds(String psUuid) {
+    protected boolean volumeFindMissingImageUuid(String psUuid) {
         String sql;
         if (psUuid == null) {
             sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
@@ -312,9 +312,24 @@ public abstract class ImageCacheCleaner {
                     "1. zstack-ctl stop_node\n" +
                     "2. zstack-ctl start_node -DfixImageCacheUuid=true -DrootVolumeFindMissingImageUuid=true\n" +
                     "to fix the problem. For the data safety, we won't clean the image cache of the primary storage", count, getPrimaryStorageType()));
+            return true;
+        }
+
+        return false;
+    }
+
+    /***
+     *
+     * @param psUuid image cache to be cleaned up on the primary storage, if null, clean up same type of primary storage
+     * @return image cache ids whose image is expunged
+     */
+    @Transactional
+    protected List<Long> getStaleImageCacheIds(String psUuid) {
+        if (volumeFindMissingImageUuid(psUuid)) {
             return null;
         }
 
+        String sql;
         if (psUuid == null) {
             sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
         } else  {
@@ -350,75 +365,39 @@ public abstract class ImageCacheCleaner {
         return VolumeSnapshotReferenceUtils.filterStaleImageCache(deleted);
     }
 
-    @Transactional
-    protected List<Long> getStaleImageCacheIdsForLocalStorage(String psUuid) {
-        String sql;
-        Long count;
-        if (psUuid == null) {
-            sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
-                    " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType";
-            count = SQL.New(sql).param("volType", VolumeType.Root).param("psType", getPrimaryStorageType()).find();
-
-        } else {
-            sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
-                    " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType and pri.uuid = :psUuid";
-            count = SQL.New(sql).param("volType", VolumeType.Root).param("psType", getPrimaryStorageType()).param("psUuid", psUuid).find();
-        }
-
-        if (count != 0) {
-            logger.warn(String.format("found %s volumes on the primary storage[type:%s] has NULL rootImageUuid. Please do following:\n" +
-                    "1. zstack-ctl stop_node\n" +
-                    "2. zstack-ctl start_node -DfixImageCacheUuid=true -DrootVolumeFindMissingImageUuid=true\n" +
-                    "to fix the problem. For the data safety, we won't clean the image cache of the primary storage", count, getPrimaryStorageType()));
-            return null;
-        }
-
-        List<Long> deleted;
-        if (psUuid == null) {
-            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
-            deleted=SQL.New(sql).param("ptype", getPrimaryStorageType()).list();
-        } else  {
-            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype and pri.uuid = :psUuid";
-            deleted=SQL.New(sql).param("ptype", getPrimaryStorageType()).param("psUuid", psUuid).list();
-        }
-
-        if (psUuid == null) {
-            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select vm.imageUuid from VmInstanceVO vm) and" +
-                    " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
-            deleted.addAll(SQL.New(sql).param("psType", getPrimaryStorageType()).list());
-        } else {
-            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select vm.imageUuid from VmInstanceVO vm) and" +
-                    " c.primaryStorageUuid = pri.uuid and pri.type = :psType and pri.uuid = :psUuid";
-            deleted.addAll(SQL.New(sql).param("psType", getPrimaryStorageType()).param("psUuid", psUuid).list());
-        }
-
-        if (deleted.isEmpty()) {
-            return null;
-        }
-
-        return VolumeSnapshotReferenceUtils.filterStaleImageCache(deleted);
-    }
 
     @Transactional
     protected List<ImageCacheShadowVO> createShadowImageCacheVOsForNewDeletedAndOld(String psUuid) {
+        // 1. image has been deleted
         List<Long> staleImageCacheIds = getStaleImageCacheIds(psUuid);
         if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
             return null;
         }
 
-        String sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol where vol.rootImageUuid is not null) and c.id in (:ids)";
-        TypedQuery<ImageCacheVO> cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
+        // 2. no volume refers to the image
+        String sql = "select c.id from ImageCacheVO c" +
+                " where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol where vol.rootImageUuid is not null)" +
+                " and c.id in (:ids)";
+        TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
         cq.setParameter("ids", staleImageCacheIds);
-        List<ImageCacheVO> stale = cq.getResultList();
+        staleImageCacheIds = cq.getResultList();
 
-        if (stale.isEmpty()) {
+        if (staleImageCacheIds.isEmpty()) {
             return null;
         }
 
-        logger.debug(String.format("found %s stale images in cache on the primary storage[type:%s], they are about to be cleaned up",
-                stale.size(), getPrimaryStorageType()));
+        // 3. no volume snapshot tree refers to the image
+        sql = "select c from ImageCacheVO c" +
+                " where c.imageUuid not in (select tree.rootImageUuid from VolumeSnapshotTreeVO tree where tree.rootImageUuid is not null)" +
+                " and c.id in (:ids)";
+        TypedQuery<ImageCacheVO> tq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
+        tq.setParameter("ids", staleImageCacheIds);
+        List<ImageCacheVO> stales = tq.getResultList();
 
-        for (ImageCacheVO vo : stale) {
+        logger.debug(String.format("found %s stale images in cache on the primary storage[type:%s], they are about to be cleaned up",
+                stales.size(), getPrimaryStorageType()));
+
+        for (ImageCacheVO vo : stales) {
             dbf.getEntityManager().persist(new ImageCacheShadowVO(vo));
             dbf.getEntityManager().remove(vo);
         }
