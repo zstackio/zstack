@@ -512,6 +512,22 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         });
 
+        resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
+        resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
+            if (oldValue.equals(newValue)) {
+                return;
+            }
+
+            VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
+                    .eq(VmInstanceVO_.uuid, resourceUuid)
+                    .findValue();
+            if (vmState != null
+                    && vmState != VmInstanceState.Starting  // some configs are set while vm is starting
+                    && !VmInstanceState.offlineStates.contains(vmState)) {
+                throw new GlobalConfigException("Can not change vm.cpuMode while VM is living.");
+            }
+        });
+
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_RECONNECT_ME, ReconnectMeCmd.class, new SyncHttpCallHandler<ReconnectMeCmd>() {
             @Override
             public String handleSyncHttpCall(ReconnectMeCmd cmd) {

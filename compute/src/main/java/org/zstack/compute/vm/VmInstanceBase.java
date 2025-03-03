@@ -7832,20 +7832,28 @@ public class VmInstanceBase extends AbstractVmInstance {
                             completion.fail(errCode);
                         }
                     });
-                } else {
-                    VmInstanceState currentState = Q.New(VmInstanceVO.class)
-                            .select(VmInstanceVO_.state)
-                            .eq(VmInstanceVO_.uuid, self.getUuid())
-                            .findValue();
-                    if (currentState == VmInstanceState.Rebooting) {
-                        SQL.New(VmInstanceVO.class)
-                                .set(VmInstanceVO_.state, originState)
-                                .eq(VmInstanceVO_.uuid, self.getUuid())
-                                .update();
-                    }
-
-                    completion.fail(errCode);
+                    return;
                 }
+
+                VmInstanceState currentState = Q.New(VmInstanceVO.class)
+                        .select(VmInstanceVO_.state)
+                        .eq(VmInstanceVO_.uuid, self.getUuid())
+                        .findValue();
+
+                if (currentState == VmInstanceState.Rebooting) {
+                    if (data.containsKey(VmStopOnHypervisorFlow.class.getName())) {
+                        currentState = currentState.nextState(VmInstanceStateEvent.stopped);
+                    }
+                    if (data.containsKey(VmStartOnHypervisorFlow.class.getName())) {
+                        currentState = currentState.nextState(VmInstanceStateEvent.running);
+                    }
+                    SQL.New(VmInstanceVO.class)
+                            .set(VmInstanceVO_.state, currentState)
+                            .eq(VmInstanceVO_.uuid, self.getUuid())
+                            .update();
+                }
+
+                completion.fail(errCode);
             }
         }).start();
     }
