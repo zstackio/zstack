@@ -6,6 +6,7 @@ import org.zstack.compute.host.HostManagerImpl
 import org.zstack.compute.host.HostReconnectTask
 import org.zstack.compute.host.HostTrackImpl
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.config.GlobalConfigFacadeImpl
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.core.NoErrorCompletion
@@ -13,6 +14,7 @@ import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.host.*
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMReconnectHostTask
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
@@ -20,6 +22,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.FieldUtils
+import org.zstack.utils.SizeUtils
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
@@ -27,6 +30,7 @@ import java.util.concurrent.TimeUnit
 class KVMPingCase extends SubCase {
     EnvSpec env
     CloudBus bus
+    GlobalConfigFacadeImpl gcf
 
     @Override
     void clean() {
@@ -98,8 +102,12 @@ class KVMPingCase extends SubCase {
 
         boolean pingSuccess = false
 
+        def kvmagent_mem_threshold = null
+        def kvmagent_mem_hard_limit = null
         env.afterSimulator(KVMConstant.KVM_PING_PATH) { KVMAgentCommands.PingResponse rsp, HttpEntity<String> e ->
             KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
+            kvmagent_mem_threshold = cmd.configs.get(KVMGlobalConfig.KVMAGENT_PHYSICAL_MEMORY_USAGE_ALARM_THRESHOLD.getName())
+            kvmagent_mem_hard_limit =  cmd.configs.get(KVMGlobalConfig.KVMAGENT_PHYSICAL_MEMORY_USAGE_HARD_LIMIT.getName())
 
             if (cmd.hostUuid == kvm1.uuid && !pingSuccess) {
                 throw new RuntimeException("failure on purpose")
@@ -108,6 +116,24 @@ class KVMPingCase extends SubCase {
             }
 
             return rsp
+        }
+
+        retryInSecs {
+            assert kvmagent_mem_hard_limit == SizeUtils.sizeStringToBytes("10G")
+            assert kvmagent_mem_threshold == SizeUtils.sizeStringToBytes("2G")
+        }
+
+        KVMGlobalConfig.KVMAGENT_PHYSICAL_MEMORY_USAGE_ALARM_THRESHOLD.updateValue(SizeUtils.sizeStringToBytes("100M"))
+        KVMGlobalConfig.KVMAGENT_PHYSICAL_MEMORY_USAGE_HARD_LIMIT.updateValue(SizeUtils.sizeStringToBytes("200M"))
+        retryInSecs {
+            assert kvmagent_mem_hard_limit == SizeUtils.sizeStringToBytes("200M")
+            assert kvmagent_mem_threshold == SizeUtils.sizeStringToBytes("100M")
+        }
+        KVMGlobalConfig.KVMAGENT_PHYSICAL_MEMORY_USAGE_ALARM_THRESHOLD.updateValue(SizeUtils.sizeStringToBytes("5G"))
+        KVMGlobalConfig.KVMAGENT_PHYSICAL_MEMORY_USAGE_HARD_LIMIT.updateValue(SizeUtils.sizeStringToBytes("20G"))
+        retryInSecs {
+            assert kvmagent_mem_hard_limit == SizeUtils.sizeStringToBytes("20G")
+            assert kvmagent_mem_threshold == SizeUtils.sizeStringToBytes("5G")
         }
 
         updateGlobalConfig {
@@ -458,6 +484,7 @@ class KVMPingCase extends SubCase {
     @Override
     void test() {
         bus = bean(CloudBus.class)
+        gcf = bean(GlobalConfigFacadeImpl.class)
 
         env.create {
             HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)

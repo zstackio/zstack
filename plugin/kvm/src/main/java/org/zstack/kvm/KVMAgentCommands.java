@@ -348,6 +348,7 @@ public class KVMAgentCommands {
 
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
+        public Map<String, Object> configs;
     }
 
     public static class PingResponse extends AgentResponse {
@@ -4482,4 +4483,83 @@ public class KVMAgentCommands {
             this.imageData = imageData;
         }
     }
+
+    public static class HostProcessPhysicalMemoryUsageAlarmCmd {
+        private String hostUuid;
+        private String pid;
+        private String processName;
+        private long memoryUsage;
+        private Map<String, Object> additionalProperties = new HashMap<>();
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getPid() {
+            return pid;
+        }
+
+        public void setPid(String pid) {
+            this.pid = pid;
+        }
+
+        public String getProcessName() {
+            return processName;
+        }
+
+        public void setProcessName(String processName) {
+            this.processName = processName;
+        }
+
+        public long getMemoryUsage() {
+            return memoryUsage;
+        }
+
+        public void setMemoryUsage(long memoryUsage) {
+            this.memoryUsage = memoryUsage;
+        }
+
+        public Map<String, Object> getAdditionalProperties() {
+            return additionalProperties;
+        }
+
+        public void setAdditionalProperties(Map<String, Object> additionalProperties) {
+            this.additionalProperties = additionalProperties;
+        }
+    }
+
+    public static class HostKvmagentStatusCmd {
+        private String status;
+        private String hostUuid;
+        private long memoryUsage;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public long getMemoryUsage() {
+            return memoryUsage;
+        }
+
+        public void setMemoryUsage(long memoryUsage) {
+            this.memoryUsage = memoryUsage;
+        }
+    }
+
 }
