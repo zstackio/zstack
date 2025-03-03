@@ -105,3 +105,9 @@ CALL ADD_COLUMN('GuestVmScriptEO', 'encodingType', 'VARCHAR(32)', 1, 'PlainText'
 CALL ADD_COLUMN('GuestVmScriptExecutedRecordVO', 'encodingType', 'VARCHAR(32)', 1, 'PlainText');
 DROP VIEW IF EXISTS `zstack`.`GuestVmScriptVO`;
 CREATE VIEW `zstack`.`GuestVmScriptVO` AS SELECT uuid, name, description, platform, encodingType, scriptContent, renderParams, scriptType, scriptTimeout, version, createDate, lastOpDate FROM `zstack`.`GuestVmScriptEO` WHERE deleted IS NULL;
+
+UPDATE `zstack`.`VolumeSnapshotTreeVO` t JOIN `zstack`.`VolumeVO` v ON t.volumeUuid = v.uuid
+SET t.rootImageUuid = v.rootImageUuid
+WHERE t.current = true
+  AND v.rootImageUuid IS NOT NULL
+  AND t.rootImageUuid IS NULL;
