@@ -6,6 +6,7 @@ import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.StringDSL;
 
 import java.io.Serializable;
 import java.util.*;
@@ -58,14 +59,7 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
      * return a fixed uuid that starts with "ff0" and ends with "00"
      */
     protected static String uuid(Class<?> voClass) {
-        StringBuilder builder = new StringBuilder(
-                UUID.nameUUIDFromBytes(voClass.getSimpleName().getBytes()).toString().replace("-", ""));
-        builder.setCharAt(0, 'f');
-        builder.setCharAt(1, 'f');
-        builder.setCharAt(2, '0');
-        builder.setCharAt(30, '0');
-        builder.setCharAt(31, '0');
-        return builder.toString();
+        return StringDSL.createFixedUuid(voClass);
     }
 
     public Message() {
