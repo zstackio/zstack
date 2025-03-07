@@ -54,8 +54,12 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
@@ -2512,6 +2516,35 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         CloneCmd cmd = new CloneCmd();
                         cmd.srcPath = cloneInstallPath;
                         cmd.dstPath = volumePath;
+                        List<CephPrimaryStorageCheckInstanceTypeExtensionPoint> exts = pluginRgty.getExtensionList(CephPrimaryStorageCheckInstanceTypeExtensionPoint.class);
+                        for (CephPrimaryStorageCheckInstanceTypeExtensionPoint ext : exts) {
+                            Boolean result = ext.isSupportCloneByThirdParty(msg.getVolume().getVmInstanceUuid());
+                            if (!result) {
+                                break;
+                            }
+                            boolean isRootVolume = Q.New(VolumeVO.class)
+                                    .eq(VolumeVO_.uuid, msg.getVolume().getUuid())
+                                    .eq(VolumeVO_.type, VolumeType.Root)
+                                    .isExists();
+                            boolean isBareMetal2Instance = Q.New(VmInstanceVO.class)
+                                    .eq(VmInstanceVO_.uuid, msg.getVolume().getVmInstanceUuid())
+                                    .eq(VmInstanceVO_.type, "baremetal2")
+                                    .isExists();
+                            boolean hasToken = CephSystemTags.THIRDPARTY_PLATFORM.hasTag(msg.getPrimaryStorageUuid());
+                            if (isRootVolume && isBareMetal2Instance && hasToken) {
+                                List<String> monIps = Q.New(CephPrimaryStorageMonVO.class)
+                                        .select(CephPrimaryStorageMonVO_.hostname)
+                                        .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                                        .listValues();
+                                cmd.token = CephSystemTags.THIRDPARTY_PLATFORM.getTokenByResourceUuid(msg.getPrimaryStorageUuid(),
+                                        CephSystemTags.THIRDPARTY_PLATFORM_TOKEN);
+                                cmd.monIp = monIps.get(0);
+                                cmd.tpTimeout = CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class);
+                            }
+                            VolumeVO vo = Q.New(VolumeVO.class)
+                                    .eq(VolumeVO_.uuid, msg.getVolume().getUuid()).find();
+                            ext.convertToBlockVolume(vo);
+                        }
 
                         httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
                             @Override
