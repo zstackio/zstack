@@ -309,7 +309,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     }
 
-    private void addOvnLogicalPorts(String sdnControllerUuid, List<VmNicInventory> nics, Completion completion) {
+    private void sdnAddVmNic(String sdnControllerUuid, List<VmNicInventory> nics, Completion completion) {
         SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
         SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
         if (factory == null) {
@@ -318,12 +318,12 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
 
         SdnControllerL2 controller = factory.getSdnControllerL2(vo);
-        controller.addLogicalPorts(nics, completion);
+        controller.addVmNics(nics, completion);
     }
 
-    private void addOvnLogicalPort(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
+    private void sdnAddVmNics(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
         new While<>(nicMaps.entrySet()).each((e, wcomp) -> {
-            addOvnLogicalPorts(e.getKey(), e.getValue(), new Completion(wcomp) {
+            sdnAddVmNic(e.getKey(), e.getValue(), new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();
@@ -356,7 +356,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
 
         SdnControllerL2 controller = factory.getSdnControllerL2(vo);
-        controller.removeLogicalPorts(nics, completion);
+        controller.removeVmNics(nics, completion);
     }
 
     private void removeLogicalPort(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
@@ -460,7 +460,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         List<VmNicInventory> nics = new ArrayList<>();
         nics.add(spec.getDestNics().get(0));
         nicMaps.put(controllerUuid, nics);
-        addOvnLogicalPort(nicMaps, completion);
+        sdnAddVmNics(nicMaps, completion);
     }
 
     @Override
@@ -589,7 +589,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
-        addOvnLogicalPort(nicMaps, completion);
+        sdnAddVmNics(nicMaps, completion);
     }
 
     @Override
