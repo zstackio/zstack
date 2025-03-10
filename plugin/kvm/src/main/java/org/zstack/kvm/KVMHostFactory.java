@@ -21,10 +21,6 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigException;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.config.schema.GuestOsCategory;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -438,6 +434,22 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             ResourceConfig cpuMode = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
             if (CPU_MODE_NONE.equals(cpuMode.getResourceConfigValue(resourceUuid, String.class))) {
                 throw new GlobalConfigException("Can not disable cpu hypervisor feature with vm.cpuMode none");
+            }
+        });
+
+        resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
+        resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
+            if (oldValue.equals(newValue)) {
+                return;
+            }
+
+            VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
+                    .eq(VmInstanceVO_.uuid, resourceUuid)
+                    .findValue();
+            if (vmState != null
+                    && vmState != VmInstanceState.Starting  // some configs are set while vm is starting
+                    && !VmInstanceState.offlineStates.contains(vmState)) {
+                throw new GlobalConfigException("Can not change vm.cpuMode while VM is living.");
             }
         });
 
