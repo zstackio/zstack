@@ -475,6 +475,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public Long size;
         public Long actualSize;
         public String installPath;
+        public String volumeId;
+        public String volumeStatus;
 
         public String getInstallPath() {
             return installPath;
@@ -482,6 +484,22 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public String getVolumeId() {
+            return volumeId;
+        }
+
+        public void setVolumeId(String volumeId) {
+            this.volumeId = volumeId;
+        }
+
+        public String getVolumeStatus() {
+            return volumeStatus;
+        }
+
+        public void setVolumeStatus(String volumeStatus) {
+            this.volumeStatus = volumeStatus;
         }
     }
 
@@ -2535,15 +2553,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 List<String> monIps = Q.New(CephPrimaryStorageMonVO.class)
                                         .select(CephPrimaryStorageMonVO_.hostname)
                                         .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                                        .eq(CephPrimaryStorageMonVO_.status, MonStatus.Connected)
                                         .listValues();
                                 cmd.token = CephSystemTags.THIRDPARTY_PLATFORM.getTokenByResourceUuid(msg.getPrimaryStorageUuid(),
                                         CephSystemTags.THIRDPARTY_PLATFORM_TOKEN);
-                                cmd.monIp = monIps.get(0);
+                                cmd.monIp = monIps != null ? monIps.get(0): null;
                                 cmd.tpTimeout = CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class);
+                                VolumeVO vo = Q.New(VolumeVO.class)
+                                        .eq(VolumeVO_.uuid, msg.getVolume().getUuid()).find();
+                                ext.convertToBlockVolume(vo);
                             }
-                            VolumeVO vo = Q.New(VolumeVO.class)
-                                    .eq(VolumeVO_.uuid, msg.getVolume().getUuid()).find();
-                            ext.convertToBlockVolume(vo);
                         }
 
                         httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
@@ -2555,6 +2574,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             @Override
                             public void success(CloneRsp ret) {
                                 actualSize = ret.actualSize;
+                                List<CephPrimaryStorageCheckInstanceTypeExtensionPoint> exts = pluginRgty.getExtensionList(CephPrimaryStorageCheckInstanceTypeExtensionPoint.class);
+                                for (CephPrimaryStorageCheckInstanceTypeExtensionPoint ext : exts) {
+                                    if (!ext.isBlockVolume(msg.getVolume().getUuid())) {
+                                        break;
+                                    }
+                                    volumePath = ret.installPath == null ? volumePath : makeVolumeInstallPathByTargetPool(ret.installPath, targetCephPoolName);
+                                    ext.populateBlockVolumeDetails(msg.getVolume().getUuid(), ret.volumeId, ret.volumeStatus);
+                                }
                                 trigger.next();
                             }
                         });
