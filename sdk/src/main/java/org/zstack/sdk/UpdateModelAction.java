@@ -43,6 +43,9 @@ public class UpdateModelAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String modelCenterUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List types;
+
     @Param(required = false)
     public java.util.List systemTags;
 
