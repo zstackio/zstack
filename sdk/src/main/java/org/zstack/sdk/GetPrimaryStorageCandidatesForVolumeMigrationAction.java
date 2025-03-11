@@ -28,6 +28,9 @@ public class GetPrimaryStorageCandidatesForVolumeMigrationAction extends Abstrac
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String volumeUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean liveMigrate = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 
