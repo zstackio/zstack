@@ -25,4 +25,9 @@
         <id>3001</id>
         <description>ZStone configuration error</description>
     </code>
+
+    <code>
+        <id>3002</id>
+        <description>ZStone state error</description>
+    </code>
 </error>

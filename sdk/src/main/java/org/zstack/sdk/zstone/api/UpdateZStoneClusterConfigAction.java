@@ -46,6 +46,9 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String managementNetworkCidr;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean force = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 
