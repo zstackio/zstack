@@ -1,0 +1,1 @@
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'clusterId', 'INT', 1, NULL);
