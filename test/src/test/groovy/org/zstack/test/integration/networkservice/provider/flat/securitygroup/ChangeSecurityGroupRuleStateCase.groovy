@@ -72,9 +72,9 @@ class ChangeSecurityGroupRuleStateCase extends SubCase {
             ip4Rules = cmd.ruleTOs.get(sg1.uuid)
             assert ip4Rules.size() == 12
 
-            assert ip4Rules.find {it.priority == 1 && it.type == "Ingress" && it.state == "Enabled"}
-            assert ip4Rules.find {it.priority == 3 && it.type == "Ingress" && it.state == "Enabled"}
-            assert ip4Rules.find {it.priority == 5 && it.type == "Ingress" && it.state == "Enabled"}
+            assert ip4Rules.find {it.priority == 1 && it.ruleType == "Ingress" && it.state == "Enabled"}
+            assert ip4Rules.find {it.priority == 3 && it.ruleType == "Ingress" && it.state == "Enabled"}
+            assert ip4Rules.find {it.priority == 5 && it.ruleType == "Ingress" && it.state == "Enabled"}
         }
 
         cmd = null

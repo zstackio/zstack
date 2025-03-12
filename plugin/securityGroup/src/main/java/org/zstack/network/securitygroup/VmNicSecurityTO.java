@@ -16,6 +16,7 @@ public class VmNicSecurityTO {
     private String egressPolicy;
     private String actionCode = ACTION_CODE_APPLY_CHAIN;
     private Map<String, Integer> securityGroupRefs;
+    private boolean refresh = false;
 
     public VmNicSecurityTO() {
         securityGroupRefs = new HashMap<String, Integer>();
@@ -84,5 +85,13 @@ public class VmNicSecurityTO {
 
     public void setSecurityGroupRefs(Map<String, Integer> securityGroupRefs) {
         this.securityGroupRefs = securityGroupRefs;
+    }
+
+    public boolean isRefresh() {
+        return refresh;
+    }
+
+    public void setRefresh(boolean refresh) {
+        this.refresh = refresh;
     }
 }

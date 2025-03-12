@@ -2,6 +2,7 @@ package org.zstack.sdnController;
 
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
 import org.zstack.sdnController.header.SdnControllerVO;
 
 public interface SdnControllerFactory {
@@ -12,6 +13,8 @@ public interface SdnControllerFactory {
     default SdnController getSdnController(String l2NetworkUuid) {return null;};
 
     SdnControllerL2 getSdnControllerL2(SdnControllerVO vo);
+
+    SecurityGroupSdnBackend getSdnControllerSecurityGroup(SdnControllerVO vo);
 
     default SdnControllerL2 getSdnControllerL2(String l2NetworkUuid) {return null;};
 

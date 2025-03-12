@@ -129,6 +129,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         msg.setVmInstanceUuid(servedVm.getVmInventory().getUuid());
         msg.setHostUuid(servedVm.getDestHost().getUuid());
         msg.setSgUuids(sgUuids);
+        msg.setOperation(servedVm.getCurrentVmOperation());
         bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -157,6 +158,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
             uuids.add(nic.getUuid());
         }
         msg.setNicUuids(uuids);
+        msg.setOperation(servedVm.getCurrentVmOperation());
 
         bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -201,6 +203,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         msg.setVmInstanceUuid(vmInstanceInventory.getUuid());
         msg.setHostUuid(vmInstanceInventory.getHostUuid());
         msg.setSgUuids(sgUuids);
+        msg.setOperation(VmInstanceConstant.VmOperation.AttachNic);
         bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

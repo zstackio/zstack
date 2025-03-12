@@ -9,6 +9,7 @@ public class CreateSecurityGroupMsg extends NeedReplyMessage {
     private String name;
     private String description;
     private String accountUuid;
+    private String sdnControllerUuid;
 
     public String getName() {
         return name;
@@ -32,5 +33,13 @@ public class CreateSecurityGroupMsg extends NeedReplyMessage {
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public String getSdnControllerUuid() {
+        return sdnControllerUuid;
+    }
+
+    public void setSdnControllerUuid(String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
     }
 }

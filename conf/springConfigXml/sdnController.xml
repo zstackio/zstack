@@ -30,6 +30,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint"/>
+            <zstack:extension interface="org.zstack.network.securitygroup.SecurityGroupGetSdnBackendExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
