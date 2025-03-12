@@ -36,8 +36,6 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessage;
-import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
-import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
@@ -536,7 +534,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 */
 
-    @Transactional
     private VolumeSnapshotStruct newChain(VolumeSnapshotVO vo, boolean fullsnapshot) {
         new SQLBatch() {
             @Override
@@ -546,6 +543,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 chain.setVolumeUuid(vo.getVolumeUuid());
                 chain.setUuid(Platform.getUuid());
                 chain.setStatus(VolumeSnapshotTreeStatus.Creating);
+                if (!fullsnapshot) {
+                    String rootImageUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, vo.getVolumeUuid())
+                            .select(VolumeVO_.rootImageUuid)
+                            .findValue();
+                    chain.setRootImageUuid(rootImageUuid);
+                }
+
                 chain = dbf.getEntityManager().merge(chain);
 
                 logger.debug(String.format("created new volume snapshot tree[tree uuid:%s, volume uuid:%s, full snapshot uuid:%s]",
