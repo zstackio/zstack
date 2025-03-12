@@ -1,10 +1,10 @@
-package org.zstack.sdk.zstone.api;
+package org.zstack.sdk.zsv.core.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateZStoneClusterConfigAction extends AbstractAction {
+public class GetNodeRolesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zstone.api.UpdateZStoneClusterConfigResult value;
+        public org.zstack.sdk.zsv.core.api.GetNodeRolesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,30 +24,6 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
             return this;
         }
     }
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String clusterName;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String managementIp;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String chronyIp;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String publicNetworkCidr;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String clusterNetworkCidr;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String managementNetworkCidr;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean force = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -67,12 +43,6 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -81,8 +51,8 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zstone.api.UpdateZStoneClusterConfigResult value = res.getResult(org.zstack.sdk.zstone.api.UpdateZStoneClusterConfigResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zstone.api.UpdateZStoneClusterConfigResult() : value; 
+        org.zstack.sdk.zsv.core.api.GetNodeRolesResult value = res.getResult(org.zstack.sdk.zsv.core.api.GetNodeRolesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zsv.core.api.GetNodeRolesResult() : value; 
 
         return ret;
     }
@@ -111,11 +81,11 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/zstone-plugin/config/cluster";
+        info.httpMethod = "GET";
+        info.path = "/zsv/nodes/roles";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateZStoneClusterConfig";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

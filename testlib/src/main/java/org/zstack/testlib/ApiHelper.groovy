@@ -44602,6 +44602,33 @@ abstract class ApiHelper {
     }
 
 
+    def zceXTestConnection(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zcex.api.ZceXTestConnectionAction.class) Closure c) {
+        def a = new org.zstack.sdk.zcex.api.ZceXTestConnectionAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def addZStone(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zstone.api.AddZStoneAction.class) Closure c) {
         def a = new org.zstack.sdk.zstone.api.AddZStoneAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -44768,6 +44795,60 @@ abstract class ApiHelper {
 
     def zStoneTestConnection(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zstone.api.ZStoneTestConnectionAction.class) Closure c) {
         def a = new org.zstack.sdk.zstone.api.ZStoneTestConnectionAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getNodeRoles(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zsv.core.api.GetNodeRolesAction.class) Closure c) {
+        def a = new org.zstack.sdk.zsv.core.api.GetNodeRolesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def checkCephPlugin(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zsv.storage.api.CheckCephPluginAction.class) Closure c) {
+        def a = new org.zstack.sdk.zsv.storage.api.CheckCephPluginAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

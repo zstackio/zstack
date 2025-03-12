@@ -111,12 +111,17 @@ public class RestHttp<T> {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     protected ErrorableValue<T> handleWithErrorCode() {
         try {
             DebugUtils.Assert(this.handler != null, "handler cannot be null");
             final ResponseEntity<String> entity = this.handler.apply(this);
-            return returnClass == Void.class ?
-                    ErrorableValue.of(null) :
+            if (returnClass == Void.class) {
+                return ErrorableValue.of(null);
+            }
+
+            return returnClass == String.class ?
+                    ((ErrorableValue<T>) ErrorableValue.of(entity.getBody())) :
                     ErrorableValue.of(JSONObjectUtil.toObject(entity.getBody(), returnClass));
         } catch (OperationFailureException e) {
             return ErrorableValue.ofErrorCode(e.getErrorCode());
