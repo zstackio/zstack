@@ -22,20 +22,44 @@ if [[ `id -u` -ne 0 ]] && [[ x"$user" = x"root" ]]; then
     MYSQL='sudo mysql'
 fi
 
+if command -v greatdb &> /dev/null; then
+    MYSQL='greatdb'
+    if [[ `id -u` -ne 0 ]] && [[ x"$user" = x"root" ]]; then
+        MYSQL='sudo greatdb'
+    fi
+fi
+
 mysql_run() {
     $MYSQL --user=$user --password=$password --host=$host --port=$port "$@"
 }
 
-mysql_run << EOF
-DROP DATABASE IF EXISTS zstack;
-CREATE DATABASE zstack;
-DROP DATABASE IF EXISTS zstack_rest;
-CREATE DATABASE zstack_rest;
-grant all privileges on zstack.* to root@'%' identified by "$password";
-grant all privileges on zstack_rest.* to root@'%' identified by "$password";
-grant all privileges on zstack.* to root@'localhost' identified by "$password";
-grant all privileges on zstack_rest.* to root@'localhost' identified by "$password";
+if command -v greatdb &> /dev/null; then
+  mysql_run << EOF
+    set global log_bin_trust_function_creators=1;
+    DROP DATABASE IF EXISTS zstack;
+    CREATE DATABASE zstack;
+    DROP DATABASE IF EXISTS zstack_rest;
+    CREATE DATABASE zstack_rest;
+    CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY "${password}";
+    CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY "${password}";
+    grant all privileges on zstack.* to root@'%';
+    grant all privileges on zstack_rest.* to root@'%';
+    grant all privileges on zstack.* to root@'127.0.0.1';
+    grant all privileges on zstack_rest.* to root@'127.0.0.1';
 EOF
+else
+  mysql_run << EOF
+  set global log_bin_trust_function_creators=1;
+  DROP DATABASE IF EXISTS zstack;
+  CREATE DATABASE zstack;
+  DROP DATABASE IF EXISTS zstack_rest;
+  CREATE DATABASE zstack_rest;
+  grant all privileges on zstack.* to root@'%' identified by "${password}";
+  grant all privileges on zstack_rest.* to root@'%' identified by "${password}";
+  grant all privileges on zstack.* to root@'127.0.0.1' identified by "${password}";
+  grant all privileges on zstack_rest.* to root@'127.0.0.1' identified by "${password}";
+EOF
+fi
 
 rm -rf $flyway_sql
 mkdir -p $flyway_sql
@@ -67,32 +91,50 @@ hostname=`hostname`
 
 [ -z $zstack_user_password ] && zstack_user_password=''
 
-db_version=`mysql --version | awk '/Distrib/{print $5}' |awk -F'.' '{print $1}'`
-if [ $db_version -ge 10 ];then
-    mysql --user=$user --password=$password --host=$host --port=$port << EOF
-drop user if exists zstack;
-drop user if exists zstack_rest;
-create user 'zstack' identified by "$zstack_user_password";
-create user 'zstack_rest' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@'localhost' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@'%' identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@'localhost' identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@'%' identified by "$zstack_user_password";
-flush privileges;
+if command -v greatdb &> /dev/null; then
+  $MYSQL --user=$user --password=$password --host=$host --port=$port << EOF
+    drop user if exists zstack;
+    drop user if exists zstack_rest;
+    create user if not exists 'zstack'@'localhost' identified by "$zstack_user_password";
+    create user if not exists 'zstack'@'%' identified by "$zstack_user_password";
+    create user if not exists 'zstack_rest'@'localhost' identified by "$zstack_user_password";
+    create user if not exists 'zstack_rest'@'%' identified by "$zstack_user_password";
+    grant all privileges on zstack.* to zstack@'localhost';
+    grant all privileges on zstack.* to zstack@'%';
+    grant system_user on *.* to zstack@'localhost';
+    grant system_user on *.* to zstack@'%';
+    grant all privileges on zstack_rest.* to zstack@'localhost';
+    grant all privileges on zstack_rest.* to zstack@'%';
+    flush privileges;
 EOF
 else
-    mysql --user=$user --password=$password --host=$host --port=$port << EOF
-grant usage on *.* to 'zstack'@'localhost';
-grant usage on *.* to 'zstack'@'%';
-drop user zstack;
-create user 'zstack' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@'localhost' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@'%' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@"$hostname" identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@'localhost' identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@"$hostname" identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@'%' identified by "$zstack_user_password";
-flush privileges;
+  db_version=`$MYSQL --version | awk '/Distrib/{print $5}' |awk -F'.' '{print $1}'`
+  if [ $db_version -ge 10 ];then
+      $MYSQL --user=$user --password=$password --host=$host --port=$port << EOF
+  drop user if exists zstack;
+  drop user if exists zstack_rest;
+  create user 'zstack' identified by "$zstack_user_password";
+  create user 'zstack_rest' identified by "$zstack_user_password";
+  grant all privileges on zstack.* to zstack@'localhost' identified by "$zstack_user_password";
+  grant all privileges on zstack.* to zstack@'%' identified by "$zstack_user_password";
+  grant all privileges on zstack_rest.* to zstack@'localhost' identified by "$zstack_user_password";
+  grant all privileges on zstack_rest.* to zstack@'%' identified by "$zstack_user_password";
+  flush privileges;
 EOF
+  else
+      $MYSQL --user=$user --password=$password --host=$host --port=$port << EOF
+  grant usage on *.* to 'zstack'@'localhost';
+  grant usage on *.* to 'zstack'@'%';
+  drop user zstack;
+  create user 'zstack' identified by "$zstack_user_password";
+  grant all privileges on zstack.* to zstack@'localhost' identified by "$zstack_user_password";
+  grant all privileges on zstack.* to zstack@'%' identified by "$zstack_user_password";
+  grant all privileges on zstack.* to zstack@"$hostname" identified by "$zstack_user_password";
+  grant all privileges on zstack_rest.* to zstack@'localhost' identified by "$zstack_user_password";
+  grant all privileges on zstack_rest.* to zstack@"$hostname" identified by "$zstack_user_password";
+  grant all privileges on zstack_rest.* to zstack@'%' identified by "$zstack_user_password";
+  flush privileges;
+EOF
+  fi
 fi
 

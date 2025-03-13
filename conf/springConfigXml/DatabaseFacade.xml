@@ -87,6 +87,7 @@
                 <!--.8.2.x infinispan not support async https://issues.redhat.com/browse/ISPN-4065 -->
                 <prop key="hibernate.search.default.worker.execution">sync</prop>
                 <!--<prop key="hibernate.search.default.index_flush_interval">${IndexWorker.flushInterval:1000}</prop>-->
+                <prop key="hibernate.globally_quoted_identifiers">true</prop>
             </props>
         </property>
     </bean>
