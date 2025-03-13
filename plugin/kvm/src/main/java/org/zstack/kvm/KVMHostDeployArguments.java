@@ -26,9 +26,16 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String isInstallHostShutdownHook;
     @SerializedName("isEnableKsm")
     private String isEnableKsm;
-
+    @SerializedName("enable_spice_tls")
+    private String enableSpiceTls;
+    @SerializedName("enable_cgroup_device_acl")
+    private String enableCgroupDeviceAcl;
+    @SerializedName("restart_libvirtd")
+    private String restartLibvirtd;
     @SerializedName("extra_packages")
     private String extraPackages;
+
+    private transient boolean forceRun = false;
 
     public String getInit() {
         return init;
@@ -121,5 +128,37 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setExtraPackages(String extraPackages) {
         this.extraPackages = extraPackages;
+    }
+
+    public String getEnableSpiceTls() {
+        return enableSpiceTls;
+    }
+
+    public void setEnableSpiceTls(String enableSpiceTls) {
+        this.enableSpiceTls = enableSpiceTls;
+    }
+
+    public String getEnableCgroupDeviceAcl() {
+        return enableCgroupDeviceAcl;
+    }
+
+    public void setEnableCgroupDeviceAcl(String enableCgroupDeviceAcl) {
+        this.enableCgroupDeviceAcl = enableCgroupDeviceAcl;
+    }
+
+    public String getRestartLibvirtd() {
+        return restartLibvirtd;
+    }
+
+    public void setRestartLibvirtd(String restartLibvirtd) {
+        this.restartLibvirtd = restartLibvirtd;
+    }
+
+    public boolean isForceRun() {
+        return forceRun;
+    }
+
+    public void setForceRun(boolean forceRun) {
+        this.forceRun = forceRun;
     }
 }

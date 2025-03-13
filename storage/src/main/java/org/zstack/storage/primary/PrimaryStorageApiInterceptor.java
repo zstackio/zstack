@@ -16,6 +16,8 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
 import org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg;
@@ -48,6 +50,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRegistry;
+    @Autowired
+    private PrimaryStorageManagerImpl primaryStorageManager;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof PrimaryStorageMessage) {
@@ -70,10 +74,25 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             validate(((APIGetTrashOnPrimaryStorageMsg) msg));
         } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
             validate((APICreateVolumeSnapshotGroupMsg) msg);
+        } else if (msg instanceof APIAddStorageProtocolMsg) {
+            validate((APIAddStorageProtocolMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIAddStorageProtocolMsg msg) {
+        if (Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, msg.getUuid())
+                .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, msg.getOutputProtocol())
+                .isExists()) {
+            throw new ApiMessageInterceptionException(argerr("outputProtocol[%s] is exist on primary storage[%s]" +
+                    "no need to add again", msg.getOutputProtocol(), msg.getPrimaryStorageUuid()));
+        }
+        PrimaryStorageVO vo = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid()).find();
+        PrimaryStorageFactory factory = primaryStorageManager.primaryStorageFactories.get(vo.getType());
+        factory.validateStorageProtocol(msg.getOutputProtocol());
     }
 
     private void validate(APIGetPrimaryStorageCapacityMsg msg) {

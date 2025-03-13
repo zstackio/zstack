@@ -1,6 +1,7 @@
 package org.zstack.externalStorage.primary.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -8,11 +9,9 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.core.workflow.NopeFlow;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
@@ -84,18 +83,21 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
         }
 
         return new NoRollbackFlow() {
-            final String __name__ = "external-primary-storage-kvm-host-connecting-flow";
+            final String __name__ = "prepare-external-primary-storage";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                checkHostStatus(context.getInventory(), extPss, new WhileDoneCompletion(trigger) {
+                doPrepareExternalPrimaryStorage(context, extPss, new Completion(trigger) {
                     @Override
-                    public void done(ErrorCodeList errList) {
-                        data.put(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR, errList);
+                    public void success() {
                         trigger.next();
                     }
-                });
 
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
             }
         };
     }
@@ -116,8 +118,67 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
         });
     }
 
-    private void checkHostStatus(KVMHostInventory host, List<ExternalPrimaryStorageVO> extPss, WhileDoneCompletion completion) {
+    private void doPrepareExternalPrimaryStorage(final KVMHostConnectedContext context, List<ExternalPrimaryStorageVO> extPss, Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("do-prepare-external-primary-storage");
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "deploy-client";
 
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                deployClient(context, extPss, new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "check-host-status";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                checkHostStatus(context.getInventory(), extPss, new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errList) {
+                        data.put(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR, errList);
+                        trigger.next();
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).start();
+    }
+
+    private void deployClient(final KVMHostConnectedContext context, List<ExternalPrimaryStorageVO> extPss, WhileDoneCompletion completion) {
+        new While<>(extPss).each((extPs, compl) -> {
+            logger.debug(String.format("deploying client for external primary storage[uuid:%s, name:%s] on KVM host[uuid:%s, name:%s]",
+                    extPs.getUuid(), extPs.getName(), context.getInventory().getUuid(), context.getInventory().getName()));
+            extPsFactory.getNodeSvc(extPs.getUuid()).deployClient(context.getInventory(), new Completion(compl) {
+                @Override
+                public void success() {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(completion);
+    }
+
+    private void checkHostStatus(KVMHostInventory host, List<ExternalPrimaryStorageVO> extPss, WhileDoneCompletion completion) {
         Map<String, PrimaryStorageHostStatus> hostStatus = getHostStatus(extPss);
         new While<>(extPss).each((extPs, compl) -> {
             logger.debug(String.format("checking host status for external primary storage[uuid:%s, name:%s] on KVM host[uuid:%s, name:%s]",

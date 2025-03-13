@@ -1,7 +1,6 @@
 package org.zstack.testlib
 
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.header.zone.ZoneVO
 import org.zstack.header.zone.ZoneVO_
 import org.zstack.sdk.AttachBackupStorageToZoneAction
@@ -62,6 +61,16 @@ class ZoneSpec extends Spec {
 
     PrimaryStorageSpec cephPrimaryStorage(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CephPrimaryStorageSpec.class) Closure c) {
         def nspec = new CephPrimaryStorageSpec(envSpec)
+        c.delegate = nspec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(nspec)
+        primaryStorage.add(nspec)
+        return nspec
+    }
+
+    PrimaryStorageSpec externalPrimaryStorage(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ExternalPrimaryStorageSpec.class) Closure c) {
+        def nspec = new ExternalPrimaryStorageSpec(envSpec)
         c.delegate = nspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

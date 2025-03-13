@@ -132,6 +132,7 @@
         <class>org.zstack.storage.primary.local.LocalStorageHostRefVO</class>
         <class>org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO</class>
         <class>org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO</class>
+        <class>org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO</class>
         <class>org.zstack.storage.ceph.backup.CephBackupStorageVO</class>
         <class>org.zstack.storage.ceph.backup.CephBackupStorageMonVO</class>
         <class>org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO</class>
@@ -200,5 +201,6 @@
         <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpVO </class>
         <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefVO</class>
         <class>org.zstack.header.host.HostHwMonitorStatusVO</class>
+        <class>org.zstack.header.volume.block.BlockVolumeVO</class>
     </persistence-unit>
 </persistence>
