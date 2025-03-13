@@ -19,20 +19,19 @@ BEGIN
     ALTER TABLE `zstack`.`BareMetal2InstanceProvisionNicVO`
     DROP FOREIGN KEY `fkBareMetal2InstanceProvisionNicVOInstanceVO`;
 
-    UPDATE `zstack`.`BareMetal2InstanceProvisionNicVO`
-    SET `uuid` = REPLACE(UUID(), '-', '');
-
     ALTER TABLE `zstack`.`BareMetal2InstanceProvisionNicVO`
     ADD CONSTRAINT `fkBareMetal2InstanceProvisionNicVOInstanceVO`
     FOREIGN KEY (`instanceUuid`) REFERENCES `BareMetal2InstanceVO` (`uuid`)
     ON DELETE CASCADE;
+
+    UPDATE `zstack`.`BareMetal2InstanceProvisionNicVO`
+    SET `uuid` = REPLACE(UUID(), '-', '');
 
     ALTER TABLE `zstack`.`BareMetal2InstanceProvisionNicVO`
     ADD COLUMN `isPrimaryProvisionNic` BOOLEAN NOT NULL DEFAULT FALSE;
 
     UPDATE `zstack`.`BareMetal2InstanceProvisionNicVO`
     SET `isPrimaryProvisionNic` = TRUE;
-
 
     ALTER TABLE `zstack`.`BareMetal2ChassisNicVO`
     ADD COLUMN `isPrimaryProvisionNic` BOOLEAN NOT NULL DEFAULT FALSE;
