@@ -68,6 +68,9 @@ public class DeployAppDevelopmentServiceAction extends AbstractAction {
     public java.lang.String type;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Long memorySize;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
