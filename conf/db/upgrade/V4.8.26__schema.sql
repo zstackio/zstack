@@ -46,3 +46,9 @@ DELIMITER ;
 
 CALL createThickProvisionVolumeTag();
 DROP PROCEDURE IF EXISTS createThickProvisionVolumeTag;
+
+UPDATE `zstack`.`VolumeSnapshotTreeVO` t JOIN `zstack`.`VolumeVO` v ON t.volumeUuid = v.uuid
+SET t.rootImageUuid = v.rootImageUuid
+WHERE t.current = true
+  AND v.rootImageUuid IS NOT NULL
+  AND t.rootImageUuid IS NULL;
