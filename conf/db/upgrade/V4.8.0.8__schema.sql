@@ -16,8 +16,16 @@ BEGIN
     UPDATE `zstack`.`BareMetal2InstanceProvisionNicVO`
     SET `instanceUuid` = `uuid`;
 
+    ALTER TABLE `zstack`.`BareMetal2InstanceProvisionNicVO`
+    DROP FOREIGN KEY `fkBareMetal2InstanceProvisionNicVOInstanceVO`;
+
     UPDATE `zstack`.`BareMetal2InstanceProvisionNicVO`
     SET `uuid` = REPLACE(UUID(), '-', '');
+
+    ALTER TABLE `zstack`.`BareMetal2InstanceProvisionNicVO`
+    ADD CONSTRAINT `fkBareMetal2InstanceProvisionNicVOInstanceVO`
+    FOREIGN KEY (`instanceUuid`) REFERENCES `BareMetal2InstanceVO` (`uuid`)
+    ON DELETE CASCADE;
 
     ALTER TABLE `zstack`.`BareMetal2InstanceProvisionNicVO`
     ADD COLUMN `isPrimaryProvisionNic` BOOLEAN NOT NULL DEFAULT FALSE;
@@ -25,21 +33,13 @@ BEGIN
     UPDATE `zstack`.`BareMetal2InstanceProvisionNicVO`
     SET `isPrimaryProvisionNic` = TRUE;
 
-    ALTER TABLE `zstack`.`BareMetal2InstanceProvisionNicVO`
-    DROP FOREIGN KEY `fkBareMetal2InstanceProvisionNicVOInstanceVO`;
-
-    ALTER TABLE `zstack`.`BareMetal2InstanceProvisionNicVO`
-    ADD CONSTRAINT `fkBareMetal2InstanceProvisionNicVOInstanceVO`
-    FOREIGN KEY (`instanceUuid`) REFERENCES `BareMetal2InstanceVO` (`uuid`)
-    ON DELETE CASCADE;
 
     ALTER TABLE `zstack`.`BareMetal2ChassisNicVO`
     ADD COLUMN `isPrimaryProvisionNic` BOOLEAN NOT NULL DEFAULT FALSE;
 
-    UPDATE `zstack`.`BareMetal2ChassisNicVO` chassis
-    JOIN `zstack`.`BareMetal2InstanceProvisionNicVO` provision
-    ON chassis.mac = provision.mac
-    SET chassis.isPrimaryProvisionNic = provision.isPrimaryProvisionNic;
+    UPDATE `zstack`.`BareMetal2ChassisNicVO`
+    SET `isPrimaryProvisionNic` = TRUE
+    WHERE `isProvisionNic` = TRUE;
 
     COMMIT;
 END$$
