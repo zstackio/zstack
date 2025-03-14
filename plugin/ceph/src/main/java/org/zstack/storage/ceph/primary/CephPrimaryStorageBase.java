@@ -76,10 +76,7 @@ import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.CollectionDSL;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -1017,6 +1014,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class DeleteVolumeChainRsp extends AgentResponse {
+        public List<String> undeletedInstallPaths;
     }
 
     public static class CleanTrashCmd extends AgentCommand {
@@ -1747,7 +1745,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.skipIfExisting = msg.isSkipIfExisting();
 
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
-        
+
         httpCall(CREATE_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
@@ -5370,6 +5368,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                CephDeleteVolumeSnapshotGC snapshotGC = new CephDeleteVolumeSnapshotGC();
+                snapshotGC.NAME = String.format("gc-ceph-%s-volumesnapshot-path-%s", self.getUuid(), cmd.snapshotPath);
+                snapshotGC.primaryStorageUuid = self.getUuid();
+                snapshotGC.volumeSnapshot = msg.getSnapshot();
+                snapshotGC.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
                 completion.done();
@@ -5952,14 +5955,31 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         DeleteVolumeChainOnPrimaryStorageReply reply = new DeleteVolumeChainOnPrimaryStorageReply();
         DeleteVolumeChainCmd cmd = new DeleteVolumeChainCmd();
         cmd.installPaths = msg.getInstallPaths();
-        new HttpCaller<>(DELETE_VOLUME_CHAIN_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+        new HttpCaller<>(DELETE_VOLUME_CHAIN_PATH, cmd, DeleteVolumeChainRsp.class, new ReturnValueCompletion<DeleteVolumeChainRsp>(msg) {
+            private void submitGcForUndeletedInstallPaths(List<String> undeletedInstallPaths) {
+                CephDeleteVolumeChainGC volumeChainGC = new CephDeleteVolumeChainGC();
+                volumeChainGC.primaryStorageUuid = self.getUuid();
+                volumeChainGC.installPaths = undeletedInstallPaths;
+                volumeChainGC.NAME = String.format("gc-ceph-%s-volume-chain-%s", self.getUuid(), msg.getChainTop());
+                volumeChainGC.chainTop = msg.getChainTop();
+                volumeChainGC.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+                logger.debug(String.format("unable to delete installPaths %s, now add GC to delete", undeletedInstallPaths));
+            }
+
             @Override
-            public void success(AgentResponse rsp) {
+            public void success(DeleteVolumeChainRsp rsp) {
+                if (CollectionUtils.isEmpty(rsp.undeletedInstallPaths)) {
+                    bus.reply(msg, reply);
+                    return;
+                }
+                submitGcForUndeletedInstallPaths(rsp.undeletedInstallPaths);
+                reply.setUndeletedInstallPaths(rsp.undeletedInstallPaths);
                 bus.reply(msg, reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                submitGcForUndeletedInstallPaths(cmd.installPaths);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

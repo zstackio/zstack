@@ -561,7 +561,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                         return
                     }
 
-                    if (f.parent?.pathString() == snapshotPath) {
+                    if (f.parent?.setVolumeChainInstallPaths() == snapshotPath) {
                         children.add(f.pathString())
                     }
                 }
@@ -732,12 +732,17 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.DELETE_VOLUME_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
-                return new CephPrimaryStorageBase.GetBackingChainRsp()
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.DeleteVolumeChainCmd.class)
+                def rsp = new CephPrimaryStorageBase.DeleteVolumeChainRsp()
+                rsp.undeletedInstallPaths = []
+                return rsp
             }
 
-            VFS.vfsHook(CephPrimaryStorageBase.DELETE_VOLUME_CHAIN_PATH, espec) { CephPrimaryStorageBase.AgentResponse rsp, HttpEntity<String> e, EnvSpec spec ->
+            // TODO Need to implement ceph trash in VFS
+            VFS.vfsHook(CephPrimaryStorageBase.DELETE_VOLUME_CHAIN_PATH, espec) { CephPrimaryStorageBase.DeleteVolumeChainRsp rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.DeleteVolumeChainCmd.class)
                 VFS vfs = vfs(cmd, spec)
+                rsp.undeletedInstallPaths = []
 
                 for (String path : cmd.installPaths) {
                     String vfsPath = cephPathToVFSPath(path)
