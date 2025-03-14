@@ -1,5 +1,7 @@
 package org.zstack.utils.string;
 
+import java.util.Locale;
+
 /**
  * Created by mingjian.deng on 2018/11/28.
  */
@@ -17,17 +19,29 @@ public class ErrorCodeElaboration {
     public ErrorCodeElaboration() {
     }
 
-    public ErrorCodeElaboration(ErrorCodeElaboration other, Object...args) {
+    public ErrorCodeElaboration(ErrorCodeElaboration other, Locale locale, Object...args) {
         if (args != null) {
             this.message_en = String.format(other.message_en, args);
-            this.message_cn = String.format(other.message_cn, args);
+            this.message_cn = Locale.SIMPLIFIED_CHINESE.equals(locale) ? String.format(other.message_cn, args) : null;
         } else {
             this.message_en = other.message_en;
-            this.message_cn = other.message_cn;
+            this.message_cn = Locale.SIMPLIFIED_CHINESE.equals(locale) ? other.message_cn : null;
         }
         this.distance = other.distance;
         this.method = other.method;
         this.code = other.code;
+    }
+
+    public ErrorCodeElaboration(ErrorCodeElaboration other, Locale locale) {
+        category = other.category;
+        code = other.code;
+        regex = other.regex;
+        message_en = other.message_en;
+        message_cn = Locale.SIMPLIFIED_CHINESE.equals(locale) ? other.message_cn : null;
+        source = other.source;
+        distance = other.distance;
+        formatSrcError = other.formatSrcError;
+        method = other.method;
     }
 
     public ErrorCodeElaboration(ErrorCodeElaboration other) {
