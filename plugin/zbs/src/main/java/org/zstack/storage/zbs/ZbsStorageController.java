@@ -206,6 +206,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
+        reloadDbInfo();
+
         // FIXME: hard code for install path
         CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
         to.setInstallPath(String.format("cbd:%s_physical/%s/%s", config.getLogicalPoolName(), config.getLogicalPoolName(), ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME));
@@ -482,6 +484,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String allocateSpace(AllocateSpaceSpec aspec) {
+        reloadDbInfo();
+
         // TODO allocate pool
         LogicalPoolInfo logicalPoolInfo = allocateFreePool(aspec.getSize());
         if (logicalPoolInfo == null) {
@@ -1681,5 +1685,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public ZbsStorageController(ExternalPrimaryStorageVO self) {
         this.self = self;
+        this.reloadDbInfo();
     }
 }
