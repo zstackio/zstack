@@ -92,6 +92,14 @@ public class EventRecordsInventory  {
         return this.readStatus;
     }
 
+    public java.lang.String operatorAccountUuid;
+    public void setOperatorAccountUuid(java.lang.String operatorAccountUuid) {
+        this.operatorAccountUuid = operatorAccountUuid;
+    }
+    public java.lang.String getOperatorAccountUuid() {
+        return this.operatorAccountUuid;
+    }
+
     public java.lang.String labels;
     public void setLabels(java.lang.String labels) {
         this.labels = labels;

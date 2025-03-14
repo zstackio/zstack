@@ -132,6 +132,14 @@ public class AlarmRecordsInventory  {
         return this.readStatus;
     }
 
+    public java.lang.String operatorAccountUuid;
+    public void setOperatorAccountUuid(java.lang.String operatorAccountUuid) {
+        this.operatorAccountUuid = operatorAccountUuid;
+    }
+    public java.lang.String getOperatorAccountUuid() {
+        return this.operatorAccountUuid;
+    }
+
     public java.lang.String resourceUuid;
     public void setResourceUuid(java.lang.String resourceUuid) {
         this.resourceUuid = resourceUuid;
