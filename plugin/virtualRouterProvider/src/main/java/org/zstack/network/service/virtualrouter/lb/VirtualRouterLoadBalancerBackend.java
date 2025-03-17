@@ -53,6 +53,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentRespo
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.resourceconfig.ResourceConfigVO;
 import org.zstack.resourceconfig.ResourceConfigVO_;
@@ -273,6 +274,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         String vipL3Uuid;
 
         boolean enableFullLog;
+
+        boolean enableStatsLog;
 
         public static class ServerGroup {
             private String name;
@@ -498,6 +501,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             this.enableFullLog = enableFullLog;
         }
 
+        public boolean isEnableStatsLog() {
+            return enableStatsLog;
+        }
+
+        public void setEnableStatsLog(boolean enableStatsLog) {
+            this.enableStatsLog = enableStatsLog;
+        }
+
         public String getVipL3Uuid() {
             return vipL3Uuid;
         }
@@ -610,7 +621,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 .eq(ResourceConfigVO_.resourceUuid, resourceUuid)
                 .findValue();
         return value;
-
     }
 
     public boolean enableFullLog(LbTO to, VirtualRouterVmInventory vr) {
@@ -629,6 +639,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             return Boolean.TRUE.equals(TypeUtils.stringToValue(enableVpcFullLog, boolean.class));
         } else {
             return VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.value(boolean.class);
+        }
+    }
+
+    public boolean enableStatsLog(LbTO to) {
+        ResourceConfig rc = rcf.getResourceConfig(VyosGlobalConfig.ENABLE_LOADBALANCER_STATS_LOG.getIdentity());
+        if (rc != null) {
+            return rc.getResourceConfigValue(to.getLbUuid(), boolean.class);
+        } else {
+            return false;
         }
     }
 
@@ -982,6 +1001,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 to.setParameters(params);
                 if (vr != null) {
                     to.setEnableFullLog(enableFullLog(to, vr));
+                    to.setEnableStatsLog(enableStatsLog(to));
                 }
                 return to;
             }
@@ -1294,6 +1314,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 msg.setCheckStatus(statusCheck);
                 for (VirtualRouterLoadBalancerBackend.LbTO to: listeners) {
                     to.setEnableFullLog(enableFullLog(to, vr));
+                    to.setEnableStatsLog(enableStatsLog(to));
                 }
                 cmd.setLbs(listeners);
                 cmd.enableHaproxyLog = rcf.getResourceConfigValue(VyosGlobalConfig.ENABLE_HAPROXY_LOG, vr.getUuid(), Boolean.class);
@@ -1313,6 +1334,34 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         } else {
                             trigger.fail(reply.getError());
                         }
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "after-refresh-lb-listeners";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(pluginRgty.getExtensionList(VirtualRouterLoadBalancerExtensionPoint.class)).each((ext, whileCompletion) -> {
+                    ext.afterRefreshLoadBalancerListener(vr.getUuid(), new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            whileCompletion.addError(errorCode);
+                            whileCompletion.allDone();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            logger.warn(String.format("after refresh load balancer listener failed, because:%s", errorCodeList.getCauses().get(0)));
+                        }
+                        trigger.next();
                     }
                 });
             }

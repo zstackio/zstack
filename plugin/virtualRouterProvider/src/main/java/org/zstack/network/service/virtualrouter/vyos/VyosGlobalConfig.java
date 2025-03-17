@@ -37,6 +37,10 @@ public class VyosGlobalConfig {
     public static GlobalConfig ENABLE_LOADBALANCER_FULL_LOG = new GlobalConfig(CATEGORY, "enable.loadbalancer.full.log");
 
     @GlobalConfigValidation
+    @BindResourceConfig({LoadBalancerVO.class})
+    public static GlobalConfig ENABLE_LOADBALANCER_STATS_LOG = new GlobalConfig(CATEGORY, "enable.loadbalancer.stats.log");
+
+    @GlobalConfigValidation
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig ENABLE_VYOS_CMD = new GlobalConfig(CATEGORY, "enable.vyos.cmd");
 }
