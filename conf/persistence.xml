@@ -212,5 +212,6 @@
         <class>org.zstack.header.host.HostHwMonitorStatusVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
+        <class>org.zstack.log.server.LogServerVO</class>
     </persistence-unit>
 </persistence>
