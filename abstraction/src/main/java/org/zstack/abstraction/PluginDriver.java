@@ -1,5 +1,6 @@
 package org.zstack.abstraction;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
@@ -67,6 +68,6 @@ public interface PluginDriver {
      * @return Collection of OptionType
      */
     default Collection<OptionType> optionTypes() {
-        return null;
+        return new ArrayList<>();
     }
 }
