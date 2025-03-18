@@ -56,6 +56,9 @@ public class UpdateOAuthClientAction extends AbstractAction {
     public java.lang.String identityProvider;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String pluginUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String loginType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

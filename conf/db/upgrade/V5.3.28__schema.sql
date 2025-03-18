@@ -49,6 +49,8 @@ DROP PROCEDURE IF EXISTS createThickProvisionVolumeTag;
 
 ALTER TABLE `zstack`.`EncryptionIntegrityVO` MODIFY COLUMN `resourceUuid` varchar(128) NOT NULL;
 
+ALTER TABLE `zstack`.`OAuth2ClientVO` ADD COLUMN `pluginUuid` varchar(32) DEFAULT NULL;
+
 CREATE TABLE `zstack`.`ObservabilityServerOfferingVO`(
     `uuid`                  varchar(32) NOT NULL UNIQUE,
     `managementNetworkUuid` varchar(32) DEFAULT NULL,
