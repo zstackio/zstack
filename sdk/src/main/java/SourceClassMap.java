@@ -456,6 +456,10 @@ public class SourceClassMap {
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
 			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
+			put("org.zstack.log.server.LogCategory", "org.zstack.sdk.LogCategory");
+			put("org.zstack.log.server.LogLevel", "org.zstack.sdk.LogLevel");
+			put("org.zstack.log.server.LogServerInventory", "org.zstack.sdk.LogServerInventory");
+			put("org.zstack.log.server.LogType", "org.zstack.sdk.LogType");
 			put("org.zstack.login.entity.LdapResourceRefInventory", "org.zstack.sdk.LdapResourceRefInventory");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
 			put("org.zstack.loginControl.entity.ControlStrategy", "org.zstack.sdk.ControlStrategy");
@@ -1075,6 +1079,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory");
 			put("org.zstack.sdk.LocalStorageResourceRefInventory", "org.zstack.storage.primary.local.LocalStorageResourceRefInventory");
 			put("org.zstack.sdk.LocateStatus", "org.zstack.storage.device.localRaid.LocateStatus");
+			put("org.zstack.sdk.LogCategory", "org.zstack.log.server.LogCategory");
+			put("org.zstack.sdk.LogLevel", "org.zstack.log.server.LogLevel");
+			put("org.zstack.sdk.LogServerInventory", "org.zstack.log.server.LogServerInventory");
+			put("org.zstack.sdk.LogType", "org.zstack.log.server.LogType");
 			put("org.zstack.sdk.LoginAuthenticationProcedureDesc", "org.zstack.header.identity.login.LoginAuthenticationProcedureDesc");
 			put("org.zstack.sdk.LongJobInventory", "org.zstack.header.longjob.LongJobInventory");
 			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
