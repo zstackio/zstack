@@ -22,6 +22,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ModelServiceRefInventory", "org.zstack.sdk.ModelServiceRefInventory");
 			put("org.zstack.ai.entity.TrainedModelRecordInventory", "org.zstack.sdk.TrainedModelRecordInventory");
 			put("org.zstack.ai.message.MaaSUsage", "org.zstack.sdk.MaaSUsage");
+			put("org.zstack.ai.message.ModelService", "org.zstack.sdk.ModelService");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemInventory", "org.zstack.sdk.AliyunNasFileSystemInventory");
@@ -1112,6 +1113,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ModelEvalServiceInstanceGroupInventory", "org.zstack.ai.entity.ModelEvalServiceInstanceGroupInventory");
 			put("org.zstack.sdk.ModelEvaluationTaskInventory", "org.zstack.ai.entity.ModelEvaluationTaskInventory");
 			put("org.zstack.sdk.ModelInventory", "org.zstack.ai.entity.ModelInventory");
+			put("org.zstack.sdk.ModelService", "org.zstack.ai.message.ModelService");
 			put("org.zstack.sdk.ModelServiceGroupDatasetRefInventory", "org.zstack.ai.entity.ModelServiceGroupDatasetRefInventory");
 			put("org.zstack.sdk.ModelServiceInstanceGroupInventory", "org.zstack.ai.entity.ModelServiceInstanceGroupInventory");
 			put("org.zstack.sdk.ModelServiceInstanceInventory", "org.zstack.ai.entity.ModelServiceInstanceInventory");
