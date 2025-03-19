@@ -38,7 +38,7 @@ public class PrimaryStorageMigrateVmAction extends AbstractAction {
     public boolean withDataVolumes = true;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataVolumes;
+    public java.util.List dataVolumeUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean withSnapshots = true;
