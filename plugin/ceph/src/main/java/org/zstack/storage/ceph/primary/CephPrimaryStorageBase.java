@@ -2550,14 +2550,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     .isExists();
                             boolean hasToken = CephSystemTags.THIRDPARTY_PLATFORM.hasTag(msg.getPrimaryStorageUuid());
                             if (isRootVolume && isBareMetal2Instance && hasToken) {
-                                List<String> monIps = Q.New(CephPrimaryStorageMonVO.class)
-                                        .select(CephPrimaryStorageMonVO_.hostname)
-                                        .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
-                                        .eq(CephPrimaryStorageMonVO_.status, MonStatus.Connected)
-                                        .listValues();
+                                CephPrimaryStorageVO cephPrimaryStorageVO = dbf.findByUuid(msg.getPrimaryStorageUuid(), CephPrimaryStorageVO.class);
+                                String monIp = cephPrimaryStorageVO.getMons()
+                                        .stream()
+                                        .filter(v -> v.getStatus() == MonStatus.Connected)
+                                        .map(CephPrimaryStorageMonVO::getHostname)
+                                        .findAny()
+                                        .orElseThrow(() -> new OperationFailureException(
+                                                operr("all ceph mons of primary storage[uuid:%s] are not in Connected state", cephPrimaryStorageVO.getUuid())
+                                        ));
                                 cmd.token = CephSystemTags.THIRDPARTY_PLATFORM.getTokenByResourceUuid(msg.getPrimaryStorageUuid(),
                                         CephSystemTags.THIRDPARTY_PLATFORM_TOKEN);
-                                cmd.monIp = monIps != null ? monIps.get(0): null;
+                                cmd.monIp = monIp;
                                 cmd.tpTimeout = CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class);
                                 VolumeVO vo = Q.New(VolumeVO.class)
                                         .eq(VolumeVO_.uuid, msg.getVolume().getUuid()).find();
