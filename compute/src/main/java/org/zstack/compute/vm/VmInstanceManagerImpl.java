@@ -2854,6 +2854,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Override
+    public VmDnsBackend getVmDnsBackend(String type) {
+        return vmFactoryManager.getVmDnsBackend(type);
+    }
+
+    @Override
     public ErrorCode handleSystemTag(String vmUuid, List<String> tags) {
         PatternedSystemTag tag = VmSystemTags.DIRECTORY_UUID;
         String token = VmSystemTags.DIRECTORY_UUID_TOKEN;

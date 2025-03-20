@@ -1,21 +1,71 @@
-package org.zstack.compute;
+package org.zstack.compute.vm;
 
 import org.apache.commons.lang.StringUtils;
-import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.vm.VmInstanceType;
 import org.zstack.header.vm.VmNicParam;
 import org.zstack.header.vm.VmNicState;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 
-public class VmNicUtils {
-    public static void validateVmParams(List<VmNicParam> vmNicParams, List<String> l3Uuids, List<String> supportNicDriverTypes, String vmType) {
+public class VmNicParamValidator {
+    private List<VmNicParam> vmNicParams;
+    private List<String> l3Uuids;
+    private String defaultL3Uuid;
+    private List<String> supportNicDriverTypes;
+    private String vmType;
+    private boolean isWindowsVm = false;
+
+    public VmNicParamValidator withVmNicParams(List<VmNicParam> vmNicParams) {
+        this.vmNicParams = vmNicParams;
+        return this;
+    }
+
+    public VmNicParamValidator withVmNicParam(VmNicParam vmNicParam) {
+        this.vmNicParams = Collections.singletonList(vmNicParam);
+        return this;
+    }
+
+    public VmNicParamValidator withL3Uuids(List<String> l3Uuids) {
+        this.l3Uuids = l3Uuids;
+        return this;
+    }
+
+    public VmNicParamValidator withL3Uuid(String l3Uuid) {
+        this.l3Uuids = Collections.singletonList(l3Uuid);
+        return this;
+    }
+
+    public VmNicParamValidator withDefaultL3Uuid(String defaultL3Uuid) {
+        this.defaultL3Uuid = defaultL3Uuid;
+        return this;
+    }
+
+    public VmNicParamValidator withSupportNicDriverTypes(List<String> supportNicDriverTypes) {
+        this.supportNicDriverTypes = supportNicDriverTypes;
+        return this;
+    }
+
+    public VmNicParamValidator withVmType(String vmType) {
+        this.vmType = vmType;
+        return this;
+    }
+
+    public VmNicParamValidator isWindowsVm(boolean isWindowsVm) {
+        this.isWindowsVm = isWindowsVm;
+        return this;
+    }
+
+    public void validate() {
         if (CollectionUtils.isEmpty(vmNicParams)) {
             return;
         }
@@ -33,8 +83,8 @@ public class VmNicUtils {
         }
 
         for (VmNicParam nic : vmNicParams) {
-            String l3 = nic.getL3NetworkUuid();
-            if (StringUtils.isEmpty(l3)) {
+            String l3Uuid = nic.getL3NetworkUuid();
+            if (StringUtils.isEmpty(l3Uuid)) {
                 throw new ApiMessageInterceptionException(argerr("l3NetworkUuid of vm nic can not be null"));
             }
             if (!CollectionUtils.isEmpty(l3Uuids) && !l3Uuids.contains(nic.getL3NetworkUuid())) {
@@ -76,6 +126,50 @@ public class VmNicUtils {
 
             if (!nic.isSriovEnabled() && nic.getVfParentUuid() != null) {
                 throw new ApiMessageInterceptionException(argerr("vm nic with vf parent uuid[%s] should be SR-IOV enabled", nic.getVfParentUuid()));
+            }
+
+            if (!CollectionUtils.isEmpty(nic.getDns6List())) {
+                if (isWindowsVm) {
+                    if (nic.getDns6List().size() > 2) {
+                        throw new ApiMessageInterceptionException(argerr("size of dns6 list for Windows vm should not exceed 2"));
+                    }
+
+                    for (String dns: nic.getDns6List()) {
+                        if (!IPv6NetworkUtils.isValidIpv6(dns)) {
+                            throw new ApiMessageInterceptionException(argerr("dns6[%s] should be ipv6 address", dns));
+                        }
+                    }
+                } else {
+                    nic.getDnsList().addAll(nic.getDns6List());
+                }
+            }
+
+            if (!CollectionUtils.isEmpty(nic.getDnsList())) {
+                if (isWindowsVm) {
+                    if (nic.getDnsList().size() > 2) {
+                        throw new ApiMessageInterceptionException(argerr("size of dns list for Windows vm should not exceed 2"));
+                    }
+
+                    for (String dns: nic.getDnsList()) {
+                        if (!NetworkUtils.isIpv4Address(dns)) {
+                            throw new ApiMessageInterceptionException(argerr("dns[%s] should be ipv4 address", dns));
+                        }
+                    }
+                } else {
+                    if (!Objects.equals(l3Uuid, defaultL3Uuid)) {
+                        throw new ApiMessageInterceptionException(argerr("dns should be set to the default l3 network"));
+                    }
+
+                    if (nic.getDnsList().size() > 3) {
+                        throw new ApiMessageInterceptionException(argerr("total size of dns list should not exceed 3"));
+                    }
+
+                    for (String dns: nic.getDnsList()) {
+                        if (!NetworkUtils.isIpAddress(dns)) {
+                            throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", dns));
+                        }
+                    }
+                }
             }
         }
     }

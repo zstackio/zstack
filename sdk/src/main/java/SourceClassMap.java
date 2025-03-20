@@ -329,6 +329,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.VirtualizerInfo", "org.zstack.sdk.VirtualizerInfo");
 			put("org.zstack.header.vm.VirtualizerInfoInventory", "org.zstack.sdk.VirtualizerInfoInventory");
 			put("org.zstack.header.vm.VmCapabilities", "org.zstack.sdk.VmCapabilities");
+			put("org.zstack.header.vm.VmDnsInventory", "org.zstack.sdk.VmDnsInventory");
 			put("org.zstack.header.vm.VmInstanceInventory", "org.zstack.sdk.VmInstanceInventory");
 			put("org.zstack.header.vm.VmNicInventory", "org.zstack.sdk.VmNicInventory");
 			put("org.zstack.header.vm.VmPriorityConfigInventory", "org.zstack.sdk.VmPriorityConfigInventory");
@@ -1231,6 +1232,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmCPUSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmCPUSpendingDetails");
 			put("org.zstack.sdk.VmCapabilities", "org.zstack.header.vm.VmCapabilities");
 			put("org.zstack.sdk.VmCdRomInventory", "org.zstack.header.vm.cdrom.VmCdRomInventory");
+			put("org.zstack.sdk.VmDnsInventory", "org.zstack.header.vm.VmDnsInventory");
 			put("org.zstack.sdk.VmExternalBackupInfo", "org.zstack.externalbackup.VmExternalBackupInfo");
 			put("org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory", "org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory");
 			put("org.zstack.sdk.VmInstanceDeviceAddressGroupInventory", "org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory");

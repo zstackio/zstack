@@ -169,7 +169,7 @@ public class VmAllocateNicFlow implements Flow {
                             nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
-                            dbf.persist(vo);
+                            persist(vo);
                         }
                         if (!nicNicIpAddressInfo.ipv4Address.isEmpty()) {
                             UsedIpVO vo = new UsedIpVO();
@@ -189,11 +189,11 @@ public class VmAllocateNicFlow implements Flow {
                             nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
-                            dbf.persist(vo);
+                            persist(vo);
                         }
                     }
                     nics.add(nic);
-                    nicVO = dbf.updateAndRefresh(nicVO);
+                    nicVO = merge(nicVO);
                     addVmNicConfig(nicVO, spec, nicSpec);
                 }
             }.execute();
@@ -228,6 +228,19 @@ public class VmAllocateNicFlow implements Flow {
             ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
             Integer queues = vmNicParam.getMultiQueueNum();
             multiQueues.updateValue(vmNicVO.getUuid(), queues.toString());
+        }
+
+        boolean isWindowsVm = ImagePlatform.Windows.toString().equals(vmSpec.getVmInventory().getPlatform());
+        VmDnsBackend bkd = vmMgr.getVmDnsBackend(vmSpec.getVmInventory().getType());
+        if (isWindowsVm) {
+            bkd.setNicDns(vmSpec.getVmInventory().getUuid(), vmNicVO.getUuid(), vmNicParam.getDnsList(), IPv6Constants.IPv4);
+            bkd.setNicDns(vmSpec.getVmInventory().getUuid(), vmNicVO.getUuid(), vmNicParam.getDns6List(), IPv6Constants.IPv6);
+        } else {
+            List<String> dnsList = vmNicParam.getDnsList() == null ? new ArrayList<>() : vmNicParam.getDnsList();
+            List<String> dns6List = vmNicParam.getDns6List() == null ? new ArrayList<>() : vmNicParam.getDns6List();
+            dnsList.addAll(dns6List);
+            // assign dns list to null to skip setting
+            bkd.setVmDns(vmSpec.getVmInventory().getUuid(), dnsList.isEmpty() ? null : dnsList);
         }
     }
 

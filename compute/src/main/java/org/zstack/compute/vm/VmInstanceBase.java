@@ -65,6 +65,8 @@ import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.network.service.DnsUtils;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
@@ -135,6 +137,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     private TagManager tagMgr;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -3242,6 +3246,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmStaticIpMsg) msg);
         } else if (msg instanceof APIDeleteVmStaticIpMsg) {
             handle((APIDeleteVmStaticIpMsg) msg);
+        } else if (msg instanceof APIGetVmDnsMsg) {
+            handle((APIGetVmDnsMsg) msg);
+        } else if (msg instanceof APISetVmDnsMsg) {
+            handle((APISetVmDnsMsg) msg);
         } else if (msg instanceof APIGetVmHostnameMsg) {
             handle((APIGetVmHostnameMsg) msg);
         } else if (msg instanceof APIGetVmStartingCandidateClustersHostsMsg) {
@@ -3933,6 +3941,110 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    private void handle(final APIGetVmDnsMsg msg) {
+        APIGetVmDnsReply reply = new APIGetVmDnsReply();
+
+        boolean isWindowsVm = ImagePlatform.Windows.toString().equals(getSelf().getPlatform());
+        if (isWindowsVm) {
+            String l3Uuid = self.getVmNics().stream()
+                    .filter(nic -> nic.getUuid().equals(msg.getVmNicUuid()))
+                    .findFirst().orElse(new VmNicVO())
+                    .getL3NetworkUuid();
+            reply.setDnsList(nwServiceMgr.getVmNicDns(msg.getVmNicUuid(), msg.getIpVersion(), l3Uuid));
+            reply.setVmDnsList(VmDnsInventory.valueOf1(DnsUtils.getVmDnsVOList(msg.getVmNicUuid(), msg.getIpVersion())));
+        } else {
+            reply.setDnsList(nwServiceMgr.getVmDns(msg.getVmInstanceUuid(), self.getDefaultL3NetworkUuid()));
+            reply.setVmDnsList(VmDnsInventory.valueOf1(DnsUtils.getVmDnsVOList(msg.getVmInstanceUuid())));
+        }
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final APISetVmDnsMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                APISetVmDnsEvent evt = new APISetVmDnsEvent(msg.getId());
+                setVmDns(msg, new ReturnValueCompletion<List<VmDnsInventory>>(evt) {
+                    @Override
+                    public void success(List<VmDnsInventory> returnValue) {
+                        evt.setInventories(returnValue);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "set-vm-dns";
+            }
+        });
+    }
+
+    private void setVmDns(APISetVmDnsMsg msg, ReturnValueCompletion<List<VmDnsInventory>> completion) {
+        boolean isWindowsVm = ImagePlatform.Windows.toString().equals(getSelf().getPlatform());
+
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("set-vm-dns-for-%s", msg.getVmInstanceUuid()));
+        chain.allowEmptyFlow();
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "set-vm-dns-to-backend";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VmDnsBackend bkd = vmMgr.getVmDnsBackend(getSelf().getType());
+                if (isWindowsVm) {
+                    bkd.setNicDns(msg.getVmInstanceUuid(), msg.getVmNicUuid(), msg.getDnsList(), msg.getIpVersion());
+                } else {
+                    bkd.setVmDns(msg.getVmInstanceUuid(), msg.getDnsList());
+                }
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "set-sync-ports-tag";
+
+            @Override
+            public boolean skip(Map data) {
+                return self.getState() == VmInstanceState.Running;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                vmPortsHelper.setVmSyncPorts(msg.getVmInstanceUuid());
+                trigger.next();
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                List<VmDnsVO> vos;
+                if (isWindowsVm) {
+                    vos = Q.New(VmDnsVO.class).eq(VmDnsVO_.vmNicUuid, msg.getVmNicUuid()).list();
+                } else {
+                    vos = Q.New(VmDnsVO.class).eq(VmDnsVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+                }
+                completion.success(VmDnsInventory.valueOf1(vos));
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void handle(APISetVmBootModeMsg msg) {

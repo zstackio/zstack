@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * Created by MaJin on 2020/10/10.
  */
 public class NewVmInstanceMsgBuilder {
-    private static List<VmNicSpec> getVmNicSpecsFromNewVmInstanceMsg(NewVmInstanceMessage msg) {
+    public static List<VmNicSpec> getVmNicSpecsFromNewVmInstanceMsg(NewVmInstanceMessage msg) {
         if (CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
             return Collections.EMPTY_LIST;
         }
