@@ -139,6 +139,12 @@
         <name>org.zstack.header.vm.APISetVmStaticIpMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIGetVmDnsMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APISetVmDnsMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIDeleteVmStaticIpMsg</name>
     </message>
     <message>

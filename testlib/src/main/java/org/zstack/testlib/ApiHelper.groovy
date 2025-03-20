@@ -21914,6 +21914,33 @@ abstract class ApiHelper {
     }
 
 
+    def getVmDns(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmDnsAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVmDnsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getVmEmulatorPinning(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmEmulatorPinningAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmEmulatorPinningAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -34240,6 +34267,33 @@ abstract class ApiHelper {
 
     def setVmConsolePassword(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmConsolePasswordAction.class) Closure c) {
         def a = new org.zstack.sdk.SetVmConsolePasswordAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def setVmDns(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmDnsAction.class) Closure c) {
+        def a = new org.zstack.sdk.SetVmDnsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

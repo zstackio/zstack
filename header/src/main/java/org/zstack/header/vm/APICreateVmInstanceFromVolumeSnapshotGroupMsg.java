@@ -10,6 +10,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.other.APIAuditor;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
@@ -106,6 +107,9 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
 
     @APIParam(required = false)
     private Map<String, List<String>> dataVolumeSystemTags;
+
+    @APINoSee
+    private String platform;
 
     public String getName() {
         return name;
@@ -270,5 +274,14 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
 
     public void setDataVolumeSystemTags(Map<String, List<String>> dataVolumeSystemTags) {
         this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
+
+    @Override
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
     }
 }

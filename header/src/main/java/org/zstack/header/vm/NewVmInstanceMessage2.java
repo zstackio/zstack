@@ -12,6 +12,7 @@ public interface NewVmInstanceMessage2 extends NewVmInstanceMessage {
     String getHostUuid();
     String getStrategy();
     String getInstanceOfferingUuid();
+    String getPlatform();
 
     void setCpuNum(Integer cpuNum);
     void setMemorySize(Long memorySize);
