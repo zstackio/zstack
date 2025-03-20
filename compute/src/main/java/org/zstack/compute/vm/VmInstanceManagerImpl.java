@@ -172,7 +172,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     protected EventFacade evtf;
 
     private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
-    private final static VmPortsHelper vmPortsHelper = new VmPortsHelper();
+    private final static VmConfigSyncHelper vmConfigSyncHelper = new VmConfigSyncHelper();
 
     @Override
     public void handleMessage(Message msg) {
@@ -1086,7 +1086,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             creator.create();
         }
 
-        vmPortsHelper.setVmSyncPorts(finalVo.getUuid());
+        vmConfigSyncHelper.setVmSyncPorts(finalVo.getUuid());
     }
 
     private List<ErrorCode> extEmitterHandleSystemTag(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, VmInstanceVO finalVo) {
@@ -2869,6 +2869,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
     @Override
     public VmNicQosConfigBackend getVmNicQosConfigBackend(String type) {
         return vmFactoryManager.getVmNicQosConfigBackend(type);
+    }
+
+    @Override
+    public VmDnsBackend getVmDnsBackend(String type) {
+        return vmFactoryManager.getVmDnsBackend(type);
     }
 
     @Override

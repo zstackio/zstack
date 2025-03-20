@@ -915,6 +915,9 @@ public class NetworkUtils {
 
     public static final String NETWORK_CFG_EMPTY = "none";
 
+    public static final String PROTO_DHCP = "dhcp";
+    public static final String PROTO_STATIC = "static";
+
     public static final String DEFAULT_IPV4_PREFIX = "32";
     public static final String DEFAULT_IPV6_PREFIX = "128";
     public static final String DEFAULT_IPV4_PREFIX_SPLIT = "/";

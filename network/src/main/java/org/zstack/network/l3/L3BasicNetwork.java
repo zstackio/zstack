@@ -731,6 +731,8 @@ public class L3BasicNetwork implements L3Network {
                     });
                 }
 
+                flow(getAfterDnsUpdatedFlow(NetworkUtils.getIpversion(msg.getDns())));
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -807,6 +809,8 @@ public class L3BasicNetwork implements L3Network {
                     });
                 }
 
+                flow(getAfterDnsUpdatedFlow(NetworkUtils.getIpversion(msg.getDns())));
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -827,6 +831,20 @@ public class L3BasicNetwork implements L3Network {
             }
         }).start();
 	}
+
+    protected NoRollbackFlow getAfterDnsUpdatedFlow(Integer ipVersion) {
+        return new NoRollbackFlow() {
+            String __name__ = "after-dns-updated";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                for (L3NetworkDnsUpdateExtensionPoint ext : pluginRgty.getExtensionList(L3NetworkDnsUpdateExtensionPoint.class)) {
+                    ext.afterDnsUpdated(self.getUuid(), ipVersion);
+                }
+                trigger.next();
+            }
+        };
+    }
 
 	private void handle(final AttachNetworkServiceToL3Msg msg) {
         MessageReply reply = new MessageReply();
