@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteCdpTaskAction extends AbstractAction {
+public class DeleteCbtTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteCdpTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteCdpTaskResult value;
+        public org.zstack.sdk.DeleteCbtTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +66,8 @@ public class DeleteCdpTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteCdpTaskResult value = res.getResult(org.zstack.sdk.DeleteCdpTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteCdpTaskResult() : value; 
+        org.zstack.sdk.DeleteCbtTaskResult value = res.getResult(org.zstack.sdk.DeleteCbtTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteCbtTaskResult() : value; 
 
         return ret;
     }
@@ -97,7 +97,7 @@ public class DeleteCdpTaskAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/cdp-task/{uuid}";
+        info.path = "/cbt-task/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
