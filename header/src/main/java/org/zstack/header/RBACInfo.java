@@ -31,5 +31,20 @@ public class RBACInfo implements RBACDescription {
                 .uuid(AccountConstant.LEGACY_ROLE_UUID)
                 .actions("org.zstack.header.**")
                 .build();
+
+        roleBuilder()
+                .name("sod-system-administrator")
+                .uuid(AccountConstant.SOD_SYSTEM_ADMIN_ROLE_UUID)
+                .build();
+
+        roleBuilder()
+                .name("sod-security-administrator")
+                .uuid(AccountConstant.SOD_SECURITY_ADMIN_ROLE_UUID)
+                .build();
+
+        roleBuilder()
+                .name("sod-auditor")
+                .uuid(AccountConstant.SOD_AUDITOR_ROLE_UUID)
+                .build();
     }
 }
