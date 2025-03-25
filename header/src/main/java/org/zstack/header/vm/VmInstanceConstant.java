@@ -87,4 +87,7 @@ public interface VmInstanceConstant {
 
     String EMPTY_CDROM = "empty";
     String NONE_CDROM = "none";
+
+    String MEMORY_ACCESS_MODE_SHARED = "shared";
+    String MEMORY_ACCESS_MODE_PRIVATE = "private";
 }
