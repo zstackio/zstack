@@ -1016,7 +1016,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIAddImageMsg.class)
                 .addCounterQuota(ImageQuotaConstant.IMAGE_NUM)
-                .addMessageRequiredQuotaHandler(ImageQuotaConstant.IMAGE_SIZE, (msg) -> new ImageQuotaUtil().getLocalImageSizeOnBackupStorage(msg)));
+                .addMessageRequiredQuotaHandler(ImageQuotaConstant.IMAGE_SIZE, (msg) -> new ImageQuotaUtil().getImageActualSizeOnBs(msg.getUrl().trim(), msg.getBackupStorageUuids())));
         quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIRecoverImageMsg.class)
                 .addMessageRequiredQuotaHandler(ImageQuotaConstant.IMAGE_SIZE, (msg) -> {
                     ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getImageUuid());
@@ -1129,6 +1129,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         if (msgData.getPlatform() != null) {
             vo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
         }
+
+        long asize = new ImageQuotaUtil().getImageActualSizeOnBs(msgData.getUrl().trim(), msgData.getBackupStorageUuids());
+        vo.setActualSize(asize);
 
         ImageFactory factory = getImageFacotry(ImageType.valueOf(imageType));
         final ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
