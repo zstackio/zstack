@@ -1,0 +1,1 @@
+ALTER TABLE `zstack`.`OAuth2ClientVO` ADD COLUMN `pluginUuid` varchar(32) DEFAULT NULL;
