@@ -32,3 +32,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PluginSecretResourcePoolVO` (
     CONSTRAINT fkPluginSecretResourcePoolVOSecretResourcePoolVO FOREIGN KEY (uuid) REFERENCES SecretResourcePoolVO (uuid) ON DELETE CASCADE,
     CONSTRAINT fkPluginSecretResourcePoolVOPluginDriverVO FOREIGN KEY (pluginDriverUuid) REFERENCES PluginDriverVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+update EventSubscriptionVO set name='Cryptographic Resource Status Abnormal' where uuid='eecc7b576c05391bb01fd956964d3ba4';
+update SystemTagVO set tag='name::cn::密码资源状态异常' where resourceUuid='eecc7b576c05391bb01fd956964d3ba4';
