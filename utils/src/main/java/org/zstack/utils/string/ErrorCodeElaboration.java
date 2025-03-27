@@ -1,5 +1,7 @@
 package org.zstack.utils.string;
 
+import java.util.Locale;
+
 /**
  * Created by mingjian.deng on 2018/11/28.
  */
@@ -17,29 +19,47 @@ public class ErrorCodeElaboration {
     public ErrorCodeElaboration() {
     }
 
-    public ErrorCodeElaboration(ErrorCodeElaboration other, Object...args) {
-        if (args != null) {
-            this.message_en = String.format(other.message_en, args);
-            this.message_cn = String.format(other.message_cn, args);
-        } else {
-            this.message_en = other.message_en;
-            this.message_cn = other.message_cn;
-        }
-        this.distance = other.distance;
-        this.method = other.method;
-        this.code = other.code;
+    public static ErrorCodeElaboration clone(ErrorCodeElaboration template) {
+        ErrorCodeElaboration elaboration = new ErrorCodeElaboration();
+        elaboration.category = template.category;
+        elaboration.code = template.code;
+        elaboration.regex = template.regex;
+        elaboration.message_en = template.message_en;
+        elaboration.message_cn = template.message_cn;
+        elaboration.source = template.source;
+        elaboration.distance = template.distance;
+        elaboration.formatSrcError = template.formatSrcError;
+        elaboration.method = template.method;
+        return elaboration;
     }
 
-    public ErrorCodeElaboration(ErrorCodeElaboration other) {
-        category = other.category;
-        code = other.code;
-        regex = other.regex;
-        message_en = other.message_en;
-        message_cn = other.message_cn;
-        source = other.source;
-        distance = other.distance;
-        formatSrcError = other.formatSrcError;
-        method = other.method;
+    public static ErrorCodeElaboration cloneSimple(ErrorCodeElaboration template) {
+        ErrorCodeElaboration elaboration = new ErrorCodeElaboration();
+        elaboration.message_en = template.message_en;
+        elaboration.message_cn = template.message_cn;
+        elaboration.code = template.code;
+        elaboration.distance = template.distance;
+        elaboration.method = template.method;
+        return elaboration;
+    }
+
+    public static ErrorCodeElaboration cloneSimple(ErrorCodeElaboration template, Object...args) {
+        ErrorCodeElaboration elaboration = new ErrorCodeElaboration();
+        elaboration.message_en = args == null ? template.message_en : String.format(template.message_en, args);
+        if (template.message_cn != null) {
+            elaboration.message_cn = args == null ? template.message_cn : String.format(template.message_cn, args);
+        }
+        elaboration.code = template.code;
+        elaboration.distance = template.distance;
+        elaboration.method = template.method;
+        return elaboration;
+    }
+
+    public ErrorCodeElaboration removeCnMessageIfLocaleIsNotMatch(Locale locale) {
+        if (locale != null && !Locale.SIMPLIFIED_CHINESE.equals(locale)) {
+            message_cn = null;
+        }
+        return this;
     }
 
     public ErrorCodeElaboration addElaborationMessage(ErrorCodeElaboration other) {

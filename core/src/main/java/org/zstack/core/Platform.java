@@ -1026,11 +1026,13 @@ public class Platform {
         // error from other component directly, so we need to check if the args is
         // matched with the regex at first
         if (args != null && args.length == 1 && StringSimilarity.isRegexMatched(ela.getRegex(), String.valueOf(args[0]))) {
-            result.setMessages(new ErrorCodeElaboration(ela));
+            result.setMessages(ErrorCodeElaboration.clone(ela)
+                    .removeCnMessageIfLocaleIsNotMatch(locale));
             String formatError = String.format(prefix, args[0]);
             result.setElaboration(StringSimilarity.formatElaboration(formatError));
         } else {
-            result.setMessages(new ErrorCodeElaboration(ela, args));
+            result.setMessages(ErrorCodeElaboration.cloneSimple(ela, args)
+                    .removeCnMessageIfLocaleIsNotMatch(locale));
             result.setElaboration(StringSimilarity.formatElaboration(String.format(prefix, msg), args));
         }
 

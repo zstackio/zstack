@@ -86,10 +86,14 @@ class ElaborationCase extends SubCase {
         def err = operr("certificate has expired or is not yet valid") as ErrorCode
         assert err.elaboration != null
         assert err.elaboration.trim() == "Error message: The current system time has expired for ImageStore certificate. Possible reason: ImageStore server system time or certificate is modified."
+        assert err.messages.message_en != null
+        assert err.messages.message_cn == null
 
         err = operr("The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.", Platform.uuid, "Rebooting") as ErrorCode
         assert err.elaboration != null
         assert err.elaboration.trim() == "Error message: Only VMs with the status [Running, Stopped] support CPU/memory update. Current status: Rebooting."
+        assert err.messages.message_en != null
+        assert err.messages.message_cn == null
 
         err = operr("test for missed error") as ErrorCode
         assert err.elaboration == null
@@ -162,6 +166,8 @@ class ElaborationCase extends SubCase {
     }
 
     void testErrorList() {
+        assert Platform.locale.toString() == "zh_CN"
+
         def list = new ArrayList<ErrorCode>()
         def err1 = operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", Platform.uuid, "host-1", "Maintenance") as ErrorCode
         def err2 = operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", Platform.uuid, "host-2", "Maintenance") as ErrorCode

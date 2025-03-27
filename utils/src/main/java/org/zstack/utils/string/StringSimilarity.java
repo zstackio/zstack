@@ -371,7 +371,7 @@ public class StringSimilarity {
         return elaborations.stream()
                 .filter(ela -> ElaborationSearchMethod.distance == ela.getMethod())
                 .map(ela -> {
-                    ErrorCodeElaboration result = new ErrorCodeElaboration(ela);
+                    ErrorCodeElaboration result = ErrorCodeElaboration.clone(ela);
                     result.setDistance(getSimilar(ela.getRegex(), sub));
                     return result;
                 })
