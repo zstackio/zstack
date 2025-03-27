@@ -40,6 +40,24 @@ doc {
 					since "0.6"
 				}
 				column {
+					name "direction"
+					enclosedIn ""
+					desc "数据合并方向。pull：向前合并；commit：向后合并；auto：自动选择最优合并方向"
+					location "body"
+					type "String"
+					optional true
+					since "4.10.6"
+				}
+				column {
+					name "scope"
+					enclosedIn ""
+					desc "数据合并方式。single：仅合并单个快照；chain：合并整个快照链；auto：自动判断最佳合并范围"
+					location "body"
+					type "String"
+					optional true
+					since "4.10.6"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
