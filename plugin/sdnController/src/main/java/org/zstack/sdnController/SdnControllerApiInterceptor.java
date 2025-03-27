@@ -2,6 +2,7 @@ package org.zstack.sdnController;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
@@ -14,8 +15,14 @@ import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
 import org.zstack.header.network.l2.APICreateL2NoVlanNetworkMsg;
 import org.zstack.header.network.l2.APICreateL2VlanNetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
+import org.zstack.network.l3.L3NetworkHelper;
+import org.zstack.network.securitygroup.APIAddVmNicToSecurityGroupMsg;
+import org.zstack.network.securitygroup.APIAttachSecurityGroupToL3NetworkMsg;
+import org.zstack.network.securitygroup.SecurityGroupHelper;
 import org.zstack.sdnController.header.*;
+import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -47,8 +54,8 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
 
     public List<Class> getMessageClassToIntercept() {
         List<Class> ret = new ArrayList<>();
-        ret.add(APIAddSdnControllerMsg.class);
-        ret.add(APIRemoveSdnControllerMsg.class);
+        ret.add(APIAttachSecurityGroupToL3NetworkMsg.class);
+        ret.add(APIAddVmNicToSecurityGroupMsg.class);
 
         return ret;
     }
@@ -66,11 +73,39 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APISdnControllerRemoveHostMsg)msg);
         } else if (msg instanceof APISdnControllerChangeHostMsg) {
             validate((APISdnControllerChangeHostMsg)msg);
+        } else if (msg instanceof APIAttachSecurityGroupToL3NetworkMsg) {
+            validate((APIAttachSecurityGroupToL3NetworkMsg)msg);
+        } else if (msg instanceof APIAddVmNicToSecurityGroupMsg) {
+            validate((APIAddVmNicToSecurityGroupMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIAddVmNicToSecurityGroupMsg msg) {
+        String sgControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
+        for (String uuid : msg.getVmNicUuids()) {
+            VmNicVO nicVO = dbf.findByUuid(uuid, VmNicVO.class);
+            String nicControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(nicVO.getL3NetworkUuid());
+            if (!StringUtils.equals(sgControllerUuid, nicControllerUuid)) {
+                throw new ApiMessageInterceptionException(argerr("could not add vmnic to securityGroup, " +
+                                "because they have different sdn controller[nic controller uuid:%s, security group controller uuid:%s]",
+                        nicControllerUuid, sgControllerUuid));
+            }
+        }
+    }
+
+
+    private void validate(APIAttachSecurityGroupToL3NetworkMsg msg) {
+        String l3SdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
+        String sgSdnControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
+        if (!StringUtils.equals(l3SdnControllerUuid, sgSdnControllerUuid)) {
+            throw new ApiMessageInterceptionException(argerr("could not attach l3 network to securityGroup, " +
+                    "because they have different sdn controller[l3 controller uuid:%s, security group controller uuid:%s]",
+                    l3SdnControllerUuid, sgSdnControllerUuid));
+        }
     }
 
     private void validate(APIAddSdnControllerMsg msg) {

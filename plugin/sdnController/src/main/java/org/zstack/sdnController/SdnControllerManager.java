@@ -7,6 +7,5 @@ public interface SdnControllerManager {
     SdnControllerFactory getSdnControllerFactory(String type);
     SdnController getSdnController(SdnControllerVO sdnControllerVO);
     SdnControllerL2 getSdnControllerL2(SdnControllerVO sdnControllerVO);
-
     FlowChain getSyncChain(SdnControllerVO sdnControllerVO);
 }

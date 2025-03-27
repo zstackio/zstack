@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
@@ -40,7 +41,7 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
     @Autowired
     private CloudBus bus;
 
-    private static String NAME = VmNicSecurityGroupRefVO.class.getSimpleName();
+    private static String NAME = SecurityGroupVO.class.getSimpleName();
 
     @Override
     public void asyncCascade(CascadeAction action, Completion completion) {
@@ -64,103 +65,57 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
         completion.success();
     }
 
-    private void handleSecurityGroupRefDeletion(CascadeAction action, final Completion completion) {
-        List<VmNicSecurityGroupRefInventory> refs = refFromAction(action);
-        if (refs.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        Map<String, List<String>> map = new HashMap<String, List<String>>();
-        for (VmNicSecurityGroupRefInventory ref : refs) {
-            List<String> nicUuids = map.get(ref.getSecurityGroupUuid());
-            if (nicUuids == null) {
-                nicUuids = new ArrayList<String>();
-                map.put(ref.getSecurityGroupUuid(), nicUuids);
-            }
-            nicUuids.add(ref.getVmNicUuid());
-        }
-
-        List<RemoveVmNicFromSecurityGroupMsg> msgs = new ArrayList<RemoveVmNicFromSecurityGroupMsg>();
-        for (Map.Entry<String, List<String>> e : map.entrySet()) {
-            RemoveVmNicFromSecurityGroupMsg msg = new RemoveVmNicFromSecurityGroupMsg();
-            msg.setSecurityGroupUuid(e.getKey());
-            msg.setVmNicUuids(e.getValue());
-            bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, e.getKey());
-            msgs.add(msg);
-        }
-
-        bus.send(msgs, new CloudBusListCallBack(completion) {
-            @Override
-            public void run(List<MessageReply> replies) {
-                for (MessageReply reply : replies) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(String.format("failed to remove vm nic from some security group for some destroyed vm," +
-                                "no worry, security group will catch it up later. %s", reply.getError()));
-                    }
-                }
-
-                completion.success();
-            }
-        });
-    }
-
     private void handleDeletion(CascadeAction action, final Completion completion) {
-        if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            handleSecurityGroupRefDeletion(action, completion);
-        } else {
-            handleSecurityGroupDeletion(action, completion);
-        }
-
-    }
-
-    private void handleSecurityGroupDeletion(CascadeAction action, final Completion completion) {
-        List<AccountInventory> accounts = action.getParentIssuerContext();
-        List<String> accountUuids = accounts.stream().map(AccountInventory::getUuid).collect(Collectors.toList());
-
-        List<SecurityGroupDeletionMsg> msgs = new SQLBatchWithReturn<List<SecurityGroupDeletionMsg>>() {
-            @Override
-            protected List<SecurityGroupDeletionMsg> scripts() {
-                List<String> uuids = q(AccountResourceRefVO.class)
-                        .select(AccountResourceRefVO_.resourceUuid)
-                        .eq(AccountResourceRefVO_.resourceType, SecurityGroupVO.class.getSimpleName())
-                        .in(AccountResourceRefVO_.ownerAccountUuid, accountUuids)
-                        .listValues();
-
-                if (uuids.isEmpty()) {
-                    return null;
-                }
-
-                return uuids.stream().map(auuid -> {
-                    SecurityGroupDeletionMsg msg = new SecurityGroupDeletionMsg();
-                    msg.setUuid(auuid);
-                    bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, auuid);
-                    return msg;
-                }).collect(Collectors.toList());
-            }
-        }.execute();
-
-
-        if (msgs == null) {
+        List<SecurityGroupInventory> sgInv = securityGroupUuidsFromAction(action);
+        if (sgInv == null || sgInv.isEmpty()) {
             completion.success();
             return;
         }
 
-        new While<>(msgs).all((msg, com) -> bus.send(msg, new CloudBusCallBack(com) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    logger.warn(String.format("failed to delete scheduler[uuid:%s], %s", msg.getUuid(), reply.getError()));
-                }
+        new While<>(sgInv).each((inv, wcomp) -> {
+            SecurityGroupDeletionMsg msg = new SecurityGroupDeletionMsg();
+            msg.setUuid(inv.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, inv.getUuid());
+            bus.send(msg, new CloudBusCallBack(wcomp) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(String.format("failed to delete security group[uuid:%s], %s", msg.getUuid(), reply.getError()));
+                    }
 
-                com.done();
-            }
-        })).run(new WhileDoneCompletion(completion) {
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 completion.success();
             }
         });
+    }
+
+    private List<SecurityGroupInventory> securityGroupUuidsFromAction(CascadeAction action) {
+        List<SecurityGroupInventory> ret = null;
+        if (NAME.equals(action.getParentIssuer())) {
+            ret = action.getParentIssuerContext();
+        } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            List<AccountInventory> accounts = action.getParentIssuerContext();
+            List<String> accountUuids = accounts.stream().map(AccountInventory::getUuid).collect(Collectors.toList());
+
+            List<String> sgUuids= Q.New(AccountResourceRefVO.class)
+                    .select(AccountResourceRefVO_.resourceUuid)
+                    .eq(AccountResourceRefVO_.resourceType, SecurityGroupVO.class.getSimpleName())
+                    .in(AccountResourceRefVO_.ownerAccountUuid, accountUuids)
+                    .listValues();
+            if (sgUuids.isEmpty()) {
+                return null;
+            }
+
+            List<SecurityGroupVO> sgVos = Q.New(SecurityGroupVO.class)
+                    .in(SecurityGroupVO_.uuid, sgUuids).list();
+            ret = SecurityGroupInventory.valueOf(sgVos);
+        }
+        return ret;
     }
 
     @Override
@@ -173,44 +128,16 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
         return NAME;
     }
 
-    private List<VmNicSecurityGroupRefInventory> refFromAction(CascadeAction action) {
-        List<VmDeletionStruct> vms = action.getParentIssuerContext();
-        List<String> nicUuids = new ArrayList<String>();
-        for (VmDeletionStruct vm : vms) {
-            nicUuids.addAll(CollectionUtils.transformToList(vm.getInventory().getVmNics(), new Function<String, VmNicInventory>() {
-                @Override
-                public String call(VmNicInventory arg) {
-                    return arg.getUuid();
-                }
-            }));
-        }
-
-
-        if (nicUuids.isEmpty()) {
-            return new ArrayList<VmNicSecurityGroupRefInventory>();
-        }
-
-        SimpleQuery<VmNicSecurityGroupRefVO> q = dbf.createQuery(VmNicSecurityGroupRefVO.class);
-        q.add(VmNicSecurityGroupRefVO_.vmNicUuid, SimpleQuery.Op.IN, nicUuids);
-        List<VmNicSecurityGroupRefVO> vos = q.list();
-        return VmNicSecurityGroupRefInventory.valueOf(vos);
-    }
-
     @Override
     public CascadeAction createActionForChildResource(CascadeAction action) {
-        if (CascadeConstant.DELETION_CLEANUP_CODE.equals(action.getActionCode())) {
-            return null;
+        if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
+            List<SecurityGroupInventory> sgInvs = securityGroupUuidsFromAction(action);
+            if (sgInvs != null && !sgInvs.isEmpty()) {
+                return action.copy().setParentIssuer(NAME).setParentIssuerContext(sgInvs);
+            }
+            return action;
         }
 
-        if (!action.getParentIssuer().equals(VmInstanceVO.class.getSimpleName())) {
-            return null;
-        }
-
-        List<VmNicSecurityGroupRefInventory> refs = refFromAction(action);
-        if (refs.isEmpty()) {
-            return null;
-        }
-
-        return action.copy().setParentIssuer(NAME).setParentIssuerContext(refs);
+        return null;
     }
 }

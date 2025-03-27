@@ -1,5 +1,6 @@
 package org.zstack.sdnController.h3cVcfc;
 
+import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerFactory;
 import org.zstack.sdnController.SdnControllerL2;
@@ -22,5 +23,10 @@ public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
     @Override
     public SdnControllerL2 getSdnControllerL2(SdnControllerVO vo) {
         return new H3cVcfcSdnController(vo);
+    }
+
+    @Override
+    public SecurityGroupSdnBackend getSdnControllerSecurityGroup(SdnControllerVO vo) {
+        return null;
     }
 }

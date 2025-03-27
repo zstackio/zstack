@@ -5,6 +5,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
+import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -25,7 +26,7 @@ public class SdnControllerDhcpExtensionImpl implements IpRangeBackendExtensionPo
         L3NetworkVO l3Vo = dbf.findByUuid(iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2Vo = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
 
-        String sdnControllerUuid = SdnControllerHelper.getSdnControllerUuidFromL2Uuid(l2Vo.getUuid());
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL2Uuid(l2Vo.getUuid());
         if (sdnControllerUuid == null) {
             completion.success();
             return;
@@ -47,7 +48,7 @@ public class SdnControllerDhcpExtensionImpl implements IpRangeBackendExtensionPo
         L3NetworkVO l3Vo = dbf.findByUuid(iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2Vo = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
 
-        String sdnControllerUuid = SdnControllerHelper.getSdnControllerUuidFromL2Uuid(l2Vo.getUuid());
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL2Uuid(l2Vo.getUuid());
         if (sdnControllerUuid == null) {
             completion.success();
             return;

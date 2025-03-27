@@ -6,8 +6,10 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  * @api
@@ -45,6 +47,7 @@ import org.zstack.header.rest.RestRequest;
  *
  * see :ref:`APICreateSecurityGroupEvent`
  */
+@TagResourceType(SecurityGroupVO.class)
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups",
