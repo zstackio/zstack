@@ -522,8 +522,16 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.sshKeyPairUuids = sshKeyPairUuids;
     }
 
+    public DiskAO getRootDiskAO() {
+        if (diskAOs == null) {
+            return new DiskAO();
+        }
+
+        return diskAOs.stream().filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(new DiskAO());
+    }
+
     public String getPlatform() {
-        return platform;
+        return platform != null ? platform : getRootDiskAO().getPlatform();
     }
 
     public void setPlatform(String platform) {
@@ -531,7 +539,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     }
 
     public String getGuestOsType() {
-        return guestOsType;
+        return guestOsType != null ? guestOsType : getRootDiskAO().getGuestOsType();
     }
 
     public void setGuestOsType(String guestOsType) {
@@ -539,7 +547,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     }
 
     public String getArchitecture() {
-        return architecture;
+        return architecture != null ? architecture : getRootDiskAO().getArchitecture();
     }
 
     public void setArchitecture(String architecture) {
