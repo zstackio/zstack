@@ -51,8 +51,6 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
@@ -64,7 +62,6 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.network.l2.L2NetworkSystemTags;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.network.securitygroup.APIUpdateSecurityGroupRulePriorityMsg.SecurityGroupRulePriorityAO;
@@ -73,7 +70,6 @@ import org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg.VmNicSecurit
 import org.zstack.query.QueryFacade;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -650,7 +646,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         VmNicSecurityGroupTo nicTo = cal.calculateVmNicSecurityGroupTO();
         for (VmNicSecurityTO to : nicTo.vmNics) {
-            to.setRefresh(true);
+            to.setSync(true);
         }
 
         sdnBackend.updateSecurityGroup(nicTo, completion);
@@ -669,7 +665,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         VmNicSecurityGroupTo nicTo = cal.calculateVmNicSecurityGroupTO();
         for (VmNicSecurityTO to : nicTo.vmNics) {
-            to.setRefresh(true);
+            to.setSync(true);
         }
         sdnBackend.updateSecurityGroup(nicTo, completion);
     }
@@ -688,7 +684,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         VmNicSecurityGroupTo nicTo = cal.calculateVmNicSecurityGroupTO();
         for (SecurityGroupTo group : nicTo.groups) {
             if (group.getSecurityGroupUuid().equals(sgUuid)) {
-                group.setAction(SecurityGroupTo.ACTION_CODE_DELETE_CHAIN);
+                group.setActionCode(SecurityGroupTo.ACTION_CODE_DELETE_CHAIN);
             }
         }
         sdnBackend.updateSecurityGroup(nicTo, completion);
