@@ -1238,14 +1238,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateVmInstanceMsg msg) {
         if (CollectionUtils.isNotEmpty(msg.getDiskAOs())) {
-            APICreateVmInstanceMsg.DiskAO rootDiskAO = msg.getDiskAOs().stream()
-                    .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
-            if (rootDiskAO == null) {
+            APICreateVmInstanceMsg.DiskAO rootDiskAO = msg.getRootDiskAO();
+            if (!rootDiskAO.isBoot()) {
                 throw new ApiMessageInterceptionException(argerr("missing root disk"));
             }
-            msg.setPlatform(rootDiskAO.getPlatform());
-            msg.setGuestOsType(rootDiskAO.getGuestOsType());
-            msg.setArchitecture(rootDiskAO.getArchitecture());
             if (CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
                 if (rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
                     msg.setVirtio(true);
