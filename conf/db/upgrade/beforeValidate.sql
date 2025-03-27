@@ -27,6 +27,16 @@ BEGIN
         update `zstack`.`schema_version` set `checksum`=-540021638   where `script`='V4.4.6__schema.sql' and `checksum` <> -540021638;
         update `zstack`.`schema_version` set `checksum`=-698734653   where `script`='V4.5.11__schema.sql' and `checksum` <> -698734653;
         update `zstack`.`schema_version` set `checksum`=-2137714083   where `script`='V4.7.0__schema.sql' and `checksum` <> -2137714083;
+        update `zstack`.`schema_version` set `checksum`=-1493191986   where `script`='V0.6__schema.sql' and `checksum` <> -1493191986;
+        update `zstack`.`schema_version` set `checksum`=286222955   where `script`='V1.3__schema.sql' and `checksum` <> 286222955;
+        update `zstack`.`schema_version` set `checksum`=390362109   where `script`='V1.7__schema.sql' and `checksum` <> 390362109;
+        update `zstack`.`schema_version` set `checksum`=-1453565511   where `script`='V2.1.0__schema.sql' and `checksum` <> -1453565511;
+        update `zstack`.`schema_version` set `checksum`=672814727   where `script`='V2.2.0__schema.sql' and `checksum` <> 672814727;
+        update `zstack`.`schema_version` set `checksum`=271601676  where `script`='V3.1.0__schema.sql' and `checksum` <> 271601676;
+        update `zstack`.`schema_version` set `checksum`=-294520100   where `script`='V4.6.21__schema.sql' and `checksum` <> -294520100;
+        update `zstack`.`schema_version` set `checksum`=1170348213   where `script`='V4.8.0.6__schema.sql' and `checksum` <> 1170348213;
+        update `zstack`.`schema_version` set `checksum`=1298863127   where `script`='V5.3.0__schema.sql' and `checksum` <> 1298863127;
+        update `zstack`.`schema_version` set `checksum`=613548663   where `script`='V5.3.6__schema.sql' and `checksum` <> 613548663;
     END IF;
 END $$
 

@@ -24,7 +24,7 @@ SELECT
     CURRENT_TIMESTAMP(),                       -- createDate
     CURRENT_TIMESTAMP()                        -- lastOpDate
 FROM DatasetVO
-WHERE system = true;
+WHERE `system` = true;
 
 INSERT INTO SystemTagVO
 (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`)
@@ -38,7 +38,7 @@ SELECT
     CURRENT_TIMESTAMP(),                       -- createDate
     CURRENT_TIMESTAMP()                        -- lastOpDate
 FROM DatasetVO
-WHERE system = true;
+WHERE `system` = true;
 
 CALL RENAME_TABLE('ContainerManagementVmVO', 'ContainerManagementEndpointVO');
 
