@@ -284,6 +284,7 @@ public class KvmBackend extends HypervisorBackend {
         public String srcPath;
         public String destPath;
         public boolean fullRebase;
+        public List<String> chainInstallPathInDb = new ArrayList<>();
     }
 
     public static class OfflineMergeSnapshotRsp extends AgentRsp {
@@ -302,6 +303,7 @@ public class KvmBackend extends HypervisorBackend {
         public String top;
         public String base;
         public List<String> topChildrenInstallPathInDb = new ArrayList<>();
+        public List<String> chainInstallPathInDb = new ArrayList<>();
     }
 
     public static class OfflineCommitSnapshotRsp extends AgentRsp {
@@ -2419,6 +2421,7 @@ public class KvmBackend extends HypervisorBackend {
         cmd.top = msg.getSrcSnapshot().getPrimaryStorageInstallPath();
         cmd.base = msg.getDstSnapshot().getPrimaryStorageInstallPath();
         cmd.topChildrenInstallPathInDb = msg.getSrcChildrenInstallPathInDb();
+        cmd.chainInstallPathInDb = msg.getChainInstallPathInDb();
         new Do().go(OFFLINE_COMMIT_SNAPSHOT_PATH, cmd, OfflineCommitSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp returnValue) {
@@ -2443,6 +2446,7 @@ public class KvmBackend extends HypervisorBackend {
         cmd.srcPath = msg.getSrcSnapshotParentPath();
         cmd.destPath = msg.getDstSnapshot().getPrimaryStorageInstallPath();
         cmd.fullRebase = cmd.srcPath == null;
+        cmd.chainInstallPathInDb = msg.getChainInstallPathInDb();
         new Do().go(OFFLINE_MERGE_SNAPSHOT_PATH, cmd, OfflineMergeSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp returnValue) {

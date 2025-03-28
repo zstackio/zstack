@@ -12,6 +12,7 @@ public class CommitVolumeSnapshotOnPrimaryStorageMsg extends NeedReplyMessage im
     private VolumeSnapshotInventory srcSnapshot;
     private VolumeSnapshotInventory dstSnapshot;
     List<String> srcChildrenInstallPathInDb = new ArrayList<>();
+    private List<String> chainInstallPathInDb = new ArrayList<>();
 
     public VolumeInventory getVolume() {
         return volume;
@@ -43,6 +44,14 @@ public class CommitVolumeSnapshotOnPrimaryStorageMsg extends NeedReplyMessage im
 
     public void setSrcChildrenInstallPathInDb(List<String> srcChildrenInstallPathInDb) {
         this.srcChildrenInstallPathInDb = srcChildrenInstallPathInDb;
+    }
+
+    public List<String> getChainInstallPathInDb() {
+        return chainInstallPathInDb;
+    }
+
+    public void setChainInstallPathInDb(List<String> chainInstallPathInDb) {
+        this.chainInstallPathInDb = chainInstallPathInDb;
     }
 
     @Override

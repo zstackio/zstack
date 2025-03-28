@@ -4,12 +4,16 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PullVolumeSnapshotOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     VolumeInventory volume;
     private String srcSnapshotParentPath;
     private VolumeSnapshotInventory srcSnapshot;
     private VolumeSnapshotInventory dstSnapshot;
     private String hostUuid;
+    private List<String> chainInstallPathInDb = new ArrayList<>();
 
     public VolumeInventory getVolume() {
         return volume;
@@ -50,5 +54,13 @@ public class PullVolumeSnapshotOnHypervisorMsg extends NeedReplyMessage implemen
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public List<String> getChainInstallPathInDb() {
+        return chainInstallPathInDb;
+    }
+
+    public void setChainInstallPathInDb(List<String> chainInstallPathInDb) {
+        this.chainInstallPathInDb = chainInstallPathInDb;
     }
 }

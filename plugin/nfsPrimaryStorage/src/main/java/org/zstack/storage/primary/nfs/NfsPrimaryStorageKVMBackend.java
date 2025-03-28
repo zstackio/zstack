@@ -1992,6 +1992,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setDestPath(msg.getDstSnapshot().getPrimaryStorageInstallPath());
         cmd.setUuid(msg.getVolume().getPrimaryStorageUuid());
         cmd.setFullRebase(cmd.getSrcPath() == null);
+        cmd.setChainInstallPathInDb(msg.getChainInstallPathInDb());
 
         KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
         kmsg.setCommand(cmd);
@@ -2024,6 +2025,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.top = msg.getSrcSnapshot().getPrimaryStorageInstallPath();
         cmd.base = msg.getDstSnapshot().getPrimaryStorageInstallPath();
         cmd.topChildrenInstallPathInDb = msg.getSrcChildrenInstallPathInDb();
+        cmd.chainInstallPathInDb = msg.getChainInstallPathInDb();
 
         KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
         kmsg.setCommand(cmd);
