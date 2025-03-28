@@ -2,6 +2,7 @@ package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
 import org.zstack.cbd.LogicalPoolInfo
+import org.zstack.cbd.kvm.KvmCbdCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
@@ -175,6 +176,14 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.setSize(actualSize)
 
                 return rsp
+            }
+
+            simulator(KvmCbdCommands.SETUP_CBD_SELF_FENCER_PATH) {
+                return new KvmCbdCommands.AgentRsp()
+            }
+
+            simulator(KvmCbdCommands.CANCEL_CBD_SELF_FENCER_PATH) {
+                return new KvmCbdCommands.AgentRsp()
             }
         }
     }

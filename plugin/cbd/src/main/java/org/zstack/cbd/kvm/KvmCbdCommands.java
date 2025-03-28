@@ -10,7 +10,7 @@ import java.util.List;
  * @date 2024/4/10 15:40
  */
 public class KvmCbdCommands {
-    public static final String CBD_SETUP_SELF_FENCER_PATH = "/ha/cbd/setupselffencer";
+    public static final String SETUP_CBD_SELF_FENCER_PATH = "/ha/cbd/setupselffencer";
     public static final String CANCEL_CBD_SELF_FENCER_PATH = "/ha/cbd/cancelselffencer";
     public static final String CBD_CHECK_VMSTATE_PATH = "/cbd/check/vmstate";
 
@@ -42,6 +42,9 @@ public class KvmCbdCommands {
         public Long heartbeatRequiredSpace;
         public String strategy;
         public List<String> fencers;
+    }
+
+    public static class KvmCancelSelfFencerCmd extends AgentCmd {
     }
 
     public static class AgentCmd extends KVMAgentCommands.AgentCommand {
