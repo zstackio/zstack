@@ -10,7 +10,7 @@ public class SecurityGroupTo {
     private String SecurityGroupName;
     private List<String> SecurityGroupVmIps = new ArrayList<>();
     private List<String> SecurityGroupVmIp6s = new ArrayList<>();
-    private String Action;
+    private String actionCode;
     private List<RuleTO> rules = new ArrayList<>();
 
     public String getSecurityGroupUuid() {
@@ -45,12 +45,12 @@ public class SecurityGroupTo {
         SecurityGroupVmIp6s = securityGroupVmIp6s;
     }
 
-    public String getAction() {
-        return Action;
+    public String getActionCode() {
+        return actionCode;
     }
 
-    public void setAction(String action) {
-        Action = action;
+    public void setActionCode(String actionCode) {
+        this.actionCode = actionCode;
     }
 
     public List<RuleTO> getRules() {
