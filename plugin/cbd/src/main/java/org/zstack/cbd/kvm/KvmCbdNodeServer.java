@@ -1,12 +1,9 @@
 package org.zstack.cbd.kvm;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.cbd.AddonInfo;
-import org.zstack.cbd.MdsInfo;
 import org.zstack.cbd.kvm.KvmCbdCommands.AgentRsp;
 import org.zstack.cbd.kvm.KvmCbdCommands.KvmSetupSelfFencerCmd;
-import org.zstack.cbd.kvm.KvmCbdCommands.KvmUpdateClientConfCmd;
+import org.zstack.cbd.kvm.KvmCbdCommands.KvmCancelSelfFencerCmd;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -22,7 +19,6 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
 import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO;
@@ -35,11 +31,8 @@ import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
@@ -151,7 +144,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                         cmd.uuid = param.getPrimaryStorage().getUuid();
                         cmd.fencers = param.getFencers();
 
-                        httpCall(KvmCbdCommands.CBD_SETUP_SELF_FENCER_PATH, param.getHostUuid(), cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
+                        httpCall(KvmCbdCommands.SETUP_CBD_SELF_FENCER_PATH, param.getHostUuid(), cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
                             @Override
                             public void success(AgentRsp returnValue) {
                                 trigger.next();
@@ -184,7 +177,19 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
     @Override
     public void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion) {
+        KvmCancelSelfFencerCmd cmd = new KvmCancelSelfFencerCmd();
+        cmd.uuid = param.getPrimaryStorage().getUuid();
+        httpCall(KvmCbdCommands.CANCEL_CBD_SELF_FENCER_PATH, param.getHostUuid(), cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp rsp) {
+                completion.success();
+            }
 
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     protected <T extends AgentRsp> void httpCall(String path, final String hostUuid, KVMAgentCommands.AgentCommand cmd, final Class<T> respType, final ReturnValueCompletion<T> completion) {
