@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateModelAction extends AbstractAction {
+public class UpdateModelEvaluationTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateModelAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateModelResult value;
+        public org.zstack.sdk.UpdateModelEvaluationTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,23 +28,11 @@ public class UpdateModelAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String installPath;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String modelCenterUuid;
-
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List modelClassifications;
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +66,8 @@ public class UpdateModelAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateModelResult value = res.getResult(org.zstack.sdk.UpdateModelResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateModelResult() : value; 
+        org.zstack.sdk.UpdateModelEvaluationTaskResult value = res.getResult(org.zstack.sdk.UpdateModelEvaluationTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateModelEvaluationTaskResult() : value; 
 
         return ret;
     }
@@ -109,10 +97,10 @@ public class UpdateModelAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ai/models/{uuid}";
+        info.path = "/model-evaluation-tasks/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateModel";
+        info.parameterName = "updateModelEvaluationTask";
         return info;
     }
 

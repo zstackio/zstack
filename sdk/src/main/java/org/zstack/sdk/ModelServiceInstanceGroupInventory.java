@@ -100,4 +100,12 @@ public class ModelServiceInstanceGroupInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String yaml;
+    public void setYaml(java.lang.String yaml) {
+        this.yaml = yaml;
+    }
+    public java.lang.String getYaml() {
+        return this.yaml;
+    }
+
 }

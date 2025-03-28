@@ -64,7 +64,7 @@ public class UpdateModelServiceAction extends AbstractAction {
     @Param(required = false, validValues = {"Other","Bentoml","HuggingFace"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String source;
 
-    @Param(required = false, validValues = {"vLLM","Diffusers","Transformers","sentence_transformers","llama.cpp","Ollama","Other"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String framework;
 
     @Param(required = false)

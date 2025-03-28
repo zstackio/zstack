@@ -7440,6 +7440,33 @@ abstract class ApiHelper {
     }
 
 
+    def cloneModelService(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CloneModelServiceAction.class) Closure c) {
+        def a = new org.zstack.sdk.CloneModelServiceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def cloneVmInstance(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CloneVmInstanceAction.class) Closure c) {
         def a = new org.zstack.sdk.CloneVmInstanceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -17484,6 +17511,33 @@ abstract class ApiHelper {
 
     def deployAppDevelopmentService(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeployAppDevelopmentServiceAction.class) Closure c) {
         def a = new org.zstack.sdk.DeployAppDevelopmentServiceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deployDistributedModelService(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeployDistributedModelServiceAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeployDistributedModelServiceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -37398,6 +37452,33 @@ abstract class ApiHelper {
     }
 
 
+    def restartModelServiceGroups(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RestartModelServiceGroupsAction.class) Closure c) {
+        def a = new org.zstack.sdk.RestartModelServiceGroupsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def restartResourceStack(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RestartResourceStackAction.class) Closure c) {
         def a = new org.zstack.sdk.RestartResourceStackAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -43743,6 +43824,33 @@ abstract class ApiHelper {
 
     def updateModelCenter(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateModelCenterAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateModelCenterAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateModelEvaluationTask(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateModelEvaluationTaskAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateModelEvaluationTaskAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

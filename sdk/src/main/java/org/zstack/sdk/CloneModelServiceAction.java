@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeployModelEvalServiceAction extends AbstractAction {
+public class CloneModelServiceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeployModelEvalServiceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeployModelEvalServiceResult value;
+        public org.zstack.sdk.CloneModelServiceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,110 +25,68 @@ public class DeployModelEvalServiceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"Performance","Capability"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String taskType;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer limits;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Float temperature;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer topK;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Float topP;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer maxNewTokens;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Float repetitionPenalty;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {128L,128000L}, noTrim = false)
-    public java.lang.Integer maxLength;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String prompt;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String model;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,1024L}, noTrim = false)
-    public java.lang.Integer parallel;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {5L,300L}, noTrim = false)
-    public java.lang.Integer logEveryQuery;
-
-    @Param(required = false, validValues = {"openai","dashscope"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String api;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map requestHeaders;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {5L,120L}, noTrim = false)
-    public java.lang.Integer connectTimeout;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {5L,120L}, noTrim = false)
-    public java.lang.Integer readTimeout;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String modelUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    public java.lang.String readme;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmImageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List datasetUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List modelServiceGroupUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dockerImage;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer cpuNum;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
+    public long size = 0L;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map environmentVariables;
+    public java.lang.String gpuComputeCapability;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map startupParameters;
+    public java.lang.String installPath;
 
-    @Param(required = true, validValues = {"VirtualMachine","Container"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String startCommand;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String pythonVersion;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String condaVersion;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean system = false;
+
+    @Param(required = false, validValues = {"Endpoint","FineTune","App","ModelEval"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
+    public java.lang.String yaml;
+
+    @Param(required = false, validValues = {"Other","Bentoml","HuggingFace"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String source;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long memorySize;
+    public java.lang.String framework;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List l3NetworkUuids;
+    public java.lang.Integer requestCpu;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer serviceBootUptime;
+    public java.lang.Long requestMemory;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -162,8 +120,8 @@ public class DeployModelEvalServiceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeployModelEvalServiceResult value = res.getResult(org.zstack.sdk.DeployModelEvalServiceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeployModelEvalServiceResult() : value; 
+        org.zstack.sdk.CloneModelServiceResult value = res.getResult(org.zstack.sdk.CloneModelServiceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CloneModelServiceResult() : value; 
 
         return ret;
     }
@@ -192,11 +150,11 @@ public class DeployModelEvalServiceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/ai/model-services/eval/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/ai/model-services/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "deployModelEvalService";
+        info.parameterName = "params";
         return info;
     }
 
