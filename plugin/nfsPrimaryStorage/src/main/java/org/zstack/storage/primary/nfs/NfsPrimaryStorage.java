@@ -37,6 +37,7 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotDirection;
 import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -45,7 +46,7 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
-import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.*;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.VolumeErrors;
@@ -60,9 +61,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -129,67 +128,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
-        } else if (msg instanceof UndoSnapshotCreationOnPrimaryStorageMsg) {
-            handle((UndoSnapshotCreationOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CommitVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CommitVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof PullVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((PullVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
-    }
-
-    private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
-        final TakeSnapshotReply reply = new TakeSnapshotReply();
-
-        String volumeUuid = msg.getVolume().getUuid();
-        VolumeVO vol = dbf.findByUuid(volumeUuid, VolumeVO.class);
-
-        String huuid;
-        String connectedHostUuid = factory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
-        if (vol.getVmInstanceUuid() != null) {
-            Tuple t = Q.New(VmInstanceVO.class)
-                    .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
-                    .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid())
-                    .findTuple();
-            VmInstanceState state = t.get(0, VmInstanceState.class);
-            String vmHostUuid = t.get(1, String.class);
-
-            if (state == VmInstanceState.Running || state == VmInstanceState.Paused) {
-                DebugUtils.Assert(vmHostUuid != null,
-                        String.format("vm[uuid:%s] is Running or Paused, but has no hostUuid", vol.getVmInstanceUuid()));
-                huuid = vmHostUuid;
-            } else if (state == VmInstanceState.Stopped) {
-                huuid = connectedHostUuid;
-            } else {
-                reply.setError(operr("vm[uuid:%s] is not Running, Paused or Stopped, current state is %s",
-                        vol.getVmInstanceUuid(), state));
-                bus.reply(msg, reply);
-                return;
-            }
-        } else {
-            huuid = connectedHostUuid;
-        }
-        CommitVolumeOnHypervisorMsg hmsg = new CommitVolumeOnHypervisorMsg();
-        hmsg.setHostUuid(huuid);
-        hmsg.setVmUuid(msg.getVmUuid());
-        hmsg.setVolume(msg.getVolume());
-        hmsg.setSrcPath(msg.getSrcPath());
-        hmsg.setDstPath(msg.getDstPath());
-        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, huuid);
-        bus.send(hmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
-                if (!reply.isSuccess()) {
-                    ret.setError(reply.getError());
-                    bus.reply(msg, ret);
-                    return;
-                }
-
-                CommitVolumeOnHypervisorReply treply = (CommitVolumeOnHypervisorReply) reply;
-                ret.setSize(treply.getSize());
-                ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
-                bus.reply(msg, ret);
-            }
-        });
     }
 
     protected void updateMountPoint(String newUrl, Completion completion) {
@@ -1904,5 +1849,90 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void handle(CommitVolumeSnapshotOnPrimaryStorageMsg msg) {
+        CommitVolumeSnapshotOnPrimaryStorageReply reply = new CommitVolumeSnapshotOnPrimaryStorageReply();
+
+        String hostUuid = getHostUuidFromVolume(msg.getVolume().getUuid());
+        if (hostUuid == null || hostUuid.isEmpty()) {
+            reply.setError(operr("no host found for volume[uuid:%s]", msg.getVolume().getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(
+                msg.getVolume().getFormat(), self.getUuid()));
+
+        backend.commitSnapshot(msg, hostUuid, new ReturnValueCompletion<CommitVolumeSnapshotOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CommitVolumeSnapshotOnPrimaryStorageReply r) {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    protected void handle(PullVolumeSnapshotOnPrimaryStorageMsg msg) {
+        PullVolumeSnapshotOnPrimaryStorageReply reply = new PullVolumeSnapshotOnPrimaryStorageReply();
+
+        String hostUuid = getHostUuidFromVolume(msg.getVolume().getUuid());
+        if (hostUuid == null || hostUuid.isEmpty()) {
+            reply.setError(operr("no host found for volume[uuid:%s]", msg.getVolume().getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(
+                msg.getVolume().getFormat(), self.getUuid()));
+
+        backend.pullSnapshot(msg, hostUuid, new ReturnValueCompletion<PullVolumeSnapshotOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(PullVolumeSnapshotOnPrimaryStorageReply r) {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private String getHostUuidFromVolume(String volumeUuid) {
+        VolumeVO vol = dbf.findByUuid(volumeUuid, VolumeVO.class);
+
+        String hostUuid = "";
+        List<HostInventory> connectedHost = factory.getConnectedHostForOperation(getSelfInventory());
+        if (connectedHost.isEmpty()) {
+            return hostUuid;
+        }
+        String connectedHostUuid = factory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
+        if (vol.getVmInstanceUuid() != null) {
+            Tuple t = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                    .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid())
+                    .findTuple();
+            VmInstanceState state = t.get(0, VmInstanceState.class);
+            String vmHostUuid = t.get(1, String.class);
+
+            if (state == VmInstanceState.Running || state == VmInstanceState.Paused) {
+                DebugUtils.Assert(vmHostUuid != null,
+                        String.format("vm[uuid:%s] is Running or Paused, but has no hostUuid", vol.getVmInstanceUuid()));
+                hostUuid = vmHostUuid;
+            } else if (state == VmInstanceState.Stopped) {
+                hostUuid = connectedHostUuid;
+            }
+        } else {
+            hostUuid = connectedHostUuid;
+        }
+
+        return hostUuid;
     }
 }
