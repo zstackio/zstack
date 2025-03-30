@@ -101,7 +101,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
     private void validate(APIAttachSecurityGroupToL3NetworkMsg msg) {
         String l3SdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
         String sgSdnControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
-        if (!StringUtils.equals(l3SdnControllerUuid, sgSdnControllerUuid)) {
+        if (sgSdnControllerUuid != null && !sgSdnControllerUuid.equals(l3SdnControllerUuid)) {
             throw new ApiMessageInterceptionException(argerr("could not attach l3 network to securityGroup, " +
                     "because they have different sdn controller[l3 controller uuid:%s, security group controller uuid:%s]",
                     l3SdnControllerUuid, sgSdnControllerUuid));
