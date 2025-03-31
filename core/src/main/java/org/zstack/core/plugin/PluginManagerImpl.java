@@ -378,8 +378,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     registerPluginAsSingleton((Class<? extends PluginDriver>) tempClazz, (Class<? extends PluginDriver>) tempClazz.getInterfaces()[0]);
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            logger.error(String.format("Error occurred while scanning and loading plugins from: %s", jarFile.getAbsolutePath()), t);
         }
     }
 
