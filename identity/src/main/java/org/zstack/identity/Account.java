@@ -2,6 +2,10 @@ package org.zstack.identity;
 
 import org.zstack.core.db.Q;
 import org.zstack.header.identity.*;
+import org.zstack.header.identity.role.RoleAccountRefVO;
+import org.zstack.header.identity.role.RoleAccountRefVO_;
+
+import static org.zstack.header.identity.AccountConstant.SOD_AUDITOR_ROLE_UUID;
 
 public interface Account {
     static String getAccountUuidOfResource(String resUuid) {
@@ -33,5 +37,20 @@ public interface Account {
 
     static boolean isAdmin(String accountUuid) {
         return AccountConstant.isAdmin(accountUuid);
+    }
+
+    static boolean supportToQueryAuditsFromAllAccounts(SessionInventory session) {
+        return supportToQueryAuditsFromAllAccounts(session.getAccountUuid());
+    }
+
+    static boolean supportToQueryAuditsFromAllAccounts(String accountUuid) {
+        if (isAdmin(accountUuid)) {
+            return true;
+        }
+
+        return Q.New(RoleAccountRefVO.class)
+                    .eq(RoleAccountRefVO_.accountUuid, accountUuid)
+                    .eq(RoleAccountRefVO_.roleUuid, SOD_AUDITOR_ROLE_UUID)
+                    .isExists();
     }
 }
