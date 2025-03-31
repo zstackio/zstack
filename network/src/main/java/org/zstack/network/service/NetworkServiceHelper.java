@@ -11,6 +11,14 @@ public class NetworkServiceHelper {
     public static class HostRouteInfo {
         public String prefix;
         public String nexthop;
+
+        @Override
+        public String toString() {
+            return "HostRouteInfo{" +
+                    "prefix='" + prefix + '\'' +
+                    ", nexthop='" + nexthop + '\'' +
+                    '}';
+        }
     }
 
     public static List<HostRouteInfo> getL3NetworkHostRoute(String l3NetworkUuid){
