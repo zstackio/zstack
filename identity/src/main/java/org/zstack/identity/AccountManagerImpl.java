@@ -192,6 +192,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid());
     }
 
+    @Override
+    public boolean isInSystemAdminType(SessionInventory session) {
+        return Account.isAdminPermission(session);
+    }
+
     private void passThrough(AccountMessage msg) {
         AccountVO vo = dbf.findByUuid(msg.getAccountUuid(), AccountVO.class);
         if (vo == null) {
