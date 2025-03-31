@@ -54,6 +54,8 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.network.service.flat.IpStatisticConstants.VmType;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.header.network.service.SdnControllerDhcp;
+import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -109,6 +111,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private NetworkServiceManager nwServiceMgr;
     @Autowired
     protected L3NetworkManager l3NwMgr;
+    @Autowired
+    protected SdnControllerManager sdnMgr;
 
     private Map<String, L3NetworkGetIpStatisticExtensionPoint> getIpStatisticExts = new HashMap<>();
 
@@ -212,6 +216,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<IpRangeVO> ip6Ranges = l3VO.getIpRanges().stream().filter(
                 ipr -> ipr.getIpVersion() == IPv6Constants.IPv6 && !ipr.getAddressMode().equals(IPv6Constants.SLAAC))
                 .collect(Collectors.toList());
+
+        SdnControllerDhcp sdnDhcp = sdnMgr.getSdnControllerDhcp(msg.getL3NetworkUuid());
 
         /*
         * step #1, delete old dhcp server ip
@@ -334,8 +340,36 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             String __name__ = "refresh-dhcp-server-on-hosts";
 
             @Override
+            public boolean skip(Map data) {
+                return sdnDhcp != null;
+            }
+
+            @Override
             public void run(FlowTrigger trigger, Map data) {
                 refreshDhcpInfoToHosts(l3VO, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "refresh-dhcp-server-on-sdn-controller";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (sdnDhcp == null) {
+                    trigger.next();
+                    return;
+                }
+
+                sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3VO)),
+                        false, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();

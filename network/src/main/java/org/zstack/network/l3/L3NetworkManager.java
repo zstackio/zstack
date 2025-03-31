@@ -2,6 +2,7 @@ package org.zstack.network.l3;
 
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 
@@ -30,4 +31,6 @@ public interface L3NetworkManager {
     List<VmNicInventory> filterVmNicByIpVersion(List<VmNicInventory> vmNics, int ipVersion);
 
     boolean applyNetworkServiceWhenVmStateChange(String type);
+
+    SdnControllerDhcp getSdnControllerDhcp(String l3Uuid);
 }
