@@ -23,7 +23,15 @@ public interface AccountManager {
 
     AccountResourceRefInventory changeResourceOwner(String resourceUuid, String newOwnerUuid);
 
+    /**
+     * return true only when the account is "admin" account
+     */
     boolean isAdmin(SessionInventory session);
+
+    /**
+     * return true if the account is in {@link AccountType#SystemAdmin} type
+     */
+    boolean isInSystemAdminType(SessionInventory session);
 
     void adminAdoptAllOrphanedResource(List<String> resourceUuid, String originAccountUuid);
 
