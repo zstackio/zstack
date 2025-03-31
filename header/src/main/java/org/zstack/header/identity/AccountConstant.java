@@ -50,7 +50,7 @@ public interface AccountConstant {
      * account has SystemAdmin type also have admin permission,
      * but this method only check "admin" account.
      *
-     * use Account.isAdminPermission(SessionInventory)
+     * use Account.isAdminPermission(SessionInventory) or isAdmin(SessionInventory)
      */
     @Deprecated
     static boolean isAdminPermission(SessionInventory session) {
@@ -61,10 +61,18 @@ public interface AccountConstant {
      * account has SystemAdmin type also have admin permission,
      * but this method only check "admin" account.
      *
-     * use Account.isAdminPermission(String)
+     * use Account.isAdminPermission(String) or isAdmin(String)
      */
     @Deprecated
     static boolean isAdminPermission(String accountUuid) {
+        return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
+    }
+
+    static boolean isAdmin(SessionInventory session) {
+        return isAdmin(session.getAccountUuid());
+    }
+
+    static boolean isAdmin(String accountUuid) {
         return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
     }
 
