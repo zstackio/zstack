@@ -17,7 +17,7 @@ public interface Account {
     }
 
     static boolean isAdminPermission(String accountUuid) {
-        if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid)) {
+        if (isAdmin(accountUuid)) {
             return true;
         }
 
@@ -25,5 +25,13 @@ public interface Account {
                 .eq(AccountVO_.uuid, accountUuid)
                 .eq(AccountVO_.type, AccountType.SystemAdmin)
                 .isExists();
+    }
+
+    static boolean isAdmin(SessionInventory session) {
+        return AccountConstant.isAdmin(session.getAccountUuid());
+    }
+
+    static boolean isAdmin(String accountUuid) {
+        return AccountConstant.isAdmin(accountUuid);
     }
 }
