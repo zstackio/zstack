@@ -8,6 +8,7 @@ import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.cbd.MdsUri
 import org.zstack.sdk.*
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
+import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.storage.zbs.ZbsConstants
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
@@ -146,16 +147,26 @@ class ZbsPrimaryStorageCase extends SubCase {
             ps = env.inventoryByName("zbs-1") as PrimaryStorageInventory
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
 
-            testZbsStorageLifecycle()
+            testDefaultConfig()
+            testLifecycle()
             testDataVolumeLifecycle()
-//            testZbsPrimaryStorageMdsPing()
-            testZbsStorageNegativeScenario()
+            testMdsPing()
+            testNegativeScenario()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
         }
     }
 
-    void testZbsStorageLifecycle() {
+    void testDefaultConfig() {
+        def rc = getResourceConfig {
+            category = VolumeGlobalConfig.CATEGORY
+            name = VolumeGlobalConfig.VOLUME_PHYSICAL_BLOCK_SIZE.getName()
+            resourceUuid = ps.uuid
+        } as GetResourceConfigResult
+        assert rc.value == ZbsConstants.VOLUME_PHYSICAL_BLOCK_SIZE
+    }
+
+    void testLifecycle() {
         updateExternalPrimaryStorage {
             uuid = ps.uuid
             name = "test-zbs-new-name"
@@ -208,7 +219,7 @@ class ZbsPrimaryStorageCase extends SubCase {
         }
     }
 
-    void testZbsPrimaryStorageMdsPing() {
+    void testMdsPing() {
         PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(1)
 
         Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
@@ -282,7 +293,7 @@ class ZbsPrimaryStorageCase extends SubCase {
         deleteVolume(vol.uuid)
     }
 
-    void testZbsStorageNegativeScenario() {
+    void testNegativeScenario() {
         expect(AssertionError.class) {
             addExternalPrimaryStorage {
                 zoneUuid = zone.uuid

@@ -1786,6 +1786,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         controller.connect(externalVO.getConfig(), self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
             @Override
             public void success(LinkedHashMap addonInfo) {
+                if (param.isNewAdded()) {
+                    controller.onFirstAdditionConfigure(new NopeCompletion());
+                }
                 SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                         .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
                         .update();

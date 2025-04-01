@@ -1307,6 +1307,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         completion.success();
     }
 
+    @Override
+    public void onFirstAdditionConfigure(Completion completion) {
+        completion.success();
+    }
+
     private void retry(Runnable r) {
         retry(r, 3);
     }
