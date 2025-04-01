@@ -38,6 +38,9 @@ import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
 import org.zstack.kvm.KVMHostVO;
 import org.zstack.kvm.KVMHostVO_;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -65,6 +68,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private DatabaseFacade dbf;
     @Autowired
     protected RESTFacade restf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private ExternalPrimaryStorageVO self;
     private AddonInfo addonInfo;
@@ -888,6 +893,13 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void setTrashExpireTime(int timeInSeconds, Completion completion) {
 
+    }
+
+    @Override
+    public void onFirstAdditionConfigure(Completion completion) {
+        ResourceConfig rc = rcf.getResourceConfig(VolumeGlobalConfig.VOLUME_PHYSICAL_BLOCK_SIZE.getIdentity());
+        rc.updateValue(self.getUuid(), ZbsConstants.VOLUME_PHYSICAL_BLOCK_SIZE);
+        completion.success();
     }
 
     public void doDeleteVolume(String installPath, Boolean force, Completion comp) {

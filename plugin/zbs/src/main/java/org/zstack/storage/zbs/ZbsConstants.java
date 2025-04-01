@@ -15,4 +15,5 @@ public interface ZbsConstants {
     String ZBS_CBD_LUN_PATH_FORMAT = "cbd:%s/%s/%s";
     String ZBS_CBD_PREFIX_SCHEME = "cbd://";
     Integer PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE = 3;
+    String VOLUME_PHYSICAL_BLOCK_SIZE = "4096";
 }
