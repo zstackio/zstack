@@ -248,7 +248,7 @@ public class L3BasicNetwork implements L3Network {
                 lock.lock();
                 Defer.defer(lock::unlock);
 
-                self = dbf.updateAndRefresh(self);
+                self = dbf.reload(self);
                 List<IpRangeInventory> normalIpRanges = IpRangeHelper.getNormalIpRanges(self);
                 normalIpRanges = normalIpRanges.stream().filter(r -> r.getIpVersion() == inv.getIpVersion()).collect(Collectors.toList());
                 if (normalIpRanges.size() == 1 && normalIpRanges.get(0).getUuid().equals(msg.getIpRangeUuid())) {
