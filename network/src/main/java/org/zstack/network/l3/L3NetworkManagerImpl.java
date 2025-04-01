@@ -11,8 +11,10 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
@@ -31,6 +33,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.datatypes.IpCapacityData;
+import org.zstack.header.network.service.GetSdnControllerDhcpExtensionPoint;
+import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -137,6 +141,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     private void handle(final APISetL3NetworkMtuMsg msg) {
         final APISetL3NetworkMtuEvent evt = new APISetL3NetworkMtuEvent(msg.getId());
 
+        String oldmtu = NetworkServiceSystemTag.L3_MTU.getTokenByResourceUuid(msg.getL3NetworkUuid(), NetworkServiceSystemTag.MTU_TOKEN);
         NetworkServiceSystemTag.L3_MTU.delete(msg.getL3NetworkUuid());
         SystemTagCreator creator = NetworkServiceSystemTag.L3_MTU.newSystemTagCreator(msg.getL3NetworkUuid());
         creator.ignoreIfExisting = true;
@@ -149,7 +154,66 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         );
         creator.create();
 
-        bus.publish(evt);
+        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("change-l3-network-mtu");
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (!l3Vo.enableIpAddressAllocation()) {
+                    trigger.next();
+                    return;
+                }
+
+                SdnControllerDhcp dhcp = getSdnControllerDhcp(msg.getL3NetworkUuid());
+                if (dhcp == null) {
+                    trigger.next();
+                    return;
+                }
+
+                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3Vo);
+                if (iprs.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                dhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3Vo)), false, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                if (oldmtu != null) {
+                    NetworkServiceSystemTag.L3_MTU.delete(msg.getL3NetworkUuid());
+                    SystemTagCreator creator = NetworkServiceSystemTag.L3_MTU.newSystemTagCreator(msg.getL3NetworkUuid());
+                    creator.recreate = true;
+                    creator.inherent = false;
+                    creator.setTagByTokens(
+                            map(
+                                    e(NetworkServiceSystemTag.MTU_TOKEN, oldmtu),
+                                    e(NetworkServiceSystemTag.L3_UUID_TOKEN, msg.getL3NetworkUuid())
+                            )
+                    );
+                    creator.create();
+                }
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private void handle(final APIGetL3NetworkMtuMsg msg) {
@@ -915,5 +979,14 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(vo.getType()));
         L3Network nw = factory.getL3Network(vo);
         completion.success(nw.checkIpAvailability(msg));
+    }
+
+    @Override
+    public SdnControllerDhcp getSdnControllerDhcp(String l3Uuid) {
+        for (GetSdnControllerDhcpExtensionPoint exp : pluginRgty.getExtensionList(GetSdnControllerDhcpExtensionPoint.class)) {
+            return exp.getSdnControllerDhcp(l3Uuid);
+        }
+
+        return null;
     }
 }

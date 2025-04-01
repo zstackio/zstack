@@ -13,6 +13,8 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
@@ -60,6 +62,7 @@ import org.zstack.utils.stopwatch.StopWatch;
 import javax.persistence.Tuple;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
@@ -225,34 +228,45 @@ public class L3BasicNetwork implements L3Network {
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("del-ip-range-%s", inv.getUuid()));
         chain.then(new NoRollbackFlow() {
-            String __name__ = "remove-from-backend";
+            String __name__ = "disable-sdn-dhcp";
 
             @Override
+            @Deferred
             public void run(FlowTrigger trigger, Map data) {
-                List<IpRangeBackendExtensionPoint> exps = pluginRgty.getExtensionList(IpRangeBackendExtensionPoint.class);
-                new While<>(exps).each((exp, wcomp) -> {
-                    exp.removeIpRange(Collections.singletonList(inv), new Completion(wcomp) {
+                if (!self.enableIpAddressAllocation()) {
+                    trigger.next();
+                    return;
+                }
+
+                SdnControllerDhcp sdnDhcp = l3NwMgr.getSdnControllerDhcp(self.getUuid());
+                if (sdnDhcp == null) {
+                    trigger.next();
+                    return;
+                }
+
+                GLock lock = new GLock(String.format("delete-ip-range-from-l3-%s", self.getUuid()), TimeUnit.MINUTES.toSeconds(5));
+                lock.lock();
+                Defer.defer(lock::unlock);
+
+                self = dbf.updateAndRefresh(self);
+                List<IpRangeInventory> normalIpRanges = IpRangeHelper.getNormalIpRanges(self);
+                normalIpRanges = normalIpRanges.stream().filter(r -> r.getIpVersion() == inv.getIpVersion()).collect(Collectors.toList());
+                if (normalIpRanges.size() == 1 && normalIpRanges.get(0).getUuid().equals(msg.getIpRangeUuid())) {
+                    sdnDhcp.disableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), inv.getIpVersion(),
+                            new Completion(trigger) {
                         @Override
                         public void success() {
-                            wcomp.done();
+                            trigger.next();
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            wcomp.addError(errorCode);
-                            wcomp.allDone();
+                            trigger.fail(errorCode);
                         }
                     });
-                }).run(new WhileDoneCompletion(trigger) {
-                    @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        if (errorCodeList.getCauses().isEmpty()) {
-                            trigger.next();
-                        } else {
-                            trigger.fail(errorCodeList.getCauses().get(0));
-                        }
-                    }
-                });
+                } else {
+                    trigger.next();
+                }
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "remove-db";
@@ -1067,6 +1081,8 @@ public class L3BasicNetwork implements L3Network {
     private void handle(final APIRemoveDnsFromL3NetworkMsg msg) {
         final APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
 
+        SdnControllerDhcp sdnDhcp = l3NwMgr.getSdnControllerDhcp(msg.getL3NetworkUuid());
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("remove-dns-%s-from-l3-%s", msg.getDns(), msg.getL3NetworkUuid()));
         chain.then(new ShareFlow() {
@@ -1089,9 +1105,49 @@ public class L3BasicNetwork implements L3Network {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-dns-from-sdn";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!self.enableIpAddressAllocation()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        if (sdnDhcp == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(self);
+                        if (iprs.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), false, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
                 if (L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(self.getType()) && !self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "remove-dns-from-backend";
+
+                        @Override
+                        public boolean skip(Map data) {
+                            return sdnDhcp != null;
+                        }
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
@@ -1135,6 +1191,8 @@ public class L3BasicNetwork implements L3Network {
     private void handle(final APIAddDnsToL3NetworkMsg msg) {
         final APIAddDnsToL3NetworkEvent evt = new APIAddDnsToL3NetworkEvent(msg.getId());
 
+        SdnControllerDhcp sdnDhcp = l3NwMgr.getSdnControllerDhcp(msg.getL3NetworkUuid());
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("add-dns-%s-to-l3-%s", msg.getDns(), msg.getL3NetworkUuid()));
         chain.then(new ShareFlow() {
@@ -1165,9 +1223,49 @@ public class L3BasicNetwork implements L3Network {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-to-sdn";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!self.enableIpAddressAllocation()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        if (sdnDhcp == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(self);
+                        if (iprs.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), false, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
                 if (L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(self.getType()) && !self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "apply-to-backend";
+
+                        @Override
+                        public boolean skip(Map data) {
+                            return sdnDhcp != null;
+                        }
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {

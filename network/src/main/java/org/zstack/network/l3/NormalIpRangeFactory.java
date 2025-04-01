@@ -16,6 +16,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.network.IPv6Constants;
@@ -23,6 +24,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,8 @@ public class NormalIpRangeFactory implements IpRangeFactory {
     DatabaseFacade dbf;
     @Autowired
     protected PluginRegistry pluginRgty;
+    @Autowired
+    protected L3NetworkManager l3Mgr;
 
     @Override
     public IpRangeType getType() {
@@ -104,60 +108,32 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                 dbf.removeCollection(vos, IpRangeVO.class);
                 trigger.rollback();
             }
-        }).then(new Flow() {
-            String __name__ = "add-to-backend";
+        }).then(new NoRollbackFlow() {
+            String __name__ = "enable-sdn-dhcp";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
-                List<IpRangeBackendExtensionPoint> exps = pluginRgty.getExtensionList(IpRangeBackendExtensionPoint.class);
-                new While<>(exps).each((exp, wcomp) -> {
-                    exp.addIpRange(IpRangeInventory.valueOf(vos), new Completion(wcomp) {
-                        @Override
-                        public void success() {
-                            wcomp.done();
-                        }
+                L3NetworkVO l3vo = dbf.findByUuid(iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class);
+                if (!l3vo.enableIpAddressAllocation()) {
+                    trigger.next();
+                    return;
+                }
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            wcomp.addError(errorCode);
-                            wcomp.allDone();
-                        }
-                    });
-                }).run(new WhileDoneCompletion(trigger) {
+                SdnControllerDhcp sdnDhcp = l3Mgr.getSdnControllerDhcp(l3vo.getUuid());
+                if (sdnDhcp == null) {
+                    trigger.next();
+                    return;
+                }
+
+                sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3vo)), false, new Completion(trigger) {
                     @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        if (errorCodeList.getCauses().isEmpty()) {
-                            trigger.next();
-                        } else {
-                            trigger.fail(errorCodeList.getCauses().get(0));
-                        }
+                    public void success() {
+                        trigger.next();
                     }
-                });
-            }
 
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
-                List<IpRangeBackendExtensionPoint> exps = pluginRgty.getExtensionList(IpRangeBackendExtensionPoint.class);
-                new While<>(exps).each((exp, wcomp) -> {
-                    exp.removeIpRange(IpRangeInventory.valueOf(vos), new Completion(wcomp) {
-                        @Override
-                        public void success() {
-                            wcomp.done();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            wcomp.addError(errorCode);
-                            wcomp.allDone();
-                        }
-
-                    });
-                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        trigger.rollback();
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
                     }
                 });
             }

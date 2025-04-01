@@ -21,8 +21,11 @@ import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.service.GetSdnControllerDhcpExtensionPoint;
+import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.*;
 import org.zstack.network.l2.L2NetworkSystemTags;
+import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.network.securitygroup.SecurityGroupGetSdnBackendExtensionPoint;
 import org.zstack.network.securitygroup.SecurityGroupManager;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
@@ -38,7 +41,8 @@ import static org.zstack.core.Platform.operr;
 public class SdnControllerManagerImpl extends AbstractService implements SdnControllerManager,
         L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, InstantiateResourceOnAttachingNicExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
-        ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint {
+        ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint,
+        GetSdnControllerDhcpExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
 
     @Autowired
@@ -677,6 +681,22 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
         SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
         return factory.getSdnControllerSecurityGroup(vo);
+    }
+
+    @Override
+    public SdnControllerDhcp getSdnControllerDhcp(String l3Uuid) {
+        String controllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3Uuid);
+        if (controllerUuid == null) {
+            return null;
+        }
+
+        SdnControllerVO vo = dbf.findByUuid(controllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            throw new CloudRuntimeException(String.format("can not find sdn controller[uuid:%s] for l3 network[uuid:%s]",
+                    controllerUuid, l3Uuid));
+        }
+        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+        return factory.getSdnControllerDhcp(vo);
     }
 
     @Override
