@@ -65,6 +65,7 @@
         </property>
         <property name="startVmWorkFlowElements">
             <list>
+                <value>org.zstack.compute.vm.CheckVmVolumeSnapshotChainForStartVmFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateHostForStoppedVmFlow</value>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicForStartingVmFlow</value>

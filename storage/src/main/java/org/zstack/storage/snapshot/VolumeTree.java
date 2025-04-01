@@ -361,6 +361,10 @@ public class VolumeTree {
         return aliveChain.stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList());
     }
 
+    public List<String> getAliveChainSnapshotInstallPath() {
+        return aliveChain.stream().map(VolumeSnapshotInventory::getPrimaryStorageInstallPath).collect(Collectors.toList());
+    }
+
     public DeleteVolumeSnapshotDirection resolveDirection(String targetSnapshotUuid, String childSnapshotUuid, String initialDirection,
                                                           boolean targetSnapshotIsLatest, VmInstanceState vmState) {
         boolean online = (vmState == VmInstanceState.Running || vmState == VmInstanceState.Paused)

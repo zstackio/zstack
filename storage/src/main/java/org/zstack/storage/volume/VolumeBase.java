@@ -3173,6 +3173,12 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 VolumeSnapshotGroupVO group = createGroup(r);
                 logger.debug(String.format("created volume snapshot group[uuid:%s] for vm[uuid:%s]",
                         group.getUuid(), vm.getUuid()));
+
+                if (vols.size() != r.getInventories().size()) {
+                    completion.fail(operr("failed to create snapshot group: expected %s snapshots," +
+                            " but the operation resulted in %s", vols.size(), r.getInventories().size()));
+                    return;
+                }
                 completion.success(VolumeSnapshotGroupInventory.valueOf(dbf.reload(group)));
             }
 

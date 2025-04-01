@@ -965,15 +965,16 @@ public class VolumeSnapshotTreeBase {
                                     cmsg.setSrcSnapshot(srcSnapshotInv);
                                     cmsg.setDstSnapshot(dstSnapshotInv);
                                     cmsg.setSrcChildrenInstallPathInDb(childrenInstallPath);
+                                    cmsg.setChainInstallPathInDb(volumeTree.getAliveChainSnapshotInstallPath());
                                     bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
                                     bus.send(cmsg, new CloudBusCallBack(trigger) {
                                         @Override
-                                        public void run(MessageReply reply) {
-                                            if (!reply.isSuccess()) {
-                                                trigger.fail(reply.getError());
+                                        public void run(MessageReply r) {
+                                            if (!r.isSuccess()) {
+                                                trigger.fail(r.getError());
                                                 return;
                                             }
-                                            CommitVolumeSnapshotOnHypervisorReply re = reply.castReply();
+                                            CommitVolumeSnapshotOnHypervisorReply re = r.castReply();
                                             newInstallPathSize = re.getSize();
                                             updateDatabase();
                                             trigger.next();
@@ -985,12 +986,16 @@ public class VolumeSnapshotTreeBase {
                                     cmsg.setSrcSnapshot(srcSnapshotInv);
                                     cmsg.setDstSnapshot(dstSnapshotInv);
                                     cmsg.setSrcChildrenInstallPathInDb(childrenInstallPath);
+                                    if (volumeTree.getAliveChainSnapshotInstallPath().contains(srcSnapshotInv.getPrimaryStorageInstallPath()) &&
+                                            volumeTree.getAliveChainSnapshotInstallPath().contains(dstSnapshotInv.getPrimaryStorageInstallPath())) {
+                                        cmsg.setChainInstallPathInDb(volumeTree.getAliveChainSnapshotInstallPath());
+                                    }
                                     bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, volume.getPrimaryStorageUuid());
                                     bus.send(cmsg, new CloudBusCallBack(trigger) {
                                         @Override
                                         public void run(MessageReply r) {
-                                            if (!reply.isSuccess()) {
-                                                trigger.fail(reply.getError());
+                                            if (!r.isSuccess()) {
+                                                trigger.fail(r.getError());
                                                 return;
                                             }
                                             CommitVolumeSnapshotOnPrimaryStorageReply re = r.castReply();
@@ -1145,6 +1150,7 @@ public class VolumeSnapshotTreeBase {
                                     pmsg.setSrcSnapshotParentPath(srcSnapshotParentPath);
                                     pmsg.setSrcSnapshot(srcSnapshotInv);
                                     pmsg.setDstSnapshot(dstSnapshotInv);
+                                    pmsg.setChainInstallPathInDb(volumeTree.getAliveChainSnapshotInstallPath());
                                     bus.makeTargetServiceIdByResourceUuid(pmsg, HostConstant.SERVICE_ID, hostUuid);
                                     bus.send(pmsg, new CloudBusCallBack(completion) {
                                         @Override
@@ -1166,6 +1172,10 @@ public class VolumeSnapshotTreeBase {
                                     pmsg.setSrcSnapshotParentPath(srcSnapshotParentPath);
                                     pmsg.setSrcSnapshot(srcSnapshotInv);
                                     pmsg.setDstSnapshot(dstSnapshotInv);
+                                    if (volumeTree.getAliveChainSnapshotInstallPath().contains(srcSnapshotInv.getPrimaryStorageInstallPath()) &&
+                                            volumeTree.getAliveChainSnapshotInstallPath().contains(dstSnapshotInv.getPrimaryStorageInstallPath())) {
+                                        pmsg.setChainInstallPathInDb(volumeTree.getAliveChainSnapshotInstallPath());
+                                    }
                                     bus.makeTargetServiceIdByResourceUuid(pmsg, PrimaryStorageConstant.SERVICE_ID, volume.getPrimaryStorageUuid());
                                     bus.send(pmsg, new CloudBusCallBack(trigger) {
                                         @Override

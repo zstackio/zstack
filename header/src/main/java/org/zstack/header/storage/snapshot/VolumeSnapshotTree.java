@@ -5,6 +5,7 @@ import org.zstack.utils.function.Function;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -423,5 +424,18 @@ public class VolumeSnapshotTree {
             return root;
         }
         return findSnapshot(root.children, func);
+    }
+
+    public List<String> getAliveChainInstallPath(String latestSnapshotUuid) {
+        VolumeSnapshotTree.SnapshotLeaf lastestSnapshotLeaf = findSnapshot(new Function<Boolean, VolumeSnapshotInventory>() {
+            @Override
+            public Boolean call(VolumeSnapshotInventory arg) {
+                return arg.getUuid().equals(latestSnapshotUuid);
+            }
+        });
+
+        List<VolumeSnapshotInventory> ancestors = lastestSnapshotLeaf.getAncestors();
+        Collections.reverse(ancestors);
+        return ancestors.stream().map(VolumeSnapshotInventory::getPrimaryStorageInstallPath).collect(Collectors.toList());
     }
 }
