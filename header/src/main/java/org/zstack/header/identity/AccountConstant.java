@@ -46,28 +46,6 @@ public interface AccountConstant {
     String SOD_SECURITY_ADMIN_ROLE_UUID = "855013d87cf55944b4a6c6ae729b3f55";
     String SOD_AUDITOR_ROLE_UUID = "855014f1908759aca90f58ca56290955";
 
-    /**
-     * account has SystemAdmin type also have admin permission,
-     * but this method only check "admin" account.
-     *
-     * use Account.isAdminPermission(SessionInventory) or isAdmin(SessionInventory)
-     */
-    @Deprecated
-    static boolean isAdminPermission(SessionInventory session) {
-        return isAdminPermission(session.getAccountUuid());
-    }
-
-    /**
-     * account has SystemAdmin type also have admin permission,
-     * but this method only check "admin" account.
-     *
-     * use Account.isAdminPermission(String) or isAdmin(String)
-     */
-    @Deprecated
-    static boolean isAdminPermission(String accountUuid) {
-        return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
-    }
-
     static boolean isAdmin(SessionInventory session) {
         return isAdmin(session.getAccountUuid());
     }
