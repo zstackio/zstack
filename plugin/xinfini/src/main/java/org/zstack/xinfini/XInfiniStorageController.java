@@ -928,6 +928,11 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         //TODO
     }
 
+    @Override
+    public void onFirstAdditionConfigure(Completion completion) {
+        completion.success();
+    }
+
     public void cleanActiveRecord(VolumeInventory vol) {
 
     }

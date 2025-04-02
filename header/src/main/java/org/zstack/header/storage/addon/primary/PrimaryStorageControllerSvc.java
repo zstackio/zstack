@@ -50,4 +50,5 @@ public interface PrimaryStorageControllerSvc {
     void validateConfig(String config);
 
     void setTrashExpireTime(int timeInSeconds, Completion completion);
+    void onFirstAdditionConfigure(Completion completion);
 }
