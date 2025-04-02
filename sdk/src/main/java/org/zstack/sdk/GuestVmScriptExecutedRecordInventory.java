@@ -68,6 +68,14 @@ public class GuestVmScriptExecutedRecordInventory  {
         return this.version;
     }
 
+    public java.lang.String encodingType;
+    public void setEncodingType(java.lang.String encodingType) {
+        this.encodingType = encodingType;
+    }
+    public java.lang.String getEncodingType() {
+        return this.encodingType;
+    }
+
     public java.lang.String scriptContent;
     public void setScriptContent(java.lang.String scriptContent) {
         this.scriptContent = scriptContent;

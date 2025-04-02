@@ -49,3 +49,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LogServerVO` (
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('GuestVmScriptEO', 'encodingType', 'VARCHAR(32)', 1, 'PlainText');
+CALL ADD_COLUMN('GuestVmScriptExecutedRecordVO', 'encodingType', 'VARCHAR(32)', 1, 'PlainText');
+DROP VIEW IF EXISTS `zstack`.`GuestVmScriptVO`;
+CREATE VIEW `zstack`.`GuestVmScriptVO` AS SELECT uuid, name, description, platform, encodingType, scriptContent, renderParams, scriptType, scriptTimeout, version, createDate, lastOpDate FROM `zstack`.`GuestVmScriptEO` WHERE deleted IS NULL;
