@@ -36,7 +36,7 @@ BEGIN
             IF instance_yaml IS NOT NULL AND instance_yaml != '' THEN
                 UPDATE ModelServiceInstanceGroupVO
                 SET yaml = instance_yaml
-                WHERE id = group_uuid;
+                WHERE uuid = group_uuid;
 
                 SELECT CONCAT('updated group_uuid: ', group_uuid, ' yaml');
             END IF;
