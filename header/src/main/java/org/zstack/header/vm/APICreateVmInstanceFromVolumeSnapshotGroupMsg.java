@@ -61,6 +61,10 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
      */
     @APIParam(resourceType = L3NetworkVO.class, required = false)
     private List<String> l3NetworkUuids;
+
+    @APIParam(required = false)
+    private String vmNicParams;
+
     /**
      * @desc see type of :ref:`VmInstanceInventory`
      * @choices - UserVm
@@ -176,7 +180,11 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
 
     @Override
     public String getVmNicParams() {
-        return null;
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(String vmNicParams) {
+        this.vmNicParams = vmNicParams;
     }
 
     public String getType() {
