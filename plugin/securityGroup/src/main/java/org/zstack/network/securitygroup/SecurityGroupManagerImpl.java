@@ -1207,6 +1207,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         }
 
                         data.put(SecurityGroupConstant.Param.SECURITY_GROUP_UUIDS, sgUuids);
+                        data.put(SecurityGroupConstant.Param.SECURITY_GROUP_REFS, toDelete);
 
                         trigger.next();
                     }
@@ -1267,7 +1268,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        sdnRefreshVmNics(backend, Collections.singletonList(msg.getVmNicUuid()), new Completion(trigger) {
+                        List<VmNicSecurityGroupRefVO> toDelete = (List<VmNicSecurityGroupRefVO>) data.get(SecurityGroupConstant.Param.SECURITY_GROUP_REFS);
+                        List<String> sgUuids = toDelete.stream().map(VmNicSecurityGroupRefVO::getSecurityGroupUuid).distinct().collect(Collectors.toList());
+                        sdnRemoveSecurityGroupFromVmNic(backend, sgUuids, Collections.singletonList(msg.getVmNicUuid()), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
