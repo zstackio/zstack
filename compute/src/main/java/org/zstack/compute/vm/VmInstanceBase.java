@@ -3933,6 +3933,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     ipOperator.setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
                 }
                 ipOperator.setIpChange(self.getUuid(), msg.getL3NetworkUuid());
+                if (self.getState() != VmInstanceState.Running) {
+                    vmPortsHelper.setVmSyncPorts(msg.getVmInstanceUuid());
+                }
                 completion.success();
             }
 
@@ -6631,11 +6634,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                     String __name__ = "update-nic-ip-for-disable-ipam";
 
                     @Override
+                    public boolean skip(Map data) {
+                        return destL3.getEnableIPAM();
+                    }
+
+                    @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (destL3.getEnableIPAM()) {
-                            trigger.next();
-                            return;
-                        }
                         if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
                             self.setDefaultL3NetworkUuid(destL3.getUuid());
                         }
@@ -6696,9 +6700,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                         dbf.removeCollection(voOldList, UsedIpVO.class);
                         data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
                         data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
-                        if (self.getState() != VmInstanceState.Running) {
-                            vmPortsHelper.setVmSyncPorts(msg.getVmInstanceUuid());
-                        }
                         trigger.next();
                     }
                 });
@@ -6707,11 +6708,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                     String __name__ = "update-nic-ip";
 
                     @Override
+                    public boolean skip(Map data) {
+                        return !destL3.getEnableIPAM();
+                    }
+
+                    @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (!destL3.getEnableIPAM()) {
-                            trigger.next();
-                            return;
-                        }
                         if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
                             self.setDefaultL3NetworkUuid(destL3.getUuid());
                         }
@@ -6744,6 +6746,21 @@ public class VmInstanceBase extends AbstractVmInstance {
                         dbf.updateCollection(ipVOS);
                         data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
                         data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
+                        trigger.next();
+                    }
+                });
+
+                flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "set-sync-ports-tag";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return self.getState() == VmInstanceState.Running;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        vmPortsHelper.setVmSyncPorts(msg.getVmInstanceUuid());
                         trigger.next();
                     }
                 });
