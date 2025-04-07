@@ -434,7 +434,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     for (Tuple sgRef : sgRefs) {
                         int priority = sgRef.get(1, Integer.class);
                         String sgUuid = sgRef.get(2, String.class);
-                        if (securityGroupUuids.contains(sgUuid)) {
+                        if (securityGroupUuids != null && securityGroupUuids.contains(sgUuid)) {
                             nicTo.getSecurityGroupRefs().put(sgUuid, priority);
                         }
                     }
@@ -885,9 +885,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         List<SecurityGroupL3NetworkRefVO> toDelete = new ArrayList<>();
                         for (SecurityGroupL3NetworkRefVO ref : sgvo.getAttachedL3NetworkRefs()) {
                             String sql = "select count(ref.uuid) from VmNicSecurityGroupRefVO ref, VmNicVO nic " +
-                                    " where ref.vmNicUuid=nic.uuid " +
+                                    " where ref.securityGroupUuid = :sgUuid " +
+                                    " and ref.vmNicUuid=nic.uuid " +
                                     " and nic.l3NetworkUuid = :l3uuid";
                             TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                            q.setParameter("sgUuid", msg.getSecurityGroupUuid());
                             q.setParameter("l3uuid", ref.getL3NetworkUuid());
                             Long count = q.getSingleResult();
                             if (count == 0) {
@@ -2315,7 +2317,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         Map<String, List<String>> toDelete = new HashMap<>();
         rules.forEach(r -> {
-            toDelete.computeIfAbsent(r.getRemoteSecurityGroupUuid(), k -> new ArrayList<>());
+            toDelete.computeIfAbsent(r.getSecurityGroupUuid(), k -> new ArrayList<>());
             toDelete.get(r.getSecurityGroupUuid()).add(r.getUuid());
         });
 

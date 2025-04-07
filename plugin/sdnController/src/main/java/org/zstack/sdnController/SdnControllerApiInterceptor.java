@@ -18,10 +18,7 @@ import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l3.L3NetworkHelper;
-import org.zstack.network.securitygroup.APIAddVmNicToSecurityGroupMsg;
-import org.zstack.network.securitygroup.APIAttachSecurityGroupToL3NetworkMsg;
-import org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg;
-import org.zstack.network.securitygroup.SecurityGroupHelper;
+import org.zstack.network.securitygroup.*;
 import org.zstack.sdnController.header.*;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
@@ -57,6 +54,8 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         List<Class> ret = new ArrayList<>();
         ret.add(APIAttachSecurityGroupToL3NetworkMsg.class);
         ret.add(APIAddVmNicToSecurityGroupMsg.class);
+        ret.add(APISetVmNicSecurityGroupMsg.class);
+        ret.add(APIAddSecurityGroupRuleMsg.class);
 
         return ret;
     }
@@ -80,6 +79,8 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIAddVmNicToSecurityGroupMsg) msg);
         } else if (msg instanceof APISetVmNicSecurityGroupMsg) {
             validate((APISetVmNicSecurityGroupMsg) msg);
+        } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
+            validate((APIAddSecurityGroupRuleMsg) msg);
         }
 
         setServiceId(msg);
@@ -96,6 +97,21 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
                 throw new ApiMessageInterceptionException(argerr("could not add vmnic to securityGroup, " +
                                 "because they have different sdn controller[nic controller uuid:%s, security group controller uuid:%s]",
                         nicControllerUuid, sgControllerUuid));
+            }
+        }
+    }
+
+    private void validate(APIAddSecurityGroupRuleMsg msg) {
+        String sgControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
+        for (APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule : msg.getRules()) {
+            if (rule.getRemoteSecurityGroupUuid() == null) {
+                continue;
+            }
+            String remoteControllerUuid = SecurityGroupHelper.getSdnControllerUuid(rule.getRemoteSecurityGroupUuid());
+            if (!StringUtils.equals(sgControllerUuid, remoteControllerUuid)) {
+                throw new ApiMessageInterceptionException(argerr("could not add securityGroup rule, " +
+                                "because rule remote security group sdn controller uuid[:%s] is different from security group controller uuid[:%s]",
+                        remoteControllerUuid, sgControllerUuid));
             }
         }
     }
