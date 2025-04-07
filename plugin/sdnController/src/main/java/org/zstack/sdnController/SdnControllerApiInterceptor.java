@@ -20,6 +20,7 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.network.securitygroup.APIAddVmNicToSecurityGroupMsg;
 import org.zstack.network.securitygroup.APIAttachSecurityGroupToL3NetworkMsg;
+import org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg;
 import org.zstack.network.securitygroup.SecurityGroupHelper;
 import org.zstack.sdnController.header.*;
 import org.zstack.utils.ObjectUtils;
@@ -77,11 +78,26 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIAttachSecurityGroupToL3NetworkMsg)msg);
         } else if (msg instanceof APIAddVmNicToSecurityGroupMsg) {
             validate((APIAddVmNicToSecurityGroupMsg) msg);
+        } else if (msg instanceof APISetVmNicSecurityGroupMsg) {
+            validate((APISetVmNicSecurityGroupMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APISetVmNicSecurityGroupMsg msg) {
+        VmNicVO nicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        String nicControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(nicVO.getL3NetworkUuid());
+        for (APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO ref : msg.getRefs()) {
+            String sgControllerUuid = SecurityGroupHelper.getSdnControllerUuid(ref.getSecurityGroupUuid());
+            if (!StringUtils.equals(sgControllerUuid, nicControllerUuid)) {
+                throw new ApiMessageInterceptionException(argerr("could not add vmnic to securityGroup, " +
+                                "because they have different sdn controller[nic controller uuid:%s, security group controller uuid:%s]",
+                        nicControllerUuid, sgControllerUuid));
+            }
+        }
     }
 
     private void validate(APIAddVmNicToSecurityGroupMsg msg) {
