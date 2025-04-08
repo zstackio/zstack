@@ -33,6 +33,9 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     private Integer ipVersion;
 
     @Column
+    private String vSwitchType;
+
+    @Column
     private Timestamp createDate;
     
     @Column
@@ -136,5 +139,13 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
+    }
+
+    public String getvSwitchType() {
+        return vSwitchType;
+    }
+
+    public void setvSwitchType(String vSwitchType) {
+        this.vSwitchType = vSwitchType;
     }
 }

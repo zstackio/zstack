@@ -34,6 +34,9 @@ public class CreateSecurityGroupAction extends AbstractAction {
     @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer ipVersion;
 
+    @Param(required = false, validValues = {"LinuxBridge","OvnDpdk"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vSwitchType = "LinuxBridge";
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

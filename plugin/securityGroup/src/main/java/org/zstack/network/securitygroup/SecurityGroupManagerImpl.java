@@ -98,7 +98,7 @@ import static org.zstack.utils.CollectionDSL.*;
 
 public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeReadyExtensionPoint,
         VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, ValidateL3SecurityGroupExtensionPoint,
-        SdnControllerDeleteExtensionPoint, L3NetworkDeleteExtensionPoint {
+        SdnControllerDeleteExtensionPoint {
     private static CLogger logger = Utils.getLogger(SecurityGroupManagerImpl.class);
 
     @Autowired
@@ -735,6 +735,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setState(SecurityGroupState.Enabled);
+        vo.setvSwitchType(msg.getvSwitchType());
         vo.setInternalId(dbf.generateSequenceNumber(SecurityGroupSequenceNumberVO.class));
         vo.setAccountUuid(msg.getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
@@ -872,39 +873,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 removeNicFromSecurityGroup(msg.getSecurityGroupUuid(), msg.getVmNicUuids(), new Completion(msg, chain) {
                     @Override
                     public void success() {
-                        String controllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
-                        if (controllerUuid == null) {
-                            bus.reply(msg, reply);
-                            chain.next();
-                            return;
-                        }
-
-                        // todo, user can not detach l3 from security group,
-                        // so detach l3 network from security group, if there is no vmnic of l3 attached to security group
-                        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-                        List<SecurityGroupL3NetworkRefVO> toDelete = new ArrayList<>();
-                        for (SecurityGroupL3NetworkRefVO ref : sgvo.getAttachedL3NetworkRefs()) {
-                            String sql = "select count(ref.uuid) from VmNicSecurityGroupRefVO ref, VmNicVO nic " +
-                                    " where ref.securityGroupUuid = :sgUuid " +
-                                    " and ref.vmNicUuid=nic.uuid " +
-                                    " and nic.l3NetworkUuid = :l3uuid";
-                            TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                            q.setParameter("sgUuid", msg.getSecurityGroupUuid());
-                            q.setParameter("l3uuid", ref.getL3NetworkUuid());
-                            Long count = q.getSingleResult();
-                            if (count == 0) {
-                                toDelete.add(ref);
-                            }
-                        }
-
-                        if (!toDelete.isEmpty()) {
-                            dbf.removeCollection(toDelete, SecurityGroupL3NetworkRefVO.class);
-                            toDelete.forEach(sgvo.getAttachedL3NetworkRefs()::remove);
-                            if (sgvo.getAttachedL3NetworkRefs().isEmpty()) {
-                                SecurityGroupSystemTags.SDN_CONTROLLER_UUID.delete(sgvo.getUuid());
-                            }
-                        }
-
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -1984,9 +1952,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                             detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
                             SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-                            if (vo.getAttachedL3NetworkRefs().isEmpty()) {
-                                SecurityGroupSystemTags.SDN_CONTROLLER_UUID.delete(vo.getUuid());
-                            }
                             evt.setInventory(SecurityGroupInventory.valueOf(vo));
                             bus.publish(evt);
                             chain.next();
@@ -1995,9 +1960,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 } else {
                     detachSecurityGroupFromL3Network(msg.getSecurityGroupUuid(), msg.getL3NetworkUuid());
                     SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-                    if (vo.getAttachedL3NetworkRefs().isEmpty()) {
-                        SecurityGroupSystemTags.SDN_CONTROLLER_UUID.delete(vo.getUuid());
-                    }
                     evt.setInventory(SecurityGroupInventory.valueOf(vo));
                     bus.publish(evt);
                     chain.next();
@@ -2096,29 +2058,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
             @Override
             public void run(SyncTaskChain chain) {
-                String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
-                if (sdnControllerUuid != null) {
-                    String sgSdnControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
-                    if (sgSdnControllerUuid != null && !sgSdnControllerUuid.equals(sdnControllerUuid)) {
-                        evt.setError(argerr("could not attach l3 network to securityGroup, " +
-                                        "because they have different sdn controller[l3 controller uuid:%s, security group controller uuid:%s]",
-                                sdnControllerUuid, sgSdnControllerUuid));
-                        bus.publish(evt);
-                        chain.next();
-                        return;
-                    }
-
-                    SystemTagCreator creator = SecurityGroupSystemTags.SDN_CONTROLLER_UUID.newSystemTagCreator(msg.getSecurityGroupUuid());
-                    creator.recreate = true;
-                    creator.inherent = false;
-                    creator.setTagByTokens(
-                            map(
-                                    e(SecurityGroupSystemTags.SDN_CONTROLLER_UUID_TOKEN, sdnControllerUuid)
-                            )
-                    );
-                    creator.create();
-                }
-
                 SimpleQuery<SecurityGroupL3NetworkRefVO> q = dbf.createQuery(SecurityGroupL3NetworkRefVO.class);
                 q.add(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
                 q.add(SecurityGroupL3NetworkRefVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
@@ -3281,6 +3220,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setState(SecurityGroupState.Enabled);
+        vo.setvSwitchType(msg.getvSwitchType());
         vo.setInternalId(dbf.generateSequenceNumber(SecurityGroupSequenceNumberVO.class));
         vo.setAccountUuid(msg.getSession().getAccountUuid());
 
@@ -3700,46 +3640,5 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 completion.success();
             }
         });
-    }
-
-    @Override
-    public String preDeleteL3Network(L3NetworkInventory inventory) throws L3NetworkException {
-        return null;
-    }
-
-    @Override
-    public void beforeDeleteL3Network(L3NetworkInventory inventory) {
-
-    }
-
-    @Deferred
-    @Override
-    public void afterDeleteL3Network(L3NetworkInventory inventory) {
-        String sgUuid = Q.New(SecurityGroupL3NetworkRefVO.class)
-                .select(SecurityGroupL3NetworkRefVO_.securityGroupUuid)
-                .eq(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, inventory.getUuid())
-                .findValue();
-        if (sgUuid == null) {
-            return;
-        }
-
-        GLock lock = new GLock(String.format("security-group-remove-l3", sgUuid), TimeUnit.MINUTES.toSeconds(1));
-        lock.lock();
-        Defer.defer(lock::unlock);
-
-        SecurityGroupVO vo = dbf.findByUuid(sgUuid, SecurityGroupVO.class);
-        long count = vo.getAttachedL3NetworkRefs().stream()
-                .filter(ref -> !ref.getL3NetworkUuid().equals(inventory.getUuid())).count();
-        if (count > 0) {
-            return;
-        }
-
-        String sdnControllerUuid = SecurityGroupSystemTags.SDN_CONTROLLER_UUID
-                .getTokenByResourceUuid(sgUuid, SecurityGroupSystemTags.SDN_CONTROLLER_UUID_TOKEN);
-        if (sdnControllerUuid == null) {
-            return;
-        }
-
-        SecurityGroupSystemTags.SDN_CONTROLLER_UUID.delete(sgUuid);
     }
 }

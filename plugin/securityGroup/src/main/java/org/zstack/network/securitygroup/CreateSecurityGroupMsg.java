@@ -9,6 +9,7 @@ public class CreateSecurityGroupMsg extends NeedReplyMessage {
     private String name;
     private String description;
     private String accountUuid;
+    private String vSwitchType = "LinuxBridge";
     private String sdnControllerUuid;
 
     public String getName() {
@@ -41,5 +42,13 @@ public class CreateSecurityGroupMsg extends NeedReplyMessage {
 
     public void setSdnControllerUuid(String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;
+    }
+
+    public String getvSwitchType() {
+        return vSwitchType;
+    }
+
+    public void setvSwitchType(String vSwitchType) {
+        this.vSwitchType = vSwitchType;
     }
 }

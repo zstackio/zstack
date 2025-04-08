@@ -85,6 +85,16 @@ doc {
 					optional true
 					since "3.4.0"
 				}
+				column {
+					name "vSwitchType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.3.20"
+					values ("LinuxBridge","OvnDpdk")
+				}
 			}
         }
 
