@@ -2,7 +2,7 @@
   {
     "name": "ORGANIZATION_OPERATOR_ROLE",
     "uuid": "ff46f380a9b745f490f7edbe0f2c72b9",
-    "description": "\u90e8\u95e8\u8fd0\u8425\u7ba1\u7406\u5458",
+    "description": "ORGANIZATION_OPERATOR_ROLE",
     "statements":
     [
       {
