@@ -1,0 +1,1 @@
+CALL ADD_COLUMN('SecurityGroupVO', 'vSwitchType', 'VARCHAR(32)', 0, 'LinuxBridge');

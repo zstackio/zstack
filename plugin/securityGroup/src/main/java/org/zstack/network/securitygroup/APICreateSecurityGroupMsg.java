@@ -71,6 +71,20 @@ public class APICreateSecurityGroupMsg extends APICreateMessage implements APIAu
     @APIParam(required = false, validValues = {"4", "6"})
     private Integer ipVersion;
 
+    /**
+     * @desc vSwitch type
+     */
+    @APIParam(required = false, maxLength = 1024, validValues = {"LinuxBridge", "OvnDpdk"})
+    private String vSwitchType = "LinuxBridge";
+
+    public String getvSwitchType() {
+        return vSwitchType;
+    }
+
+    public void setvSwitchType(String vSwitchType) {
+        this.vSwitchType = vSwitchType;
+    }
+
     public String getName() {
         return name;
     }

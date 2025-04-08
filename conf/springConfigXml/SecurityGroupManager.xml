@@ -22,7 +22,6 @@
 			<zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.vm.ValidateL3SecurityGroupExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint" />
-			<zstack:extension interface="org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint" />
 		</zstack:plugin>
 	</bean>
 

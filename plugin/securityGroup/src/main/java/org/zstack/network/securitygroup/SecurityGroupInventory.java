@@ -5,6 +5,7 @@ import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
+import javax.persistence.Column;
 import javax.persistence.JoinColumn;
 import java.sql.Timestamp;
 import java.util.*;
@@ -91,6 +92,8 @@ public class SecurityGroupInventory {
     @Deprecated
     private Integer ipVersion;
 
+    private String vSwitchType;
+
     /**
      * @desc the time this resource gets created
      */
@@ -131,6 +134,7 @@ public class SecurityGroupInventory {
         this.setLastOpDate(vo.getLastOpDate());
         this.setRules(SecurityGroupRuleInventory.valueOf(vo.getRules()));
         this.setState(vo.getState().toString());
+        this.setvSwitchType(vo.getvSwitchType());
         Set<String> l3Uuids= new HashSet<String>(vo.getAttachedL3NetworkRefs().size());
         for (SecurityGroupL3NetworkRefVO ref : vo.getAttachedL3NetworkRefs()) {
             l3Uuids.add(ref.getL3NetworkUuid());
@@ -230,5 +234,13 @@ public class SecurityGroupInventory {
     @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
+    }
+
+    public String getvSwitchType() {
+        return vSwitchType;
+    }
+
+    public void setvSwitchType(String vSwitchType) {
+        this.vSwitchType = vSwitchType;
     }
 }
