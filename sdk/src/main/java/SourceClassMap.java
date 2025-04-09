@@ -23,6 +23,9 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.TrainedModelRecordInventory", "org.zstack.sdk.TrainedModelRecordInventory");
 			put("org.zstack.ai.message.MaaSUsage", "org.zstack.sdk.MaaSUsage");
 			put("org.zstack.ai.message.ModelCenterServiceInventory", "org.zstack.sdk.ModelCenterServiceInventory");
+			put("org.zstack.ai.message.ModelCenterServiceInventory$MetaServerService", "org.zstack.sdk.MetaServerService");
+			put("org.zstack.ai.message.ModelCenterServiceInventory$ServiceStatus", "org.zstack.sdk.ServiceStatus");
+			put("org.zstack.ai.message.ModelCenterServiceInventory$ZdfsService", "org.zstack.sdk.ZdfsService");
 			put("org.zstack.ai.message.ModelService", "org.zstack.sdk.ModelService");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
@@ -405,6 +408,9 @@ public class SourceClassMap {
 			put("org.zstack.header.vpc.ha.VpcHaGroupMonitorIpInventory", "org.zstack.sdk.VpcHaGroupMonitorIpInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupNetworkServiceRefInventory", "org.zstack.sdk.VpcHaGroupNetworkServiceRefInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupVipRefInventory", "org.zstack.sdk.VpcHaGroupVipRefInventory");
+			put("org.zstack.header.zdfs.StorageType", "org.zstack.sdk.StorageType");
+			put("org.zstack.header.zdfs.ZdfsInventory", "org.zstack.sdk.ZdfsInventory");
+			put("org.zstack.header.zdfs.ZdfsStorageInventory", "org.zstack.sdk.ZdfsStorageInventory");
 			put("org.zstack.header.zone.ZoneInventory", "org.zstack.sdk.ZoneInventory");
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
@@ -1101,6 +1107,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MdevDeviceStatus", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceStatus");
 			put("org.zstack.sdk.MdevDeviceType", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceType");
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
+			put("org.zstack.sdk.MetaServerService", "org.zstack.ai.message.ModelCenterServiceInventory$MetaServerService");
 			put("org.zstack.sdk.MiniCandidateHostStruct", "org.zstack.header.bootstrap.MiniCandidateHostStruct");
 			put("org.zstack.sdk.MiniHostInfo", "org.zstack.header.bootstrap.MiniHostInfo");
 			put("org.zstack.sdk.MiniNetworkConfigStruct", "org.zstack.header.bootstrap.MiniNetworkConfigStruct");
@@ -1284,6 +1291,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
 			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.header.securitymachine.SecurityMachineInventory");
+			put("org.zstack.sdk.ServiceStatus", "org.zstack.ai.message.ModelCenterServiceInventory$ServiceStatus");
 			put("org.zstack.sdk.ServiceTypeStatisticData", "org.zstack.header.host.ServiceTypeStatisticData");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SessionStatus", "org.zstack.header.portMirror.SessionStatus");
@@ -1321,6 +1329,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SshPrivateKeyPairInventory", "org.zstack.header.sshkeypair.SshPrivateKeyPairInventory");
 			put("org.zstack.sdk.StackParameters", "org.zstack.header.cloudformation.StackParameters");
 			put("org.zstack.sdk.StackTemplateInventory", "org.zstack.header.cloudformation.StackTemplateInventory");
+			put("org.zstack.sdk.StorageType", "org.zstack.header.zdfs.StorageType");
 			put("org.zstack.sdk.SupportedResourceStruct", "org.zstack.header.cloudformation.SupportedResourceStruct");
 			put("org.zstack.sdk.SyncBackupResult", "org.zstack.header.storage.backup.SyncBackupResult");
 			put("org.zstack.sdk.SystemTagInventory", "org.zstack.header.tag.SystemTagInventory");
@@ -1452,6 +1461,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZBoxVmBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVmBackupInfo");
 			put("org.zstack.sdk.ZBoxVolumeBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo");
 			put("org.zstack.sdk.ZQLQueryReturn", "org.zstack.zql.ZQLQueryReturn");
+			put("org.zstack.sdk.ZdfsInventory", "org.zstack.header.zdfs.ZdfsInventory");
+			put("org.zstack.sdk.ZdfsService", "org.zstack.ai.message.ModelCenterServiceInventory$ZdfsService");
+			put("org.zstack.sdk.ZdfsStorageInventory", "org.zstack.header.zdfs.ZdfsStorageInventory");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");

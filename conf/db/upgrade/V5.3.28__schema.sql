@@ -103,3 +103,32 @@ CALL ADD_COLUMN('GuestVmScriptEO', 'encodingType', 'VARCHAR(32)', 1, 'PlainText'
 CALL ADD_COLUMN('GuestVmScriptExecutedRecordVO', 'encodingType', 'VARCHAR(32)', 1, 'PlainText');
 DROP VIEW IF EXISTS `zstack`.`GuestVmScriptVO`;
 CREATE VIEW `zstack`.`GuestVmScriptVO` AS SELECT uuid, name, description, platform, encodingType, scriptContent, renderParams, scriptType, scriptTimeout, version, createDate, lastOpDate FROM `zstack`.`GuestVmScriptEO` WHERE deleted IS NULL;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZdfsVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `zoneUuid` varchar(32) NULL,
+    `url` varchar(255) NOT NULL,
+    `hostName` varchar(255) NOT NULL,
+    `sshPort` int(16) not NULL,
+    `status` varchar(32) NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZdfsStorageVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `endPoint` varchar(255) NOT NULL,
+    `type` varchar(32) NOT NULL,
+    `accessKey` varchar(255) NULL,
+    `secretKey` varchar(255) NULL,
+    `usedCapacity` bigint(20) unsigned NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('ModelCenterVO', 'zoneUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelCenterVO', 'zdfsUuid', 'VARCHAR(32)', 1, NULL);
+ALTER TABLE ModelCenterVO ADD CONSTRAINT fkModelCenterVOZoneVO FOREIGN KEY (zoneUuid) REFERENCES ZoneEO (uuid) ON DELETE CASCADE;
+ALTER TABLE ModelCenterVO ADD CONSTRAINT fkModelCenterVOZdfsVO FOREIGN KEY (zdfsUuid) REFERENCES ZdfsVO (uuid) ON DELETE SET NULL;
