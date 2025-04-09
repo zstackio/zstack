@@ -1,0 +1,3 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+remote_config:
+  url: "http://open.zstack.ai:20001/code-reviews/zstack-cloud.yaml"
