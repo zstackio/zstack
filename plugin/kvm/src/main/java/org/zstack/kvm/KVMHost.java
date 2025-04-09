@@ -2676,10 +2676,10 @@ public class KVMHost extends HostBase implements Host {
 
         MergeSnapshotCmd cmd = new MergeSnapshotCmd();
         cmd.setFullRebase(msg.isFullRebase());
-        cmd.setDestPath(volume.getInstallPath());
         cmd.setSrcPath(msg.getFrom() != null ? msg.getFrom().getPrimaryStorageInstallPath() : null);
         cmd.setVmUuid(volume.getVmInstanceUuid());
         cmd.setVolume(VolumeTO.valueOf(volume, (KVMHostInventory) getSelfInventory()));
+        cmd.setDestPath(cmd.getVolume().getInstallPath());
 
         extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
