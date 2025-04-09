@@ -131,6 +131,15 @@ doc {
 					optional true
 					since "4.7.21"
 				}
+				column {
+					name "allocatorStrategy"
+					enclosedIn "updateVmInstance"
+					desc "虚拟机分配策略"
+					location "body"
+					type "String"
+					optional true
+					since "4.10.10"
+				}
 			}
         }
 

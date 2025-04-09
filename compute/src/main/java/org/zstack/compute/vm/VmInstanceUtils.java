@@ -27,6 +27,9 @@ public class VmInstanceUtils {
         if (msg.getRootDiskSize() != null) {
             cmsg.setRootDiskSize(msg.getRootDiskSize());
         }
+        if (msg.getAllocatorStrategy() != null) {
+            cmsg.setAllocatorStrategy(msg.getAllocatorStrategy());
+        }
         cmsg.setDataDiskSizes(msg.getDataDiskSizes());
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());

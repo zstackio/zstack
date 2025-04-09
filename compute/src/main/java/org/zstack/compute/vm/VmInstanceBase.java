@@ -5734,6 +5734,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     update = true;
                 }
 
+                if (msg.getAllocatorStrategy() != null) {
+                    self.setAllocatorStrategy(msg.getAllocatorStrategy());
+                    update = true;
+                }
+
                 if (update) {
                     dbf.update(self);
                 }
@@ -5827,7 +5832,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    private void handle(final APIUpdateVmInstanceMsg msg) {
+    private void handle(APIUpdateVmInstanceMsg msg) {
         APIUpdateVmInstanceEvent evt = new APIUpdateVmInstanceEvent(msg.getId());
         UpdateVmInstanceMsg umsg = new UpdateVmInstanceMsg();
         umsg.setUuid(msg.getUuid());
@@ -5841,6 +5846,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         umsg.setState(msg.getState());
         umsg.setGuestOsType(msg.getGuestOsType());
         umsg.setSystemTags(msg.getSystemTags());
+        umsg.setAllocatorStrategy(msg.getAllocatorStrategy());
         bus.makeTargetServiceIdByResourceUuid(umsg, VmInstanceConstant.SERVICE_ID, umsg.getVmInstanceUuid());
         bus.send(umsg, new CloudBusCallBack(msg) {
             @Override

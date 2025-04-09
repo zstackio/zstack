@@ -14,6 +14,7 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.zone.ZoneVO;
 
 import java.util.Collections;
@@ -219,6 +220,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false)
     private Boolean virtio;
 
+    @APIParam(required = false)
+    private String allocatorStrategy;
+
     @PythonClassInventory
     public static class DiskAO {
         private boolean boot;
@@ -233,9 +237,29 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         private String templateUuid;
         private String diskOfferingUuid;
         private String sourceType;
+        /**
+         * allow: VolumeVO.uuid
+         */
         private String sourceUuid;
         private List<String> systemTags;
         private String name;
+
+        public DiskAO withImage(String imageUuid) {
+            this.templateUuid = imageUuid;
+            return this;
+        }
+
+        public DiskAO withVolume(String volumeUuid) {
+            this.sourceType = VolumeVO.class.getSimpleName();
+            this.sourceUuid = volumeUuid;
+            return this;
+        }
+
+        public DiskAO withLun(String lunUuid) {
+            this.sourceType = "LunVO";
+            this.sourceUuid = lunUuid;
+            return this;
+        }
 
         public boolean isBoot() {
             return boot;
@@ -574,6 +598,14 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.virtio = virtio;
     }
 
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
+    }
+
     public static APICreateVmInstanceMsg __example__() {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
         msg.setName("vm1");
@@ -589,6 +621,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         disk1.setGuestOsType("Helix 8");
         disk1.setArchitecture("x86_64");
         disk1.setSystemTags(list("volumeProvisioningStrategy::ThickProvisioning"));
+        disk1.withVolume(uuid(VolumeVO.class));
 
         DiskAO disk2 = new DiskAO();
         disk2.setName("data-volume");
