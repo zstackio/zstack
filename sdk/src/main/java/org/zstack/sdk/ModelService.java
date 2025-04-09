@@ -172,6 +172,22 @@ public class ModelService  {
         return this.serviceBootUptime;
     }
 
+    public java.lang.String rootDiskOfferingUuid;
+    public void setRootDiskOfferingUuid(java.lang.String rootDiskOfferingUuid) {
+        this.rootDiskOfferingUuid = rootDiskOfferingUuid;
+    }
+    public java.lang.String getRootDiskOfferingUuid() {
+        return this.rootDiskOfferingUuid;
+    }
+
+    public java.lang.Long rootDiskSize;
+    public void setRootDiskSize(java.lang.Long rootDiskSize) {
+        this.rootDiskSize = rootDiskSize;
+    }
+    public java.lang.Long getRootDiskSize() {
+        return this.rootDiskSize;
+    }
+
     public SessionInventory session;
     public void setSession(SessionInventory session) {
         this.session = session;

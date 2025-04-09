@@ -130,6 +130,12 @@ public class DeployModelEvalServiceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer serviceBootUptime;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String rootDiskOfferingUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long rootDiskSize;
+
     @Param(required = false)
     public java.util.List systemTags;
 
