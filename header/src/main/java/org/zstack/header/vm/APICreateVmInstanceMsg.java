@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * @api create a new vm instance
@@ -86,8 +86,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(maxLength = 255)
     private String name;
     /**
-     * @desc uuid of instance offering. See :ref:`InstanceOfferingInventory`
+     * InstanceOfferingVO is deprecated, use cpuNum, memorySize, reservedMemorySize, allocatorStrategy instead
      */
+    @Deprecated
     @APIParam(resourceType = InstanceOfferingVO.class, required = false)
     private String instanceOfferingUuid;
 
@@ -125,18 +126,28 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
      * mandatory when vm is created from ISO. See 'mediaType' of :ref:`ImageInventory`
      * @optional
      */
+    @Deprecated
     @APIParam(required = false, resourceType = DiskOfferingVO.class)
     private String rootDiskOfferingUuid;
 
+    /**
+     * use DiskAO.size
+     */
+    @Deprecated
     @APIParam(required = false)
     private Long rootDiskSize;
 
+    /**
+     * use DiskAO.size
+     */
+    @Deprecated
     @APIParam(required = false)
     private List<Long> dataDiskSizes;
 
     /**
      * @desc disk offering uuid for data volumes. See :ref:`DiskOfferingInventory`
      */
+    @Deprecated
     @APIParam(required = false, resourceType = DiskOfferingVO.class)
     private List<String> dataDiskOfferingUuids;
     /**
@@ -170,25 +181,27 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, maxLength = 2048)
     private String description;
 
-    /**
-     * @desc user-defined root password
-     * @optional
-     */
-//    @APIParam(required = false, maxLength = 32, validRegexValues = VmInstanceConstant.USER_VM_REGEX_PASSWORD)
-//    private String rootPassword;
-
     private String defaultL3NetworkUuid;
 
     @APIParam(required = false, validValues = {"InstantStart", "JustCreate", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
+    /**
+     * use DiskAO.systemTags
+     */
     @APIParam(required = false)
+    @Deprecated
     private List<String> rootVolumeSystemTags;
 
+    /**
+     * use DiskAO.systemTags
+     */
     @APIParam(required = false)
+    @Deprecated
     private List<String> dataVolumeSystemTags;
 
     @APIParam(required = false)
+    @Deprecated
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
 
     @APIParam(required = false)
@@ -214,6 +227,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         private String architecture;
         private String primaryStorageUuid;
         private long size;
+        /**
+         * allow: ImageVO.uuid
+         */
         private String templateUuid;
         private String diskOfferingUuid;
         private String sourceType;
@@ -563,12 +579,24 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         msg.setName("vm1");
         msg.setDescription("this is a vm");
         msg.setClusterUuid(uuid());
-        msg.setDataDiskOfferingUuids(asList(uuid(), uuid()));
-        msg.setImageUuid(uuid());
-        msg.setInstanceOfferingUuid(uuid());
         msg.setL3NetworkUuids(Collections.singletonList(uuid()));
-        msg.setRootVolumeSystemTags(Collections.singletonList("volumeProvisioningStrategy::ThickProvisioning"));
-        msg.setDataVolumeSystemTags(null);
+
+        DiskAO disk1 = new DiskAO();
+        disk1.setName("root-volume");
+        disk1.setBoot(true);
+        disk1.setPrimaryStorageUuid(uuid(PrimaryStorageVO.class));
+        disk1.setPlatform("Linux");
+        disk1.setGuestOsType("Helix 8");
+        disk1.setArchitecture("x86_64");
+        disk1.setSystemTags(list("volumeProvisioningStrategy::ThickProvisioning"));
+
+        DiskAO disk2 = new DiskAO();
+        disk2.setName("data-volume");
+        disk2.setBoot(false);
+        disk2.setPrimaryStorageUuid(uuid(PrimaryStorageVO.class));
+
+        msg.setDiskAOs(list(disk1, disk2));
+
         return msg;
     }
 
