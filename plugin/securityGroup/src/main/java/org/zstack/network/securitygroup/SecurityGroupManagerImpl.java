@@ -53,6 +53,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
@@ -274,11 +275,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             String sql = "select nic.uuid from VmNicVO nic, VmInstanceVO vm, VmNicSecurityGroupRefVO ref, SecurityGroupVO sg" +
                     " where nic.uuid = ref.vmNicUuid and nic.vmInstanceUuid = vm.uuid"+
                     " and ref.securityGroupUuid = sg.uuid and sg.state in (:sgState)" +
+                    " and sg.vSwitchType = :vSwitchType" +
                     " and vm.hostUuid in (:hostUuids) and vm.state in (:vmStates)";
             TypedQuery<String> insgQuery = dbf.getEntityManager().createQuery(sql, String.class);
             insgQuery.setParameter("hostUuids", hostUuids);
             insgQuery.setParameter("vmStates", vmStates);
             insgQuery.setParameter("sgState", sgStates);
+            insgQuery.setParameter("vSwitchType", L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
             List<String> nicsInSg = insgQuery.getResultList();
 
             sql = "select nic.uuid from VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid" +
@@ -977,8 +980,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         if (msg.getSgUuids() != null && !msg.getSgUuids().isEmpty()) {
             Q.New(SecurityGroupVO.class)
-                    .select(SecurityGroupVO_.uuid).in(SecurityGroupVO_.uuid, msg.getSgUuids())
-                    .eq(SecurityGroupVO_.state, SecurityGroupState.Enabled).listValues().forEach(sgUuid -> {
+                    .select(SecurityGroupVO_.uuid)
+                    .eq(SecurityGroupVO_.vSwitchType, L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE)
+                    .in(SecurityGroupVO_.uuid, msg.getSgUuids())
+                    .eq(SecurityGroupVO_.state, SecurityGroupState.Enabled)
+                    .listValues().forEach(sgUuid -> {
                         HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember((String) sgUuid);
                         if (!groupMemberTO.getHostUuids().isEmpty()) {
                             updateGroupMembers(groupMemberTO);
