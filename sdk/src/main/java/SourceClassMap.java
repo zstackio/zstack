@@ -133,9 +133,9 @@ public class SourceClassMap {
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.jit.JitSecurityMachineInventory", "org.zstack.sdk.JitSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.koal.KoAlSecretResourcePoolInventory", "org.zstack.sdk.KoAlSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.plugin.PluginSecretResourcePoolInventory", "org.zstack.sdk.PluginSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.sansec.SanSecSecretResourcePoolInventory", "org.zstack.sdk.SanSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.sansec.SanSecSecurityMachineInventory", "org.zstack.sdk.SanSecSecurityMachineInventory");
-			put("org.zstack.crypto.securitymachine.thirdparty.plugin.PluginSecretResourcePoolInventory", "org.zstack.sdk.PluginSecretResourcePoolInventory");
 			put("org.zstack.directory.DirectoryInventory", "org.zstack.sdk.DirectoryInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
