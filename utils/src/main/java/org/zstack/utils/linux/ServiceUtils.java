@@ -36,7 +36,7 @@ public class ServiceUtils {
             }
 
             serviceContent.append("\n[Service]\n");
-            serviceContent.append("Type=oneshot\n");
+            serviceContent.append("Type=forking\n");
             serviceContent.append("ExecStart=").append(scriptPath).append("\n");
 
             serviceContent.append("\n[Install]\n");
