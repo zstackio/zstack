@@ -1822,40 +1822,16 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 .eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgId)
                 .listValues();
 
-        //security group bas been bound to non sdn network
-        boolean normalSg = false;
-        List<String> l3Uuids = Q.New(SecurityGroupL3NetworkRefVO.class)
-                .select(SecurityGroupL3NetworkRefVO_.l3NetworkUuid)
-                .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, sgId)
-                .listValues();
-        if (!l3Uuids.isEmpty()) {
-            String controllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3Uuids.get(0));
-            if (controllerUuid == null) {
-                normalSg = true;
-            }
-        }
         List<VmNicVO> candidateNics = new ArrayList<>();
-        List<VmNicVO> allNics;
-        if (normalSg) {
-            allNics = SQL.New("select nic from VmNicVO nic, VmInstanceVO vm" +
-                            " where nic.vmInstanceUuid = vm.uuid" +
-                            " and nic.type = :nicType " +
-                            " and vm.type = :vmType" +
-                            " and vm.state in (:vmStates)", VmNicVO.class)
-                    .param("nicType", VmInstanceConstant.VIRTUAL_NIC_TYPE)
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                    .param("vmStates", list(VmInstanceState.Running, VmInstanceState.Stopped))
-                    .list();
-        } else {
-            allNics = SQL.New("select nic from VmNicVO nic, VmInstanceVO vm" +
-                            " where nic.vmInstanceUuid = vm.uuid" +
-                            " and vm.type = :vmType" +
-                            " and vm.state in (:vmStates)", VmNicVO.class)
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                    .param("vmStates", list(VmInstanceState.Running, VmInstanceState.Stopped))
-                    .list();
-        }
-        
+        List<VmNicVO> allNics = SQL.New("select nic from VmNicVO nic, VmInstanceVO vm" +
+                        " where nic.vmInstanceUuid = vm.uuid" +
+                        " and nic.type = :nicType " +
+                        " and vm.type = :vmType" +
+                        " and vm.state in (:vmStates)", VmNicVO.class)
+                .param("nicType", VmInstanceConstant.VIRTUAL_NIC_TYPE)
+                .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                .param("vmStates", list(VmInstanceState.Running, VmInstanceState.Stopped))
+                .list();
         if (allNics.isEmpty()) {
             return allNics;
         }
