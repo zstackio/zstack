@@ -47,6 +47,8 @@ DELIMITER ;
 CALL createThickProvisionVolumeTag();
 DROP PROCEDURE IF EXISTS createThickProvisionVolumeTag;
 
+ALTER TABLE `zstack`.`EncryptionIntegrityVO` MODIFY COLUMN `resourceUuid` varchar(128) NOT NULL;
+
 CREATE TABLE `zstack`.`ObservabilityServerOfferingVO`(
     `uuid`                  varchar(32) NOT NULL UNIQUE,
     `managementNetworkUuid` varchar(32) DEFAULT NULL,

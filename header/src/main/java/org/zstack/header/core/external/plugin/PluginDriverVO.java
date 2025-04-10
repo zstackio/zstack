@@ -6,6 +6,7 @@ import org.zstack.header.vo.ResourceVO;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import java.sql.Timestamp;
 
 @Entity
 @Table
@@ -32,6 +33,18 @@ public class PluginDriverVO extends ResourceVO {
     @Column
     private String features;
 
+    @Column
+    private String optionTypes;
+
+    @Column
+    private Timestamp createDate;
+
+    @Column
+    private Timestamp lastOpDate;
+
+    @Column
+    private boolean deleted = false;
+
     public PluginDriverVO() {
     }
 
@@ -44,6 +57,18 @@ public class PluginDriverVO extends ResourceVO {
         this.version = other.version;
         this.description = other.description;
         this.type = other.type;
+        this.optionTypes = other.optionTypes;
+        this.createDate = other.createDate;
+        this.lastOpDate = other.lastOpDate;
+        this.deleted = other.deleted;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     @Override
@@ -110,5 +135,29 @@ public class PluginDriverVO extends ResourceVO {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getOptionTypes() {
+        return optionTypes;
+    }
+
+    public void setOptionTypes(String optionTypes) {
+        this.optionTypes = optionTypes;
+    }
+
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
+    }
+
+    public Timestamp getLastOpDate() {
+        return lastOpDate;
+    }
+
+    public void setLastOpDate(Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
     }
 }

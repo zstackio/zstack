@@ -1,5 +1,6 @@
 package org.zstack.abstraction;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -59,4 +60,13 @@ public interface PluginDriver {
      * @return license of current plugin
      */
     String license();
+
+    /**
+     * Provides a Collection of OptionType inputs that define the required input fields for defining a plugin integration
+     *
+     * @return Collection of OptionType
+     */
+    default Collection<OptionType> optionTypes() {
+        return null;
+    }
 }

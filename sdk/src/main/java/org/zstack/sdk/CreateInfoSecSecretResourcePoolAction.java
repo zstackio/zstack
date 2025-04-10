@@ -37,6 +37,9 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String model;
 
+    @Param(required = false, validValues = {"All","DataCrypto","Auth"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ability;
+
     @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine","CloudSecurityResourceService","SecureSignVerifyService","Plugin"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 

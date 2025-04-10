@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreatePluginSecretResourcePoolAction extends AbstractAction {
+public class DeletePluginDriversAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreatePluginSecretResourcePoolAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSecretResourcePoolResult value;
+        public org.zstack.sdk.DeletePluginDriversResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,11 @@ public class CreatePluginSecretResourcePoolAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map properties;
-
-    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String pluginDriverUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String model;
-
-    @Param(required = false, validValues = {"All","DataCrypto","Auth"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ability;
-
-    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine","CloudSecurityResourceService","SecureSignVerifyService","Plugin"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {6L,180L}, noTrim = false)
-    public java.lang.Integer heartbeatInterval;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -90,8 +63,8 @@ public class CreatePluginSecretResourcePoolAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSecretResourcePoolResult value = res.getResult(org.zstack.sdk.CreateSecretResourcePoolResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSecretResourcePoolResult() : value; 
+        org.zstack.sdk.DeletePluginDriversResult value = res.getResult(org.zstack.sdk.DeletePluginDriversResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePluginDriversResult() : value; 
 
         return ret;
     }
@@ -120,11 +93,11 @@ public class CreatePluginSecretResourcePoolAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/secret-resource-pool/plugin";
+        info.httpMethod = "DELETE";
+        info.path = "/external/plugins/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

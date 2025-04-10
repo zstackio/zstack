@@ -10,7 +10,8 @@ public class RBACInfo implements RBACDescription {
                 .name("external-plugin")
                 .adminOnlyAPIs(
                         APIQueryPluginDriversMsg.class,
-                        APIRefreshPluginDriversMsg.class
+                        APIRefreshPluginDriversMsg.class,
+                        APIDeletePluginDriversMsg.class
                 ).build();
     }
 

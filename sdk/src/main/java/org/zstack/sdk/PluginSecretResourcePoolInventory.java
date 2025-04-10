@@ -12,4 +12,12 @@ public class PluginSecretResourcePoolInventory extends org.zstack.sdk.SecretReso
         return this.properties;
     }
 
+    public java.lang.String pluginDriverUuid;
+    public void setPluginDriverUuid(java.lang.String pluginDriverUuid) {
+        this.pluginDriverUuid = pluginDriverUuid;
+    }
+    public java.lang.String getPluginDriverUuid() {
+        return this.pluginDriverUuid;
+    }
+
 }

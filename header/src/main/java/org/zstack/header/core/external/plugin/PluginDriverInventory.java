@@ -1,23 +1,32 @@
 package org.zstack.header.core.external.plugin;
 
+import org.zstack.abstraction.OptionType;
 import org.zstack.header.search.Inventory;
+import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 @Inventory(mappingVOClass = PluginDriverVO.class)
 public class PluginDriverInventory {
+    private String uuid;
     private String name;
     private String type;
     private String vendor;
     private String features;
+    private Collection<OptionType> optionTypes;
+    private boolean deleted;
     private String license;
     private String version;
     private String description;
+    private Timestamp createDate;
+    private Timestamp lastOpDate;
 
     public static PluginDriverInventory valueOf(PluginDriverVO vo) {
         PluginDriverInventory inv = new PluginDriverInventory();
+        inv.setUuid(vo.getUuid());
         inv.setName(vo.getName());
         inv.setVendor(vo.getVendor());
         inv.setFeatures(vo.getFeatures());
@@ -25,6 +34,10 @@ public class PluginDriverInventory {
         inv.setLicense(vo.getLicense());
         inv.setVersion(vo.getVersion());
         inv.setDescription(vo.getDescription());
+        inv.setOptionTypes(JSONObjectUtil.toCollection(vo.getOptionTypes(), ArrayList.class, OptionType.class));
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setLastOpDate(vo.getLastOpDate());
+        inv.setDeleted(vo.isDeleted());
         return inv;
     }
 
@@ -34,6 +47,22 @@ public class PluginDriverInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getName() {
@@ -90,5 +119,29 @@ public class PluginDriverInventory {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Collection<OptionType> getOptionTypes() {
+        return optionTypes;
+    }
+
+    public void setOptionTypes(Collection<OptionType> optionTypes) {
+        this.optionTypes = optionTypes;
+    }
+
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
+    }
+
+    public Timestamp getLastOpDate() {
+        return lastOpDate;
+    }
+
+    public void setLastOpDate(Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
     }
 }

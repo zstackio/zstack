@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/external/plugins",
         isAction = true,
-        responseClass = APIRefreshPluginDrviersEvent.class,
+        responseClass = APIRefreshPluginDriversEvent.class,
         method = HttpMethod.PUT
 )
 public class APIRefreshPluginDriversMsg extends APIMessage {
