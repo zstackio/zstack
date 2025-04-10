@@ -1,7 +1,9 @@
 package org.zstack.test.integration.networkservice.provider.flat.userdata
 
 import org.springframework.http.HttpEntity
+import org.zstack.header.network.l3.L3NetworkType
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmInstanceVO
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.flat.FlatUserdataBackend
@@ -135,6 +137,11 @@ class TestUserDataBatchApllyCase extends SubCase {
             imageUuid = image.uuid
             l3NetworkUuids = [l31.uuid]
         }
+        createSystemTag {
+            resourceUuid = vm1.uuid
+            resourceType = VmInstanceVO.class.getSimpleName()
+            tag = "hostname::kvm"
+        }
         VmNicInventory nic1 = vm1.vmNics.get(0)
 
         VmInstanceInventory vm2 = createVmInstance {
@@ -143,6 +150,11 @@ class TestUserDataBatchApllyCase extends SubCase {
             imageUuid = image.uuid
             l3NetworkUuids = [l31.uuid]
         }
+        createSystemTag {
+            resourceUuid = vm2.uuid
+            resourceType = VmInstanceVO.class.getSimpleName()
+            tag = "hostname::kvm"
+        }
         VmNicInventory nic2 = vm2.vmNics.get(0)
 
         VmInstanceInventory vm3 = createVmInstance {
@@ -150,6 +162,11 @@ class TestUserDataBatchApllyCase extends SubCase {
             instanceOfferingUuid = offer.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l32.uuid]
+        }
+        createSystemTag {
+            resourceUuid = vm3.uuid
+            resourceType = VmInstanceVO.class.getSimpleName()
+            tag = "hostname::kvm"
         }
         VmNicInventory nic3 = vm3.vmNics.get(0)
 
@@ -168,6 +185,20 @@ class TestUserDataBatchApllyCase extends SubCase {
             assert to.vmIp == nic1.ip || to.vmIp == nic2.ip || to.vmIp == nic3.ip
             assert to.netmask == nic1.netmask || to.netmask == nic2.netmask || to.netmask == nic3.netmask
             assert to.l3NetworkUuid == nic1.l3NetworkUuid || to.l3NetworkUuid == nic2.l3NetworkUuid || to.l3NetworkUuid == nic3.l3NetworkUuid
+            assert to.metadata.vmUuid == vm1.uuid || to.metadata.vmUuid == vm2.uuid || to.metadata.vmUuid == vm3.uuid
+            assert to.metadata.mac == nic1.mac || to.metadata.mac == nic2.mac || to.metadata.mac == nic3.mac
+            assert to.metadata.vmHostname == host.name
+            assert to.metadata.regionName
+//            assert to.metadata.dnsServersIp
+//            assert to.metadata.vpcId
+
+            for (FlatUserdataBackend.NetworkInterfaceDetails nid : to.networkInterfaces) {
+                assert nid.ip == nic1.ip || nid.ip == nic2.ip || nid.ip == nic3.ip
+                assert nid.netmask == nic1.netmask || nid.netmask == nic2.netmask || nid.netmask == nic3.netmask
+                assert nid.gateway == nic1.gateway || nid.gateway == nic2.gateway || nid.gateway == nic3.gateway
+                assert nid.macAddress == nic1.mac || nid.macAddress == nic2.mac || nid.macAddress == nic3.mac
+                assert nid.vpcCidrBlock == l31.ipRanges.get(0).networkCidr || nid.vpcCidrBlock == l32.ipRanges.get(0).networkCidr
+            }
         }
 
         FlatUserdataBackend.CleanupUserdataCmd ccmd = null
