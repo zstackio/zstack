@@ -21,7 +21,6 @@ import org.zstack.expon.sdk.pool.FailureDomainModule;
 import org.zstack.expon.sdk.uss.UssGatewayModule;
 import org.zstack.expon.sdk.vhost.VhostControllerModule;
 import org.zstack.expon.sdk.volume.ExponVolumeQos;
-import org.zstack.expon.sdk.volume.GetVolumeBoundPathResponse;
 import org.zstack.expon.sdk.volume.VolumeModule;
 import org.zstack.expon.sdk.volume.VolumeSnapshotModule;
 import org.zstack.header.core.Completion;
@@ -1039,7 +1038,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     @Override
     public void deleteVolumeAndSnapshot(String installPath, Completion comp) {
         String volId = getVolIdFromPath(installPath);
-        apiHelper.deleteVolume(volId, true);
+        apiHelper.deleteVolumeAndSnapshots(volId, true);
         comp.success();
     }
 
