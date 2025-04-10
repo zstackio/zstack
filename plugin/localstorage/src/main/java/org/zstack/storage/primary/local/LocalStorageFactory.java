@@ -15,10 +15,12 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.trash.CreateRecycleExtensionPoint;
+import org.zstack.core.trash.DeleteRecycleExtensionPoint;
 import org.zstack.header.Component;
 import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.core.*;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.trash.InstallPathRecycleVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -46,6 +48,7 @@ import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
+import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
@@ -53,6 +56,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -73,7 +77,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         RecoverDataVolumeExtensionPoint, RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
         HostAfterConnectedExtensionPoint, InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint,
         PostMarkRootVolumeAsSnapshotExtension, AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint,
-        CreateRecycleExtensionPoint, AfterInstantiateVolumeExtensionPoint, CreateDataVolumeExtensionPoint {
+        CreateRecycleExtensionPoint, AfterInstantiateVolumeExtensionPoint, CreateDataVolumeExtensionPoint, DeleteRecycleExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -1313,6 +1317,30 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (!hostUuids.isEmpty()) {
             vo.setHostUuid(hostUuids.get(0));
         }
+    }
+
+    @Override
+    public String makeSureInstallPathNotUsed(InstallPathRecycleInventory inv) {
+        List<String> volumeUuids = Q.New(VolumeVO.class).eq(VolumeVO_.installPath, inv.getInstallPath()).select(VolumeVO_.uuid).listValues();
+        if (volumeUuids.isEmpty()) {
+            return null;
+        }
+
+        volumeUuids = volumeUuids.stream().filter(volumeUuid -> {
+            String hostUuid = LocalStorageAllocatorFactory.getHostUuidFromURIScheme(String.format("volume://%s", volumeUuid));
+            return Objects.equals(hostUuid, inv.getHostUuid());
+        }).collect(Collectors.toList());
+
+        return volumeUuids.isEmpty() ? null : String.format("%s is still in using by volume[uuids:%s], " +
+                "cannot remove it from trash before delete them", inv.getInstallPath(), volumeUuids);
+    }
+
+    @Override
+    public String buildAllocatedInstallUrl(InstallPathRecycleInventory inv) {
+        LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
+        path.installPath = inv.getInstallPath();
+        path.hostUuid = inv.getHostUuid();
+        return path.makeFullPath();
     }
 
     @Override

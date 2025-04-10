@@ -13,6 +13,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -21,6 +22,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.MergeQueue;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.trash.DeleteRecycleExtensionPoint;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -95,6 +97,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected StorageTrash trash;
     @Autowired
     protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public PrimaryStorageBase() {
     }
@@ -989,9 +993,15 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     logger.info(String.format("Deleted volume %s in Trash.", inv.getInstallPath()));
-                    IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                    String allocatedInstallUrl = null;
+                    DeleteRecycleExtensionPoint ext = pluginRgty.getExtensionFromMap(self.getType(), DeleteRecycleExtensionPoint.class);
+                    if (ext != null) {
+                        allocatedInstallUrl = ext.buildAllocatedInstallUrl(inv);
+                    }
+                    ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                     imsg.setPrimaryStorageUuid(self.getUuid());
                     imsg.setDiskSize(inv.getSize());
+                    imsg.setAllocatedInstallUrl(allocatedInstallUrl);
                     bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(imsg);
                     trash.removeFromDb(trashId);
