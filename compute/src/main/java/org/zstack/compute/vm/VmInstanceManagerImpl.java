@@ -1179,6 +1179,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     attachOtherDisks = !otherDisks.isEmpty();
                 }
 
+                // VM in other platform do not support to attach data volume when VM is running
+                boolean temporaryShutdown = ImagePlatform.Other.name().equals(finalVo.getPlatform()) &&
+                        Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) &&
+                        attachOtherDisks;
+
                 flow(new Flow() {
                     String __name__ = "call-after-persist-vm-extensions";
                     @Override
@@ -1299,7 +1304,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
                         smsg.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
                         smsg.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
-                        if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && attachOtherDisks) {
+
+                        if (temporaryShutdown) {
+                            logger.debug(String.format(
+                                    "VM[uuid=%s] will be temporarily shut down before attaching data volume(s): strategy update to 'CreateStopped'",
+                                    finalVo.getUuid()));
                             smsg.setStrategy(VmCreationStrategy.CreateStopped.toString());
                         } else {
                             smsg.setStrategy(msg.getStrategy());
@@ -1364,7 +1373,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     otherDisks.forEach(diskAO -> flow(new VmInstantiateOtherDiskFlow(diskAO)));
                 }
 
-                if (Objects.equals(msg.getStrategy(), VmCreationStrategy.InstantStart.toString()) && attachOtherDisks) {
+                if (temporaryShutdown) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "start-vm";
 
