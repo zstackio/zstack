@@ -17,6 +17,7 @@ import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -249,32 +250,36 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
     private void initEncryptDriver() {
         String driverType = EncryptGlobalConfig.ENCRYPT_DRIVER.value();
-        for (EncryptDriver driver : pluginRegistry.getExtensionList(EncryptDriver.class)) {
-            if (!driverType.equals(driver.getDriverType().toString())) {
-                continue;
-            }
-
-            encryptDriver = driver;
-            break;
+        EncryptDriver encryptDriver = findEncryptDriver(driverType);
+        if (encryptDriver != null) {
+            this.encryptDriver = encryptDriver;
+            logger.debug(String.format("New encrypt driver: %s is included by driver class: %s", driverType, encryptDriver.getClass().getCanonicalName()));
+            return;
         }
 
-        if (encryptDriver == null) {
-            throw new CloudRuntimeException(String.format("no matched encrypt driver[type:%s] can be found", driverType));
-        }
+        throw new CloudRuntimeException(String.format("No matched encrypt driver[type:%s] can be found", driverType));
+    }
+
+    private EncryptDriver findEncryptDriver(String driverType) {
+        return pluginRegistry.getExtensionList(EncryptDriver.class).stream()
+                .filter(driver -> driverType.equals(driver.getDriverType().toString()) ||
+                        (driver.getDriverTypes() != null && driver.getDriverTypes().contains(driverType)))
+                .findFirst()
+                .orElseGet(() -> {
+                    logger.error(String.format("No matched encrypt driver[type:%s] can be found", driverType));
+                    return null;
+                });
     }
 
     public void installGlobalConfigUpdateHooks() {
-        EncryptGlobalConfig.ENCRYPT_DRIVER.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
-            @Override
-            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                for (EncryptDriver driver : pluginRegistry.getExtensionList(EncryptDriver.class)) {
-                    if (!newConfig.value().equals(driver.getDriverType().toString())) {
-                        continue;
-                    }
-
-                    encryptDriver = driver;
-                    break;
-                }
+        EncryptGlobalConfig.ENCRYPT_DRIVER.installUpdateExtension((oldConfig, newConfig) -> {
+            String updatedToDriverType = newConfig.value();
+            EncryptDriver encryptDriver = findEncryptDriver(updatedToDriverType);
+            if (encryptDriver != null) {
+                logger.debug(String.format("New encrypt driver: %s is included by driver class: %s", updatedToDriverType, encryptDriver.getClass().getCanonicalName()));
+                this.encryptDriver = encryptDriver;
+            } else {
+                logger.error(String.format("No matched encrypt driver[type:%s] can be found", updatedToDriverType));
             }
         });
 

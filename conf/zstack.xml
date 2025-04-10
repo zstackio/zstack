@@ -119,4 +119,5 @@
     <import resource="springConfigXml/TfPortAllocator.xml"/>
     <import resource="springConfigXml/HostNetworkManager.xml"/>
     <import resource="springConfigXml/upgrade.xml"/>
+    <import resource="springConfigXml/plugin.xml"/>
 </beans>

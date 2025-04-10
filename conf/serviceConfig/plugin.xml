@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>external.plugin</id>
+    <message>
+        <name>org.zstack.header.core.external.plugin.APIQueryPluginDriversMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.core.external.plugin.APIRefreshPluginDriversMsg</name>
+    </message>
+</service>
