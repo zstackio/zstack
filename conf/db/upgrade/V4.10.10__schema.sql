@@ -5,3 +5,5 @@ UPDATE `zstack`.`ResourceVO` set `resourceType` = 'ThirdPartyAccountSourceVO' wh
 
 UPDATE `zstack`.`AlarmVO` SET `name` = 'Data Storage Available Capacity' WHERE `name` = 'Primary Storage Available Capacity';
 UPDATE `zstack`.`AlarmVO` SET `name` = 'Data Storage Available Physical Capacity' WHERE `name` = 'Primary Storage Available Physical Capacity';
+
+DELETE FROM `zstack`.`ResourceConfigVO` WHERE `category`='sharedblock' AND `name`='qcow2.allocation';
