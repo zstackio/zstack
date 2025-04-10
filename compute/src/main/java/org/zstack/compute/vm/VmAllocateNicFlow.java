@@ -220,7 +220,7 @@ public class VmAllocateNicFlow implements Flow {
         // add vmnic bandwidth systemtag
         if (vmNicParam.getInboundBandwidth() != null || vmNicParam.getOutboundBandwidth() != null) {
             VmNicQosConfigBackend backend = vmMgr.getVmNicQosConfigBackend(vmSpec.getVmInventory().getType());
-            backend.addNicQos(vmSpec.getVmInventory().getUuid(), vmNicVO.getUuid(), vmNicParam.getInboundBandwidth(), vmNicParam.getOutboundBandwidth());
+            backend.addNicQos(vmSpec.getVmInventory().getUuid(), vmNicVO.getUuid(), vmNicParam.getOutboundBandwidth(), vmNicParam.getInboundBandwidth());
         }
 
         //add vmnic multiqueue config
