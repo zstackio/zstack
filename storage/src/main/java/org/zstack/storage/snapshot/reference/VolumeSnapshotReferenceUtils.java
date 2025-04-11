@@ -339,7 +339,8 @@ public class VolumeSnapshotReferenceUtils {
 
         return SQL.New("select c.id from ImageCacheVO c" +
                         " where c.id in (:ids)" +
-                        " and c.imageUuid not in (select tree.rootImageUuid from VolumeSnapshotReferenceTreeVO tree)", Long.class)
+                        " and c.imageUuid not in (select tree.rootImageUuid from VolumeSnapshotReferenceTreeVO tree" +
+                        " where tree.rootImageUuid is not null)", Long.class)
                 .param("ids", ids)
                 .list();
     }
