@@ -10,6 +10,7 @@ import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkCreateExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.service.*;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.userdata.UserdataConstant;
@@ -115,6 +116,11 @@ public class FlatProviderFactory implements NetworkServiceProviderFactory, Prepa
 
     @Override
     public void afterCreateL2Network(L2NetworkInventory l2Network) {
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2Network.getvSwitchType());
+        if (vSwitchType.getSdnControllerType() != null) {
+            return;
+        }
+
         NetworkServiceProviderL2NetworkRefVO ref = new NetworkServiceProviderL2NetworkRefVO();
         ref.setL2NetworkUuid(l2Network.getUuid());
         ref.setNetworkServiceProviderUuid(flatProvider.getUuid());
