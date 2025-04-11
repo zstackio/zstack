@@ -26,6 +26,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>CentOS</name>
+        <version>9</version>
+        <osRelease>CentOS 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>RedHat</name>
         <version>5</version>
         <osRelease>RHEL 5</osRelease>
@@ -57,6 +63,12 @@
     <osInfo>
         <platform>Linux</platform>
         <name>Ubuntu</name>
+        <version>14</version>
+        <osRelease>Ubuntu 14</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Ubuntu</name>
         <version>16</version>
         <osRelease>Ubuntu 16</osRelease>
     </osInfo>
@@ -77,6 +89,12 @@
         <name>Ubuntu</name>
         <version>22</version>
         <osRelease>Ubuntu 22</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Ubuntu</name>
+        <version>24</version>
+        <osRelease>Ubuntu 24</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -104,6 +122,18 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>Debian</name>
+        <version>11</version>
+        <osRelease>Debian 11</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Debian</name>
+        <version>12</version>
+        <osRelease>Debian 12</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Fedora</name>
         <version></version>
         <osRelease>Fedora</osRelease>
@@ -117,14 +147,26 @@
     <osInfo>
         <platform>Linux</platform>
         <name>Kylin</name>
-        <version>7</version>
-        <osRelease>Kylin 7</osRelease>
+        <version>V7</version>
+        <osRelease>Kylin V7</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Kylin</name>
-        <version>10</version>
-        <osRelease>Kylin 10</osRelease>
+        <version>V10</version>
+        <osRelease>Kylin V10</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>NeoKylin</name>
+        <version>V7</version>
+        <osRelease>NeoKylin V7</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>NeoKylin</name>
+        <version>V7Update6</version>
+        <osRelease>NeoKylin V7 Update6</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -153,14 +195,80 @@
     <osInfo>
         <platform>Linux</platform>
         <name>SUSE</name>
-        <version>12</version>
-        <osRelease>SUSE Linux 12</osRelease>
+        <version>SLES11</version>
+        <osRelease>SUSE Linux Enterprise Server 11</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>SUSE</name>
-        <version>15</version>
-        <osRelease>SUSE Linux 15</osRelease>
+        <version>SLES12</version>
+        <osRelease>SUSE Linux Enterprise Server 12</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>SLES15</version>
+        <osRelease>SUSE Linux Enterprise Server 15</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>Leap11</version>
+        <osRelease>openSUSE Leap 11</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>Leap12</version>
+        <osRelease>openSUSE Leap 12</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>Leap15</version>
+        <osRelease>openSUSE Leap 15</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>SLED11</version>
+        <osRelease>SUSE Linux Desktop 11</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>SLED12</version>
+        <osRelease>SUSE Linux Desktop 12</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Rocky</name>
+        <version>8</version>
+        <osRelease>Rocky Linux 8</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Rocky</name>
+        <version>9</version>
+        <osRelease>Rocky Linux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Anolis</name>
+        <version>7</version>
+        <osRelease>Anolis OS 7</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Anolis</name>
+        <version>8</version>
+        <osRelease>Anolis OS 8</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>AlmaLinux</name>
+        <version>9</version>
+        <osRelease>AlmaLinux 9</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
