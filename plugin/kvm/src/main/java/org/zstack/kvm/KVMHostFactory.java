@@ -7,21 +7,22 @@ import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmNicManager;
-import org.zstack.core.config.*;
-import org.zstack.core.config.schema.GuestOsCharacter;
-import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.network.l2.*;
-import org.zstack.header.tag.SystemTagInventory;
-import org.zstack.header.tag.SystemTagLifeCycleListener;
-import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
-import org.zstack.network.l3.ServiceTypeExtensionPoint;
-import org.zstack.resourceconfig.ResourceConfig;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.CloudBusSteppingCallback;
+import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
+import org.zstack.core.config.GuestOsExtensionPoint;
+import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -33,6 +34,7 @@ import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -40,14 +42,37 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
-import org.zstack.header.vm.*;
-import org.zstack.header.volume.*;
-import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
-import org.zstack.kvm.KVMAgentCommands.TransmitVmOperationToMnCmd;
-import org.zstack.header.host.HostNetworkInterfaceServiceType;
+import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagLifeCycleListener;
+import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.vm.KvmReportVmShutdownEventMsg;
+import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventMsg;
+import org.zstack.header.vm.RebootVmInstanceMsg;
+import org.zstack.header.vm.StartVmInstanceMsg;
+import org.zstack.header.vm.StopVmInstanceMsg;
+import org.zstack.header.vm.VmCanonicalEvents;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.kvm.KVMAgentCommands.*;
+import org.zstack.network.l3.ServiceTypeExtensionPoint;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.SizeUtils;
@@ -69,7 +94,14 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -131,6 +163,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private VmNicManager vmNicManager;
     @Autowired
     private GlobalConfigFacade gcf;
+    @Autowired
+    KvmVmSyncPingTask pingTask;
     private Future<Void> checkSocketChannelTimeoutThread;
     public static int skipHostPingTimeWhenKvmagentBusy = 300;
 
@@ -526,6 +560,17 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         });
 
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_SHUTDOWN_EVENT, ReportVmShutdownEventCmd.class, cmd -> {
+            if (cmd.vmUuid == null || !Q.New(VmInstanceVO.class)
+                    .eq(VmInstanceVO_.uuid, cmd.vmUuid)
+                    .isExists()) {
+                logger.debug(String.format("vm[uuid:%s] not found, skip report vm shutdown event", cmd.vmUuid));
+            }
+
+            if (pingTask.isVmDoNotNeedToTrace(cmd.vmUuid)) {
+                logger.debug(String.format("vm[uuid:%s] is not in the list of vm that need to be traced, skip report vm shutdown event", cmd.vmUuid));
+                return null;
+            }
+
             KvmReportVmShutdownEventMsg msg = new KvmReportVmShutdownEventMsg();
             msg.setVmInstanceUuid(cmd.vmUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, cmd.vmUuid);
