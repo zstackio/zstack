@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.allocator.HostAllocatorStrategyType;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -584,6 +585,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
         }.execute();
+
+        if (msg.getAllocatorStrategy() != null && !HostAllocatorStrategyType.hasType(msg.getAllocatorStrategy())) {
+            throw new ApiMessageInterceptionException(
+                    argerr("unsupported host allocation strategy[%s]", msg.getAllocatorStrategy()));
+        }
     }
 
     private void validate(APIGetInterdependentL3NetworksImagesMsg msg) {
@@ -1299,6 +1305,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         validatePsWhetherSameCluster(msg);
         validateDataDiskAOs(msg);
+
+        if (msg.getAllocatorStrategy() != null && !HostAllocatorStrategyType.hasType(msg.getAllocatorStrategy())) {
+            throw new ApiMessageInterceptionException(
+                    argerr("unsupported host allocation strategy[%s]", msg.getAllocatorStrategy()));
+        }
     }
 
     private void validateDataDiskAOs(APICreateVmInstanceMsg msg) {

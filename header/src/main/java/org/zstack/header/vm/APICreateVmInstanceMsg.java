@@ -14,6 +14,7 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.zone.ZoneVO;
 
 import java.util.Collections;
@@ -21,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * @api create a new vm instance
@@ -86,8 +87,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(maxLength = 255)
     private String name;
     /**
-     * @desc uuid of instance offering. See :ref:`InstanceOfferingInventory`
+     * InstanceOfferingVO is deprecated, use cpuNum, memorySize, reservedMemorySize, allocatorStrategy instead
      */
+    @Deprecated
     @APIParam(resourceType = InstanceOfferingVO.class, required = false)
     private String instanceOfferingUuid;
 
@@ -125,18 +127,28 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
      * mandatory when vm is created from ISO. See 'mediaType' of :ref:`ImageInventory`
      * @optional
      */
+    @Deprecated
     @APIParam(required = false, resourceType = DiskOfferingVO.class)
     private String rootDiskOfferingUuid;
 
+    /**
+     * use DiskAO.size
+     */
+    @Deprecated
     @APIParam(required = false)
     private Long rootDiskSize;
 
+    /**
+     * use DiskAO.size
+     */
+    @Deprecated
     @APIParam(required = false)
     private List<Long> dataDiskSizes;
 
     /**
      * @desc disk offering uuid for data volumes. See :ref:`DiskOfferingInventory`
      */
+    @Deprecated
     @APIParam(required = false, resourceType = DiskOfferingVO.class)
     private List<String> dataDiskOfferingUuids;
     /**
@@ -170,25 +182,27 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, maxLength = 2048)
     private String description;
 
-    /**
-     * @desc user-defined root password
-     * @optional
-     */
-//    @APIParam(required = false, maxLength = 32, validRegexValues = VmInstanceConstant.USER_VM_REGEX_PASSWORD)
-//    private String rootPassword;
-
     private String defaultL3NetworkUuid;
 
     @APIParam(required = false, validValues = {"InstantStart", "JustCreate", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
+    /**
+     * use DiskAO.systemTags
+     */
     @APIParam(required = false)
+    @Deprecated
     private List<String> rootVolumeSystemTags;
 
+    /**
+     * use DiskAO.systemTags
+     */
     @APIParam(required = false)
+    @Deprecated
     private List<String> dataVolumeSystemTags;
 
     @APIParam(required = false)
+    @Deprecated
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
 
     @APIParam(required = false)
@@ -206,6 +220,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false)
     private Boolean virtio;
 
+    @APIParam(required = false)
+    private String allocatorStrategy;
+
     @PythonClassInventory
     public static class DiskAO {
         private boolean boot;
@@ -214,12 +231,35 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         private String architecture;
         private String primaryStorageUuid;
         private long size;
+        /**
+         * allow: ImageVO.uuid
+         */
         private String templateUuid;
         private String diskOfferingUuid;
         private String sourceType;
+        /**
+         * allow: VolumeVO.uuid
+         */
         private String sourceUuid;
         private List<String> systemTags;
         private String name;
+
+        public DiskAO withImage(String imageUuid) {
+            this.templateUuid = imageUuid;
+            return this;
+        }
+
+        public DiskAO withVolume(String volumeUuid) {
+            this.sourceType = VolumeVO.class.getSimpleName();
+            this.sourceUuid = volumeUuid;
+            return this;
+        }
+
+        public DiskAO withLun(String lunUuid) {
+            this.sourceType = "LunVO";
+            this.sourceUuid = lunUuid;
+            return this;
+        }
 
         public boolean isBoot() {
             return boot;
@@ -558,17 +598,38 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.virtio = virtio;
     }
 
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
+    }
+
     public static APICreateVmInstanceMsg __example__() {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
         msg.setName("vm1");
         msg.setDescription("this is a vm");
         msg.setClusterUuid(uuid());
-        msg.setDataDiskOfferingUuids(asList(uuid(), uuid()));
-        msg.setImageUuid(uuid());
-        msg.setInstanceOfferingUuid(uuid());
         msg.setL3NetworkUuids(Collections.singletonList(uuid()));
-        msg.setRootVolumeSystemTags(Collections.singletonList("volumeProvisioningStrategy::ThickProvisioning"));
-        msg.setDataVolumeSystemTags(null);
+
+        DiskAO disk1 = new DiskAO();
+        disk1.setName("root-volume");
+        disk1.setBoot(true);
+        disk1.setPrimaryStorageUuid(uuid(PrimaryStorageVO.class));
+        disk1.setPlatform("Linux");
+        disk1.setGuestOsType("Helix 8");
+        disk1.setArchitecture("x86_64");
+        disk1.setSystemTags(list("volumeProvisioningStrategy::ThickProvisioning"));
+        disk1.withVolume(uuid(VolumeVO.class));
+
+        DiskAO disk2 = new DiskAO();
+        disk2.setName("data-volume");
+        disk2.setBoot(false);
+        disk2.setPrimaryStorageUuid(uuid(PrimaryStorageVO.class));
+
+        msg.setDiskAOs(list(disk1, disk2));
+
         return msg;
     }
 

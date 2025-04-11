@@ -16,6 +16,7 @@ public class UpdateVmInstanceMsg extends NeedReplyMessage implements VmInstanceM
     private Long memorySize;
     private Long reservedMemorySize;
     private String guestOsType;
+    private String allocatorStrategy;
 
     public String getUuid() {
         return uuid;
@@ -95,6 +96,14 @@ public class UpdateVmInstanceMsg extends NeedReplyMessage implements VmInstanceM
 
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
     }
 
     @Override

@@ -329,6 +329,15 @@ doc {
 					optional true
 					since "4.7.0"
 				}
+				column {
+					name "allocatorStrategy"
+					enclosedIn "params"
+					desc "虚拟机分配策略"
+					location "body"
+					type "String"
+					optional true
+					since "4.10.10"
+				}
 			}
         }
 

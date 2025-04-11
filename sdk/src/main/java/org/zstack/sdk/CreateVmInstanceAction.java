@@ -28,6 +28,7 @@ public class CreateVmInstanceAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String instanceOfferingUuid;
 
@@ -52,15 +53,19 @@ public class CreateVmInstanceAction extends AbstractAction {
     @Param(required = false, validValues = {"UserVm","ApplianceVm"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String rootDiskOfferingUuid;
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Long rootDiskSize;
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataDiskSizes;
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataDiskOfferingUuids;
 
@@ -85,12 +90,15 @@ public class CreateVmInstanceAction extends AbstractAction {
     @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy = "InstantStart";
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List rootVolumeSystemTags;
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataVolumeSystemTags;
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.Map dataVolumeSystemTagsOnIndex;
 
@@ -108,6 +116,9 @@ public class CreateVmInstanceAction extends AbstractAction {
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean virtio;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String allocatorStrategy;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List diskAOs;

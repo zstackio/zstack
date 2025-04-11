@@ -36,6 +36,8 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     private Long reservedMemorySize;
     @APIParam(required = false, maxLength = 255)
     private String guestOsType;
+    @APIParam(required = false)
+    private String allocatorStrategy;
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
@@ -120,6 +122,14 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
 
     public void setReservedMemorySize(Long reservedMemorySize) {
         this.reservedMemorySize = reservedMemorySize;
+    }
+
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
     }
 
     public static APIUpdateVmInstanceMsg __example__() {
