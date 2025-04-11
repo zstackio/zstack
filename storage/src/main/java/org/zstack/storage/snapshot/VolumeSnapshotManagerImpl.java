@@ -281,7 +281,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
         final String issuer = VolumeSnapshotVO.class.getSimpleName();
         List<VolumeSnapshotVO> vos = Q.New(VolumeSnapshotVO.class).in(VolumeSnapshotVO_.uuid, ancestorMap.keySet()).list();
-        final List<VolumeSnapshotInventory> ctx = VolumeSnapshotInventory.valueOf(vos);
+        VolumeSnapshotDeletionStructs ctx = new VolumeSnapshotDeletionStructs(
+                VolumeSnapshotInventory.valueOf(vos), DeleteVolumeSnapshotDirection.Pull.toString(), DeleteVolumeSnapshotScope.Chain.toString());
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("batch-delete-snapshots-%s", msg.getUuids()));
 
@@ -349,7 +350,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             public void handle(Map data) {
                 reportProgress("95");
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
-                ctx.stream().filter(inventory -> results.containsKey(inventory.getUuid()) && results.get(inventory.getUuid()).isSuccess())
+                ctx.getSnapshotInventories().stream().filter(inventory -> results.containsKey(inventory.getUuid()) && results.get(inventory.getUuid()).isSuccess())
                         .forEach(inventory -> {
                             new FireSnapShotCanonicalEvent()
                                     .fireSnapShotStatusChangedEvent(VolumeSnapshotStatus.valueOf(inventory.getStatus()), inventory);
@@ -381,7 +382,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 }
                 handleErrorCode((ErrorCodeList) errCode);
                 event.setResults(new ArrayList<>(results.values()));
-                ctx.stream().filter(inventory -> results.containsKey(inventory.getUuid()) && results.get(inventory.getUuid()).isSuccess())
+                ctx.getSnapshotInventories().stream().filter(inventory -> results.containsKey(inventory.getUuid()) && results.get(inventory.getUuid()).isSuccess())
                         .forEach(inventory -> {
                             new FireSnapShotCanonicalEvent()
                                     .fireSnapShotStatusChangedEvent(VolumeSnapshotStatus.valueOf(inventory.getStatus()), inventory);
