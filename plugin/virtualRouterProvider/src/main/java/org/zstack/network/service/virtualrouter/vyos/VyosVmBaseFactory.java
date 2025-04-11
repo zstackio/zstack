@@ -8,6 +8,7 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
+import org.zstack.header.network.l2.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
@@ -19,10 +20,6 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.network.NetworkException;
-import org.zstack.header.network.l2.APICreateL2NetworkMsg;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkCreateExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceProviderL2NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
 import org.zstack.header.network.service.NetworkServiceProviderVO_;
@@ -253,6 +250,11 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
     @Override
     public void afterCreateL2Network(L2NetworkInventory l2Network) {
         if (!supportedL2NetworkTypes.contains(l2Network.getType())) {
+            return;
+        }
+
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2Network.getvSwitchType());
+        if (vSwitchType.getSdnControllerType() != null) {
             return;
         }
 
