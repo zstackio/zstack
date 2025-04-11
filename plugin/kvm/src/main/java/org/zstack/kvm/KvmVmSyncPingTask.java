@@ -457,4 +457,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         vmApis.putIfAbsent(inv.getUuid(), new ConcurrentHashMap<>());
         vmsToSkip.putIfAbsent(inv.getUuid(), ConcurrentHashMap.newKeySet());
     }
+
+    public boolean isVmDoNotNeedToTrace(String vmUuid) {
+        return vmsToSkip.values().stream().anyMatch(vmsToSkipSet -> vmsToSkipSet.contains(vmUuid));
+    }
 }
