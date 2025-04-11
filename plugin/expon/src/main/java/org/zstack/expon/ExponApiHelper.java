@@ -328,7 +328,19 @@ public class ExponApiHelper implements SingleFlightExecutor {
         req.setForce(force);
         callErrorOut(req, DeleteVolumeResponse.class);
     }
-    
+
+    public void deleteVolumeAndSnapshots(String volId, boolean force) {
+        List<VolumeSnapshotModule> snaps = queryVolumeSnapshots(volId);
+        snaps.forEach(snap -> {
+            String addedIscsiClientId = getSnapshotAttachedIscsiClientGroups(snap.getId()).stream().findFirst().orElse(null);
+            if (addedIscsiClientId != null) {
+                removeSnapshotFromIscsiClientGroup(snap.getId(), addedIscsiClientId);
+            }
+            deleteVolumeSnapshot(snap.getId(), true);
+        });
+        deleteVolume(volId, force);
+    }
+
     public VolumeModule cloneVolume(String snapId, String name, ExponVolumeQos qos) {
         CloneVolumeRequest req = new CloneVolumeRequest();
         req.setSnapshotId(snapId);
@@ -418,6 +430,16 @@ public class ExponApiHelper implements SingleFlightExecutor {
         req.setSnapshotId(snapId);
         req.setForce(force);
         callIgnoringSpecificErrors(req, DeleteVolumeSnapshotResponse.class, ExponError.SNAPSHOT_NOT_FOUND);
+    }
+
+    public List<VolumeSnapshotModule> queryVolumeSnapshots(String volId) {
+        QueryVolumeSnapshotRequest req = new QueryVolumeSnapshotRequest();
+        req.addCond("volume_id", volId);
+        QueryVolumeSnapshotResponse rsp = queryErrorOut(req, QueryVolumeSnapshotResponse.class);
+        if (rsp.getTotal() == 0) {
+            return new ArrayList<>();
+        }
+        return rsp.getSnaps().stream().filter(it -> it.getVolumeId().equals(volId)).collect(Collectors.toList());
     }
 
     public VolumeSnapshotModule queryVolumeSnapshot(String name) {
