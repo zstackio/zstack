@@ -248,7 +248,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         }
 
         if (msg.getBondMode() != null && msg.getLacpMode() == null) {
-            msg.setLacpMode(L2NetworkConstant.LACP_MODE_OFF);
+            msg.setLacpMode(L2NetworkConstant.LACP_MODE_ACTIVE);
         }
     }
 
