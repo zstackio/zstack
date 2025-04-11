@@ -785,6 +785,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
         }
+
+        if (msg.getDnsList().size() > msg.getDnsList().stream().distinct().count()) {
+            throw new ApiMessageInterceptionException(argerr("duplicate dns in dns list", msg.getDnsList()));
+        }
     }
 
     private void validateDnsMsg(String vmInstanceUuid, String vmNicUuid, Integer ipVersion, boolean isWindowsVm) {

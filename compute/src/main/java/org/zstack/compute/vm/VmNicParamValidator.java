@@ -139,6 +139,10 @@ public class VmNicParamValidator {
                             throw new ApiMessageInterceptionException(argerr("dns6[%s] should be ipv6 address", dns));
                         }
                     }
+
+                    if (nic.getDns6List().size() > nic.getDns6List().stream().distinct().count()) {
+                        throw new ApiMessageInterceptionException(argerr("duplicate dns in dns6 list", nic.getDns6List()));
+                    }
                 } else {
                     nic.getDnsList().addAll(nic.getDns6List());
                 }
@@ -169,6 +173,10 @@ public class VmNicParamValidator {
                             throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", dns));
                         }
                     }
+                }
+
+                if (nic.getDnsList().size() > nic.getDnsList().stream().distinct().count()) {
+                    throw new ApiMessageInterceptionException(argerr("duplicate dns in dns list", nic.getDnsList()));
                 }
             }
         }
