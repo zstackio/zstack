@@ -1192,6 +1192,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private void copyImageSecurityLevelIfNeeded(String imageUuid, String vmUuid) {
         if (Q.New(SecurityLevelResourceRefVO.class).eq(SecurityLevelResourceRefVO_.resourceUuid, imageUuid).isExists()) {
+            VmInstanceVO vmVO = dbf.findByUuid(vmUuid, VmInstanceVO.class);
             String currentImageSecurityLevel = Q.New(SecurityLevelResourceRefVO.class)
                     .select(SecurityLevelResourceRefVO_.securityLevel)
                     .eq(SecurityLevelResourceRefVO_.resourceUuid, imageUuid).findValue();
@@ -1202,6 +1203,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
             refVO.setSecurityLevel(currentImageSecurityLevel);
             dbf.persist(refVO);
             logger.debug(String.format("successfully sync image[uuid:%s] security level[%s] to vm[uuid:%s]", imageUuid, currentImageSecurityLevel, vmUuid));
+
+            vmVO.getAllDiskVolumes().forEach( v -> {
+                    SecurityLevelResourceRefVO srRef = new SecurityLevelResourceRefVO();
+                    srRef.setResourceUuid(v.getUuid());
+                    srRef.setSecurityLevel(currentImageSecurityLevel);
+                    dbf.persist(srRef);
+                    logger.debug(String.format("successfully sync image[uuid:%s] security level[%s] to volume[uuid:%s]", imageUuid, currentImageSecurityLevel, v.getUuid()));
+                }
+            );
         }
     }
 
