@@ -47,7 +47,7 @@ public class VmInstanceUtils {
         if (msg.getVirtio() == null) {
             cmsg.setVirtio(false);
         } else {
-            cmsg.setVirtio(msg.isVirtio());
+            cmsg.setVirtio(msg.getVirtio());
         }
         cmsg.setDiskAOs(msg.getDiskAOs());
         return cmsg;

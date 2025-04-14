@@ -62,6 +62,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionUtils.getDuplicateElementsOfList;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 
 /**
  * Created with IntelliJ IDEA.
@@ -1198,6 +1199,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVmInstanceMsg msg) {
+        boolean virtIOTagExists = (isEmpty(msg.getSystemTags())) ? false :
+                msg.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
+
         if (CollectionUtils.isNotEmpty(msg.getDiskAOs())) {
             APICreateVmInstanceMsg.DiskAO rootDiskAO = msg.getDiskAOs().stream()
                     .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
@@ -1207,13 +1211,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             msg.setPlatform(rootDiskAO.getPlatform());
             msg.setGuestOsType(rootDiskAO.getGuestOsType());
             msg.setArchitecture(rootDiskAO.getArchitecture());
-            if (CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
-                if (rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat())) {
-                    msg.setVirtio(true);
-                }
-            } else {
-                msg.setVirtio(false);
+            if (!virtIOTagExists && CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
+                virtIOTagExists = rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
             }
+        }
+
+        if (virtIOTagExists && msg.getVirtio() == Boolean.FALSE) {
+            throw new ApiMessageInterceptionException(argerr("virtio tag is not allowed when virtio is false"));
+        } else if (virtIOTagExists) {
+            msg.setVirtio(true);
         }
 
         ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
@@ -1276,8 +1282,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (msg.getVirtio() == null) {
                 if (image.getVirtio() != null) {
                     msg.setVirtio(image.getVirtio());
-                } else {
-                    msg.setVirtio(false);
                 }
             }
         }
