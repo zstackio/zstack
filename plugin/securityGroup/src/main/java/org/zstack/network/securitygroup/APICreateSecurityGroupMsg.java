@@ -6,8 +6,10 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  * @api
@@ -45,6 +47,7 @@ import org.zstack.header.rest.RestRequest;
  *
  * see :ref:`APICreateSecurityGroupEvent`
  */
+@TagResourceType(SecurityGroupVO.class)
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups",
@@ -67,6 +70,20 @@ public class APICreateSecurityGroupMsg extends APICreateMessage implements APIAu
     @Deprecated
     @APIParam(required = false, validValues = {"4", "6"})
     private Integer ipVersion;
+
+    /**
+     * @desc vSwitch type
+     */
+    @APIParam(required = false, maxLength = 1024, validValues = {"LinuxBridge", "OvnDpdk"})
+    private String vSwitchType = "LinuxBridge";
+
+    public String getvSwitchType() {
+        return vSwitchType;
+    }
+
+    public void setvSwitchType(String vSwitchType) {
+        this.vSwitchType = vSwitchType;
+    }
 
     public String getName() {
         return name;

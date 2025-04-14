@@ -61,7 +61,8 @@ public class APISdnControllerRemoveHostMsg extends APIMessage implements SdnCont
         APISdnControllerRemoveHostMsg msg = new APISdnControllerRemoveHostMsg();
 
         msg.setSdnControllerUuid(uuid());
-        msg.setSdnControllerUuid(uuid());
+        msg.setHostUuid(uuid());
+        msg.setvSwitchType("OvnDpdk");
 
         return msg;
     }

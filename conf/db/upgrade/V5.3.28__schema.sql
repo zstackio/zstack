@@ -111,3 +111,5 @@ SET t.rootImageUuid = v.rootImageUuid
 WHERE t.current = true
   AND v.rootImageUuid IS NOT NULL
   AND t.rootImageUuid IS NULL;
+
+CALL ADD_COLUMN('SecurityGroupVO', 'vSwitchType', 'VARCHAR(32)', 0, 'LinuxBridge');

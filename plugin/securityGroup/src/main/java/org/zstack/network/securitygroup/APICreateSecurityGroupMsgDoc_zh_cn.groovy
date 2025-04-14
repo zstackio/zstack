@@ -85,6 +85,16 @@ doc {
 					optional true
 					since "3.4.0"
 				}
+				column {
+					name "vSwitchType"
+					enclosedIn "params"
+					desc "虚拟交换机类型，用于指定安全组所使用的网络虚拟化技术"
+					location "body"
+					type "String"
+					optional true
+					since "5.3.20"
+					values ("LinuxBridge","OvnDpdk")
+				}
 			}
         }
 

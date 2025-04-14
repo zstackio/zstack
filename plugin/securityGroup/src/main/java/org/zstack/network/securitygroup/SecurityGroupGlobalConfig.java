@@ -25,4 +25,12 @@ public class SecurityGroupGlobalConfig {
     @GlobalConfigValidation(inNumberRange = {100, 1000})
     @GlobalConfigDef(defaultValue = "100", type = Integer.class,  description = "security group rules num limit")
     public static GlobalConfig SECURITY_GROUP_RULES_NUM_LIMIT = new GlobalConfig(CATEGORY, "rules.num.limit");
+
+    @GlobalConfigValidation(inNumberRange = {10, 20})
+    @GlobalConfigDef(defaultValue = "10", type = Integer.class,  description = "security groups attached to vmnic num limit")
+    public static GlobalConfig VMNIC_SECURITY_GROUP_NUM_LIMIT = new GlobalConfig(CATEGORY, "vnic.sg.num.limit");
+
+    @GlobalConfigValidation(inNumberRange = {25000, 30000})
+    @GlobalConfigDef(defaultValue = "30000", type = Integer.class,  description = "security group rule max priority in ovn")
+    public static GlobalConfig OVN_ACL_MAX_PRIORITY = new GlobalConfig(CATEGORY, "ovn.max.priority");
 }

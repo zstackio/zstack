@@ -54,6 +54,8 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.network.service.flat.IpStatisticConstants.VmType;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.header.network.service.SdnControllerDhcp;
+import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -109,6 +111,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private NetworkServiceManager nwServiceMgr;
     @Autowired
     protected L3NetworkManager l3NwMgr;
+    @Autowired
+    protected SdnControllerManager sdnMgr;
 
     private Map<String, L3NetworkGetIpStatisticExtensionPoint> getIpStatisticExts = new HashMap<>();
 
@@ -212,6 +216,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<IpRangeVO> ip6Ranges = l3VO.getIpRanges().stream().filter(
                 ipr -> ipr.getIpVersion() == IPv6Constants.IPv6 && !ipr.getAddressMode().equals(IPv6Constants.SLAAC))
                 .collect(Collectors.toList());
+
+        SdnControllerDhcp sdnDhcp = sdnMgr.getSdnControllerDhcp(msg.getL3NetworkUuid());
 
         /*
         * step #1, delete old dhcp server ip
@@ -334,8 +340,36 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             String __name__ = "refresh-dhcp-server-on-hosts";
 
             @Override
+            public boolean skip(Map data) {
+                return sdnDhcp != null;
+            }
+
+            @Override
             public void run(FlowTrigger trigger, Map data) {
                 refreshDhcpInfoToHosts(l3VO, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "refresh-dhcp-server-on-sdn-controller";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (sdnDhcp == null) {
+                    trigger.next();
+                    return;
+                }
+
+                sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3VO)),
+                        false, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -869,7 +903,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 reply.setIp6(ip);
                 int l3IpVersion = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).select(L3NetworkVO_.ipVersion).findValue();
                 if (l3IpVersion == IPv6Constants.IPv6) {
-                    /* to be compitable with old version, dhcp server address of ipv6 only l3 network is filled in this field */
+                    /* to be compatible with old version, dhcp server address of ipv6 only l3 network is filled in this field */
                     reply.setIp(ip);
                 }
             }
@@ -886,7 +920,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return allocateDhcpIp(l3Uuid, ipVersion, true, null, excludedIp);
     }
 
-    private static Map<String, String> getExistingDhcpServerIp(String l3Uuid, int ipVersion) {
+    public static Map<String, String> getExistingDhcpServerIp(String l3Uuid, int ipVersion) {
         Map<String, String> ret = new HashMap<>();
         List<String> tags = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTags(l3Uuid);
         if (tags != null) {
@@ -913,7 +947,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Deferred
     private String allocateDhcpIp(String l3Uuid, int ipVersion, boolean allocate_ip, String requiredIp, String excludedIp) {
-        if (!isProvidedByMe(l3Uuid)) {
+        if (!isAllocateDhcpServerIp(l3Uuid)) {
             return null;
         }
 
@@ -1183,27 +1217,42 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void beforeDeleteL3Network(L3NetworkInventory inventory) {
     }
 
-    private boolean isProvidedByMe(String l3Uuid) {
+    private boolean isAllocateDhcpServerIp(String l3Uuid) {
         String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3Uuid, NetworkServiceType.DHCP.toString());
-        return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType);
+        if (providerType == null) {
+            return false;
+        }
+
+        NetworkServiceProviderType type = NetworkServiceProviderType.valueOf(providerType);
+        return type.isAllocateDhcpServerIp();
+    }
+
+    private boolean isCreateDhcpNameSpace(String l3Uuid) {
+        String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3Uuid, NetworkServiceType.DHCP.toString());
+        if (providerType == null) {
+            return false;
+        }
+
+        NetworkServiceProviderType type = NetworkServiceProviderType.valueOf(providerType);
+        return type.isCreateDhcpNameSpace();
     }
 
     @Override
     public void afterDeleteL3Network(L3NetworkInventory inventory) {
-        if (!isProvidedByMe(inventory.getUuid())) {
-            return;
+        if (isAllocateDhcpServerIp(inventory.getUuid())) {
+            Map<String, String> dhcpMap = getExistingDhcpServerIp(inventory.getUuid(), IPv6Constants.DUAL_STACK);
+            for (Map.Entry<String, String> entry : dhcpMap.entrySet()) {
+                String dhcpIp = entry.getKey();
+                String dhcpIpUuid = entry.getValue();
+                deleteDhcpServerIp(inventory.getUuid(), dhcpIp, dhcpIpUuid);
+                logger.debug(String.format("delete DHCP server ip[%s] of the flat network[uuid:%s] as the L3 network is deleted",
+                        dhcpIp, inventory.getUuid()));
+            }
         }
 
-        Map<String, String> dhcpMap = getExistingDhcpServerIp(inventory.getUuid(), IPv6Constants.DUAL_STACK);
-        for (Map.Entry<String, String> entry : dhcpMap.entrySet()) {
-            String dhcpIp = entry.getKey();
-            String dhcpIpUuid = entry.getValue();
-            deleteDhcpServerIp(inventory.getUuid(), dhcpIp, dhcpIpUuid);
-            logger.debug(String.format("delete DHCP server ip[%s] of the flat network[uuid:%s] as the L3 network is deleted",
-                    dhcpIp, inventory.getUuid()));
+        if (isCreateDhcpNameSpace(inventory.getUuid())) {
+            deleteNameSpace(inventory, new NopeCompletion());
         }
-
-        deleteNameSpace(inventory, new NopeCompletion());
     }
 
     private void deleteNameSpace(L3NetworkInventory inventory, Completion completion) {
@@ -1977,7 +2026,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         final Map<String, List<DhcpInfo>> l3DhcpMap = new HashMap<>();
         for (DhcpInfo d : dhcpInfo) {
-            if (!isProvidedByMe(d.l3NetworkUuid)) {
+            if (!isCreateDhcpNameSpace(d.l3NetworkUuid)) {
                 /* there are vm in this l3, but dhcp is disabled */
                 continue;
             }
@@ -2390,7 +2439,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void validate(APIChangeL3NetworkDhcpIpAddressMsg msg) {
-        if (!isProvidedByMe(msg.getL3NetworkUuid())) {
+        if (!isAllocateDhcpServerIp(msg.getL3NetworkUuid())) {
             throw new ApiMessageInterceptionException(argerr("could change dhcp server ip, because flat dhcp is not enabled"));
         }
 
@@ -2529,10 +2578,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     dbf.persistCollection(usedIpVOS);
                 }
             }
-        }
-
-        if (ipr.getIpRangeType() != IpRangeType.Normal) {
-            return;
         }
 
         if (!Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ipr.getUuid()).isExists()) {
@@ -2721,6 +2766,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             }
         }
 
+        if (!isCreateDhcpNameSpace(l3VO.getUuid())) {
+            completion.success();
+            return;
+        }
+
         refreshDhcpInfoToHosts(l3VO, new Completion(completion) {
             @Override
             public void success() {
@@ -2792,7 +2842,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, Completion completion) {
-        if (!isProvidedByMe(l3VO.getUuid())) {
+        if (!isCreateDhcpNameSpace(l3VO.getUuid())) {
             completion.success();
             return;
         }

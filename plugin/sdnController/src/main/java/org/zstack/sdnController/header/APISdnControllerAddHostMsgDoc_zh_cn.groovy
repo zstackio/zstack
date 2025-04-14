@@ -5,7 +5,7 @@ import org.zstack.sdnController.header.APISdnControllerAddHostEvent
 doc {
     title "SdnControllerAddHost"
 
-    category "SDN"
+    category "SdnController"
 
     desc """SDN控制器添加物理机"""
 

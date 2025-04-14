@@ -11,6 +11,7 @@ import org.zstack.header.network.*;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkCreateExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
@@ -54,6 +55,11 @@ public class SecurityGroupProviderFactory implements NetworkServiceProviderFacto
     @Override
     public void afterCreateL2Network(L2NetworkInventory l2Network) {
         if (!supportedL2NetworkTypes.contains(l2Network.getType())) {
+            return;
+        }
+
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2Network.getvSwitchType());
+        if (vSwitchType.getSdnControllerType() != null) {
             return;
         }
         

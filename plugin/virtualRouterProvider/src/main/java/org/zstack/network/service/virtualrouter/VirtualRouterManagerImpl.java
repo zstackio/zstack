@@ -43,10 +43,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.NetworkException;
-import org.zstack.header.network.l2.APICreateL2NetworkMsg;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkCreateExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -903,6 +900,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		if (!supportedL2NetworkTypes.contains(l2Network.getType())) {
 			return;
 		}
+
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2Network.getvSwitchType());
+        if (vSwitchType.getSdnControllerType() != null) {
+            return;
+        }
 		
 		NetworkServiceProviderVO vo = getRouterVO();
 		NetworkServiceProvider router = providerFactory.getNetworkServiceProvider(vo);
@@ -2498,7 +2500,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
-        if (ipr.getIpRangeType() != IpRangeType.Normal) {
+        if (!Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ipr.getUuid()).isExists()) {
             return;
         }
 

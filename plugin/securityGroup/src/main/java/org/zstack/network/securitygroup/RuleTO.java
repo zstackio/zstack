@@ -5,7 +5,7 @@ import java.util.List;
 public class RuleTO {
     private int ipVersion;
     private int priority;
-    private String type;
+    private String ruleType;
     private String remoteGroupUuid;
     private List<String> remoteGroupVmIps;
     private String state;
@@ -84,11 +84,13 @@ public class RuleTO {
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
-    public String getType() {
-        return type;
+
+    public String getRuleType() {
+        return ruleType;
     }
-    public void setType(String type) {
-        this.type = type;
+
+    public void setRuleType(String ruleType) {
+        this.ruleType = ruleType;
     }
 
     public void setRemoteGroupVmIps(List<String> remoteGroupVmIps) {
@@ -136,7 +138,7 @@ public class RuleTO {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("ipVersion: %s,", this.ipVersion));
-        sb.append(String.format("type: %s,", this.type));
+        sb.append(String.format("type: %s,", this.ruleType));
         sb.append(String.format("state: %s,", this.state));
         sb.append(String.format("priority: %s,", this.priority));
         sb.append(String.format("action: %s,", this.action));
@@ -152,7 +154,7 @@ public class RuleTO {
     public String toFullString() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("ipVersion: %s,", this.ipVersion));
-        sb.append(String.format("type: %s,", this.type));
+        sb.append(String.format("type: %s,", this.ruleType));
         sb.append(String.format("state: %s,", this.state));
         sb.append(String.format("priority: %s", this.priority));
         sb.append(String.format("action: %s,", this.action));

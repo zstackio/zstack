@@ -11,6 +11,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -28,6 +29,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.DeleteL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO_;
 import org.zstack.sdnController.header.*;
@@ -57,6 +59,8 @@ public class SdnControllerBase {
     private EventFacade evtf;
     @Autowired
     SdnControllerManager sdnMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public SdnControllerVO self;
 
@@ -631,7 +635,33 @@ public class SdnControllerBase {
                 });
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = String.format("delete-sdn-controller-%s", self.getName());
+            String __name__ = String.format("delete-network-service");
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<SdnControllerDeleteExtensionPoint> exps = pluginRgty.getExtensionList(SdnControllerDeleteExtensionPoint.class);
+                new While<>(exps).each((exp, wcomp) -> {
+                    exp.deleteNetworkServiceOfSdnController(msg.getSdnControllerUuid(), new Completion(wcomp) {
+                        @Override
+                        public void success() {
+                            wcomp.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.warn(String.format("delete network service failed, error: %s", errorCode.getDetails()));
+                            wcomp.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = String.format("delete-from-sdn-controller");
 
             @Override
             public void run(FlowTrigger trigger, Map data) {

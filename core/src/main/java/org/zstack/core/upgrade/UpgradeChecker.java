@@ -236,7 +236,8 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             VersionComparator currentVersion = new VersionComparator(agentVersionVO.getCurrentVersion());
             Set<Map.Entry<String, String>> entries = fields.entrySet()
                     .stream()
-                    .filter(entry -> currentVersion.lessThan(entry.getValue()))
+                    .filter(entry -> {//logger.debug(String.format("entry key: %s, value:%s", entry.getKey(), entry.getValue()));
+                        return currentVersion.lessThan(entry.getValue());})
                     .collect(Collectors.toSet());
 
             // do not have new version changes

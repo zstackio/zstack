@@ -4,6 +4,7 @@ public class VmNicQosStruct {
     public String hostUuid;
     public String vmUuid;
     public String vmNicUuid;
+    public String l2Uuid;
     public String internalName;
     public Long outboundBandwidth;
     public Long inboundBandwidth;

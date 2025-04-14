@@ -2,7 +2,6 @@ package org.zstack.network.securitygroup;
 
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 
@@ -32,6 +31,9 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     @Column
     @Deprecated
     private Integer ipVersion;
+
+    @Column
+    private String vSwitchType;
 
     @Column
     private Timestamp createDate;
@@ -137,5 +139,13 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
+    }
+
+    public String getvSwitchType() {
+        return vSwitchType;
+    }
+
+    public void setvSwitchType(String vSwitchType) {
+        this.vSwitchType = vSwitchType;
     }
 }
