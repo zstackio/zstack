@@ -115,3 +115,16 @@ WHERE t.current = true
   AND t.rootImageUuid IS NULL;
 
 CALL ADD_COLUMN('SecurityGroupVO', 'vSwitchType', 'VARCHAR(32)', 0, 'LinuxBridge');
+
+DROP TABLE IF EXISTS HostHaStateVO;
+CREATE TABLE `HostHaStateVO` (
+                                 `id` BIGINT UNSIGNED NOT NULL UNIQUE AUTO_INCREMENT,
+                                 `hostUuid` VARCHAR(32) NOT NULL,
+                                 `primaryStorageUuid` VARCHAR(32) NOT NULL,
+                                 `state` varchar(32),
+                                 `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                 `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+                                 PRIMARY KEY (`id`),
+                                 CONSTRAINT `HostHaStateVO_HostEO_uuid_fk` FOREIGN KEY (`hostUuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE,
+                                 CONSTRAINT `HostHaStateVO_PrimaryStorageEO_uuid_fk` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `PrimaryStorageEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
