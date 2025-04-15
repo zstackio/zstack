@@ -48,13 +48,13 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
         }
     }
 
-    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+    private List<DiskAO> diskAOs;
 
-    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+    public List<DiskAO> getDiskAOs() {
         return diskAOs;
     }
 
-    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+    public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
     }
 

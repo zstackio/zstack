@@ -115,7 +115,7 @@ public class VmAllocateHostFlow implements Flow {
 
         if (!CollectionUtils.isEmpty(spec.getDiskAOs())) {
             msg.getRequiredPrimaryStorageUuids().addAll(spec.getDiskAOs().stream()
-                    .map(APICreateVmInstanceMsg.DiskAO::getPrimaryStorageUuid).filter(Objects::nonNull).collect(Collectors.toList()));
+                    .map(DiskAO::getPrimaryStorageUuid).filter(Objects::nonNull).collect(Collectors.toList()));
         }
 
         setImageRequiredPrimaryStorageUuidFromDiskAO(msg, spec);
@@ -127,7 +127,7 @@ public class VmAllocateHostFlow implements Flow {
             return;
         }
 
-        spec.getDiskAOs().stream().filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().ifPresent(rootDiskAO -> {
+        spec.getDiskAOs().stream().filter(DiskAO::isBoot).findFirst().ifPresent(rootDiskAO -> {
             if (rootDiskAO.getPrimaryStorageUuid() != null) {
                 msg.setImageRequiredPrimaryStorageUuid(rootDiskAO.getPrimaryStorageUuid());
             }

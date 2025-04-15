@@ -47,8 +47,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
 import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -80,7 +80,6 @@ import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
-import org.zstack.tag.SystemTag;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
@@ -637,7 +636,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
 
         List<String> volumeUuids = msg.getDiskAOs().stream()
                 .filter(diskAO -> Objects.equals(diskAO.getSourceType(), VolumeVO.class.getSimpleName()))
-                .map(APICreateVmInstanceMsg.DiskAO::getSourceUuid).collect(Collectors.toList());
+                .map(DiskAO::getSourceUuid).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(volumeUuids)) {
             return;
         }

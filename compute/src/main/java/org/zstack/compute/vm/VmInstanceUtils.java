@@ -7,6 +7,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.APIChangeInstanceOfferingMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.UpdateVmInstanceMsg;
 import org.zstack.header.vm.UpdateVmInstanceSpec;
 import org.zstack.header.vm.VmInstanceVO;
@@ -123,8 +124,8 @@ public class VmInstanceUtils {
         if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
             return;
         }
-        APICreateVmInstanceMsg.DiskAO rootdiskAO = msg.getDiskAOs().stream()
-                .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
+        DiskAO rootdiskAO = msg.getDiskAOs().stream()
+                .filter(DiskAO::isBoot).findFirst().orElse(null);
         if (rootdiskAO == null) {
             return;
         }

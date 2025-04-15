@@ -1203,8 +1203,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 msg.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
 
         if (CollectionUtils.isNotEmpty(msg.getDiskAOs())) {
-            APICreateVmInstanceMsg.DiskAO rootDiskAO = msg.getDiskAOs().stream()
-                    .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
+            DiskAO rootDiskAO = msg.getDiskAOs().stream()
+                    .filter(DiskAO::isBoot).findFirst().orElse(null);
             if (rootDiskAO == null) {
                 throw new ApiMessageInterceptionException(argerr("missing root disk"));
             }
@@ -1320,7 +1320,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
             return;
         }
-        for (APICreateVmInstanceMsg.DiskAO diskAO : msg.getDiskAOs()) {
+        for (DiskAO diskAO : msg.getDiskAOs()) {
             if (diskAO.isBoot()) {
                 continue;
             }
@@ -1328,7 +1328,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    public void checkMutualExclusion(APICreateVmInstanceMsg.DiskAO diskAO) {
+    public void checkMutualExclusion(DiskAO diskAO) {
         Map<String, Boolean> map = new HashMap<>();
         map.put("size", diskAO.getSize() > 0);
         map.put("templateUuid", diskAO.getTemplateUuid() != null);

@@ -50,10 +50,10 @@ public class VmInstantiateOtherDiskFlow implements Flow {
     @Autowired
     protected HostAllocatorManager hostAllocatorMgr;
 
-    APICreateVmInstanceMsg.DiskAO diskAO;
+    DiskAO diskAO;
     VolumeInventory volumeInventory;
 
-    public VmInstantiateOtherDiskFlow(APICreateVmInstanceMsg.DiskAO diskAO) {
+    public VmInstantiateOtherDiskFlow(DiskAO diskAO) {
         this.diskAO = diskAO;
     }
 

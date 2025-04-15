@@ -45,7 +45,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private List<String> sshKeyPairUuids;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
-    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+    private List<DiskAO> diskAOs;
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -77,11 +77,11 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         this.guestOsType = guestOsType;
     }
 
-    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+    public List<DiskAO> getDiskAOs() {
         return diskAOs;
     }
 
-    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+    public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
     }
 
