@@ -3,6 +3,7 @@ package org.zstack.storage.zbs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.cbd.MdsInfo;
 import org.zstack.cbd.MdsStatus;
+import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
@@ -143,17 +144,18 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                         @Autowired
                         public void run(FlowTrigger trigger, Map data) {
                             StringBuilder builder = new StringBuilder();
+                            String allowPorts = ZbsConstants.ZBS_PS_ALLOW_PORTS + ',' + HostGlobalConfig.NBD_PORT_RANGE.value(String.class);
                             if (!ZbsGlobalProperty.MN_NETWORKS.isEmpty()) {
                                 builder.append(String.format("sudo bash %s -m %s -p %s -c %s",
                                         "/var/lib/zstack/zbsp/package/zbsps-iptables",
                                         ZbsConstants.ZBS_PS_IPTABLES_COMMENTS,
-                                        ZbsConstants.ZBS_PS_ALLOW_PORTS,
+                                        allowPorts,
                                         String.join(",", ZbsGlobalProperty.MN_NETWORKS)));
                             } else {
                                 builder.append(String.format("sudo bash %s -m %s -p %s",
                                         "/var/lib/zstack/zbsp/package/zbsps-iptables",
                                         ZbsConstants.ZBS_PS_IPTABLES_COMMENTS,
-                                        ZbsConstants.ZBS_PS_ALLOW_PORTS));
+                                        allowPorts));
                             }
 
                             try {
