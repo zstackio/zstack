@@ -14,19 +14,23 @@ import org.zstack.header.volume.VolumeEO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
-import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.VmSpec
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Created by xing5 on 2017/2/22.
  */
 class OneVmBasicLifeCycleCase extends SubCase {
     EnvSpec env
+
+    VmInstanceInventory vm
+    ImageInventory image
+    L3NetworkInventory l3, pubL3
+    HostInventory kvm
 
     def DOC = """
 test a VM's start/stop/reboot/destroy/recover operations 
@@ -47,6 +51,7 @@ test a VM's start/stop/reboot/destroy/recover operations
     @Override
     void test() {
         env.create {
+            prepare()
             testStopVm()
             testStartVm()
             testRebootVm()
@@ -54,16 +59,29 @@ test a VM's start/stop/reboot/destroy/recover operations
             testRecoverVm()
             testExpungeVm()            
             testDeleteCreatedVm()
+            testFailToCreateVmInDisabledZone()
+            testFailToCreateVmInDisabledCluster()
+            testFailToCreateVmInDisabledHost()
             testCreateVmParameter()
         }
     }
 
-    void testRecoverVm() {
-        VmSpec spec = env.specByName("vm")
+    void prepare() {
+        vm = env.inventoryByName("vm") as VmInstanceInventory
 
-        VmInstanceInventory inv = recoverVmInstance {
-            uuid = spec.inventory.uuid
-        }
+        boolean vmHasVirtio = VmSystemTags.VIRTIO.hasTag(vm.uuid)
+        assert vmHasVirtio
+
+        image = env.inventoryByName("image1") as ImageInventory
+        l3 = env.inventoryByName("l3") as L3NetworkInventory
+        pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
+        kvm = env.inventoryByName("kvm") as HostInventory
+    }
+
+    void testRecoverVm() {
+        def inv = recoverVmInstance {
+            uuid = vm.uuid
+        } as VmInstanceInventory
 
         assert inv.state == VmInstanceState.Stopped.toString()
 
@@ -72,8 +90,6 @@ test a VM's start/stop/reboot/destroy/recover operations
     }
 
     void testDestroyVm() {
-        VmSpec spec = env.specByName("vm")
-
         KVMAgentCommands.DestroyVmCmd cmd = null
 
         env.afterSimulator(KVMConstant.KVM_DESTROY_VM_PATH) { rsp, HttpEntity<String> e ->
@@ -82,19 +98,17 @@ test a VM's start/stop/reboot/destroy/recover operations
         }
 
         destroyVmInstance {
-            uuid = spec.inventory.uuid
+            uuid = vm.uuid
         }
 
         assert cmd != null
-        assert cmd.uuid == spec.inventory.uuid
+        assert cmd.uuid == vm.uuid
         VmInstanceVO vmvo = dbFindByUuid(cmd.uuid, VmInstanceVO.class)
         assert vmvo.state == VmInstanceState.Destroyed
     }
 
     void testRebootVm() {
         // reboot = stop + start
-        VmSpec spec = env.specByName("vm")
-
         KVMAgentCommands.StartVmCmd startCmd = null
         KVMAgentCommands.StopVmCmd stopCmd = null
 
@@ -108,21 +122,19 @@ test a VM's start/stop/reboot/destroy/recover operations
             return rsp
         }
 
-        VmInstanceInventory inv = rebootVmInstance {
-            uuid = spec.inventory.uuid
-        }
+        def inv = rebootVmInstance {
+            uuid = vm.uuid
+        } as VmInstanceInventory
 
         assert startCmd != null
-        assert startCmd.vmInstanceUuid == spec.inventory.uuid
+        assert startCmd.vmInstanceUuid == vm.uuid
         assert startCmd.chassisAssetTag == "www.zstack.io"
         assert stopCmd != null
-        assert stopCmd.uuid == spec.inventory.uuid
+        assert stopCmd.uuid == vm.uuid
         assert inv.state == VmInstanceState.Running.toString()
     }
 
     void testStartVm() {
-        VmSpec spec = env.specByName("vm")
-
         KVMAgentCommands.StartVmCmd cmd = null
 
         env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
@@ -130,12 +142,12 @@ test a VM's start/stop/reboot/destroy/recover operations
             return rsp
         }
 
-        VmInstanceInventory inv = startVmInstance {
-            uuid = spec.inventory.uuid
-        }
+        def inv = startVmInstance {
+            uuid = vm.uuid
+        } as VmInstanceInventory
 
         assert cmd != null
-        assert cmd.vmInstanceUuid == spec.inventory.uuid
+        assert cmd.vmInstanceUuid == vm.uuid
         assert inv.state == VmInstanceState.Running.toString()
         assert cmd.chassisAssetTag == "www.zstack.io"
 
@@ -146,11 +158,9 @@ test a VM's start/stop/reboot/destroy/recover operations
         assert cmd.memory == vmvo.memorySize
         assert cmd.cpuNum == vmvo.cpuNum
 
-        String tag = VmSystemTags.VM_SYSTEM_SERIAL_NUMBER.getTag(spec.inventory.uuid)
+        String tag = VmSystemTags.VM_SYSTEM_SERIAL_NUMBER.getTag(vm.uuid)
         assert tag != null
 
-
-        //TODO: test socketNum, cpuOnSocket
         assert cmd.rootVolume.installPath == vmvo.rootVolume.installPath
         assert cmd.rootVolume.useVirtio
         vmvo.vmNics.each { nic ->
@@ -163,8 +173,6 @@ test a VM's start/stop/reboot/destroy/recover operations
     }
 
     void testStopVm() {
-        VmSpec spec = env.specByName("vm")
-
         KVMAgentCommands.StopVmCmd cmd = null
 
         env.afterSimulator(KVMConstant.KVM_STOP_VM_PATH) { rsp, HttpEntity<String> e ->
@@ -172,22 +180,20 @@ test a VM's start/stop/reboot/destroy/recover operations
             return rsp
         }
 
-        VmInstanceInventory inv = stopVmInstance {
-            uuid = spec.inventory.uuid
-        }
+        def inv = stopVmInstance {
+            uuid = vm.uuid
+        } as VmInstanceInventory
 
         assert inv.state == VmInstanceState.Stopped.toString()
 
         assert cmd != null
-        assert cmd.uuid == spec.inventory.uuid
+        assert cmd.uuid == vm.uuid
 
         def vmvo = dbFindByUuid(cmd.uuid, VmInstanceVO.class)
         assert vmvo.state == VmInstanceState.Stopped
     }
 
     void testExpungeVm() {
-        VmInstanceInventory vm = env.inventoryByName("vm")
-
         destroyVmInstance {
             uuid = vm.uuid
         }
@@ -212,112 +218,98 @@ test a VM's start/stop/reboot/destroy/recover operations
         assert before == after + 1
     }
 
+    void testFailToCreateVmInDisabledZone() {
+        def zoneInventory = env.inventoryByName("zone") as ZoneInventory
+
+        changeZoneState {
+            uuid = zoneInventory.uuid
+            stateEvent = "disable"
+        }
+
+        expectApiFailure({
+            createVmInstance {
+                delegate.name = "test-for-parameter"
+                delegate.zoneUuid = zoneInventory.uuid
+                delegate.cpuNum = 4
+                delegate.memorySize = SizeUnit.GIGABYTE.toByte(8)
+                delegate.imageUuid = image.uuid
+                delegate.l3NetworkUuids = [l3.uuid]
+                delegate.strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }) {
+            assert delegate.code == "SYS.1006"
+            assert delegate.details.contains(zoneInventory.uuid)
+        }
+
+        changeZoneState {
+            uuid = zoneInventory.uuid
+            stateEvent = "enable"
+        }
+    }
+
+    void testFailToCreateVmInDisabledCluster() {
+        def clusterInventory = env.inventoryByName("cluster") as ClusterInventory
+
+        changeClusterState {
+            uuid = clusterInventory.uuid
+            stateEvent = "disable"
+        }
+
+        expectApiFailure({
+            createVmInstance {
+                delegate.name = "test-for-parameter"
+                delegate.clusterUuid = clusterInventory.uuid
+                delegate.cpuNum = 4
+                delegate.memorySize = SizeUnit.GIGABYTE.toByte(8)
+                delegate.imageUuid = image.uuid
+                delegate.l3NetworkUuids = [l3.uuid]
+                delegate.strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }) {
+            assert delegate.code == "SYS.1006"
+            assert delegate.details.contains(clusterInventory.uuid)
+        }
+
+        changeClusterState {
+            uuid = clusterInventory.uuid
+            stateEvent = "enable"
+        }
+    }
+
+    void testFailToCreateVmInDisabledHost() {
+        changeHostState {
+            uuid = kvm.uuid
+            stateEvent = "disable"
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                delegate.name = "test-for-parameter"
+                delegate.hostUuid = kvm.uuid
+                delegate.cpuNum = 4
+                delegate.memorySize = SizeUnit.GIGABYTE.toByte(8)
+                delegate.imageUuid = image.uuid
+                delegate.l3NetworkUuids = [l3.uuid]
+                delegate.strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        changeHostState {
+            uuid = kvm.uuid
+            stateEvent = "enable"
+        }
+    }
+
     void testCreateVmParameter() {
-        VmSpec spec = env.specByName("vm")
-        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
-        InstanceOfferingInventory instanceOfferingInventory = env.inventoryByName("instanceOffering")
-        ImageInventory imageInventory = env.inventoryByName("image1")
-        L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3")
-        L3NetworkInventory l3pubInventory = env.inventoryByName("pubL3")
-        ZoneInventory zoneInventory = env.inventoryByName("zone")
-        ClusterInventory clusterInventory = env.inventoryByName("cluster")
-        HostInventory hostInventory = env.inventoryByName("kvm")
-
-
-        // create vm with a disable zone
-        changeZoneState {
-            uuid = zoneInventory.uuid
-            stateEvent = "disable"
-        }
-        expect(AssertionError.class) {
-            createVmInstance {
-                name = "test-for-parameter"
-                zoneUuid = zoneInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
-                imageUuid = imageInventory.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
-                strategy = VmCreationStrategy.JustCreate.toString()
-            }
-        }
-
-        changeZoneState {
-            uuid = zoneInventory.uuid
-            stateEvent = "enable"
-        }
-
-        // create vm with a disable cluster
-        changeClusterState {
-            uuid = clusterInventory.uuid
-            stateEvent = "disable"
-        }
-
-        expect(AssertionError.class) {
-            createVmInstance {
-                name = "test-for-parameter"
-                clusterUuid = clusterInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
-                imageUuid = imageInventory.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
-                strategy = VmCreationStrategy.JustCreate.toString()
-            }
-        }
-
-        changeClusterState {
-            uuid = clusterInventory.uuid
-            stateEvent = "enable"
-        }
-
-        // create vm with a disable host
-        changeHostState {
-            uuid = hostInventory.uuid
-            stateEvent = "disable"
-        }
-
-        expect(AssertionError.class) {
-            createVmInstance {
-                name = "test-for-parameter"
-                hostUuid = hostInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
-                imageUuid = imageInventory.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
-                strategy = VmCreationStrategy.JustCreate.toString()
-            }
-        }
-
-        changeHostState {
-            uuid = hostInventory.uuid
-            stateEvent = "enable"
-        }
-
-        changeDiskOfferingState {
-            uuid = diskOfferingInventory.uuid
-            stateEvent = "disable"
-        }
-        expect(AssertionError.class) {
-            createVmInstance {
-                name = "test-for-parameter"
-                hostUuid = hostInventory.uuid
-                rootDiskOfferingUuid = diskOfferingInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
-                imageUuid = imageInventory.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
-                strategy = VmCreationStrategy.JustCreate.toString()
-            }
-        }
-
-        changeDiskOfferingState {
-            uuid = diskOfferingInventory.uuid
-            stateEvent = "enable"
-        }
-
         //without default l3 network
         expect(AssertionError.class) {
             createVmInstance {
                 name = "test-for-parameter"
-                hostUuid = hostInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
-                imageUuid = imageInventory.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid, l3pubInventory.uuid]
+                hostUuid = kvm.uuid
+                cpuNum = 4
+                memorySize = SizeUnit.GIGABYTE.toByte(8)
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid, pubL3.uuid]
                 strategy = VmCreationStrategy.JustCreate.toString()
             }
         }
@@ -326,11 +318,12 @@ test a VM's start/stop/reboot/destroy/recover operations
         expect(AssertionError.class) {
             createVmInstance {
                 name = "test-for-parameter"
-                hostUuid = hostInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
-                imageUuid = imageInventory.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
-                defaultL3NetworkUuid = l3pubInventory.uuid
+                hostUuid = kvm.uuid
+                cpuNum = 4
+                memorySize = SizeUnit.GIGABYTE.toByte(8)
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                defaultL3NetworkUuid = pubL3.uuid
                 strategy = VmCreationStrategy.JustCreate.toString()
             }
         }
@@ -339,40 +332,42 @@ test a VM's start/stop/reboot/destroy/recover operations
         expect(AssertionError.class) {
             createVmInstance {
                 name = "test-for-parameter"
-                hostUuid = hostInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
-                imageUuid = imageInventory.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
-                defaultL3NetworkUuid = l3pubInventory.uuid
+                hostUuid = kvm.uuid
+                cpuNum = 4
+                memorySize = SizeUnit.GIGABYTE.toByte(8)
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                defaultL3NetworkUuid = pubL3.uuid
                 strategy = VmCreationStrategy.JustCreate.toString()
             }
         }
 
         //image
-        BackupStorageInventory bs = env.inventoryByName("sftp")
-        ImageInventory data = addImage {
+        def bs = env.inventoryByName("sftp") as BackupStorageInventory
+        def data = addImage {
             name = "image-data-volume"
             mediaType = ImageConstant.ImageMediaType.DataVolumeTemplate
             url = "http://zstack.org/download/test-volume.qcow2"
             backupStorageUuids = [bs.uuid]
             format = ImageConstant.QCOW2_FORMAT_STRING
             system = true
-        }
+        } as ImageInventory
 
-        ImageInventory iso = addImage {
+        def iso = addImage {
             name = "sized-image"
             url = "http://my-site/foo.iso"
             backupStorageUuids = [bs.uuid]
             format = ImageConstant.ISO_FORMAT_STRING
-        }
+        } as ImageInventory
 
         expect(AssertionError.class) {
             createVmInstance {
                 name = "test-for-parameter"
-                hostUuid = hostInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
+                hostUuid = kvm.uuid
+                cpuNum = 4
+                memorySize = SizeUnit.GIGABYTE.toByte(8)
                 imageUuid = data.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
+                l3NetworkUuids = [l3.uuid]
                 strategy = VmCreationStrategy.JustCreate.toString()
             }
         }
@@ -380,10 +375,11 @@ test a VM's start/stop/reboot/destroy/recover operations
         expect(AssertionError.class) {
             createVmInstance {
                 name = "test-for-parameter"
-                hostUuid = hostInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
+                hostUuid = kvm.uuid
+                cpuNum = 4
+                memorySize = SizeUnit.GIGABYTE.toByte(8)
                 imageUuid = iso.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
+                l3NetworkUuids = [l3.uuid]
                 strategy = VmCreationStrategy.JustCreate.toString()
             }
         }
@@ -391,39 +387,44 @@ test a VM's start/stop/reboot/destroy/recover operations
         expect(AssertionError.class) {
             createVmInstance {
                 name = "test-for-parameter"
-                hostUuid = hostInventory.uuid
-                rootDiskOfferingUuid = diskOfferingInventory.uuid
-                instanceOfferingUuid = instanceOfferingInventory.uuid
+                hostUuid = kvm.uuid
+                cpuNum = 4
+                memorySize = SizeUnit.GIGABYTE.toByte(8)
                 imageUuid = data.uuid
-                l3NetworkUuids = [l3NetworkInventory.uuid]
+                l3NetworkUuids = [l3.uuid]
                 strategy = VmCreationStrategy.JustCreate.toString()
+                diskAOs = [
+                    [
+                        boot: true,
+                        size: SizeUnit.GIGABYTE.toByte(20)
+                    ]
+                ]
             }
         }
 
     }
 
     void testDeleteCreatedVm() {
-        VmSpec spec = env.specByName("vm")
-        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
-        InstanceOfferingInventory instanceOfferingInventory = env.inventoryByName("instanceOffering")
-        ImageInventory imageInventory = env.inventoryByName("image1")
-        L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3")
-
-        CreateVmInstanceAction action = new CreateVmInstanceAction()
-        action.name = "JustCreatedVm"
-        action.rootDiskOfferingUuid = diskOfferingInventory.uuid
-        action.instanceOfferingUuid = instanceOfferingInventory.uuid
-        action.imageUuid = imageInventory.uuid
-        action.l3NetworkUuids = [l3NetworkInventory.uuid]
-        action.strategy = VmCreationStrategy.JustCreate.toString()
-        action.sessionId = adminSession()
-        CreateVmInstanceAction.Result result = action.call()
+        def justCreatedVm = createVmInstance {
+            delegate.name = "JustCreatedVm"
+            delegate.cpuNum = 4
+            delegate.memorySize = SizeUnit.GIGABYTE.toByte(8)
+            delegate.imageUuid = image.uuid
+            delegate.l3NetworkUuids = [l3.uuid]
+            delegate.strategy = VmCreationStrategy.JustCreate.toString()
+            delegate.diskAOs = [
+                [
+                    boot: true,
+                    size: SizeUnit.GIGABYTE.toByte(20)
+                ]
+            ]
+        } as VmInstanceInventory
 
         destroyVmInstance {
-            uuid = result.value.inventory.uuid
+            uuid = justCreatedVm.uuid
         }
 
-        VmInstanceVO vo = dbFindByUuid(result.value.inventory.uuid, VmInstanceVO.class)
+        VmInstanceVO vo = dbFindByUuid(justCreatedVm.uuid, VmInstanceVO.class)
         assert vo == null
     }
 
