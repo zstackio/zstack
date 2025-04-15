@@ -67,6 +67,7 @@ class SpringSpec {
     void flatNetwork() {
         include("flatNetworkProvider.xml")
         include("sdnController.xml")
+        include("vxlan.xml")
     }
 
     void sftpBackupStorage() {
