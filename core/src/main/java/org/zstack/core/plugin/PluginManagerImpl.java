@@ -101,7 +101,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
         });
     }
 
-    private void registerPluginAsSingleton(
+    protected void registerPluginAsSingleton(
             Class<? extends PluginDriver> pluginRegisterClz,
             Class<? extends PluginDriver> pluginDriverClz) {
         try {
