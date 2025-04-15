@@ -16,14 +16,12 @@ public class ServiceUtils {
      * @param description 服务描述
      * @param documentation 文档URL
      * @param dependencies 依赖的其他服务
-     * @param scriptPath 执行脚本路径
-     * @param scriptContent 执行脚本内容
+     * @param execStart 执行命令
      */
     public static void installService(String serviceName, String description,
                                          String documentation, List<String> dependencies,
-                                         String scriptPath, String scriptContent) {
+                                         String execStart) {
         try {
-            // 生成服务单元文件内容
             StringBuilder serviceContent = new StringBuilder("[Unit]\n");
             serviceContent.append("Description=").append(description).append("\n");
 
@@ -37,26 +35,18 @@ public class ServiceUtils {
 
             serviceContent.append("\n[Service]\n");
             serviceContent.append("Type=forking\n");
-            serviceContent.append("ExecStart=").append(scriptPath).append("\n");
+            serviceContent.append("ExecStart=").append(execStart).append("\n");
 
             serviceContent.append("\n[Install]\n");
             serviceContent.append("WantedBy=multi-user.target");
 
-            // 服务文件路径
             String tmpServicePath = "/tmp/" + serviceName + ".service";
             String servicePath = "/etc/systemd/system/" + serviceName + ".service";
 
-            // 使用Bash执行命令
             new Bash() {
                 @Override
                 protected void scripts() {
-                    // 写入脚本文件
-                    run("echo '%s' > %s", scriptContent, scriptPath);
-                    // 写入服务文件
                     run("echo '%s' > %s; sudo cp %s %s", serviceContent, tmpServicePath, tmpServicePath, servicePath);
-                    // 设置脚本执行权限
-                    run("sudo chmod +x %s",scriptPath);
-                    // 启用服务并重新加载
                     run("sudo systemctl enable %s; sudo systemctl daemon-reload", serviceName);
                 }
             }.execute();
