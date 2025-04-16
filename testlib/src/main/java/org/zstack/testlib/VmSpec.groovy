@@ -18,6 +18,10 @@ class VmSpec extends Spec implements HasSession {
     private Closure defaultL3Network = {}
     @SpecParam(required = true)
     String name
+    @SpecParam(required = false)
+    Integer cpu
+    @SpecParam(required = false)
+    Long memorySize
     @SpecParam
     String description
     @SpecParam
@@ -165,6 +169,8 @@ class VmSpec extends Spec implements HasSession {
             delegate.name = name
             delegate.description = description
             delegate.sessionId = sessionId
+            delegate.cpuNum = cpu
+            delegate.memorySize = memorySize
             delegate.instanceOfferingUuid = instanceOffering()
             delegate.imageUuid = image()
             delegate.rootDiskOfferingUuid = rootDiskOffering()

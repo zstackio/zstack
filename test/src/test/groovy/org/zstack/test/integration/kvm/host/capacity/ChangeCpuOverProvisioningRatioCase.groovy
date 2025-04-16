@@ -22,12 +22,6 @@ class ChangeCpuOverProvisioningRatioCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "1CPU1G"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -83,9 +77,11 @@ class ChangeCpuOverProvisioningRatioCase extends SubCase {
                 }
                 attachBackupStorage("sftp")
             }
+
             vm {
                 name = "vm"
-                useInstanceOffering("1CPU1G")
+                cpu = 1
+                memorySize = SizeUnit.GIGABYTE.toByte(1)
                 useImage("image1")
                 useL3Networks("l3")
             }
@@ -118,7 +114,8 @@ class ChangeCpuOverProvisioningRatioCase extends SubCase {
 
         VmInstanceInventory newVm = createVmInstance {
             name = "newVm"
-            instanceOfferingUuid = vm.instanceOfferingUuid
+            cpuNum = 1
+            memorySize = SizeUnit.GIGABYTE.toByte(1)
             imageUuid = vm.imageUuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
         }
