@@ -48,12 +48,6 @@ class DeleteHostCase extends SubCase{
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -154,15 +148,11 @@ class DeleteHostCase extends SubCase{
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                memorySize = SizeUnit.GIGABYTE.toByte(8)
+                cpu = 4
                 useImage("image1")
                 useL3Networks("l3")
             }
-        }
-
-        env.diskOffering {
-            name = "diskOffering"
-            diskSize = SizeUnit.GIGABYTE.toByte(10)
         }
     }
 
@@ -181,13 +171,11 @@ class DeleteHostCase extends SubCase{
         HostInventory host1 = env.inventoryByName("kvm1")
         HostInventory host2 = env.inventoryByName("kvm2")
         VmInstanceInventory vm = env.inventoryByName("vm")
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
-
 
         // create disk on host1
         VolumeInventory vol = createDataVolume {
             name = "data1"
-            diskOfferingUuid = diskOffering.uuid
+            diskSize = SizeUnit.GIGABYTE.toByte(10)
         }
         vol = attachDataVolumeToVm {
             vmInstanceUuid = vm.uuid
@@ -198,14 +186,15 @@ class DeleteHostCase extends SubCase{
         // create vm on host2
         VmInstanceInventory newVm = createVmInstance {
             name = "newVm"
-            instanceOfferingUuid = vm.instanceOfferingUuid
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
+            cpuNum = 4
             imageUuid = vm.imageUuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
             hostUuid = (host1.uuid == vm.hostUuid ? host2.uuid : host1.uuid)
         }
         VolumeInventory newVol = createDataVolume {
             name = "data2"
-            diskOfferingUuid = diskOffering.uuid
+            diskSize = SizeUnit.GIGABYTE.toByte(10)
             systemTags = ["localStorage::hostUuid::${newVm.hostUuid}".toString()]
         }
         attachDataVolumeToVm {

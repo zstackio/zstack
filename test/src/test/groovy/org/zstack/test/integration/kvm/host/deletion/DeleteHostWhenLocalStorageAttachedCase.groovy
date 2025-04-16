@@ -27,12 +27,6 @@ class DeleteHostWhenLocalStorageAttachedCase extends SubCase{
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -96,7 +90,8 @@ class DeleteHostWhenLocalStorageAttachedCase extends SubCase{
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                memorySize = SizeUnit.GIGABYTE.toByte(8)
+                cpu = 4
                 useImage("image")
                 useL3Networks("l3")
             }
@@ -120,7 +115,8 @@ class DeleteHostWhenLocalStorageAttachedCase extends SubCase{
 
         VmInstanceInventory vm_local = createVmInstance {
             name = "vm_local"
-            instanceOfferingUuid = vm.instanceOfferingUuid
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
+            cpuNum = 4
             imageUuid = vm.imageUuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
             primaryStorageUuidForRootVolume = local.uuid
@@ -128,7 +124,8 @@ class DeleteHostWhenLocalStorageAttachedCase extends SubCase{
 
         VmInstanceInventory vm_local2 = createVmInstance {
             name = "vm_local2"
-            instanceOfferingUuid = vm.instanceOfferingUuid
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
+            cpuNum = 4
             imageUuid = vm.imageUuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
             primaryStorageUuidForRootVolume = local2.uuid
