@@ -1171,7 +1171,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         chain.setName(String.format("do-create-vmInstance-%s", vo.getUuid()));
         chain.then(new ShareFlow() {
             VmInstanceInventory instantiateVm;
-            List<APICreateVmInstanceMsg.DiskAO> otherDisks = new ArrayList<>();
+            List<DiskAO> otherDisks = new ArrayList<>();
             boolean attachOtherDisks = false;
 
             @Override
@@ -1415,7 +1415,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 });
             }
 
-            private void setDiskAOsName(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+            private void setDiskAOsName(List<DiskAO> diskAOs) {
                 AtomicInteger count = new AtomicInteger(1);
                 diskAOs.stream().filter(diskAO -> diskAO.getSourceUuid() == null).filter(diskAO -> diskAO.getName() == null)
                         .forEach(diskAO -> {

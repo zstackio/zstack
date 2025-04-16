@@ -1,8 +1,8 @@
 package org.zstack.compute.vm;
 
 import org.zstack.header.host.CpuArchitecture;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
 import org.zstack.header.vm.VmCreationStrategy;
 import org.zstack.header.vm.VmNicSpec;
@@ -56,13 +56,13 @@ public class InstantiateVmFromNewCreatedStruct {
         }
     }
 
-    private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+    private List<DiskAO> diskAOs;
 
-    public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
+    public List<DiskAO> getDiskAOs() {
         return diskAOs;
     }
 
-    public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
+    public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
     }
 
