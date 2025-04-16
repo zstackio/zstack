@@ -28,6 +28,7 @@ import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint;
+import org.zstack.storage.addon.primary.ExternalHostIdGetter;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -121,14 +122,13 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        Integer hostId = Q.New(ExternalPrimaryStorageHostRefVO.class).select(ExternalPrimaryStorageHostRefVO_.hostId)
+                        ExternalPrimaryStorageHostRefVO ref = Q.New(ExternalPrimaryStorageHostRefVO.class)
                                 .eq(ExternalPrimaryStorageHostRefVO_.hostUuid, param.getHostUuid())
                                 .eq(ExternalPrimaryStorageHostRefVO_.primaryStorageUuid, param.getPrimaryStorage().getUuid())
-                                .findValue();
-
-                        if (hostId == null) {
-                            trigger.fail(operr("not found hostId for hostUuid[%s] and primaryStorageUuid[%s]", param.getHostUuid(), param.getPrimaryStorage().getUuid()));
-                            return;
+                                .find();
+                        if (ref == null || ref.getHostId() == 0) {
+                            logger.warn(String.format("not found hostId for hostUuid[%s] and primaryStorageUuid[%s]", param.getHostUuid(), param.getPrimaryStorage().getUuid()));
+                            ref = new ExternalHostIdGetter(999).getOrAllocateHostIdRef(param.getHostUuid(), param.getPrimaryStorage().getUuid());
                         }
 
                         KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
@@ -139,11 +139,10 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                         cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
                         cmd.heartbeatRequiredSpace = heartbeatVol.getHeartbeatRequiredSpace();
                         cmd.hostUuid = param.getHostUuid();
-                        cmd.hostId = hostId;
+                        cmd.hostId = ref.getHostId();
                         cmd.strategy = param.getStrategy();
                         cmd.uuid = param.getPrimaryStorage().getUuid();
                         cmd.fencers = param.getFencers();
-
                         httpCall(KvmCbdCommands.SETUP_CBD_SELF_FENCER_PATH, param.getHostUuid(), cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
                             @Override
                             public void success(AgentRsp returnValue) {
