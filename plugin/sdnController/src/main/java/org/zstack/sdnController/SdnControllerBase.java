@@ -19,6 +19,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -42,6 +43,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.sdnController.header.SdnControllerFlowDataParam.SDN_CONTROLLER_UUID;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -239,6 +241,17 @@ public class SdnControllerBase {
 
             @Override
             public void run(SyncTaskChain chain) {
+                SdnControllerHostRefVO refvo = Q.New(SdnControllerHostRefVO.class)
+                        .eq(SdnControllerHostRefVO_.sdnControllerUuid, msg.getSdnControllerUuid())
+                        .eq(SdnControllerHostRefVO_.vSwitchType, msg.getvSwitchType())
+                        .eq(SdnControllerHostRefVO_.vtepIp, msg.getVtepIp()).find();
+                if (refvo != null) {
+                    completion.fail(argerr("could not add host[uuid:%s] to sdn controller[uuid:%s], " +
+                                    " because vtepip is used by host[uuid:%s]", msg.getHostUuid(),
+                            msg.getSdnControllerUuid(), refvo.getHostUuid()));
+                    return;
+                }
+
                 SdnController controller = getSdnController();
                 controller.addHost(msg, new Completion(completion) {
                     @Override
