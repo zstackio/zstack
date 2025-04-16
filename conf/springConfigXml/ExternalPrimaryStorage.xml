@@ -18,7 +18,7 @@
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" order="-1"/>
             <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint" order="-1"/>
-            <zstack:extension interface="org.zstack.header.vm.VmAttachVolumeExtensionPoint" order="-1" />
+            <zstack:extension interface="org.zstack.header.vm.VmAttachVolumeExtensionPoint" order="-2" />
             <zstack:extension interface="org.zstack.header.vm.VmDetachVolumeExtensionPoint" order="-1" />
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory"/>
