@@ -2,6 +2,9 @@ package org.zstack.header.vm;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
+import static org.zstack.utils.CollectionUtils.isEmpty;
+
 /**
  * Created by david on 8/22/16.
  */
@@ -26,9 +29,15 @@ public interface CreateVmInstanceMessage {
 
     String getType();
 
-    String getRootDiskOfferingUuid();
+    default String getRootDiskOfferingUuid() {
+        final DiskAO bootDisk = findBootDisk();
+        return bootDisk == null ? null : bootDisk.getDiskOfferingUuid();
+    }
 
-    long getRootDiskSize();
+    default long getRootDiskSize() {
+        final DiskAO bootDisk = findBootDisk();
+        return bootDisk == null ? 0 : bootDisk.getSize();
+    }
 
     List<String> getDataDiskOfferingUuids();
 
@@ -47,4 +56,10 @@ public interface CreateVmInstanceMessage {
     String getAllocatorStrategy();
 
     String getStrategy(); // VmCreationStrategy
+
+    List<DiskAO> getDiskAOs();
+
+    default DiskAO findBootDisk() {
+        return isEmpty(getDiskAOs()) ? null : findOneOrNull(getDiskAOs(),DiskAO::isBoot);
+    }
 }

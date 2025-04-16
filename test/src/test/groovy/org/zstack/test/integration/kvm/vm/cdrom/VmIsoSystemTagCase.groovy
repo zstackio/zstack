@@ -12,6 +12,7 @@ import org.zstack.header.message.MessageReply
 import org.zstack.header.network.l3.L3NetworkVO
 import org.zstack.header.network.l3.L3NetworkVO_
 import org.zstack.header.vm.CreateVmInstanceMsg
+import org.zstack.header.vm.DiskAO
 import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceState
@@ -191,7 +192,11 @@ class VmIsoSystemTagCase extends SubCase {
         cmsg.setDefaultL3NetworkUuid(hostNameVm.getDefaultL3NetworkUuid())
         cmsg.setStrategy(VmCreationStrategy.InstantStart.toString())
         cmsg.setAccountUuid(currentEnvSpec.session.getAccountUuid())
-        cmsg.setRootDiskOfferingUuid(diskOffering.uuid)
+
+        def bootDisk = DiskAO.rootDisk().withImage(hostNameVm.getImageUuid())
+        bootDisk.diskOfferingUuid = diskOffering.uuid
+        cmsg.diskAOs = [bootDisk]
+
         bus.makeLocalServiceId(cmsg, VmInstanceConstant.SERVICE_ID)
         bus.send(cmsg, new CloudBusCallBack(null) {
             @Override

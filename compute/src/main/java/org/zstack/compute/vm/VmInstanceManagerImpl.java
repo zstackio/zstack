@@ -1289,20 +1289,26 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
                         smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
 
-                        if (msg.getRootDiskOfferingUuid() != null) {
-                            smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
-                        } else if (msg.getRootDiskSize() > 0) {
-                            DiskOfferingVO dvo = new DiskOfferingVO();
-                            dvo.setUuid(Platform.getUuid());
-                            dvo.setAccountUuid(msg.getAccountUuid());
-                            dvo.setDiskSize(msg.getRootDiskSize());
-                            dvo.setName("for-create-vm-" + finalVo.getUuid());
-                            dvo.setType("TemporaryDiskOfferingType");
-                            dvo.setState(DiskOfferingState.Enabled);
-                            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
-                            dbf.persist(dvo);
-                            smsg.setRootDiskOfferingUuid(dvo.getUuid());
+                        final DiskAO rootDisk = msg.findBootDisk();
+                        DiskOfferingVO dvo = null;
+                        if (rootDisk != null) {
+                            if (rootDisk.getDiskOfferingUuid() != null) {
+                                smsg.setRootDiskOfferingUuid(rootDisk.getDiskOfferingUuid());
+                            } else if (rootDisk.getSize() > 0) {
+                                dvo = new DiskOfferingVO();
+                                dvo.setUuid(Platform.getUuid());
+                                dvo.setAccountUuid(msg.getAccountUuid());
+                                dvo.setDiskSize(rootDisk.getSize());
+                                dvo.setName("for-create-vm-" + finalVo.getUuid());
+                                dvo.setType("TemporaryDiskOfferingType");
+                                dvo.setState(DiskOfferingState.Enabled);
+                                dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+                                dbf.persist(dvo);
+                                smsg.setRootDiskOfferingUuid(dvo.getUuid());
+                            }
                         }
+
+                        String newCreateDiskOfferingUuid = dvo == null ? null : dvo.getUuid();
 
                         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
                         smsg.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
@@ -1329,8 +1335,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         bus.send(smsg, new CloudBusCallBack(smsg) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (msg.getRootDiskOfferingUuid() == null && smsg.getRootDiskOfferingUuid() != null) {
-                                    dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
+                                if (newCreateDiskOfferingUuid != null) {
+                                    dbf.removeByPrimaryKey(newCreateDiskOfferingUuid, DiskOfferingVO.class);
                                 }
 
                                 if (!temporaryDiskOfferingUuids.isEmpty()) {
