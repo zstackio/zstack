@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
+import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
+import static org.zstack.utils.CollectionUtils.isEmpty;
+
 /**
  * Created by Wenhao.Zhang on 22/03/10
  */
@@ -24,10 +28,6 @@ public class VmInstanceUtils {
     public static CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
         CreateVmInstanceMsg cmsg = NewVmInstanceMsgBuilder.fromAPINewVmInstanceMsg(msg);
         cmsg.setImageUuid(msg.getImageUuid());
-        cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
-        if (msg.getRootDiskSize() != null) {
-            cmsg.setRootDiskSize(msg.getRootDiskSize());
-        }
         if (msg.getAllocatorStrategy() != null) {
             cmsg.setAllocatorStrategy(msg.getAllocatorStrategy());
         }
@@ -51,6 +51,31 @@ public class VmInstanceUtils {
             cmsg.setVirtio(msg.getVirtio());
         }
         cmsg.setDiskAOs(msg.getDiskAOs());
+
+        if (isEmpty(cmsg.getDiskAOs())) {
+            DiskAO bootDisk = DiskAO.rootDisk();
+
+            if (msg.getRootDiskOfferingUuid() != null) {
+                bootDisk.setDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+            } else if (msg.getRootDiskSize() != null) {
+                bootDisk.setSize(msg.getRootDiskSize());
+            }
+            bootDisk.setPlatform(msg.getPlatform());
+            bootDisk.setGuestOsType(msg.getGuestOsType());
+            bootDisk.setArchitecture(msg.getArchitecture());
+            cmsg.setDiskAOs(list(bootDisk));
+        } else {
+            DiskAO bootDisk = findOneOrNull(cmsg.getDiskAOs(), DiskAO::isBoot);
+            if (msg.getRootDiskOfferingUuid() != null) {
+                bootDisk.setDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+            } else if (msg.getRootDiskSize() != null) {
+                bootDisk.setSize(msg.getRootDiskSize());
+            }
+            bootDisk.setPlatform(msg.getPlatform());
+            bootDisk.setGuestOsType(msg.getGuestOsType());
+            bootDisk.setArchitecture(msg.getArchitecture());
+        }
+
         return cmsg;
     }
 

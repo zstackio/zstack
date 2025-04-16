@@ -20,8 +20,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private long reservedMemorySize;
     private List<VmNicSpec> l3NetworkSpecs;
     private String type;
-    private String rootDiskOfferingUuid;
-    private long rootDiskSize;
     private List<Long> dataDiskSizes;
     private List<String> dataDiskOfferingUuids;
     private List<String> dataVolumeTemplateUuids;
@@ -178,24 +176,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDataDiskSizes(List<Long> dataDiskSizes) {
         this.dataDiskSizes = dataDiskSizes;
-    }
-
-    @Override
-    public long getRootDiskSize() {
-        return rootDiskSize;
-    }
-
-    public void setRootDiskSize(long rootDiskSize) {
-        this.rootDiskSize = rootDiskSize;
-    }
-
-    @Override
-    public String getRootDiskOfferingUuid() {
-        return rootDiskOfferingUuid;
-    }
-
-    public void setRootDiskOfferingUuid(String rootDiskOfferingUuid) {
-        this.rootDiskOfferingUuid = rootDiskOfferingUuid;
     }
 
     @Override

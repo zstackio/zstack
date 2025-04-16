@@ -33,6 +33,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<String> sshKeyPairUuids;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
+    private List<DiskAO> diskAOs;
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -56,7 +57,6 @@ public class InstantiateVmFromNewCreatedStruct {
         }
     }
 
-    private List<DiskAO> diskAOs;
 
     public List<DiskAO> getDiskAOs() {
         return diskAOs;
@@ -162,7 +162,6 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
         struct.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         struct.setL3NetworkUuids(msg.getL3NetworkSpecs());
-        struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setCandidatePrimaryStorageUuidsForRootVolume(msg.getCandidatePrimaryStorageUuidsForRootVolume());
         struct.setCandidatePrimaryStorageUuidsForDataVolume(msg.getCandidatePrimaryStorageUuidsForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
