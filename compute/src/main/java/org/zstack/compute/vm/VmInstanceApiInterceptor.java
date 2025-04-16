@@ -1224,25 +1224,26 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
         if (image == null) {
-            String err = "";
+            List<String> errorList = new ArrayList<>();
             if (msg.getPlatform() == null) {
-                err = Platform.missingVariables("platform");
+                errorList.add(Platform.missingVariables("platform"));
             }
 
             if (msg.getGuestOsType() == null) {
-                err += Platform.missingVariables("guestOsType");
+                errorList.add(Platform.missingVariables("guestOsType"));
             }
 
             if (msg.getArchitecture() == null) {
-                err += Platform.missingVariables("architecture");
+                errorList.add(Platform.missingVariables("architecture"));
             }
 
             if (msg.getRootDiskOfferingUuid() == null && msg.getRootDiskSize() == null) {
-                err += "rootDiskOfferingUuid or rootDiskSize cannot be all null";
+                errorList.add("rootDiskOfferingUuid or rootDiskSize cannot be all null");
             }
 
-            if (!err.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr(String.format("when imageUuid is null, %s", err)));
+            if (!errorList.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr(
+                        String.format("when imageUuid is null, %s", String.join(", ", errorList))));
             }
         } else {
             ImageState imgState = image.getState();
