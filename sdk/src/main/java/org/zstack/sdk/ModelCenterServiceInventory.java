@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.ZdfsService;
 
 public class ModelCenterServiceInventory  {
 
@@ -12,20 +12,20 @@ public class ModelCenterServiceInventory  {
         return this.uuid;
     }
 
-    public java.lang.String name;
-    public void setName(java.lang.String name) {
-        this.name = name;
+    public java.util.List serviceStatuses;
+    public void setServiceStatuses(java.util.List serviceStatuses) {
+        this.serviceStatuses = serviceStatuses;
     }
-    public java.lang.String getName() {
-        return this.name;
+    public java.util.List getServiceStatuses() {
+        return this.serviceStatuses;
     }
 
-    public java.lang.String status;
-    public void setStatus(java.lang.String status) {
-        this.status = status;
+    public ZdfsService zdfs;
+    public void setZdfs(ZdfsService zdfs) {
+        this.zdfs = zdfs;
     }
-    public java.lang.String getStatus() {
-        return this.status;
+    public ZdfsService getZdfs() {
+        return this.zdfs;
     }
 
 }

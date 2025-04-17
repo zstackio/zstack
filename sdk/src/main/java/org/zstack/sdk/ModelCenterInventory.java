@@ -1,6 +1,7 @@
 package org.zstack.sdk;
 
 import org.zstack.sdk.ModelCenterCapacityInventory;
+import org.zstack.sdk.ZdfsInventory;
 
 public class ModelCenterInventory  {
 
@@ -114,6 +115,14 @@ public class ModelCenterInventory  {
     }
     public ModelCenterCapacityInventory getCapacity() {
         return this.capacity;
+    }
+
+    public ZdfsInventory zdfs;
+    public void setZdfs(ZdfsInventory zdfs) {
+        this.zdfs = zdfs;
+    }
+    public ZdfsInventory getZdfs() {
+        return this.zdfs;
     }
 
     public java.sql.Timestamp createDate;
