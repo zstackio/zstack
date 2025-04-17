@@ -349,7 +349,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         return path.makeFullPath();
     }
 
-    private String getHostUuidFromURIScheme(String uri) {
+    public static String getHostUuidFromURIScheme(String uri) {
         String protocol;
         try {
             protocol = new URI(uri).getScheme();

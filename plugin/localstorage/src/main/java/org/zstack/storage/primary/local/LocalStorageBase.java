@@ -12,6 +12,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -20,6 +21,7 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -639,6 +641,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     boolean success = false;
 
                     @Override
+                    public boolean skip(Map data) {
+                        return msg.isAllocatedPrimaryStorageCapacity();
+                    }
+
+                    @Override
                     public void run(FlowTrigger trigger, Map data) {
                         reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize, self.getUuid());
                         success = true;
@@ -658,6 +665,33 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 for (Flow fl : flows) {
                     flow(fl);
                 }
+
+                flow(new Flow() {
+                    String __name__ = "move-original-volume-to-trash";
+
+                    private InstallPathRecycleInventory trashInv;
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return !msg.isKeepOriginalVolumeInTrash();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        trashInv = trash.createTrash(TrashType.MigrateVolume, true, VolumeInventory.valueOf(volume));
+                        logger.debug(String.format("trash volume[uuid:%s] source folder[path: %s] on host[%s]",
+                                volume.getUuid(), volume.getInstallPath(), trashInv.getHostUuid()));
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (trashInv != null) {
+                            trash.removeFromDb(trashInv.getTrashId());
+                        }
+                        trigger.rollback();
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "change-reference-to-dst-host";
@@ -683,6 +717,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "return-capacity-to-src-host";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return msg.isKeepOriginalVolumeInTrash();
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {

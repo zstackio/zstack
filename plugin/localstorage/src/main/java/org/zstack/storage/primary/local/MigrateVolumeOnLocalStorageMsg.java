@@ -11,6 +11,7 @@ public class MigrateVolumeOnLocalStorageMsg extends NeedReplyMessage implements 
     private String primaryStorageUuid;
     private String destHostUuid;
     private boolean keepOriginalVolumeInTrash;
+    private boolean allocatedPrimaryStorageCapacity;
 
     public String getDestHostUuid() {
         return destHostUuid;
@@ -43,5 +44,13 @@ public class MigrateVolumeOnLocalStorageMsg extends NeedReplyMessage implements 
 
     public void setKeepOriginalVolumeInTrash(boolean keepOriginalVolumeInTrash) {
         this.keepOriginalVolumeInTrash = keepOriginalVolumeInTrash;
+    }
+
+    public boolean isAllocatedPrimaryStorageCapacity() {
+        return allocatedPrimaryStorageCapacity;
+    }
+
+    public void setAllocatedPrimaryStorageCapacity(boolean allocatedPrimaryStorageCapacity) {
+        this.allocatedPrimaryStorageCapacity = allocatedPrimaryStorageCapacity;
     }
 }

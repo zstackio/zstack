@@ -36,6 +36,7 @@ import org.zstack.header.volume.*;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -244,6 +245,15 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
 
     @Override
     public String makeSureInstallPathNotUsed(InstallPathRecycleInventory inv) {
+        if (VolumeVO.class.getSimpleName().equals(inv.getResourceType())) {
+            String psType = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, inv.getStorageUuid()).select(PrimaryStorageVO_.type).findValue();
+            DeleteRecycleExtensionPoint ext = pluginRgty.getExtensionFromMap(psType, DeleteRecycleExtensionPoint.class);
+            if (ext != null) {
+                return ext.makeSureInstallPathNotUsed(inv);
+            } else {
+                return makeSureInstallPathNotUsedByVolume(inv.getInstallPath());
+            }
+        }
         return makeSureInstallPathNotUsed(inv.getInstallPath(), inv.getResourceType());
     }
 
@@ -381,6 +391,13 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
 
     @Override
     public boolean start() {
+        pluginRgty.saveExtensionAsMap(DeleteRecycleExtensionPoint.class, new Function<Object, DeleteRecycleExtensionPoint>() {
+            @Override
+            public Object call(DeleteRecycleExtensionPoint arg) {
+                return arg.getPrimaryStorageType().toString();
+            }
+        });
+
         transferTrashDataFromOldVersion();
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             return stop();
