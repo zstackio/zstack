@@ -1201,6 +1201,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateVmInstanceMsg msg) {
         boolean virtIOTagExists = (isEmpty(msg.getSystemTags())) ? false :
                 msg.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
+        String platform = msg.getPlatform(), guestOsType = msg.getGuestOsType(), architecture = msg.getArchitecture();
 
         if (CollectionUtils.isNotEmpty(msg.getDiskAOs())) {
             DiskAO rootDiskAO = msg.getDiskAOs().stream()
@@ -1208,9 +1209,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (rootDiskAO == null) {
                 throw new ApiMessageInterceptionException(argerr("missing root disk"));
             }
-            msg.setPlatform(rootDiskAO.getPlatform());
-            msg.setGuestOsType(rootDiskAO.getGuestOsType());
-            msg.setArchitecture(rootDiskAO.getArchitecture());
+
+            platform = platform == null ? rootDiskAO.getPlatform() : platform;
+            guestOsType = guestOsType == null ? rootDiskAO.getGuestOsType() : guestOsType;
+            architecture = architecture == null ? rootDiskAO.getArchitecture() : architecture;
             if (!virtIOTagExists && CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
                 virtIOTagExists = rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
             }
@@ -1225,15 +1227,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
         if (image == null) {
             List<String> errorList = new ArrayList<>();
-            if (msg.getPlatform() == null) {
+            if (platform == null) {
                 errorList.add(Platform.missingVariables("platform"));
             }
 
-            if (msg.getGuestOsType() == null) {
+            if (guestOsType == null) {
                 errorList.add(Platform.missingVariables("guestOsType"));
             }
 
-            if (msg.getArchitecture() == null) {
+            if (architecture == null) {
                 errorList.add(Platform.missingVariables("architecture"));
             }
 
@@ -1244,6 +1246,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (!errorList.isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr(
                         String.format("when imageUuid is null, %s", String.join(", ", errorList))));
+            }
+
+            msg.setPlatform(platform);
+            msg.setGuestOsType(guestOsType);
+            msg.setArchitecture(architecture);
+            if (msg.getVirtio() == null) {
+                msg.setVirtio(ImagePlatform.Linux.name().equals(msg.getPlatform()));
             }
         } else {
             ImageState imgState = image.getState();
@@ -1266,25 +1275,32 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
             }
 
-            if (msg.getPlatform() == null && image.getPlatform() == null) {
+            if (platform == null && image.getPlatform() == null) {
                 throw new ApiMessageInterceptionException(operr("at least one of field platform in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            } else if (platform == null) {
+                platform = image.getPlatform().name();
             }
 
-            if (msg.getGuestOsType() == null && image.getGuestOsType() == null) {
+            if (guestOsType == null && image.getGuestOsType() == null) {
                 throw new ApiMessageInterceptionException(operr("at least one of field guestOsType in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            } else if (guestOsType == null) {
+                guestOsType = image.getGuestOsType();
             }
 
-            if (msg.getArchitecture() == null && image.getArchitecture() == null) {
+            if (architecture == null && image.getArchitecture() == null) {
                 throw new ApiMessageInterceptionException(operr("at least one of field architecture in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+            } else if (architecture == null) {
+                architecture = image.getArchitecture();
+            }
+
+            msg.setPlatform(platform);
+            msg.setGuestOsType(guestOsType);
+            msg.setArchitecture(architecture);
+            if (msg.getVirtio() == null) {
+                msg.setVirtio(ImagePlatform.Linux.name().equals(platform));
             }
 
             validateRootDiskOffering(imgFormat, msg);
-
-            if (msg.getVirtio() == null) {
-                if (image.getVirtio() != null) {
-                    msg.setVirtio(image.getVirtio());
-                }
-            }
         }
 
         validateDataDiskSizes(msg);
