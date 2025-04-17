@@ -58,6 +58,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -678,6 +679,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        VolumeVO volume = dbf.findByUuid(volumeRefVO.getResourceUuid(), VolumeVO.class);
+                        volume.setInstallPath(getVolumeFolderPath(volume.getInstallPath()));
                         trashInv = trash.createTrash(TrashType.MigrateVolume, true, VolumeInventory.valueOf(volume));
                         logger.debug(String.format("trash volume[uuid:%s] source folder[path: %s] on host[%s]",
                                 volume.getUuid(), volume.getInstallPath(), trashInv.getHostUuid()));
@@ -690,6 +693,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             trash.removeFromDb(trashInv.getTrashId());
                         }
                         trigger.rollback();
+                    }
+
+                    private String getVolumeFolderPath(String installPath) {
+                        File vol = new File(installPath);
+                        if (vol.getParentFile().getName().equals("snapshots")) {
+                            return vol.getParentFile().getParent();
+                        } else {
+                            return vol.getParent();
+                        }
                     }
                 });
 
