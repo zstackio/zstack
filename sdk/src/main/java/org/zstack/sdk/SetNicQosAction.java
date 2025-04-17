@@ -28,10 +28,10 @@ public class SetNicQosAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8192L,32212254720L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8000L,30000000000L}, noTrim = false)
     public java.lang.Long outboundBandwidth;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8192L,32212254720L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8000L,30000000000L}, noTrim = false)
     public java.lang.Long inboundBandwidth;
 
     @Param(required = false)
