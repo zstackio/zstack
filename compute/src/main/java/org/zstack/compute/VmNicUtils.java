@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.header.vm.VmInstanceConstant.VM_NIC_QOS_MAX;
+import static org.zstack.header.vm.VmInstanceConstant.VM_NIC_QOS_MIN;
 
 public class VmNicUtils {
     public static void validateVmParms(List<VmNicParam> vmNicParms, List<String> l3Uuids, List<String> supportNicDriverTypes) {
@@ -33,13 +35,13 @@ public class VmNicUtils {
             }
 
             if (nic.getOutboundBandwidth() != null) {
-                if (nic.getOutboundBandwidth() < 8192 || nic.getOutboundBandwidth() > 32212254720L) {
+                if (nic.getOutboundBandwidth() < VM_NIC_QOS_MIN || nic.getOutboundBandwidth() > VM_NIC_QOS_MAX) {
                     throw new ApiMessageInterceptionException(argerr("outbound bandwidth[%d] of vm nic is out of [8192, 32212254720]", nic.getOutboundBandwidth()));
                 }
             }
 
             if (nic.getInboundBandwidth() != null) {
-                if (nic.getInboundBandwidth() < 8192 || nic.getInboundBandwidth() > 32212254720L) {
+                if (nic.getInboundBandwidth() < VM_NIC_QOS_MIN || nic.getInboundBandwidth() > VM_NIC_QOS_MAX) {
                     throw new ApiMessageInterceptionException(argerr("inbound bandwidth[%d] of vm nic is out of [8192, 32212254720]", nic.getInboundBandwidth()));
                 }
             }

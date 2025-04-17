@@ -90,4 +90,7 @@ public interface VmInstanceConstant {
 
     String MEMORY_ACCESS_MODE_SHARED = "shared";
     String MEMORY_ACCESS_MODE_PRIVATE = "private";
+
+    Long VM_NIC_QOS_MIN = 8000L;
+    Long VM_NIC_QOS_MAX = 30000000000L;
 }
