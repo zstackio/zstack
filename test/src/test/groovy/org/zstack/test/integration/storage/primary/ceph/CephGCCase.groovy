@@ -5,12 +5,9 @@ import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.core.gc.GarbageCollectorVO_
+import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.volume.VolumeDeletionPolicyManager
-import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.GarbageCollectorInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.VolumeInventory
-import org.zstack.sdk.VolumeSnapshotInventory
+import org.zstack.sdk.*
 import org.zstack.storage.ceph.CephGlobalConfig
 import org.zstack.storage.ceph.primary.CephDeleteVolumeChainGC
 import org.zstack.storage.ceph.primary.CephDeleteVolumeGC
@@ -20,17 +17,10 @@ import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.storage.volume.VolumeSystemTags
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.ClusterSpec
-import org.zstack.testlib.DiskOfferingSpec
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HttpError
-import org.zstack.testlib.PrimaryStorageSpec
-import org.zstack.testlib.SubCase
-import org.zstack.testlib.vfs.VFS
+import org.zstack.testlib.*
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
-
 /**
  * Created by kayo on 2018/7/25.
  */
@@ -354,6 +344,62 @@ class CephGCCase extends SubCase {
         }
     }
 
+    void testGCDoneAndCancelAfterTriggerGC() {
+        env.cleanSimulatorAndMessageHandlers()
+        def deleteFail = true
+        def callDelete = 0
+        env.hijackSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp, HttpEntity<String> e ->
+            callDelete ++
+            if (deleteFail) {
+                throw new CloudRuntimeException("on purpose")
+            }
+            return rsp
+        }
+
+        VolumeInventory vol = createDataVolume {
+            name = "data"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ceph.uuid
+        }
+        deleteDataVolume {
+            uuid = vol.uuid
+        }
+        expungeDataVolume {
+            uuid = vol.uuid
+        }
+
+        def job
+        retryInSecs {
+            def jobs = queryGCJob {
+                conditions = ["context~=%${vol.getUuid()}%".toString()]
+            } as List<GarbageCollectorInventory>
+            assert jobs.size() == 1
+            job = jobs.get(0)
+            assert jobs.get(0).status != GCStatus.Done.toString()
+            assert callDelete == 1
+        }
+        deleteFail = false
+        triggerGCJob {
+            uuid = job.uuid
+        }
+        retryInSecs {
+            def jobs = queryGCJob {
+                conditions = ["context~=%${vol.getUuid()}%".toString()]
+            } as List<GarbageCollectorInventory>
+            assert jobs.size() == 1
+            assert jobs.get(0).status == GCStatus.Done.toString()
+            assert callDelete == 2
+        }
+
+        assert !retryInSecs(3) {
+            def jobs = queryGCJob {
+                conditions = ["context~=%${vol.getUuid()}%".toString()]
+            } as List<GarbageCollectorInventory>
+            return jobs.size() != 1 || jobs.get(0).status != GCStatus.Done.toString() || callDelete != 2
+        }
+
+    }
+
     void prepareEnv() {
         env.preSimulator(CephPrimaryStorageBase.DELETE_PATH) {
             if (deleteFail) {
@@ -369,6 +415,9 @@ class CephGCCase extends SubCase {
         env.create {
             ceph = (env.specByName("ceph-pri") as PrimaryStorageSpec).inventory
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
+
+            CephGlobalConfig.GC_INTERVAL.updateValue(TimeUnit.SECONDS.toSeconds(2))
+            testGCDoneAndCancelAfterTriggerGC()
 
             // set a very long time so the GC won't run, we use API to trigger it
             CephGlobalConfig.GC_INTERVAL.updateValue(TimeUnit.DAYS.toSeconds(1))
