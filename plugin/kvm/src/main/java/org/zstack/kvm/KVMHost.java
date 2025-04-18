@@ -5250,8 +5250,7 @@ public class KVMHost extends HostBase implements Host {
                 final ErrorCode privateKeyError = connectWithPrivateKey();
                 if (privateKeyError == null) {
                     trigger.fail(err(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED,
-                            "host password has been changed. " +
-                            "Please update host password in management node by UpdateKVMHostAction with host UUID[%s]",
+                            "host password has been changed. Please update host password in management node by UpdateKVMHostAction with host UUID[%s]",
                                     self.getUuid()));
                     return;
                 }
