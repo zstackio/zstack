@@ -24,6 +24,8 @@ class VmSpec extends Spec implements HasSession {
     Long memorySize
     @SpecParam
     String description
+    @SpecParam(required = false)
+    Boolean virtio
     @SpecParam
     List<String> rootVolumeSystemTags = []
     @SpecParam
@@ -184,6 +186,7 @@ class VmSpec extends Spec implements HasSession {
             delegate.rootVolumeSystemTags = rootVolumeSystemTags
             delegate.dataVolumeSystemTags = dataVolumeSystemTags
             delegate.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex
+            delegate.virtio = virtio
         }
 
         postCreate {

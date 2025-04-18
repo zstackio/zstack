@@ -133,6 +133,7 @@ use:
 
             vm {
                 name = "vm"
+                virtio = true
                 useInstanceOffering("instanceOffering")
                 useImage("image1")
                 useL3Networks("l3")
