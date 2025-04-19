@@ -150,3 +150,32 @@ CREATE TABLE `HostHaStateVO` (
                                  CONSTRAINT `HostHaStateVO_HostEO_uuid_fk` FOREIGN KEY (`hostUuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE,
                                  CONSTRAINT `HostHaStateVO_PrimaryStorageEO_uuid_fk` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `PrimaryStorageEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZdfsVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `zoneUuid` varchar(32) NULL,
+    `url` varchar(255) NOT NULL,
+    `hostName` varchar(255) NOT NULL,
+    `sshPort` int(16) not NULL,
+    `status` varchar(32) NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZdfsStorageVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `endPoint` varchar(255) NOT NULL,
+    `type` varchar(32) NOT NULL,
+    `accessKey` varchar(255) NULL,
+    `secretKey` varchar(255) NULL,
+    `usedCapacity` bigint(20) unsigned NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('ModelCenterVO', 'zoneUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelCenterVO', 'zdfsUuid', 'VARCHAR(32)', 1, NULL);
+ALTER TABLE ModelCenterVO ADD CONSTRAINT fkModelCenterVOZoneVO FOREIGN KEY (zoneUuid) REFERENCES ZoneEO (uuid) ON DELETE CASCADE;
+ALTER TABLE ModelCenterVO ADD CONSTRAINT fkModelCenterVOZdfsVO FOREIGN KEY (zdfsUuid) REFERENCES ZdfsVO (uuid) ON DELETE SET NULL;
