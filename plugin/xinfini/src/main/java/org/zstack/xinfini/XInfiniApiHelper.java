@@ -643,9 +643,10 @@ public class XInfiniApiHelper {
         req.setIscsiGatewayIds(iscsiGatewayIds);
         req.setIscsiClientCodes(iscsiClientCodes);
         CreateIscsiClientGroupResponse rsp =  callErrorOut(req, CreateIscsiClientGroupResponse.class);
-        // TODO xinfini not support yet
-        // return retryUtilStateActive(req, CreateIscsiClientGroupResponse.class,(CreateIscsiClientGroupResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
-        return rsp.toModule();
+
+        GetIscsiClientGroupRequest gReq = new GetIscsiClientGroupRequest();
+        gReq.setId(rsp.getSpec().getId());
+        return retryUtilStateActive(gReq, GetIscsiClientGroupResponse.class,(GetIscsiClientGroupResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
     public IscsiClientGroupModule getIscsiClientGroup(int id) {
