@@ -6,6 +6,7 @@ import org.zstack.header.identity.role.RoleAccountRefVO;
 import org.zstack.header.identity.role.RoleAccountRefVO_;
 
 import static org.zstack.header.identity.AccountConstant.SOD_AUDITOR_ROLE_UUID;
+import static org.zstack.header.identity.AccountConstant.SOD_SYSTEM_ADMIN_ROLE_UUID;
 
 public interface Account {
     static String getAccountUuidOfResource(String resUuid) {
@@ -51,6 +52,27 @@ public interface Account {
         return Q.New(RoleAccountRefVO.class)
                     .eq(RoleAccountRefVO_.accountUuid, accountUuid)
                     .eq(RoleAccountRefVO_.roleUuid, SOD_AUDITOR_ROLE_UUID)
+                    .isExists();
+    }
+
+    /**
+     * include alert and events
+     */
+    static boolean supportToQueryEventsFromAllAccounts(SessionInventory session) {
+        return supportToQueryEventsFromAllAccounts(session.getAccountUuid());
+    }
+
+    /**
+     * include alert and events
+     */
+    static boolean supportToQueryEventsFromAllAccounts(String accountUuid) {
+        if (isAdmin(accountUuid)) {
+            return true;
+        }
+
+        return Q.New(RoleAccountRefVO.class)
+                    .eq(RoleAccountRefVO_.accountUuid, accountUuid)
+                    .eq(RoleAccountRefVO_.roleUuid, SOD_SYSTEM_ADMIN_ROLE_UUID)
                     .isExists();
     }
 }
