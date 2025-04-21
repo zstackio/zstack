@@ -4738,6 +4738,8 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.4.0")
         public Map<String, String> nicNameDriverMap;
         @GrayVersion(value = "5.4.0")
+        public List<String> restoreNicPciAddressList = new ArrayList<>();
+        @GrayVersion(value = "5.4.0")
         public String brExName;
         @GrayVersion(value = "5.4.0")
         public String ovnRemoteConnection;
