@@ -9,20 +9,17 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.core.BypassWhenUnitTest;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.identity.Quota;
-import org.zstack.header.image.APIAddImageMsg;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.storage.backup.*;
-import org.zstack.identity.QuotaUtil;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.GetLocalFileSizeOnBackupStorageMsg;
+import org.zstack.header.storage.backup.GetLocalFileSizeOnBackupStorageReply;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Created by miao on 16-10-9.
@@ -85,25 +82,21 @@ public class ImageQuotaUtil {
         return imageSize;
     }
 
-
-    public long getLocalImageSizeOnBackupStorage(APIAddImageMsg msg) {
+    public long getImageActualSizeOnBs(String url, List<String> bsUuids) {
         long imageSizeAsked = 0;
 
         if (CoreGlobalProperty.UNIT_TEST_ON) {
-            return imageSizeAsked;
+            return 1;
         }
 
-        final String url = msg.getUrl().trim();
         if (url.startsWith("file:///")) {
             GetLocalFileSizeOnBackupStorageMsg gmsg = new GetLocalFileSizeOnBackupStorageMsg();
-            String bsUuid = msg.getBackupStorageUuids().get(0);
-            gmsg.setBackupStorageUuid(bsUuid);
+            gmsg.setBackupStorageUuid(bsUuids.get(0));
             gmsg.setUrl(url.split("://")[1]);
-            bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
+            bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuids.get(0));
             GetLocalFileSizeOnBackupStorageReply reply = (GetLocalFileSizeOnBackupStorageReply) bus.call(gmsg);
             if (!reply.isSuccess()) {
-                logger.warn(String.format("cannot get image. The image url : %s. description: %s.name: %s",
-                        url, msg.getDescription(), msg.getName()));
+                logger.warn(String.format("cannot get image. The image url: %s", url));
                 throw new OperationFailureException(reply.getError());
             } else {
                 imageSizeAsked = reply.getSize();
@@ -114,8 +107,7 @@ public class ImageQuotaUtil {
             try {
                 len = header.getFirst("Content-Length");
             } catch (Exception e) {
-                logger.warn(String.format("cannot get image.  The image url : %s. description: %s.name: %s",
-                        url, msg.getDescription(), msg.getName()));
+                logger.warn(String.format("cannot get image. The image url: %s", url));
             }
             imageSizeAsked = len == null ? 0 : Long.parseLong(len);
         }

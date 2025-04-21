@@ -4,35 +4,27 @@ import com.google.gson.Gson
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
-import org.zstack.core.config.GlobalConfigVO
-import org.zstack.core.config.GlobalConfigVO_
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.core.timeout.ApiTimeoutGlobalProperty
-import org.zstack.header.image.APIAddImageMsg
-import org.zstack.header.image.ImageConstant
-import org.zstack.header.image.ImagePlatform
-import org.zstack.header.image.ImageVO
+import org.zstack.header.image.*
+import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.longjob.LongJobVO_
-import org.zstack.header.longjob.LongJobState
 import org.zstack.header.storage.backup.DownloadImageMsg
 import org.zstack.header.storage.backup.DownloadImageReply
-import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterMsg
 import org.zstack.longjob.LongJobGlobalConfig
-import org.zstack.sdk.*
+import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.LongJobInventory
+import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.storage.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.SizeUtils
 import org.zstack.utils.TimeUtils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-
-import javax.persistence.metamodel.SingularAttribute
 
 /**
  * Created by camile on 2/5/18.
@@ -102,13 +94,14 @@ class AddImageLongJobCase extends SubCase {
             timeout = cmd.getTimeout()
             //DownloadImageMsg
             LongJobVO vo = Q.New(LongJobVO.class).eq(LongJobVO_.description, myDescription).find()
+            assert Q.New(ImageVO.class).eq(ImageVO_.@name, "TinyLinux-1byte").select(ImageVO_.actualSize).findValue() != 0
             assert vo.state == LongJobState.Running
             flag += 1
             return rsp
         }
 
         APIAddImageMsg msg = new APIAddImageMsg()
-        msg.setName("TinyLinux")
+        msg.setName("TinyLinux-1byte")
         msg.setBackupStorageUuids(Collections.singletonList(bs.uuid))
         msg.setUrl("http://192.168.1.20/share/images/tinylinux.qcow2")
         msg.setFormat(ImageConstant.QCOW2_FORMAT_STRING)
