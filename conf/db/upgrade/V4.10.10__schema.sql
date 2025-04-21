@@ -7,3 +7,5 @@ UPDATE `zstack`.`AlarmVO` SET `name` = 'Data Storage Available Capacity' WHERE `
 UPDATE `zstack`.`AlarmVO` SET `name` = 'Data Storage Available Physical Capacity' WHERE `name` = 'Primary Storage Available Physical Capacity';
 
 DELETE FROM `zstack`.`ResourceConfigVO` WHERE `category`='sharedblock' AND `name`='qcow2.allocation';
+
+DELETE FROM `zstack`.`SystemTagVO` WHERE `tag`='vmNumaEnable::false' AND `resourceType`='VmInstanceVO';
