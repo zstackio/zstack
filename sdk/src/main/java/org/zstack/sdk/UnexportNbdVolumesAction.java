@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteCdpTaskAction extends AbstractAction {
+public class UnexportNbdVolumesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteCdpTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteCdpTaskResult value;
+        public org.zstack.sdk.UnexportNbdVolumesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,10 @@ public class DeleteCdpTaskAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.util.List volumeUuids;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean force = false;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmInstanceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +63,8 @@ public class DeleteCdpTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteCdpTaskResult value = res.getResult(org.zstack.sdk.DeleteCdpTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteCdpTaskResult() : value; 
+        org.zstack.sdk.UnexportNbdVolumesResult value = res.getResult(org.zstack.sdk.UnexportNbdVolumesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UnexportNbdVolumesResult() : value; 
 
         return ret;
     }
@@ -96,11 +93,11 @@ public class DeleteCdpTaskAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/cdp-task/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/cbt-task/unexportvolume";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

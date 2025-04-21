@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteCdpTaskAction extends AbstractAction {
+public class QueryCbtTaskAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteCdpTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteCdpTaskResult value;
+        public org.zstack.sdk.QueryCbtTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class DeleteCdpTaskAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean force = false;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class DeleteCdpTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteCdpTaskResult value = res.getResult(org.zstack.sdk.DeleteCdpTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteCdpTaskResult() : value; 
+        org.zstack.sdk.QueryCbtTaskResult value = res.getResult(org.zstack.sdk.QueryCbtTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryCbtTaskResult() : value; 
 
         return ret;
     }
@@ -96,10 +64,10 @@ public class DeleteCdpTaskAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/cdp-task/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/cbt-task";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }
