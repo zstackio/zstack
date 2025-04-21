@@ -1,21 +1,30 @@
 package org.zstack.header.vm;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class VmNicParam implements Serializable {
     private String l3NetworkUuid;
 
-    private String ip;
-
     private String mac;
+
+    private String ip;
 
     private String netmask;
 
     private String gateway;
 
-    private String metaData;
+    private List<String> dnsList;
 
-    private Integer ipVersion;
+    private String ip6;
+
+    private String ipv6Prefix;
+
+    private String ipv6Gateway;
+
+    private List<String> dns6List;
+
+    private String metaData;
 
     private String driverType;
 
@@ -37,20 +46,20 @@ public class VmNicParam implements Serializable {
         this.l3NetworkUuid = l3NetworkUuid;
     }
 
-    public String getIp() {
-        return ip;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
-
     public String getMac() {
         return mac;
     }
 
     public void setMac(String mac) {
         this.mac = mac;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
     }
 
     public String getNetmask() {
@@ -69,20 +78,52 @@ public class VmNicParam implements Serializable {
         this.gateway = gateway;
     }
 
+    public List<String> getDnsList() {
+        return dnsList;
+    }
+
+    public void setDnsList(List<String> dnsList) {
+        this.dnsList = dnsList;
+    }
+
+    public String getIp6() {
+        return ip6;
+    }
+
+    public void setIp6(String ip6) {
+        this.ip6 = ip6;
+    }
+
+    public String getIpv6Prefix() {
+        return ipv6Prefix;
+    }
+
+    public void setIpv6Prefix(String ipv6Prefix) {
+        this.ipv6Prefix = ipv6Prefix;
+    }
+
+    public String getIpv6Gateway() {
+        return ipv6Gateway;
+    }
+
+    public void setIpv6Gateway(String ipv6Gateway) {
+        this.ipv6Gateway = ipv6Gateway;
+    }
+
+    public List<String> getDns6List() {
+        return dns6List;
+    }
+
+    public void setDns6List(List<String> dns6List) {
+        this.dns6List = dns6List;
+    }
+
     public String getMetaData() {
         return metaData;
     }
 
     public void setMetaData(String metaData) {
         this.metaData = metaData;
-    }
-
-    public Integer getIpVersion() {
-        return ipVersion;
-    }
-
-    public void setIpVersion(Integer ipVersion) {
-        this.ipVersion = ipVersion;
     }
 
     public String getDriverType() {

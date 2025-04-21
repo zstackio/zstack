@@ -9,7 +9,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
@@ -88,7 +88,6 @@ public class VmAllocateNicFlow implements Flow {
 
         List<VmNicInventory> nics = new ArrayList<>();
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nics);
-        List<ErrorCode> errs = new ArrayList<>();
 
         new While<>(VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())).each((nicSpec, wcomp) -> {
             L3NetworkInventory nw = nicSpec.getL3Invs().get(0);
@@ -110,8 +109,9 @@ public class VmAllocateNicFlow implements Flow {
             VmNicParam nicParam = nicSpec.getVmNicParam();
             VmNicType type = nicManager.getVmNicType(spec.getVmInventory().getUuid(), nw, nicParam.isSriovEnabled());
             if (type == null) {
-                errs.add(Platform.operr("there is no available nicType on L3 network [%s]", nw.getUuid()));
+                wcomp.addError(Platform.operr("there is no available nicType on L3 network [%s]", nw.getUuid()));
                 wcomp.allDone();
+                return;
             }
             VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
@@ -145,9 +145,9 @@ public class VmAllocateNicFlow implements Flow {
             nic.setDeviceId(deviceId);
             nic.setInternalName(VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), nic.getDeviceId()));
             nic.setState(disableL3Networks.contains(nic.getL3NetworkUuid()) ? VmNicState.disable.toString() : VmNicState.enable.toString());
-            new SQLBatch() {
+            final String vmNicUuid = new SQLBatchWithReturn<String>() {
                 @Override
-                protected void scripts() {
+                protected String scripts() {
                     VmNicVO nicVO = vnicFactory.createVmNic(nic, spec);
                     if (!nw.getEnableIPAM() && nicNetworkInfoMap != null && nicNetworkInfoMap.containsKey(nw.getUuid())) {
                         NicIpAddressInfo nicNicIpAddressInfo = nicNetworkInfoMap.get(nic.getL3NetworkUuid());
@@ -169,7 +169,7 @@ public class VmAllocateNicFlow implements Flow {
                             nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
-                            dbf.persist(vo);
+                            persist(vo);
                         }
                         if (!nicNicIpAddressInfo.ipv4Address.isEmpty()) {
                             UsedIpVO vo = new UsedIpVO();
@@ -189,21 +189,22 @@ public class VmAllocateNicFlow implements Flow {
                             nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
-                            dbf.persist(vo);
+                            persist(vo);
                         }
                     }
                     nics.add(nic);
-                    nicVO = dbf.updateAndRefresh(nicVO);
-                    addVmNicConfig(nicVO, spec, nicSpec);
+                    nicVO = merge(nicVO);
+                    return nicVO.getUuid();
                 }
             }.execute();
+            addVmNicConfig(vmNicUuid, spec, nicSpec);
             wcomp.done();
 
         }).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errs.size() > 0) {
-                    trigger.fail(errs.get(0));
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    trigger.fail(errorCodeList.getCauses().get(0));
                 } else {
                     trigger.next();
                 }
@@ -211,7 +212,7 @@ public class VmAllocateNicFlow implements Flow {
         });
     }
 
-    private void addVmNicConfig(VmNicVO vmNicVO, VmInstanceSpec vmSpec, VmNicSpec nicSpec) {
+    private void addVmNicConfig(String vmNicUuid, VmInstanceSpec vmSpec, VmNicSpec nicSpec) {
         if (nicSpec == null) {
             return;
         }
@@ -220,14 +221,32 @@ public class VmAllocateNicFlow implements Flow {
         // add vmnic bandwidth systemtag
         if (vmNicParam.getInboundBandwidth() != null || vmNicParam.getOutboundBandwidth() != null) {
             VmNicQosConfigBackend backend = vmMgr.getVmNicQosConfigBackend(vmSpec.getVmInventory().getType());
-            backend.addNicQos(vmSpec.getVmInventory().getUuid(), vmNicVO.getUuid(), vmNicParam.getOutboundBandwidth(), vmNicParam.getInboundBandwidth());
+            backend.addNicQos(vmSpec.getVmInventory().getUuid(), vmNicUuid, vmNicParam.getOutboundBandwidth(), vmNicParam.getInboundBandwidth());
         }
 
         //add vmnic multiqueue config
         if (vmNicParam.getMultiQueueNum() != null) {
             ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
             Integer queues = vmNicParam.getMultiQueueNum();
-            multiQueues.updateValue(vmNicVO.getUuid(), queues.toString());
+            multiQueues.updateValue(vmNicUuid, queues.toString());
+        }
+
+        boolean isWindowsVm = ImagePlatform.Windows.toString().equals(vmSpec.getVmInventory().getPlatform());
+        VmDnsBackend bkd = vmMgr.getVmDnsBackend(vmSpec.getVmInventory().getType());
+        if (bkd == null) {
+            logger.debug(String.format("no dns backend found for vm type[%s], skip setting dns", vmSpec.getVmInventory().getType()));
+            return;
+        }
+
+        if (isWindowsVm) {
+            bkd.setNicDns(vmSpec.getVmInventory().getUuid(), vmNicUuid, vmNicParam.getDnsList(), IPv6Constants.IPv4);
+            bkd.setNicDns(vmSpec.getVmInventory().getUuid(), vmNicUuid, vmNicParam.getDns6List(), IPv6Constants.IPv6);
+        } else {
+            List<String> dnsList = vmNicParam.getDnsList() == null ? new ArrayList<>() : vmNicParam.getDnsList();
+            List<String> dns6List = vmNicParam.getDns6List() == null ? new ArrayList<>() : vmNicParam.getDns6List();
+            dnsList.addAll(dns6List);
+            // assign dns list to null to skip setting
+            bkd.setVmDns(vmSpec.getVmInventory().getUuid(), dnsList.isEmpty() ? null : dnsList);
         }
     }
 

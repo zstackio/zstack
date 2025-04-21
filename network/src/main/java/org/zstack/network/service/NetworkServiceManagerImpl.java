@@ -34,9 +34,11 @@ import org.zstack.header.vm.*;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -490,6 +492,35 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         }
 
         return dns;
+    }
+
+    @Override
+    public List<String> getVmDns(String vmUuid, String l3NetworkUuid) {
+        List<String> dnsList = DnsUtils.getVmDnsList(vmUuid);
+        if (!dnsList.isEmpty() || l3NetworkUuid == null) {
+            return dnsList;
+        }
+
+        dnsList.addAll(getL3NetworkDns(l3NetworkUuid));
+        return dnsList;
+    }
+
+    @Override
+    public List<String> getVmNicDns(String vmNicUuid, Integer ipVersion, String l3NetworkUuid) {
+        List<String> dnsList = DnsUtils.getVmNicDnsList(vmNicUuid, ipVersion);
+
+        if (!dnsList.isEmpty() || l3NetworkUuid == null) {
+            return dnsList;
+        }
+
+        dnsList.addAll(getL3NetworkDns(l3NetworkUuid));
+        return dnsList.stream().filter(dns -> {
+            try {
+                return Objects.equals(NetworkUtils.getIpversion(dns), ipVersion);
+            } catch (Exception ignored) {
+                return false;
+            }
+        }).collect(Collectors.toList());
     }
 
     @Override

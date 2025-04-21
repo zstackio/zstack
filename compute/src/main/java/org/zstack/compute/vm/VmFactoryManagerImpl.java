@@ -20,6 +20,7 @@ public class VmFactoryManagerImpl implements VmFactoryManager, Component {
     private final Map<Class, VmInstanceBaseExtensionFactory> vmInstanceBaseExtensionFactories = new HashMap<>();
     private final Map<String, VmInstanceNicFactory> vmInstanceNicFactories = new HashMap<>();
     private final Map<String, VmNicQosConfigBackend> vmNicQosConfigMap = new HashMap<>();
+    private final Map<String, VmDnsBackend> vmDnsBackendMap = new HashMap<>();
     private final Map<String, HypervisorBasedVmConfigurationFactory> vmInstanceConfigurationFactoryMap = new HashMap<>();
 
     @Override
@@ -40,6 +41,11 @@ public class VmFactoryManagerImpl implements VmFactoryManager, Component {
     @Override
     public VmNicQosConfigBackend getVmNicQosConfigBackend(String vmInstanceType) {
         return vmNicQosConfigMap.get(vmInstanceType);
+    }
+
+    @Override
+    public VmDnsBackend getVmDnsBackend(String vmInstanceType) {
+        return vmDnsBackendMap.get(vmInstanceType);
     }
 
     @Override
@@ -85,6 +91,15 @@ public class VmFactoryManagerImpl implements VmFactoryManager, Component {
                         old.getClass().getName(), ext.getClass().getName(), ext.getVmInstanceType()));
             }
             vmNicQosConfigMap.put(ext.getVmInstanceType(), ext);
+        }
+
+        for (VmDnsBackend ext : pluginRgty.getExtensionList(VmDnsBackend.class)) {
+            VmDnsBackend old = vmDnsBackendMap.get(ext.getVmInstanceType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("can not add VmDnsBackend, because duplicate VmDnsBackend [%s, %s] for type[%s]",
+                        old.getClass().getName(), ext.getClass().getName(), ext.getVmInstanceType()));
+            }
+            vmDnsBackendMap.put(ext.getVmInstanceType(), ext);
         }
 
         for (HypervisorBasedVmConfigurationFactory ext : pluginRgty.getExtensionList(HypervisorBasedVmConfigurationFactory.class)) {

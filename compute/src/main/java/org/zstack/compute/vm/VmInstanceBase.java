@@ -65,6 +65,8 @@ import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.network.service.DnsUtils;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
@@ -135,12 +137,14 @@ public class VmInstanceBase extends AbstractVmInstance {
     private TagManager tagMgr;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
     protected String syncThreadName;
     private final static StaticIpOperator ipOperator = new StaticIpOperator();
-    private final static VmPortsHelper vmPortsHelper = new VmPortsHelper();
+    private final static VmConfigSyncHelper vmConfigSyncHelper = new VmConfigSyncHelper();
 
     protected void checkState(final String hostUuid, final NoErrorCompletion completion) {
         CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
@@ -3242,6 +3246,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmStaticIpMsg) msg);
         } else if (msg instanceof APIDeleteVmStaticIpMsg) {
             handle((APIDeleteVmStaticIpMsg) msg);
+        } else if (msg instanceof APIGetVmDnsMsg) {
+            handle((APIGetVmDnsMsg) msg);
+        } else if (msg instanceof APISetVmDnsMsg) {
+            handle((APISetVmDnsMsg) msg);
         } else if (msg instanceof APIGetVmHostnameMsg) {
             handle((APIGetVmHostnameMsg) msg);
         } else if (msg instanceof APIGetVmStartingCandidateClustersHostsMsg) {
@@ -3896,7 +3904,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         dbf.update(nicVO);
         dbf.removeCollection(voRemoveList, UsedIpVO.class);
         if (self.getState() != VmInstanceState.Running) {
-            vmPortsHelper.setVmSyncPorts(msg.getVmInstanceUuid());
+            vmConfigSyncHelper.setVmSyncPorts(msg.getVmInstanceUuid());
         }
         completion.success();
     }
@@ -3925,6 +3933,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     ipOperator.setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
                 }
                 ipOperator.setIpChange(self.getUuid(), msg.getL3NetworkUuid());
+                if (self.getState() != VmInstanceState.Running) {
+                    vmConfigSyncHelper.setVmSyncPorts(msg.getVmInstanceUuid());
+                }
                 completion.success();
             }
 
@@ -3933,6 +3944,110 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    private void handle(final APIGetVmDnsMsg msg) {
+        APIGetVmDnsReply reply = new APIGetVmDnsReply();
+
+        boolean isWindowsVm = ImagePlatform.Windows.toString().equals(getSelf().getPlatform());
+        if (isWindowsVm) {
+            String l3Uuid = self.getVmNics().stream()
+                    .filter(nic -> nic.getUuid().equals(msg.getVmNicUuid()))
+                    .findFirst().orElse(new VmNicVO())
+                    .getL3NetworkUuid();
+            reply.setDnsList(nwServiceMgr.getVmNicDns(msg.getVmNicUuid(), msg.getIpVersion(), l3Uuid));
+            reply.setVmDnsList(VmDnsInventory.valueOf1(DnsUtils.getVmDnsVOList(msg.getVmNicUuid(), msg.getIpVersion())));
+        } else {
+            reply.setDnsList(nwServiceMgr.getVmDns(msg.getVmInstanceUuid(), self.getDefaultL3NetworkUuid()));
+            reply.setVmDnsList(VmDnsInventory.valueOf1(DnsUtils.getVmDnsVOList(msg.getVmInstanceUuid())));
+        }
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final APISetVmDnsMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                APISetVmDnsEvent evt = new APISetVmDnsEvent(msg.getId());
+                setVmDns(msg, new ReturnValueCompletion<List<VmDnsInventory>>(evt) {
+                    @Override
+                    public void success(List<VmDnsInventory> returnValue) {
+                        evt.setInventories(returnValue);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "set-vm-dns";
+            }
+        });
+    }
+
+    private void setVmDns(APISetVmDnsMsg msg, ReturnValueCompletion<List<VmDnsInventory>> completion) {
+        boolean isWindowsVm = ImagePlatform.Windows.toString().equals(getSelf().getPlatform());
+
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("set-vm-dns-for-%s", msg.getVmInstanceUuid()));
+        chain.allowEmptyFlow();
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "set-vm-dns-to-backend";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VmDnsBackend bkd = vmMgr.getVmDnsBackend(getSelf().getType());
+                if (isWindowsVm) {
+                    bkd.setNicDns(msg.getVmInstanceUuid(), msg.getVmNicUuid(), msg.getDnsList(), msg.getIpVersion());
+                } else {
+                    bkd.setVmDns(msg.getVmInstanceUuid(), msg.getDnsList());
+                }
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "set-sync-ports-tag";
+
+            @Override
+            public boolean skip(Map data) {
+                return self.getState() == VmInstanceState.Running;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                vmConfigSyncHelper.setVmSyncPorts(msg.getVmInstanceUuid());
+                trigger.next();
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                List<VmDnsVO> vos;
+                if (isWindowsVm) {
+                    vos = Q.New(VmDnsVO.class).eq(VmDnsVO_.vmNicUuid, msg.getVmNicUuid()).list();
+                } else {
+                    vos = Q.New(VmDnsVO.class).eq(VmDnsVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+                }
+                completion.success(VmDnsInventory.valueOf1(vos));
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void handle(APISetVmBootModeMsg msg) {
@@ -4019,14 +4134,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.publish(evt);
     }
 
-    private void setVmHostName(String vmInstanceUuid, Completion completion) {
+    private void setVmHostname(String vmInstanceUuid, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("set-hostname-%s", vmInstanceUuid));
         chain.allowEmptyFlow();
         chain.getData().put(VmInstanceConstant.Params.VmInstanceUuid.toString(), vmInstanceUuid);
 
-        final List<SetVmHostNameFlowInterface> exts = pluginRgty.getExtensionList(SetVmHostNameFlowInterface.class);
-        for (SetVmHostNameFlowInterface ext : exts) {
-            chain.then(ext.getSetVmHostNameFlow());
+        final List<SetVmHostnameFlowInterface> exts = pluginRgty.getExtensionList(SetVmHostnameFlowInterface.class);
+        for (SetVmHostnameFlowInterface ext : exts) {
+            chain.then(ext.getSetVmHostnameFlow());
         }
         chain.done(new FlowDoneHandler(completion) {
             @Override
@@ -4050,7 +4165,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         VmSystemTags.HOSTNAME.delete(self.getUuid());
-        setVmHostName(msg.getVmInstanceUuid(), new Completion(msg) {
+        setVmHostname(msg.getVmInstanceUuid(), new Completion(msg) {
             @Override
             public void success() {
                 bus.publish(evt);
@@ -4088,7 +4203,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         APISetVmHostnameEvent evt = new APISetVmHostnameEvent(msg.getId());
-        setVmHostName(msg.getVmInstanceUuid(), new Completion(msg) {
+        setVmHostname(msg.getVmInstanceUuid(), new Completion(msg) {
             @Override
             public void success() {
                 bus.publish(evt);
@@ -6525,11 +6640,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                     String __name__ = "update-nic-ip-for-disable-ipam";
 
                     @Override
+                    public boolean skip(Map data) {
+                        return destL3.getEnableIPAM();
+                    }
+
+                    @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (destL3.getEnableIPAM()) {
-                            trigger.next();
-                            return;
-                        }
                         if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
                             self.setDefaultL3NetworkUuid(destL3.getUuid());
                         }
@@ -6590,9 +6706,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                         dbf.removeCollection(voOldList, UsedIpVO.class);
                         data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
                         data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
-                        if (self.getState() != VmInstanceState.Running) {
-                            vmPortsHelper.setVmSyncPorts(msg.getVmInstanceUuid());
-                        }
                         trigger.next();
                     }
                 });
@@ -6601,11 +6714,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                     String __name__ = "update-nic-ip";
 
                     @Override
+                    public boolean skip(Map data) {
+                        return !destL3.getEnableIPAM();
+                    }
+
+                    @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (!destL3.getEnableIPAM()) {
-                            trigger.next();
-                            return;
-                        }
                         if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
                             self.setDefaultL3NetworkUuid(destL3.getUuid());
                         }
@@ -6638,6 +6752,21 @@ public class VmInstanceBase extends AbstractVmInstance {
                         dbf.updateCollection(ipVOS);
                         data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
                         data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
+                        trigger.next();
+                    }
+                });
+
+                flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "set-sync-ports-tag";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return self.getState() == VmInstanceState.Running;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        vmConfigSyncHelper.setVmSyncPorts(msg.getVmInstanceUuid());
                         trigger.next();
                     }
                 });

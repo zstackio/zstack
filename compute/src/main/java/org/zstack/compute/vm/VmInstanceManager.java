@@ -36,4 +36,6 @@ public interface VmInstanceManager {
     VmInstanceNicFactory getVmInstanceNicFactory(VmNicType type);
 
     VmNicQosConfigBackend getVmNicQosConfigBackend(String type);
+
+    VmDnsBackend getVmDnsBackend(String type);
 }

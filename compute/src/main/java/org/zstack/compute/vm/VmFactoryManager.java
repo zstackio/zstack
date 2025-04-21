@@ -14,5 +14,7 @@ public interface VmFactoryManager {
 
     VmNicQosConfigBackend getVmNicQosConfigBackend(String vmInstanceType);
 
+    VmDnsBackend getVmDnsBackend(String vmInstanceType);
+
     HypervisorBasedVmConfigurationFactory getVmInstanceConfigurationFactory(String hypervisorType);
 }
