@@ -137,7 +137,8 @@ public class ProgressReportService extends AbstractService implements Management
                 Defer.defer(cleanup);
                 setThreadContext(cmd);
                 TaskProgressInfo.progress()
-                        .withContent(cmd.getProgress(), cmd.getDetail())
+                        .withContent(cmd.getProgress())
+                        .withOpaque(cmd.getDetail())
                         .report();
                 return null;
             }

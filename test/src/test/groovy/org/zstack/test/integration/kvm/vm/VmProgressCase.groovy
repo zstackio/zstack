@@ -1,7 +1,5 @@
 package org.zstack.test.integration.kvm.vm
 
-import com.google.gson.JsonElement
-import com.google.gson.JsonParser
 import org.springframework.http.HttpEntity
 import org.springframework.web.util.UriComponentsBuilder
 import org.zstack.core.Platform
@@ -16,15 +14,14 @@ import org.zstack.header.core.progress.TaskProgressVO_
 import org.zstack.header.core.progress.TaskType
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.rest.RESTFacade
+import org.zstack.header.vm.APICreateVmInstanceMsg
 import org.zstack.sdk.*
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
-import org.zstack.testlib.ApiPathTracker
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.FuncTrigger
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
@@ -133,6 +130,7 @@ class VmProgressCase extends SubCase {
                 rcmd.progress = String.valueOf(i++)
                 rcmd.setThreadContextMap(cmd.threadContext)
                 rcmd.setThreadContextStack(cmd.threadContextStack)
+                rcmd.detail = ["remain":"17498636288", "total":"17498636288"]
                 restf.syncJsonPost(url, JSONObjectUtil.toJsonString(rcmd), header, ProgressCommands.ProgressReportResponse.class)
 
                 ft.trigger([cmd, rcmd])
@@ -164,13 +162,23 @@ class VmProgressCase extends SubCase {
                 // the first one is starting the user vm
                 TaskProgressInventory inv = invs[0]
                 assert inv.type == TaskType.Task.toString()
+                assert inv.taskName == APICreateVmInstanceMsg.class.name
+                assert inv.content == "create a volume[%s] on the local storage"
+                assert inv.arguments == "[\"Root\"]"
+                assert inv.opaque == null
 
                 // the second one is downloading user image
                 inv = invs[1]
                 assert inv.content == rcmd.progress
+                int progressNumber = Integer.parseInt(inv.content)
+                assert progressNumber >= 0
+                assert progressNumber < 100
                 assert inv.type == TaskType.Progress.toString()
-                JsonElement element = JsonParser.parseString(inv.arguments)
-                assert element.isJsonArray()
+                assert inv.opaque != null
+                assert inv.opaque["remain"] != null
+                assert inv.opaque["total"] != null
+                assert inv.parentUuid == invs[0].taskUuid
+                assert inv.arguments == null
 
             } else if (cmd.backupStorageInstallPath == vrImagePath) {
                 // downloading vr image, 1 sub tasks here
