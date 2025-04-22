@@ -66,7 +66,7 @@ public interface Account {
      * include alert and events
      */
     static boolean supportToQueryEventsFromAllAccounts(String accountUuid) {
-        if (isAdmin(accountUuid)) {
+        if (isAdminPermission(accountUuid)) {
             return true;
         }
 
