@@ -146,6 +146,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>openEuler</name>
+        <version>24.03</version>
+        <osRelease>openEuler 24.03</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>SUSE</name>
         <version>12</version>
         <osRelease>SUSE Linux 12</osRelease>
