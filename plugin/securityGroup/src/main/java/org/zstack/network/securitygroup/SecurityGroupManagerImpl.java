@@ -454,6 +454,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     SecurityGroupVO vo = dbf.findByUuid(uuid, SecurityGroupVO.class);
                     group.setSecurityGroupUuid(uuid);
                     group.setSecurityGroupName(vo.getName());
+                    int internalId = (int)vo.getInternalId();
+                    group.setInternalId(internalId);
                     group.setSecurityGroupVmIps(getVmIpsBySecurityGroup(uuid, IPv6Constants.IPv4));
                     group.setSecurityGroupVmIp6s(getVmIpsBySecurityGroup(uuid, IPv6Constants.IPv6));
 
@@ -627,6 +629,24 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Override
+    public VmNicSecurityGroupTo getVmNicSecurityGroupRules(List<String> sgUuids) {
+        RuleCalculator cal = new RuleCalculator();
+        cal.sgStates = Collections.singletonList(SecurityGroupState.Enabled);
+        cal.securityGroupUuids = sgUuids;
+        cal.vmNicUuids = Q.New(VmNicSecurityGroupRefVO.class)
+                .select(VmNicSecurityGroupRefVO_.vmNicUuid)
+                .in(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuids)
+                .listValues();
+        cal.vmNicUuids = cal.vmNicUuids.stream().distinct().collect(Collectors.toList());
+        if (cal.vmNicUuids.isEmpty()) {
+            VmNicSecurityGroupTo nicTo = cal.calculateVmNicSecurityGroupTO();
+            return nicTo;
+        }
+
+        return cal.calculateVmNicSecurityGroupTO();
     }
 
     private void sdnRefreshVmNicsDefaultRule(SecurityGroupSdnBackend sdnBackend, List<String> vmNicUuids, Completion completion) {

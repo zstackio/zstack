@@ -9,6 +9,7 @@ import org.zstack.sdnController.header.SdnControllerInventory;
 import org.zstack.sdnController.header.SdnVlanRange;
 import org.zstack.sdnController.header.SdnVniRange;
 
+import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public interface SdnControllerL2 {
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);
     List<SdnVlanRange> getVlanRange(SdnControllerInventory controller);
 
-    default List<String> getL2NetworkOfSdnController() { return new ArrayList<>();};
+    default List<Tuple> getL2NetworkOfSdnController() { return new ArrayList<>();};
 
     default void addVmNics(List<VmNicInventory> nics, Completion completion) {completion.success();};
     default void removeVmNics(List<VmNicInventory> nics, Completion completion) {completion.success();};

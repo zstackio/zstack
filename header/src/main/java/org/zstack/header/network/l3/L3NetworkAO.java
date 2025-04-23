@@ -17,6 +17,9 @@ public class L3NetworkAO extends ResourceVO {
     private String name;
 
     @Column
+    private Integer internalId;
+
+    @Column
     private String description;
 
     @Column
@@ -174,5 +177,13 @@ public class L3NetworkAO extends ResourceVO {
 
     public void setIsolated(Boolean isolated) {
         this.isolated = isolated;
+    }
+
+    public Integer getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(Integer internalId) {
+        this.internalId = internalId;
     }
 }

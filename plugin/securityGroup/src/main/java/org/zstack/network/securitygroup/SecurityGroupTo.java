@@ -8,6 +8,7 @@ public class SecurityGroupTo {
     public static final String ACTION_CODE_DELETE_CHAIN = "deleteChain";
     private String securityGroupUuid;
     private String securityGroupName;
+    private Integer internalId;
     private List<String> securityGroupVmIps = new ArrayList<>();
     private List<String> securityGroupVmIp6s = new ArrayList<>();
     private String actionCode;
@@ -27,6 +28,14 @@ public class SecurityGroupTo {
 
     public void setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;
+    }
+
+    public Integer getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(Integer internalId) {
+        this.internalId = internalId;
     }
 
     public List<String> getSecurityGroupVmIps() {

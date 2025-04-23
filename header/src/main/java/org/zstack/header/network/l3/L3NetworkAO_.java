@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 @StaticMetamodel(L3NetworkAO.class)
 public class L3NetworkAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<L3NetworkAO, String> name;
+    public static volatile SingularAttribute<L3NetworkAO, Integer> internalId;
     public static volatile SingularAttribute<L3NetworkAO, String> type;
     public static volatile SingularAttribute<L3NetworkAO, Boolean> system;
     public static volatile SingularAttribute<L3NetworkAO, L3NetworkState> state;

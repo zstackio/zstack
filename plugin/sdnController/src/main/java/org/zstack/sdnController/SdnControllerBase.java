@@ -41,6 +41,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
@@ -577,7 +578,8 @@ public class SdnControllerBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 SdnControllerL2 sdnControllerL2 = getSdnControllerL2();
-                List<String> l2Uuids = sdnControllerL2.getL2NetworkOfSdnController();
+                List<Tuple> l2Tuples = sdnControllerL2.getL2NetworkOfSdnController();
+                List<String> l2Uuids = l2Tuples.stream().map(t -> t.get(0, String.class)).collect(Collectors.toList());
                 if (l2Uuids.isEmpty()) {
                     trigger.next();
                     return;
@@ -678,15 +680,15 @@ public class SdnControllerBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                controller.deleteSdnController(msg, SdnControllerInventory.valueOf(self), new Completion(completion) {
+                controller.deleteSdnController(msg, SdnControllerInventory.valueOf(self), new Completion(trigger) {
                     @Override
                     public void success() {
-                        completion.success();
+                        trigger.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        completion.fail(errorCode);
+                        trigger.fail(errorCode);
                     }
                 });
             }

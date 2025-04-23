@@ -1,6 +1,7 @@
 package org.zstack.network.securitygroup;
 
-import org.zstack.header.Service;
+import java.util.List;
 
 public interface SecurityGroupManager {
+    VmNicSecurityGroupTo getVmNicSecurityGroupRules(List<String> sgUuids);
 }

@@ -707,7 +707,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO", "FileIntegrityVerificationVO",
                               "EncryptEntityMetadataVO", "VmInstanceDeviceAddressGroupVO", "HostOsCategoryVO", "KvmHostHypervisorMetadataVO",
                               "HaStrategyConditionVO", "SystemTagVO", "ConsoleProxyAgentVO", "ConsoleProxyVO", "XmlHookVO", "SSOServerTokenVO",
-                              "HostNetworkLabelVO"]) {
+                              "HostNetworkLabelVO", "L3NetworkSequenceNumberVO"]) {
                 return
             }
 

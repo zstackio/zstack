@@ -56,4 +56,7 @@ public interface L2NetworkConstant {
     public static final String LACP_MODE_OFF = "off";
     public static final String LACP_MODE_ACTIVE = "active";
     public static final String LACP_MODE_PASSIVE = "passive";
+
+    public static final Integer VLAN_ID_MAX = 4095;
+    public static final Integer VXLAN_ID_MAX = 16777215;
 }

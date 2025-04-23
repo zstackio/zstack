@@ -68,6 +68,14 @@ public class SecurityGroupInventory  {
         return this.lastOpDate;
     }
 
+    public long internalId;
+    public void setInternalId(long internalId) {
+        this.internalId = internalId;
+    }
+    public long getInternalId() {
+        return this.internalId;
+    }
+
     public java.util.List rules;
     public void setRules(java.util.List rules) {
         this.rules = rules;

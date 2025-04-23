@@ -85,6 +85,9 @@ public class L3NetworkInventory implements Serializable {
      * @desc max length of 255 characters
      */
     private String name;
+
+    private Integer internalId;
+
     /**
      * @desc max length of 2048 characters
      */
@@ -162,6 +165,7 @@ public class L3NetworkInventory implements Serializable {
     public static L3NetworkInventory valueOf(L3NetworkVO vo) {
         L3NetworkInventory inv = new L3NetworkInventory();
         inv.setUuid(vo.getUuid());
+        inv.setInternalId(vo.getInternalId());
         inv.setCreateDate(vo.getCreateDate());
         inv.setDescription(vo.getDescription());
         inv.setL2NetworkUuid(vo.getL2NetworkUuid());
@@ -429,5 +433,13 @@ public class L3NetworkInventory implements Serializable {
         }
 
         return false;
+    }
+
+    public Integer getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(Integer internalId) {
+        this.internalId = internalId;
     }
 }

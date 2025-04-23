@@ -369,7 +369,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 }
 
                 sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3VO)),
-                        false, new Completion(trigger) {
+                        new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
