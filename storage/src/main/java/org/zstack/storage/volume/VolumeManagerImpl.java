@@ -1116,6 +1116,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         cmsg.setAccountUuid(msg.getSession().getAccountUuid());
         cmsg.setDiskSize(msg.getDiskSize());
         cmsg.setName(msg.getName());
+        cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setSystemTags(msg.getSystemTags());
         cmsg.setDiskOfferingUuid(msg.getDiskOfferingUuid());
         cmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
