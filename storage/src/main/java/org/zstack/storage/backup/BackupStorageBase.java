@@ -44,9 +44,12 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -85,6 +88,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     protected RESTFacade restf;
     @Autowired
     protected StorageTrash trash;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     protected String id;
 
@@ -164,6 +169,15 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     protected void exceptionIfImageSizeGreaterThanAvailableCapacity(String url) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
+            if (self.getTotalCapacity() == 0) {
+                return;
+            }
+            long size = 2;
+            long reservedCapacity = getReservedCapacity();
+            long available = self.getAvailableCapacity() - reservedCapacity;
+            if (size > available) {
+                throw new OperationFailureException(operr("the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]. Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, available));
+            }
             return;
         }
 
@@ -173,7 +187,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }
 
         long size = getContentLength(url);
-        long reservedCapacity = SizeUtils.sizeStringToBytes(BackupStorageGlobalConfig.RESERVED_CAPACITY.value());
+        long reservedCapacity = getReservedCapacity();
         long available = self.getAvailableCapacity() - reservedCapacity;
         if (size == -1) {
             logger.error(String.format("failed to get image size from url %s, but ignore this error and proceed", url));
@@ -184,6 +198,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             throw new OperationFailureException(operr("the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]." +
                             "Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, available));
         }
+    }
+
+    private long getReservedCapacity() {
+        ResourceConfig rc = rcf.getResourceConfig(BackupStorageGlobalConfig.RESERVED_CAPACITY.getIdentity());
+        return SizeUtils.sizeStringToBytes(rc.getResourceConfigValue(self.getUuid(), String.class));
     }
 
     protected void refreshVO() {
