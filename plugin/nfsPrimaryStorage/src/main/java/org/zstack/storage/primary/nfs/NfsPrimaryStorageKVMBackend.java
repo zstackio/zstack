@@ -2024,6 +2024,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.top = msg.getSrcSnapshot().getPrimaryStorageInstallPath();
         cmd.base = msg.getDstSnapshot().getPrimaryStorageInstallPath();
         cmd.topChildrenInstallPathInDb = msg.getSrcChildrenInstallPathInDb();
+        cmd.setUuid(msg.getVolume().getPrimaryStorageUuid());
 
         KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
         kmsg.setCommand(cmd);
