@@ -2120,11 +2120,11 @@ ${txt}
 \t\tname "${n}"
 \t\tdesc "${desc == null ? "" : desc}"
 \t\ttype "${type}"
-\t\tsince "${projectVersion != null ? projectVersion : "zsv 4.2.0 (please update it)"}"
+\t\tsince "${projectVersion}"
 \t}"""
         }
 
-        String createRef(String n, String path, String desc, String type, Class clz, Boolean overrideDesc=null) {
+        String createRef(String n, String path, String desc, String type, Class clz) {
             DebugUtils.Assert(!PRIMITIVE_TYPES.contains(clz), "${clz.name} is a primitive class!!!")
             if (!ErrorCode.getClass().isAssignableFrom(clz)) {
                 laterResolveClasses.add(clz)
@@ -2134,9 +2134,9 @@ ${txt}
             return """\tref {
 \t\tname "${n}"
 \t\tpath "${path}"
-\t\tdesc "${desc}"${overrideDesc != null ? ",${overrideDesc}" : ""}
+\t\tdesc "${desc}"
 \t\ttype "${type}"
-\t\tsince "${projectVersion != null ? projectVersion : "zsv 4.2.0 (please update it)"}"
+\t\tsince "${projectVersion}"
 \t\tclz ${clz.simpleName}.class
 \t}"""
         }
@@ -2168,12 +2168,10 @@ ${txt}
                         }
                     } else {
                         String desc = null
-                        Boolean overrideDesc = null
                         if(ErrorCode.isAssignableFrom(v.type)){
                             desc = "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
-                            overrideDesc = false
                         }
-                        fieldStrings.add(createRef("${k}", "${responseClass.canonicalName}.${v.name}", desc, v.type.simpleName, v.type, overrideDesc))
+                        fieldStrings.add(createRef("${k}", "${responseClass.canonicalName}.${v.name}", desc, v.type.simpleName, v.type))
                     }
                 }
 
