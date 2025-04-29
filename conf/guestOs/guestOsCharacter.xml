@@ -216,12 +216,12 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
-        <osRelease>SUSE Linux Desktop 11</osRelease>
+        <osRelease>SUSE Linux Enterprise Desktop 11</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
-        <osRelease>SUSE Linux Desktop 12</osRelease>
+        <osRelease>SUSE Linux Enterprise Desktop 12</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
