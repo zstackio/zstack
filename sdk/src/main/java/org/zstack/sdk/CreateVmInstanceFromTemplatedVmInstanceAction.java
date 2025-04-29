@@ -49,7 +49,7 @@ public class CreateVmInstanceFromTemplatedVmInstanceAction extends AbstractActio
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List l3NetworkUuids;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String defaultL3NetworkUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
