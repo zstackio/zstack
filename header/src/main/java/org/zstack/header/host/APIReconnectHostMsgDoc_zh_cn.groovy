@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIReconnectHostEvent
 
 doc {
-    title "ReconnectHost"
+	title "ReconnectHost"
 
-    category "host"
+	category "host"
 
-    desc """重连物理机"""
+	desc """重连物理机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReconnectHostMsg.class
+			clz APIReconnectHostMsg.class
 
-            desc """重新连接物理机"""
-            
+			desc """重新连接物理机"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIReconnectHostEvent.class
-        }
-    }
+		response {
+			clz APIReconnectHostEvent.class
+		}
+	}
 }

@@ -4,27 +4,27 @@ import org.zstack.header.identity.APIQueryQuotaReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryQuota"
+	title "QueryQuota"
 
-    category "identity"
+	category "identity"
 
-    desc """查询配额"""
+	desc """查询配额"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/accounts/quotas"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryQuotaMsg.class
+			clz APIQueryQuotaMsg.class
 
-            desc """查询配额"""
-            
+			desc """查询配额"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryQuotaReply.class
-        }
-    }
+		response {
+			clz APIQueryQuotaReply.class
+		}
+	}
 }

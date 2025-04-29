@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIReconnectPrimaryStorageEvent
 
 doc {
-    title "重连主存储(ReconnectPrimaryStorage)"
+	title "重连主存储(ReconnectPrimaryStorage)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """重连主存储"""
+	desc """重连主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReconnectPrimaryStorageMsg.class
+			clz APIReconnectPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIReconnectPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIReconnectPrimaryStorageEvent.class
+		}
+	}
 }

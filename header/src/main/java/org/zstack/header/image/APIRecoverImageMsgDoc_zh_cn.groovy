@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APIRecoverImageEvent
 
 doc {
-    title "恢复镜像(RecoverImage)"
+	title "恢复镜像(RecoverImage)"
 
-    category "image"
+	category "image"
 
-    desc """恢复被删除（但未彻底删除）的镜像"""
+	desc """恢复被删除（但未彻底删除）的镜像"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/images/{imageUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRecoverImageMsg.class
+			clz APIRecoverImageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRecoverImageEvent.class
-        }
-    }
+		response {
+			clz APIRecoverImageEvent.class
+		}
+	}
 }

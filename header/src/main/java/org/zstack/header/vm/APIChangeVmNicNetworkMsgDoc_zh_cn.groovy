@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIChangeVmNicNetworkEvent
 
 doc {
-    title "改变网卡的L3网络"
+	title "改变网卡的L3网络"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """改变Stopped的云主机的网卡的L3网络"""
+	desc """改变Stopped的云主机的网卡的L3网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/nics/{vmNicUuid}/l3-networks/{destL3NetworkUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeVmNicNetworkMsg.class
+			clz APIChangeVmNicNetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "destL3NetworkUuid"
@@ -37,7 +37,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "userTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "staticIp"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "3.11.0"
 				}
 				column {
 					name "vmNicParams"
@@ -76,10 +76,10 @@ doc {
 					since "4.2.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeVmNicNetworkEvent.class
-        }
-    }
+		response {
+			clz APIChangeVmNicNetworkEvent.class
+		}
+	}
 }

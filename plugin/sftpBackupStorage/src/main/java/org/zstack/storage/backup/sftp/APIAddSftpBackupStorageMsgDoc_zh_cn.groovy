@@ -3,22 +3,22 @@ package org.zstack.storage.backup.sftp
 import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageEvent
 
 doc {
-    title "添加sftp镜像服务器(AddSftpBackupStorage)"
+	title "添加sftp镜像服务器(AddSftpBackupStorage)"
 
-    category "storage.backup.sftp"
+	category "storage.backup.sftp"
 
-    desc """添加sftp镜像服务器"""
+	desc """添加sftp镜像服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/backup-storage/sftp"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddSftpBackupStorageMsg.class
+			clz APIAddSftpBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -139,10 +139,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddSftpBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddSftpBackupStorageEvent.class
+		}
+	}
 }

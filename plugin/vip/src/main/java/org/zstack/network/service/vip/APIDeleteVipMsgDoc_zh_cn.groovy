@@ -3,22 +3,22 @@ package org.zstack.network.service.vip
 import org.zstack.network.service.vip.APIDeleteVipEvent
 
 doc {
-    title "DeleteVip"
+	title "DeleteVip"
 
-    category "vip"
+	category "vip"
 
-    desc """删除VIP"""
+	desc """删除VIP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vips/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVipMsg.class
+			clz APIDeleteVipMsg.class
 
-            desc """删除VIP"""
-            
+			desc """删除VIP"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVipEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVipEvent.class
+		}
+	}
 }

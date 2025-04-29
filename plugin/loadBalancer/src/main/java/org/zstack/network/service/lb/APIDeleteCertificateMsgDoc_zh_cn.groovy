@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIDeleteCertificateEvent
 
 doc {
-    title "DeleteCertificate"
+	title "DeleteCertificate"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """删除证书"""
+	desc """删除证书"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/certificates/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteCertificateMsg.class
+			clz APIDeleteCertificateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "2.3"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "2.3"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "2.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteCertificateEvent.class
-        }
-    }
+		response {
+			clz APIDeleteCertificateEvent.class
+		}
+	}
 }

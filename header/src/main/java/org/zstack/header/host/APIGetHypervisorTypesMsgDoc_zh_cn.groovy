@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIGetHypervisorTypesReply
 
 doc {
-    title "GetHypervisorTypes"
+	title "GetHypervisorTypes"
 
-    category "host"
+	category "host"
 
-    desc """获取云主机虚拟化技术类型"""
+	desc """获取云主机虚拟化技术类型"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hosts/hypervisor-types"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHypervisorTypesMsg.class
+			clz APIGetHypervisorTypesMsg.class
 
-            desc """获取云主机的虚拟化技术类型"""
-            
+			desc """获取云主机的虚拟化技术类型"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetHypervisorTypesReply.class
-        }
-    }
+		response {
+			clz APIGetHypervisorTypesReply.class
+		}
+	}
 }

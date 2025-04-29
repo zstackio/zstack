@@ -3,22 +3,22 @@ package org.zstack.network.service.vip
 import org.zstack.network.service.vip.APICreateVipEvent
 
 doc {
-    title "CreateVip"
+	title "CreateVip"
 
-    category "vip"
+	category "vip"
 
-    desc """创建VIP"""
+	desc """创建VIP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vips"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVipMsg.class
+			clz APICreateVipMsg.class
 
-            desc """创建VIP"""
-            
+			desc """创建VIP"""
+
 			params {
 
 				column {
@@ -112,10 +112,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVipEvent.class
-        }
-    }
+		response {
+			clz APICreateVipEvent.class
+		}
+	}
 }

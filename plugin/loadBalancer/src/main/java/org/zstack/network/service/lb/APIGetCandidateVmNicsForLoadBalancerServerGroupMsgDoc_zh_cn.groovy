@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerServerGroupReply
 
 doc {
-    title "GetCandidateVmNicsForLoadBalancerServerGroup"
+	title "GetCandidateVmNicsForLoadBalancerServerGroup"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/load-balancers/servergroups/candidate-nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateVmNicsForLoadBalancerServerGroupMsg.class
+			clz APIGetCandidateVmNicsForLoadBalancerServerGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateVmNicsForLoadBalancerServerGroupReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateVmNicsForLoadBalancerServerGroupReply.class
+		}
+	}
 }

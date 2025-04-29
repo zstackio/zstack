@@ -3,22 +3,22 @@ package org.zstack.header.storage.snapshot.group
 import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupEvent
 
 doc {
-    title "RevertVmFromSnapshotGroup"
+	title "RevertVmFromSnapshotGroup"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """从快照组恢复云主机"""
+	desc """从快照组恢复云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volume-snapshots/group/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRevertVmFromSnapshotGroupMsg.class
+			clz APIRevertVmFromSnapshotGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "3.6.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRevertVmFromSnapshotGroupEvent.class
-        }
-    }
+		response {
+			clz APIRevertVmFromSnapshotGroupEvent.class
+		}
+	}
 }

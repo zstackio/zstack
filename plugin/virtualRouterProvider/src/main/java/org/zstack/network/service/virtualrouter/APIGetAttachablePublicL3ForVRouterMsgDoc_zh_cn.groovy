@@ -3,22 +3,22 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.network.service.virtualrouter.APIGetAttachablePublicL3ForVRouterReply
 
 doc {
-    title "获取云路由可加载外部网络(GetAttachablePublicL3ForVRouter)"
+	title "获取云路由可加载外部网络(GetAttachablePublicL3ForVRouter)"
 
-    category "云路由"
+	category "云路由"
 
-    desc """获取云路由可加载的公网和系统网络，将自动排除到地址冲突的网络"""
+	desc """获取云路由可加载的公网和系统网络，将自动排除到地址冲突的网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/attachable-public-l3s"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetAttachablePublicL3ForVRouterMsg.class
+			clz APIGetAttachablePublicL3ForVRouterMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "2.2"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetAttachablePublicL3ForVRouterReply.class
-        }
-    }
+		response {
+			clz APIGetAttachablePublicL3ForVRouterReply.class
+		}
+	}
 }

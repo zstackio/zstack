@@ -3,22 +3,22 @@ package org.zstack.header.configuration
 import org.zstack.header.configuration.APIDeleteInstanceOfferingEvent
 
 doc {
-    title "DeleteInstanceOffering"
+	title "DeleteInstanceOffering"
 
-    category "configuration"
+	category "configuration"
 
-    desc """删除云主机规格"""
+	desc """删除云主机规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/instance-offerings/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteInstanceOfferingMsg.class
+			clz APIDeleteInstanceOfferingMsg.class
 
-            desc """删除云主机规格"""
-            
+			desc """删除云主机规格"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteInstanceOfferingEvent.class
-        }
-    }
+		response {
+			clz APIDeleteInstanceOfferingEvent.class
+		}
+	}
 }

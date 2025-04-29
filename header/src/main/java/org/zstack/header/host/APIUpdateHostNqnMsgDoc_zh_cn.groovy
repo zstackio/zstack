@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIUpdateHostNqnEvent
 
 doc {
-    title "UpdateHostNqn"
+	title "UpdateHostNqn"
 
-    category "host"
+	category "host"
 
-    desc """更新主机nqn"""
+	desc """更新主机nqn"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/nqn/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateHostNqnMsg.class
+			clz APIUpdateHostNqnMsg.class
 
-            desc """更新主机nqn"""
-            
+			desc """更新主机nqn"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "4.10.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateHostNqnEvent.class
-        }
-    }
+		response {
+			clz APIUpdateHostNqnEvent.class
+		}
+	}
 }

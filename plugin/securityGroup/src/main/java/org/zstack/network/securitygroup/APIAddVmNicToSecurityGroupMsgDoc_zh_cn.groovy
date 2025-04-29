@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIAddVmNicToSecurityGroupEvent
 
 doc {
-    title "AddVmNicToSecurityGroup"
+	title "AddVmNicToSecurityGroup"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"""
+	desc """用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/security-groups/{securityGroupUuid}/vm-instances/nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddVmNicToSecurityGroupMsg.class
+			clz APIAddVmNicToSecurityGroupMsg.class
 
-            desc """用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"""
-            
+			desc """用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddVmNicToSecurityGroupEvent.class
-        }
-    }
+		response {
+			clz APIAddVmNicToSecurityGroupEvent.class
+		}
+	}
 }

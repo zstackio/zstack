@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmBootOrderReply
 
 doc {
-    title "获得云主机启动设备列表(GetVmBootOrder)"
+	title "获得云主机启动设备列表(GetVmBootOrder)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获得一个云主机的启动设备列表"""
+	desc """获得一个云主机的启动设备列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/{uuid}/boot-orders"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmBootOrderMsg.class
+			clz APIGetVmBootOrderMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmBootOrderReply.class
-        }
-    }
+		response {
+			clz APIGetVmBootOrderReply.class
+		}
+	}
 }

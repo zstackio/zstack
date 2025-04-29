@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIUpdateAccountEvent
 
 doc {
-    title "UpdateAccount"
+	title "UpdateAccount"
 
-    category "identity"
+	category "identity"
 
-    desc """更新账户"""
+	desc """更新账户"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/accounts/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateAccountMsg.class
+			clz APIUpdateAccountMsg.class
 
-            desc """更新账户"""
-            
+			desc """更新账户"""
+
 			params {
 
 				column {
@@ -95,10 +95,10 @@ doc {
 					values ("Enabled","Disabled","Staled")
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateAccountEvent.class
-        }
-    }
+		response {
+			clz APIUpdateAccountEvent.class
+		}
+	}
 }

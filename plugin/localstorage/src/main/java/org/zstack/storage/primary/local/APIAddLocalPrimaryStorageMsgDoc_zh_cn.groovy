@@ -3,22 +3,22 @@ package org.zstack.storage.primary.local
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "添加本地存储为主存储(AddLocalPrimaryStorage)"
+	title "添加本地存储为主存储(AddLocalPrimaryStorage)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """添加类型为本地存储的主存储"""
+	desc """添加类型为本地存储的主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/local-storage"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddLocalPrimaryStorageMsg.class
+			clz APIAddLocalPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -103,10 +103,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddPrimaryStorageEvent.class
+		}
+	}
 }

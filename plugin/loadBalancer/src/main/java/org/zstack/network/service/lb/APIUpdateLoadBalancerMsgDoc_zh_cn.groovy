@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIUpdateLoadBalancerEvent
 
 doc {
-    title "UpdateLoadBalancer"
+	title "UpdateLoadBalancer"
 
-    category "未知类别"
+	category "未知类别"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/load-balancers/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateLoadBalancerMsg.class
+			clz APIUpdateLoadBalancerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -85,10 +85,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateLoadBalancerEvent.class
-        }
-    }
+		response {
+			clz APIUpdateLoadBalancerEvent.class
+		}
+	}
 }

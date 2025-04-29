@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIGetHostBlockDevicesReply
 
 doc {
-    title "GetHostBlockDevices"
+	title "GetHostBlockDevices"
 
-    category "host"
+	category "host"
 
-    desc """获取物理的磁盘设备信息"""
+	desc """获取物理的磁盘设备信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hosts/{uuid}/get-block-devices"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostBlockDevicesMsg.class
+			clz APIGetHostBlockDevicesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "zsv 4.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetHostBlockDevicesReply.class
-        }
-    }
+		response {
+			clz APIGetHostBlockDevicesReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIAttachVmNicToVmEvent
 
 doc {
-    title "AttachVmNicToVm"
+	title "AttachVmNicToVm"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """加载网卡到云主机"""
+	desc """加载网卡到云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/{vmInstanceUuid}/nices/{vmNicUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachVmNicToVmMsg.class
+			clz APIAttachVmNicToVmMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "vmInstanceUuid"
@@ -37,7 +37,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachVmNicToVmEvent.class
-        }
-    }
+		response {
+			clz APIAttachVmNicToVmEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.longjob
 import org.zstack.header.longjob.APIDeleteLongJobEvent
 
 doc {
-    title "DeleteLongJob"
+	title "DeleteLongJob"
 
-    category "longjob"
+	category "longjob"
 
-    desc """删除长任务"""
+	desc """删除长任务"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/longjobs/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteLongJobMsg.class
+			clz APIDeleteLongJobMsg.class
 
-            desc """删除长任务"""
-            
+			desc """删除长任务"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "2.2.4"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "2.2.4"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteLongJobEvent.class
-        }
-    }
+		response {
+			clz APIDeleteLongJobEvent.class
+		}
+	}
 }

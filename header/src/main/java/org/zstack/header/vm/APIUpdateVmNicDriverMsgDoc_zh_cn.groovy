@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIUpdateVmNicDriverEvent
 
 doc {
-    title "UpdateVmNicDriver"
+	title "UpdateVmNicDriver"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """更改网卡驱动"""
+	desc """更改网卡驱动"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateVmNicDriverMsg.class
+			clz APIUpdateVmNicDriverMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.9"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateVmNicDriverEvent.class
-        }
-    }
+		response {
+			clz APIUpdateVmNicDriverEvent.class
+		}
+	}
 }

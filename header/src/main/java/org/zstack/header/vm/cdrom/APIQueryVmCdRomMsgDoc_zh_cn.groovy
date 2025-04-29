@@ -4,28 +4,28 @@ import org.zstack.header.vm.cdrom.APIQueryVmCdRomReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryVmCdRom"
+	title "QueryVmCdRom"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """查询CDROM清单"""
+	desc """查询CDROM清单"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/cdroms"
 			url "GET /v1/vm-instances/cdroms/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryVmCdRomMsg.class
+			clz APIQueryVmCdRomMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryVmCdRomReply.class
-        }
-    }
+		response {
+			clz APIQueryVmCdRomReply.class
+		}
+	}
 }

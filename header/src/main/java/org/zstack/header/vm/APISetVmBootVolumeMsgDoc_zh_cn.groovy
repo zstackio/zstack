@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmBootVolumeEvent
 
 doc {
-    title "SetVmBootVolume"
+	title "SetVmBootVolume"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """设置云主机启动盘"""
+	desc """设置云主机启动盘"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmBootVolumeMsg.class
+			clz APISetVmBootVolumeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.2.0"
+					since "3.12.0"
 				}
 				column {
 					name "volumeUuid"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.2.0"
+					since "3.12.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.2.0"
+					since "3.12.0"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.2.0"
+					since "3.12.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmBootVolumeEvent.class
-        }
-    }
+		response {
+			clz APISetVmBootVolumeEvent.class
+		}
+	}
 }

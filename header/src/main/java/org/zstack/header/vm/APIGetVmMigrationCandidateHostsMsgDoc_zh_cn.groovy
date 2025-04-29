@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmMigrationCandidateHostsReply
 
 doc {
-    title "获取可热迁移的物理机列表(GetVmMigrationCandidateHosts)"
+	title "获取可热迁移的物理机列表(GetVmMigrationCandidateHosts)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取一个云主机可以热迁移的物理机列表"""
+	desc """获取一个云主机可以热迁移的物理机列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/{vmInstanceUuid}/migration-target-hosts"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmMigrationCandidateHostsMsg.class
+			clz APIGetVmMigrationCandidateHostsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmMigrationCandidateHostsReply.class
-        }
-    }
+		response {
+			clz APIGetVmMigrationCandidateHostsReply.class
+		}
+	}
 }

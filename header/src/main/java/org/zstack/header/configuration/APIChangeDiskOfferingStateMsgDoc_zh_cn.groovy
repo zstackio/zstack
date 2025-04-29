@@ -3,22 +3,22 @@ package org.zstack.header.configuration
 import org.zstack.header.configuration.APIChangeDiskOfferingStateEvent
 
 doc {
-    title "ChangeDiskOfferingState"
+	title "ChangeDiskOfferingState"
 
-    category "configuration"
+	category "configuration"
 
-    desc """更改云盘规格的启用状态"""
+	desc """更改云盘规格的启用状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/disk-offerings/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeDiskOfferingStateMsg.class
+			clz APIChangeDiskOfferingStateMsg.class
 
-            desc """更改云盘规格的启用状态"""
-            
+			desc """更改云盘规格的启用状态"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeDiskOfferingStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeDiskOfferingStateEvent.class
+		}
+	}
 }

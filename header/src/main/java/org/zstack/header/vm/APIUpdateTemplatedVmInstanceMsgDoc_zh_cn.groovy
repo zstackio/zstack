@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIUpdateTemplatedVmInstanceEvent
 
 doc {
-    title "UpdateTemplatedVmInstance"
+	title "UpdateTemplatedVmInstance"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """更新虚拟机模板"""
+	desc """更新虚拟机模板"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/templatedVmInstance/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateTemplatedVmInstanceMsg.class
+			clz APIUpdateTemplatedVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -85,10 +85,10 @@ doc {
 					since "zsv 4.2.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateTemplatedVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIUpdateTemplatedVmInstanceEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIAddVmNicToLoadBalancerEvent
 
 doc {
-    title "添加云主机网卡到负载均衡(AddVmNicToLoadBalancer)"
+	title "添加云主机网卡到负载均衡(AddVmNicToLoadBalancer)"
 
-    category "负载均衡"
+	category "负载均衡"
 
-    desc """添加云主机网卡到负载均衡"""
+	desc """添加云主机网卡到负载均衡"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/load-balancers/listeners/{listenerUuid}/vm-instances/nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddVmNicToLoadBalancerMsg.class
+			clz APIAddVmNicToLoadBalancerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddVmNicToLoadBalancerEvent.class
-        }
-    }
+		response {
+			clz APIAddVmNicToLoadBalancerEvent.class
+		}
+	}
 }

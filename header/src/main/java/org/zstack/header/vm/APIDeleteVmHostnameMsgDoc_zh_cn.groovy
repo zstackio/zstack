@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDeleteVmHostnameEvent
 
 doc {
-    title "删除云主机Hostname(DeleteVmHostname)"
+	title "删除云主机Hostname(DeleteVmHostname)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除云主机的Hostname。注意，该删除操作仅仅是删除配置在数据库中以及DHCP服务器上的云主机hostname，无法改变云主机内部手动配置的hostname。"""
+	desc """删除云主机的Hostname。注意，该删除操作仅仅是删除配置在数据库中以及DHCP服务器上的云主机hostname，无法改变云主机内部手动配置的hostname。"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/{uuid}/hostnames"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVmHostnameMsg.class
+			clz APIDeleteVmHostnameMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVmHostnameEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVmHostnameEvent.class
+		}
+	}
 }

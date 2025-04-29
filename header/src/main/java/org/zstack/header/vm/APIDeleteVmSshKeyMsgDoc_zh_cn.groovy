@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDeleteVmSshKeyEvent
 
 doc {
-    title "删除云主机SSH Key(DeleteVmSshKey)"
+	title "删除云主机SSH Key(DeleteVmSshKey)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除云主机SSH Key，该Key是之前通过SetVmSshKey设置的。"""
+	desc """删除云主机SSH Key，该Key是之前通过SetVmSshKey设置的。"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/{uuid}/ssh-keys"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVmSshKeyMsg.class
+			clz APIDeleteVmSshKeyMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVmSshKeyEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVmSshKeyEvent.class
+		}
+	}
 }

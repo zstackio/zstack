@@ -3,22 +3,22 @@ package org.zstack.header.configuration
 import org.zstack.header.configuration.APIChangeInstanceOfferingStateEvent
 
 doc {
-    title "ChangeInstanceOfferingState"
+	title "ChangeInstanceOfferingState"
 
-    category "configuration"
+	category "configuration"
 
-    desc """更改云主机规格的启用状态"""
+	desc """更改云主机规格的启用状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/instance-offerings/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeInstanceOfferingStateMsg.class
+			clz APIChangeInstanceOfferingStateMsg.class
 
-            desc """更改云主机规格的启用状态"""
-            
+			desc """更改云主机规格的启用状态"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeInstanceOfferingStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeInstanceOfferingStateEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.core.errorcode
 import org.zstack.core.errorcode.APIGetElaborationsReply
 
 doc {
-    title "GetElaborations"
+	title "GetElaborations"
 
-    category "errorcode"
+	category "errorcode"
 
-    desc """查看系统错误码"""
+	desc """查看系统错误码"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/errorcode/elaborations"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetElaborationsMsg.class
+			clz APIGetElaborationsMsg.class
 
-            desc """查看系统错误码"""
-            
+			desc """查看系统错误码"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetElaborationsReply.class
-        }
-    }
+		response {
+			clz APIGetElaborationsReply.class
+		}
+	}
 }

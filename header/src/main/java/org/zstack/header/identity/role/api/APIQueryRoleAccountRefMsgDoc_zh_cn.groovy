@@ -4,27 +4,27 @@ import org.zstack.header.identity.role.api.APIQueryRoleAccountRefReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryRoleAccountRef"
+	title "QueryRoleAccountRef"
 
-    category "rbac"
+	category "rbac"
 
-    desc """查询角色账户关系"""
+	desc """查询角色账户关系"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/identities/role-account-refs"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryRoleAccountRefMsg.class
+			clz APIQueryRoleAccountRefMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryRoleAccountRefReply.class
-        }
-    }
+		response {
+			clz APIQueryRoleAccountRefReply.class
+		}
+	}
 }

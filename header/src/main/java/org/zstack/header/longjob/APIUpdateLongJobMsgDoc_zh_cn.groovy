@@ -3,22 +3,22 @@ package org.zstack.header.longjob
 import org.zstack.header.longjob.APIUpdateLongJobEvent
 
 doc {
-    title "UpdateLongJob"
+	title "UpdateLongJob"
 
-    category "longjob"
+	category "longjob"
 
-    desc """更新长任务"""
+	desc """更新长任务"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/longjobs/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateLongJobMsg.class
+			clz APIUpdateLongJobMsg.class
 
-            desc """更新长任务"""
-            
+			desc """更新长任务"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.9"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateLongJobEvent.class
-        }
-    }
+		response {
+			clz APIUpdateLongJobEvent.class
+		}
+	}
 }

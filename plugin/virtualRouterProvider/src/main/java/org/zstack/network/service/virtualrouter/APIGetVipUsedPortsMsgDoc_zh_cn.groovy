@@ -3,22 +3,22 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply
 
 doc {
-    title "GetVipUsedPorts"
+	title "GetVipUsedPorts"
 
-    category "virtualRouter"
+	category "virtualRouter"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vips/{uuid}/usedports"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVipUsedPortsMsg.class
+			clz APIGetVipUsedPortsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVipUsedPortsReply.class
-        }
-    }
+		response {
+			clz APIGetVipUsedPortsReply.class
+		}
+	}
 }

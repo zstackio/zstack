@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIGetL3NetworkMtuReply
 
 doc {
-    title "GetL3NetworkMtu"
+	title "GetL3NetworkMtu"
 
-    category "network.l3"
+	category "network.l3"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/l3-networks/{l3NetworkUuid}/mtu"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetL3NetworkMtuMsg.class
+			clz APIGetL3NetworkMtuMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetL3NetworkMtuReply.class
-        }
-    }
+		response {
+			clz APIGetL3NetworkMtuReply.class
+		}
+	}
 }

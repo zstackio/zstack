@@ -3,22 +3,22 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterEvent
 
 doc {
-    title "重连虚拟路由器(ReconnectVirtualRouter)"
+	title "重连虚拟路由器(ReconnectVirtualRouter)"
 
-    category "虚拟路由器"
+	category "虚拟路由器"
 
-    desc """重连虚拟路由器"""
+	desc """重连虚拟路由器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReconnectVirtualRouterMsg.class
+			clz APIReconnectVirtualRouterMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIReconnectVirtualRouterEvent.class
-        }
-    }
+		response {
+			clz APIReconnectVirtualRouterEvent.class
+		}
+	}
 }

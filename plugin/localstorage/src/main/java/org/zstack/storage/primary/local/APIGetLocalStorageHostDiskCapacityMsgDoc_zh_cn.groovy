@@ -3,22 +3,22 @@ package org.zstack.storage.primary.local
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply
 
 doc {
-    title "获取主机本地存储容量(GetLocalStorageHostDiskCapacity)"
+	title "获取主机本地存储容量(GetLocalStorageHostDiskCapacity)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """获取本地存储中物理机本地盘磁盘容量"""
+	desc """获取本地存储中物理机本地盘磁盘容量"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage/local-storage/{primaryStorageUuid}/capacities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetLocalStorageHostDiskCapacityMsg.class
+			clz APIGetLocalStorageHostDiskCapacityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetLocalStorageHostDiskCapacityReply.class
-        }
-    }
+		response {
+			clz APIGetLocalStorageHostDiskCapacityReply.class
+		}
+	}
 }

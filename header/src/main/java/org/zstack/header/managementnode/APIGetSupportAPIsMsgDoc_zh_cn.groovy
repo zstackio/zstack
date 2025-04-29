@@ -3,22 +3,22 @@ package org.zstack.header.managementnode
 import org.zstack.header.managementnode.APIGetSupportAPIsReply
 
 doc {
-    title "GetSupportAPIs"
+	title "GetSupportAPIs"
 
-    category "managementNode"
+	category "managementNode"
 
-    desc """获取所有支持的API"""
+	desc """获取所有支持的API"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/management-nodes/actions"
 
 
 
-            clz APIGetSupportAPIsMsg.class
+			clz APIGetSupportAPIsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetSupportAPIsReply.class
-        }
-    }
+		response {
+			clz APIGetSupportAPIsReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIGetCandidateL3NetworksForLoadBalancerReply
 
 doc {
-    title "GetCandidateL3NetworksForLoadBalancer"
+	title "GetCandidateL3NetworksForLoadBalancer"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """获取监听器可加载L3网络"""
+	desc """获取监听器可加载L3网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/load-balancers/listeners/{listenerUuid}/networks/candidates"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateL3NetworksForLoadBalancerMsg.class
+			clz APIGetCandidateL3NetworksForLoadBalancerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.9.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateL3NetworksForLoadBalancerReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateL3NetworksForLoadBalancerReply.class
+		}
+	}
 }

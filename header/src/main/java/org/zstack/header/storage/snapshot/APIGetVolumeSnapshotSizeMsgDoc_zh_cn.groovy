@@ -3,22 +3,22 @@ package org.zstack.header.storage.snapshot
 import org.zstack.header.storage.snapshot.APIGetVolumeSnapshotSizeEvent
 
 doc {
-    title "GetVolumeSnapshotSize"
+	title "GetVolumeSnapshotSize"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """获取快照容量"""
+	desc """获取快照容量"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volume-snapshots/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVolumeSnapshotSizeMsg.class
+			clz APIGetVolumeSnapshotSizeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "3.5"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVolumeSnapshotSizeEvent.class
-        }
-    }
+		response {
+			clz APIGetVolumeSnapshotSizeEvent.class
+		}
+	}
 }

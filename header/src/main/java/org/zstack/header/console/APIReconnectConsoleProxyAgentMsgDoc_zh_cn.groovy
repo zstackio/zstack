@@ -3,22 +3,22 @@ package org.zstack.header.console
 import org.zstack.header.console.APIReconnectConsoleProxyAgentEvent
 
 doc {
-    title "ReconnectConsoleProxyAgent"
+	title "ReconnectConsoleProxyAgent"
 
-    category "console"
+	category "console"
 
-    desc """重连控制台代理Agent"""
+	desc """重连控制台代理Agent"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/consoles/agents"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReconnectConsoleProxyAgentMsg.class
+			clz APIReconnectConsoleProxyAgentMsg.class
 
-            desc """重连控制台代理Agent"""
-            
+			desc """重连控制台代理Agent"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIReconnectConsoleProxyAgentEvent.class
-        }
-    }
+		response {
+			clz APIReconnectConsoleProxyAgentEvent.class
+		}
+	}
 }

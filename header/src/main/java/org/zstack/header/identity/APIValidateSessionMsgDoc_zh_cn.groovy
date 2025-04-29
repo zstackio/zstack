@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIValidateSessionReply
 
 doc {
-    title "ValidateSession"
+	title "ValidateSession"
 
-    category "identity"
+	category "identity"
 
-    desc """验证会话的有效性"""
+	desc """验证会话的有效性"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/accounts/sessions/{sessionUuid}/valid"
 
 
 
-            clz APIValidateSessionMsg.class
+			clz APIValidateSessionMsg.class
 
-            desc """验证会话的有效性"""
-            
+			desc """验证会话的有效性"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIValidateSessionReply.class
-        }
-    }
+		response {
+			clz APIValidateSessionReply.class
+		}
+	}
 }

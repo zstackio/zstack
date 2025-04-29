@@ -3,22 +3,22 @@ package org.zstack.header.simulator.storage.backup
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent
 
 doc {
-    title "AddSimulatorBackupStorage"
+	title "AddSimulatorBackupStorage"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/backup-storage/simulators"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddSimulatorBackupStorageMsg.class
+			clz APIAddSimulatorBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -121,10 +121,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddBackupStorageEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.ldap.api
 import org.zstack.ldap.api.APICreateLdapBindingEvent
 
 doc {
-    title "CreateLdapBinding"
+	title "CreateLdapBinding"
 
-    category "ldap"
+	category "ldap"
 
-    desc """创建LDAP绑定"""
+	desc """创建LDAP绑定"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/ldap/bindings"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateLdapBindingMsg.class
+			clz APICreateLdapBindingMsg.class
 
-            desc """创建LDAP绑定"""
-            
+			desc """创建LDAP绑定"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "4.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateLdapBindingEvent.class
-        }
-    }
+		response {
+			clz APICreateLdapBindingEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmDnsEvent
 
 doc {
-    title "SetVmDns"
+	title "SetVmDns"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """设置云主机DNS"""
+	desc """设置云主机DNS"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmDnsMsg.class
+			clz APISetVmDnsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -77,10 +77,10 @@ doc {
 					since "4.10.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmDnsEvent.class
-        }
-    }
+		response {
+			clz APISetVmDnsEvent.class
+		}
+	}
 }

@@ -4,27 +4,27 @@ import org.zstack.header.storage.primary.APIQueryImageCacheReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryImageCache"
+	title "QueryImageCache"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """查询主存储上的镜像缓存"""
+	desc """查询主存储上的镜像缓存"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage/imagecache"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryImageCacheMsg.class
+			clz APIQueryImageCacheMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryImageCacheReply.class
-        }
-    }
+		response {
+			clz APIQueryImageCacheReply.class
+		}
+	}
 }

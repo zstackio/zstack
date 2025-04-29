@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIUpdateLoadBalancerServerGroupEvent
 
 doc {
-    title "更新负载均衡服务器组"
+	title "更新负载均衡服务器组"
 
-    category "负载均衡"
+	category "负载均衡"
 
-    desc """更新负载均衡服务器组"""
+	desc """更新负载均衡服务器组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/load-balancers/servergroups/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateLoadBalancerServerGroupMsg.class
+			clz APIUpdateLoadBalancerServerGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "name"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "description"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "userTags"
@@ -64,13 +64,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateLoadBalancerServerGroupEvent.class
-        }
-    }
+		response {
+			clz APIUpdateLoadBalancerServerGroupEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmReply
 
 doc {
-    title "获取可创建云主机的目的地列表(GetCandidateZonesClustersHostsForCreatingVm)"
+	title "获取可创建云主机的目的地列表(GetCandidateZonesClustersHostsForCreatingVm)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取可以创建指定云主机参数的目的区域、集群、物理机。用户可以使用该API，通过指定云主机参数获得可以创建满足参数云主机的目的地。"""
+	desc """获取可以创建指定云主机参数的目的区域、集群、物理机。用户可以使用该API，通过指定云主机参数获得可以创建满足参数云主机的目的地。"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/candidate-destinations"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateZonesClustersHostsForCreatingVmMsg.class
+			clz APIGetCandidateZonesClustersHostsForCreatingVmMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -136,13 +136,13 @@ doc {
 					location "query"
 					type "Long"
 					optional true
-					since "4.1.2"
+					since "3.11.2"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateZonesClustersHostsForCreatingVmReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateZonesClustersHostsForCreatingVmReply.class
+		}
+	}
 }

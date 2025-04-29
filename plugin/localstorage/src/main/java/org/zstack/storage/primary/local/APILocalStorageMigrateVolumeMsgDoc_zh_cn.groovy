@@ -3,22 +3,22 @@ package org.zstack.storage.primary.local
 import org.zstack.storage.primary.local.APILocalStorageMigrateVolumeEvent
 
 doc {
-    title "迁移本地存储上存放的云盘(LocalStorageMigrateVolume)"
+	title "迁移本地存储上存放的云盘(LocalStorageMigrateVolume)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """迁移本地存储上存放的云盘"""
+	desc """迁移本地存储上存放的云盘"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/local-storage/volumes/{volumeUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APILocalStorageMigrateVolumeMsg.class
+			clz APILocalStorageMigrateVolumeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APILocalStorageMigrateVolumeEvent.class
-        }
-    }
+		response {
+			clz APILocalStorageMigrateVolumeEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APIGetUploadImageJobDetailsReply
 
 doc {
-    title "GetUploadImageJobDetails"
+	title "GetUploadImageJobDetails"
 
-    category "image"
+	category "image"
 
-    desc """获取上传镜像任务详情"""
+	desc """获取上传镜像任务详情"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/images/upload-job/details/{imageId}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetUploadImageJobDetailsMsg.class
+			clz APIGetUploadImageJobDetailsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "4.1.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetUploadImageJobDetailsReply.class
-        }
-    }
+		response {
+			clz APIGetUploadImageJobDetailsReply.class
+		}
+	}
 }

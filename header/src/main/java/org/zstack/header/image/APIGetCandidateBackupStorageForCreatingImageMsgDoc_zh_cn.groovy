@@ -3,24 +3,24 @@ package org.zstack.header.image
 import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply
 
 doc {
-    title "GetCandidateBackupStorageForCreatingImage"
+	title "GetCandidateBackupStorageForCreatingImage"
 
-    category "host.allocator"
+	category "host.allocator"
 
-    desc """获取创建镜像的备份存储候选"""
+	desc """获取创建镜像的备份存储候选"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/images/candidate-backup-storage"
 			url "GET /v1/images/volumes/{volumeUuid}/candidate-backup-storage"
 			url "GET /v1/images/volume-snapshots/{volumeSnapshotUuid}/candidate-backup-storage"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateBackupStorageForCreatingImageMsg.class
+			clz APIGetCandidateBackupStorageForCreatingImageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -60,10 +60,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateBackupStorageForCreatingImageReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateBackupStorageForCreatingImageReply.class
+		}
+	}
 }

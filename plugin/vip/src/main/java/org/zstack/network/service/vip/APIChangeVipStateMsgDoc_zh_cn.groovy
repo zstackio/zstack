@@ -3,22 +3,22 @@ package org.zstack.network.service.vip
 import org.zstack.network.service.vip.APIChangeVipStateEvent
 
 doc {
-    title "ChangeVipState"
+	title "ChangeVipState"
 
-    category "vip"
+	category "vip"
 
-    desc """更改VIP启用状态"""
+	desc """更改VIP启用状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vips/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeVipStateMsg.class
+			clz APIChangeVipStateMsg.class
 
-            desc """更改VIP启用状态"""
-            
+			desc """更改VIP启用状态"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeVipStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeVipStateEvent.class
+		}
+	}
 }

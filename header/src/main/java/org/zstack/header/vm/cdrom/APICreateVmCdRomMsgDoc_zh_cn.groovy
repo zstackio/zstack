@@ -3,22 +3,22 @@ package org.zstack.header.vm.cdrom
 import org.zstack.header.vm.cdrom.APICreateVmCdRomEvent
 
 doc {
-    title "CreateVmCdRom"
+	title "CreateVmCdRom"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """为云主机创建CDROM"""
+	desc """为云主机创建CDROM"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/cdroms"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVmCdRomMsg.class
+			clz APICreateVmCdRomMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVmCdRomEvent.class
-        }
-    }
+		response {
+			clz APICreateVmCdRomEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleEvent
 
 doc {
-    title "AddSecurityGroupRule"
+	title "AddSecurityGroupRule"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """用户可以使用AddSecurityGroupRule添加规则到安全组"""
+	desc """用户可以使用AddSecurityGroupRule添加规则到安全组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/security-groups/{securityGroupUuid}/rules"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddSecurityGroupRuleMsg.class
+			clz APIAddSecurityGroupRuleMsg.class
 
-            desc """用户可以使用AddSecurityGroupRule添加规则到安全组"""
-            
+			desc """用户可以使用AddSecurityGroupRule添加规则到安全组"""
+
 			params {
 
 				column {
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -73,13 +73,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddSecurityGroupRuleEvent.class
-        }
-    }
+		response {
+			clz APIAddSecurityGroupRuleEvent.class
+		}
+	}
 }

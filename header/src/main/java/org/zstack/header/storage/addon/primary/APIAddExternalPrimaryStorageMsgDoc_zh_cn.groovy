@@ -3,22 +3,22 @@ package org.zstack.header.storage.addon.primary
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "AddExternalPrimaryStorage"
+	title "AddExternalPrimaryStorage"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """添加外部存储"""
+	desc """添加外部存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/addon"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddExternalPrimaryStorageMsg.class
+			clz APIAddExternalPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "defaultOutputProtocol"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 					values ("Vhost","Scsi","Nvme","Curve","file")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "url"
@@ -56,7 +56,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "name"
@@ -65,7 +65,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "description"
@@ -74,7 +74,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "type"
@@ -83,7 +83,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "zoneUuid"
@@ -92,7 +92,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "resourceUuid"
@@ -101,7 +101,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "tagUuids"
@@ -110,7 +110,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "systemTags"
@@ -119,7 +119,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "userTags"
@@ -128,13 +128,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddPrimaryStorageEvent.class
+		}
+	}
 }

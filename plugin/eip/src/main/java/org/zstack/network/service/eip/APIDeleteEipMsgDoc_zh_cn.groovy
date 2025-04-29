@@ -3,22 +3,22 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIDeleteEipEvent
 
 doc {
-    title "删除弹性IP(DeleteEip)"
+	title "删除弹性IP(DeleteEip)"
 
-    category "弹性IP"
+	category "弹性IP"
 
-    desc """删除弹性IP"""
+	desc """删除弹性IP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/eips/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteEipMsg.class
+			clz APIDeleteEipMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteEipEvent.class
-        }
-    }
+		response {
+			clz APIDeleteEipEvent.class
+		}
+	}
 }

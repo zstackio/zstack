@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIDetachSecurityGroupFromL3NetworkEvent
 
 doc {
-    title "DetachSecurityGroupFromL3Network"
+	title "DetachSecurityGroupFromL3Network"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """用户可以使用DetachSecurityGroupFromL3Network来从一个L3网络卸载一个安全组,卸载后, 所有的规则都会从这个L3网络上的并且在这个安全组中的虚拟机网卡上删除. 这个命令是异步执行的, 在它返回后可能规则仍然没有对所有虚拟机网卡生效"""
+	desc """用户可以使用DetachSecurityGroupFromL3Network来从一个L3网络卸载一个安全组,卸载后, 所有的规则都会从这个L3网络上的并且在这个安全组中的虚拟机网卡上删除. 这个命令是异步执行的, 在它返回后可能规则仍然没有对所有虚拟机网卡生效"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachSecurityGroupFromL3NetworkMsg.class
+			clz APIDetachSecurityGroupFromL3NetworkMsg.class
 
-            desc """用户可以使用DetachSecurityGroupFromL3Network来从一个L3网络卸载一个安全组,卸载后, 所有的规则都会从这个L3网络上的并且在这个安全组中的虚拟机网卡上删除. 这个命令是异步执行的, 在它返回后可能规则仍然没有对所有虚拟机网卡生效"""
-            
+			desc """用户可以使用DetachSecurityGroupFromL3Network来从一个L3网络卸载一个安全组,卸载后, 所有的规则都会从这个L3网络上的并且在这个安全组中的虚拟机网卡上删除. 这个命令是异步执行的, 在它返回后可能规则仍然没有对所有虚拟机网卡生效"""
+
 			params {
 
 				column {
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachSecurityGroupFromL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APIDetachSecurityGroupFromL3NetworkEvent.class
+		}
+	}
 }

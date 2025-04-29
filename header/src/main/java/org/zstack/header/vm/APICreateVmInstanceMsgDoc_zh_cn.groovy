@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APICreateVmInstanceEvent
 
 doc {
-    title "创建云主机(CreateVmInstance)"
+	title "创建云主机(CreateVmInstance)"
 
-    category "云主机"
+	category "云主机"
 
-    desc """创建一个新的云主机"""
+	desc """创建一个新的云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVmInstanceMsg.class
+			clz APICreateVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "type"
@@ -92,7 +92,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.4.6"
+					since "3.14.6"
 				}
 				column {
 					name "dataDiskOfferingUuids"
@@ -255,7 +255,7 @@ doc {
 					location "body"
 					type "Map"
 					optional true
-					since "4.4.24"
+					since "3.14.24"
 				}
 				column {
 					name "sshKeyPairUuids"
@@ -264,7 +264,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "dataVolumeTemplateUuids"
@@ -273,7 +273,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "diskAOs"
@@ -282,7 +282,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "platform"
@@ -291,7 +291,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "guestOsType"
@@ -300,7 +300,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "architecture"
@@ -309,7 +309,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "reservedMemorySize"
@@ -318,7 +318,7 @@ doc {
 					location "body"
 					type "Long"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "virtio"
@@ -327,7 +327,7 @@ doc {
 					location "body"
 					type "Boolean"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "allocatorStrategy"
@@ -339,10 +339,10 @@ doc {
 					since "4.10.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APICreateVmInstanceEvent.class
+		}
+	}
 }

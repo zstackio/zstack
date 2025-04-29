@@ -3,22 +3,22 @@ package org.zstack.header.configuration
 import org.zstack.header.configuration.APICreateDiskOfferingEvent
 
 doc {
-    title "CreateDiskOffering"
+	title "CreateDiskOffering"
 
-    category "configuration"
+	category "configuration"
 
-    desc """创建云盘规格"""
+	desc """创建云盘规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/disk-offerings"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateDiskOfferingMsg.class
+			clz APICreateDiskOfferingMsg.class
 
-            desc """创建云盘规格"""
-            
+			desc """创建云盘规格"""
+
 			params {
 
 				column {
@@ -113,10 +113,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateDiskOfferingEvent.class
-        }
-    }
+		response {
+			clz APICreateDiskOfferingEvent.class
+		}
+	}
 }

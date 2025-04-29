@@ -3,22 +3,22 @@ package org.zstack.header.configuration
 import org.zstack.header.configuration.APICreateInstanceOfferingEvent
 
 doc {
-    title "CreateInstanceOffering"
+	title "CreateInstanceOffering"
 
-    category "configuration"
+	category "configuration"
 
-    desc """创建云主机规格"""
+	desc """创建云主机规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/instance-offerings"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateInstanceOfferingMsg.class
+			clz APICreateInstanceOfferingMsg.class
 
-            desc """创建云主机规格"""
-            
+			desc """创建云主机规格"""
+
 			params {
 
 				column {
@@ -127,13 +127,13 @@ doc {
 					location "body"
 					type "long"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateInstanceOfferingEvent.class
-        }
-    }
+		response {
+			clz APICreateInstanceOfferingEvent.class
+		}
+	}
 }

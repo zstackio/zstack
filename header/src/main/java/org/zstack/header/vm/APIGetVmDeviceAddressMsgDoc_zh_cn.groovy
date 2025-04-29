@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmDeviceAddressReply
 
 doc {
-    title "GetVmDeviceAddress"
+	title "GetVmDeviceAddress"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取云主机内部与云平台资源对应的设备地址"""
+	desc """获取云主机内部与云平台资源对应的设备地址"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/devices"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmDeviceAddressMsg.class
+			clz APIGetVmDeviceAddressMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "3.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmDeviceAddressReply.class
-        }
-    }
+		response {
+			clz APIGetVmDeviceAddressReply.class
+		}
+	}
 }

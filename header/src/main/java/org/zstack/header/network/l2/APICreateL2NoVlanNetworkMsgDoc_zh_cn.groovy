@@ -3,22 +3,22 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APICreateL2NetworkEvent
 
 doc {
-    title "创建普通二层网络(CreateL2NoVlanNetwork)"
+	title "创建普通二层网络(CreateL2NoVlanNetwork)"
 
-    category "二层网络"
+	category "二层网络"
 
-    desc """创建普通二层网络"""
+	desc """创建普通二层网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/no-vlan"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateL2NoVlanNetworkMsg.class
+			clz APICreateL2NoVlanNetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 					values ("LinuxBridge","OvsDpdk","MacVlan")
 				}
 				column {
@@ -113,10 +113,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateL2NetworkEvent.class
-        }
-    }
+		response {
+			clz APICreateL2NetworkEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.service.flat
 import org.zstack.network.service.flat.APIGetL3NetworkDhcpIpAddressReply
 
 doc {
-    title "获取网络DHCP服务所用地址(GetL3NetworkDhcpIpAddress)"
+	title "获取网络DHCP服务所用地址(GetL3NetworkDhcpIpAddress)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """获取网络DHCP服务所用地址"""
+	desc """获取网络DHCP服务所用地址"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/l3-networks/{l3NetworkUuid}/dhcp-ip"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetL3NetworkDhcpIpAddressMsg.class
+			clz APIGetL3NetworkDhcpIpAddressMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetL3NetworkDhcpIpAddressReply.class
-        }
-    }
+		response {
+			clz APIGetL3NetworkDhcpIpAddressReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.resourceconfig
 import org.zstack.resourceconfig.APIUpdateResourceConfigEvent
 
 doc {
-    title "UpdateResourceConfig"
+	title "UpdateResourceConfig"
 
-    category "resourceConfig"
+	category "resourceConfig"
 
-    desc """更新资源高级设置"""
+	desc """更新资源高级设置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/resource-configurations/{category}/{name}/{resourceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateResourceConfigMsg.class
+			clz APIUpdateResourceConfigMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -76,10 +76,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateResourceConfigEvent.class
-        }
-    }
+		response {
+			clz APIUpdateResourceConfigEvent.class
+		}
+	}
 }

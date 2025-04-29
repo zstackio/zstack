@@ -3,22 +3,22 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.header.configuration.APICreateInstanceOfferingEvent
 
 doc {
-    title "创建虚拟路由器规格(CreateVirtualRouterOffering)"
+	title "创建虚拟路由器规格(CreateVirtualRouterOffering)"
 
-    category "虚拟路由器"
+	category "虚拟路由器"
 
-    desc """创建虚拟路由器规格"""
+	desc """创建虚拟路由器规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/instance-offerings/virtual-routers"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVirtualRouterOfferingMsg.class
+			clz APICreateVirtualRouterOfferingMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -172,7 +172,7 @@ doc {
 					location "body"
 					type "long"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "tagUuids"
@@ -181,13 +181,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateInstanceOfferingEvent.class
-        }
-    }
+		response {
+			clz APICreateInstanceOfferingEvent.class
+		}
+	}
 }

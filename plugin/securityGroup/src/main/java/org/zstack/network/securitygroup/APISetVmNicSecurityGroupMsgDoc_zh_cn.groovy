@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APISetVmNicSecurityGroupEvent
 
 doc {
-    title "SetVmNicSecurityGroup"
+	title "SetVmNicSecurityGroup"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """设置网卡的安全组"""
+	desc """设置网卡的安全组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/security-groups/nics/{vmNicUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmNicSecurityGroupMsg.class
+			clz APISetVmNicSecurityGroupMsg.class
 
-            desc """设置网卡的安全组"""
-            
+			desc """设置网卡的安全组"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "refs"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmNicSecurityGroupEvent.class
-        }
-    }
+		response {
+			clz APISetVmNicSecurityGroupEvent.class
+		}
+	}
 }

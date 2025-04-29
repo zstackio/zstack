@@ -3,22 +3,22 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIAttachL2NetworkToClusterEvent
 
 doc {
-    title "挂载二层网络到集群(AttachL2NetworkToCluster)"
+	title "挂载二层网络到集群(AttachL2NetworkToCluster)"
 
-    category "二层网络"
+	category "二层网络"
 
-    desc """挂载二层网络到集群"""
+	desc """挂载二层网络到集群"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachL2NetworkToClusterMsg.class
+			clz APIAttachL2NetworkToClusterMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 					values ("LinuxBridge")
 				}
 				column {
@@ -77,10 +77,10 @@ doc {
 					since "4.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachL2NetworkToClusterEvent.class
-        }
-    }
+		response {
+			clz APIAttachL2NetworkToClusterEvent.class
+		}
+	}
 }

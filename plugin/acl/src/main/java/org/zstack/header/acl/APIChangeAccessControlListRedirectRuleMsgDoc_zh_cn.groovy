@@ -3,22 +3,22 @@ package org.zstack.header.acl
 import org.zstack.header.acl.APIChangeAccessControlListRedirectRuleEvent
 
 doc {
-    title "ChangeAccessControlListRedirectRule"
+	title "ChangeAccessControlListRedirectRule"
 
-    category "acl"
+	category "acl"
 
-    desc """修改控制策略组转发规则的名称"""
+	desc """修改控制策略组转发规则的名称"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/access-control-lists/redirectRules/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeAccessControlListRedirectRuleMsg.class
+			clz APIChangeAccessControlListRedirectRuleMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "name"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeAccessControlListRedirectRuleEvent.class
-        }
-    }
+		response {
+			clz APIChangeAccessControlListRedirectRuleEvent.class
+		}
+	}
 }

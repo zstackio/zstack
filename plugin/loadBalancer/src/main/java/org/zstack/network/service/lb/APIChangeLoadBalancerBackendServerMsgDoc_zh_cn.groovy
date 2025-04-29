@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIChangeLoadBalancerBackendServerEvent
 
 doc {
-    title "修改负载均衡后端服务器参数"
+	title "修改负载均衡后端服务器参数"
 
-    category "负载均衡"
+	category "负载均衡"
 
-    desc """修改负载均衡后端服务器参数"""
+	desc """修改负载均衡后端服务器参数"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/load-balancers/servergroups/{serverGroupUuid}/backendserver/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeLoadBalancerBackendServerMsg.class
+			clz APIChangeLoadBalancerBackendServerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "vmNics"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "servers"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "userTags"
@@ -64,13 +64,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeLoadBalancerBackendServerEvent.class
-        }
-    }
+		response {
+			clz APIChangeLoadBalancerBackendServerEvent.class
+		}
+	}
 }

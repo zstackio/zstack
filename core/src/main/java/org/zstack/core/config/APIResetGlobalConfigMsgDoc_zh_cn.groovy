@@ -3,22 +3,22 @@ package org.zstack.core.config
 import org.zstack.core.config.APIResetGlobalConfigEvent
 
 doc {
-    title "ResetGlobalConfig"
+	title "ResetGlobalConfig"
 
-    category "globalConfig"
+	category "globalConfig"
 
-    desc """重置全局配置"""
+	desc """重置全局配置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/global-configurations/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIResetGlobalConfigMsg.class
+			clz APIResetGlobalConfigMsg.class
 
-            desc """重置全局配置消息"""
-            
+			desc """重置全局配置消息"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "3.1.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIResetGlobalConfigEvent.class
-        }
-    }
+		response {
+			clz APIResetGlobalConfigEvent.class
+		}
+	}
 }

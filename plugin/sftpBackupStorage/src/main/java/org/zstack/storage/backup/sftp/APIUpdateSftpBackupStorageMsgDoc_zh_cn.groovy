@@ -3,22 +3,22 @@ package org.zstack.storage.backup.sftp
 import org.zstack.header.storage.backup.APIUpdateBackupStorageEvent
 
 doc {
-    title "更新Sftp镜像服务器属性(UpdateSftpBackupStorage)"
+	title "更新Sftp镜像服务器属性(UpdateSftpBackupStorage)"
 
-    category "storage.backup.sftp"
+	category "storage.backup.sftp"
 
-    desc """更新Sftp镜像服务器属性"""
+	desc """更新Sftp镜像服务器属性"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/backup-storage/sftp/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateSftpBackupStorageMsg.class
+			clz APIUpdateSftpBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -103,10 +103,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIUpdateBackupStorageEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIRevokeResourceSharingEvent
 
 doc {
-    title "RevokeResourceSharing"
+	title "RevokeResourceSharing"
 
-    category "identity"
+	category "identity"
 
-    desc """解除资源共享"""
+	desc """解除资源共享"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/accounts/resources/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRevokeResourceSharingMsg.class
+			clz APIRevokeResourceSharingMsg.class
 
-            desc """解除资源共享"""
-            
+			desc """解除资源共享"""
+
 			params {
 
 				column {
@@ -76,10 +76,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRevokeResourceSharingEvent.class
-        }
-    }
+		response {
+			clz APIRevokeResourceSharingEvent.class
+		}
+	}
 }

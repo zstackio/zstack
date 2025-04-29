@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APICreateDataVolumeFromVolumeTemplateEvent
 
 doc {
-    title "从镜像创建云盘(CreateDataVolumeFromVolumeTemplate)"
+	title "从镜像创建云盘(CreateDataVolumeFromVolumeTemplate)"
 
-    category "volume"
+	category "volume"
 
-    desc """从镜像创建云盘"""
+	desc """从镜像创建云盘"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/volumes/data/from/data-volume-templates/{imageUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateDataVolumeFromVolumeTemplateMsg.class
+			clz APICreateDataVolumeFromVolumeTemplateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -103,10 +103,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateDataVolumeFromVolumeTemplateEvent.class
-        }
-    }
+		response {
+			clz APICreateDataVolumeFromVolumeTemplateEvent.class
+		}
+	}
 }

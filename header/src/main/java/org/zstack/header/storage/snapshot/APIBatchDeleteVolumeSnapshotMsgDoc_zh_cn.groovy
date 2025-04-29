@@ -3,22 +3,22 @@ package org.zstack.header.storage.snapshot
 import org.zstack.header.storage.snapshot.APIBatchDeleteVolumeSnapshotEvent
 
 doc {
-    title "BatchDeleteVolumeSnapshot"
+	title "BatchDeleteVolumeSnapshot"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """批量删除云盘快照"""
+	desc """批量删除云盘快照"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volume-snapshots/batch-delete"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIBatchDeleteVolumeSnapshotMsg.class
+			clz APIBatchDeleteVolumeSnapshotMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "3.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIBatchDeleteVolumeSnapshotEvent.class
-        }
-    }
+		response {
+			clz APIBatchDeleteVolumeSnapshotEvent.class
+		}
+	}
 }

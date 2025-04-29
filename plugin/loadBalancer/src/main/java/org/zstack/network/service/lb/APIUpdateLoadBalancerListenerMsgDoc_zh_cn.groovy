@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIUpdateLoadBalancerListenerEvent
 
 doc {
-    title "UpdateLoadBalancerListener"
+	title "UpdateLoadBalancerListener"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/load-balancers/listeners/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateLoadBalancerListenerMsg.class
+			clz APIUpdateLoadBalancerListenerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateLoadBalancerListenerEvent.class
-        }
-    }
+		response {
+			clz APIUpdateLoadBalancerListenerEvent.class
+		}
+	}
 }

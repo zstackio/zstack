@@ -3,22 +3,22 @@ package org.zstack.header.network.service
 import org.zstack.header.network.service.APIDetachNetworkServiceFromL3NetworkEvent
 
 doc {
-    title "从三层网络卸载网络服务(DetachNetworkServiceFromL3Network)"
+	title "从三层网络卸载网络服务(DetachNetworkServiceFromL3Network)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """从三层网络卸载网络服务"""
+	desc """从三层网络卸载网络服务"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/l3-networks/{l3NetworkUuid}/network-services"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachNetworkServiceFromL3NetworkMsg.class
+			clz APIDetachNetworkServiceFromL3NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "networkServices"
 					enclosedIn ""
 					desc "网络服务"
-					location "body"
+					location "query"
 					type "Map"
 					optional false
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachNetworkServiceFromL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APIDetachNetworkServiceFromL3NetworkEvent.class
+		}
+	}
 }

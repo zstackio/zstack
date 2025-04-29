@@ -3,22 +3,22 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APICreateEipEvent
 
 doc {
-    title "创建弹性IP(CreateEip)"
+	title "创建弹性IP(CreateEip)"
 
-    category "弹性IP"
+	category "弹性IP"
 
-    desc """创建弹性IP"""
+	desc """创建弹性IP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/eips"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateEipMsg.class
+			clz APICreateEipMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -103,10 +103,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateEipEvent.class
-        }
-    }
+		response {
+			clz APICreateEipEvent.class
+		}
+	}
 }

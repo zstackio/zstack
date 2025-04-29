@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetCandidateL3NetworksForChangeVmNicNetworkReply
 
 doc {
-    title "获取云主机网卡可以加载的L3网络"
+	title "获取云主机网卡可以加载的L3网络"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取云主机网卡可以加载的L3网络列表"""
+	desc """获取云主机网卡可以加载的L3网络列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/nics/{vmNicUuid}/l3-networks-candidates"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateL3NetworksForChangeVmNicNetworkMsg.class
+			clz APIGetCandidateL3NetworksForChangeVmNicNetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateL3NetworksForChangeVmNicNetworkReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateL3NetworksForChangeVmNicNetworkReply.class
+		}
+	}
 }

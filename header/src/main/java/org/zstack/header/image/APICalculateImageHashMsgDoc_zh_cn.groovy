@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APICalculateImageHashEvent
 
 doc {
-    title "CalculateImageHash"
+	title "CalculateImageHash"
 
-    category "image"
+	category "image"
 
-    desc """计算镜像的MD5值"""
+	desc """计算镜像的MD5值"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/images/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICalculateImageHashMsg.class
+			clz APICalculateImageHashMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "4.1.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICalculateImageHashEvent.class
-        }
-    }
+		response {
+			clz APICalculateImageHashEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.storage.primary.nfs
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "添加 NFS 主存储(AddNfsPrimaryStorage)"
+	title "添加 NFS 主存储(AddNfsPrimaryStorage)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """添加 NFS 主存储"""
+	desc """添加 NFS 主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/nfs"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddNfsPrimaryStorageMsg.class
+			clz APIAddNfsPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -103,10 +103,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddPrimaryStorageEvent.class
+		}
+	}
 }

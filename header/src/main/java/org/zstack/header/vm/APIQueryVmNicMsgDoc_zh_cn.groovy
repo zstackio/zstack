@@ -4,28 +4,28 @@ import org.zstack.header.vm.APIQueryVmNicReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "查询云主机网卡(QueryVmNic)"
+	title "查询云主机网卡(QueryVmNic)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """查询云主机网卡"""
+	desc """查询云主机网卡"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/nics"
 			url "GET /v1/vm-instances/nics/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryVmNicMsg.class
+			clz APIQueryVmNicMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryVmNicReply.class
-        }
-    }
+		response {
+			clz APIQueryVmNicReply.class
+		}
+	}
 }

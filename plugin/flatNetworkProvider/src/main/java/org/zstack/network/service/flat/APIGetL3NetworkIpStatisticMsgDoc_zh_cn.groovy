@@ -3,22 +3,22 @@ package org.zstack.network.service.flat
 import org.zstack.network.service.flat.APIGetL3NetworkIpStatisticReply
 
 doc {
-    title "获取三层网络IP地址使用情况统计(GetL3NetworkIpStatistic)"
+	title "获取三层网络IP地址使用情况统计(GetL3NetworkIpStatistic)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """获取三层网络IP地址使用情况统计"""
+	desc """获取三层网络IP地址使用情况统计"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/l3-networks/{l3NetworkUuid}/ip-statistic"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetL3NetworkIpStatisticMsg.class
+			clz APIGetL3NetworkIpStatisticMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -115,10 +115,10 @@ doc {
 					since "3.7.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetL3NetworkIpStatisticReply.class
-        }
-    }
+		response {
+			clz APIGetL3NetworkIpStatisticReply.class
+		}
+	}
 }

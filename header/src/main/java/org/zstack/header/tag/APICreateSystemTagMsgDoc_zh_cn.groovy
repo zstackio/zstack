@@ -3,22 +3,22 @@ package org.zstack.header.tag
 import org.zstack.header.tag.APICreateSystemTagEvent
 
 doc {
-    title "CreateSystemTag"
+	title "CreateSystemTag"
 
-    category "tag"
+	category "tag"
 
-    desc """创建系统标签"""
+	desc """创建系统标签"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/system-tags"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateSystemTagMsg.class
+			clz APICreateSystemTagMsg.class
 
-            desc """创建系统标签"""
-            
+			desc """创建系统标签"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateSystemTagEvent.class
-        }
-    }
+		response {
+			clz APICreateSystemTagEvent.class
+		}
+	}
 }

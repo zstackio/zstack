@@ -3,22 +3,22 @@ package org.zstack.core.config
 import org.zstack.core.config.APIUpdateGlobalConfigEvent
 
 doc {
-    title "UpdateGlobalConfig"
+	title "UpdateGlobalConfig"
 
-    category "globalConfig"
+	category "globalConfig"
 
-    desc """更新全局配置"""
+	desc """更新全局配置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/global-configurations/{category}/{name}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateGlobalConfigMsg.class
+			clz APIUpdateGlobalConfigMsg.class
 
-            desc """更新全局配置"""
-            
+			desc """更新全局配置"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateGlobalConfigEvent.class
-        }
-    }
+		response {
+			clz APIUpdateGlobalConfigEvent.class
+		}
+	}
 }

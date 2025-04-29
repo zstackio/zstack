@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIRemoveBackendServerFromServerGroupEvent
 
 doc {
-    title "RemoveBackendServerFromServerGroup"
+	title "RemoveBackendServerFromServerGroup"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/load-balancers/servergroups/{serverGroupUuid}/backendservers/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRemoveBackendServerFromServerGroupMsg.class
+			clz APIRemoveBackendServerFromServerGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRemoveBackendServerFromServerGroupEvent.class
-        }
-    }
+		response {
+			clz APIRemoveBackendServerFromServerGroupEvent.class
+		}
+	}
 }

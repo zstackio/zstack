@@ -3,22 +3,22 @@ package org.zstack.sdnController.header
 import org.zstack.sdnController.header.APIRemoveSdnControllerEvent
 
 doc {
-    title "RemoveSdnController"
+	title "RemoveSdnController"
 
-    category "SdnController"
+	category "SdnController"
 
-    desc """删除SDN控制器"""
+	desc """删除SDN控制器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/sdn-controllers/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRemoveSdnControllerMsg.class
+			clz APIRemoveSdnControllerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "3.7"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.7"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.7"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRemoveSdnControllerEvent.class
-        }
-    }
+		response {
+			clz APIRemoveSdnControllerEvent.class
+		}
+	}
 }

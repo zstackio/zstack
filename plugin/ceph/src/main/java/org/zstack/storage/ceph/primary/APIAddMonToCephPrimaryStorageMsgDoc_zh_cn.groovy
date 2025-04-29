@@ -3,22 +3,22 @@ package org.zstack.storage.ceph.primary
 import org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageEvent
 
 doc {
-    title "为 Ceph 主存储添加 mon 节点(AddMonToCephPrimaryStorage)"
+	title "为 Ceph 主存储添加 mon 节点(AddMonToCephPrimaryStorage)"
 
-    category "storage.ceph.primary"
+	category "storage.ceph.primary"
 
-    desc """为 Ceph 主存储添加 mon 节点"""
+	desc """为 Ceph 主存储添加 mon 节点"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/ceph/{uuid}/mons"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddMonToCephPrimaryStorageMsg.class
+			clz APIAddMonToCephPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddMonToCephPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddMonToCephPrimaryStorageEvent.class
+		}
+	}
 }

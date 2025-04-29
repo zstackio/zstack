@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDetachIsoFromVmInstanceEvent
 
 doc {
-    title "卸载云主机上的ISO(DetachIsoFromVmInstance)"
+	title "卸载云主机上的ISO(DetachIsoFromVmInstance)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """如果云主机上挂载有ISO，卸载它"""
+	desc """如果云主机上挂载有ISO，卸载它"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/{vmInstanceUuid}/iso"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachIsoFromVmInstanceMsg.class
+			clz APIDetachIsoFromVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "isoUuid"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "2.3.1"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachIsoFromVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIDetachIsoFromVmInstanceEvent.class
+		}
+	}
 }

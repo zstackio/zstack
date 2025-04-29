@@ -3,24 +3,24 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIGetFreeIpReply
 
 doc {
-    title "获取空闲IP(GetFreeIp)"
+	title "获取空闲IP(GetFreeIp)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """获取空闲IP"""
+	desc """获取空闲IP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/l3-networks/ip/free"
 			url "GET /v1/l3-networks/{l3NetworkUuid}/ip/free"
 			url "GET /v1/l3-networks/ip-ranges/{ipRangeUuid}/ip/free"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetFreeIpMsg.class
+			clz APIGetFreeIpMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -98,10 +98,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetFreeIpReply.class
-        }
-    }
+		response {
+			clz APIGetFreeIpReply.class
+		}
+	}
 }

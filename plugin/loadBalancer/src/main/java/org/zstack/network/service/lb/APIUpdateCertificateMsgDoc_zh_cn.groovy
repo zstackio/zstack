@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIUpdateCertificateEvent
 
 doc {
-    title "UpdateCertificate"
+	title "UpdateCertificate"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """更新证书信息"""
+	desc """更新证书信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/certificates/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateCertificateMsg.class
+			clz APIUpdateCertificateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -85,10 +85,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateCertificateEvent.class
-        }
-    }
+		response {
+			clz APIUpdateCertificateEvent.class
+		}
+	}
 }

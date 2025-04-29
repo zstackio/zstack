@@ -3,22 +3,22 @@ package org.zstack.storage.ceph.primary
 import org.zstack.storage.ceph.primary.APIDeleteCephPrimaryStoragePoolEvent
 
 doc {
-    title "DeleteCephPrimaryStoragePool"
+	title "DeleteCephPrimaryStoragePool"
 
-    category "storage.ceph.primary"
+	category "storage.ceph.primary"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/primary-storage/ceph/pools/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteCephPrimaryStoragePoolMsg.class
+			clz APIDeleteCephPrimaryStoragePoolMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteCephPrimaryStoragePoolEvent.class
-        }
-    }
+		response {
+			clz APIDeleteCephPrimaryStoragePoolEvent.class
+		}
+	}
 }

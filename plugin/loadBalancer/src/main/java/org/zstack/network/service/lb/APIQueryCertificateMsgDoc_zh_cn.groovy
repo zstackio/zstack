@@ -4,28 +4,28 @@ import org.zstack.network.service.lb.APIQueryCertificateReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryCertificate"
+	title "QueryCertificate"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """查询证书"""
+	desc """查询证书"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/certificates"
 			url "GET /v1/certificates/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryCertificateMsg.class
+			clz APIQueryCertificateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryCertificateReply.class
-        }
-    }
+		response {
+			clz APIQueryCertificateReply.class
+		}
+	}
 }

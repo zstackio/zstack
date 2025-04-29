@@ -3,22 +3,22 @@ package org.zstack.core.config
 import org.zstack.core.config.APIGetGlobalConfigOptionsReply
 
 doc {
-    title "GetGlobalConfigOptions"
+	title "GetGlobalConfigOptions"
 
-    category "globalConfig"
+	category "globalConfig"
 
-    desc """获取全局配置参数选项"""
+	desc """获取全局配置参数选项"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/global-configurations/{category}/{name}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetGlobalConfigOptionsMsg.class
+			clz APIGetGlobalConfigOptionsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.4.0"
+					since "3.14.0"
 				}
 				column {
 					name "name"
@@ -37,7 +37,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.4.0"
+					since "3.14.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.4.0"
+					since "3.14.0"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.4.0"
+					since "3.14.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetGlobalConfigOptionsReply.class
-        }
-    }
+		response {
+			clz APIGetGlobalConfigOptionsReply.class
+		}
+	}
 }

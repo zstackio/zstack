@@ -3,22 +3,22 @@ package org.zstack.network.service.vip
 import org.zstack.network.service.vip.APICheckVipPortAvailabilityReply
 
 doc {
-    title "CheckVipPortAvailability"
+	title "CheckVipPortAvailability"
 
-    category "vip"
+	category "vip"
 
-    desc """检查VIP端口是否空闲"""
+	desc """检查VIP端口是否空闲"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vips/{vipUuid}/check-port-availability"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICheckVipPortAvailabilityMsg.class
+			clz APICheckVipPortAvailabilityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "port"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "int"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "protocolType"
@@ -46,7 +46,7 @@ doc {
 					location "query"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 					values ("TCP","UDP")
 				}
 				column {
@@ -56,7 +56,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "start"
@@ -65,7 +65,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
@@ -74,7 +74,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -83,13 +83,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICheckVipPortAvailabilityReply.class
-        }
-    }
+		response {
+			clz APICheckVipPortAvailabilityReply.class
+		}
+	}
 }

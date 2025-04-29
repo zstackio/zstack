@@ -3,22 +3,22 @@ package org.zstack.header.vm.cdrom
 import org.zstack.header.vm.cdrom.APISetVmInstanceDefaultCdRomEvent
 
 doc {
-    title "SetVmInstanceDefaultCdRom"
+	title "SetVmInstanceDefaultCdRom"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """设置云主机默认CDROM"""
+	desc """设置云主机默认CDROM"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{vmInstanceUuid}/cdroms/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmInstanceDefaultCdRomMsg.class
+			clz APISetVmInstanceDefaultCdRomMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "3.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmInstanceDefaultCdRomEvent.class
-        }
-    }
+		response {
+			clz APISetVmInstanceDefaultCdRomEvent.class
+		}
+	}
 }

@@ -3,29 +3,29 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIRemoveAccessControlListFromLoadBalancerEvent
 
 doc {
-    title "RemoveAccessControlListFromLoadBalancer"
+	title "RemoveAccessControlListFromLoadBalancer"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """删除监听器访问控制策略"""
+	desc """删除监听器访问控制策略"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/load-balancers/listeners/{listenerUuid}/access-control-lists"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRemoveAccessControlListFromLoadBalancerMsg.class
+			clz APIRemoveAccessControlListFromLoadBalancerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
 					name "aclUuids"
 					enclosedIn ""
 					desc "访问控制策略组唯一标识"
-					location "body"
+					location "query"
 					type "List"
 					optional false
 					since "3.9"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.9"
@@ -52,7 +52,7 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.9"
@@ -61,16 +61,16 @@ doc {
 					name "serverGroupUuids"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRemoveAccessControlListFromLoadBalancerEvent.class
-        }
-    }
+		response {
+			clz APIRemoveAccessControlListFromLoadBalancerEvent.class
+		}
+	}
 }

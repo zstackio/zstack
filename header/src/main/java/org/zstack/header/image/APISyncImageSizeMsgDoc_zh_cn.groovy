@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APISyncImageSizeEvent
 
 doc {
-    title "刷新镜像大小信息(SyncImageSize)"
+	title "刷新镜像大小信息(SyncImageSize)"
 
-    category "image"
+	category "image"
 
-    desc """获取实时镜像大小信息"""
+	desc """获取实时镜像大小信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/images/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISyncImageSizeMsg.class
+			clz APISyncImageSizeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISyncImageSizeEvent.class
-        }
-    }
+		response {
+			clz APISyncImageSizeEvent.class
+		}
+	}
 }

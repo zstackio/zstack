@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetInterdependentL3NetworksBackupStoragesReply
 
 doc {
-    title "GetInterdependentL3NetworksBackupStorages"
+	title "GetInterdependentL3NetworksBackupStorages"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取内部依赖的L3网络或者镜像服务器信息"""
+	desc """获取内部依赖的L3网络或者镜像服务器信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/backupStorage-l3networks/dependencies"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetInterdependentL3NetworksBackupStoragesMsg.class
+			clz APIGetInterdependentL3NetworksBackupStoragesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetInterdependentL3NetworksBackupStoragesReply.class
-        }
-    }
+		response {
+			clz APIGetInterdependentL3NetworksBackupStoragesReply.class
+		}
+	}
 }

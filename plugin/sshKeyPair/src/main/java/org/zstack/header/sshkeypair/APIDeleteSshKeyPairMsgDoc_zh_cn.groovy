@@ -3,22 +3,22 @@ package org.zstack.header.sshkeypair
 import org.zstack.header.sshkeypair.APIDeleteSshKeyPairEvent
 
 doc {
-    title "DeleteSshKeyPair"
+	title "DeleteSshKeyPair"
 
-    category "sshKeyPair"
+	category "sshKeyPair"
 
-    desc """删除密钥对"""
+	desc """删除密钥对"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/ssh-key-pair/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteSshKeyPairMsg.class
+			clz APIDeleteSshKeyPairMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,31 +28,31 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteSshKeyPairEvent.class
-        }
-    }
+		response {
+			clz APIDeleteSshKeyPairEvent.class
+		}
+	}
 }

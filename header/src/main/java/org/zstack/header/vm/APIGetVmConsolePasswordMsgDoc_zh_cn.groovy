@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmConsolePasswordReply
 
 doc {
-    title "获取云主机控制台密码(GetVmConsolePassword)"
+	title "获取云主机控制台密码(GetVmConsolePassword)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取一个云主机的控制台密码"""
+	desc """获取一个云主机的控制台密码"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/{uuid}/console-passwords"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmConsolePasswordMsg.class
+			clz APIGetVmConsolePasswordMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmConsolePasswordReply.class
-        }
-    }
+		response {
+			clz APIGetVmConsolePasswordReply.class
+		}
+	}
 }

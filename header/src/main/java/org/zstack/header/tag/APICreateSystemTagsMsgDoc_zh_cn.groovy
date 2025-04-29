@@ -3,22 +3,22 @@ package org.zstack.header.tag
 import org.zstack.header.tag.APICreateSystemTagsEvent
 
 doc {
-    title "CreateSystemTags"
+	title "CreateSystemTags"
 
-    category "tag"
+	category "tag"
 
-    desc """批量创建系统标签"""
+	desc """批量创建系统标签"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/system-tags/{resourceUuid}/tags"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateSystemTagsMsg.class
+			clz APICreateSystemTagsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "resourceUuid"
@@ -37,7 +37,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "tags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -64,13 +64,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateSystemTagsEvent.class
-        }
-    }
+		response {
+			clz APICreateSystemTagsEvent.class
+		}
+	}
 }

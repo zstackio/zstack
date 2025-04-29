@@ -4,28 +4,28 @@ import org.zstack.sdnController.header.APIQuerySdnControllerReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QuerySdnController"
+	title "QuerySdnController"
 
-    category "SdnController"
+	category "SdnController"
 
-    desc """查询SDN控制器"""
+	desc """查询SDN控制器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/sdn-controllers"
 			url "GET /v1/sdn-controllers/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQuerySdnControllerMsg.class
+			clz APIQuerySdnControllerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQuerySdnControllerReply.class
-        }
-    }
+		response {
+			clz APIQuerySdnControllerReply.class
+		}
+	}
 }

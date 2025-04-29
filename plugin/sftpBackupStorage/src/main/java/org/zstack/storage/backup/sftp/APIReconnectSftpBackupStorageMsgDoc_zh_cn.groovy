@@ -3,22 +3,22 @@ package org.zstack.storage.backup.sftp
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageEvent
 
 doc {
-    title "ReconnectSftpBackupStorage"
+	title "ReconnectSftpBackupStorage"
 
-    category "storage.backup.sftp"
+	category "storage.backup.sftp"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/backup-storage/sftp/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReconnectSftpBackupStorageMsg.class
+			clz APIReconnectSftpBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIReconnectSftpBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIReconnectSftpBackupStorageEvent.class
+		}
+	}
 }

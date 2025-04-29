@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIResumeVmInstanceEvent
 
 doc {
-    title "恢复暂停的云主机(ResumeVmInstance)"
+	title "恢复暂停的云主机(ResumeVmInstance)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """恢复一个被暂停的云主机，云主机从内存中恢复运行"""
+	desc """恢复一个被暂停的云主机，云主机从内存中恢复运行"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIResumeVmInstanceMsg.class
+			clz APIResumeVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIResumeVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIResumeVmInstanceEvent.class
+		}
+	}
 }

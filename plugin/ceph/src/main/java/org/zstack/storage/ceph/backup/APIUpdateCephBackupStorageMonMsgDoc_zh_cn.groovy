@@ -3,22 +3,22 @@ package org.zstack.storage.ceph.backup
 import org.zstack.storage.ceph.backup.APIUpdateCephBackupStorageMonEvent
 
 doc {
-    title "更新 Ceph 镜像服务器 mon 节点(UpdateCephBackupStorageMon)"
+	title "更新 Ceph 镜像服务器 mon 节点(UpdateCephBackupStorageMon)"
 
-    category "storage.ceph.backup"
+	category "storage.ceph.backup"
 
-    desc """更新 Ceph 镜像服务器 mon 节点"""
+	desc """更新 Ceph 镜像服务器 mon 节点"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/backup-storage/ceph/mons/{monUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateCephBackupStorageMonMsg.class
+			clz APIUpdateCephBackupStorageMonMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateCephBackupStorageMonEvent.class
-        }
-    }
+		response {
+			clz APIUpdateCephBackupStorageMonEvent.class
+		}
+	}
 }

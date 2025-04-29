@@ -3,22 +3,22 @@ package org.zstack.header.vo
 import org.zstack.header.vo.APIGetResourceNamesReply
 
 doc {
-    title "GetResourceNames"
+	title "GetResourceNames"
 
-    category "identity"
+	category "identity"
 
-    desc """输入资源的UUID可以获得该资源的名称，例如知道虚拟机的UUID，用于获得虚拟机名称。该API的特点在在于无需知道某个UUID具体代表什么资源，易于UI用作UUID到名称的翻译"""
+	desc """输入资源的UUID可以获得该资源的名称，例如知道虚拟机的UUID，用于获得虚拟机名称。该API的特点在在于无需知道某个UUID具体代表什么资源，易于UI用作UUID到名称的翻译"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/resources/names"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetResourceNamesMsg.class
+			clz APIGetResourceNamesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetResourceNamesReply.class
-        }
-    }
+		response {
+			clz APIGetResourceNamesReply.class
+		}
+	}
 }

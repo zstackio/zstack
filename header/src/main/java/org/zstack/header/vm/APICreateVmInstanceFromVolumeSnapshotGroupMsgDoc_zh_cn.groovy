@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotGroupEvent
 
 doc {
-    title "CreateVmInstanceFromVolumeSnapshotGroup"
+	title "CreateVmInstanceFromVolumeSnapshotGroup"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """从快照组创建云主机"""
+	desc """从快照组创建云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/from/volume-snapshots/group/{volumeSnapshotGroupUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVmInstanceFromVolumeSnapshotGroupMsg.class
+			clz APICreateVmInstanceFromVolumeSnapshotGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "description"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "instanceOfferingUuid"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "cpuNum"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "memorySize"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "Long"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "l3NetworkUuids"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "type"
@@ -82,7 +82,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 					values ("UserVm","ApplianceVm")
 				}
 				column {
@@ -92,7 +92,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "zoneUuid"
@@ -101,7 +101,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "clusterUuid"
@@ -110,7 +110,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "hostUuid"
@@ -119,7 +119,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "primaryStorageUuidForRootVolume"
@@ -128,7 +128,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "defaultL3NetworkUuid"
@@ -137,7 +137,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "strategy"
@@ -146,7 +146,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 					values ("InstantStart","CreateStopped")
 				}
 				column {
@@ -156,7 +156,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "tagUuids"
@@ -165,7 +165,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "systemTags"
@@ -174,7 +174,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "userTags"
@@ -183,7 +183,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "rootVolumeSystemTags"
@@ -192,7 +192,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "dataVolumeSystemTags"
@@ -201,7 +201,7 @@ doc {
 					location "body"
 					type "Map"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "reservedMemorySize"
@@ -210,7 +210,7 @@ doc {
 					location "body"
 					type "Long"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "vmNicParams"
@@ -222,10 +222,10 @@ doc {
 					since "4.10.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVmInstanceFromVolumeSnapshotGroupEvent.class
-        }
-    }
+		response {
+			clz APICreateVmInstanceFromVolumeSnapshotGroupEvent.class
+		}
+	}
 }

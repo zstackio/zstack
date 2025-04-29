@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIChangeVmNicStateEvent
 
 doc {
-    title "ChangeVmNicState"
+	title "ChangeVmNicState"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """修改云主机网卡状态"""
+	desc """修改云主机网卡状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/nics/{vmNicUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeVmNicStateMsg.class
+			clz APIChangeVmNicStateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.5"
+					since "3.15"
 					values ("enable","disable")
 				}
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeVmNicStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeVmNicStateEvent.class
+		}
+	}
 }

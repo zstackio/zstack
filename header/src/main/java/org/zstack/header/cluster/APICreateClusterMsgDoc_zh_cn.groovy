@@ -3,22 +3,22 @@ package org.zstack.header.cluster
 import org.zstack.header.cluster.APICreateClusterEvent
 
 doc {
-    title "CreateCluster"
+	title "CreateCluster"
 
-    category "cluster"
+	category "cluster"
 
-    desc """管理员可以使用CreateCluster命令来创建一个集群"""
+	desc """管理员可以使用CreateCluster命令来创建一个集群"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/clusters"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateClusterMsg.class
+			clz APICreateClusterMsg.class
 
-            desc """管理员可以使用CreateCluster命令来创建一个集群"""
-            
+			desc """管理员可以使用CreateCluster命令来创建一个集群"""
+
 			params {
 
 				column {
@@ -102,7 +102,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.0"
+					since "3.10"
 					values ("x86_64","aarch64","mips64el","loongarch64")
 				}
 				column {
@@ -115,10 +115,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateClusterEvent.class
-        }
-    }
+		response {
+			clz APICreateClusterEvent.class
+		}
+	}
 }

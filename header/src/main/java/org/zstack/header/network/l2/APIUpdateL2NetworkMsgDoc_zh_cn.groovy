@@ -3,22 +3,22 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIUpdateL2NetworkEvent
 
 doc {
-    title "更新二层网络(UpdateL2Network)"
+	title "更新二层网络(UpdateL2Network)"
 
-    category "二层网络"
+	category "二层网络"
 
-    desc """更新二层网络"""
+	desc """更新二层网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/l2-networks/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateL2NetworkMsg.class
+			clz APIUpdateL2NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateL2NetworkEvent.class
-        }
-    }
+		response {
+			clz APIUpdateL2NetworkEvent.class
+		}
+	}
 }

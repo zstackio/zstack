@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APICreateSecurityGroupEvent
 
 doc {
-    title "CreateSecurityGroup"
+	title "CreateSecurityGroup"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """用户可以使用CreateSecurityGroup来创建一个安全组"""
+	desc """用户可以使用CreateSecurityGroup来创建一个安全组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/security-groups"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateSecurityGroupMsg.class
+			clz APICreateSecurityGroupMsg.class
 
-            desc """用户可以使用CreateSecurityGroup来创建一个安全组"""
-            
+			desc """用户可以使用CreateSecurityGroup来创建一个安全组"""
+
 			params {
 
 				column {
@@ -86,10 +86,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateSecurityGroupEvent.class
-        }
-    }
+		response {
+			clz APICreateSecurityGroupEvent.class
+		}
+	}
 }

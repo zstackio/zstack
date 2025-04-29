@@ -4,28 +4,28 @@ import org.zstack.header.storage.snapshot.group.APIQueryVolumeSnapshotGroupReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryVolumeSnapshotGroup"
+	title "QueryVolumeSnapshotGroup"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """查询快照组"""
+	desc """查询快照组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/volume-snapshots/group"
 			url "GET /v1/volume-snapshots/group/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryVolumeSnapshotGroupMsg.class
+			clz APIQueryVolumeSnapshotGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryVolumeSnapshotGroupReply.class
-        }
-    }
+		response {
+			clz APIQueryVolumeSnapshotGroupReply.class
+		}
+	}
 }

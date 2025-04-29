@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetCandidatePrimaryStoragesForCreatingVmReply
 
 doc {
-    title "获取创建云主机时可选择的主存储(GetCandidatePrimaryStoragesForCreatingVm)"
+	title "获取创建云主机时可选择的主存储(GetCandidatePrimaryStoragesForCreatingVm)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """用户可通过指定云主机参数，来获取当前参数下可选择的主存储"""
+	desc """用户可通过指定云主机参数，来获取当前参数下可选择的主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/candidate-storages"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidatePrimaryStoragesForCreatingVmMsg.class
+			clz APIGetCandidatePrimaryStoragesForCreatingVmMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -55,7 +55,7 @@ doc {
 					location "query"
 					type "Long"
 					optional true
-					since "4.1.2"
+					since "3.11.2"
 				}
 				column {
 					name "dataDiskOfferingUuids"
@@ -73,7 +73,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.3.9"
+					since "3.13.9"
 				}
 				column {
 					name "zoneUuid"
@@ -121,10 +121,10 @@ doc {
 					since "2.1"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidatePrimaryStoragesForCreatingVmReply.class
-        }
-    }
+		response {
+			clz APIGetCandidatePrimaryStoragesForCreatingVmReply.class
+		}
+	}
 }

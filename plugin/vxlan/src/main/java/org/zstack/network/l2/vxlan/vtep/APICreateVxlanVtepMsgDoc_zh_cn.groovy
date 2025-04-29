@@ -3,22 +3,22 @@ package org.zstack.network.l2.vxlan.vtep
 import org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepEvent
 
 doc {
-    title "创建VXLAN隧道端点(CreateVxlanVtep)"
+	title "创建VXLAN隧道端点(CreateVxlanVtep)"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """创建VXLAN隧道端点"""
+	desc """创建VXLAN隧道端点"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/vxlan/vteps"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVxlanVtepMsg.class
+			clz APICreateVxlanVtepMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -85,10 +85,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVxlanVtepEvent.class
-        }
-    }
+		response {
+			clz APICreateVxlanVtepEvent.class
+		}
+	}
 }

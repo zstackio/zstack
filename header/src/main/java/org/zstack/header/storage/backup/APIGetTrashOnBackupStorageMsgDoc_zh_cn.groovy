@@ -3,22 +3,22 @@ package org.zstack.header.storage.backup
 import org.zstack.header.storage.backup.APIGetTrashOnBackupStorageReply
 
 doc {
-    title "GetTrashOnBackupStorage"
+	title "GetTrashOnBackupStorage"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """获取备份存储上的回收数据列表"""
+	desc """获取备份存储上的回收数据列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/backup-storage/trash"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetTrashOnBackupStorageMsg.class
+			clz APIGetTrashOnBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -77,10 +77,10 @@ doc {
 					since "3.2.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetTrashOnBackupStorageReply.class
-        }
-    }
+		response {
+			clz APIGetTrashOnBackupStorageReply.class
+		}
+	}
 }

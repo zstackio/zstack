@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APICreateVolumeSnapshotEvent
 
 doc {
-    title "CreateVolumeSnapshot"
+	title "CreateVolumeSnapshot"
 
-    category "volume"
+	category "volume"
 
-    desc """创建云盘快照"""
+	desc """创建云盘快照"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/volumes/{volumeUuid}/volume-snapshots"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVolumeSnapshotMsg.class
+			clz APICreateVolumeSnapshotMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -85,10 +85,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVolumeSnapshotEvent.class
-        }
-    }
+		response {
+			clz APICreateVolumeSnapshotEvent.class
+		}
+	}
 }

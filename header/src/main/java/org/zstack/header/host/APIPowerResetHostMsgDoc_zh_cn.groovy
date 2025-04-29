@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIPowerResetHostEvent
 
 doc {
-    title "PowerResetHost"
+	title "PowerResetHost"
 
-    category "host"
+	category "host"
 
-    desc """重启物理机"""
+	desc """重启物理机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/power/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIPowerResetHostMsg.class
+			clz APIPowerResetHostMsg.class
 
-            desc """重启一台物理机"""
-            
+			desc """重启一台物理机"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "method"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 					values ("AUTO","AGENT","IPMI")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -56,7 +56,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "returnEarly"
@@ -65,13 +65,13 @@ doc {
 					location "body"
 					type "boolean"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIPowerResetHostEvent.class
-        }
-    }
+		response {
+			clz APIPowerResetHostEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APIUpdateImageEvent
 
 doc {
-    title "更新镜像信息(UpdateImage)"
+	title "更新镜像信息(UpdateImage)"
 
-    category "image"
+	category "image"
 
-    desc """更新镜像信息"""
+	desc """更新镜像信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/images/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateImageMsg.class
+			clz APIUpdateImageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -121,7 +121,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.0"
+					since "3.10"
 					values ("x86_64","aarch64","mips64el","loongarch64")
 				}
 				column {
@@ -131,13 +131,13 @@ doc {
 					location "body"
 					type "Boolean"
 					optional true
-					since "4.1.2"
+					since "3.11.2"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateImageEvent.class
-        }
-    }
+		response {
+			clz APIUpdateImageEvent.class
+		}
+	}
 }

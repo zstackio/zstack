@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIGetHostWebSshUrlEvent
 
 doc {
-    title "GetHostWebSshUrl"
+	title "GetHostWebSshUrl"
 
-    category "host"
+	category "host"
 
-    desc """获取物理机网页终端链接"""
+	desc """获取物理机网页终端链接"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/hosts/webssh"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostWebSshUrlMsg.class
+			clz APIGetHostWebSshUrlMsg.class
 
-            desc """获取一台物理机网页终端链接"""
-            
+			desc """获取一台物理机网页终端链接"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "https"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "Boolean"
 					optional true
-					since "4.7.11"
+					since "3.17.11"
 				}
 				column {
 					name "userName"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "password"
@@ -73,13 +73,13 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetHostWebSshUrlEvent.class
-        }
-    }
+		response {
+			clz APIGetHostWebSshUrlEvent.class
+		}
+	}
 }

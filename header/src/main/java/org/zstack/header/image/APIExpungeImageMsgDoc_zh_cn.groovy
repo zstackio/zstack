@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APIExpungeImageEvent
 
 doc {
-    title "彻底删除镜像(ExpungeImage)"
+	title "彻底删除镜像(ExpungeImage)"
 
-    category "image"
+	category "image"
 
-    desc """彻底删除镜像"""
+	desc """彻底删除镜像"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/images/{imageUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIExpungeImageMsg.class
+			clz APIExpungeImageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.2.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIExpungeImageEvent.class
-        }
-    }
+		response {
+			clz APIExpungeImageEvent.class
+		}
+	}
 }

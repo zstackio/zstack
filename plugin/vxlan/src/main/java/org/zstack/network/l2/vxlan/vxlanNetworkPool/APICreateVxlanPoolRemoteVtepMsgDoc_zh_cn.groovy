@@ -3,22 +3,22 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVxlanPoolRemoteVtepEvent
 
 doc {
-    title "创建远端VXLAN隧道端点(CreateVxlanPoolRemoteVtep)"
+	title "创建远端VXLAN隧道端点(CreateVxlanPoolRemoteVtep)"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """创建远端VXLAN隧道端点"""
+	desc """创建远端VXLAN隧道端点"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}/remote-vtep-ip"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVxlanPoolRemoteVtepMsg.class
+			clz APICreateVxlanPoolRemoteVtepMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.11"
+					since "3.17.11"
 				}
 				column {
 					name "clusterUuid"
@@ -37,7 +37,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.11"
+					since "3.17.11"
 				}
 				column {
 					name "remoteVtepIp"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.11"
+					since "3.17.11"
 				}
 				column {
 					name "resourceUuid"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.11"
+					since "3.17.11"
 				}
 				column {
 					name "tagUuids"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.11"
+					since "3.17.11"
 				}
 				column {
 					name "systemTags"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.11"
+					since "3.17.11"
 				}
 				column {
 					name "userTags"
@@ -82,13 +82,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.11"
+					since "3.17.11"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVxlanPoolRemoteVtepEvent.class
-        }
-    }
+		response {
+			clz APICreateVxlanPoolRemoteVtepEvent.class
+		}
+	}
 }

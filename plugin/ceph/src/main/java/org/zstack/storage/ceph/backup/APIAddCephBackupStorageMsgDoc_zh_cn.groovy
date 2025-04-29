@@ -3,22 +3,22 @@ package org.zstack.storage.ceph.backup
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent
 
 doc {
-    title "添加Ceph镜像服务器(AddCephBackupStorage)"
+	title "添加Ceph镜像服务器(AddCephBackupStorage)"
 
-    category "storage.ceph.backup"
+	category "storage.ceph.backup"
 
-    desc """添加Ceph镜像服务器"""
+	desc """添加Ceph镜像服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/backup-storage/ceph"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddCephBackupStorageMsg.class
+			clz APIAddCephBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -121,10 +121,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddBackupStorageEvent.class
+		}
+	}
 }

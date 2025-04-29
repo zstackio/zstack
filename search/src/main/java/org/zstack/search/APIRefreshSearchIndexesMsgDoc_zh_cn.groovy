@@ -3,22 +3,22 @@ package org.zstack.search
 import org.zstack.search.APIRefreshSearchIndexesReply
 
 doc {
-    title "RefreshSearchIndexes"
+	title "RefreshSearchIndexes"
 
-    category "search"
+	category "search"
 
-    desc """重新生成索引"""
+	desc """重新生成索引"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/search/indexes/refresh"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRefreshSearchIndexesMsg.class
+			clz APIRefreshSearchIndexesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRefreshSearchIndexesReply.class
-        }
-    }
+		response {
+			clz APIRefreshSearchIndexesReply.class
+		}
+	}
 }

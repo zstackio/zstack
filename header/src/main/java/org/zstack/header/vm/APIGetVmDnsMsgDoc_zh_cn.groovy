@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmDnsReply
 
 doc {
-    title "GetVmDns"
+	title "GetVmDns"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取云主机的DNS信息"""
+	desc """获取云主机的DNS信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/{vmInstanceUuid}/dns"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmDnsMsg.class
+			clz APIGetVmDnsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -68,10 +68,10 @@ doc {
 					since "4.10.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmDnsReply.class
-        }
-    }
+		response {
+			clz APIGetVmDnsReply.class
+		}
+	}
 }

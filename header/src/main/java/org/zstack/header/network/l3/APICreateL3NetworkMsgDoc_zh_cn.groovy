@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APICreateL3NetworkEvent
 
 doc {
-    title "创建三层网络(CreateL3Network)"
+	title "创建三层网络(CreateL3Network)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """创建三层网络"""
+	desc """创建三层网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l3-networks"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateL3NetworkMsg.class
+			clz APICreateL3NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -141,10 +141,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APICreateL3NetworkEvent.class
+		}
+	}
 }

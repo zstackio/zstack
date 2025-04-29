@@ -3,22 +3,22 @@ package org.zstack.header.zone
 import org.zstack.header.zone.APIGetZoneReply
 
 doc {
-    title "GetZone"
+	title "GetZone"
 
-    category "zone"
+	category "zone"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/zones/{uuid}/info"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetZoneMsg.class
+			clz APIGetZoneMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetZoneReply.class
-        }
-    }
+		response {
+			clz APIGetZoneReply.class
+		}
+	}
 }

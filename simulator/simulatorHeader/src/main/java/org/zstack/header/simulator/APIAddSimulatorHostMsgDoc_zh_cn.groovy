@@ -3,22 +3,22 @@ package org.zstack.header.simulator
 import org.zstack.header.host.APIAddHostEvent
 
 doc {
-    title "AddSimulatorHost"
+	title "AddSimulatorHost"
 
-    category "host"
+	category "host"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/hosts/simulators"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddSimulatorHostMsg.class
+			clz APIAddSimulatorHostMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -112,10 +112,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddHostEvent.class
-        }
-    }
+		response {
+			clz APIAddHostEvent.class
+		}
+	}
 }

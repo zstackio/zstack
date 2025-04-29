@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIChangeVmNicSecurityPolicyEvent
 
 doc {
-    title "ChangeVmNicSecurityPolicy"
+	title "ChangeVmNicSecurityPolicy"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """更改网卡的默认流量策略"""
+	desc """更改网卡的默认流量策略"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/security-groups/nics/{vmNicUuid}/security-policy/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeVmNicSecurityPolicyMsg.class
+			clz APIChangeVmNicSecurityPolicyMsg.class
 
-            desc """更改网卡的安全策略"""
-            
+			desc """更改网卡的安全策略"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "ingressPolicy"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 					values ("DENY","ALLOW")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 					values ("DENY","ALLOW")
 				}
 				column {
@@ -57,7 +57,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -66,13 +66,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeVmNicSecurityPolicyEvent.class
-        }
-    }
+		response {
+			clz APIChangeVmNicSecurityPolicyEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.network.service.virtualrouter.APIProvisionVirtualRouterConfigEvent
 
 doc {
-    title "重新配置虚拟路由器(ProvisionVirtualRouterConfig)"
+	title "重新配置虚拟路由器(ProvisionVirtualRouterConfig)"
 
-    category "虚拟路由器"
+	category "虚拟路由器"
 
-    desc """重新配置虚拟路由器"""
+	desc """重新配置虚拟路由器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/provision"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIProvisionVirtualRouterConfigMsg.class
+			clz APIProvisionVirtualRouterConfigMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "3.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIProvisionVirtualRouterConfigEvent.class
-        }
-    }
+		response {
+			clz APIProvisionVirtualRouterConfigEvent.class
+		}
+	}
 }

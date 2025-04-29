@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmNicAttachedNetworkServiceReply
 
 doc {
-    title "获取网卡加载的网络服务名称(GetVmNicAttachedNetworkService)"
+	title "获取网卡加载的网络服务名称(GetVmNicAttachedNetworkService)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取一个网卡已加载的网络服务名称"""
+	desc """获取一个网卡已加载的网络服务名称"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/nics/{vmNicUuid}/attached-networkservices"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmNicAttachedNetworkServiceMsg.class
+			clz APIGetVmNicAttachedNetworkServiceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmNicAttachedNetworkServiceReply.class
-        }
-    }
+		response {
+			clz APIGetVmNicAttachedNetworkServiceReply.class
+		}
+	}
 }

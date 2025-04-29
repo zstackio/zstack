@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmsCapabilitiesEvent
 
 doc {
-    title "GetVmsCapabilities"
+	title "GetVmsCapabilities"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """批量获取云主机能力"""
+	desc """批量获取云主机能力"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/capabilities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmsCapabilitiesMsg.class
+			clz APIGetVmsCapabilitiesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "List"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmsCapabilitiesEvent.class
-        }
-    }
+		response {
+			clz APIGetVmsCapabilitiesEvent.class
+		}
+	}
 }

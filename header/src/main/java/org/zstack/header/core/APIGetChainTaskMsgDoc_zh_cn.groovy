@@ -3,22 +3,22 @@ package org.zstack.header.core
 import org.zstack.header.core.APIGetChainTaskReply
 
 doc {
-    title "GetChainTask"
+	title "GetChainTask"
 
-    category "core"
+	category "core"
 
-    desc """获取任务队列详情"""
+	desc """获取任务队列详情"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/core/task-details"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetChainTaskMsg.class
+			clz APIGetChainTaskMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetChainTaskReply.class
-        }
-    }
+		response {
+			clz APIGetChainTaskReply.class
+		}
+	}
 }

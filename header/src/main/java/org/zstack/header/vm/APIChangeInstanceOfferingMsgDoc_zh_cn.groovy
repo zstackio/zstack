@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIChangeInstanceOfferingEvent
 
 doc {
-    title "ChangeInstanceOffering"
+	title "ChangeInstanceOffering"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeInstanceOfferingMsg.class
+			clz APIChangeInstanceOfferingMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeInstanceOfferingEvent.class
-        }
-    }
+		response {
+			clz APIChangeInstanceOfferingEvent.class
+		}
+	}
 }

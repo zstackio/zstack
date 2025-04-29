@@ -3,22 +3,22 @@ package org.zstack.core.errorcode
 import org.zstack.core.errorcode.APICheckElaborationContentReply
 
 doc {
-    title "CheckElaborationContent"
+	title "CheckElaborationContent"
 
-    category "errorcode"
+	category "errorcode"
 
-    desc """检查错误码文件的格式"""
+	desc """检查错误码文件的格式"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/errorcode/elaborations/check"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICheckElaborationContentMsg.class
+			clz APICheckElaborationContentMsg.class
 
-            desc """检查错误码文件的格式"""
-            
+			desc """检查错误码文件的格式"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "3.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICheckElaborationContentReply.class
-        }
-    }
+		response {
+			clz APICheckElaborationContentReply.class
+		}
+	}
 }

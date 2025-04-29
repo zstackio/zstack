@@ -3,22 +3,22 @@ package org.zstack.header.longjob
 import org.zstack.header.longjob.APIResumeLongJobEvent
 
 doc {
-    title "ResumeLongJob"
+	title "ResumeLongJob"
 
-    category "longjob"
+	category "longjob"
 
-    desc """恢复运行长任务"""
+	desc """恢复运行长任务"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/longjobs/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIResumeLongJobMsg.class
+			clz APIResumeLongJobMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "3.9.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIResumeLongJobEvent.class
-        }
-    }
+		response {
+			clz APIResumeLongJobEvent.class
+		}
+	}
 }

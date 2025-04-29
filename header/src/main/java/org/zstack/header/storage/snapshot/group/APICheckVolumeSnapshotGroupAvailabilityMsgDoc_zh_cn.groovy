@@ -3,22 +3,22 @@ package org.zstack.header.storage.snapshot.group
 import org.zstack.header.storage.snapshot.group.APICheckVolumeSnapshotGroupAvailabilityReply
 
 doc {
-    title "CheckVolumeSnapshotGroupAvailability"
+	title "CheckVolumeSnapshotGroupAvailability"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """检查快照组可用性"""
+	desc """检查快照组可用性"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/volume-snapshots/groups/availabilities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICheckVolumeSnapshotGroupAvailabilityMsg.class
+			clz APICheckVolumeSnapshotGroupAvailabilityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "3.6.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICheckVolumeSnapshotGroupAvailabilityReply.class
-        }
-    }
+		response {
+			clz APICheckVolumeSnapshotGroupAvailabilityReply.class
+		}
+	}
 }

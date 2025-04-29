@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIChangeSecurityGroupRuleStateEvent
 
 doc {
-    title "ChangeSecurityGroupRuleState"
+	title "ChangeSecurityGroupRuleState"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """更改安全组规则状态"""
+	desc """更改安全组规则状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/security-groups/{securityGroupUuid}/rules/state/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeSecurityGroupRuleStateMsg.class
+			clz APIChangeSecurityGroupRuleStateMsg.class
 
-            desc """更改安全组规则状态"""
-            
+			desc """更改安全组规则状态"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "ruleUuids"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "state"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 					values ("Enabled","Disabled")
 				}
 				column {
@@ -56,7 +56,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -65,13 +65,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeSecurityGroupRuleStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeSecurityGroupRuleStateEvent.class
+		}
+	}
 }

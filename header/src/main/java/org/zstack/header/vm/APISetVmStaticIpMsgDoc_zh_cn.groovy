@@ -3,25 +3,25 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmStaticIpEvent
 
 doc {
-    title "指定云主机IP(SetVmStaticIp)"
+	title "指定云主机IP(SetVmStaticIp)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """给云主机网卡指定IP，用户可以通过该API控制ZStack分配给云主机网卡的IP。
+	desc """给云主机网卡指定IP，用户可以通过该API控制ZStack分配给云主机网卡的IP。
 
 用户要确保指定的IP在指定三层网络，并且IP未被占用。
 """
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmStaticIpMsg.class
+			clz APISetVmStaticIpMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -115,10 +115,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmStaticIpEvent.class
-        }
-    }
+		response {
+			clz APISetVmStaticIpEvent.class
+		}
+	}
 }

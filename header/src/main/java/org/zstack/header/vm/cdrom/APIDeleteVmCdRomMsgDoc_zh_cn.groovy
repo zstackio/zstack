@@ -3,22 +3,22 @@ package org.zstack.header.vm.cdrom
 import org.zstack.header.vm.cdrom.APIDeleteVmCdRomEvent
 
 doc {
-    title "DeleteVmCdRom"
+	title "DeleteVmCdRom"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除CDROM"""
+	desc """删除CDROM"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/cdroms/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVmCdRomMsg.class
+			clz APIDeleteVmCdRomMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "3.3"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.3"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVmCdRomEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVmCdRomEvent.class
+		}
+	}
 }

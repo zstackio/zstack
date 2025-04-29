@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetCandidateVmForAttachingIsoReply
 
 doc {
-    title "获取ISO可加载云主机列表(GetCandidateVmForAttachingIso)"
+	title "获取ISO可加载云主机列表(GetCandidateVmForAttachingIso)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取一个ISO可以加载到的云主机列表"""
+	desc """获取一个ISO可以加载到的云主机列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/images/iso/{isoUuid}/vm-candidates"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateVmForAttachingIsoMsg.class
+			clz APIGetCandidateVmForAttachingIsoMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateVmForAttachingIsoReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateVmForAttachingIsoReply.class
+		}
+	}
 }

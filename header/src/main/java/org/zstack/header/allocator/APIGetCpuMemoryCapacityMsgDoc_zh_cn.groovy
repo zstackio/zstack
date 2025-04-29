@@ -3,22 +3,22 @@ package org.zstack.header.allocator
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply
 
 doc {
-    title "GetCpuMemoryCapacity"
+	title "GetCpuMemoryCapacity"
 
-    category "分配器"
+	category "分配器"
 
-    desc """获取cpu和内存容量"""
+	desc """获取cpu和内存容量"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hosts/capacities/cpu-memory"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCpuMemoryCapacityMsg.class
+			clz APIGetCpuMemoryCapacityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -86,10 +86,10 @@ doc {
 					values ("KVM","ESX")
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCpuMemoryCapacityReply.class
-        }
-    }
+		response {
+			clz APIGetCpuMemoryCapacityReply.class
+		}
+	}
 }

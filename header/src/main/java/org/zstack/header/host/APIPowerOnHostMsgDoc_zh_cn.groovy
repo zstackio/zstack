@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIPowerOnHostEvent
 
 doc {
-    title "PowerOnHost"
+	title "PowerOnHost"
 
-    category "host"
+	category "host"
 
-    desc """物理机开机"""
+	desc """物理机开机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/power/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIPowerOnHostMsg.class
+			clz APIPowerOnHostMsg.class
 
-            desc """一台物理机开机"""
-            
+			desc """一台物理机开机"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "returnEarly"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "boolean"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIPowerOnHostEvent.class
-        }
-    }
+		response {
+			clz APIPowerOnHostEvent.class
+		}
+	}
 }

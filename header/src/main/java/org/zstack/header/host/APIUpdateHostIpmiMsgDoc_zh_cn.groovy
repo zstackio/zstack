@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIUpdateHostIpmiEvent
 
 doc {
-    title "UpdateHostIpmi"
+	title "UpdateHostIpmi"
 
-    category "host"
+	category "host"
 
-    desc """更新物理机IPMI信息"""
+	desc """更新物理机IPMI信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/ipmi/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateHostIpmiMsg.class
+			clz APIUpdateHostIpmiMsg.class
 
-            desc """更新一台物理机IPMI信息"""
-            
+			desc """更新一台物理机IPMI信息"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7"
+					since "3.17.0"
 				}
 				column {
 					name "ipmiAddress"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "ipmiUsername"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "ipmiPassword"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "ipmiPort"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "int"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -82,13 +82,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateHostIpmiEvent.class
-        }
-    }
+		response {
+			clz APIUpdateHostIpmiEvent.class
+		}
+	}
 }

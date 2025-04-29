@@ -3,22 +3,22 @@ package org.zstack.header.zone
 import org.zstack.header.zone.APIUpdateZoneEvent
 
 doc {
-    title "更新区域（UpdateZone）"
+	title "更新区域（UpdateZone）"
 
-    category "zone"
+	category "zone"
 
-    desc """更新区域的名称、描述、系统标签或者用户标签"""
+	desc """更新区域的名称、描述、系统标签或者用户标签"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/zones/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateZoneMsg.class
+			clz APIUpdateZoneMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -73,13 +73,13 @@ doc {
 					location "body"
 					type "Boolean"
 					optional true
-					since "4.6.31"
+					since "3.16.31"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateZoneEvent.class
-        }
-    }
+		response {
+			clz APIUpdateZoneEvent.class
+		}
+	}
 }

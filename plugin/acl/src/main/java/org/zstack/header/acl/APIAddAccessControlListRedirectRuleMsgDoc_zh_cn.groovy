@@ -3,22 +3,22 @@ package org.zstack.header.acl
 import org.zstack.header.acl.APIAddAccessControlListEntryEvent
 
 doc {
-    title "AddAccessControlListRedirectRule"
+	title "AddAccessControlListRedirectRule"
 
-    category "acl"
+	category "acl"
 
-    desc """向访问控制策略组添加转发规则"""
+	desc """向访问控制策略组添加转发规则"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/access-control-lists/{aclUuid}/redirectRules"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddAccessControlListRedirectRuleMsg.class
+			clz APIAddAccessControlListRedirectRuleMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "description"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "domain"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "url"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "aclUuid"
@@ -64,7 +64,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "resourceUuid"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "tagUuids"
@@ -82,7 +82,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "systemTags"
@@ -91,7 +91,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "userTags"
@@ -100,13 +100,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddAccessControlListEntryEvent.class
-        }
-    }
+		response {
+			clz APIAddAccessControlListEntryEvent.class
+		}
+	}
 }

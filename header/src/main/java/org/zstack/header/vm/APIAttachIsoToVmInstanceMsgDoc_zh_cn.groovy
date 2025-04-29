@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIAttachIsoToVmInstanceEvent
 
 doc {
-    title "加载ISO到云主机(AttachIsoToVmInstance)"
+	title "加载ISO到云主机(AttachIsoToVmInstance)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """加载一个ISO镜像到Running或Stopped的云主机"""
+	desc """加载一个ISO镜像到Running或Stopped的云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/{vmInstanceUuid}/iso/{isoUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachIsoToVmInstanceMsg.class
+			clz APIAttachIsoToVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachIsoToVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIAttachIsoToVmInstanceEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIFlattenVolumeEvent
 
 doc {
-    title "FlattenVolume"
+	title "FlattenVolume"
 
-    category "volume"
+	category "volume"
 
-    desc """扁平合并云盘"""
+	desc """扁平合并云盘"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volumes/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIFlattenVolumeMsg.class
+			clz APIFlattenVolumeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "dryRun"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "boolean"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIFlattenVolumeEvent.class
-        }
-    }
+		response {
+			clz APIFlattenVolumeEvent.class
+		}
+	}
 }

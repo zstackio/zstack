@@ -3,22 +3,22 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterEvent
 
 doc {
-    title "从集群上卸载二层网络(DetachL2NetworkFromCluster)"
+	title "从集群上卸载二层网络(DetachL2NetworkFromCluster)"
 
-    category "二层网络"
+	category "二层网络"
 
-    desc """从集群上卸载二层网络"""
+	desc """从集群上卸载二层网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachL2NetworkFromClusterMsg.class
+			clz APIDetachL2NetworkFromClusterMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachL2NetworkFromClusterEvent.class
-        }
-    }
+		response {
+			clz APIDetachL2NetworkFromClusterEvent.class
+		}
+	}
 }

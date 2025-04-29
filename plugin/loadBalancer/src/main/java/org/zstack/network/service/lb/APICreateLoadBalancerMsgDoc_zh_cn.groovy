@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APICreateLoadBalancerEvent
 
 doc {
-    title "创建负载均衡器(CreateLoadBalancer)"
+	title "创建负载均衡器(CreateLoadBalancer)"
 
-    category "负载均衡"
+	category "负载均衡"
 
-    desc """创建负载均衡器"""
+	desc """创建负载均衡器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/load-balancers"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateLoadBalancerMsg.class
+			clz APICreateLoadBalancerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateLoadBalancerEvent.class
-        }
-    }
+		response {
+			clz APICreateLoadBalancerEvent.class
+		}
+	}
 }

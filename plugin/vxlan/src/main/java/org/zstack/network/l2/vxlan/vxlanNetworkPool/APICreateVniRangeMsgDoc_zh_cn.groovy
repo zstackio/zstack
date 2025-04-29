@@ -3,22 +3,22 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVniRangeEvent
 
 doc {
-    title "创建VNI范围(CreateVniRange)d"
+	title "创建VNI范围(CreateVniRange)d"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """创建VNI范围"""
+	desc """创建VNI范围"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-ranges"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVniRangeMsg.class
+			clz APICreateVniRangeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -103,10 +103,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVniRangeEvent.class
-        }
-    }
+		response {
+			clz APICreateVniRangeEvent.class
+		}
+	}
 }

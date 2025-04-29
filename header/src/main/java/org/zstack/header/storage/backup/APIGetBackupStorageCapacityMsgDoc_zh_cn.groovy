@@ -3,22 +3,22 @@ package org.zstack.header.storage.backup
 import org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply
 
 doc {
-    title "获取镜像服务器存储容量(GetBackupStorageCapacity)"
+	title "获取镜像服务器存储容量(GetBackupStorageCapacity)"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """获取镜像服务器存储容量"""
+	desc """获取镜像服务器存储容量"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/backup-storage/capacities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetBackupStorageCapacityMsg.class
+			clz APIGetBackupStorageCapacityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetBackupStorageCapacityReply.class
-        }
-    }
+		response {
+			clz APIGetBackupStorageCapacityReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIAttachL2NetworkToHostEvent
 
 doc {
-    title "挂载二层网络到物理机(AttachL2NetworkToHost)"
+	title "挂载二层网络到物理机(AttachL2NetworkToHost)"
 
-    category "二层网络"
+	category "二层网络"
 
-    desc """挂载二层网络到物理机"""
+	desc """挂载二层网络到物理机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/{l2NetworkUuid}/hosts/{hostUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachL2NetworkToHostMsg.class
+			clz APIAttachL2NetworkToHostMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "hostUuid"
@@ -37,7 +37,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "l2ProviderType"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 					values ("LinuxBridge")
 				}
 				column {
@@ -56,7 +56,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "userTags"
@@ -65,7 +65,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "hostParam"
@@ -77,10 +77,10 @@ doc {
 					since "4.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachL2NetworkToHostEvent.class
-        }
-    }
+		response {
+			clz APIAttachL2NetworkToHostEvent.class
+		}
+	}
 }

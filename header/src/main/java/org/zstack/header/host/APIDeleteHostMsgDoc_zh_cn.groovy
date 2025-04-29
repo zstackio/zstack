@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIDeleteHostEvent
 
 doc {
-    title "DeleteHost"
+	title "DeleteHost"
 
-    category "host"
+	category "host"
 
-    desc """删除物理机"""
+	desc """删除物理机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/hosts/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteHostMsg.class
+			clz APIDeleteHostMsg.class
 
-            desc """删除一个物理机"""
-            
+			desc """删除一个物理机"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteHostEvent.class
-        }
-    }
+		response {
+			clz APIDeleteHostEvent.class
+		}
+	}
 }

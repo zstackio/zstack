@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APISetL3NetworkRouterInterfaceIpEvent
 
 doc {
-    title "SetL3NetworkRouterInterfaceIp"
+	title "SetL3NetworkRouterInterfaceIp"
 
-    category "network.l3"
+	category "network.l3"
 
-    desc """设置三层网络上路由器接口地址，仅当会在普通三层网络上创建云路由器或在VPC网络上加载VPC路由器时有效"""
+	desc """设置三层网络上路由器接口地址，仅当会在普通三层网络上创建云路由器或在VPC网络上加载VPC路由器时有效"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/router-interface-ip"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetL3NetworkRouterInterfaceIpMsg.class
+			clz APISetL3NetworkRouterInterfaceIpMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "2.2"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetL3NetworkRouterInterfaceIpEvent.class
-        }
-    }
+		response {
+			clz APISetL3NetworkRouterInterfaceIpEvent.class
+		}
+	}
 }

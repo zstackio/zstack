@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APISetImageBootModeEvent
 
 doc {
-    title "SetImageBootMode"
+	title "SetImageBootMode"
 
-    category "image"
+	category "image"
 
-    desc """设置镜像启动模式"""
+	desc """设置镜像启动模式"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/images/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetImageBootModeMsg.class
+			clz APISetImageBootModeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "3.9.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetImageBootModeEvent.class
-        }
-    }
+		response {
+			clz APISetImageBootModeEvent.class
+		}
+	}
 }

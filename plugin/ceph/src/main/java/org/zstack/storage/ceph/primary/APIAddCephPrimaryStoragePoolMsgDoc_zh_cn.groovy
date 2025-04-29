@@ -3,22 +3,22 @@ package org.zstack.storage.ceph.primary
 import org.zstack.storage.ceph.primary.APIAddCephPrimaryStoragePoolEvent
 
 doc {
-    title "AddCephPrimaryStoragePool"
+	title "AddCephPrimaryStoragePool"
 
-    category "storage.ceph.primary"
+	category "storage.ceph.primary"
 
-    desc """为Ceph主存储添加Pool"""
+	desc """为Ceph主存储添加Pool"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/ceph/{primaryStorageUuid}/pools"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddCephPrimaryStoragePoolMsg.class
+			clz APIAddCephPrimaryStoragePoolMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -113,10 +113,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddCephPrimaryStoragePoolEvent.class
-        }
-    }
+		response {
+			clz APIAddCephPrimaryStoragePoolEvent.class
+		}
+	}
 }

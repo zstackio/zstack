@@ -3,22 +3,22 @@ package org.zstack.header.storage.backup
 import org.zstack.header.storage.backup.APIReconnectBackupStorageEvent
 
 doc {
-    title "重连镜像服务器(ReconnectBackupStorage)"
+	title "重连镜像服务器(ReconnectBackupStorage)"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """重连镜像服务器"""
+	desc """重连镜像服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/backup-storage/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReconnectBackupStorageMsg.class
+			clz APIReconnectBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIReconnectBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIReconnectBackupStorageEvent.class
+		}
+	}
 }

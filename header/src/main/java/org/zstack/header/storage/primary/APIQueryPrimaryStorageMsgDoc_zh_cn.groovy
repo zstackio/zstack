@@ -4,27 +4,27 @@ import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryPrimaryStorage"
+	title "QueryPrimaryStorage"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """查询主存储"""
+	desc """查询主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryPrimaryStorageMsg.class
+			clz APIQueryPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryPrimaryStorageReply.class
-        }
-    }
+		response {
+			clz APIQueryPrimaryStorageReply.class
+		}
+	}
 }

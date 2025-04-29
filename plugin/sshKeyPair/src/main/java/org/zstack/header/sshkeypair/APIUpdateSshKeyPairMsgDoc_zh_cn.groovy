@@ -3,22 +3,22 @@ package org.zstack.header.sshkeypair
 import org.zstack.header.sshkeypair.APIUpdateSshKeyPairEvent
 
 doc {
-    title "UpdateSshKeyPair"
+	title "UpdateSshKeyPair"
 
-    category "sshKeyPair"
+	category "sshKeyPair"
 
-    desc """更新密钥对"""
+	desc """更新密钥对"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/ssh-key-pair/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateSshKeyPairMsg.class
+			clz APIUpdateSshKeyPairMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "name"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "description"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -64,13 +64,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateSshKeyPairEvent.class
-        }
-    }
+		response {
+			clz APIUpdateSshKeyPairEvent.class
+		}
+	}
 }

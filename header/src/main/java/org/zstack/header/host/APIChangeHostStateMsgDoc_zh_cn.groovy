@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIChangeHostStateEvent
 
 doc {
-    title "ChangeHostState"
+	title "ChangeHostState"
 
-    category "host"
+	category "host"
 
-    desc """更新物理机启用状态"""
+	desc """更新物理机启用状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeHostStateMsg.class
+			clz APIChangeHostStateMsg.class
 
-            desc """更新物理机启用状态"""
-            
+			desc """更新物理机启用状态"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeHostStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeHostStateEvent.class
+		}
+	}
 }

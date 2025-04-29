@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIChangeL3NetworkStateEvent
 
 doc {
-    title "改变三层网络状态(ChangeL3NetworkState)"
+	title "改变三层网络状态(ChangeL3NetworkState)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """改变三层网络状态"""
+	desc """改变三层网络状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/l3-networks/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeL3NetworkStateMsg.class
+			clz APIChangeL3NetworkStateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeL3NetworkStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeL3NetworkStateEvent.class
+		}
+	}
 }

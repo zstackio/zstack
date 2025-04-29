@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIUpdateIpRangeEvent
 
 doc {
-    title "更新IP地址范围(UpdateIpRange)"
+	title "更新IP地址范围(UpdateIpRange)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """更新IP地址范围"""
+	desc """更新IP地址范围"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/l3-networks/ip-ranges/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateIpRangeMsg.class
+			clz APIUpdateIpRangeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateIpRangeEvent.class
-        }
-    }
+		response {
+			clz APIUpdateIpRangeEvent.class
+		}
+	}
 }

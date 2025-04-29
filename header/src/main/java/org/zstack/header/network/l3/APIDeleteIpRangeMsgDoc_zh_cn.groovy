@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIDeleteIpRangeEvent
 
 doc {
-    title "删除IP地址范围(DeleteIpRange)"
+	title "删除IP地址范围(DeleteIpRange)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """删除IP地址范围"""
+	desc """删除IP地址范围"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/l3-networks/ip-ranges/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteIpRangeMsg.class
+			clz APIDeleteIpRangeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteIpRangeEvent.class
-        }
-    }
+		response {
+			clz APIDeleteIpRangeEvent.class
+		}
+	}
 }

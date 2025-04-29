@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIAttachDataVolumeToVmEvent
 
 doc {
-    title "AttachDataVolumeToVm"
+	title "AttachDataVolumeToVm"
 
-    category "volume"
+	category "volume"
 
-    desc """挂载云盘到云主机上"""
+	desc """挂载云盘到云主机上"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/volumes/{volumeUuid}/vm-instances/{vmInstanceUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachDataVolumeToVmMsg.class
+			clz APIAttachDataVolumeToVmMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachDataVolumeToVmEvent.class
-        }
-    }
+		response {
+			clz APIAttachDataVolumeToVmEvent.class
+		}
+	}
 }

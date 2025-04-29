@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APICleanUpStorageTrashOnPrimaryStorageEvent
 
 doc {
-    title "清空主存储垃圾(CleanUpStorageTrashOnPrimaryStorage)"
+	title "清空主存储垃圾(CleanUpStorageTrashOnPrimaryStorage)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """清空主存储垃圾"""
+	desc """清空主存储垃圾"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/{uuid}/storagetrash/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICleanUpStorageTrashOnPrimaryStorageMsg.class
+			clz APICleanUpStorageTrashOnPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "force"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "boolean"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "3.18.0"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "3.18.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICleanUpStorageTrashOnPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APICleanUpStorageTrashOnPrimaryStorageEvent.class
+		}
+	}
 }

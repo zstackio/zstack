@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIGetL3NetworkRouterInterfaceIpReply
 
 doc {
-    title "GetL3NetworkRouterInterfaceIp"
+	title "GetL3NetworkRouterInterfaceIp"
 
-    category "network.l3"
+	category "network.l3"
 
-    desc """获取三层网络上路由器的接口地址"""
+	desc """获取三层网络上路由器的接口地址"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/l3-networks/{l3NetworkUuid}/router-interface-ip"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetL3NetworkRouterInterfaceIpMsg.class
+			clz APIGetL3NetworkRouterInterfaceIpMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "2.2"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetL3NetworkRouterInterfaceIpReply.class
-        }
-    }
+		response {
+			clz APIGetL3NetworkRouterInterfaceIpReply.class
+		}
+	}
 }

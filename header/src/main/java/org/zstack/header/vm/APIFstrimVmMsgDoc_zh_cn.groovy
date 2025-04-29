@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIFstrimVmEvent
 
 doc {
-    title "FstrimVm"
+	title "FstrimVm"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """回收云主机磁盘空间"""
+	desc """回收云主机磁盘空间"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIFstrimVmMsg.class
+			clz APIFstrimVmMsg.class
 
-            desc """回收云主机磁盘空间"""
-            
+			desc """回收云主机磁盘空间"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIFstrimVmEvent.class
-        }
-    }
+		response {
+			clz APIFstrimVmEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIDetachDataVolumeFromHostEvent
 
 doc {
-    title "DetachDataVolumeFromHost"
+	title "DetachDataVolumeFromHost"
 
-    category "volume"
+	category "volume"
 
-    desc """从物理机卸载数据云盘"""
+	desc """从物理机卸载数据云盘"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/volumes/{volumeUuid}/hosts"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachDataVolumeFromHostMsg.class
+			clz APIDetachDataVolumeFromHostMsg.class
 
-            desc """从物理机卸载数据云盘"""
-            
+			desc """从物理机卸载数据云盘"""
+
 			params {
 
 				column {
@@ -28,40 +28,40 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.5.0"
+					since "3.15.0"
 				}
 				column {
 					name "hostUuid"
 					enclosedIn ""
 					desc "物理机UUID"
-					location "body"
+					location "query"
 					type "String"
 					optional true
-					since "4.5.0"
+					since "3.15.0"
 				}
 				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
-					since "4.5.0"
+					since "3.15.0"
 				}
 				column {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
-					since "4.5.0"
+					since "3.15.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachDataVolumeFromHostEvent.class
-        }
-    }
+		response {
+			clz APIDetachDataVolumeFromHostEvent.class
+		}
+	}
 }

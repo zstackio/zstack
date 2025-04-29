@@ -3,22 +3,22 @@ package org.zstack.header.storage.backup
 import org.zstack.header.storage.backup.APIGetBackupStorageTypesReply
 
 doc {
-    title "获取镜像服务器类型列表(GetBackupStorageTypes)"
+	title "获取镜像服务器类型列表(GetBackupStorageTypes)"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """获取镜像服务器类型列表"""
+	desc """获取镜像服务器类型列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/backup-storage/types"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetBackupStorageTypesMsg.class
+			clz APIGetBackupStorageTypesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetBackupStorageTypesReply.class
-        }
-    }
+		response {
+			clz APIGetBackupStorageTypesReply.class
+		}
+	}
 }

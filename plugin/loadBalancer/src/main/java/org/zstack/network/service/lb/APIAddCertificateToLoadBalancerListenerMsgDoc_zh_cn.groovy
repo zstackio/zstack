@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIAddCertificateToLoadBalancerListenerEvent
 
 doc {
-    title "AddCertificateToLoadBalancerListener"
+	title "AddCertificateToLoadBalancerListener"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """添加证书到负载均衡"""
+	desc """添加证书到负载均衡"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/load-balancers/listeners/{listenerUuid}/certificate"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddCertificateToLoadBalancerListenerMsg.class
+			clz APIAddCertificateToLoadBalancerListenerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "2.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddCertificateToLoadBalancerListenerEvent.class
-        }
-    }
+		response {
+			clz APIAddCertificateToLoadBalancerListenerEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.ldap.api
 import org.zstack.ldap.api.APIUpdateLdapServerEvent
 
 doc {
-    title "UpdateLdapServer"
+	title "UpdateLdapServer"
 
-    category "ldap"
+	category "ldap"
 
-    desc """更新LDAP服务器"""
+	desc """更新LDAP服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/ldap/servers/{ldapServerUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateLdapServerMsg.class
+			clz APIUpdateLdapServerMsg.class
 
-            desc """更新LDAP服务器"""
-            
+			desc """更新LDAP服务器"""
+
 			params {
 
 				column {
@@ -161,10 +161,10 @@ doc {
 					values ("NoAction","StaleAccount","DeleteAccount")
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateLdapServerEvent.class
-        }
-    }
+		response {
+			clz APIUpdateLdapServerEvent.class
+		}
+	}
 }

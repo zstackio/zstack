@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APILogOutReply
 
 doc {
-    title "LogOut"
+	title "LogOut"
 
-    category "identity"
+	category "identity"
 
-    desc """退出当前登录状态"""
+	desc """退出当前登录状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/accounts/sessions/{sessionUuid}"
 
 
 
-            clz APILogOutMsg.class
+			clz APILogOutMsg.class
 
-            desc """退出当前登录状态"""
-            
+			desc """退出当前登录状态"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "clientInfo"
 					enclosedIn ""
 					desc "客户端信息"
-					location "body"
+					location "query"
 					type "Map"
 					optional true
 					since "3.5.0"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APILogOutReply.class
-        }
-    }
+		response {
+			clz APILogOutReply.class
+		}
+	}
 }

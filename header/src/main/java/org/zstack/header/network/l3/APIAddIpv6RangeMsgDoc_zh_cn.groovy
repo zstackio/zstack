@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIAddIpRangeEvent
 
 doc {
-    title "添加IP地址范围(AddIpv6Range)"
+	title "添加IP地址范围(AddIpv6Range)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """添加IPv6地址范围"""
+	desc """添加IPv6地址范围"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/ipv6-ranges"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddIpv6RangeMsg.class
+			clz APIAddIpv6RangeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -141,10 +141,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddIpRangeEvent.class
-        }
-    }
+		response {
+			clz APIAddIpRangeEvent.class
+		}
+	}
 }

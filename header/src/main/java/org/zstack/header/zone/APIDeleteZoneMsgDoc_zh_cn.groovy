@@ -3,22 +3,22 @@ package org.zstack.header.zone
 import org.zstack.header.zone.APIDeleteZoneEvent
 
 doc {
-    title "删除一个区域（DeleteZone）"
+	title "删除一个区域（DeleteZone）"
 
-    category "zone"
+	category "zone"
 
-    desc """删除一个区域"""
+	desc """删除一个区域"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/zones/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteZoneMsg.class
+			clz APIDeleteZoneMsg.class
 
-            desc """删除一个区域"""
-            
+			desc """删除一个区域"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "设置为Permissive时, 如果删除过程中发生错误或者删除不被允许ZStack会停止删除操作; 在这种情况下, 包含失败原因的错误代码会被返回;设置为Enforcing, ZStack会忽略所有错误和权限而直接删除资源; 在这种情况下, 删除操作总是会成功"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteZoneEvent.class
-        }
-    }
+		response {
+			clz APIDeleteZoneEvent.class
+		}
+	}
 }

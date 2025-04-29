@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIGetHostSensorsReply
 
 doc {
-    title "GetHostSensors"
+	title "GetHostSensors"
 
-    category "Host"
+	category "Host"
 
-    desc """获取主机传感器信息"""
+	desc """获取主机传感器信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hosts/{uuid}/get-sensors"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostSensorsMsg.class
+			clz APIGetHostSensorsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "zsv 4.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetHostSensorsReply.class
-        }
-    }
+		response {
+			clz APIGetHostSensorsReply.class
+		}
+	}
 }

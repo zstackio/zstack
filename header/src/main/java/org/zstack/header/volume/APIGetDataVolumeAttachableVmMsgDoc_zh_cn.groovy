@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIGetDataVolumeAttachableVmReply
 
 doc {
-    title "GetDataVolumeAttachableVm"
+	title "GetDataVolumeAttachableVm"
 
-    category "volume"
+	category "volume"
 
-    desc """获取云盘是否能被加载"""
+	desc """获取云盘是否能被加载"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/volumes/{volumeUuid}/candidate-vm-instances"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetDataVolumeAttachableVmMsg.class
+			clz APIGetDataVolumeAttachableVmMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetDataVolumeAttachableVmReply.class
-        }
-    }
+		response {
+			clz APIGetDataVolumeAttachableVmReply.class
+		}
+	}
 }

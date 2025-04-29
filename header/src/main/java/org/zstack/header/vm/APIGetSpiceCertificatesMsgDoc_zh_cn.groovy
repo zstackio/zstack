@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetSpiceCertificatesReply
 
 doc {
-    title "获取spice的CA证书(GetSpiceCertificates)"
+	title "获取spice的CA证书(GetSpiceCertificates)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """开启Spice TLS加密后，spice客户端需要下载CA证书才能访问云主机控制台"""
+	desc """开启Spice TLS加密后，spice客户端需要下载CA证书才能访问云主机控制台"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/spice/certificates"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetSpiceCertificatesMsg.class
+			clz APIGetSpiceCertificatesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "3.7"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetSpiceCertificatesReply.class
-        }
-    }
+		response {
+			clz APIGetSpiceCertificatesReply.class
+		}
+	}
 }

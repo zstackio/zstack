@@ -3,22 +3,22 @@ package org.zstack.header.apimediator
 import org.zstack.header.apimediator.APIIsReadyToGoReply
 
 doc {
-    title "IsReadyToGo"
+	title "IsReadyToGo"
 
-    category "other"
+	category "other"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/management-nodes/ready"
 
 
 
-            clz APIIsReadyToGoMsg.class
+			clz APIIsReadyToGoMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIIsReadyToGoReply.class
-        }
-    }
+		response {
+			clz APIIsReadyToGoReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIDetachEipEvent
 
 doc {
-    title "解绑弹性IP(DetachEip)"
+	title "解绑弹性IP(DetachEip)"
 
-    category "弹性IP"
+	category "弹性IP"
 
-    desc """解绑弹性IP"""
+	desc """解绑弹性IP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/eips/{uuid}/vm-instances/nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachEipMsg.class
+			clz APIDetachEipMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachEipEvent.class
-        }
-    }
+		response {
+			clz APIDetachEipEvent.class
+		}
+	}
 }

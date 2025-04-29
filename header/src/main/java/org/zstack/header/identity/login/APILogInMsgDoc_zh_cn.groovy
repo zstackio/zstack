@@ -3,22 +3,22 @@ package org.zstack.header.identity.login
 import org.zstack.header.identity.APILogInReply
 
 doc {
-    title "LogIn"
+	title "LogIn"
 
-    category "login"
+	category "login"
 
-    desc """登录"""
+	desc """登录"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/login"
 
 
 
-            clz APILogInMsg.class
+			clz APILogInMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "password"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "loginType"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "captchaUuid"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "verifyCode"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "clientInfo"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "Map"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "properties"
@@ -82,7 +82,7 @@ doc {
 					location "body"
 					type "Map"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "systemTags"
@@ -91,7 +91,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "userTags"
@@ -100,13 +100,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APILogInReply.class
-        }
-    }
+		response {
+			clz APILogInReply.class
+		}
+	}
 }

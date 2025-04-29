@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIUpdatePriorityConfigEvent
 
 doc {
-    title "UpdatePriorityConfig"
+	title "UpdatePriorityConfig"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """更改云主机优先级配置"""
+	desc """更改云主机优先级配置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-priority-config/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdatePriorityConfigMsg.class
+			clz APIUpdatePriorityConfigMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.7"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdatePriorityConfigEvent.class
-        }
-    }
+		response {
+			clz APIUpdatePriorityConfigEvent.class
+		}
+	}
 }

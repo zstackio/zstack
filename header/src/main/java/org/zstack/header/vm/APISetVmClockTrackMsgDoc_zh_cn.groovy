@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmClockTrackEvent
 
 doc {
-    title "SetVmClockTrack"
+	title "SetVmClockTrack"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """设置云主机时钟同步"""
+	desc """设置云主机时钟同步"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmClockTrackMsg.class
+			clz APISetVmClockTrackMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "track"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.1.0"
+					since "3.11.0"
 					values ("guest","host")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "body"
 					type "Boolean"
 					optional true
-					since "4.4.12"
+					since "3.14.12"
 				}
 				column {
 					name "intervalInSeconds"
@@ -56,7 +56,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "4.4.12"
+					since "3.14.12"
 					values ("0","60","600","1800","3600","7200","21600","43200","86400")
 				}
 				column {
@@ -66,7 +66,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "userTags"
@@ -75,13 +75,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmClockTrackEvent.class
-        }
-    }
+		response {
+			clz APISetVmClockTrackEvent.class
+		}
+	}
 }

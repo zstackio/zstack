@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDeleteTemplatedVmInstanceEvent
 
 doc {
-    title "DeleteTemplatedVmInstance"
+	title "DeleteTemplatedVmInstance"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除虚拟机模板"""
+	desc """删除虚拟机模板"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/templatedVmInstance/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteTemplatedVmInstanceMsg.class
+			clz APIDeleteTemplatedVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式(Permissive / Enforcing，Permissive)"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "zsv 4.2.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "zsv 4.2.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "zsv 4.2.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteTemplatedVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIDeleteTemplatedVmInstanceEvent.class
+		}
+	}
 }

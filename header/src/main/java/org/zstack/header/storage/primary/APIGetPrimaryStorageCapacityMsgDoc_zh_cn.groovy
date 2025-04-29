@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityReply
 
 doc {
-    title "获取主存储容量(GetPrimaryStorageCapacity)"
+	title "获取主存储容量(GetPrimaryStorageCapacity)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """获取主存储容量"""
+	desc """获取主存储容量"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage/capacities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetPrimaryStorageCapacityMsg.class
+			clz APIGetPrimaryStorageCapacityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -76,10 +76,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetPrimaryStorageCapacityReply.class
-        }
-    }
+		response {
+			clz APIGetPrimaryStorageCapacityReply.class
+		}
+	}
 }

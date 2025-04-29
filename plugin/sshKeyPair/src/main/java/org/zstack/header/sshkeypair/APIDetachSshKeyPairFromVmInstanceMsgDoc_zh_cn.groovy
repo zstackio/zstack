@@ -3,22 +3,22 @@ package org.zstack.header.sshkeypair
 import org.zstack.header.sshkeypair.APIDetachSshKeyPairFromVmInstanceEvent
 
 doc {
-    title "DetachSshKeyPairFromVmInstance"
+	title "DetachSshKeyPairFromVmInstance"
 
-    category "sshKeyPair"
+	category "sshKeyPair"
 
-    desc """云主机卸载密钥对"""
+	desc """云主机卸载密钥对"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/ssh-key-pair/{sshKeyPairUuid}/vm-instance/{vmInstanceUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachSshKeyPairFromVmInstanceMsg.class
+			clz APIDetachSshKeyPairFromVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "sshKeyPairUuid"
@@ -37,31 +37,31 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachSshKeyPairFromVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIDetachSshKeyPairFromVmInstanceEvent.class
+		}
+	}
 }

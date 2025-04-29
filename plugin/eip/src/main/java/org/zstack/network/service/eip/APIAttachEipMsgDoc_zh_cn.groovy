@@ -3,22 +3,22 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIAttachEipEvent
 
 doc {
-    title "绑定弹性IP(AttachEip)"
+	title "绑定弹性IP(AttachEip)"
 
-    category "弹性IP"
+	category "弹性IP"
 
-    desc """绑定弹性IP"""
+	desc """绑定弹性IP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachEipMsg.class
+			clz APIAttachEipMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachEipEvent.class
-        }
-    }
+		response {
+			clz APIAttachEipEvent.class
+		}
+	}
 }

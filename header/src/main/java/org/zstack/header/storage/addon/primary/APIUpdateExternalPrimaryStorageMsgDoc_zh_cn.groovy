@@ -3,22 +3,22 @@ package org.zstack.header.storage.addon.primary
 import org.zstack.header.storage.addon.primary.APIUpdateExternalPrimaryStorageEvent
 
 doc {
-    title "UpdateExternalPrimaryStorage"
+	title "UpdateExternalPrimaryStorage"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """更新外部存储"""
+	desc """更新外部存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/addon/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateExternalPrimaryStorageMsg.class
+			clz APIUpdateExternalPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "defaultProtocol"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 					values ("Vhost","Scsi","Nvme","Curve","file")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "name"
@@ -56,7 +56,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "description"
@@ -65,7 +65,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "url"
@@ -74,7 +74,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "systemTags"
@@ -83,7 +83,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "userTags"
@@ -92,13 +92,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateExternalPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIUpdateExternalPrimaryStorageEvent.class
+		}
+	}
 }

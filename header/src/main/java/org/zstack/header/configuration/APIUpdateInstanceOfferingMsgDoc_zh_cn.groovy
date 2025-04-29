@@ -3,22 +3,22 @@ package org.zstack.header.configuration
 import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent
 
 doc {
-    title "UpdateInstanceOffering"
+	title "UpdateInstanceOffering"
 
-    category "configuration"
+	category "configuration"
 
-    desc """更新云主机规格"""
+	desc """更新云主机规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/instance-offerings/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateInstanceOfferingMsg.class
+			clz APIUpdateInstanceOfferingMsg.class
 
-            desc """更新云主机规格"""
-            
+			desc """更新云主机规格"""
+
 			params {
 
 				column {
@@ -76,10 +76,10 @@ doc {
 					since "2.3.1"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateInstanceOfferingEvent.class
-        }
-    }
+		response {
+			clz APIUpdateInstanceOfferingEvent.class
+		}
+	}
 }
